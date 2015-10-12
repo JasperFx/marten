@@ -2,7 +2,34 @@
   "locked": false,
   "version": 1,
   "targets": {
-    "DNX,Version=v4.5.1": {},
+    "DNX,Version=v4.5.1": {
+      "Fixie/1.0.0.29": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Fixie.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Fixie.Console.exe": {},
+          "lib/net45/Fixie.Console.x86.exe": {},
+          "lib/net45/Fixie.dll": {},
+          "lib/net45/Fixie.TestDriven.dll": {},
+          "lib/net45/Fixie.VisualStudio.TestAdapter.dll": {},
+          "lib/net45/Mono.Cecil.dll": {},
+          "lib/net45/Mono.Cecil.Pdb.dll": {},
+          "lib/net45/Mono.Cecil.Rocks.dll": {},
+          "lib/net45/TestDriven.Framework.dll": {}
+        }
+      },
+      "Npgsql/3.1.0-alpha1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Npgsql.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Npgsql.dll": {}
+        }
+      }
+    },
     "DNXCore,Version=v5.0": {
       "Microsoft.CSharp/4.0.1-beta-23225": {
         "type": "package",
@@ -292,6 +319,27 @@
     }
   },
   "libraries": {
+    "Fixie/1.0.0.29": {
+      "type": "package",
+      "sha512": "ukL2gug2fDNjx1KbOXaybtRsbZC3aEyHzQL4StK9nz21gES3/fLjtNFpkP5b4zw5SscOHNPHDsbg0GsiHQEW0A==",
+      "files": [
+        "Fixie.1.0.0.29.nupkg",
+        "Fixie.1.0.0.29.nupkg.sha512",
+        "Fixie.nuspec",
+        "lib/net45/Fixie.Console.exe",
+        "lib/net45/Fixie.Console.exe.config",
+        "lib/net45/Fixie.Console.x86.exe",
+        "lib/net45/Fixie.Console.x86.exe.config",
+        "lib/net45/Fixie.dll",
+        "lib/net45/Fixie.dll.tdnet",
+        "lib/net45/Fixie.TestDriven.dll",
+        "lib/net45/Fixie.VisualStudio.TestAdapter.dll",
+        "lib/net45/Mono.Cecil.dll",
+        "lib/net45/Mono.Cecil.Pdb.dll",
+        "lib/net45/Mono.Cecil.Rocks.dll",
+        "lib/net45/TestDriven.Framework.dll"
+      ]
+    },
     "Microsoft.CSharp/4.0.1-beta-23225": {
       "type": "package",
       "serviceable": true,
@@ -320,6 +368,17 @@
         "ref/wpa81/_._",
         "ref/xamarinios10/_._",
         "ref/xamarinmac20/_._"
+      ]
+    },
+    "Npgsql/3.1.0-alpha1": {
+      "type": "package",
+      "sha512": "YpV0VPBWCvQYnlVE+4TtcBIwwf+RhDx9Gfy2OKb+rlTcOr9AqFAO7e6x1yWI0XXu/DiZ6EU2B4ForIuLAbDmIA==",
+      "files": [
+        "lib/net45/Npgsql.dll",
+        "lib/net45/Npgsql.xml",
+        "Npgsql.3.1.0-alpha1.nupkg",
+        "Npgsql.3.1.0-alpha1.nupkg.sha512",
+        "Npgsql.nuspec"
       ]
     },
     "System.Collections/4.0.11-beta-23225": {
@@ -1044,7 +1103,10 @@
   },
   "projectFileDependencyGroups": {
     "": [],
-    "DNX,Version=v4.5.1": [],
+    "DNX,Version=v4.5.1": [
+      "Fixie >= 1.0.0.29",
+      "Npgsql >= 3.1.0-alpha1"
+    ],
     "DNXCore,Version=v5.0": [
       "Microsoft.CSharp >= 4.0.1-beta-23225",
       "System.Collections >= 4.0.11-beta-23225",

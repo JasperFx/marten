@@ -2,7 +2,17 @@
   "locked": false,
   "version": 1,
   "targets": {
-    "DNX,Version=v4.5.1": {},
+    "DNX,Version=v4.5.1": {
+      "Npgsql/3.1.0-alpha1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Npgsql.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Npgsql.dll": {}
+        }
+      }
+    },
     "DNXCore,Version=v5.0": {
       "Microsoft.CSharp/4.0.1-beta-23225": {
         "type": "package",
@@ -320,6 +330,17 @@
         "ref/wpa81/_._",
         "ref/xamarinios10/_._",
         "ref/xamarinmac20/_._"
+      ]
+    },
+    "Npgsql/3.1.0-alpha1": {
+      "type": "package",
+      "sha512": "YpV0VPBWCvQYnlVE+4TtcBIwwf+RhDx9Gfy2OKb+rlTcOr9AqFAO7e6x1yWI0XXu/DiZ6EU2B4ForIuLAbDmIA==",
+      "files": [
+        "lib/net45/Npgsql.dll",
+        "lib/net45/Npgsql.xml",
+        "Npgsql.3.1.0-alpha1.nupkg",
+        "Npgsql.3.1.0-alpha1.nupkg.sha512",
+        "Npgsql.nuspec"
       ]
     },
     "System.Collections/4.0.11-beta-23225": {
@@ -1044,7 +1065,9 @@
   },
   "projectFileDependencyGroups": {
     "": [],
-    "DNX,Version=v4.5.1": [],
+    "DNX,Version=v4.5.1": [
+      "Npgsql >= 3.1.0-alpha1"
+    ],
     "DNXCore,Version=v5.0": [
       "Microsoft.CSharp >= 4.0.1-beta-23225",
       "System.Collections >= 4.0.11-beta-23225",
