@@ -1,0 +1,4 @@
+source https://nuget.org/api/v2
+nuget Fixie
+nuget Npgsql
+nuget Shouldly
