@@ -29,6 +29,8 @@ bld/
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
 
+connection.txt
+
 # NUNIT
 *.VisualState.xml
 TestResult.xml

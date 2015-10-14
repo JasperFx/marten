@@ -2,5 +2,6 @@ NUGET
   remote: https://nuget.org/api/v2
   specs:
     Fixie (1.0.0.33)
+    FubuCore (1.3.0.278)
     Npgsql (3.0.3)
     Shouldly (2.6.0)
