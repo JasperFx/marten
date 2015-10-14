@@ -39,7 +39,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Generation\Templates\Templates.cs" />
+    <Compile Include="Generation\GenerationClasses.cs" />
+    <Compile Include="Generation\Templates\TemplateSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -7,7 +7,7 @@ namespace Marten.Testing.Generation
     {
         public void can_read_document_table()
         {
-            Templates.DocumentTable().ShouldContain("%TABLE_NAME%");
+            TemplateSource.DocumentTable().ShouldContain("%TABLE_NAME%");
         } 
     }
 }

@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConnectionSource.cs" />
+    <Compile Include="Generation\SchemaBuilderTests.cs" />
     <Compile Include="Generation\TemplateReadingTests.cs" />
     <Compile Include="PlayingTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
