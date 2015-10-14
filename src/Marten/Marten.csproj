@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommandRunner.cs" />
     <Compile Include="Generation\GenerationClasses.cs" />
     <Compile Include="Generation\Templates\TemplateSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -27,4 +27,6 @@ namespace Marten.Generation
             return _writer.ToString();
         }
     }
+
+
 }

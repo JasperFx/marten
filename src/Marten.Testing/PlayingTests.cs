@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using Marten.Generation;
+using Marten.Testing.Generation;
 using Npgsql;
 using Shouldly;
 
@@ -25,6 +27,17 @@ namespace Marten.Testing
                         Debug.WriteLine(reader.GetString(0));
                     }
                 }
+            }
+        }
+
+        public void try_command_runner()
+        {
+            var builder = new SchemaBuilder();
+            builder.CreateTable(typeof(SchemaBuilderTests.MySpecialDocument));
+
+            using (var runner = new CommandRunner(ConnectionSource.ConnectionString))
+            {
+                runner.Execute(builder.ToSql());
             }
         }
     }
