@@ -1,7 +1,9 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Marten.Generation;
 using Marten.Testing.Generation;
 using Npgsql;
+using NpgsqlTypes;
 using Shouldly;
 
 namespace Marten.Testing
@@ -34,10 +36,25 @@ namespace Marten.Testing
         {
             var builder = new SchemaBuilder();
             builder.CreateTable(typeof(SchemaBuilderTests.MySpecialDocument));
+            builder.DefineUpsert(typeof (SchemaBuilderTests.MySpecialDocument));
+
+            var id = Guid.NewGuid();
 
             using (var runner = new CommandRunner(ConnectionSource.ConnectionString))
             {
                 runner.Execute(builder.ToSql());
+
+                runner.Execute("mt_upsert_myspecialdocument", command =>
+                {
+                    command.Parameters.Add("docId", NpgsqlDbType.Uuid).Value = id;
+                    command.Parameters.Add("doc", NpgsqlDbType.Json).Value = "{\"id\":\"1\"}";
+                });
+
+                runner.Execute("mt_upsert_myspecialdocument", command =>
+                {
+                    command.Parameters.Add("docId", NpgsqlDbType.Uuid).Value = id;
+                    command.Parameters.Add("doc", NpgsqlDbType.Json).Value = "{\"id\":\"2\"}";
+                });
             }
         }
     }

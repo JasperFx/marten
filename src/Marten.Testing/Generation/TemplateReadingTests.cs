@@ -8,6 +8,11 @@ namespace Marten.Testing.Generation
         public void can_read_document_table()
         {
             TemplateSource.DocumentTable().ShouldContain("%TABLE_NAME%");
-        } 
+        }
+
+        public void can_read_upsert_document()
+        {
+            TemplateSource.UpsertDocument().ShouldContain("INSERT INTO %TABLE_NAME%");
+        }
     }
 }

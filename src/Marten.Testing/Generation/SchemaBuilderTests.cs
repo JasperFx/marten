@@ -22,6 +22,23 @@ namespace Marten.Testing.Generation
             sql.ShouldContain("json NOT NULL");
         }
 
+        public void upsert_name_for_document_type()
+        {
+            SchemaBuilder.UpsertNameFor(typeof(MySpecialDocument))
+                .ShouldBe("mt_upsert_MySpecialDocument");
+        }
+
+        public void write_upsert_sql()
+        {
+            var builder = new SchemaBuilder();
+            builder.DefineUpsert(typeof(MySpecialDocument));
+
+            var sql = builder.ToSql();
+
+            sql.ShouldContain("INSERT INTO mt_doc_MySpecialDocument");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_MySpecialDocument");
+        }
+
         public class MySpecialDocument { }
     }
 }

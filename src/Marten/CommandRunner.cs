@@ -15,10 +15,7 @@ namespace Marten
 
         public int Execute(string sql)
         {
-            if (_connection.State == ConnectionState.Closed)
-            {
-                _connection.Open();
-            }
+            ensureConnectionIsOpen();
 
             using (var command = _connection.CreateCommand())
             {
@@ -27,14 +24,36 @@ namespace Marten
             }
         }
 
+        public int Execute(string function, Action<NpgsqlCommand> configure)
+        {
+            ensureConnectionIsOpen();
+
+            using (var command = _connection.CreateCommand())
+            {
+                command.CommandType = CommandType.StoredProcedure;
+                command.CommandText = function;
+
+                configure(command);
+
+                
+
+                return command.ExecuteNonQuery();
+            }
+        }
+
         public void Dispose()
         {
-            if (_connection.State != ConnectionState.Closed)
-            {
-                _connection.Close();
-            }
+            ensureConnectionIsOpen();
 
             _connection.Dispose();
+        }
+
+        private void ensureConnectionIsOpen()
+        {
+            if (_connection.State == ConnectionState.Closed)
+            {
+                _connection.Open();
+            }
         }
     }
 }
