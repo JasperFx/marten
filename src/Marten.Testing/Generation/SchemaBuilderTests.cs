@@ -11,6 +11,17 @@ namespace Marten.Testing.Generation
                 .ShouldBe("mt_doc_MySpecialDocument");
         }
 
+        public void write_document_table()
+        {
+            var builder = new SchemaBuilder();
+            builder.CreateTable(typeof(MySpecialDocument));
+
+            var sql = builder.ToSql();
+
+            sql.ShouldContain("CREATE TABLE mt_doc_MySpecialDocument");
+            sql.ShouldContain("json NOT NULL");
+        }
+
         public class MySpecialDocument { }
     }
 }
