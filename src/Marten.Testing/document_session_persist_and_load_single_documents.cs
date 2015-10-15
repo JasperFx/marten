@@ -61,5 +61,10 @@ namespace Marten.Testing
                 user2.LastName.ShouldBe(user.LastName);
             }
         }
+
+        public void try_to_load_a_document_that_does_not_exist()
+        {
+            theSession.Load<User>(Guid.NewGuid()).ShouldBeNull();
+        }
     }
 }

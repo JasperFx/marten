@@ -8,6 +8,7 @@ namespace Marten.Schema
         void InitializeSchema(SchemaBuilder builder);
         NpgsqlCommand UpsertCommand(object document, string json);
         NpgsqlCommand LoaderCommand(object id);
+        NpgsqlCommand DeleteCommand(object id);
     }
 
     // TODO -- might kill off this thing later
@@ -18,7 +19,7 @@ namespace Marten.Schema
         //NpgsqlCommand UpsertCommand();
 
         NpgsqlCommand UpsertCommand(T document, string json);
-        NpgsqlCommand DeleteCommand(object id);
+        
 
 
     }

@@ -115,6 +115,8 @@ namespace Marten
                 loader.Connection = conn;
                 var json = loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
 
+                if (json == null) return default(T);
+
                 return _serializer.FromJson<T>(json);
             }
         }
