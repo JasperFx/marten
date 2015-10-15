@@ -112,6 +112,9 @@ namespace Marten
                     });
 
                     tx.Commit();
+
+                    _deletes.Clear();
+                    _updates.Clear();
                 }
             }
             

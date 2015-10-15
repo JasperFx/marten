@@ -52,6 +52,7 @@
     <Compile Include="document_session_persist_and_load_single_documents.cs" />
     <Compile Include="Generation\SchemaBuilderTests.cs" />
     <Compile Include="Generation\TemplateReadingTests.cs" />
+    <Compile Include="persist_and_deleting_multiple_documents_Tests.cs" />
     <Compile Include="PlayingTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Schema\DevelopmentDocumentSchemaTests.cs" />
