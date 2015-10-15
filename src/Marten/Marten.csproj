@@ -39,6 +39,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\CommonAssemblyInfo.cs">
+      <Link>CommonAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="CommandRunner.cs" />
     <Compile Include="Generation\GenerationClasses.cs" />
     <Compile Include="Generation\Templates\TemplateSource.cs" />
