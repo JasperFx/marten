@@ -7,10 +7,13 @@ using NpgsqlTypes;
 
 namespace Marten.Schema
 {
-    public class DocumentStorage<T> : IDocumentStorage<T> where T : IDocument
+    public class DocumentStorage<T> : IDocumentStorage where T : IDocument
     {
         private readonly string _upsertCommand = SchemaBuilder.UpsertNameFor(typeof (T));
         private readonly string _loadCommand = "select data from {0} where id = :id".ToFormat(SchemaBuilder.TableNameFor(typeof(T)));
+
+        private readonly string _deleteCommand =
+            "delete from {0} where id = :id".ToFormat(SchemaBuilder.TableNameFor(typeof (T)));
 
         public NpgsqlCommand UpsertCommand(T document, string json)
         {
@@ -37,9 +40,17 @@ namespace Marten.Schema
             return command;
         }
 
-        public NpgsqlCommand DeleteCommand(object id)
+        public NpgsqlCommand DeleteCommandForId(object id)
         {
-            throw new NotImplementedException();
+            var command = new NpgsqlCommand(_deleteCommand);
+            command.Parameters.Add("id", NpgsqlDbType.Uuid).Value = id;
+
+            return command;
+        }
+
+        public NpgsqlCommand DeleteCommandForEntity(object entity)
+        {
+            return DeleteCommandForId(entity.As<T>().Id);
         }
 
         public void InitializeSchema(SchemaBuilder builder)

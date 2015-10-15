@@ -10,7 +10,7 @@ namespace Marten
     {
         void Delete<T>(T entity);
         void Delete<T>(ValueType id);
-        void Delete(string id);
+        void Delete<T>(string id);
 
         T Load<T>(string id);
         T[] Load<T>(IEnumerable<string> ids);

@@ -2,26 +2,11 @@
 using FubuCore;
 using Marten.Testing.Documents;
 using Shouldly;
-using StructureMap;
 
 namespace Marten.Testing
 {
-    public class document_session_persist_and_load_single_documents_Tests : IDisposable
+    public class document_session_persist_and_load_single_documents_Tests : DocumentSessionFixture
     {
-        private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
-        private readonly IDocumentSession theSession;
-
-        public document_session_persist_and_load_single_documents_Tests()
-        {
-            ConnectionSource.CleanBasicDocuments();
-            theSession = _container.GetInstance<IDocumentSession>();
-        }
-
-        public void Dispose()
-        {
-            theSession.Dispose();
-        }
-
         public void persist_a_single_document()
         {
             var user = new User {FirstName = "Magic", LastName = "Johnson"};
@@ -50,7 +35,7 @@ namespace Marten.Testing
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session2 = _container.GetInstance<IDocumentSession>())
+            using (var session2 = theContainer.GetInstance<IDocumentSession>())
             {
                 session2.ShouldNotBeSameAs(theSession);
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Marten.Schema;
+using Npgsql;
 
 namespace Marten
 {
@@ -11,6 +12,7 @@ namespace Marten
         private readonly IConnectionFactory _factory;
 
         private readonly IList<object> _updates = new List<object>();
+        private readonly IList<NpgsqlCommand> _deletes = new List<NpgsqlCommand>(); 
 
         public DocumentSession(IDocumentSchema schema, ISerializer serializer, IConnectionFactory factory)
         {
@@ -25,17 +27,20 @@ namespace Marten
 
         public void Delete<T>(T entity)
         {
-            throw new NotImplementedException();
+            var storage = _schema.StorageFor(typeof (T));
+            _deletes.Add(storage.DeleteCommandForEntity(entity));
         }
 
         public void Delete<T>(ValueType id)
         {
-            throw new NotImplementedException();
+            var storage = _schema.StorageFor(typeof(T));
+            _deletes.Add(storage.DeleteCommandForId(id));
         }
 
-        public void Delete(string id)
+        public void Delete<T>(string id)
         {
-            throw new NotImplementedException();
+            var storage = _schema.StorageFor(typeof(T));
+            _deletes.Add(storage.DeleteCommandForId(id));
         }
 
         public T Load<T>(string id)
@@ -97,6 +102,13 @@ namespace Marten
 
                             command.ExecuteNonQuery();
                         }
+                    });
+
+                    _deletes.Each(cmd =>
+                    {
+                        cmd.Connection = conn;
+                        cmd.Transaction = tx;
+                        cmd.ExecuteNonQuery();
                     });
 
                     tx.Commit();
