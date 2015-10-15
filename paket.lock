@@ -6,3 +6,4 @@ NUGET
     Newtonsoft.Json (7.0.1)
     Npgsql (3.0.3)
     Shouldly (2.6.0)
+    structuremap (4.0.0.266-alpha)

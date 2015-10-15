@@ -48,6 +48,10 @@
     <Compile Include="ISerializer.cs" />
     <Compile Include="JsonNetSerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Schema\DevelopmentDocumentSchema.cs" />
+    <Compile Include="Schema\DocumentStorage.cs" />
+    <Compile Include="Schema\IDocumentSchema.cs" />
+    <Compile Include="Schema\IDocumentStorage.cs" />
     <Compile Include="Schema\SchemaClasses.cs" />
   </ItemGroup>
   <ItemGroup>

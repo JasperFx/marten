@@ -63,18 +63,19 @@ namespace Marten
     {
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
-        private readonly NpgsqlConnection _connection;
+        private readonly IConnectionFactory _factory;
 
-        public DocumentSession(IDocumentSchema schema, ISerializer serializer, NpgsqlConnection connection)
+        private readonly IList<object> _updates = new List<object>();
+
+        public DocumentSession(IDocumentSchema schema, ISerializer serializer, IConnectionFactory factory)
         {
             _schema = schema;
             _serializer = serializer;
-            _connection = connection;
+            _factory = factory;
         }
 
         public void Dispose()
         {
-            throw new NotImplementedException();
         }
 
         public void Delete<T>(T entity)
@@ -104,7 +105,18 @@ namespace Marten
 
         public T Load<T>(ValueType id)
         {
-            throw new NotImplementedException();
+            var storage = _schema.StorageFor(typeof (T));
+            var loader = storage.LoaderCommand(id);
+
+            using (var conn = _factory.Create())
+            {
+                conn.Open();
+
+                loader.Connection = conn;
+                var json = loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
+
+                return _serializer.FromJson<T>(json);
+            }
         }
 
         public T[] Load<T>(params ValueType[] ids)
@@ -119,12 +131,38 @@ namespace Marten
 
         public void SaveChanges()
         {
-            throw new NotImplementedException();
+            // TODO -- fancier later to add batch updating!
+
+            using (var conn = _factory.Create())
+            {
+                conn.Open();
+                using (var tx = conn.BeginTransaction())
+                {
+                    _updates.Each(o =>
+                    {
+                        var docType = o.GetType();
+                        var storage = _schema.StorageFor(docType);
+
+                        using (var command = storage.UpsertCommand(o, _serializer.ToJson(o)))
+                        {
+                            command.Connection = conn;
+                            command.Transaction = tx;
+
+                            command.ExecuteNonQuery();
+                        }
+                    });
+
+                    tx.Commit();
+                }
+            }
+            
+
         }
 
         public void Store(object entity)
         {
-            throw new NotImplementedException();
+            // TODO -- throw if null
+            _updates.Add(entity);
         }
     }
 }

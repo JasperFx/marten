@@ -4,3 +4,4 @@ nuget FubuCore
 nuget Newtonsoft.Json
 nuget Npgsql
 nuget Shouldly
+nuget structuremap

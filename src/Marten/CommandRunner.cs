@@ -118,5 +118,16 @@ AND type_udt_name != 'trigger';
 
             Debug.WriteLine(table);
         }
+
+        public T QueryScalar<T>(string sql)
+        {
+            ensureConnectionIsOpen();
+
+            using (var command = _connection.CreateCommand())
+            {
+                command.CommandText = sql;
+                return (T) command.ExecuteScalar();
+            }
+        }
     }
 }
