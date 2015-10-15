@@ -34,9 +34,9 @@ namespace Marten.Testing
                 runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (Issue))));
                 runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (Company))));
 
-                runner.Execute("FUNCTION {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(User))));
-                runner.Execute("FUNCTION {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Issue))));
-                runner.Execute("FUNCTION {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Company))));
+                runner.Execute("DROP FUNCTION if exists {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(User))));
+                runner.Execute("DROP FUNCTION if exists {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Issue))));
+                runner.Execute("DROP FUNCTION if exists {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Company))));
             }
         }
     }

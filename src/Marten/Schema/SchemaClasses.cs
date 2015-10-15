@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using FubuCore;
 using Marten.Generation;
 using Npgsql;
 using NpgsqlTypes;
@@ -13,18 +15,28 @@ namespace Marten.Schema
 
     public class DevelopmentDocumentSchema : IDocumentSchema, IDisposable
     {
-        private readonly IConnectionFactory _connections;
         private readonly Lazy<CommandRunner> _runner;
+        private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes = new ConcurrentDictionary<Type, IDocumentStorage>(); 
 
         public DevelopmentDocumentSchema(IConnectionFactory connections)
         {
-            _connections = connections;
             _runner = new Lazy<CommandRunner>(() => new CommandRunner(connections.Create()));
         }
 
         public IDocumentStorage StorageFor(Type documentType)
         {
-            throw new NotImplementedException();
+            return _documentTypes.GetOrAdd(documentType, type =>
+            {
+                // TODO -- will need to get fancier later when we stop requiring IDocument
+                var storage = typeof (DocumentStorage<>).CloseAndBuildAs<IDocumentStorage>(documentType);
+
+                var builder = new SchemaBuilder();
+                storage.InitializeSchema(builder);
+
+                _runner.Value.Execute(builder.ToSql());
+
+                return storage;
+            });
         }
 
         public void Dispose()
@@ -67,7 +79,7 @@ namespace Marten.Schema
 
     public interface IDocumentStorage
     {
-        
+        void InitializeSchema(SchemaBuilder builder);
     }
 
     public interface IDocumentStorage<T> : IDocumentStorage where T : IDocument
@@ -79,7 +91,7 @@ namespace Marten.Schema
         NpgsqlCommand UpsertCommand(T document, string json);
         NpgsqlCommand LoaderCommand(object id);
 
-        void InitializeSchema(SchemaBuilder builder);
+        
     }
 
     public class DocumentStorage<T> : IDocumentStorage<T> where T : IDocument
