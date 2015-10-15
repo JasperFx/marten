@@ -43,11 +43,13 @@
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="CommandRunner.cs" />
+    <Compile Include="DocumentSession.cs" />
     <Compile Include="Generation\GenerationClasses.cs" />
     <Compile Include="Generation\Templates\TemplateSource.cs" />
     <Compile Include="IConnectionFactory.cs" />
     <Compile Include="IDocument.cs" />
     <Compile Include="IDocumentSession.cs" />
+    <Compile Include="IDocumentStore.cs" />
     <Compile Include="ISerializer.cs" />
     <Compile Include="JsonNetSerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
