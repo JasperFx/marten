@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Marten.Generation;
 using Marten.Testing.Generation;
@@ -43,7 +44,7 @@ namespace Marten.Testing
             using (var runner = new CommandRunner(ConnectionSource.ConnectionString))
             {
                 runner.Execute(builder.ToSql());
-
+                /*
                 runner.Execute("mt_upsert_myspecialdocument", command =>
                 {
                     command.Parameters.Add("docId", NpgsqlDbType.Uuid).Value = id;
@@ -55,6 +56,9 @@ namespace Marten.Testing
                     command.Parameters.Add("docId", NpgsqlDbType.Uuid).Value = id;
                     command.Parameters.Add("doc", NpgsqlDbType.Json).Value = "{\"id\":\"2\"}";
                 });
+                 * */
+                //runner.DescribeSchema();
+                runner.SchemaFunctionNames().Each(x => Debug.WriteLine(x));
             }
         }
     }

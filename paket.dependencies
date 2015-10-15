@@ -1,5 +1,6 @@
 source https://nuget.org/api/v2
 nuget Fixie
 nuget FubuCore
+nuget Newtonsoft.Json
 nuget Npgsql
 nuget Shouldly

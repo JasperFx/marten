@@ -3,5 +3,6 @@ NUGET
   specs:
     Fixie (1.0.0.33)
     FubuCore (1.3.0.278)
+    Newtonsoft.Json (7.0.1)
     Npgsql (3.0.3)
     Shouldly (2.6.0)

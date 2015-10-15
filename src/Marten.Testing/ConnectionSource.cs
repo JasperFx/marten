@@ -1,9 +1,12 @@
 ﻿using System;
 using FubuCore;
+using Marten.Generation;
+using Marten.Testing.Documents;
+using Npgsql;
 
 namespace Marten.Testing
 {
-    public static class ConnectionSource
+    public class ConnectionSource : IConnectionFactory
     {
         private readonly static Lazy<string> _connectionString = new Lazy<string>(() =>
         {
@@ -16,6 +19,25 @@ namespace Marten.Testing
         public static string ConnectionString
         {
             get { return _connectionString.Value; }
+        }
+
+        public NpgsqlConnection Create()
+        {
+            return new NpgsqlConnection(ConnectionString);
+        }
+
+        public static void CleanBasicDocuments()
+        {
+            using (var runner = new CommandRunner(ConnectionString))
+            {
+                runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (User))));
+                runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (Issue))));
+                runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (Company))));
+
+                runner.Execute("FUNCTION {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(User))));
+                runner.Execute("FUNCTION {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Issue))));
+                runner.Execute("FUNCTION {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Company))));
+            }
         }
     }
 }
