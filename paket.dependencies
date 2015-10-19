@@ -3,5 +3,6 @@ nuget Fixie
 nuget FubuCore
 nuget Newtonsoft.Json
 nuget Npgsql
+nuget Remotion.Linq
 nuget Shouldly
 nuget structuremap

@@ -15,6 +15,8 @@ namespace Marten.Schema
         private readonly string _deleteCommand =
             "delete from {0} where id = :id".ToFormat(SchemaBuilder.TableNameFor(typeof (T)));
 
+        private readonly string _tableName = SchemaBuilder.TableNameFor(typeof (T));
+
         public NpgsqlCommand UpsertCommand(T document, string json)
         {
             var command = new NpgsqlCommand(_upsertCommand);
@@ -51,6 +53,14 @@ namespace Marten.Schema
         public NpgsqlCommand DeleteCommandForEntity(object entity)
         {
             return DeleteCommandForId(entity.As<T>().Id);
+        }
+
+        public string TableName
+        {
+            get
+            {
+                return _tableName;
+            }
         }
 
         public void InitializeSchema(SchemaBuilder builder)

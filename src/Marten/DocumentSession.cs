@@ -1,7 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using FubuCore;
+using Marten.Linq;
 using Marten.Schema;
 using Npgsql;
+using Remotion.Linq.Parsing.ExpressionVisitors.Transformation;
+using Remotion.Linq.Parsing.Structure;
+using Remotion.Linq.Parsing.Structure.NodeTypeProviders;
 
 namespace Marten
 {
@@ -126,5 +132,53 @@ namespace Marten
             // TODO -- throw if null
             _updates.Add(entity);
         }
+
+        public IQueryable<T> Query<T>()
+        {
+            var transformerRegistry = ExpressionTransformerRegistry.CreateDefault();
+
+
+            var processor = ExpressionTreeParser.CreateDefaultProcessor(transformerRegistry);
+            // Add custom processors here:
+            // processor.InnerProcessors.Add (new MyExpressionTreeProcessor());
+
+
+            var expressionTreeParser = new ExpressionTreeParser(new MethodNameBasedNodeTypeRegistry(), processor);
+            var parser = new QueryParser(expressionTreeParser);
+            return new MartenQueryable<T>(new QueryProvider(parser, new QueryExecutor()));
+        }
+
+        public IEnumerable<T> Query<T>(string @where, string orderBy = null)
+        {
+            var tableName = _schema.StorageFor(typeof(T)).TableName;
+            var sql = "select data from {0} where {1}".ToFormat(tableName, @where);
+            if (orderBy.IsNotEmpty())
+            {
+                sql += " order by " + orderBy;
+            }
+
+            return query<T>(sql).ToArray();
+        }
+
+        private IEnumerable<T> query<T>(string sql)
+        {
+            using (var conn = _factory.Create())
+            {
+                conn.Open();
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = sql;
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var json = reader.GetString(0);
+                            yield return _serializer.FromJson<T>(json);
+                        }
+                    }
+                }
+            }
+        } 
     }
 }

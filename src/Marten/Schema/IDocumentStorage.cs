@@ -10,6 +10,7 @@ namespace Marten.Schema
         NpgsqlCommand LoaderCommand(object id);
         NpgsqlCommand DeleteCommandForId(object id);
         NpgsqlCommand DeleteCommandForEntity(object entity);
+        string TableName { get; }
     }
 
 }

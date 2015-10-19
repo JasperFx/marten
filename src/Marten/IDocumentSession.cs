@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Marten
 {
@@ -31,5 +32,9 @@ namespace Marten
         /// </summary>
         /// <param name="entity">entity to store.</param>
         void Store(object entity);
+
+        IQueryable<T> Query<T>();
+
+        IEnumerable<T> Query<T>(string @where, string orderBy = null);
     }
 }
