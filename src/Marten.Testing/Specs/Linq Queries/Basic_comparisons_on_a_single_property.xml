@@ -12,7 +12,11 @@
     </TheDocumentsAre>
     <ExecutingQuery>
       <table id="724c8058-0089-4510-9f5c-bff8ff85b720">
-        <ExecutingQuery-row WhereClause="x.Number == 1" Sql="select data from mt_doc_Target where data -&gt;&gt; 'Number' = :arg0" Results="A" />
+        <ExecutingQuery-row WhereClause="x.Number == 1" Results="A" />
+        <ExecutingQuery-row WhereClause="x.Number &gt; 3" Results="D, E, F" />
+        <ExecutingQuery-row WhereClause="x.Number &lt; 3" Results="A, B" />
+        <ExecutingQuery-row WhereClause="x.Number &lt;= 3" Results="A, B, C" />
+        <ExecutingQuery-row WhereClause="x.Number &gt;= 3" Results="C, D, E, F" />
       </table>
     </ExecutingQuery>
   </Linq>

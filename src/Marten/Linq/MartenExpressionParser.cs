@@ -20,15 +20,27 @@ namespace Marten.Linq
 
         public static IWhereFragment GetWhereFragment(BinaryExpression binary)
         {
+            var jsonLocator = JsonLocator(binary.Left);
+            // TODO -- handle NULL differently I'd imagine
+            var value = Value(binary.Right);
+
             switch (binary.NodeType)
             {
                 case ExpressionType.Equal:
-                    // TODO -- handle NULL differently I'd imagine
-                    var value = Value(binary.Right);
-                    var sql = "{0} = ?".ToFormat(JsonLocator(binary.Left));
-                    
+                    return new WhereFragment("{0} = ?".ToFormat(jsonLocator), value);
 
-                    return new WhereFragment(sql, value);
+                case ExpressionType.GreaterThan:
+                    return new WhereFragment("{0} > ?".ToFormat(jsonLocator), value);
+
+                case ExpressionType.GreaterThanOrEqual:
+                    return new WhereFragment("{0} >= ?".ToFormat(jsonLocator), value);
+
+                case ExpressionType.LessThan:
+                    return new WhereFragment("{0} < ?".ToFormat(jsonLocator), value);
+
+                case ExpressionType.LessThanOrEqual:
+                    return new WhereFragment("{0} <= ?".ToFormat(jsonLocator), value);
+
             }
 
             throw new NotSupportedException();
