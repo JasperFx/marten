@@ -1,7 +1,7 @@
 <Spec id="deb452b4-e9ce-49d9-ab54-77868463162c" maxRetries="0" tags="" lifecycle="Regression" name="Basic comparisons on a single property" lastUpdated="Tuesday, October 20, 2015" expirationPeriod="0">
   <Linq id="2124a9c3-d8eb-444b-b94f-4c572b62545f">
     <TheDocumentsAre>
-      <Rows id="cbbb10d5-daac-4b27-99ef-386a029dd2fe">
+      <Rows id="cbbb10d5-daac-4b27-99ef-386a029dd2fe" active-cells="String=False">
         <TheDocumentsAre-row Name="A" Number="1" />
         <TheDocumentsAre-row Name="B" Number="2" />
         <TheDocumentsAre-row Name="C" Number="3" />

@@ -12,5 +12,6 @@ namespace Marten.Testing.Fixtures
         public Guid Id { get; set; }
 
         public int Number { get; set; }
+        public string String { get; set; }
     }
 }

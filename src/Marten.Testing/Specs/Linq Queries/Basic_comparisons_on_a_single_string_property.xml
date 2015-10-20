@@ -1,0 +1,20 @@
+<Spec id="d5ecff19-88f2-4785-aafd-9db0a6b8762c" maxRetries="0" tags="" lifecycle="Regression" name="Basic comparisons on a single string property" lastUpdated="Tuesday, October 20, 2015" expirationPeriod="0">
+  <Linq id="2124a9c3-d8eb-444b-b94f-4c572b62545f">
+    <TheDocumentsAre>
+      <Rows id="cbbb10d5-daac-4b27-99ef-386a029dd2fe" active-cells="String=True,Number=False">
+        <TheDocumentsAre-row Name="A" String="A" />
+        <TheDocumentsAre-row Name="B" String="B" />
+        <TheDocumentsAre-row Name="C" String="C" />
+        <TheDocumentsAre-row Name="D" String="A" />
+        <TheDocumentsAre-row Name="E" String="E" />
+        <TheDocumentsAre-row Name="F" String="F" />
+      </Rows>
+    </TheDocumentsAre>
+    <ExecutingQuery>
+      <table id="724c8058-0089-4510-9f5c-bff8ff85b720">
+        <ExecutingQuery-row WhereClause="x.String == &quot;A&quot;" Results="A, D" />
+        <ExecutingQuery-row WhereClause="x.String != &quot;A&quot;" Results="B, C, E, F" />
+      </table>
+    </ExecutingQuery>
+  </Linq>
+</Spec>

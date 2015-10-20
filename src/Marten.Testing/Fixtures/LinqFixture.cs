@@ -31,6 +31,9 @@ namespace Marten.Testing.Fixtures
             expression(x => x.Number >= 3);
             expression(x => x.Number != 3);
 
+            expression(x => x.String == "A");
+            expression(x => x.String != "A");
+
             AddSelectionValues("Expressions", _wheres.Keys.ToArray());
         }
 
@@ -66,7 +69,8 @@ namespace Marten.Testing.Fixtures
                     _idToName[target.Id] = name;
                 }).Header("Document Name");
 
-                _.SetProperty(x => x.Number);
+                _.SetProperty(x => x.Number).DefaultValue("1");
+                _.SetProperty(x => x.String).DefaultValue("Max");
 
                 _.Do(t => _session.Store(t));
             }).AsTable("If the documents are").After(() => _session.SaveChanges());
