@@ -19,13 +19,13 @@ namespace Marten.Testing
             {
                 using (var session = container.GetInstance<IDocumentSession>())
                 {
-                    var u = new User {FirstName = "Jeremy", LastName = "Miller"};
-                    session.Store(u);
+                    session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+                    session.Store(new User {FirstName = "Max", LastName = "Miller"});
                     session.SaveChanges();
 
-                    var user = session.Query<User>().Where(x => x.FirstName == "Jeremy").ToArray().Single();
+                    var user = session.Query<User>().Where(x => x.FirstName == "Jeremy" && x.LastName == "Miller").ToArray().Single();
                     user.LastName.ShouldBe("Miller");
-                    user.Id.ShouldBe(u.Id);
+                    user.FirstName.ShouldBe("Jeremy");
                 }
             }
 

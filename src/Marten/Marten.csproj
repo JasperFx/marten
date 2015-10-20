@@ -52,6 +52,7 @@
     <Compile Include="IDocumentStore.cs" />
     <Compile Include="ISerializer.cs" />
     <Compile Include="JsonNetSerializer.cs" />
+    <Compile Include="Linq\CompoundWhereFragment.cs" />
     <Compile Include="Linq\DocumentQuery.cs" />
     <Compile Include="Linq\IWhereFragment.cs" />
     <Compile Include="Linq\MartenQueryable.cs" />

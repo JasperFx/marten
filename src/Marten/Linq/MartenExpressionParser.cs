@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using FubuCore;
 using Marten.Util;
+using Remotion.Linq.Parsing.Structure.NodeTypeProviders;
 
 namespace Marten.Linq
 {
@@ -44,18 +45,30 @@ namespace Marten.Linq
 
         public static IWhereFragment GetWhereFragment(BinaryExpression binary)
         {
+            if (_operators.ContainsKey(binary.NodeType))
+            {
+                return buildSimpleWhereClause(binary);
+            }
+
+
+            switch (binary.NodeType)
+            {
+                 case ExpressionType.AndAlso:
+                    return new CompoundWhereFragment("and", ParseWhereFragment(binary.Left), ParseWhereFragment(binary.Right));
+
+            }
+
+            throw new NotSupportedException();
+        }
+
+        private static IWhereFragment buildSimpleWhereClause(BinaryExpression binary)
+        {
             var jsonLocator = JsonLocator(binary.Left);
             // TODO -- handle NULL differently I'd imagine
             var value = Value(binary.Right);
 
-            if (_operators.ContainsKey(binary.NodeType))
-            {
-                var op = _operators[binary.NodeType];
-                return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
-            }
-
-
-            throw new NotSupportedException();
+            var op = _operators[binary.NodeType];
+            return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
         }
 
         public static object Value(Expression expression)
