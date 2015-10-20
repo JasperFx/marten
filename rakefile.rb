@@ -9,7 +9,7 @@ BUILD_NUMBER = build_number
 
 task :ci => [:default, :pack]
 
-task :default => [:test]
+task :default => [:test, :storyteller]
 
 desc "Prepares the working directory for a new build"
 task :clean do

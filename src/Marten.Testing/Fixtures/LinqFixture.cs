@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using FubuCore;
@@ -21,15 +22,6 @@ namespace Marten.Testing.Fixtures
         public LinqFixture()
         {
             Title = "Linq Support";
-        }
-
-        public override void SetUp()
-        {
-            _idToName.ClearAll();
-
-            ConnectionSource.CleanBasicDocuments();
-            _container = Container.For<DevelopmentModeRegistry>();
-            _session = _container.GetInstance<IDocumentSession>();
 
             // set the expressions
             expression(x => x.Number == 1);
@@ -41,9 +33,21 @@ namespace Marten.Testing.Fixtures
             AddSelectionValues("Expressions", _wheres.Keys.ToArray());
         }
 
+        public override void SetUp()
+        {
+            _idToName.ClearAll();
+
+            ConnectionSource.CleanBasicDocuments();
+            _container = Container.For<DevelopmentModeRegistry>();
+            _session = _container.GetInstance<IDocumentSession>();
+
+
+        }
+
         private void expression(Expression<Func<Target, bool>> where)
         {
-            _wheres.Add(where.ToString(), where);
+            var key = @where.As<LambdaExpression>().Body.ToString().TrimStart('(').TrimEnd(')');
+            _wheres.Add(key, where);
         }
 
         public override void TearDown()
@@ -68,12 +72,13 @@ namespace Marten.Testing.Fixtures
         }
 
         [ExposeAsTable("Executing queries")]
-        public void ExecutingQuery([SelectionList("Expressions")]string WhereClause, out string Sql, out ResultSet Results)
+        public void ExecutingQuery([SelectionList("Expressions")]string WhereClause, out ResultSet Results)
         {
             var expression = _wheres[WhereClause];
             var queryable = _session.Query<Target>().Where(expression);
 
-            Sql = queryable.As<MartenQueryable<Target>>().ToCommand().CommandText;
+            var sql = _session.As<DocumentSession>().BuildCommand<Target>(queryable).CommandText;
+            Debug.WriteLine(sql);
 
             Results = new ResultSet(queryable.ToArray().Select(x => _idToName[x.Id]).ToArray());
         }

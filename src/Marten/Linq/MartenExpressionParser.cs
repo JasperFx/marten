@@ -1,6 +1,8 @@
 using System;
 using System.Linq.Expressions;
+using System.Reflection;
 using FubuCore;
+using Marten.Util;
 
 namespace Marten.Linq
 {
@@ -21,8 +23,12 @@ namespace Marten.Linq
             switch (binary.NodeType)
             {
                 case ExpressionType.Equal:
+                    // TODO -- handle NULL differently I'd imagine
+                    var value = Value(binary.Right);
                     var sql = "{0} = ?".ToFormat(JsonLocator(binary.Left));
-                    return new WhereFragment(sql, Value(binary.Right));
+                    
+
+                    return new WhereFragment(sql, value);
             }
 
             throw new NotSupportedException();
@@ -32,6 +38,8 @@ namespace Marten.Linq
         {
             if (expression is ConstantExpression)
             {
+                // TODO -- handle nulls
+                // TODO -- check out more types here.
                 return expression.As<ConstantExpression>().Value;
             }
 
@@ -42,7 +50,18 @@ namespace Marten.Linq
         {
             if (expression is MemberExpression)
             {
-                return "data ->> '{0}'".ToFormat(expression.As<MemberExpression>().Member.Name);
+                var member = expression.As<MemberExpression>().Member;
+                
+
+                var locator = "data ->> '{0}'".ToFormat(member.Name);
+                var memberType = member.GetMemberType();
+                if (memberType == typeof (int))
+                {
+                    return "CAST({0} as integer)".ToFormat(locator);
+                }
+
+
+                return locator;
             }
 
             throw new NotSupportedException();

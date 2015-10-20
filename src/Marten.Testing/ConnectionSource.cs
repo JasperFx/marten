@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using FubuCore;
 using Marten.Generation;
 using Marten.Testing.Documents;
@@ -11,8 +12,12 @@ namespace Marten.Testing
     {
         private readonly static Lazy<string> _connectionString = new Lazy<string>(() =>
         {
-            var path =
-                AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("connection.txt");
+            var path = AppDomain.CurrentDomain.BaseDirectory.AppendPath("connection.txt");
+            if (!File.Exists(path))
+            {
+                path = AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("connection.txt");
+            }
+
 
             return new FileSystem().ReadStringFromFile(path);
         }); 

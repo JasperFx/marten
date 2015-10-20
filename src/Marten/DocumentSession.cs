@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using FubuCore;
 using Marten.Linq;
 using Marten.Schema;
@@ -24,18 +22,48 @@ namespace Marten
         private readonly IList<NpgsqlCommand> _deletes = new List<NpgsqlCommand>();
         private readonly IConnectionFactory _factory;
         private readonly IQueryParser _parser;
-        private readonly QueryParser _queryParser;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
 
         private readonly IList<object> _updates = new List<object>();
 
-        public DocumentSession(IDocumentSchema schema, ISerializer serializer, IConnectionFactory factory, IQueryParser parser)
+        public DocumentSession(IDocumentSchema schema, ISerializer serializer, IConnectionFactory factory,
+            IQueryParser parser)
         {
             _schema = schema;
             _serializer = serializer;
             _factory = factory;
             _parser = parser;
+        }
+
+        T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
+        {
+            throw new NotImplementedException();
+        }
+
+        T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
+        {
+            var command = BuildCommand<T>(queryModel);
+
+            return query<T>(command);
+        }
+
+        public NpgsqlCommand BuildCommand<T>(QueryModel queryModel)
+        {
+            var query = new DocumentQuery<T>(_schema.StorageFor(typeof (T)).TableName);
+            var @where = queryModel.BodyClauses.OfType<WhereClause>().FirstOrDefault();
+            if (@where != null)
+            {
+                query.Where = MartenExpressionParser.ParseWhereFragment(@where.Predicate);
+            }
+
+            var command = query.ToCommand();
+            return command;
         }
 
         public void Dispose()
@@ -182,34 +210,10 @@ namespace Marten
             }
         }
 
-        T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
+        public NpgsqlCommand BuildCommand<T>(IQueryable<T> queryable)
         {
-            throw new NotImplementedException();
-        }
-
-        T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
-        {
-            throw new NotImplementedException();
-        }
-
-        IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
-        {
-            var command = BuildCommand<T>(queryModel);
-
-            return query<T>(command);
-        }
-
-        public NpgsqlCommand BuildCommand<T>(QueryModel queryModel)
-        {
-            var query = new DocumentQuery<T>(_schema.StorageFor(typeof (T)).TableName);
-            var @where = queryModel.BodyClauses.OfType<WhereClause>().FirstOrDefault();
-            if (@where != null)
-            {
-                query.Where = MartenExpressionParser.ParseWhereFragment(@where.Predicate);
-            }
-
-            var command = query.ToCommand();
-            return command;
+            var model = _parser.GetParsedQuery(queryable.Expression);
+            return BuildCommand<T>(model);
         }
     }
 }
