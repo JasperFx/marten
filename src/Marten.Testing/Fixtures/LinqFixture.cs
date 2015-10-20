@@ -41,6 +41,9 @@ namespace Marten.Testing.Fixtures
             expression(x => x.String == "A");
             expression(x => x.String != "A");
 
+            expression(x => x.String == "A" && x.Number == 1);
+            expression(x => x.String == "A" || x.Number == 1);
+
             AddSelectionValues("Expressions", _wheres.Keys.ToArray());
         }
 
@@ -57,7 +60,7 @@ namespace Marten.Testing.Fixtures
 
         private void expression(Expression<Func<Target, bool>> where)
         {
-            var key = @where.As<LambdaExpression>().Body.ToString().TrimStart('(').TrimEnd(')');
+            var key = @where.As<LambdaExpression>().Body.ToString().TrimStart('(').TrimEnd(')').Replace(") AndAlso (", " && ").Replace(") OrElse (", " || ");
             _wheres.Add(key, where);
         }
 

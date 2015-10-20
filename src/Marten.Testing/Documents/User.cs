@@ -1,4 +1,5 @@
 ﻿using System;
+using FubuCore;
 
 namespace Marten.Testing.Documents
 {
@@ -13,5 +14,10 @@ namespace Marten.Testing.Documents
 
         public string FirstName { get; set; }
         public string LastName { get; set; }
+
+        public string FullName
+        {
+            get { return "{0} {1}".ToFormat(FirstName, LastName); }
+        }
     }
 }

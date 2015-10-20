@@ -56,6 +56,8 @@ namespace Marten.Linq
                  case ExpressionType.AndAlso:
                     return new CompoundWhereFragment("and", ParseWhereFragment(binary.Left), ParseWhereFragment(binary.Right));
 
+                case ExpressionType.OrElse:
+                    return new CompoundWhereFragment("or", ParseWhereFragment(binary.Left), ParseWhereFragment(binary.Right));
             }
 
             throw new NotSupportedException();

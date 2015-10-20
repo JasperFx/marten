@@ -21,11 +21,16 @@ namespace Marten.Testing
                 {
                     session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
                     session.Store(new User {FirstName = "Max", LastName = "Miller"});
+                    session.Store(new User {FirstName = "Han", LastName = "Solo"});
                     session.SaveChanges();
 
-                    var user = session.Query<User>().Where(x => x.FirstName == "Jeremy" && x.LastName == "Miller").ToArray().Single();
-                    user.LastName.ShouldBe("Miller");
-                    user.FirstName.ShouldBe("Jeremy");
+                    var firstnames = session.Query<User>().Where(x => x.FirstName == "Han" || x.FirstName == "Max").ToArray()
+                        .OrderBy(x => x.FirstName).Select(x => x.FirstName).ToArray();
+
+                    firstnames.ShouldBe(new []{"Han", "Max"});
+                    
+
+
                 }
             }
 

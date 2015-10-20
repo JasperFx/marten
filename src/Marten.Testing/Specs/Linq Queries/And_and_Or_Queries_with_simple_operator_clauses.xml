@@ -1,0 +1,19 @@
+<Spec id="531df1e8-45a9-4d47-99eb-3700dc09fdda" maxRetries="0" tags="" lifecycle="Regression" name="And and Or Queries with simple operator clauses" lastUpdated="Tuesday, October 20, 2015" expirationPeriod="0">
+  <Linq id="2cb341fd-9b57-41a3-a583-3a661800e3f5">
+    <TheDocumentsAre>
+      <Rows id="52384ff5-a7a8-4d3a-843c-53630757e06f" active-cells="Long=False">
+        <TheDocumentsAre-row Name="First" Number="1" String="A" />
+        <TheDocumentsAre-row Name="Second" Number="2" String="A" />
+        <TheDocumentsAre-row Name="Third" Number="1" String="B" />
+        <TheDocumentsAre-row Name="Fourth" Number="1" String="A" />
+        <TheDocumentsAre-row Name="Fifth" Number="2" String="C" />
+      </Rows>
+    </TheDocumentsAre>
+    <ExecutingQuery>
+      <table id="117768d1-3a9f-428f-b431-786fe6160bdd">
+        <ExecutingQuery-row WhereClause="x.String == &quot;A&quot; &amp;&amp; x.Number == 1" Results="First, Fourth" />
+        <ExecutingQuery-row WhereClause="x.String == &quot;A&quot; || x.Number == 1" Results="First, Second, Third, Fourth" />
+      </table>
+    </ExecutingQuery>
+  </Linq>
+</Spec>
