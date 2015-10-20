@@ -61,6 +61,7 @@
     <Compile Include="Schema\IDocumentStorage.cs" />
     <Compile Include="Schema\SchemaClasses.cs" />
     <Compile Include="Util\CommandExtensions.cs" />
+    <Compile Include="Util\StringExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Generation\Templates\DocumentTable.txt" />

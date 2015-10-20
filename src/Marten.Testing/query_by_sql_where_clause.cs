@@ -17,7 +17,7 @@ namespace Marten.Testing
                     session.Store(u);
                     session.SaveChanges();
 
-                    var user = session.Query<User>("data ->> 'FirstName' = 'Jeremy'").Single();
+                    var user = session.Query<User>("where data ->> 'FirstName' = 'Jeremy'").Single();
                     user.LastName.ShouldBe("Miller");
                     user.Id.ShouldBe(u.Id);
                 }
@@ -36,13 +36,58 @@ namespace Marten.Testing
                     session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
                     session.SaveChanges();
 
-                    var firstnames = session.Query<User>("data ->> 'LastName' = 'Miller'").OrderBy(x => x.FirstName)
+                    var firstnames = session.Query<User>("where data ->> 'LastName' = 'Miller'").OrderBy(x => x.FirstName)
                         .Select(x => x.FirstName).ToArray();
                         
                     firstnames.Length.ShouldBe(3);
                     firstnames[0].ShouldBe("Jeremy");
                     firstnames[1].ShouldBe("Lindsey");
                     firstnames[2].ShouldBe("Max");
+                }
+            }
+        }
+
+        public void query_by_one_parameter()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                using (var session = container.GetInstance<IDocumentSession>())
+                {
+                    session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Max", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                    session.SaveChanges();
+
+                    var firstnames = session.Query<User>("where data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
+                        .Select(x => x.FirstName).ToArray();
+
+                    firstnames.Length.ShouldBe(3);
+                    firstnames[0].ShouldBe("Jeremy");
+                    firstnames[1].ShouldBe("Lindsey");
+                    firstnames[2].ShouldBe("Max");
+                }
+            }
+        }
+
+        public void query_by_two_parameters()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                using (var session = container.GetInstance<IDocumentSession>())
+                {
+                    session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Max", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                    session.SaveChanges();
+
+                    var user =
+                        session.Query<User>("where data ->> 'FirstName' = ? and data ->> 'LastName' = ?", "Jeremy",
+                            "Miller")
+                            .Single();
+
+                    user.ShouldNotBeNull();
                 }
             }
         }
@@ -60,7 +105,7 @@ namespace Marten.Testing
                     session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
                     session.SaveChanges();
 
-                    var firstnames = session.Query<User>("data ->> 'LastName' = 'Miller'", "data ->> 'FirstName'")
+                    var firstnames = session.Query<User>("where data ->> 'LastName' = 'Miller' order by data ->> 'FirstName'")
                         .Select(x => x.FirstName).ToArray();
 
                     firstnames.Length.ShouldBe(3);

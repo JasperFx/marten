@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using FubuCore;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Parsing.Structure;
@@ -139,36 +141,43 @@ namespace Marten
             return new MartenQueryable<T>(_parser, this);
         }
 
-        public IEnumerable<T> Query<T>(string @where, string orderBy = null)
+        public IEnumerable<T> Query<T>(string @where, params object[] parameters)
         {
             var tableName = _schema.StorageFor(typeof (T)).TableName;
-            var sql = "select data from {0} where {1}".ToFormat(tableName, @where);
-            if (orderBy.IsNotEmpty())
+            var sql = "select data from {0} {1}".ToFormat(tableName, @where);
+            var cmd = new NpgsqlCommand();
+
+            parameters.Each(x =>
             {
-                sql += " order by " + orderBy;
-            }
+                var param = cmd.AddParameter(x);
+                sql = sql.ReplaceFirst("?", ":" + param.ParameterName);
+            });
 
-            return query<T>(sql).ToArray();
+            cmd.CommandText = sql;
+
+            return query<T>(cmd).ToArray();
         }
-
 
 
         private IEnumerable<T> query<T>(string sql)
         {
+            var cmd = new NpgsqlCommand(sql);
+            return query<T>(cmd);
+        }
+
+        private IEnumerable<T> query<T>(NpgsqlCommand cmd)
+        {
             using (var conn = _factory.Create())
             {
                 conn.Open();
+                cmd.Connection = conn;
 
-                using (var cmd = conn.CreateCommand())
+                using (var reader = cmd.ExecuteReader())
                 {
-                    cmd.CommandText = sql;
-                    using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
-                        {
-                            var json = reader.GetString(0);
-                            yield return _serializer.FromJson<T>(json);
-                        }
+                        var json = reader.GetString(0);
+                        yield return _serializer.FromJson<T>(json);
                     }
                 }
             }

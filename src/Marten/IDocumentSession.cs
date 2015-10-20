@@ -35,6 +35,6 @@ namespace Marten
 
         IQueryable<T> Query<T>();
 
-        IEnumerable<T> Query<T>(string @where, string orderBy = null);
+        IEnumerable<T> Query<T>(string @where, params object[] parameters);
     }
 }
