@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using FubuCore;
@@ -8,6 +9,29 @@ namespace Marten.Linq
 {
     public static class MartenExpressionParser
     {
+        private readonly static Dictionary<Type, string> _pgCasts = new Dictionary<Type, string>
+        {
+            {typeof(int), "integer"},
+            {typeof(long), "integer"}
+        };
+
+        private static readonly IDictionary<ExpressionType, string> _operators = new Dictionary<ExpressionType, string>
+        {
+            {ExpressionType.Equal, "="},
+            {ExpressionType.NotEqual, "!="},
+            {ExpressionType.GreaterThan, ">"},
+            {ExpressionType.GreaterThanOrEqual, ">="},
+            {ExpressionType.LessThan, "<"},
+            {ExpressionType.LessThanOrEqual, "<="},
+        };
+
+        public static string ApplyCastToLocator(this string locator, Type memberType)
+        {
+            if (!_pgCasts.ContainsKey(memberType)) throw new ArgumentOutOfRangeException("memberType", "There is not Postgresql cast for member type " + memberType.FullName);
+
+            return "CAST({0} as {1})".ToFormat(locator, _pgCasts[memberType]);
+        }
+
         public static IWhereFragment ParseWhereFragment(Expression expression)
         {
             if (expression is BinaryExpression)
@@ -24,27 +48,12 @@ namespace Marten.Linq
             // TODO -- handle NULL differently I'd imagine
             var value = Value(binary.Right);
 
-            switch (binary.NodeType)
+            if (_operators.ContainsKey(binary.NodeType))
             {
-                case ExpressionType.Equal:
-                    return new WhereFragment("{0} = ?".ToFormat(jsonLocator), value);
-
-                case ExpressionType.GreaterThan:
-                    return new WhereFragment("{0} > ?".ToFormat(jsonLocator), value);
-
-                case ExpressionType.GreaterThanOrEqual:
-                    return new WhereFragment("{0} >= ?".ToFormat(jsonLocator), value);
-
-                case ExpressionType.LessThan:
-                    return new WhereFragment("{0} < ?".ToFormat(jsonLocator), value);
-
-                case ExpressionType.LessThanOrEqual:
-                    return new WhereFragment("{0} <= ?".ToFormat(jsonLocator), value);
-
-                case ExpressionType.NotEqual:
-                    return new WhereFragment("{0} != ?".ToFormat(jsonLocator), value);
-
+                var op = _operators[binary.NodeType];
+                return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
             }
+
 
             throw new NotSupportedException();
         }
@@ -66,21 +75,11 @@ namespace Marten.Linq
             if (expression is MemberExpression)
             {
                 var member = expression.As<MemberExpression>().Member;
-                
 
                 var locator = "data ->> '{0}'".ToFormat(member.Name);
                 var memberType = member.GetMemberType();
-                if (memberType == typeof (int))
-                {
-                    return "CAST({0} as integer)".ToFormat(locator);
-                }
-                else if (memberType == typeof (long))
-                {
-                    return "CAST({0} as bigint)".ToFormat(locator);
-                }
-
-
-                return locator;
+                
+                return memberType == typeof (string) ? locator : locator.ApplyCastToLocator(memberType);
             }
 
             throw new NotSupportedException();

@@ -19,5 +19,7 @@ namespace Marten.Util
         {
             return text.ReplaceFirst("?", ":" + parameter.ParameterName);
         }
+
+        
     }
 }
