@@ -1,8 +1,6 @@
 ﻿using System.Linq;
 using System.Linq.Expressions;
-using Marten.Schema;
 using Remotion.Linq;
-using Remotion.Linq.Clauses;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten.Linq
@@ -20,7 +18,5 @@ namespace Marten.Linq
         public MartenQueryable(IQueryProvider provider, Expression expression) : base(provider, expression)
         {
         }
-
-
     }
 }

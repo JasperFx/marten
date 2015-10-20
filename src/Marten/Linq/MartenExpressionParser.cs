@@ -4,7 +4,7 @@ using FubuCore;
 
 namespace Marten.Linq
 {
-    public static class SqlBuilder
+    public static class MartenExpressionParser
     {
         public static IWhereFragment ParseWhereFragment(Expression expression)
         {
@@ -13,7 +13,7 @@ namespace Marten.Linq
                 return GetWhereFragment(expression.As<BinaryExpression>());
             }
 
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public static IWhereFragment GetWhereFragment(BinaryExpression binary)
@@ -25,7 +25,7 @@ namespace Marten.Linq
                     return new WhereFragment(sql, Value(binary.Right));
             }
 
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public static object Value(Expression expression)
@@ -35,7 +35,7 @@ namespace Marten.Linq
                 return expression.As<ConstantExpression>().Value;
             }
 
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public static string JsonLocator(Expression expression)
@@ -45,7 +45,7 @@ namespace Marten.Linq
                 return "data ->> '{0}'".ToFormat(expression.As<MemberExpression>().Member.Name);
             }
 
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 }

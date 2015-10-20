@@ -56,7 +56,7 @@
     <Compile Include="Linq\IWhereFragment.cs" />
     <Compile Include="Linq\MartenQueryable.cs" />
     <Compile Include="Linq\MartenQueryParser.cs" />
-    <Compile Include="Linq\SqlBuilder.cs" />
+    <Compile Include="Linq\MartenExpressionParser.cs" />
     <Compile Include="Linq\WhereFragment.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Schema\DevelopmentDocumentSchema.cs" />

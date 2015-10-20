@@ -193,7 +193,7 @@ namespace Marten
             var @where = queryModel.BodyClauses.OfType<WhereClause>().FirstOrDefault();
             if (@where != null)
             {
-                query.Where = SqlBuilder.ParseWhereFragment(@where.Predicate);
+                query.Where = MartenExpressionParser.ParseWhereFragment(@where.Predicate);
             }
 
             return query<T>(query.ToCommand());
