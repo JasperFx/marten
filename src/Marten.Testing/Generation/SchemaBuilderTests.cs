@@ -19,7 +19,7 @@ namespace Marten.Testing.Generation
             var sql = builder.ToSql();
 
             sql.ShouldContain("CREATE TABLE mt_doc_MySpecialDocument");
-            sql.ShouldContain("json NOT NULL");
+            sql.ShouldContain("jsonb NOT NULL");
         }
 
         public void upsert_name_for_document_type()
