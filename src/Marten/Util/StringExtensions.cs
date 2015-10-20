@@ -1,4 +1,6 @@
-﻿namespace Marten.Util
+﻿using Npgsql;
+
+namespace Marten.Util
 {
     public static class StringExtensionMethods
     {
@@ -9,7 +11,13 @@
             {
                 return text;
             }
+
             return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
+        }
+
+        public static string UseParameter(this string text, NpgsqlParameter parameter)
+        {
+            return text.ReplaceFirst("?", ":" + parameter.ParameterName);
         }
     }
 }

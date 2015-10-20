@@ -16,5 +16,6 @@ namespace Marten.Util
 
             return parameter;
         }
+
     }
 }

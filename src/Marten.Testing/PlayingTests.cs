@@ -15,7 +15,6 @@ namespace Marten.Testing
     {
         public void linq_spike()
         {
-            return;
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
                 using (var session = container.GetInstance<IDocumentSession>())

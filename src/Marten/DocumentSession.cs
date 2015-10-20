@@ -9,6 +9,7 @@ using Marten.Schema;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
+using Remotion.Linq.Clauses;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
@@ -150,19 +151,12 @@ namespace Marten
             parameters.Each(x =>
             {
                 var param = cmd.AddParameter(x);
-                sql = sql.ReplaceFirst("?", ":" + param.ParameterName);
+                sql = sql.UseParameter(param);
             });
 
             cmd.CommandText = sql;
 
             return query<T>(cmd).ToArray();
-        }
-
-
-        private IEnumerable<T> query<T>(string sql)
-        {
-            var cmd = new NpgsqlCommand(sql);
-            return query<T>(cmd);
         }
 
         private IEnumerable<T> query<T>(NpgsqlCommand cmd)
@@ -195,8 +189,14 @@ namespace Marten
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
         {
-            var @where = SqlBuilder.GetWhereClause(queryModel);
-            return Query<T>(@where);
+            var query = new DocumentQuery<T>(_schema.StorageFor(typeof(T)).TableName);
+            var @where = queryModel.BodyClauses.OfType<WhereClause>().FirstOrDefault();
+            if (@where != null)
+            {
+                query.Where = SqlBuilder.ParseWhereFragment(@where.Predicate);
+            }
+
+            return query<T>(query.ToCommand());
         }
     }
 }

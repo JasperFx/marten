@@ -5,7 +5,7 @@ using Shouldly;
 
 namespace Marten.Testing.Util
 {
-    public class CommandExtensionsTester
+    public class CommandExtensionsTests
     {
         public void add_first_parameter()
         {

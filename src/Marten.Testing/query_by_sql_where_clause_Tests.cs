@@ -5,7 +5,7 @@ using StructureMap;
 
 namespace Marten.Testing
 {
-    public class query_by_sql_where_clause
+    public class query_by_sql_where_clause_Tests
     {
         public void query_for_single_document()
         {

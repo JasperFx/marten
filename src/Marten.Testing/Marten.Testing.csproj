@@ -49,15 +49,15 @@
     <Compile Include="Documents\Issue.cs" />
     <Compile Include="Documents\User.cs" />
     <Compile Include="document_session_delete_a_single_document_Tests.cs" />
-    <Compile Include="document_session_persist_and_load_single_documents.cs" />
+    <Compile Include="document_session_persist_and_load_single_documents_Tests.cs" />
     <Compile Include="Generation\SchemaBuilderTests.cs" />
     <Compile Include="Generation\TemplateReadingTests.cs" />
     <Compile Include="persist_and_deleting_multiple_documents_Tests.cs" />
     <Compile Include="PlayingTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="query_by_sql_where_clause.cs" />
+    <Compile Include="query_by_sql_where_clause_Tests.cs" />
     <Compile Include="Schema\DevelopmentDocumentSchemaTests.cs" />
-    <Compile Include="Util\CommandExtensionsTester.cs" />
+    <Compile Include="Util\CommandExtensionsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Marten\Marten.csproj">

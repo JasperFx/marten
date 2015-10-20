@@ -52,8 +52,12 @@
     <Compile Include="IDocumentStore.cs" />
     <Compile Include="ISerializer.cs" />
     <Compile Include="JsonNetSerializer.cs" />
-    <Compile Include="Linq\LinqClasses.cs" />
+    <Compile Include="Linq\DocumentQuery.cs" />
+    <Compile Include="Linq\IWhereFragment.cs" />
+    <Compile Include="Linq\MartenQueryable.cs" />
     <Compile Include="Linq\MartenQueryParser.cs" />
+    <Compile Include="Linq\SqlBuilder.cs" />
+    <Compile Include="Linq\WhereFragment.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Schema\DevelopmentDocumentSchema.cs" />
     <Compile Include="Schema\DocumentStorage.cs" />
