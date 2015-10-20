@@ -29,6 +29,7 @@ namespace Marten.Testing.Fixtures
             expression(x => x.Number < 3);
             expression(x => x.Number <= 3);
             expression(x => x.Number >= 3);
+            expression(x => x.Number != 3);
 
             AddSelectionValues("Expressions", _wheres.Keys.ToArray());
         }

@@ -41,6 +41,9 @@ namespace Marten.Linq
                 case ExpressionType.LessThanOrEqual:
                     return new WhereFragment("{0} <= ?".ToFormat(jsonLocator), value);
 
+                case ExpressionType.NotEqual:
+                    return new WhereFragment("{0} != ?".ToFormat(jsonLocator), value);
+
             }
 
             throw new NotSupportedException();

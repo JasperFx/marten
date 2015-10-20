@@ -17,6 +17,7 @@
         <ExecutingQuery-row WhereClause="x.Number &lt; 3" Results="A, B" />
         <ExecutingQuery-row WhereClause="x.Number &lt;= 3" Results="A, B, C" />
         <ExecutingQuery-row WhereClause="x.Number &gt;= 3" Results="C, D, E, F" />
+        <ExecutingQuery-row WhereClause="x.Number != 3" Results="A, B, D, E, F" />
       </table>
     </ExecutingQuery>
   </Linq>
