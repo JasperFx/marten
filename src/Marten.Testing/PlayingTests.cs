@@ -6,7 +6,6 @@ using Marten.Generation;
 using Marten.Testing.Documents;
 using Marten.Testing.Generation;
 using Npgsql;
-using NpgsqlTypes;
 using Shouldly;
 using StructureMap;
 
@@ -16,6 +15,7 @@ namespace Marten.Testing
     {
         public void linq_spike()
         {
+            return;
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
                 using (var session = container.GetInstance<IDocumentSession>())
@@ -24,8 +24,7 @@ namespace Marten.Testing
                     session.Store(u);
                     session.SaveChanges();
 
-                    var user = session.Query<User>("data ->> 'FirstName' = 'Jeremy'").Single();
-                    //var user = session.Query<User>().Where(x => x.FirstName == "Jeremy").ToArray().Single();
+                    var user = session.Query<User>().Where(x => x.FirstName == "Jeremy").ToArray().Single();
                     user.LastName.ShouldBe("Miller");
                     user.Id.ShouldBe(u.Id);
                 }

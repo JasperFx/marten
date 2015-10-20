@@ -1,30 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using FubuCore;
 using Marten.Linq;
 using Marten.Schema;
 using Npgsql;
-using Remotion.Linq.Parsing.ExpressionVisitors.Transformation;
+using Remotion.Linq;
 using Remotion.Linq.Parsing.Structure;
-using Remotion.Linq.Parsing.Structure.NodeTypeProviders;
 
 namespace Marten
 {
-    public class DocumentSession : IDocumentSession
+    public class DocumentSession : IDocumentSession, IQueryExecutor
     {
+        private readonly IList<NpgsqlCommand> _deletes = new List<NpgsqlCommand>();
+        private readonly IConnectionFactory _factory;
+        private readonly IQueryParser _parser;
+        private readonly QueryParser _queryParser;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
-        private readonly IConnectionFactory _factory;
 
         private readonly IList<object> _updates = new List<object>();
-        private readonly IList<NpgsqlCommand> _deletes = new List<NpgsqlCommand>(); 
 
-        public DocumentSession(IDocumentSchema schema, ISerializer serializer, IConnectionFactory factory)
+        public DocumentSession(IDocumentSchema schema, ISerializer serializer, IConnectionFactory factory, IQueryParser parser)
         {
             _schema = schema;
             _serializer = serializer;
             _factory = factory;
+            _parser = parser;
         }
 
         public void Dispose()
@@ -39,13 +42,13 @@ namespace Marten
 
         public void Delete<T>(ValueType id)
         {
-            var storage = _schema.StorageFor(typeof(T));
+            var storage = _schema.StorageFor(typeof (T));
             _deletes.Add(storage.DeleteCommandForId(id));
         }
 
         public void Delete<T>(string id)
         {
-            var storage = _schema.StorageFor(typeof(T));
+            var storage = _schema.StorageFor(typeof (T));
             _deletes.Add(storage.DeleteCommandForId(id));
         }
 
@@ -123,8 +126,6 @@ namespace Marten
                     _updates.Clear();
                 }
             }
-            
-
         }
 
         public void Store(object entity)
@@ -135,22 +136,12 @@ namespace Marten
 
         public IQueryable<T> Query<T>()
         {
-            var transformerRegistry = ExpressionTransformerRegistry.CreateDefault();
-
-
-            var processor = ExpressionTreeParser.CreateDefaultProcessor(transformerRegistry);
-            // Add custom processors here:
-            // processor.InnerProcessors.Add (new MyExpressionTreeProcessor());
-
-
-            var expressionTreeParser = new ExpressionTreeParser(new MethodNameBasedNodeTypeRegistry(), processor);
-            var parser = new QueryParser(expressionTreeParser);
-            return new MartenQueryable<T>(new QueryProvider(parser, new QueryExecutor()));
+            return new MartenQueryable<T>(_parser, this);
         }
 
         public IEnumerable<T> Query<T>(string @where, string orderBy = null)
         {
-            var tableName = _schema.StorageFor(typeof(T)).TableName;
+            var tableName = _schema.StorageFor(typeof (T)).TableName;
             var sql = "select data from {0} where {1}".ToFormat(tableName, @where);
             if (orderBy.IsNotEmpty())
             {
@@ -159,6 +150,8 @@ namespace Marten
 
             return query<T>(sql).ToArray();
         }
+
+
 
         private IEnumerable<T> query<T>(string sql)
         {
@@ -179,6 +172,22 @@ namespace Marten
                     }
                 }
             }
-        } 
+        }
+
+        T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
+        {
+            throw new NotImplementedException();
+        }
+
+        T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
+        {
+            var @where = SqlBuilder.GetWhereClause(queryModel);
+            return Query<T>(@where);
+        }
     }
 }

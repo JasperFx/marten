@@ -1,11 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using FubuCore;
+using Marten.Schema;
+using Npgsql;
 using Remotion.Linq;
-using Remotion.Linq.Parsing.ExpressionVisitors.Transformation;
+using Remotion.Linq.Clauses;
 using Remotion.Linq.Parsing.Structure;
-using Remotion.Linq.Parsing.Structure.NodeTypeProviders;
 
 namespace Marten.Linq
 {
@@ -27,70 +29,71 @@ namespace Marten.Linq
     }
 
 
-    public class QueryProvider : QueryProviderBase
+
+    public class DocumentQuery<T>
     {
-        public QueryProvider(IQueryParser queryParser, IQueryExecutor executor) : base(queryParser, executor)
+        private readonly string _tableName;
+        private readonly IList<NpgsqlParameter> _parameters = new List<NpgsqlParameter>(); 
+
+        public DocumentQuery(string tableName)
         {
+            _tableName = tableName;
+
         }
 
-        public override IQueryable<T> CreateQuery<T>(Expression expression)
+        public NpgsqlCommand ToCommand()
         {
-            var transformerRegistry = ExpressionTransformerRegistry.CreateDefault();
+            throw new NotImplementedException();
+        }
 
-
-            var processor = ExpressionTreeParser.CreateDefaultProcessor(transformerRegistry);
-            // Add custom processors here:
-            // processor.InnerProcessors.Add (new MyExpressionTreeProcessor());
-
-
-            var expressionTreeParser = new ExpressionTreeParser(MethodInfoBasedNodeTypeRegistry.CreateFromRelinqAssembly(), processor);
-            var parser = new QueryParser(expressionTreeParser);
-
-            var model = parser.GetParsedQuery(expression);
-
-            throw new System.NotImplementedException();
+        // TODO -- different overload that takes ctor arguments for the sproc idea later?
+        public void Where(string sql, params object[] parameters)
+        {
+            
         }
     }
 
-    public class QueryExecutor : IQueryExecutor
+    public class WhereFragment
     {
-        public T ExecuteScalar<T>(QueryModel queryModel)
-        {
-            throw new System.NotImplementedException();
-        }
+        private readonly string _sql;
+        private readonly object[] _parameters;
 
-        public T ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
+        public WhereFragment(string sql, params object[] parameters)
         {
-            throw new System.NotImplementedException();
-        }
-
-        public IEnumerable<T> ExecuteCollection<T>(QueryModel queryModel)
-        {
-            throw new System.NotImplementedException();
+            _sql = sql;
+            _parameters = parameters;
         }
     }
 
-    public static class MartenQueryParser
+    public static class SqlBuilder
     {
-        private static readonly QueryParser QueryParser;
 
-        static MartenQueryParser()
+
+        public static string GetWhereClause(QueryModel model)
         {
-            var transformerRegistry = ExpressionTransformerRegistry.CreateDefault();
+            // TODO -- what if there is more than one?
+            var @where = model.BodyClauses.OfType<WhereClause>().FirstOrDefault();
+            if (@where == null) return null;
 
+            if (@where.Predicate is BinaryExpression)
+            {
+                return GetWhereClause(@where.Predicate.As<BinaryExpression>());
+            }
 
-            var processor = ExpressionTreeParser.CreateDefaultProcessor(transformerRegistry);
-            // Add custom processors here:
-            // processor.InnerProcessors.Add (new MyExpressionTreeProcessor());
-
-
-            var expressionTreeParser = new ExpressionTreeParser(new MethodInfoBasedNodeTypeRegistry(), processor);
-            QueryParser = new QueryParser(expressionTreeParser);
+            return null;
         }
 
-        public static QueryModel Parse(Expression expression)
+        public static string GetWhereClause(BinaryExpression model)
         {
-            return QueryParser.GetParsedQuery(expression);
+            if (model.Method.Name == "Equals")
+            {
+                return "something";
+            }
+
+            throw new NotSupportedException("Marten does not yet support {0} as a where clause".ToFormat());
         }
     }
+
+
+
 }

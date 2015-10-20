@@ -53,12 +53,14 @@
     <Compile Include="ISerializer.cs" />
     <Compile Include="JsonNetSerializer.cs" />
     <Compile Include="Linq\LinqClasses.cs" />
+    <Compile Include="Linq\MartenQueryParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Schema\DevelopmentDocumentSchema.cs" />
     <Compile Include="Schema\DocumentStorage.cs" />
     <Compile Include="Schema\IDocumentSchema.cs" />
     <Compile Include="Schema\IDocumentStorage.cs" />
     <Compile Include="Schema\SchemaClasses.cs" />
+    <Compile Include="Util\CommandExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Generation\Templates\DocumentTable.txt" />

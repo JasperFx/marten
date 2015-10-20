@@ -1,4 +1,6 @@
+using Marten.Linq;
 using Marten.Schema;
+using Remotion.Linq.Parsing.Structure;
 using StructureMap;
 
 namespace Marten.Testing
@@ -11,6 +13,8 @@ namespace Marten.Testing
             ForSingletonOf<IDocumentSchema>().Use<DevelopmentDocumentSchema>();
             For<IDocumentSession>().Use<DocumentSession>();
             For<ISerializer>().Use<JsonNetSerializer>();
+
+            ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();
         }
     }
 }
