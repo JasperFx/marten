@@ -24,10 +24,10 @@ namespace Marten.Testing
                     session.Store(new User {FirstName = "Han", LastName = "Solo"});
                     session.SaveChanges();
 
-                    var firstnames = session.Query<User>().Where(x => x.FirstName == "Han" || x.FirstName == "Max").ToArray()
+                    var firstnames = session.Query<User>().Where(x => x.LastName.Contains("Mill")).ToArray()
                         .OrderBy(x => x.FirstName).Select(x => x.FirstName).ToArray();
 
-                    firstnames.ShouldBe(new []{"Han", "Max"});
+                    firstnames.ShouldBe(new []{"Jeremy", "Max"});
                     
 
 

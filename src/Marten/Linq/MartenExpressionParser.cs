@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using FubuCore;
@@ -40,7 +41,30 @@ namespace Marten.Linq
                 return GetWhereFragment(expression.As<BinaryExpression>());
             }
 
+            if (expression.NodeType == ExpressionType.Call)
+            {
+                return GetMethodCall(expression.As<MethodCallExpression>());
+            }
+
             throw new NotSupportedException();
+        }
+
+        private static IWhereFragment GetMethodCall(MethodCallExpression expression)
+        {
+            if (expression.Method.Name == "Contains")
+            {
+                var @object = expression.Object;
+                if (@object.Type == typeof (string))
+                {
+                    var locator = JsonLocator(@object);
+                    var value = Value(expression.Arguments.Single()).As<string>();
+                    return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value + "%");
+                }
+
+                
+            }
+
+            throw new NotImplementedException();
         }
 
         public static IWhereFragment GetWhereFragment(BinaryExpression binary)

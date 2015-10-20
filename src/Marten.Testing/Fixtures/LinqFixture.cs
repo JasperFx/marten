@@ -44,6 +44,8 @@ namespace Marten.Testing.Fixtures
             expression(x => x.String == "A" && x.Number == 1);
             expression(x => x.String == "A" || x.Number == 1);
 
+            expression(x => x.String.Contains("B"));
+
             AddSelectionValues("Expressions", _wheres.Keys.ToArray());
         }
 
