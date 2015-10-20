@@ -74,6 +74,10 @@ namespace Marten.Linq
                 {
                     return "CAST({0} as integer)".ToFormat(locator);
                 }
+                else if (memberType == typeof (long))
+                {
+                    return "CAST({0} as bigint)".ToFormat(locator);
+                }
 
 
                 return locator;

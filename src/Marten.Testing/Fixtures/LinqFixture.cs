@@ -31,6 +31,13 @@ namespace Marten.Testing.Fixtures
             expression(x => x.Number >= 3);
             expression(x => x.Number != 3);
 
+            expression(x => x.Long == 1);
+            expression(x => x.Long > 3);
+            expression(x => x.Long < 3);
+            expression(x => x.Long <= 3);
+            expression(x => x.Long >= 3);
+            expression(x => x.Long != 3);
+
             expression(x => x.String == "A");
             expression(x => x.String != "A");
 
@@ -70,6 +77,7 @@ namespace Marten.Testing.Fixtures
                 }).Header("Document Name");
 
                 _.SetProperty(x => x.Number).DefaultValue("1");
+                _.SetProperty(x => x.Long).DefaultValue("1");
                 _.SetProperty(x => x.String).DefaultValue("Max");
 
                 _.Do(t => _session.Store(t));
