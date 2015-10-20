@@ -7,4 +7,5 @@ NUGET
     Npgsql (3.0.3)
     Remotion.Linq (2.0.0)
     Shouldly (2.6.0)
+    Storyteller (3.0.0.280-alpha)
     structuremap (4.0.0.272-alpha)

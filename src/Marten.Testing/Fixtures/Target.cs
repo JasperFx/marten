@@ -1,0 +1,16 @@
+﻿using System;
+
+namespace Marten.Testing.Fixtures
+{
+    public class Target : IDocument
+    {
+        public Target()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        public Guid Id { get; set; }
+
+        public int Number { get; set; }
+    }
+}

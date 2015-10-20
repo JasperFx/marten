@@ -74,3 +74,14 @@ task :sln do
 	sh "start src/Marten.sln"
 end
 
+desc "Run the storyteller specifications"
+task :storyteller => [:compile] do
+	sh "packages/Storyteller/tools/st.exe run src/Marten.Testing --results-path artifacts/stresults.htm --build #{COMPILE_TARGET}"
+end
+
+desc "Run the storyteller specifications"
+task :open_st => [:compile] do
+	sh "packages/Storyteller/tools/st.exe open src/Marten.Testing"
+end
+
+

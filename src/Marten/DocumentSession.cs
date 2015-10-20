@@ -14,7 +14,12 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
-    public class DocumentSession : IDocumentSession, IQueryExecutor
+    public interface IDocumentExecutor : IQueryExecutor
+    {
+        NpgsqlCommand BuildCommand<T>(QueryModel queryModel);
+    }
+
+    public class DocumentSession : IDocumentSession, IDocumentExecutor
     {
         private readonly IList<NpgsqlCommand> _deletes = new List<NpgsqlCommand>();
         private readonly IConnectionFactory _factory;
@@ -189,14 +194,22 @@ namespace Marten
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
         {
-            var query = new DocumentQuery<T>(_schema.StorageFor(typeof(T)).TableName);
+            var command = BuildCommand<T>(queryModel);
+
+            return query<T>(command);
+        }
+
+        public NpgsqlCommand BuildCommand<T>(QueryModel queryModel)
+        {
+            var query = new DocumentQuery<T>(_schema.StorageFor(typeof (T)).TableName);
             var @where = queryModel.BodyClauses.OfType<WhereClause>().FirstOrDefault();
             if (@where != null)
             {
                 query.Where = MartenExpressionParser.ParseWhereFragment(@where.Predicate);
             }
 
-            return query<T>(query.ToCommand());
+            var command = query.ToCommand();
+            return command;
         }
     }
 }
