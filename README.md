@@ -20,5 +20,7 @@ From there, open Visual Studio.Net or whatever editor you prefer and go to town.
 
 We're using [Fixie](https://github.com/fixie/fixie) and [Shouldly](https://github.com/shouldly/shouldly) for unit testing and [paket](https://fsprojects.github.io/Paket/) for improved Nuget workflow. We're temporarily using rake for build automation.
 
+## Storyteller Specs
 
+We're also using [Storyteller](http://storyteller.github.io) for some of the very data intensive automated tests. To open the Storyteller editor, use the command `rake open_st` from the command line or `rake storyeller` to run the Storyteller specs.
 
