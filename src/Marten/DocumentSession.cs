@@ -43,7 +43,20 @@ namespace Marten
 
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
-            throw new NotImplementedException();
+            // TODO -- optimize by returning the count here too?
+            var cmd = BuildCommand<T>(queryModel);
+            var data = queryJson(cmd).ToArray();
+
+            if (data.Length == 1)
+            {
+                return _serializer.FromJson<T>(data[0]);
+            }
+            else if (data.Length == 0 && returnDefaultWhenEmpty)
+            {
+                return default(T);
+            }
+
+            throw new NotSupportedException();
         }
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
@@ -185,6 +198,11 @@ namespace Marten
 
         private IEnumerable<T> query<T>(NpgsqlCommand cmd)
         {
+            return queryJson(cmd).Select(json => _serializer.FromJson<T>(json));
+        }
+
+        private IEnumerable<string> queryJson(NpgsqlCommand cmd)
+        {
             using (var conn = _factory.Create())
             {
                 conn.Open();
@@ -194,8 +212,7 @@ namespace Marten
                 {
                     while (reader.Read())
                     {
-                        var json = reader.GetString(0);
-                        yield return _serializer.FromJson<T>(json);
+                        yield return reader.GetString(0);
                     }
                 }
             }
