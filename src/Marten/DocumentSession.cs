@@ -8,6 +8,7 @@ using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
@@ -43,21 +44,19 @@ namespace Marten
 
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
+            var isFirst = queryModel.ResultOperators.OfType<FirstResultOperator>().Any();
+
             // TODO -- optimize by returning the count here too?
             var cmd = BuildCommand<T>(queryModel);
-            var data = queryJson(cmd).ToArray();
+            var all = queryJson(cmd).ToArray();
 
-            if (data.Length == 1)
-            {
-                return _serializer.FromJson<T>(data[0]);
-            }
-            else if (data.Length == 0 && returnDefaultWhenEmpty)
-            {
-                return default(T);
-            }
+            if (returnDefaultWhenEmpty && all.Length == 0) return default(T);
 
-            throw new NotSupportedException();
+            var data = isFirst ? all.First() : all.Single();
+
+            return _serializer.FromJson<T>(data);
         }
+
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
         {
