@@ -7,13 +7,11 @@ using Marten.Util;
 
 namespace Marten.Linq
 {
+    
+
     public static class MartenExpressionParser
     {
-        private static readonly Dictionary<Type, string> _pgCasts = new Dictionary<Type, string>
-        {
-            {typeof (int), "integer"},
-            {typeof (long), "bigint"}
-        };
+
 
         private static readonly IDictionary<ExpressionType, string> _operators = new Dictionary<ExpressionType, string>
         {
@@ -27,11 +25,11 @@ namespace Marten.Linq
 
         public static string ApplyCastToLocator(this string locator, Type memberType)
         {
-            if (!_pgCasts.ContainsKey(memberType))
+            if (!TypeMappings.PgTypes.ContainsKey(memberType))
                 throw new ArgumentOutOfRangeException("memberType",
                     "There is not Postgresql cast for member type " + memberType.FullName);
 
-            return "CAST({0} as {1})".ToFormat(locator, _pgCasts[memberType]);
+            return "CAST({0} as {1})".ToFormat(locator, TypeMappings.PgTypes[memberType]);
         }
 
         public static IWhereFragment ParseWhereFragment(Expression expression)

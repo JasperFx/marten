@@ -19,8 +19,7 @@ namespace Marten.Schema
         {
             return _documentTypes.GetOrAdd(documentType, type =>
             {
-                // TODO -- will need to get fancier later when we stop requiring IDocument
-                var storage = typeof (DocumentStorage<>).CloseAndBuildAs<IDocumentStorage>(documentType);
+                var storage = DocumentStorageBuilder.Build(type);
 
                 var builder = new SchemaBuilder();
                 storage.InitializeSchema(builder);

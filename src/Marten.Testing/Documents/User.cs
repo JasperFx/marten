@@ -12,8 +12,6 @@ namespace Marten.Testing.Documents
             Id = Guid.NewGuid();
         }
 
-        public Guid Id { get; set; }
-
         public string FirstName { get; set; }
         public string LastName { get; set; }
 
@@ -21,5 +19,7 @@ namespace Marten.Testing.Documents
         {
             get { return "{0} {1}".ToFormat(FirstName, LastName); }
         }
+
+        public Guid Id { get; set; }
     }
 }
