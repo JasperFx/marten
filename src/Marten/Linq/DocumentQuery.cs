@@ -51,5 +51,22 @@ namespace Marten.Linq
             return command;
         }
 
+        public NpgsqlCommand ToCountCommand(QueryModel query)
+        {
+            var sql = "select count(*) as number from " + _tableName;
+
+            // TODO -- more than one where?
+            var where = query.BodyClauses.OfType<WhereClause>().FirstOrDefault();
+
+            var command = new NpgsqlCommand();
+            if (where != null)
+            {
+                sql += " where " + MartenExpressionParser.ParseWhereFragment(where.Predicate).ToSql(command);
+            }
+
+            command.CommandText = sql;
+
+            return command;
+        }
     }
 }

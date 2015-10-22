@@ -5,21 +5,21 @@ using Shouldly;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_through_first : DocumentSessionFixture
+    public class invoking_queryable_through_single_Tests : DocumentSessionFixture
     {
-        public void first_hit_with_only_one_document()
+        public void single_hit_with_only_one_document()
         {
-            theSession.Store(new Target { Number = 1 });
-            theSession.Store(new Target { Number = 2 });
-            theSession.Store(new Target { Number = 3 });
-            theSession.Store(new Target { Number = 4 });
+            theSession.Store(new Target{Number = 1});
+            theSession.Store(new Target{Number = 2});
+            theSession.Store(new Target{Number = 3});
+            theSession.Store(new Target{Number = 4});
             theSession.SaveChanges();
 
-            theSession.Query<Target>().First(x => x.Number == 3)
+            theSession.Query<Target>().Single(x => x.Number == 3)
                 .ShouldNotBeNull();
         }
 
-        public void first_or_default_hit_with_only_one_document()
+        public void single_or_default_hit_with_only_one_document()
         {
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
@@ -27,11 +27,11 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            theSession.Query<Target>().FirstOrDefault(x => x.Number == 3)
+            theSession.Query<Target>().SingleOrDefault(x => x.Number == 3)
                 .ShouldNotBeNull();
         }
 
-        public void first_or_default_miss()
+        public void single_or_default_miss()
         {
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
@@ -39,11 +39,11 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            theSession.Query<Target>().FirstOrDefault(x => x.Number == 11)
+            theSession.Query<Target>().SingleOrDefault(x => x.Number == 11)
                 .ShouldBeNull();
         }
 
-        public void first_hit_with_more_than_one_match()
+        public void single_hit_with_more_than_one_match()
         {
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
@@ -51,11 +51,13 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            theSession.Query<Target>().Where(x => x.Number == 2).First()
-                .ShouldNotBeNull();
+            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+            {
+                theSession.Query<Target>().Where(x => x.Number == 2).Single();
+            }).Message.ShouldBe("Sequence contains more than one element");
         }
 
-        public void first_or_default_hit_with_more_than_one_match()
+        public void single_or_default_hit_with_more_than_one_match()
         {
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
@@ -63,11 +65,13 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            theSession.Query<Target>().Where(x => x.Number == 2).FirstOrDefault()
-                .ShouldNotBeNull();
+            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+            {
+                theSession.Query<Target>().Where(x => x.Number == 2).SingleOrDefault();
+            }).Message.ShouldBe("Sequence contains more than one element");
         }
 
-        public void first_miss()
+        public void single_miss()
         {
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
@@ -77,7 +81,7 @@ namespace Marten.Testing.Linq
 
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
-                theSession.Query<Target>().Where(x => x.Number == 11).First();
+                theSession.Query<Target>().Where(x => x.Number == 11).Single();
             }).Message.ShouldBe("Sequence contains no elements");
         }
     }

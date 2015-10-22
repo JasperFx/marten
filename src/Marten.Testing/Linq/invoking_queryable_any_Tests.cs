@@ -3,7 +3,7 @@ using Marten.Testing.Fixtures;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_any : DocumentSessionFixture
+    public class invoking_queryable_any_Tests : DocumentSessionFixture
     {
 
         public void any_miss_with_query()

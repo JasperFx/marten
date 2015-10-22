@@ -54,6 +54,22 @@ namespace Marten
 
             }
 
+            if (queryModel.ResultOperators.OfType<CountResultOperator>().Any())
+            {
+                var storage = _schema.StorageFor(queryModel.SelectClause.Selector.Type);
+                var countCommand = storage.CountCommand(queryModel);
+
+                using (var conn = _factory.Create())
+                {
+                    conn.Open();
+
+                    countCommand.Connection = conn;
+                    var returnValue = countCommand.ExecuteScalar();
+
+                    return Convert.ToInt32(returnValue).As<T>();
+                }
+            }
+
             throw new NotSupportedException();
         }
 
