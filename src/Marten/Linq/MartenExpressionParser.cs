@@ -2,19 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using FubuCore;
 using Marten.Util;
-using Remotion.Linq.Parsing.Structure.NodeTypeProviders;
 
 namespace Marten.Linq
 {
     public static class MartenExpressionParser
     {
-        private readonly static Dictionary<Type, string> _pgCasts = new Dictionary<Type, string>
+        private static readonly Dictionary<Type, string> _pgCasts = new Dictionary<Type, string>
         {
-            {typeof(int), "integer"},
-            {typeof(long), "integer"}
+            {typeof (int), "integer"},
+            {typeof (long), "bigint"}
         };
 
         private static readonly IDictionary<ExpressionType, string> _operators = new Dictionary<ExpressionType, string>
@@ -24,12 +22,14 @@ namespace Marten.Linq
             {ExpressionType.GreaterThan, ">"},
             {ExpressionType.GreaterThanOrEqual, ">="},
             {ExpressionType.LessThan, "<"},
-            {ExpressionType.LessThanOrEqual, "<="},
+            {ExpressionType.LessThanOrEqual, "<="}
         };
 
         public static string ApplyCastToLocator(this string locator, Type memberType)
         {
-            if (!_pgCasts.ContainsKey(memberType)) throw new ArgumentOutOfRangeException("memberType", "There is not Postgresql cast for member type " + memberType.FullName);
+            if (!_pgCasts.ContainsKey(memberType))
+                throw new ArgumentOutOfRangeException("memberType",
+                    "There is not Postgresql cast for member type " + memberType.FullName);
 
             return "CAST({0} as {1})".ToFormat(locator, _pgCasts[memberType]);
         }
@@ -60,8 +60,6 @@ namespace Marten.Linq
                     var value = Value(expression.Arguments.Single()).As<string>();
                     return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value + "%");
                 }
-
-                
             }
 
             throw new NotImplementedException();
@@ -77,11 +75,13 @@ namespace Marten.Linq
 
             switch (binary.NodeType)
             {
-                 case ExpressionType.AndAlso:
-                    return new CompoundWhereFragment("and", ParseWhereFragment(binary.Left), ParseWhereFragment(binary.Right));
+                case ExpressionType.AndAlso:
+                    return new CompoundWhereFragment("and", ParseWhereFragment(binary.Left),
+                        ParseWhereFragment(binary.Right));
 
                 case ExpressionType.OrElse:
-                    return new CompoundWhereFragment("or", ParseWhereFragment(binary.Left), ParseWhereFragment(binary.Right));
+                    return new CompoundWhereFragment("or", ParseWhereFragment(binary.Left),
+                        ParseWhereFragment(binary.Right));
             }
 
             throw new NotSupportedException();
@@ -117,7 +117,7 @@ namespace Marten.Linq
 
                 var locator = "data ->> '{0}'".ToFormat(member.Name);
                 var memberType = member.GetMemberType();
-                
+
                 return memberType == typeof (string) ? locator : locator.ApplyCastToLocator(memberType);
             }
 

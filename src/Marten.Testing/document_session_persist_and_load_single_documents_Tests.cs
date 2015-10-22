@@ -10,6 +10,8 @@ namespace Marten.Testing
         public void persist_a_single_document()
         {
             var user = new User {FirstName = "Magic", LastName = "Johnson"};
+
+            
             theSession.Store(user);
 
             theSession.SaveChanges();
@@ -32,6 +34,7 @@ namespace Marten.Testing
         {
             var user = new User { FirstName = "James", LastName = "Worthy" };
 
+            // theSession is Marten's IDocumentSession service
             theSession.Store(user);
             theSession.SaveChanges();
 

@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using FubuCore.Util.TextWriting;
 using Marten.Generation.Templates;
 
 namespace Marten.Generation
@@ -21,9 +24,15 @@ namespace Marten.Generation
 
         public void CreateTable(Type documentType)
         {
-            var sql = TemplateSource.DocumentTable().Replace("%TABLE_NAME%", TableNameFor(documentType));
+            // TODO -- fancier later
+            var table = new TableDefinition(TableNameFor(documentType), new TableColumn("id", "uuid"));
+            table.Columns.Add(new TableColumn("data", "jsonb NOT NULL"));
 
-            _writer.WriteLine(sql);
+            table.Write(_writer);
+
+            //var sql = TemplateSource.DocumentTable().Replace("%TABLE_NAME%", TableNameFor(documentType));
+
+            //_writer.WriteLine(sql);
             _writer.WriteLine();
         }
 
@@ -41,6 +50,58 @@ namespace Marten.Generation
             _writer.WriteLine(sql);
             _writer.WriteLine();
         }
+    }
+
+    public class TableDefinition
+    {
+        public TableDefinition(string name, TableColumn primaryKey)
+        {
+            Name = name;
+            PrimaryKey = primaryKey;
+        }
+
+        public string Name { get; set; }
+
+        public TableColumn PrimaryKey;
+
+        public readonly IList<TableColumn> Columns = new List<TableColumn>();
+
+        public void Write(StringWriter writer)
+        {
+            writer.WriteLine("DROP TABLE IF EXISTS {0} CASCADE;", Name);
+            writer.WriteLine("CREATE TABLE {0} (", Name);
+
+            var length = Columns.Select(x => x.Name.Length).Max() + 4;
+
+            writer.WriteLine("    {0}{1} CONSTRAINT pk_{2} PRIMARY KEY,", PrimaryKey.Name.PadRight(length), PrimaryKey.Type, Name);
+
+            Columns.Each(col =>
+            {
+                writer.Write("    {0}{1}", col.Name.PadRight(length), col.Type);
+                if (col == Columns.Last())
+                {
+                    writer.WriteLine();
+                }
+                else
+                {
+                    writer.WriteLine(",");
+                }
+            });
+
+            writer.WriteLine(");");
+        }
+    }
+
+    public class TableColumn
+    {
+        public TableColumn(string name, string type)
+        {
+            Name = name;
+            Type = type;
+        }
+
+        public string Name;
+        public string Type;
     }
 
 

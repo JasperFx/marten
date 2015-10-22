@@ -69,9 +69,6 @@
     <Compile Include="Util\MemberInfoExtensions.cs" />
     <Compile Include="Util\StringExtensions.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Generation\Templates\DocumentTable.txt" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
