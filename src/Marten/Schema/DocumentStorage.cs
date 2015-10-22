@@ -1,7 +1,5 @@
 using System;
 using System.Data;
-using System.Linq;
-using System.Linq.Expressions;
 using FubuCore;
 using Marten.Generation;
 using Npgsql;
@@ -10,29 +8,7 @@ using StoryTeller.Engine.UserInterface;
 
 namespace Marten.Schema
 {
-    public static class DocumentStorageBuilder
-    {
-        public static IDocumentStorage Build(Type documentType)
-        {
-            var prop =
-                documentType.GetProperties().Where(x => x.Name.EqualsIgnoreCase("id") && x.CanWrite).FirstOrDefault();
-
-            if (prop == null) throw new ArgumentOutOfRangeException("documentType", "Type {0} does not have a public settable property named 'id' or 'Id'".ToFormat(documentType.FullName));
-
-            var parameter = Expression.Parameter(documentType, "x");
-            var propExpression = Expression.Property(parameter, prop);
-
-            var lambda = Expression.Lambda(propExpression, parameter);
-
-            var func = lambda.Compile();
-
-            return typeof (DocumentStorage<,>).CloseAndBuildAs<IDocumentStorage>(func, documentType, prop.PropertyType);
-        }
-
-
-    }
-
-    public class DocumentStorage<T, TKey> : IDocumentStorage where T : IDocument
+    public class DocumentStorage<T, TKey> : IDocumentStorage
     {
         private readonly string _upsertCommand = SchemaBuilder.UpsertNameFor(typeof (T));
         private readonly string _loadCommand = "select data from {0} where id = :id".ToFormat(SchemaBuilder.TableNameFor(typeof(T)));
@@ -77,8 +53,13 @@ namespace Marten.Schema
         {
             var command = new NpgsqlCommand(_loadCommand);
 
-            // TODO -- someday we'll need to map the NpgsqlDbType a bit
-            command.Parameters.Add("id", NpgsqlDbType.Uuid).Value = id; 
+            var param = new NpgsqlParameter
+            {
+                ParameterName = "id",
+                Value = id
+            };
+
+            command.Parameters.Add(param);
 
             return command;
         }
@@ -93,7 +74,7 @@ namespace Marten.Schema
 
         public NpgsqlCommand DeleteCommandForEntity(object entity)
         {
-            return DeleteCommandForId(entity.As<T>().Id);
+            return DeleteCommandForId(_key(entity.As<T>()));
         }
 
         public string TableName
