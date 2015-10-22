@@ -55,6 +55,7 @@
     <Compile Include="Fixtures\Target.cs" />
     <Compile Include="Generation\SchemaBuilderTests.cs" />
     <Compile Include="Generation\TemplateReadingTests.cs" />
+    <Compile Include="Linq\invoking_queryable_any.cs" />
     <Compile Include="Linq\invoking_queryable_through_first.cs" />
     <Compile Include="Linq\invoking_queryable_through_single.cs" />
     <Compile Include="Linq\MartenExpressionParserTests.cs" />

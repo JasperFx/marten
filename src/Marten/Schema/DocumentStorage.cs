@@ -4,8 +4,11 @@ using System.Data;
 using System.Linq;
 using FubuCore;
 using Marten.Generation;
+using Marten.Linq;
 using Npgsql;
 using NpgsqlTypes;
+using Remotion.Linq;
+using Remotion.Linq.Clauses;
 
 namespace Marten.Schema
 {
@@ -100,6 +103,12 @@ namespace Marten.Schema
             command.Parameters.Add(param);
 
             return command;
+        }
+
+        public NpgsqlCommand AnyCommand(QueryModel queryModel)
+        {
+            var query = new DocumentQuery<T>(_tableName);
+            return query.ToAnyCommand(queryModel);
         }
 
         public string TableName

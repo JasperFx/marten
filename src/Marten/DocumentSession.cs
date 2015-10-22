@@ -39,7 +39,22 @@ namespace Marten
 
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
-            throw new NotImplementedException();
+            if (queryModel.ResultOperators.OfType<AnyResultOperator>().Any())
+            {
+                var storage = _schema.StorageFor(queryModel.SelectClause.Selector.Type);
+                var anyCommand = storage.AnyCommand(queryModel);
+
+                using (var conn = _factory.Create())
+                {
+                    conn.Open();
+
+                    anyCommand.Connection = conn;
+                    return (T) anyCommand.ExecuteScalar();
+                }
+
+            }
+
+            throw new NotSupportedException();
         }
 
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
@@ -67,7 +82,8 @@ namespace Marten
 
         public NpgsqlCommand BuildCommand<T>(QueryModel queryModel)
         {
-            var query = new DocumentQuery<T>(_schema.StorageFor(typeof (T)).TableName);
+            var tableName = _schema.StorageFor(typeof (T)).TableName;
+            var query = new DocumentQuery<T>(tableName);
             var @where = queryModel.BodyClauses.OfType<WhereClause>().FirstOrDefault();
             if (@where != null)
             {
