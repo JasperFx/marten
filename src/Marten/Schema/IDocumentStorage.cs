@@ -1,4 +1,5 @@
-﻿using Marten.Generation;
+﻿using System;
+using Marten.Generation;
 using Npgsql;
 
 namespace Marten.Schema
@@ -11,6 +12,8 @@ namespace Marten.Schema
         NpgsqlCommand DeleteCommandForId(object id);
         NpgsqlCommand DeleteCommandForEntity(object entity);
         string TableName { get; }
+
+        NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids);
     }
 
 }

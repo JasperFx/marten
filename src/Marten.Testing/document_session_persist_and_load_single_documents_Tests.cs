@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using FubuCore;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -53,6 +54,28 @@ namespace Marten.Testing
         public void try_to_load_a_document_that_does_not_exist()
         {
             theSession.Load<User>(Guid.NewGuid()).ShouldBeNull();
+        }
+
+        public void load_by_id_array()
+        {
+            var user1 = new User { FirstName = "Magic", LastName = "Johnson" };
+            var user2 = new User { FirstName = "James", LastName = "Worthy" };
+            var user3 = new User { FirstName = "Michael", LastName = "Cooper" };
+            var user4 = new User { FirstName = "Mychal", LastName = "Thompson" };
+            var user5 = new User { FirstName = "Kurt", LastName = "Rambis" };
+
+            theSession.Store(user1);
+            theSession.Store(user2);
+            theSession.Store(user3);
+            theSession.Store(user4);
+            theSession.Store(user5);
+            theSession.SaveChanges();
+
+            using (var session = theContainer.GetInstance<IDocumentSession>())
+            {
+                var users = session.Load<User>().ById(user2.Id, user3.Id, user4.Id);
+                users.Count().ShouldBe(3);
+            }
         }
     }
 }

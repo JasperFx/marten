@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Data;
+using System.Linq;
 using FubuCore;
 using Marten.Generation;
 using Npgsql;
@@ -14,6 +16,9 @@ namespace Marten.Schema
 
         private readonly string _deleteCommand =
             "delete from {0} where id = :id".ToFormat(SchemaBuilder.TableNameFor(typeof (T)));
+
+        private readonly string _byArrayCommand =
+            "select data from {0} where id = ANY(:ids)".ToFormat(SchemaBuilder.TableNameFor(typeof (T)));
 
         private readonly string _tableName = SchemaBuilder.TableNameFor(typeof (T));
 
@@ -80,6 +85,21 @@ namespace Marten.Schema
         public NpgsqlCommand DeleteCommandForEntity(object entity)
         {
             return DeleteCommandForId(_key(entity.As<T>()));
+        }
+
+
+        public NpgsqlCommand LoadByArrayCommand<TInput>(TInput[] ids)
+        {
+            var command = new NpgsqlCommand(_byArrayCommand);
+            var param = new NpgsqlParameter
+            {
+                ParameterName = "ids",
+                Value = ids
+            };
+
+            command.Parameters.Add(param);
+
+            return command;
         }
 
         public string TableName

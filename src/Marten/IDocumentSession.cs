@@ -13,16 +13,15 @@ namespace Marten
         void Delete<T>(ValueType id);
         void Delete<T>(string id);
 
-        T Load<T>(string id);
-        T[] Load<T>(IEnumerable<string> ids);
-        T Load<T>(ValueType id);
-        T[] Load<T>(params ValueType[] ids);
-        T[] Load<T>(IEnumerable<ValueType> ids);
-
         /// <summary>
         ///     Saves all the pending changes to the server.
         /// </summary>
         void SaveChanges();
+
+        T Load<T>(string id);
+        T Load<T>(ValueType id);
+
+        ILoadByKeys<T> Load<T>(); 
 
         // Store by etag? Version strategy?
 
@@ -36,5 +35,11 @@ namespace Marten
         IQueryable<T> Query<T>();
 
         IEnumerable<T> Query<T>(string @where, params object[] parameters);
+    }
+
+    public interface ILoadByKeys<out TDoc>
+    {
+        IEnumerable<TDoc> ById<TKey>(params TKey[] keys);
+        IEnumerable<TDoc> ById<TKey>(IEnumerable<TKey> keys);
     }
 }

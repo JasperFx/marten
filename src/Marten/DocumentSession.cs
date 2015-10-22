@@ -93,11 +93,6 @@ namespace Marten
             return load<T>(id);
         }
 
-        public T[] Load<T>(IEnumerable<string> ids)
-        {
-            throw new NotImplementedException();
-        }
-
         public T Load<T>(ValueType id)
         {
             return load<T>(id);
@@ -121,15 +116,6 @@ namespace Marten
             }
         }
 
-        public T[] Load<T>(params ValueType[] ids)
-        {
-            throw new NotImplementedException();
-        }
-
-        public T[] Load<T>(IEnumerable<ValueType> ids)
-        {
-            throw new NotImplementedException();
-        }
 
         public void SaveChanges()
         {
@@ -219,6 +205,34 @@ namespace Marten
         {
             var model = _parser.GetParsedQuery(queryable.Expression);
             return BuildCommand<T>(model);
+        }
+
+        public ILoadByKeys<T> Load<T>()
+        {
+            return new LoadByKeys<T>(this);
+        }
+
+        public class LoadByKeys<TDoc> : ILoadByKeys<TDoc>
+        {
+            private readonly DocumentSession _parent;
+
+            public LoadByKeys(DocumentSession parent)
+            {
+                _parent = parent;
+            }
+
+            public IEnumerable<TDoc> ById<TKey>(params TKey[] keys)
+            {
+                var storage = _parent._schema.StorageFor(typeof (TDoc));
+                var cmd = storage.LoadByArrayCommand(keys);
+
+                return _parent.query<TDoc>(cmd);
+            }
+
+            public IEnumerable<TDoc> ById<TKey>(IEnumerable<TKey> keys)
+            {
+                return ById(keys.ToArray());
+            }
         }
     }
 }

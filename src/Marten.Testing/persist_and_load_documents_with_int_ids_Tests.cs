@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using System.Linq;
+using Shouldly;
 
 namespace Marten.Testing
 {
@@ -44,6 +45,21 @@ namespace Marten.Testing
             {
                 session.Load<IntDoc>(IntDoc.Id)
                     .ShouldBeNull();
+            }
+        }
+
+        public void load_by_array_of_ids()
+        {
+            theSession.Store(new IntDoc { Id = 3 });
+            theSession.Store(new IntDoc { Id = 4 });
+            theSession.Store(new IntDoc { Id = 5 });
+            theSession.Store(new IntDoc { Id = 6 });
+            theSession.Store(new IntDoc { Id = 7 });
+            theSession.SaveChanges();
+
+            using (var session = theContainer.GetInstance<IDocumentSession>())
+            {
+                session.Load<IntDoc>().ById(4, 5, 6).Count().ShouldBe(3);
             }
         }
     }
