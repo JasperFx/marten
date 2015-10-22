@@ -9,7 +9,8 @@ namespace Marten
         {
             {typeof (int), "integer"},
             {typeof (long), "bigint"},
-            {typeof(Guid), "uuid"}
+            {typeof(Guid), "uuid"},
+            {typeof(string), "varchar"}
         };
     }
 }

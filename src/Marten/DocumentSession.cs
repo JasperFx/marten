@@ -90,7 +90,7 @@ namespace Marten
 
         public T Load<T>(string id)
         {
-            throw new NotImplementedException();
+            return load<T>(id);
         }
 
         public T[] Load<T>(IEnumerable<string> ids)
@@ -99,6 +99,11 @@ namespace Marten
         }
 
         public T Load<T>(ValueType id)
+        {
+            return load<T>(id);
+        }
+
+        private T load<T>(object id)
         {
             var storage = _schema.StorageFor(typeof (T));
             var loader = storage.LoaderCommand(id);

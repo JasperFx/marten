@@ -2,7 +2,7 @@
 
 namespace Marten.Testing.Documents
 {
-    public class Issue : IDocument
+    public class Issue
     {
         public Issue()
         {

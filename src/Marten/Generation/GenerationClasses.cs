@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using FubuCore.Util.TextWriting;
 using Marten.Generation.Templates;
 
 namespace Marten.Generation
 {
     public class SchemaBuilder
     {
+        private readonly StringWriter _writer = new StringWriter();
+
         public static string TableNameFor(Type documentType)
         {
             return "mt_doc_" + documentType.Name;
@@ -20,19 +20,14 @@ namespace Marten.Generation
             return "mt_upsert_" + documentType.Name;
         }
 
-        private readonly StringWriter _writer = new StringWriter();
-
-        public void CreateTable(Type documentType)
+        public void CreateTable(Type documentType, Type idType)
         {
             // TODO -- fancier later
-            var table = new TableDefinition(TableNameFor(documentType), new TableColumn("id", "uuid"));
+            var table = new TableDefinition(TableNameFor(documentType), new TableColumn("id", TypeMappings.PgTypes[idType]));
             table.Columns.Add(new TableColumn("data", "jsonb NOT NULL"));
 
             table.Write(_writer);
 
-            //var sql = TemplateSource.DocumentTable().Replace("%TABLE_NAME%", TableNameFor(documentType));
-
-            //_writer.WriteLine(sql);
             _writer.WriteLine();
         }
 
@@ -41,11 +36,12 @@ namespace Marten.Generation
             return _writer.ToString();
         }
 
-        public void DefineUpsert(Type documentType)
+        public void DefineUpsert(Type documentType, Type idType)
         {
             var sql = TemplateSource.UpsertDocument()
                 .Replace("%TABLE_NAME%", TableNameFor(documentType))
-                .Replace("%SPROC_NAME%", UpsertNameFor(documentType));
+                .Replace("%SPROC_NAME%", UpsertNameFor(documentType))
+                .Replace("%ID_TYPE%", TypeMappings.PgTypes[idType]);
 
             _writer.WriteLine(sql);
             _writer.WriteLine();
@@ -54,6 +50,10 @@ namespace Marten.Generation
 
     public class TableDefinition
     {
+        public readonly IList<TableColumn> Columns = new List<TableColumn>();
+
+        public TableColumn PrimaryKey;
+
         public TableDefinition(string name, TableColumn primaryKey)
         {
             Name = name;
@@ -62,10 +62,6 @@ namespace Marten.Generation
 
         public string Name { get; set; }
 
-        public TableColumn PrimaryKey;
-
-        public readonly IList<TableColumn> Columns = new List<TableColumn>();
-
         public void Write(StringWriter writer)
         {
             writer.WriteLine("DROP TABLE IF EXISTS {0} CASCADE;", Name);
@@ -73,7 +69,8 @@ namespace Marten.Generation
 
             var length = Columns.Select(x => x.Name.Length).Max() + 4;
 
-            writer.WriteLine("    {0}{1} CONSTRAINT pk_{2} PRIMARY KEY,", PrimaryKey.Name.PadRight(length), PrimaryKey.Type, Name);
+            writer.WriteLine("    {0}{1} CONSTRAINT pk_{2} PRIMARY KEY,", PrimaryKey.Name.PadRight(length),
+                PrimaryKey.Type, Name);
 
             Columns.Each(col =>
             {
@@ -94,15 +91,13 @@ namespace Marten.Generation
 
     public class TableColumn
     {
+        public string Name;
+        public string Type;
+
         public TableColumn(string name, string type)
         {
             Name = name;
             Type = type;
         }
-
-        public string Name;
-        public string Type;
     }
-
-
 }

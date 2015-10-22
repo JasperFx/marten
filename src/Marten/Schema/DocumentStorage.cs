@@ -4,7 +4,6 @@ using FubuCore;
 using Marten.Generation;
 using Npgsql;
 using NpgsqlTypes;
-using StoryTeller.Engine.UserInterface;
 
 namespace Marten.Schema
 {
@@ -67,7 +66,13 @@ namespace Marten.Schema
         public NpgsqlCommand DeleteCommandForId(object id)
         {
             var command = new NpgsqlCommand(_deleteCommand);
-            command.Parameters.Add("id", NpgsqlDbType.Uuid).Value = id;
+            var param = new NpgsqlParameter
+            {
+                ParameterName = "id",
+                Value = id
+            };
+
+            command.Parameters.Add(param);
 
             return command;
         }
@@ -87,8 +92,8 @@ namespace Marten.Schema
 
         public void InitializeSchema(SchemaBuilder builder)
         {
-            builder.CreateTable(typeof(T));
-            builder.DefineUpsert(typeof(T));
+            builder.CreateTable(typeof(T), typeof(TKey));
+            builder.DefineUpsert(typeof(T), typeof(TKey));
         }
 
         public Type DocumentType

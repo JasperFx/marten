@@ -56,7 +56,10 @@
     <Compile Include="Generation\SchemaBuilderTests.cs" />
     <Compile Include="Generation\TemplateReadingTests.cs" />
     <Compile Include="Linq\MartenExpressionParserTests.cs" />
+    <Compile Include="persisting_document_with_string_id_Tests.cs" />
     <Compile Include="persist_and_deleting_multiple_documents_Tests.cs" />
+    <Compile Include="persist_and_load_documents_with_int_ids_Tests.cs" />
+    <Compile Include="persist_and_load_documents_with_long_ids_Tests.cs" />
     <Compile Include="PlayingTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="query_by_sql_where_clause_Tests.cs" />

@@ -2,7 +2,7 @@
 
 namespace Marten.Testing.Fixtures
 {
-    public class Target : IDocument
+    public class Target
     {
         public Target()
         {

@@ -3,9 +3,7 @@ using FubuCore;
 
 namespace Marten.Testing.Documents
 {
-    // The IDocument interface is just a temporary crutch
-    // for now. It won't be necessary in the end
-    public class User : IDocument
+    public class User
     {
         public User()
         {

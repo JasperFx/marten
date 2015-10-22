@@ -62,8 +62,8 @@ namespace Marten.Testing
         public void try_command_runner()
         {
             var builder = new SchemaBuilder();
-            builder.CreateTable(typeof(SchemaBuilderTests.MySpecialDocument));
-            builder.DefineUpsert(typeof (SchemaBuilderTests.MySpecialDocument));
+            builder.CreateTable(typeof(SchemaBuilderTests.MySpecialDocument), typeof(Guid));
+            builder.DefineUpsert(typeof (SchemaBuilderTests.MySpecialDocument), typeof(Guid));
 
             var id = Guid.NewGuid();
 

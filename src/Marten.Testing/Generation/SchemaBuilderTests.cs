@@ -1,4 +1,5 @@
-﻿using Marten.Generation;
+﻿using System;
+using Marten.Generation;
 using Shouldly;
 
 namespace Marten.Testing.Generation
@@ -14,7 +15,7 @@ namespace Marten.Testing.Generation
         public void write_document_table()
         {
             var builder = new SchemaBuilder();
-            builder.CreateTable(typeof(MySpecialDocument));
+            builder.CreateTable(typeof(MySpecialDocument), typeof(Guid));
 
             var sql = builder.ToSql();
 
@@ -31,7 +32,7 @@ namespace Marten.Testing.Generation
         public void write_upsert_sql()
         {
             var builder = new SchemaBuilder();
-            builder.DefineUpsert(typeof(MySpecialDocument));
+            builder.DefineUpsert(typeof(MySpecialDocument), typeof(Guid));
 
             var sql = builder.ToSql();
 
