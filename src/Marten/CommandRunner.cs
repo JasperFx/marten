@@ -49,6 +49,29 @@ namespace Marten
             }
         }
 
+        public IEnumerable<string> QueryJson(NpgsqlCommand cmd)
+        {
+            return Execute(conn =>
+            {
+                cmd.Connection = conn;
+
+                var list = new List<string>();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(reader.GetString(0));
+                    }
+
+                    reader.Close();
+                }
+
+                return list;
+            });
+
+
+        }
+
         public int Execute(string sql)
         {
             return Execute(conn =>
@@ -124,6 +147,11 @@ AND type_udt_name != 'trigger';
                     return (T)command.ExecuteScalar();
                 }
             });
+        }
+
+        public IEnumerable<T> Query<T>(NpgsqlCommand cmd, ISerializer serializer)
+        {
+            return QueryJson(cmd).Select(serializer.FromJson<T>);
         }
     }
 }

@@ -94,8 +94,7 @@ namespace Marten.Testing.Fixtures
         {
             var expression = _wheres[WhereClause];
             var queryable = _session.Query<Target>().Where(expression);
-
-            var sql = _session.As<DocumentSession>().BuildCommand<Target>(queryable).CommandText;
+            var sql = _container.GetInstance<MartenQueryExecutor>().BuildCommand<Target>(queryable).CommandText;
             Debug.WriteLine(sql);
 
             Results = new ResultSet(queryable.ToArray().Select(x => _idToName[x.Id]).ToArray());

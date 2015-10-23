@@ -8,7 +8,7 @@ namespace Marten.Linq
 {
     public class MartenQueryable<T> : QueryableBase<T>
     {
-        public MartenQueryable(IQueryParser queryParser, IDocumentExecutor executor) : base(queryParser, executor)
+        public MartenQueryable(IQueryParser queryParser, IMartenQueryExecutor executor) : base(queryParser, executor)
         {
 
         }

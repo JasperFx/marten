@@ -7,104 +7,35 @@ using Marten.Schema;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
-using Remotion.Linq.Clauses;
-using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
-    public interface IDocumentExecutor : IQueryExecutor
+    public interface IMartenQueryExecutor : IQueryExecutor
     {
         NpgsqlCommand BuildCommand<T>(QueryModel queryModel);
     }
 
-    public class DocumentSession : IDocumentSession, IDocumentExecutor
+    public class DocumentSession : IDocumentSession
     {
         private readonly IList<NpgsqlCommand> _deletes = new List<NpgsqlCommand>();
-        private readonly IConnectionFactory _factory;
         private readonly IQueryParser _parser;
+        private readonly IMartenQueryExecutor _executor;
+        private readonly CommandRunner _runner;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
-        private readonly CommandRunner _runner;
 
         private readonly IList<object> _updates = new List<object>();
 
-        public DocumentSession(IDocumentSchema schema, ISerializer serializer, IConnectionFactory factory,
-            IQueryParser parser)
+        public DocumentSession(IDocumentSchema schema, ISerializer serializer, IConnectionFactory factory, IQueryParser parser, IMartenQueryExecutor executor)
         {
             _schema = schema;
             _serializer = serializer;
-            _factory = factory;
             _parser = parser;
-            _runner = new CommandRunner(_factory);
+            _executor = executor;
+            _runner = new CommandRunner(factory);
         }
 
-        T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
-        {
-            if (queryModel.ResultOperators.OfType<AnyResultOperator>().Any())
-            {
-                var storage = _schema.StorageFor(queryModel.SelectClause.Selector.Type);
-                var anyCommand = storage.AnyCommand(queryModel);
-
-                return _runner.Execute(conn =>
-                {
-                    anyCommand.Connection = conn;
-                    return (T)anyCommand.ExecuteScalar();
-                });
-            }
-
-            if (queryModel.ResultOperators.OfType<CountResultOperator>().Any())
-            {
-                var storage = _schema.StorageFor(queryModel.SelectClause.Selector.Type);
-                var countCommand = storage.CountCommand(queryModel);
-
-                return _runner.Execute(conn =>
-                {
-                    countCommand.Connection = conn;
-                    var returnValue = countCommand.ExecuteScalar();
-                    return Convert.ToInt32(returnValue).As<T>();
-                });
-            }
-
-            throw new NotSupportedException();
-        }
-
-        T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
-        {
-            var isFirst = queryModel.ResultOperators.OfType<FirstResultOperator>().Any();
-
-            // TODO -- optimize by returning the count here too?
-            var cmd = BuildCommand<T>(queryModel);
-            var all = queryJson(cmd).ToArray();
-
-            if (returnDefaultWhenEmpty && all.Length == 0) return default(T);
-
-            var data = isFirst ? all.First() : all.Single();
-
-            return _serializer.FromJson<T>(data);
-        }
-
-
-        IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
-        {
-            var command = BuildCommand<T>(queryModel);
-
-            return query<T>(command);
-        }
-
-        public NpgsqlCommand BuildCommand<T>(QueryModel queryModel)
-        {
-            var tableName = _schema.StorageFor(typeof (T)).TableName;
-            var query = new DocumentQuery<T>(tableName);
-            var @where = queryModel.BodyClauses.OfType<WhereClause>().FirstOrDefault();
-            if (@where != null)
-            {
-                query.Where = MartenExpressionParser.ParseWhereFragment(@where.Predicate);
-            }
-
-            var command = query.ToCommand();
-            return command;
-        }
 
         public void Dispose()
         {
@@ -136,22 +67,6 @@ namespace Marten
         public T Load<T>(ValueType id)
         {
             return load<T>(id);
-        }
-
-        private T load<T>(object id)
-        {
-            var storage = _schema.StorageFor(typeof (T));
-            var loader = storage.LoaderCommand(id);
-
-            return _runner.Execute(conn =>
-            {
-                loader.Connection = conn;
-                var json = loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
-
-                if (json == null) return default(T);
-
-                return _serializer.FromJson<T>(json);
-            });
         }
 
 
@@ -200,7 +115,7 @@ namespace Marten
 
         public IQueryable<T> Query<T>()
         {
-            return new MartenQueryable<T>(_parser, this);
+            return new MartenQueryable<T>(_parser, _executor);
         }
 
         public IEnumerable<T> Query<T>(string @where, params object[] parameters)
@@ -217,47 +132,30 @@ namespace Marten
 
             cmd.CommandText = sql;
 
-            return query<T>(cmd).ToArray();
-        }
-
-        private IEnumerable<T> query<T>(NpgsqlCommand cmd)
-        {
-            return queryJson(cmd).Select(json => _serializer.FromJson<T>(json));
-        }
-
-        private IEnumerable<string> queryJson(NpgsqlCommand cmd)
-        {
-            return _runner.Execute(conn =>
-            {
-                cmd.Connection = conn;
-
-                var list = new List<string>();
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        list.Add(reader.GetString(0));
-                    }
-
-                    reader.Close();
-                }
-
-                return list;
-            });
-
-
-        }
-
-        public NpgsqlCommand BuildCommand<T>(IQueryable<T> queryable)
-        {
-            var model = _parser.GetParsedQuery(queryable.Expression);
-            return BuildCommand<T>(model);
+            return _serializer.FromJson<T>(_runner.QueryJson(cmd));
         }
 
         public ILoadByKeys<T> Load<T>()
         {
             return new LoadByKeys<T>(this);
         }
+
+        private T load<T>(object id)
+        {
+            var storage = _schema.StorageFor(typeof (T));
+            var loader = storage.LoaderCommand(id);
+
+            return _runner.Execute(conn =>
+            {
+                loader.Connection = conn;
+                var json = loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
+
+                if (json == null) return default(T);
+
+                return _serializer.FromJson<T>(json);
+            });
+        }
+
 
         public class LoadByKeys<TDoc> : ILoadByKeys<TDoc>
         {
@@ -273,7 +171,8 @@ namespace Marten
                 var storage = _parent._schema.StorageFor(typeof (TDoc));
                 var cmd = storage.LoadByArrayCommand(keys);
 
-                return _parent.query<TDoc>(cmd);
+
+                return _parent._runner.Query<TDoc>(cmd, _parent._serializer);
             }
 
             public IEnumerable<TDoc> ById<TKey>(IEnumerable<TKey> keys)

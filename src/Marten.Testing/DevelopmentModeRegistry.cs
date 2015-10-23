@@ -14,6 +14,8 @@ namespace Marten.Testing
             For<IDocumentSession>().Use<DocumentSession>();
             For<ISerializer>().Use<JsonNetSerializer>();
 
+            For<IMartenQueryExecutor>().Use<MartenQueryExecutor>();
+
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();
         }
     }
