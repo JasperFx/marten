@@ -19,14 +19,14 @@ namespace Marten.Testing.Linq
                 
         }
 
-
+        
         public void naked_any_miss()
         {
             theSession.Query<Target>().Any()
                 .ShouldBeFalse();
 
         }
-
+        
         public void naked_any_hit()
         {
             theSession.Store(new Target { Number = 1 });
@@ -37,8 +37,8 @@ namespace Marten.Testing.Linq
 
             theSession.Query<Target>().Any().ShouldBeTrue();
         }
-
-
+        
+        
         public void any_hit_with_only_one_document()
         {
             theSession.Store(new Target { Number = 1 });
@@ -50,7 +50,7 @@ namespace Marten.Testing.Linq
             theSession.Query<Target>().Any(x => x.Number == 3)
                 .ShouldBeTrue();
         }
-
+        
 
         public void any_hit_with_more_than_one_match()
         {
@@ -63,5 +63,7 @@ namespace Marten.Testing.Linq
             theSession.Query<Target>().Where(x => x.Number == 2).Any()
                 .ShouldBeTrue();
         }
+         
+         
     }
 }

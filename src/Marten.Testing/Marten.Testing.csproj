@@ -55,10 +55,18 @@
     <Compile Include="Fixtures\Target.cs" />
     <Compile Include="Generation\SchemaBuilderTests.cs" />
     <Compile Include="Generation\TemplateReadingTests.cs" />
-    <Compile Include="Linq\invoking_queryable_any_Tests.cs" />
-    <Compile Include="Linq\invoking_queryable_count_Tests.cs" />
-    <Compile Include="Linq\invoking_queryable_through_first_Tests.cs" />
-    <Compile Include="Linq\invoking_queryable_through_single_Tests.cs" />
+    <Compile Include="Linq\invoking_queryable_any_Tests.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Linq\invoking_queryable_count_Tests.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Linq\invoking_queryable_through_first_Tests.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Linq\invoking_queryable_through_single_Tests.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Linq\MartenExpressionParserTests.cs" />
     <Compile Include="persisting_document_with_string_id_Tests.cs" />
     <Compile Include="persist_and_deleting_multiple_documents_Tests.cs" />

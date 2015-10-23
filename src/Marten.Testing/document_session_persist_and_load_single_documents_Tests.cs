@@ -17,18 +17,18 @@ namespace Marten.Testing
 
             theSession.SaveChanges();
 
-            using (var runner = new CommandRunner(ConnectionSource.ConnectionString))
-            {
-                var json = runner.QueryScalar<string>("select data from mt_doc_user where id = '{0}'".ToFormat(user.Id));
+            var runner = new CommandRunner(new ConnectionSource());
+            
+            var json = runner.QueryScalar<string>("select data from mt_doc_user where id = '{0}'".ToFormat(user.Id));
 
-                json.ShouldNotBeNull();
+            json.ShouldNotBeNull();
 
-                var loadedUser = new JsonNetSerializer().FromJson<User>(json);
+            var loadedUser = new JsonNetSerializer().FromJson<User>(json);
 
-                user.ShouldNotBeSameAs(loadedUser);
-                loadedUser.FirstName.ShouldBe(user.FirstName);
-                loadedUser.LastName.ShouldBe(user.LastName);
-            }
+            user.ShouldNotBeSameAs(loadedUser);
+            loadedUser.FirstName.ShouldBe(user.FirstName);
+            loadedUser.LastName.ShouldBe(user.LastName);
+            
         }
 
         public void persist_and_reload_a_document()

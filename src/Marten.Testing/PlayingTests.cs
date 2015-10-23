@@ -53,37 +53,13 @@ namespace Marten.Testing
                     {
                         Debug.WriteLine(reader.GetString(0));
                     }
+
+                    reader.Close();
                 }
+
+                connection.Close();
             }
         }
 
-        public void try_command_runner()
-        {
-            var builder = new SchemaBuilder();
-            builder.CreateTable(typeof(SchemaBuilderTests.MySpecialDocument), typeof(Guid));
-            builder.DefineUpsert(typeof (SchemaBuilderTests.MySpecialDocument), typeof(Guid));
-
-            var id = Guid.NewGuid();
-
-            using (var runner = new CommandRunner(ConnectionSource.ConnectionString))
-            {
-                runner.Execute(builder.ToSql());
-                /*
-                runner.Execute("mt_upsert_myspecialdocument", command =>
-                {
-                    command.Parameters.Add("docId", NpgsqlDbType.Uuid).Value = id;
-                    command.Parameters.Add("doc", NpgsqlDbType.Json).Value = "{\"id\":\"1\"}";
-                });
-
-                runner.Execute("mt_upsert_myspecialdocument", command =>
-                {
-                    command.Parameters.Add("docId", NpgsqlDbType.Uuid).Value = id;
-                    command.Parameters.Add("doc", NpgsqlDbType.Json).Value = "{\"id\":\"2\"}";
-                });
-                 * */
-                //runner.DescribeSchema();
-                runner.SchemaFunctionNames().Each(x => Debug.WriteLine(x));
-            }
-        }
     }
 }

@@ -7,74 +7,90 @@ using Npgsql;
 
 namespace Marten
 {
-    public class CommandRunner : IDisposable
+    public class CommandRunner
     {
-        private readonly NpgsqlConnection _connection;
+        private readonly IConnectionFactory _factory;
 
-        public CommandRunner(string connectionString)
+        public CommandRunner(IConnectionFactory factory)
         {
-            _connection = new NpgsqlConnection(connectionString);
+            _factory = factory;
         }
 
-        public CommandRunner(NpgsqlConnection connection)
-        {
-            _connection = connection;
-        }
 
         public int Execute(string sql)
         {
-            ensureConnectionIsOpen();
-
-            using (var command = _connection.CreateCommand())
+            using (var conn = _factory.Create())
             {
-                command.CommandText = sql;
-                return command.ExecuteNonQuery();
+                conn.Open();
+
+                try
+                {
+                    using (var command = conn.CreateCommand())
+                    {
+                        command.CommandText = sql;
+                        return command.ExecuteNonQuery();
+                    }
+                }
+                finally
+                {
+                    conn.Close();
+                }
             }
         }
 
 
         public int Execute(string function, Action<NpgsqlCommand> configure)
         {
-            ensureConnectionIsOpen();
-
-            using (var command = _connection.CreateCommand())
+            using (var conn = _factory.Create())
             {
-                command.CommandType = CommandType.StoredProcedure;
-                command.CommandText = function;
+                conn.Open();
 
-                configure(command);
+                try
+                {
+                    using (var command = conn.CreateCommand())
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.CommandText = function;
 
-                
+                        configure(command);
 
-                return command.ExecuteNonQuery();
+
+
+                        return command.ExecuteNonQuery();
+                    }
+                }
+                finally
+                {
+                    conn.Close();
+                }
             }
+
+
         }
 
-        public void Dispose()
-        {
-            ensureConnectionIsOpen();
-
-            _connection.Dispose();
-        }
-
-        private void ensureConnectionIsOpen()
-        {
-            if (_connection.State == ConnectionState.Closed)
-            {
-                _connection.Open();
-            }
-        }
 
         public IEnumerable<string> SchemaTableNames()
         {
-            var table = _connection.GetSchema("Tables");
-            var tables = new List<string>();
-            foreach (DataRow row in table.Rows)
+            using (var conn = _factory.Create())
             {
-                tables.Add(row[2].ToString());
+                try
+                {
+                    var table = conn.GetSchema("Tables");
+                    var tables = new List<string>();
+                    foreach (DataRow row in table.Rows)
+                    {
+                        tables.Add(row[2].ToString());
+                    }
+
+                    return tables.Where(name => name.StartsWith("mt_")).ToArray();
+                }
+                finally
+                {
+                    conn.Close();
+                }
             }
 
-            return tables.Where(name => name.StartsWith("mt_")).ToArray();
+
         }
 
         public IEnumerable<string> SchemaFunctionNames()
@@ -84,50 +100,63 @@ namespace Marten
 
         private IEnumerable<string> findFunctionNames()
         {
-            ensureConnectionIsOpen();
+            using (var conn = _factory.Create())
+            {
+                conn.Open();
 
-            var sql = @"
+                try
+                {
+                    var sql = @"
 SELECT routine_name
 FROM information_schema.routines
 WHERE specific_schema NOT IN ('pg_catalog', 'information_schema')
 AND type_udt_name != 'trigger';
 ";
 
-            var command = _connection.CreateCommand();
-            command.CommandText = sql;
+                    var command = conn.CreateCommand();
+                    command.CommandText = sql;
 
-            using (var reader = command.ExecuteReader())
-            {
-                while (reader.Read())
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            yield return reader.GetString(0);
+                        }
+
+                        reader.Close();
+                    }
+                }
+                finally
                 {
-                    yield return reader.GetString(0);
+                    conn.Close();
                 }
             }
+
+
         }
 
-        public void DescribeSchema()
-        {
-            ensureConnectionIsOpen();
-
-            var table = _connection.GetSchema();
-
-            foreach (DataRow row in table.Rows)
-            {
-                Debug.WriteLine(row[0] + " / " + row[1] + " / " + row[2]);
-            }
-
-            Debug.WriteLine(table);
-        }
 
         public T QueryScalar<T>(string sql)
         {
-            ensureConnectionIsOpen();
-
-            using (var command = _connection.CreateCommand())
+            using (var conn = _factory.Create())
             {
-                command.CommandText = sql;
-                return (T) command.ExecuteScalar();
+                conn.Open();
+
+                try
+                {
+                    using (var command = conn.CreateCommand())
+                    {
+                        command.CommandText = sql;
+                        return (T)command.ExecuteScalar();
+                    }
+                }
+                finally
+                {
+                    conn.Close();
+                }
             }
+
+
         }
     }
 }

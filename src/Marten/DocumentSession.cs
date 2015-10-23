@@ -48,8 +48,15 @@ namespace Marten
                 {
                     conn.Open();
 
-                    anyCommand.Connection = conn;
-                    return (T) anyCommand.ExecuteScalar();
+                    try
+                    {
+                        anyCommand.Connection = conn;
+                        return (T) anyCommand.ExecuteScalar();
+                    }
+                    finally
+                    {
+                        conn.Close();
+                    }
                 }
 
             }
@@ -63,10 +70,16 @@ namespace Marten
                 {
                     conn.Open();
 
-                    countCommand.Connection = conn;
-                    var returnValue = countCommand.ExecuteScalar();
-
-                    return Convert.ToInt32(returnValue).As<T>();
+                    try
+                    {
+                        countCommand.Connection = conn;
+                        var returnValue = countCommand.ExecuteScalar();
+                        return Convert.ToInt32(returnValue).As<T>();
+                    }
+                    finally
+                    {
+                        conn.Close();
+                    }
                 }
             }
 
@@ -151,12 +164,19 @@ namespace Marten
             {
                 conn.Open();
 
-                loader.Connection = conn;
-                var json = loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
+                try
+                {
+                    loader.Connection = conn;
+                    var json = loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
 
-                if (json == null) return default(T);
+                    if (json == null) return default(T);
 
-                return _serializer.FromJson<T>(json);
+                    return _serializer.FromJson<T>(json);
+                }
+                finally
+                {
+                    conn.Close();
+                }
             }
         }
 
@@ -168,33 +188,40 @@ namespace Marten
             using (var conn = _factory.Create())
             {
                 conn.Open();
-                using (var tx = conn.BeginTransaction())
+                try
                 {
-                    _updates.Each(o =>
+                    using (var tx = conn.BeginTransaction())
                     {
-                        var docType = o.GetType();
-                        var storage = _schema.StorageFor(docType);
-
-                        using (var command = storage.UpsertCommand(o, _serializer.ToJson(o)))
+                        _updates.Each(o =>
                         {
-                            command.Connection = conn;
-                            command.Transaction = tx;
+                            var docType = o.GetType();
+                            var storage = _schema.StorageFor(docType);
 
-                            command.ExecuteNonQuery();
-                        }
-                    });
+                            using (var command = storage.UpsertCommand(o, _serializer.ToJson(o)))
+                            {
+                                command.Connection = conn;
+                                command.Transaction = tx;
 
-                    _deletes.Each(cmd =>
-                    {
-                        cmd.Connection = conn;
-                        cmd.Transaction = tx;
-                        cmd.ExecuteNonQuery();
-                    });
+                                command.ExecuteNonQuery();
+                            }
+                        });
 
-                    tx.Commit();
+                        _deletes.Each(cmd =>
+                        {
+                            cmd.Connection = conn;
+                            cmd.Transaction = tx;
+                            cmd.ExecuteNonQuery();
+                        });
 
-                    _deletes.Clear();
-                    _updates.Clear();
+                        tx.Commit();
+
+                        _deletes.Clear();
+                        _updates.Clear();
+                    }
+                }
+                finally
+                {
+                    conn.Close();
                 }
             }
         }
@@ -239,12 +266,21 @@ namespace Marten
                 conn.Open();
                 cmd.Connection = conn;
 
-                using (var reader = cmd.ExecuteReader())
+                try
                 {
-                    while (reader.Read())
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        yield return reader.GetString(0);
+                        while (reader.Read())
+                        {
+                            yield return reader.GetString(0);
+                        }
+
+                        reader.Close();
                     }
+                }
+                finally
+                {
+                    conn.Close();
                 }
             }
         }

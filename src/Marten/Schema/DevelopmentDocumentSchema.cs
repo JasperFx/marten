@@ -7,12 +7,12 @@ namespace Marten.Schema
 {
     public class DevelopmentDocumentSchema : IDocumentSchema, IDisposable
     {
-        private readonly Lazy<CommandRunner> _runner;
+        private readonly CommandRunner _runner;
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes = new ConcurrentDictionary<Type, IDocumentStorage>(); 
 
         public DevelopmentDocumentSchema(IConnectionFactory connections)
         {
-            _runner = new Lazy<CommandRunner>(() => new CommandRunner(connections.Create()));
+            _runner = new CommandRunner(connections);
         }
 
         public IDocumentStorage StorageFor(Type documentType)
@@ -24,7 +24,7 @@ namespace Marten.Schema
                 var builder = new SchemaBuilder();
                 storage.InitializeSchema(builder);
 
-                _runner.Value.Execute(builder.ToSql());
+                _runner.Execute(builder.ToSql());
 
                 return storage;
             });
@@ -32,7 +32,6 @@ namespace Marten.Schema
 
         public void Dispose()
         {
-            if (_runner.IsValueCreated) _runner.Value.Dispose();
         }
     }
 }

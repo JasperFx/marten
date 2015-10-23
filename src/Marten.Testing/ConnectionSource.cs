@@ -34,8 +34,7 @@ namespace Marten.Testing
 
         public static void CleanBasicDocuments()
         {
-            using (var runner = new CommandRunner(ConnectionString))
-            {
+            var runner = new CommandRunner(new ConnectionSource());
                 runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (User))));
                 runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (Issue))));
                 runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (Company))));
@@ -45,7 +44,6 @@ namespace Marten.Testing
                 runner.Execute("DROP FUNCTION if exists {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Issue))));
                 runner.Execute("DROP FUNCTION if exists {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Company))));
                 runner.Execute("DROP FUNCTION if exists {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Target))));
-            }
         }
     }
 }

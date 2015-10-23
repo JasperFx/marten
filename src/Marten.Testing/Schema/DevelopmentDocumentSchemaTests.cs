@@ -45,8 +45,7 @@ namespace Marten.Testing.Schema
             _schema.StorageFor(typeof (Issue)).ShouldNotBeNull();
             _schema.StorageFor(typeof (Company)).ShouldNotBeNull();
 
-            using (var runner = new CommandRunner(ConnectionSource.ConnectionString))
-            {
+            var runner = new CommandRunner(new ConnectionSource());
                 var tables = runner.SchemaTableNames();
                 tables.ShouldContain(SchemaBuilder.TableNameFor(typeof(User)).ToLower());
                 tables.ShouldContain(SchemaBuilder.TableNameFor(typeof(Issue)).ToLower());
@@ -56,7 +55,6 @@ namespace Marten.Testing.Schema
                 functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof(User)).ToLower());
                 functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof(Issue)).ToLower());
                 functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof(Company)).ToLower());
-            }
         }
     }
 }
