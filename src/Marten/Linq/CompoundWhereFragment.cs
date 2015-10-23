@@ -1,6 +1,7 @@
 using System.Linq;
 using Npgsql;
 using System.Collections.Generic;
+using Remotion.Linq.Clauses;
 
 namespace Marten.Linq
 {
@@ -8,6 +9,12 @@ namespace Marten.Linq
     {
         private readonly string _separator;
         private readonly IWhereFragment[] _children;
+
+        public CompoundWhereFragment(string separator, IEnumerable<WhereClause> wheres)
+        {
+            _separator = separator;
+            _children = wheres.Select(x => MartenExpressionParser.ParseWhereFragment(x.Predicate)).ToArray();
+        }
 
         public CompoundWhereFragment(string separator, params IWhereFragment[] children)
         {

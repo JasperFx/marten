@@ -21,49 +21,47 @@ namespace Marten.Linq
         {
             var sql = "select (count(*) > 0) as result from " + _tableName;
 
-            // TODO -- more than one where?
-            var where = _query.BodyClauses.OfType<WhereClause>().FirstOrDefault();
-
             var command = new NpgsqlCommand();
-            if (where != null)
-            {
-                sql += " where " + MartenExpressionParser.ParseWhereFragment(where.Predicate).ToSql(command);
-            }
+            sql = appendWhereClause(sql, command);
 
             command.CommandText = sql;
 
             return command;
         }
 
-        // TODO -- make this take in QueryModel
         public NpgsqlCommand ToCommand()
         {
             var command = new NpgsqlCommand();
             var sql = "select data from " + _tableName;
 
-            var where = _query.BodyClauses.OfType<WhereClause>().FirstOrDefault();
-            if (where != null)
-            {
-                sql += " where " + MartenExpressionParser.ParseWhereFragment(where.Predicate).ToSql(command);
-            }
+            sql = appendWhereClause(sql, command);
 
             command.CommandText = sql;
 
             return command;
+        }
+
+        private string appendWhereClause(string sql, NpgsqlCommand command)
+        {
+            var wheres = _query.BodyClauses.OfType<WhereClause>().ToArray();
+            if (wheres.Length == 0) return sql;
+
+            var where = wheres.Length == 1
+                ? MartenExpressionParser.ParseWhereFragment(wheres.Single().Predicate)
+                : new CompoundWhereFragment("and", wheres);
+
+
+            sql += " where " + where.ToSql(command);
+
+            return sql;
         }
 
         public NpgsqlCommand ToCountCommand()
         {
             var sql = "select count(*) as number from " + _tableName;
 
-            // TODO -- more than one where?
-            var where = _query.BodyClauses.OfType<WhereClause>().FirstOrDefault();
-
             var command = new NpgsqlCommand();
-            if (where != null)
-            {
-                sql += " where " + MartenExpressionParser.ParseWhereFragment(where.Predicate).ToSql(command);
-            }
+            sql = appendWhereClause(sql, command);
 
             command.CommandText = sql;
 

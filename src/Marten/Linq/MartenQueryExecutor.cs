@@ -5,22 +5,20 @@ using FubuCore;
 using Marten.Schema;
 using Npgsql;
 using Remotion.Linq;
-using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten.Linq
 {
-    
-
     public class MartenQueryExecutor : IMartenQueryExecutor
     {
-        private readonly IDocumentSchema _schema;
-        private readonly ISerializer _serializer;
         private readonly IQueryParser _parser;
         private readonly CommandRunner _runner;
+        private readonly IDocumentSchema _schema;
+        private readonly ISerializer _serializer;
 
-        public MartenQueryExecutor(IConnectionFactory factory, IDocumentSchema schema, ISerializer serializer, IQueryParser parser)
+        public MartenQueryExecutor(IConnectionFactory factory, IDocumentSchema schema, ISerializer serializer,
+            IQueryParser parser)
         {
             _schema = schema;
             _serializer = serializer;
@@ -38,7 +36,7 @@ namespace Marten.Linq
                 return _runner.Execute(conn =>
                 {
                     anyCommand.Connection = conn;
-                    return (T)anyCommand.ExecuteScalar();
+                    return (T) anyCommand.ExecuteScalar();
                 });
             }
 
@@ -74,7 +72,6 @@ namespace Marten.Linq
         }
 
 
-
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
         {
             var command = BuildCommand<T>(queryModel);
@@ -84,7 +81,7 @@ namespace Marten.Linq
 
         public NpgsqlCommand BuildCommand<T>(QueryModel queryModel)
         {
-            var tableName = _schema.StorageFor(typeof(T)).TableName;
+            var tableName = _schema.StorageFor(typeof (T)).TableName;
             var query = new DocumentQuery<T>(tableName, queryModel);
 
             return query.ToCommand();
@@ -95,6 +92,5 @@ namespace Marten.Linq
             var model = _parser.GetParsedQuery(queryable.Expression);
             return BuildCommand<T>(model);
         }
-
     }
 }
