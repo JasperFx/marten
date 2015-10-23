@@ -25,6 +25,7 @@ namespace Marten
         private readonly IQueryParser _parser;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
+        private readonly CommandRunner _runner;
 
         private readonly IList<object> _updates = new List<object>();
 
@@ -35,6 +36,7 @@ namespace Marten
             _serializer = serializer;
             _factory = factory;
             _parser = parser;
+            _runner = new CommandRunner(_factory);
         }
 
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
@@ -44,21 +46,11 @@ namespace Marten
                 var storage = _schema.StorageFor(queryModel.SelectClause.Selector.Type);
                 var anyCommand = storage.AnyCommand(queryModel);
 
-                using (var conn = _factory.Create())
+                return _runner.Execute(conn =>
                 {
-                    conn.Open();
-
-                    try
-                    {
-                        anyCommand.Connection = conn;
-                        return (T) anyCommand.ExecuteScalar();
-                    }
-                    finally
-                    {
-                        conn.Close();
-                    }
-                }
-
+                    anyCommand.Connection = conn;
+                    return (T)anyCommand.ExecuteScalar();
+                });
             }
 
             if (queryModel.ResultOperators.OfType<CountResultOperator>().Any())
@@ -66,21 +58,12 @@ namespace Marten
                 var storage = _schema.StorageFor(queryModel.SelectClause.Selector.Type);
                 var countCommand = storage.CountCommand(queryModel);
 
-                using (var conn = _factory.Create())
+                return _runner.Execute(conn =>
                 {
-                    conn.Open();
-
-                    try
-                    {
-                        countCommand.Connection = conn;
-                        var returnValue = countCommand.ExecuteScalar();
-                        return Convert.ToInt32(returnValue).As<T>();
-                    }
-                    finally
-                    {
-                        conn.Close();
-                    }
-                }
+                    countCommand.Connection = conn;
+                    var returnValue = countCommand.ExecuteScalar();
+                    return Convert.ToInt32(returnValue).As<T>();
+                });
             }
 
             throw new NotSupportedException();
@@ -160,24 +143,15 @@ namespace Marten
             var storage = _schema.StorageFor(typeof (T));
             var loader = storage.LoaderCommand(id);
 
-            using (var conn = _factory.Create())
+            return _runner.Execute(conn =>
             {
-                conn.Open();
+                loader.Connection = conn;
+                var json = loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
 
-                try
-                {
-                    loader.Connection = conn;
-                    var json = loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
+                if (json == null) return default(T);
 
-                    if (json == null) return default(T);
-
-                    return _serializer.FromJson<T>(json);
-                }
-                finally
-                {
-                    conn.Close();
-                }
-            }
+                return _serializer.FromJson<T>(json);
+            });
         }
 
 
@@ -185,45 +159,37 @@ namespace Marten
         {
             // TODO -- fancier later to add batch updating!
 
-            using (var conn = _factory.Create())
+            _runner.Execute(conn =>
             {
-                conn.Open();
-                try
+                using (var tx = conn.BeginTransaction())
                 {
-                    using (var tx = conn.BeginTransaction())
+                    _updates.Each(o =>
                     {
-                        _updates.Each(o =>
+                        var docType = o.GetType();
+                        var storage = _schema.StorageFor(docType);
+
+                        using (var command = storage.UpsertCommand(o, _serializer.ToJson(o)))
                         {
-                            var docType = o.GetType();
-                            var storage = _schema.StorageFor(docType);
+                            command.Connection = conn;
+                            command.Transaction = tx;
 
-                            using (var command = storage.UpsertCommand(o, _serializer.ToJson(o)))
-                            {
-                                command.Connection = conn;
-                                command.Transaction = tx;
+                            command.ExecuteNonQuery();
+                        }
+                    });
 
-                                command.ExecuteNonQuery();
-                            }
-                        });
+                    _deletes.Each(cmd =>
+                    {
+                        cmd.Connection = conn;
+                        cmd.Transaction = tx;
+                        cmd.ExecuteNonQuery();
+                    });
 
-                        _deletes.Each(cmd =>
-                        {
-                            cmd.Connection = conn;
-                            cmd.Transaction = tx;
-                            cmd.ExecuteNonQuery();
-                        });
+                    tx.Commit();
 
-                        tx.Commit();
-
-                        _deletes.Clear();
-                        _updates.Clear();
-                    }
+                    _deletes.Clear();
+                    _updates.Clear();
                 }
-                finally
-                {
-                    conn.Close();
-                }
-            }
+            });
         }
 
         public void Store(object entity)
@@ -261,28 +227,25 @@ namespace Marten
 
         private IEnumerable<string> queryJson(NpgsqlCommand cmd)
         {
-            using (var conn = _factory.Create())
+            return _runner.Execute(conn =>
             {
-                conn.Open();
                 cmd.Connection = conn;
 
-                try
+                var list = new List<string>();
+                using (var reader = cmd.ExecuteReader())
                 {
-                    using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
-                        {
-                            yield return reader.GetString(0);
-                        }
-
-                        reader.Close();
+                        list.Add(reader.GetString(0));
                     }
+
+                    reader.Close();
                 }
-                finally
-                {
-                    conn.Close();
-                }
-            }
+
+                return list;
+            });
+
+
         }
 
         public NpgsqlCommand BuildCommand<T>(IQueryable<T> queryable)
