@@ -9,20 +9,20 @@ namespace Marten.Linq
     public class DocumentQuery<T>
     {
         private readonly string _tableName;
+        private readonly QueryModel _query;
 
-        public DocumentQuery(string tableName)
+        public DocumentQuery(string tableName, QueryModel query)
         {
             _tableName = tableName;
+            _query = query;
         }
 
-        public IWhereFragment Where { get; set; }
-
-        public NpgsqlCommand ToAnyCommand(QueryModel query)
+        public NpgsqlCommand ToAnyCommand()
         {
             var sql = "select (count(*) > 0) as result from " + _tableName;
 
             // TODO -- more than one where?
-            var where = query.BodyClauses.OfType<WhereClause>().FirstOrDefault();
+            var where = _query.BodyClauses.OfType<WhereClause>().FirstOrDefault();
 
             var command = new NpgsqlCommand();
             if (where != null)
@@ -41,9 +41,10 @@ namespace Marten.Linq
             var command = new NpgsqlCommand();
             var sql = "select data from " + _tableName;
 
-            if (Where != null)
+            var where = _query.BodyClauses.OfType<WhereClause>().FirstOrDefault();
+            if (where != null)
             {
-                sql += " where " + Where.ToSql(command);
+                sql += " where " + MartenExpressionParser.ParseWhereFragment(where.Predicate).ToSql(command);
             }
 
             command.CommandText = sql;
@@ -51,12 +52,12 @@ namespace Marten.Linq
             return command;
         }
 
-        public NpgsqlCommand ToCountCommand(QueryModel query)
+        public NpgsqlCommand ToCountCommand()
         {
             var sql = "select count(*) as number from " + _tableName;
 
             // TODO -- more than one where?
-            var where = query.BodyClauses.OfType<WhereClause>().FirstOrDefault();
+            var where = _query.BodyClauses.OfType<WhereClause>().FirstOrDefault();
 
             var command = new NpgsqlCommand();
             if (where != null)

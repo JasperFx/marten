@@ -85,15 +85,9 @@ namespace Marten.Linq
         public NpgsqlCommand BuildCommand<T>(QueryModel queryModel)
         {
             var tableName = _schema.StorageFor(typeof(T)).TableName;
-            var query = new DocumentQuery<T>(tableName);
-            var @where = queryModel.BodyClauses.OfType<WhereClause>().FirstOrDefault();
-            if (@where != null)
-            {
-                query.Where = MartenExpressionParser.ParseWhereFragment(@where.Predicate);
-            }
+            var query = new DocumentQuery<T>(tableName, queryModel);
 
-            var command = query.ToCommand();
-            return command;
+            return query.ToCommand();
         }
 
         public NpgsqlCommand BuildCommand<T>(IQueryable<T> queryable)

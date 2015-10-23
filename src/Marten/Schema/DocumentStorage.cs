@@ -107,14 +107,12 @@ namespace Marten.Schema
 
         public NpgsqlCommand AnyCommand(QueryModel queryModel)
         {
-            var query = new DocumentQuery<T>(_tableName);
-            return query.ToAnyCommand(queryModel);
+            return new DocumentQuery<T>(_tableName, queryModel).ToAnyCommand();
         }
 
         public NpgsqlCommand CountCommand(QueryModel queryModel)
         {
-            var query = new DocumentQuery<T>(_tableName);
-            return query.ToCountCommand(queryModel);
+            return new DocumentQuery<T>(_tableName, queryModel).ToCountCommand();
         }
 
         public string TableName
