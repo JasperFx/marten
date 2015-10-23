@@ -16,81 +16,67 @@ namespace Marten
             _factory = factory;
         }
 
+        public void Execute(Action<NpgsqlConnection> action)
+        {
+            using (var conn = _factory.Create())
+            {
+                conn.Open();
+
+                try
+                {
+                    action(conn);
+                }
+                finally
+                {
+                    conn.Close();
+                }
+            }
+        }
+
+        public T Execute<T>(Func<NpgsqlConnection, T> func)
+        {
+            using (var conn = _factory.Create())
+            {
+                conn.Open();
+
+                try
+                {
+                    return func(conn);
+                }
+                finally
+                {
+                    conn.Close();
+                }
+            }
+        }
 
         public int Execute(string sql)
         {
-            using (var conn = _factory.Create())
+            return Execute(conn =>
             {
-                conn.Open();
-
-                try
+                using (var command = conn.CreateCommand())
                 {
-                    using (var command = conn.CreateCommand())
-                    {
-                        command.CommandText = sql;
-                        return command.ExecuteNonQuery();
-                    }
+                    command.CommandText = sql;
+                    return command.ExecuteNonQuery();
                 }
-                finally
-                {
-                    conn.Close();
-                }
-            }
+            });
         }
 
-
-        public int Execute(string function, Action<NpgsqlCommand> configure)
-        {
-            using (var conn = _factory.Create())
-            {
-                conn.Open();
-
-                try
-                {
-                    using (var command = conn.CreateCommand())
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.CommandText = function;
-
-                        configure(command);
-
-
-
-                        return command.ExecuteNonQuery();
-                    }
-                }
-                finally
-                {
-                    conn.Close();
-                }
-            }
-
-
-        }
 
 
         public IEnumerable<string> SchemaTableNames()
         {
-            using (var conn = _factory.Create())
+            return Execute(conn =>
             {
-                try
+                var table = conn.GetSchema("Tables");
+                var tables = new List<string>();
+                foreach (DataRow row in table.Rows)
                 {
-                    var table = conn.GetSchema("Tables");
-                    var tables = new List<string>();
-                    foreach (DataRow row in table.Rows)
-                    {
-                        tables.Add(row[2].ToString());
-                    }
-
-                    return tables.Where(name => name.StartsWith("mt_")).ToArray();
+                    tables.Add(row[2].ToString());
                 }
-                finally
-                {
-                    conn.Close();
-                }
-            }
 
-
+                return tables.Where(name => name.StartsWith("mt_")).ToArray();
+            });
         }
 
         public IEnumerable<string> SchemaFunctionNames()
@@ -100,12 +86,8 @@ namespace Marten
 
         private IEnumerable<string> findFunctionNames()
         {
-            using (var conn = _factory.Create())
+            return Execute(conn =>
             {
-                conn.Open();
-
-                try
-                {
                     var sql = @"
 SELECT routine_name
 FROM information_schema.routines
@@ -116,47 +98,33 @@ AND type_udt_name != 'trigger';
                     var command = conn.CreateCommand();
                     command.CommandText = sql;
 
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            yield return reader.GetString(0);
-                        }
-
-                        reader.Close();
-                    }
-                }
-                finally
+                var list = new List<string>();
+                using (var reader = command.ExecuteReader())
                 {
-                    conn.Close();
-                }
-            }
+                    while (reader.Read())
+                    {
+                        list.Add(reader.GetString(0));
+                    }
 
+                    reader.Close();
+                }
+
+                return list;
+            });
 
         }
 
 
         public T QueryScalar<T>(string sql)
         {
-            using (var conn = _factory.Create())
+            return Execute(conn =>
             {
-                conn.Open();
-
-                try
+                using (var command = conn.CreateCommand())
                 {
-                    using (var command = conn.CreateCommand())
-                    {
-                        command.CommandText = sql;
-                        return (T)command.ExecuteScalar();
-                    }
+                    command.CommandText = sql;
+                    return (T)command.ExecuteScalar();
                 }
-                finally
-                {
-                    conn.Close();
-                }
-            }
-
-
+            });
         }
     }
 }
