@@ -54,7 +54,7 @@ namespace Marten.Testing.Linq
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
                 theSession.Query<Target>().Where(x => x.Number == 2).Single();
-            }).Message.ShouldBe("Sequence contains more than one element");
+            });
         }
 
         public void single_or_default_hit_with_more_than_one_match()
@@ -68,7 +68,7 @@ namespace Marten.Testing.Linq
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
                 theSession.Query<Target>().Where(x => x.Number == 2).SingleOrDefault();
-            }).Message.ShouldBe("Sequence contains more than one element");
+            });
         }
 
         public void single_miss()
@@ -82,7 +82,7 @@ namespace Marten.Testing.Linq
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
                 theSession.Query<Target>().Where(x => x.Number == 11).Single();
-            }).Message.ShouldBe("Sequence contains no elements");
+            });
         }
     }
 }

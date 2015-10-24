@@ -78,7 +78,7 @@ namespace Marten.Testing.Linq
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
                 theSession.Query<Target>().Where(x => x.Number == 11).First();
-            }).Message.ShouldBe("Sequence contains no elements");
+            });
         }
     }
 }
