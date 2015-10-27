@@ -1,5 +1,6 @@
 ﻿using System;
 using FubuCore;
+using Marten.Testing.Fixtures;
 
 namespace Marten.Testing.Documents
 {
@@ -17,6 +18,8 @@ namespace Marten.Testing.Documents
         {
             get { return "{0} {1}".ToFormat(FirstName, LastName); }
         }
+
+        public Address Address { get; set; }
 
         public Guid Id { get; set; }
     }

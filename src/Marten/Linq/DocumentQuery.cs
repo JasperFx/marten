@@ -75,9 +75,9 @@ namespace Marten.Linq
             return sql += " order by " + orders.Select(ToOrderClause).Join(", ");
         }
 
-        public static string ToOrderClause(Ordering clause)
+        public string ToOrderClause(Ordering clause)
         {
-            var locator = MartenExpressionParser.JsonLocator(clause.Expression);
+            var locator = MartenExpressionParser.JsonLocator(typeof(T), clause.Expression);
             return clause.OrderingDirection == OrderingDirection.Asc
                 ? locator
                 : locator + " desc";
@@ -89,8 +89,8 @@ namespace Marten.Linq
             if (wheres.Length == 0) return sql;
 
             var where = wheres.Length == 1
-                ? MartenExpressionParser.ParseWhereFragment(wheres.Single().Predicate)
-                : new CompoundWhereFragment("and", wheres);
+                ? MartenExpressionParser.ParseWhereFragment(typeof(T), wheres.Single().Predicate)
+                : new CompoundWhereFragment(typeof(T), "and", wheres);
 
 
             sql += " where " + where.ToSql(command);

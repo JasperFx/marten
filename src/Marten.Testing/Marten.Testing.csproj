@@ -56,6 +56,7 @@
     <Compile Include="Fixtures\Target.cs" />
     <Compile Include="Generation\SchemaBuilderTests.cs" />
     <Compile Include="Generation\TemplateReadingTests.cs" />
+    <Compile Include="Linq\deep_searches_Tests.cs" />
     <Compile Include="Linq\invoking_queryable_any_Tests.cs">
       <SubType>Code</SubType>
     </Compile>

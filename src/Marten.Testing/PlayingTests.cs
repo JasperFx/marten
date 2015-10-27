@@ -2,7 +2,9 @@
 using System.Diagnostics;
 using System.Linq;
 using Marten.Testing.Documents;
+using Marten.Testing.Fixtures;
 using Npgsql;
+using Shouldly;
 using StructureMap;
 
 namespace Marten.Testing
@@ -19,14 +21,11 @@ namespace Marten.Testing
                     
                     session.Store(new User {FirstName = "Han", LastName = "Solo"});
                     session.Store(new User {FirstName = "Luke", LastName = "Skywalker"});
-                    session.Store(new User { FirstName = "Max", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Max", LastName = "Miller", Address = new Address{City = "Austin"}});
                     session.SaveChanges();
 
-                    session.Query<User>().OrderBy(x => x.FirstName).Take(2).Skip(1)
-                        .ToArray().Each(x =>
-                        {
-                            Debug.WriteLine("{0} {1}", x.FirstName, x.LastName);
-                        });
+                    session.Query<User>().Single(x => x.Address.City == "Austin")
+                        .FirstName.ShouldBe("Max");
                 }
             }
         }

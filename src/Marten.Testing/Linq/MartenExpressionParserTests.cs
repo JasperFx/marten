@@ -21,7 +21,7 @@ namespace Marten.Testing.Linq
             var variable = Expression.Variable(typeof(User), "foo");
             var member = Expression.MakeMemberAccess(variable, ReflectionHelper.GetProperty<User>(x => x.FirstName));
 
-            MartenExpressionParser.JsonLocator(member)
+            MartenExpressionParser.JsonLocator(typeof(User), member)
                 .ShouldBe("data ->> 'FirstName'");
         }
     }
