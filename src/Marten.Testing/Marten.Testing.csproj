@@ -51,6 +51,7 @@
     <Compile Include="document_session_delete_a_single_document_Tests.cs" />
     <Compile Include="document_session_persist_and_load_single_documents_Tests.cs" />
     <Compile Include="Fixtures\LinqFixture.cs" />
+    <Compile Include="Fixtures\OrderingFixture.cs" />
     <Compile Include="Fixtures\ResultSet.cs" />
     <Compile Include="Fixtures\Target.cs" />
     <Compile Include="Generation\SchemaBuilderTests.cs" />

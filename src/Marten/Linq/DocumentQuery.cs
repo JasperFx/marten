@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Npgsql;
 using Remotion.Linq;
@@ -35,10 +37,27 @@ namespace Marten.Linq
             var sql = "select data from " + _tableName;
 
             sql = appendWhereClause(sql, command);
+            sql = appendOrderClause(sql);
 
             command.CommandText = sql;
 
             return command;
+        }
+
+        private string appendOrderClause(string sql)
+        {
+            var orders = _query.BodyClauses.OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
+            if (!orders.Any()) return sql;
+
+            return sql += " order by " + orders.Select(ToOrderClause).Join(", ");
+        }
+
+        public static string ToOrderClause(Ordering clause)
+        {
+            var locator = MartenExpressionParser.JsonLocator(clause.Expression);
+            return clause.OrderingDirection == OrderingDirection.Asc
+                ? locator
+                : locator + " desc";
         }
 
         private string appendWhereClause(string sql, NpgsqlCommand command)

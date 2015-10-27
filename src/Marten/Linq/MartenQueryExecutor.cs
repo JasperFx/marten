@@ -60,7 +60,7 @@ namespace Marten.Linq
         {
             var isFirst = queryModel.ResultOperators.OfType<FirstResultOperator>().Any();
 
-            // TODO -- optimize by returning the count here too?
+            // TODO -- optimize by using Top 1
             var cmd = BuildCommand<T>(queryModel);
             var all = _runner.QueryJson(cmd).ToArray();
 

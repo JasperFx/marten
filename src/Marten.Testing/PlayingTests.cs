@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Marten.Generation;
 using Marten.Testing.Documents;
-using Marten.Testing.Generation;
 using Npgsql;
-using Shouldly;
 using StructureMap;
 
 namespace Marten.Testing
@@ -20,24 +16,23 @@ namespace Marten.Testing
                 using (var session = container.GetInstance<IDocumentSession>())
                 {
                     session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
-                    session.Store(new User {FirstName = "Max", LastName = "Miller"});
+                    
                     session.Store(new User {FirstName = "Han", LastName = "Solo"});
+                    session.Store(new User {FirstName = "Luke", LastName = "Skywalker"});
+                    session.Store(new User { FirstName = "Max", LastName = "Miller" });
                     session.SaveChanges();
 
-                    session.Query<User>().Where(x => x.FirstName == "Han").Single()
-                        .LastName.ShouldBe("Solo");
-                    
-
-
+                    session.Query<User>().OrderBy(x => x.LastName).OrderByDescending(x => x.FirstName)
+                        .ToArray().Each(x =>
+                        {
+                            Debug.WriteLine("{0} {1}", x.FirstName, x.LastName);
+                        });
                 }
             }
-
-
         }
 
         public void try_it_out()
         {
-
             Debug.WriteLine(ConnectionSource.ConnectionString);
 
             using (var connection = new NpgsqlConnection(ConnectionSource.ConnectionString))
@@ -60,6 +55,5 @@ namespace Marten.Testing
                 connection.Close();
             }
         }
-
     }
 }
