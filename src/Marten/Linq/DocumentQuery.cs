@@ -5,6 +5,7 @@ using System.Linq;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
 {
@@ -36,12 +37,34 @@ namespace Marten.Linq
             var command = new NpgsqlCommand();
             var sql = "select data from " + _tableName;
 
+
+
+
             sql = appendWhereClause(sql, command);
             sql = appendOrderClause(sql);
+
+            sql = appendLimit(sql);
+            sql = appendOffset(sql);
 
             command.CommandText = sql;
 
             return command;
+        }
+
+        private string appendOffset(string sql)
+        {
+            var take =
+                _query.ResultOperators.OfType<SkipResultOperator>().OrderByDescending(x => x.Count).FirstOrDefault();
+
+            return take == null ? sql : sql + " OFFSET " + take.Count + " ";
+        }
+
+        private string appendLimit(string sql)
+        {
+            var take =
+                _query.ResultOperators.OfType<TakeResultOperator>().OrderByDescending(x => x.Count).FirstOrDefault();
+
+            return take == null ? sql : sql + " LIMIT " + take.Count + " ";
         }
 
         private string appendOrderClause(string sql)

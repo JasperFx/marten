@@ -22,7 +22,7 @@ namespace Marten.Testing
                     session.Store(new User { FirstName = "Max", LastName = "Miller" });
                     session.SaveChanges();
 
-                    session.Query<User>().OrderBy(x => x.LastName).OrderByDescending(x => x.FirstName)
+                    session.Query<User>().OrderBy(x => x.FirstName).Take(2).Skip(1)
                         .ToArray().Each(x =>
                         {
                             Debug.WriteLine("{0} {1}", x.FirstName, x.LastName);
