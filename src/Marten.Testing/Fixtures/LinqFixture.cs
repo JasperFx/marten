@@ -45,6 +45,8 @@ namespace Marten.Testing.Fixtures
             expression(x => x.String == "A" || x.Number == 1);
 
             expression(x => x.String.Contains("B"));
+            expression(x => x.String.StartsWith("Bar"), "x.String.StartsWith(\"Bar\")");
+            expression(x => x.String.EndsWith("Foo"), "x.String.EndsWith(\"Foo\")");
 
             expression(x => x.String == null);
 

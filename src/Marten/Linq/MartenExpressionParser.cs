@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using FubuCore;
+using FubuCore.Reflection;
 using Marten.Util;
 
 namespace Marten.Linq
@@ -11,7 +12,9 @@ namespace Marten.Linq
 
     public static class MartenExpressionParser
     {
-
+        private static readonly string CONTAINS = ReflectionHelper.GetMethod<string>(x => x.Contains("null")).Name;
+        private static readonly string STARTS_WITH = ReflectionHelper.GetMethod<string>(x => x.StartsWith("null")).Name;
+        private static readonly string ENDS_WITH = ReflectionHelper.GetMethod<string>(x => x.EndsWith("null")).Name;
 
         private static readonly IDictionary<ExpressionType, string> _operators = new Dictionary<ExpressionType, string>
         {
@@ -77,7 +80,9 @@ namespace Marten.Linq
 
         private static IWhereFragment GetMethodCall(Type rootType, MethodCallExpression expression)
         {
-            if (expression.Method.Name == "Contains")
+
+            // TODO -- generalize this mess
+            if (expression.Method.Name == CONTAINS)
             {
                 var @object = expression.Object;
                 if (@object.Type == typeof (string))
@@ -85,6 +90,28 @@ namespace Marten.Linq
                     var locator = JsonLocator(rootType, @object);
                     var value = Value(expression.Arguments.Single()).As<string>();
                     return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value + "%");
+                }
+            }
+
+            if (expression.Method.Name == STARTS_WITH)
+            {
+                var @object = expression.Object;
+                if (@object.Type == typeof(string))
+                {
+                    var locator = JsonLocator(rootType, @object);
+                    var value = Value(expression.Arguments.Single()).As<string>();
+                    return new WhereFragment("{0} like ?".ToFormat(locator), value + "%");
+                }
+            }
+
+            if (expression.Method.Name == ENDS_WITH)
+            {
+                var @object = expression.Object;
+                if (@object.Type == typeof(string))
+                {
+                    var locator = JsonLocator(rootType, @object);
+                    var value = Value(expression.Arguments.Single()).As<string>();
+                    return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value);
                 }
             }
 
