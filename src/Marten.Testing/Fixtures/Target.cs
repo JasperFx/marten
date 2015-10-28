@@ -32,6 +32,8 @@ namespace Marten.Testing.Fixtures
         public double Double { get; set; }
         public decimal Decimal { get; set; }
         public DateTime Date { get; set; }
+        public DateTimeOffset DateOffset { get; set; }
+
     }
 
     public class Address

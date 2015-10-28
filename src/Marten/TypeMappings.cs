@@ -14,7 +14,8 @@ namespace Marten
             {typeof(Boolean), "Boolean"},
             {typeof(double), "double precision"},
             {typeof(decimal), "decimal"},
-            {typeof(DateTime), "date"}
+            {typeof(DateTime), "date"},
+            {typeof(DateTimeOffset), "timestamp with time zone"}
         };
     }
 }
