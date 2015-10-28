@@ -1,7 +1,7 @@
 using Marten.Linq;
 using Marten.Schema;
 using Remotion.Linq.Parsing.Structure;
-using StructureMap;
+using StructureMap.Configuration.DSL;
 
 namespace Marten.Testing
 {

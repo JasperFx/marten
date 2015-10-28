@@ -44,7 +44,9 @@
     </Compile>
     <Compile Include="CommandRunner.cs" />
     <Compile Include="DocumentSession.cs" />
-    <Compile Include="Generation\GenerationClasses.cs" />
+    <Compile Include="Generation\SchemaBuilder.cs" />
+    <Compile Include="Generation\TableColumn.cs" />
+    <Compile Include="Generation\TableDefinition.cs" />
     <Compile Include="Generation\Templates\TemplateSource.cs" />
     <Compile Include="IConnectionFactory.cs" />
     <Compile Include="IDocumentSession.cs" />

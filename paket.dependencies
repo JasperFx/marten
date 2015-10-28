@@ -3,6 +3,7 @@ nuget Fixie
 nuget FubuCore
 nuget Newtonsoft.Json
 nuget Npgsql
+nuget Octokit
 nuget Remotion.Linq
 nuget Shouldly
 nuget Storyteller 3.0.0.280-alpha

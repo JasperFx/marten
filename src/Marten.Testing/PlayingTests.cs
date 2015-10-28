@@ -5,6 +5,7 @@ using System.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Npgsql;
+using Octokit;
 using Shouldly;
 using StructureMap;
 
@@ -60,5 +61,6 @@ namespace Marten.Testing
                 connection.Close();
             }
         }
+
     }
 }
