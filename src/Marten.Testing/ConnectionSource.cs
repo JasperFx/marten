@@ -2,6 +2,7 @@
 using System.IO;
 using FubuCore;
 using Marten.Generation;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Npgsql;
@@ -34,16 +35,12 @@ namespace Marten.Testing
 
         public static void CleanBasicDocuments()
         {
-            var runner = new CommandRunner(new ConnectionSource());
-                runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (User))));
-                runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (Issue))));
-                runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (Company))));
-                runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(SchemaBuilder.TableNameFor(typeof (Target))));
+            var cleaner = new DevelopmentDocumentCleaner(new ConnectionSource());
+            cleaner.CompletelyRemove(typeof(User));
+            cleaner.CompletelyRemove(typeof(Issue));
+            cleaner.CompletelyRemove(typeof(Company));
+            cleaner.CompletelyRemove(typeof(Target));
 
-                runner.Execute("DROP FUNCTION if exists {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(User))));
-                runner.Execute("DROP FUNCTION if exists {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Issue))));
-                runner.Execute("DROP FUNCTION if exists {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Company))));
-                runner.Execute("DROP FUNCTION if exists {0}(docId UUID, doc JSON)".ToFormat(SchemaBuilder.UpsertNameFor(typeof(Target))));
         }
     }
 }

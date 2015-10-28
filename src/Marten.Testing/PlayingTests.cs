@@ -1,6 +1,11 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Npgsql;
+using Shouldly;
 using StructureMap;
 
 namespace Marten.Testing
@@ -13,12 +18,14 @@ namespace Marten.Testing
             {
                 using (var session = container.GetInstance<IDocumentSession>())
                 {
-                    session.Store(new Target {Number = 1, NumberArray = new[] {1, 2, 3}});
-                    session.Store(new Target {Number = 2, NumberArray = new[] {4, 5, 6}});
-                    session.Store(new Target {Number = 3, NumberArray = new[] {2, 3, 4}});
-                    session.Store(new Target {Number = 4});
+                    session.Store(new Target{Number = 1, NumberArray = new []{1, 2, 3}});
+                    session.Store(new Target{Number = 2, NumberArray = new []{4, 5, 6}});
+                    session.Store(new Target{Number = 3, NumberArray = new []{2, 3, 4}});
+                    session.Store(new Target{Number = 4});
 
                     session.SaveChanges();
+
+                    //session.Query<Target>("select data from mt_doc_target, jsonb_array_elements(data -> 'NumberArray') numbers where numbers @> ARRAY[3]").Each(x => Debug.WriteLine(x.Number));
 
                     /*
                     session.Query<Target>().Where(x => x.NumberArray.Contains(3)).ToArray()
