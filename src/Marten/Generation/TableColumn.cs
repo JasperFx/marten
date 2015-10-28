@@ -4,6 +4,7 @@ namespace Marten.Generation
     {
         public string Name;
         public string Type;
+        public string Directive;
 
         public TableColumn(string name, string type)
         {

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using FubuCore;
 
 namespace Marten.Generation
 {
@@ -14,6 +15,9 @@ namespace Marten.Generation
         {
             Name = name;
             PrimaryKey = primaryKey;
+            PrimaryKey.Directive = "CONSTRAINT pk_{0} PRIMARY KEY".ToFormat(name);
+
+            Columns.Add(primaryKey);
         }
 
         public string Name { get; set; }
@@ -25,12 +29,9 @@ namespace Marten.Generation
 
             var length = Columns.Select(x => x.Name.Length).Max() + 4;
 
-            writer.WriteLine("    {0}{1} CONSTRAINT pk_{2} PRIMARY KEY,", PrimaryKey.Name.PadRight(length),
-                PrimaryKey.Type, Name);
-
             Columns.Each(col =>
             {
-                writer.Write("    {0}{1}", col.Name.PadRight(length), col.Type);
+                writer.Write("    {0}{1} {2}", col.Name.PadRight(length), col.Type, col.Directive);
                 if (col == Columns.Last())
                 {
                     writer.WriteLine();
