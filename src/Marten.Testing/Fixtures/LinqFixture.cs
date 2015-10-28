@@ -48,6 +48,16 @@ namespace Marten.Testing.Fixtures
 
             expression(x => x.String == null);
 
+            expression(x => x.Flag);
+            expression(x => x.Flag == true);
+            expression(x => !x.Flag, "!Flag");
+            expression(x => x.Flag == false);
+
+            expression(x => x.Inner.Flag, "Inner.Flag");
+            expression(x => !x.Inner.Flag, "!Inner.Flag");
+            expression(x => x.Inner.Flag == true);
+            expression(x => x.Inner.Flag == false);
+
             AddSelectionValues("Expressions", _wheres.Keys.ToArray());
         }
 
@@ -62,9 +72,12 @@ namespace Marten.Testing.Fixtures
 
         }
 
-        private void expression(Expression<Func<Target, bool>> where)
+        private void expression(Expression<Func<Target, bool>> where, string key = null)
         {
-            var key = @where.As<LambdaExpression>().Body.ToString().TrimStart('(').TrimEnd(')').Replace(") AndAlso (", " && ").Replace(") OrElse (", " || ");
+            if (key.IsEmpty())
+            {
+                key = @where.As<LambdaExpression>().Body.ToString().TrimStart('(').TrimEnd(')').Replace(") AndAlso (", " && ").Replace(") OrElse (", " || ");
+            }
             _wheres.Add(key, where);
         }
 
@@ -86,6 +99,18 @@ namespace Marten.Testing.Fixtures
                 _.SetProperty(x => x.Number).DefaultValue("1");
                 _.SetProperty(x => x.Long).DefaultValue("1");
                 _.SetProperty(x => x.String).DefaultValue("Max");
+                _.SetProperty(x => x.Flag).DefaultValue("false");
+                _.WithInput<bool>("InnerFlag").Configure((target, flag) =>
+                {
+                    if (target.Inner == null)
+                    {
+                        target.Inner = new Target();
+                    }
+
+                    target.Inner.Flag = flag;
+
+
+                });
 
                 _.Do(t => _session.Store(t));
             }).AsTable("If the documents are").After(() => _session.SaveChanges());

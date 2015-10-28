@@ -17,16 +17,15 @@ namespace Marten.Testing
             {
                 using (var session = container.GetInstance<IDocumentSession>())
                 {
-                    session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
-                    session.Store(new User {FirstName = null, LastName = "Blank"});
+                    session.Store(new User {FirstName = "Jeremy", LastName = "Miller", Internal = true});
                     
                     session.Store(new User {FirstName = "Han", LastName = "Solo"});
                     session.Store(new User {FirstName = "Luke", LastName = "Skywalker"});
                     session.Store(new User { FirstName = "Max", LastName = "Miller", Address = new Address{City = "Austin"}});
                     session.SaveChanges();
 
-                    session.Query<User>().Single(x => x.FirstName == null)
-                        .LastName.ShouldBe("Blank");
+                    session.Query<User>().Where(x => !x.Internal)
+                        .ToArray().Count().ShouldBe(3);
                 }
             }
         }

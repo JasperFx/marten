@@ -26,6 +26,8 @@ namespace Marten.Testing.Fixtures
         public Target Inner { get; set; }
 
         public Colors Color { get; set; }
+
+        public bool Flag { get; set; }
     }
 
     public class Address
@@ -48,5 +50,7 @@ namespace Marten.Testing.Fixtures
         public string StateOrProvince { get; set; }
         public string Country { get; set; }
         public string PostalCode { get; set; }
+
+        public bool Primary { get; set; }
     }
 }

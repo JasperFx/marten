@@ -49,6 +49,29 @@ namespace Marten.Linq
                 return GetMethodCall(rootType, expression.As<MethodCallExpression>());
             }
 
+            if (expression is MemberExpression && expression.Type == typeof(bool))
+            {
+                var locator = JsonLocator(rootType, expression.As<MemberExpression>());
+                return new WhereFragment("({0})::Boolean = True".ToFormat(locator), true);
+            }
+
+            if (expression.NodeType == ExpressionType.Not)
+            {
+                return GetNotWhereFragment(rootType, expression.As<UnaryExpression>().Operand);
+            }
+
+
+            throw new NotSupportedException();
+        }
+
+        private static IWhereFragment GetNotWhereFragment(Type rootType, Expression expression)
+        {
+            if (expression is MemberExpression && expression.Type == typeof(bool))
+            {
+                var locator = JsonLocator(rootType, expression.As<MemberExpression>());
+                return new WhereFragment("({0})::Boolean = False".ToFormat(locator));
+            }
+
             throw new NotSupportedException();
         }
 
