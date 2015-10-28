@@ -13,7 +13,8 @@ namespace Marten
             {typeof(string), "varchar"},
             {typeof(Boolean), "Boolean"},
             {typeof(double), "double precision"},
-            {typeof(decimal), "decimal"}
+            {typeof(decimal), "decimal"},
+            {typeof(DateTime), "date"}
         };
     }
 }

@@ -1,0 +1,24 @@
+<Spec id="78342f05-736a-45db-b850-a5bc8f33976d" maxRetries="0" tags="" lifecycle="Regression" name="DateTime querying" lastUpdated="Wednesday, October 28, 2015" expirationPeriod="0">
+  <Linq id="2b1b63eb-e896-4e5f-bb74-4688934b4ccc">
+    <TheDocumentsAre>
+      <Rows id="97fc95a7-33f2-4fd3-a795-4cfddfbfe4d8" active-cells="Number=False,Long=False,String=False,Flag=False,Double=False,Decimal=False,InnerFlag=False">
+        <TheDocumentsAre-row Name="A" Date="TODAY" />
+        <TheDocumentsAre-row Name="B" Date="TODAY+1" />
+        <TheDocumentsAre-row Name="C" Date="TODAY+2" />
+        <TheDocumentsAre-row Name="D" Date="TODAY-1" />
+        <TheDocumentsAre-row Name="E" Date="TODAY-2" />
+        <TheDocumentsAre-row Name="F" Date="TODAY" />
+      </Rows>
+    </TheDocumentsAre>
+    <ExecutingQuery>
+      <table id="c5d372d5-2c12-4107-82ab-27839282af06">
+        <ExecutingQuery-row WhereClause="x.Date == Today" Results="A, F" />
+        <ExecutingQuery-row WhereClause="x.Date != Today" Results="B, C, D, E" />
+        <ExecutingQuery-row WhereClause="x.Date &gt; Today" Results="B, C" />
+        <ExecutingQuery-row WhereClause="x.Date &lt; Today" Results="D, E" />
+        <ExecutingQuery-row WhereClause="x.Date &gt;= Today" Results="A, B, C, F" />
+        <ExecutingQuery-row WhereClause="x.Date &lt;= Today" Results="A, D, E, F" />
+      </table>
+    </ExecutingQuery>
+  </Linq>
+</Spec>

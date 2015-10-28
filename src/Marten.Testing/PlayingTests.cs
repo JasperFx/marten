@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Marten.Testing.Documents;
@@ -17,15 +18,18 @@ namespace Marten.Testing
             {
                 using (var session = container.GetInstance<IDocumentSession>())
                 {
-                    session.Store(new User {FirstName = "Jeremy", LastName = "Miller", Internal = true});
-                    
-                    session.Store(new User {FirstName = "Han", LastName = "Solo"});
-                    session.Store(new User {FirstName = "Luke", LastName = "Skywalker"});
-                    session.Store(new User { FirstName = "Max", LastName = "Miller", Address = new Address{City = "Austin"}});
+                    session.Store(new Target{Number = 1, Date = DateTime.Today});
+                    session.Store(new Target{Number = 2, Date = DateTime.Today.AddDays(1)});
+                    session.Store(new Target{Number = 3, Date = DateTime.Today.AddDays(2)});
+                    session.Store(new Target{Number = 4, Date = DateTime.Today});
+                    session.Store(new Target{Number = 5, Date = DateTime.Today.AddDays(1)});
+
                     session.SaveChanges();
 
-                    session.Query<User>().Where(x => !x.Internal)
-                        .ToArray().Count().ShouldBe(3);
+                    var today = DateTime.Today;
+                    session.Query<Target>().Where(x => x.Date == today).ToArray()
+                        .Select(x => x.Number)
+                        .ShouldHaveTheSameElementsAs(1, 4);
                 }
             }
         }

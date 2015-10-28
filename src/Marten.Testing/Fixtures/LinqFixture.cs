@@ -72,6 +72,15 @@ namespace Marten.Testing.Fixtures
             expression(x => x.Decimal <= 10);
             expression(x => x.Decimal >= 10);
 
+            var today = DateTime.Today;
+
+            expression(x => x.Date == today, "x.Date == Today");
+            expression(x => x.Date != today, "x.Date != Today");
+            expression(x => x.Date > today, "x.Date > Today");
+            expression(x => x.Date < today, "x.Date < Today");
+            expression(x => x.Date >= today, "x.Date >= Today");
+            expression(x => x.Date <= today, "x.Date <= Today");
+
 
             AddSelectionValues("Expressions", _wheres.Keys.ToArray());
         }
@@ -117,6 +126,7 @@ namespace Marten.Testing.Fixtures
                 _.SetProperty(x => x.Flag).DefaultValue("false");
                 _.SetProperty(x => x.Double).DefaultValue("1");
                 _.SetProperty(x => x.Decimal).DefaultValue("1");
+                _.SetProperty(x => x.Date).DefaultValue("TODAY");
 
                 _.WithInput<bool>("InnerFlag").Configure((target, flag) =>
                 {
