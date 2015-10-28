@@ -58,6 +58,21 @@ namespace Marten.Testing.Fixtures
             expression(x => x.Inner.Flag == true);
             expression(x => x.Inner.Flag == false);
 
+            expression(x => x.Double == 10);
+            expression(x => x.Double != 10);
+            expression(x => x.Double > 10);
+            expression(x => x.Double < 10);
+            expression(x => x.Double <= 10);
+            expression(x => x.Double >= 10);
+
+            expression(x => x.Decimal == 10);
+            expression(x => x.Decimal != 10);
+            expression(x => x.Decimal > 10);
+            expression(x => x.Decimal < 10);
+            expression(x => x.Decimal <= 10);
+            expression(x => x.Decimal >= 10);
+
+
             AddSelectionValues("Expressions", _wheres.Keys.ToArray());
         }
 
@@ -100,6 +115,9 @@ namespace Marten.Testing.Fixtures
                 _.SetProperty(x => x.Long).DefaultValue("1");
                 _.SetProperty(x => x.String).DefaultValue("Max");
                 _.SetProperty(x => x.Flag).DefaultValue("false");
+                _.SetProperty(x => x.Double).DefaultValue("1");
+                _.SetProperty(x => x.Decimal).DefaultValue("1");
+
                 _.WithInput<bool>("InnerFlag").Configure((target, flag) =>
                 {
                     if (target.Inner == null)
@@ -117,7 +135,7 @@ namespace Marten.Testing.Fixtures
         }
 
         [ExposeAsTable("Executing queries")]
-        public void ExecutingQuery([SelectionList("Expressions")]string WhereClause, out ResultSet Results)
+        public void ExecutingQuery([SelectionList("Expressions"), Header("Where Clause")]string WhereClause, out ResultSet Results)
         {
             var expression = _wheres[WhereClause];
             var queryable = _session.Query<Target>().Where(expression);

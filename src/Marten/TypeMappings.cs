@@ -11,7 +11,9 @@ namespace Marten
             {typeof (long), "bigint"},
             {typeof(Guid), "uuid"},
             {typeof(string), "varchar"},
-            {typeof(Boolean), "Boolean"}
+            {typeof(Boolean), "Boolean"},
+            {typeof(double), "double precision"},
+            {typeof(decimal), "decimal"}
         };
     }
 }
