@@ -25,6 +25,11 @@ namespace Marten.Linq
 
         public static string ApplyCastToLocator(this string locator, Type memberType)
         {
+            if (memberType.IsEnum)
+            {
+                return "({0})::int".ToFormat(locator);
+            }
+
             if (!TypeMappings.PgTypes.ContainsKey(memberType))
                 throw new ArgumentOutOfRangeException("memberType",
                     "There is not Postgresql cast for member type " + memberType.FullName);
@@ -89,7 +94,14 @@ namespace Marten.Linq
         {
             var jsonLocator = JsonLocator(rootType, binary.Left);
             // TODO -- handle NULL differently I'd imagine
+
             var value = Value(binary.Right);
+
+            // Correct to the string value for enumerations
+            if (value != null && value.GetType().IsEnum)
+            {
+                value = value.ToString();
+            }
 
             var op = _operators[binary.NodeType];
             return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
@@ -115,6 +127,21 @@ namespace Marten.Linq
                 return JsonLocator(rootType, memberExpression);
             }
 
+            if (expression is UnaryExpression)
+            {
+                return JsonLocator(rootType, expression.As<UnaryExpression>());
+            }
+
+            throw new NotSupportedException();
+        }
+
+        public static string JsonLocator(Type rootType, UnaryExpression expression)
+        {
+            if (expression.NodeType == ExpressionType.Convert)
+            {
+                return JsonLocator(rootType, expression.Operand);
+            }
+
             throw new NotSupportedException();
         }
 
@@ -132,9 +159,11 @@ namespace Marten.Linq
 
 
             var locator = "data{0}".ToFormat(path).TrimEnd();
-            
 
-            return memberType == typeof (string) ? locator : locator.ApplyCastToLocator(memberType);
+
+            if (memberType == typeof (string)) return locator;
+
+            return locator.ApplyCastToLocator(memberType);
         }
     }
 }

@@ -1,9 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using FubuCore;
 
 namespace Marten.Testing.Fixtures
 {
+    public enum Colors
+    {
+        Red,
+        Blue,
+        Green
+    }
+
     public class Target
     {
         public Target()
@@ -18,6 +24,8 @@ namespace Marten.Testing.Fixtures
         public string String { get; set; }
 
         public Target Inner { get; set; }
+
+        public Colors Color { get; set; }
     }
 
     public class Address

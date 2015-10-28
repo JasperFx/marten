@@ -83,7 +83,8 @@ namespace Marten
                         var docType = o.GetType();
                         var storage = _schema.StorageFor(docType);
 
-                        using (var command = storage.UpsertCommand(o, _serializer.ToJson(o)))
+                        var json = _serializer.ToJson(o);
+                        using (var command = storage.UpsertCommand(o, json))
                         {
                             command.Connection = conn;
                             command.Transaction = tx;
