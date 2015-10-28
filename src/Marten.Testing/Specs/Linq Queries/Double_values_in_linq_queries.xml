@@ -1,4 +1,4 @@
-<Spec id="5f577cd7-f64e-4c1f-a2b4-848462ee97ac" maxRetries="0" tags="" lifecycle="Acceptance" name="Double values in linq queries" lastUpdated="Wednesday, October 28, 2015" expirationPeriod="0">
+<Spec id="5f577cd7-f64e-4c1f-a2b4-848462ee97ac" maxRetries="0" tags="" lifecycle="Regression" name="Double values in linq queries" lastUpdated="Wednesday, October 28, 2015" expirationPeriod="0">
   <Linq id="0ebba344-69dd-484f-9549-123d037ba63f">
     <TheDocumentsAre>
       <Rows id="442ed692-a14e-4c9f-a2ea-8dfe4c547a1a" active-cells="InnerFlag=False,Flag=False,String=False,Long=False,Number=False">
