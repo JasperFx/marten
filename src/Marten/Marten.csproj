@@ -63,9 +63,10 @@
     <Compile Include="Schema\DevelopmentDocumentSchema.cs" />
     <Compile Include="Schema\DocumentStorage.cs" />
     <Compile Include="Schema\DocumentStorageBuilder.cs" />
+    <Compile Include="Schema\IDocumentCleaner.cs" />
     <Compile Include="Schema\IDocumentSchema.cs" />
     <Compile Include="Schema\IDocumentStorage.cs" />
-    <Compile Include="Schema\SchemaClasses.cs" />
+    <Compile Include="Schema\DevelopmentDocumentCleaner.cs" />
     <Compile Include="SerializerExtensions.cs" />
     <Compile Include="TypeMappings.cs" />
     <Compile Include="Util\CommandExtensions.cs" />

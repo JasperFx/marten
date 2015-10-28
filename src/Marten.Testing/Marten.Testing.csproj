@@ -80,6 +80,7 @@
     <Compile Include="PlayingTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="query_by_sql_where_clause_Tests.cs" />
+    <Compile Include="Schema\DevelopmentDocumentCleanerTests.cs" />
     <Compile Include="Schema\DevelopmentDocumentSchemaTests.cs" />
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />

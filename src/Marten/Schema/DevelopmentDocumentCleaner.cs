@@ -6,15 +6,6 @@ using Npgsql;
 
 namespace Marten.Schema
 {
-    public interface IDocumentCleaner
-    {
-        void AllDocuments();
-        void DocumentsFor(Type documentType);
-        void DocumentsExcept(params Type[] documentTypes);
-
-        void CompletelyRemove(Type documentType);
-    }
-
     public class DevelopmentDocumentCleaner : IDocumentCleaner
     {
         private readonly CommandRunner _runner;
