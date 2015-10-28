@@ -93,14 +93,13 @@ namespace Marten.Linq
         private static IWhereFragment buildSimpleWhereClause(Type rootType, BinaryExpression binary)
         {
             var jsonLocator = JsonLocator(rootType, binary.Left);
-            // TODO -- handle NULL differently I'd imagine
+            
 
             var value = Value(binary.Right);
 
-            // Correct to the string value for enumerations
-            if (value != null && value.GetType().IsEnum)
+            if (value == null)
             {
-                value = value.ToString();
+                return new WhereFragment("{0} is null".ToFormat(jsonLocator));
             }
 
             var op = _operators[binary.NodeType];

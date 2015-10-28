@@ -46,6 +46,8 @@ namespace Marten.Testing.Fixtures
 
             expression(x => x.String.Contains("B"));
 
+            expression(x => x.String == null);
+
             AddSelectionValues("Expressions", _wheres.Keys.ToArray());
         }
 
