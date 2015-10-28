@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using Marten.Testing.Documents;
+﻿using System.Diagnostics;
 using Marten.Testing.Fixtures;
 using Npgsql;
-using Shouldly;
 using StructureMap;
 
 namespace Marten.Testing
@@ -18,18 +13,18 @@ namespace Marten.Testing
             {
                 using (var session = container.GetInstance<IDocumentSession>())
                 {
-                    session.Store(new Target{Number = 1, Date = DateTime.Today});
-                    session.Store(new Target{Number = 2, Date = DateTime.Today.AddDays(1)});
-                    session.Store(new Target{Number = 3, Date = DateTime.Today.AddDays(2)});
-                    session.Store(new Target{Number = 4, Date = DateTime.Today});
-                    session.Store(new Target{Number = 5, Date = DateTime.Today.AddDays(1)});
+                    session.Store(new Target {Number = 1, NumberArray = new[] {1, 2, 3}});
+                    session.Store(new Target {Number = 2, NumberArray = new[] {4, 5, 6}});
+                    session.Store(new Target {Number = 3, NumberArray = new[] {2, 3, 4}});
+                    session.Store(new Target {Number = 4});
 
                     session.SaveChanges();
 
-                    var today = DateTime.Today;
-                    session.Query<Target>().Where(x => x.Date == today).ToArray()
+                    /*
+                    session.Query<Target>().Where(x => x.NumberArray.Contains(3)).ToArray()
                         .Select(x => x.Number)
-                        .ShouldHaveTheSameElementsAs(1, 4);
+                        .ShouldHaveTheSameElementsAs(1, 3);
+                     */
                 }
             }
         }

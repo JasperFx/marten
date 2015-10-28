@@ -34,7 +34,7 @@ namespace Marten
 
         IQueryable<T> Query<T>();
 
-        IEnumerable<T> Query<T>(string @where, params object[] parameters);
+        IEnumerable<T> Query<T>(string sql, params object[] parameters);
     }
 
     public interface ILoadByKeys<out TDoc>

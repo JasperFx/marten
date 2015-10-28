@@ -119,10 +119,15 @@ namespace Marten
             return new MartenQueryable<T>(_parser, _executor);
         }
 
-        public IEnumerable<T> Query<T>(string @where, params object[] parameters)
+        public IEnumerable<T> Query<T>(string sql, params object[] parameters)
         {
-            var tableName = _schema.StorageFor(typeof (T)).TableName;
-            var sql = "select data from {0} {1}".ToFormat(tableName, @where);
+            if (!sql.Contains("select"))
+            {
+                var tableName = _schema.StorageFor(typeof(T)).TableName;
+                sql = "select data from {0} {1}".ToFormat(tableName, sql);
+            }
+
+
             var cmd = new NpgsqlCommand();
 
             parameters.Each(x =>

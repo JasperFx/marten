@@ -7,7 +7,7 @@ namespace Marten
     {
         private readonly JsonSerializer _serializer = new JsonSerializer
         {
-            TypeNameHandling = TypeNameHandling.All
+            TypeNameHandling = TypeNameHandling.Auto
         };
 
         public string ToJson(object document)

@@ -7,6 +7,23 @@ namespace Marten.Testing
 {
     public class query_by_sql_where_clause_Tests
     {
+        public void query_with_select_in_query()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                using (var session = container.GetInstance<IDocumentSession>())
+                {
+                    var u = new User { FirstName = "Jeremy", LastName = "Miller" };
+                    session.Store(u);
+                    session.SaveChanges();
+
+                    var user = session.Query<User>("select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'").Single();
+                    user.LastName.ShouldBe("Miller");
+                    user.Id.ShouldBe(u.Id);
+                }
+            }
+        }
+
         public void query_for_single_document()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())

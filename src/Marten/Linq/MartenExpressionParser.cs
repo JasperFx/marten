@@ -85,6 +85,7 @@ namespace Marten.Linq
             if (expression.Method.Name == CONTAINS)
             {
                 var @object = expression.Object;
+
                 if (@object.Type == typeof (string))
                 {
                     var locator = JsonLocator(rootType, @object);
