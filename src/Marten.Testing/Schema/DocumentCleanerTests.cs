@@ -69,7 +69,7 @@ namespace Marten.Testing.Schema
 
                 session.SaveChanges();
 
-                var schema = container.GetInstance<Marten.Schema.DevelopmentDocumentSchema>();
+                var schema = container.GetInstance<Marten.Schema.DocumentSchema>();
                 schema.DocumentTables().Contains(SchemaBuilder.TableNameFor(typeof(Target)))
                     .ShouldBeTrue();
 
@@ -94,7 +94,7 @@ namespace Marten.Testing.Schema
 
                 session.SaveChanges();
 
-                var schema = container.GetInstance<DevelopmentDocumentSchema>();
+                var schema = container.GetInstance<DocumentSchema>();
                 
                 schema.SchemaFunctionNames().Contains(SchemaBuilder.UpsertNameFor(typeof(Target)))
                     .ShouldBeTrue();
@@ -127,7 +127,7 @@ namespace Marten.Testing.Schema
 
                 cleaner.CompletelyRemoveAll();
 
-                var runner = container.GetInstance<DevelopmentDocumentSchema>();
+                var runner = container.GetInstance<DocumentSchema>();
 
                 runner.DocumentTables().Any().ShouldBeFalse();
                 runner.SchemaFunctionNames().Any().ShouldBeFalse();

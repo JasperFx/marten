@@ -8,13 +8,15 @@ using StructureMap;
 
 namespace Marten.Testing.Schema
 {
-    public class DevelopmentDocumentSchemaTests : IDisposable
+    public class DocumentSchemaTests : IDisposable
     {
-        private readonly Marten.Schema.DevelopmentDocumentSchema _schema = new Marten.Schema.DevelopmentDocumentSchema(new ConnectionSource());
+        private readonly DocumentSchema _schema;
+        private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
 
-        public DevelopmentDocumentSchemaTests()
+        public DocumentSchemaTests()
         {
             ConnectionSource.CleanBasicDocuments();
+            _schema = _container.GetInstance<DocumentSchema>();
         }
 
         public void Dispose()
@@ -47,7 +49,7 @@ namespace Marten.Testing.Schema
             _schema.StorageFor(typeof (Issue)).ShouldNotBeNull();
             _schema.StorageFor(typeof (Company)).ShouldNotBeNull();
 
-            var schema = new Marten.Schema.DevelopmentDocumentSchema(new ConnectionSource());
+            var schema = new DocumentSchema(new ConnectionSource(), new DevelopmentSchemaCreation(new ConnectionSource()));
             var tables = schema.SchemaTableNames();
             tables.ShouldContain(SchemaBuilder.TableNameFor(typeof (User)).ToLower());
             tables.ShouldContain(SchemaBuilder.TableNameFor(typeof (Issue)).ToLower());

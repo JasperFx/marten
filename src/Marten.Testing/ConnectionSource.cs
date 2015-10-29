@@ -6,6 +6,7 @@ using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Npgsql;
+using StructureMap;
 
 namespace Marten.Testing
 {
@@ -35,11 +36,13 @@ namespace Marten.Testing
 
         public static void CleanBasicDocuments()
         {
-            var cleaner = new DocumentCleaner(new ConnectionSource(), new Marten.Schema.DevelopmentDocumentSchema(new ConnectionSource()));
-            cleaner.CompletelyRemove(typeof(User));
-            cleaner.CompletelyRemove(typeof(Issue));
-            cleaner.CompletelyRemove(typeof(Company));
-            cleaner.CompletelyRemove(typeof(Target));
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                var cleaner = container.GetInstance<DocumentCleaner>();
+
+                cleaner.CompletelyRemoveAll();
+            }
+
 
         }
     }

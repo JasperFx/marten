@@ -63,11 +63,13 @@
     <Compile Include="Linq\MartenQueryExecutor.cs" />
     <Compile Include="Linq\WhereFragment.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Schema\DevelopmentDocumentSchema.cs" />
+    <Compile Include="Schema\DevelopmentSchemaCreation.cs" />
+    <Compile Include="Schema\DocumentSchema.cs" />
     <Compile Include="Schema\DocumentStorage.cs" />
     <Compile Include="Schema\DocumentStorageBuilder.cs" />
     <Compile Include="Schema\IDocumentCleaner.cs" />
     <Compile Include="Schema\IDocumentSchema.cs" />
+    <Compile Include="Schema\IDocumentSchemaCreation.cs" />
     <Compile Include="Schema\IDocumentStorage.cs" />
     <Compile Include="Schema\DocumentCleaner.cs" />
     <Compile Include="SerializerExtensions.cs" />

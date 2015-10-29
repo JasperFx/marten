@@ -3,17 +3,18 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using Marten.Generation;
 
 namespace Marten.Schema
 {
-    public class DevelopmentDocumentSchema : IDocumentSchema, IDisposable
+    public class DocumentSchema : IDocumentSchema, IDisposable
     {
+        private readonly IDocumentSchemaCreation _creation;
         private readonly CommandRunner _runner;
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes = new ConcurrentDictionary<Type, IDocumentStorage>(); 
 
-        public DevelopmentDocumentSchema(IConnectionFactory connections)
+        public DocumentSchema(IConnectionFactory connections, IDocumentSchemaCreation creation)
         {
+            _creation = creation;
             _runner = new CommandRunner(connections);
         }
 
@@ -25,19 +26,11 @@ namespace Marten.Schema
 
                 if (!DocumentTables().Contains(storage.TableName))
                 {
-                    buildSchemaObjectsForDocumentType(storage);
+                    _creation.CreateSchema(storage);
                 }
 
                 return storage;
             });
-        }
-
-        private void buildSchemaObjectsForDocumentType(IDocumentStorage storage)
-        {
-            var builder = new SchemaBuilder();
-            storage.InitializeSchema(builder);
-
-            _runner.Execute(builder.ToSql());
         }
 
         public IEnumerable<string> SchemaTableNames()

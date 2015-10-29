@@ -10,9 +10,10 @@ namespace Marten.Testing
         public DevelopmentModeRegistry()
         {
             For<IConnectionFactory>().Use<ConnectionSource>();
-            ForSingletonOf<IDocumentSchema>().Use<Marten.Schema.DevelopmentDocumentSchema>();
+            ForSingletonOf<IDocumentSchema>().Use<Marten.Schema.DocumentSchema>();
             For<IDocumentSession>().Use<DocumentSession>();
             For<ISerializer>().Use<JsonNetSerializer>();
+            For<IDocumentSchemaCreation>().Use<DevelopmentSchemaCreation>();
 
             For<IMartenQueryExecutor>().Use<MartenQueryExecutor>();
 
