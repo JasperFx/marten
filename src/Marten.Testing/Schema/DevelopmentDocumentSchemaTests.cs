@@ -8,7 +8,7 @@ namespace Marten.Testing.Schema
 {
     public class DevelopmentDocumentSchemaTests : IDisposable
     {
-        private readonly DevelopmentDocumentSchema _schema = new DevelopmentDocumentSchema(new ConnectionSource());
+        private readonly Marten.Schema.DevelopmentDocumentSchema _schema = new Marten.Schema.DevelopmentDocumentSchema(new ConnectionSource());
 
         public DevelopmentDocumentSchemaTests()
         {
@@ -30,14 +30,14 @@ namespace Marten.Testing.Schema
         public void caches_storage_for_a_document_type()
         {
             _schema.StorageFor(typeof (User))
-                .ShouldBeSameAs(_schema.StorageFor(typeof(User)));
+                .ShouldBeSameAs(_schema.StorageFor(typeof (User)));
 
-            _schema.StorageFor(typeof(Issue))
-                .ShouldBeSameAs(_schema.StorageFor(typeof(Issue)));
+            _schema.StorageFor(typeof (Issue))
+                .ShouldBeSameAs(_schema.StorageFor(typeof (Issue)));
 
-            _schema.StorageFor(typeof(Company))
-                .ShouldBeSameAs(_schema.StorageFor(typeof(Company)));
-        }  
+            _schema.StorageFor(typeof (Company))
+                .ShouldBeSameAs(_schema.StorageFor(typeof (Company)));
+        }
 
         public void builds_schema_objects_on_the_fly_as_needed()
         {
@@ -45,16 +45,16 @@ namespace Marten.Testing.Schema
             _schema.StorageFor(typeof (Issue)).ShouldNotBeNull();
             _schema.StorageFor(typeof (Company)).ShouldNotBeNull();
 
-            var runner = new CommandRunner(new ConnectionSource());
-                var tables = runner.SchemaTableNames();
-                tables.ShouldContain(SchemaBuilder.TableNameFor(typeof(User)).ToLower());
-                tables.ShouldContain(SchemaBuilder.TableNameFor(typeof(Issue)).ToLower());
-                tables.ShouldContain(SchemaBuilder.TableNameFor(typeof(Company)).ToLower());
+            var schema = new Marten.Schema.DevelopmentDocumentSchema(new ConnectionSource());
+            var tables = schema.SchemaTableNames();
+            tables.ShouldContain(SchemaBuilder.TableNameFor(typeof (User)).ToLower());
+            tables.ShouldContain(SchemaBuilder.TableNameFor(typeof (Issue)).ToLower());
+            tables.ShouldContain(SchemaBuilder.TableNameFor(typeof (Company)).ToLower());
 
-                var functions = runner.SchemaFunctionNames();
-                functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof(User)).ToLower());
-                functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof(Issue)).ToLower());
-                functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof(Company)).ToLower());
+            var functions = schema.SchemaFunctionNames();
+            functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof (User)).ToLower());
+            functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof (Issue)).ToLower());
+            functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof (Company)).ToLower());
         }
     }
 }

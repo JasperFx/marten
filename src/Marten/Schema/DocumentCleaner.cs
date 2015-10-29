@@ -10,16 +10,18 @@ namespace Marten.Schema
 {
     public class DocumentCleaner : IDocumentCleaner
     {
+        private readonly IDocumentSchema _schema;
         private readonly CommandRunner _runner;
 
-        public DocumentCleaner(IConnectionFactory factory)
+        public DocumentCleaner(IConnectionFactory factory, IDocumentSchema schema)
         {
+            _schema = schema;
             _runner = new CommandRunner(factory);
         }
 
         public void DeleteAllDocuments()
         {
-            _runner.DocumentTables().Each(truncateTable);
+            _schema.DocumentTables().Each(truncateTable);
         }
 
         public void DocumentsFor(Type documentType)
@@ -38,7 +40,7 @@ namespace Marten.Schema
         public void DeleteDocumentsExcept(params Type[] documentTypes)
         {
             var exemptedTables = documentTypes.Select(SchemaBuilder.TableNameFor).ToArray();
-            _runner.DocumentTables().Where(x => !exemptedTables.Contains(x)).Each(truncateTable);
+            _schema.DocumentTables().Where(x => !exemptedTables.Contains(x)).Each(truncateTable);
 
         }
 
@@ -54,7 +56,7 @@ namespace Marten.Schema
 
         public void CompletelyRemoveAll()
         {
-            _runner.SchemaTableNames().Each(dropTable);
+            _schema.SchemaTableNames().Each(dropTable);
 
             dropFunctions(_dropAllFunctionSql);
         }

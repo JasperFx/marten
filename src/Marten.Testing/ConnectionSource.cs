@@ -35,7 +35,7 @@ namespace Marten.Testing
 
         public static void CleanBasicDocuments()
         {
-            var cleaner = new DocumentCleaner(new ConnectionSource());
+            var cleaner = new DocumentCleaner(new ConnectionSource(), new Marten.Schema.DevelopmentDocumentSchema(new ConnectionSource()));
             cleaner.CompletelyRemove(typeof(User));
             cleaner.CompletelyRemove(typeof(Issue));
             cleaner.CompletelyRemove(typeof(Company));

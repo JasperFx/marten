@@ -69,15 +69,15 @@ namespace Marten.Testing.Schema
 
                 session.SaveChanges();
 
-                var runner = container.GetInstance<CommandRunner>();
-                runner.DocumentTables().Contains(SchemaBuilder.TableNameFor(typeof(Target)))
+                var schema = container.GetInstance<Marten.Schema.DevelopmentDocumentSchema>();
+                schema.DocumentTables().Contains(SchemaBuilder.TableNameFor(typeof(Target)))
                     .ShouldBeTrue();
 
                 var cleaner = container.GetInstance<DocumentCleaner>();
 
                 cleaner.CompletelyRemove(typeof(Target));
 
-                runner.DocumentTables().Contains(SchemaBuilder.TableNameFor(typeof(Target)))
+                schema.DocumentTables().Contains(SchemaBuilder.TableNameFor(typeof(Target)))
                     .ShouldBeFalse();
 
             }
@@ -94,15 +94,16 @@ namespace Marten.Testing.Schema
 
                 session.SaveChanges();
 
-                var runner = container.GetInstance<CommandRunner>();
-                runner.SchemaFunctionNames().Contains(SchemaBuilder.UpsertNameFor(typeof(Target)))
+                var schema = container.GetInstance<DevelopmentDocumentSchema>();
+                
+                schema.SchemaFunctionNames().Contains(SchemaBuilder.UpsertNameFor(typeof(Target)))
                     .ShouldBeTrue();
 
                 var cleaner = container.GetInstance<DocumentCleaner>();
 
                 cleaner.CompletelyRemove(typeof(Target));
 
-                runner.SchemaFunctionNames().Contains(SchemaBuilder.UpsertNameFor(typeof(Target)))
+                schema.SchemaFunctionNames().Contains(SchemaBuilder.UpsertNameFor(typeof(Target)))
                     .ShouldBeFalse();
 
             }
@@ -126,7 +127,7 @@ namespace Marten.Testing.Schema
 
                 cleaner.CompletelyRemoveAll();
 
-                var runner = container.GetInstance<CommandRunner>();
+                var runner = container.GetInstance<DevelopmentDocumentSchema>();
 
                 runner.DocumentTables().Any().ShouldBeFalse();
                 runner.SchemaFunctionNames().Any().ShouldBeFalse();
