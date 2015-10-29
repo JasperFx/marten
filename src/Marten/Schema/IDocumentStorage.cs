@@ -17,6 +17,8 @@ namespace Marten.Schema
         NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids);
         NpgsqlCommand AnyCommand(QueryModel queryModel);
         NpgsqlCommand CountCommand(QueryModel queryModel);
+
+        Type DocumentType { get; }
     }
 
 }

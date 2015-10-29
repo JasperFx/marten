@@ -79,10 +79,12 @@
     <Compile Include="persist_and_load_documents_with_int_ids_Tests.cs" />
     <Compile Include="persist_and_load_documents_with_long_ids_Tests.cs" />
     <Compile Include="PlayingTests.cs" />
+    <Compile Include="ProductionModeRegistry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="query_by_sql_where_clause_Tests.cs" />
     <Compile Include="Schema\DocumentSchemaTests.cs" />
     <Compile Include="Schema\DocumentCleanerTests.cs" />
+    <Compile Include="Schema\ProductionModeSchemeCreationTests.cs" />
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />
   </ItemGroup>

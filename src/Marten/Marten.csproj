@@ -72,6 +72,7 @@
     <Compile Include="Schema\IDocumentSchemaCreation.cs" />
     <Compile Include="Schema\IDocumentStorage.cs" />
     <Compile Include="Schema\DocumentCleaner.cs" />
+    <Compile Include="Schema\ProductionSchemaCreation.cs" />
     <Compile Include="SerializerExtensions.cs" />
     <Compile Include="TypeMappings.cs" />
     <Compile Include="Util\CommandExtensions.cs" />

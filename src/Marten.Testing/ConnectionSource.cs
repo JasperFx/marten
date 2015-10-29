@@ -1,10 +1,7 @@
 ﻿using System;
 using System.IO;
 using FubuCore;
-using Marten.Generation;
 using Marten.Schema;
-using Marten.Testing.Documents;
-using Marten.Testing.Fixtures;
 using Npgsql;
 using StructureMap;
 
@@ -12,17 +9,20 @@ namespace Marten.Testing
 {
     public class ConnectionSource : IConnectionFactory
     {
-        private readonly static Lazy<string> _connectionString = new Lazy<string>(() =>
+        private static readonly Lazy<string> _connectionString = new Lazy<string>(() =>
         {
             var path = AppDomain.CurrentDomain.BaseDirectory.AppendPath("connection.txt");
             if (!File.Exists(path))
             {
-                path = AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("connection.txt");
+                path =
+                    AppDomain.CurrentDomain.BaseDirectory.ParentDirectory()
+                        .ParentDirectory()
+                        .AppendPath("connection.txt");
             }
 
 
             return new FileSystem().ReadStringFromFile(path);
-        }); 
+        });
 
         public static string ConnectionString
         {
@@ -42,8 +42,6 @@ namespace Marten.Testing
 
                 cleaner.CompletelyRemoveAll();
             }
-
-
         }
     }
 }
