@@ -75,6 +75,7 @@
     <Compile Include="Schema\ProductionSchemaCreation.cs" />
     <Compile Include="SerializerExtensions.cs" />
     <Compile Include="TypeMappings.cs" />
+    <Compile Include="Util\AssemblyGenerator.cs" />
     <Compile Include="Util\CommandExtensions.cs" />
     <Compile Include="Util\MemberInfoExtensions.cs" />
     <Compile Include="Util\StringExtensions.cs" />

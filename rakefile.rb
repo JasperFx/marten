@@ -58,7 +58,9 @@ end
 
 desc 'Compile the code'
 task :compile => [:clean, :version] do
-	sh "C:/Windows/Microsoft.NET/Framework/v4.0.30319/msbuild.exe src/Marten.sln   /property:Configuration=#{COMPILE_TARGET} /v:m /t:rebuild /nr:False /maxcpucount:2"
+	msbuild = '"C:\Program Files (x86)\MSBuild\14.0\Bin\msbuild.exe"'
+
+	sh "#{msbuild} src/Marten.sln   /property:Configuration=#{COMPILE_TARGET} /v:m /t:rebuild /nr:False /maxcpucount:2"
 end
 
 desc 'Run the unit tests'

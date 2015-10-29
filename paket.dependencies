@@ -1,7 +1,7 @@
+
 source https://nuget.org/api/v2
 nuget Fixie
 nuget FubuCore
-nuget Microsoft.CodeAnalysis.CSharp
 nuget Newtonsoft.Json
 nuget Npgsql
 nuget Octokit
@@ -9,3 +9,9 @@ nuget Remotion.Linq
 nuget Shouldly
 nuget Storyteller 3.0.0.280-alpha
 nuget structuremap
+
+
+source https://www.myget.org/F/roslyn-nightly/
+nuget Microsoft.CodeAnalysis.CSharp >= 1.2.0 prerelease
+
+
