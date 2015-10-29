@@ -23,13 +23,21 @@ namespace Marten.Schema
             {
                 var storage = DocumentStorageBuilder.Build(type);
 
-                var builder = new SchemaBuilder();
-                storage.InitializeSchema(builder);
-
-                _runner.Execute(builder.ToSql());
+                if (!DocumentTables().Contains(storage.TableName))
+                {
+                    buildSchemaObjectsForDocumentType(storage);
+                }
 
                 return storage;
             });
+        }
+
+        private void buildSchemaObjectsForDocumentType(IDocumentStorage storage)
+        {
+            var builder = new SchemaBuilder();
+            storage.InitializeSchema(builder);
+
+            _runner.Execute(builder.ToSql());
         }
 
         public IEnumerable<string> SchemaTableNames()

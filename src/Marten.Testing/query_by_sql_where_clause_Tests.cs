@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
 using StructureMap;
@@ -7,6 +8,14 @@ namespace Marten.Testing
 {
     public class query_by_sql_where_clause_Tests
     {
+        public query_by_sql_where_clause_Tests()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                container.GetInstance<DocumentCleaner>().DeleteAllDocuments();
+            }
+        }
+
         public void query_with_select_in_query()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())

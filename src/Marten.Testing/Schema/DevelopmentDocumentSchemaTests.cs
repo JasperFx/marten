@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using Marten.Generation;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
+using StructureMap;
 
 namespace Marten.Testing.Schema
 {
@@ -55,6 +57,30 @@ namespace Marten.Testing.Schema
             functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof (User)).ToLower());
             functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof (Issue)).ToLower());
             functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof (Company)).ToLower());
+        }
+
+        public void do_not_rebuild_a_table_that_already_exists()
+        {
+            using (var container1 = Container.For<DevelopmentModeRegistry>())
+            {
+                using (var session = container1.GetInstance<IDocumentSession>())
+                {
+                    session.Store(new User());
+                    session.Store(new User());
+                    session.Store(new User());
+
+                    session.SaveChanges();
+                }
+            }
+
+            using (var container2 = Container.For<DevelopmentModeRegistry>())
+            {
+                using (var session = container2.GetInstance<IDocumentSession>())
+                {
+                    session.Query<User>().Count().ShouldBeGreaterThanOrEqualTo(3);
+                }
+            }
+
         }
     }
 }
