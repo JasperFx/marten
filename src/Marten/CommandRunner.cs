@@ -85,7 +85,7 @@ namespace Marten
         }
 
 
-
+        // TODO -- maybe get the schema query stuff out of here and somewhere else
         public IEnumerable<string> SchemaTableNames()
         {
             return Execute(conn =>
@@ -101,11 +101,19 @@ namespace Marten
             });
         }
 
+        // TODO -- maybe get the schema query stuff out of here and somewhere else
+        public string[] DocumentTables()
+        {
+            return SchemaTableNames().Where(x => x.Contains("_doc_")).ToArray();
+        }
+
+        // TODO -- maybe get the schema query stuff out of here and somewhere else
         public IEnumerable<string> SchemaFunctionNames()
         {
             return findFunctionNames().ToArray();
         }
 
+        // TODO -- maybe get the schema query stuff out of here and somewhere else
         private IEnumerable<string> findFunctionNames()
         {
             return Execute(conn =>

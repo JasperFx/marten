@@ -9,7 +9,7 @@ namespace Marten.Testing.Generation
         public void table_name_for_document()
         {
             SchemaBuilder.TableNameFor(typeof(MySpecialDocument))
-                .ShouldBe("mt_doc_MySpecialDocument");
+                .ShouldBe("mt_doc_myspecialdocument");
         }
 
         public void write_document_table()
@@ -19,14 +19,14 @@ namespace Marten.Testing.Generation
 
             var sql = builder.ToSql();
 
-            sql.ShouldContain("CREATE TABLE mt_doc_MySpecialDocument");
+            sql.ShouldContain("CREATE TABLE mt_doc_myspecialdocument");
             sql.ShouldContain("jsonb NOT NULL");
         }
 
         public void upsert_name_for_document_type()
         {
             SchemaBuilder.UpsertNameFor(typeof(MySpecialDocument))
-                .ShouldBe("mt_upsert_MySpecialDocument");
+                .ShouldBe("mt_upsert_myspecialdocument");
         }
 
         public void write_upsert_sql()
@@ -36,8 +36,8 @@ namespace Marten.Testing.Generation
 
             var sql = builder.ToSql();
 
-            sql.ShouldContain("INSERT INTO mt_doc_MySpecialDocument");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_MySpecialDocument");
+            sql.ShouldContain("INSERT INTO mt_doc_myspecialdocument");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_myspecialdocument");
         }
 
         public class MySpecialDocument { }

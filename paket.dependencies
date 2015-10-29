@@ -1,6 +1,7 @@
 source https://nuget.org/api/v2
 nuget Fixie
 nuget FubuCore
+nuget Microsoft.CodeAnalysis.CSharp
 nuget Newtonsoft.Json
 nuget Npgsql
 nuget Octokit

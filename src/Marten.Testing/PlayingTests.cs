@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using Marten.Testing.Documents;
@@ -39,27 +40,17 @@ namespace Marten.Testing
 
         public void try_it_out()
         {
-            Debug.WriteLine(ConnectionSource.ConnectionString);
+            var runner = new CommandRunner(new ConnectionSource());
 
-            using (var connection = new NpgsqlConnection(ConnectionSource.ConnectionString))
+            runner.Execute(conn =>
             {
-                connection.Open();
+                var table = conn.GetSchema("Tables");
 
-                var command = connection.CreateCommand();
-                command.CommandText = "select * from fake";
-
-                using (var reader = command.ExecuteReader())
+                foreach (DataRow row in table.Rows)
                 {
-                    while (reader.Read())
-                    {
-                        Debug.WriteLine(reader.GetString(0));
-                    }
-
-                    reader.Close();
+                    Debug.WriteLine("{0} / {1} / {2}", row[0], row[1], row[2]);
                 }
-
-                connection.Close();
-            }
+            });
         }
 
     }

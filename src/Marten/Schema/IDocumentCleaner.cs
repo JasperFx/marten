@@ -4,9 +4,9 @@ namespace Marten.Schema
 {
     public interface IDocumentCleaner
     {
-        void AllDocuments();
+        void DeleteAllDocuments();
         void DocumentsFor(Type documentType);
-        void DocumentsExcept(params Type[] documentTypes);
+        void DeleteDocumentsExcept(params Type[] documentTypes);
 
         void CompletelyRemove(Type documentType);
     }

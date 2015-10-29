@@ -10,12 +10,12 @@ namespace Marten.Generation
 
         public static string TableNameFor(Type documentType)
         {
-            return "mt_doc_" + documentType.Name;
+            return "mt_doc_" + documentType.Name.ToLower();
         }
 
         public static string UpsertNameFor(Type documentType)
         {
-            return "mt_upsert_" + documentType.Name;
+            return "mt_upsert_" + documentType.Name.ToLower();
         }
 
         public void CreateTable(Type documentType, Type idType)
