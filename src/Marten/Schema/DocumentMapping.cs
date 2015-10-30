@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
+using FubuCore;
 using FubuCore.Csv;
 using Marten.Generation;
 using Marten.Util;
@@ -11,6 +13,10 @@ namespace Marten.Schema
         public DocumentMapping(Type documentType)
         {
             DocumentType = documentType;
+
+            IdMember = (MemberInfo) documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
+                ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
+
         }
 
         public Type DocumentType { get; private set; }
