@@ -17,6 +17,7 @@ namespace Marten.Schema
             IdMember = (MemberInfo) documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
                 ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
 
+            TableName = TableNameFor(documentType);
         }
 
         public Type DocumentType { get; private set; }

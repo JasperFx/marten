@@ -1,12 +1,19 @@
 ﻿using System;
 using System.Reflection;
 using Marten.Schema;
+using Marten.Testing.Documents;
 using Shouldly;
 
 namespace Marten.Testing.Schema
 {
     public class DocumentMappingTests
     {
+        public void default_table_name()
+        {
+            var mapping = new DocumentMapping(typeof(User));
+            mapping.TableName.ShouldBe("mt_doc_user");
+        }
+
         public void pick_up_upper_case_property_id()
         {
             var mapping = new DocumentMapping(typeof(UpperCaseProperty));
