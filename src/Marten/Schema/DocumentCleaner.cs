@@ -26,7 +26,7 @@ namespace Marten.Schema
 
         public void DocumentsFor(Type documentType)
         {
-            var tableName = SchemaBuilder.TableNameFor(documentType);
+            var tableName = DocumentMapping.TableNameFor(documentType);
             truncateTable(tableName);
         }
 
@@ -39,17 +39,17 @@ namespace Marten.Schema
 
         public void DeleteDocumentsExcept(params Type[] documentTypes)
         {
-            var exemptedTables = documentTypes.Select(SchemaBuilder.TableNameFor).ToArray();
+            var exemptedTables = documentTypes.Select(DocumentMapping.TableNameFor).ToArray();
             _schema.DocumentTables().Where(x => !exemptedTables.Contains(x)).Each(truncateTable);
 
         }
 
         public void CompletelyRemove(Type documentType)
         {
-            var tableName = SchemaBuilder.TableNameFor(documentType);
+            var tableName = DocumentMapping.TableNameFor(documentType);
             dropTable(tableName);
 
-            var dropTargets = _dropFunctionSql.ToFormat(SchemaBuilder.UpsertNameFor(documentType));
+            var dropTargets = _dropFunctionSql.ToFormat(DocumentMapping.UpsertNameFor(documentType));
             dropFunctions(dropTargets);
         }
 

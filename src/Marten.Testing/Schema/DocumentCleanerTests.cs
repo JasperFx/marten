@@ -70,14 +70,14 @@ namespace Marten.Testing.Schema
                 session.SaveChanges();
 
                 var schema = container.GetInstance<Marten.Schema.DocumentSchema>();
-                schema.DocumentTables().Contains(SchemaBuilder.TableNameFor(typeof(Target)))
+                schema.DocumentTables().Contains(DocumentMapping.TableNameFor(typeof(Target)))
                     .ShouldBeTrue();
 
                 var cleaner = container.GetInstance<DocumentCleaner>();
 
                 cleaner.CompletelyRemove(typeof(Target));
 
-                schema.DocumentTables().Contains(SchemaBuilder.TableNameFor(typeof(Target)))
+                schema.DocumentTables().Contains(DocumentMapping.TableNameFor(typeof(Target)))
                     .ShouldBeFalse();
 
             }
@@ -96,14 +96,14 @@ namespace Marten.Testing.Schema
 
                 var schema = container.GetInstance<DocumentSchema>();
                 
-                schema.SchemaFunctionNames().Contains(SchemaBuilder.UpsertNameFor(typeof(Target)))
+                schema.SchemaFunctionNames().Contains(DocumentMapping.UpsertNameFor(typeof(Target)))
                     .ShouldBeTrue();
 
                 var cleaner = container.GetInstance<DocumentCleaner>();
 
                 cleaner.CompletelyRemove(typeof(Target));
 
-                schema.SchemaFunctionNames().Contains(SchemaBuilder.UpsertNameFor(typeof(Target)))
+                schema.SchemaFunctionNames().Contains(DocumentMapping.UpsertNameFor(typeof(Target)))
                     .ShouldBeFalse();
 
             }

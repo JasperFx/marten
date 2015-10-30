@@ -1,5 +1,6 @@
 ﻿using System;
 using Marten.Generation;
+using Marten.Schema;
 using Shouldly;
 
 namespace Marten.Testing.Generation
@@ -8,7 +9,7 @@ namespace Marten.Testing.Generation
     {
         public void table_name_for_document()
         {
-            SchemaBuilder.TableNameFor(typeof(MySpecialDocument))
+            DocumentMapping.TableNameFor(typeof(MySpecialDocument))
                 .ShouldBe("mt_doc_myspecialdocument");
         }
 
@@ -25,7 +26,7 @@ namespace Marten.Testing.Generation
 
         public void upsert_name_for_document_type()
         {
-            SchemaBuilder.UpsertNameFor(typeof(MySpecialDocument))
+            DocumentMapping.UpsertNameFor(typeof(MySpecialDocument))
                 .ShouldBe("mt_upsert_myspecialdocument");
         }
 

@@ -12,18 +12,18 @@ namespace Marten.Schema
     public class DocumentStorage<T, TKey> : IDocumentStorage
     {
         private readonly string _byArrayCommand =
-            "select data from {0} where id = ANY(:ids)".ToFormat(SchemaBuilder.TableNameFor(typeof (T)));
+            "select data from {0} where id = ANY(:ids)".ToFormat(DocumentMapping.TableNameFor(typeof (T)));
 
         private readonly string _deleteCommand =
-            "delete from {0} where id = :id".ToFormat(SchemaBuilder.TableNameFor(typeof (T)));
+            "delete from {0} where id = :id".ToFormat(DocumentMapping.TableNameFor(typeof (T)));
 
         private readonly Func<T, TKey> _key;
 
         private readonly string _loadCommand =
-            "select data from {0} where id = :id".ToFormat(SchemaBuilder.TableNameFor(typeof (T)));
+            "select data from {0} where id = :id".ToFormat(DocumentMapping.TableNameFor(typeof (T)));
 
-        private readonly string _tableName = SchemaBuilder.TableNameFor(typeof (T));
-        private readonly string _upsertCommand = SchemaBuilder.UpsertNameFor(typeof (T));
+        private readonly string _tableName = DocumentMapping.TableNameFor(typeof (T));
+        private readonly string _upsertCommand = DocumentMapping.UpsertNameFor(typeof (T));
 
         public DocumentStorage(Func<T, TKey> key)
         {

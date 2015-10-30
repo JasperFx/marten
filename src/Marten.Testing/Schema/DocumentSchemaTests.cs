@@ -51,14 +51,14 @@ namespace Marten.Testing.Schema
 
             var schema = new DocumentSchema(new ConnectionSource(), new DevelopmentSchemaCreation(new ConnectionSource()));
             var tables = schema.SchemaTableNames();
-            tables.ShouldContain(SchemaBuilder.TableNameFor(typeof (User)).ToLower());
-            tables.ShouldContain(SchemaBuilder.TableNameFor(typeof (Issue)).ToLower());
-            tables.ShouldContain(SchemaBuilder.TableNameFor(typeof (Company)).ToLower());
+            tables.ShouldContain(DocumentMapping.TableNameFor(typeof (User)).ToLower());
+            tables.ShouldContain(DocumentMapping.TableNameFor(typeof (Issue)).ToLower());
+            tables.ShouldContain(DocumentMapping.TableNameFor(typeof (Company)).ToLower());
 
             var functions = schema.SchemaFunctionNames();
-            functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof (User)).ToLower());
-            functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof (Issue)).ToLower());
-            functions.ShouldContain(SchemaBuilder.UpsertNameFor(typeof (Company)).ToLower());
+            functions.ShouldContain(DocumentMapping.UpsertNameFor(typeof (User)).ToLower());
+            functions.ShouldContain(DocumentMapping.UpsertNameFor(typeof (Issue)).ToLower());
+            functions.ShouldContain(DocumentMapping.UpsertNameFor(typeof (Company)).ToLower());
         }
 
         public void do_not_rebuild_a_table_that_already_exists()
