@@ -65,7 +65,6 @@
     <Compile Include="Schema\DevelopmentSchemaCreation.cs" />
     <Compile Include="Schema\DocumentMapping.cs" />
     <Compile Include="Schema\DocumentSchema.cs" />
-    <Compile Include="Schema\DocumentStorage.cs" />
     <Compile Include="Schema\DocumentStorageBuilder.cs" />
     <Compile Include="Schema\IDocumentCleaner.cs" />
     <Compile Include="Schema\IDocumentSchema.cs" />

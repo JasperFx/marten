@@ -17,6 +17,10 @@ namespace Marten.Schema
     {
         public static IDocumentStorage Build(Type documentType)
         {
+
+            return Build(new DocumentMapping(documentType));
+
+            /*
             var prop =
                 documentType.GetProperties().Where(x => StringExtensions.EqualsIgnoreCase(x.Name, "id") && x.CanWrite).FirstOrDefault();
 
@@ -30,6 +34,7 @@ namespace Marten.Schema
             var func = lambda.Compile();
 
             return typeof (DocumentStorage<,>).CloseAndBuildAs<IDocumentStorage>(func, documentType, prop.PropertyType);
+    */    
         }
 
         public static IDocumentStorage Build(DocumentMapping mapping)

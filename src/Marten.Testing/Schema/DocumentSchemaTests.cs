@@ -28,7 +28,6 @@ namespace Marten.Testing.Schema
         {
             var storage = _schema.StorageFor(typeof (User));
             storage.ShouldNotBeNull();
-            storage.ShouldBeOfType<DocumentStorage<User, Guid>>();
         }
 
         public void caches_storage_for_a_document_type()
