@@ -1,9 +1,11 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using FubuCore;
 using FubuCore.Csv;
 using Marten.Generation;
+using Marten.Generation.Templates;
 using Marten.Util;
 
 namespace Marten.Schema
@@ -50,6 +52,26 @@ namespace Marten.Schema
 
             return table;
 
+        }
+
+        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
+        {
+            var table = ToTable(schema);
+            table.Write(writer);
+            writer.WriteLine();
+            writer.WriteLine();
+
+            var pgIdType = TypeMappings.PgTypes[IdMember.GetMemberType()];
+
+            var sql = TemplateSource.UpsertDocument()
+                .Replace("%TABLE_NAME%", TableName)
+                .Replace("%SPROC_NAME%", UpsertNameFor(DocumentType))
+                .Replace("%ID_TYPE%", pgIdType);
+
+            writer.WriteLine(sql);
+
+            writer.WriteLine();
+            writer.WriteLine();
         }
 
         public void GenerateDocumentStorage(AssemblyGenerator generator)

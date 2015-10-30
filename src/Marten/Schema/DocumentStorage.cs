@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.IO;
 using FubuCore;
 using Marten.Generation;
 using Marten.Linq;
@@ -22,7 +23,6 @@ namespace Marten.Schema
         private readonly string _loadCommand =
             "select data from {0} where id = :id".ToFormat(DocumentMapping.TableNameFor(typeof (T)));
 
-        private readonly string _tableName = DocumentMapping.TableNameFor(typeof (T));
         private readonly string _upsertCommand = DocumentMapping.UpsertNameFor(typeof (T));
 
         public DocumentStorage(Func<T, TKey> key)
@@ -30,10 +30,7 @@ namespace Marten.Schema
             _key = key;
         }
 
-        public Type DocumentType
-        {
-            get { return typeof (T); }
-        }
+        public Type DocumentType => typeof (T);
 
         NpgsqlCommand IDocumentStorage.UpsertCommand(object document, string json)
         {
@@ -91,25 +88,15 @@ namespace Marten.Schema
 
         public NpgsqlCommand AnyCommand(QueryModel queryModel)
         {
-            return new DocumentQuery<T>(_tableName, queryModel).ToAnyCommand();
+            return new DocumentQuery<T>(TableName, queryModel).ToAnyCommand();
         }
 
         public NpgsqlCommand CountCommand(QueryModel queryModel)
         {
-            return new DocumentQuery<T>(_tableName, queryModel).ToCountCommand();
+            return new DocumentQuery<T>(TableName, queryModel).ToCountCommand();
         }
 
-        public string TableName
-        {
-            get { return _tableName; }
-        }
-
-        public void InitializeSchema(SchemaBuilder builder)
-        {
-            var mapping = new DocumentMapping(typeof(T));
-            builder.CreateTable(mapping.ToTable(null));
-            builder.DefineUpsert(typeof (T), typeof (TKey));
-        }
+        public string TableName { get; } = DocumentMapping.TableNameFor(typeof (T));
 
         public NpgsqlCommand UpsertCommand(T document, string json)
         {

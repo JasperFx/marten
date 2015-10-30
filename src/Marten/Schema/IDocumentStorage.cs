@@ -7,7 +7,6 @@ namespace Marten.Schema
 {
     public interface IDocumentStorage
     {
-        void InitializeSchema(SchemaBuilder builder);
         NpgsqlCommand UpsertCommand(object document, string json);
         NpgsqlCommand LoaderCommand(object id);
         NpgsqlCommand DeleteCommandForId(object id);

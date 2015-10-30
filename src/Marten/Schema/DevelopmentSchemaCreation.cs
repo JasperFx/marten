@@ -1,3 +1,4 @@
+using System.IO;
 using Marten.Generation;
 
 namespace Marten.Schema
@@ -11,12 +12,12 @@ namespace Marten.Schema
             _runner = new CommandRunner(factory);
         }
 
-        public void CreateSchema(IDocumentStorage storage)
+        public void CreateSchema(IDocumentSchema schema, DocumentMapping mapping)
         {
-            var builder = new SchemaBuilder();
-            storage.InitializeSchema(builder);
+            var writer= new StringWriter();
+            mapping.WriteSchemaObjects(schema, writer);
 
-            _runner.Execute(builder.ToSql());
+            _runner.Execute(writer.ToString());
         }
     }
 }

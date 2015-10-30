@@ -26,7 +26,8 @@ namespace Marten.Schema
 
                 if (!DocumentTables().Contains(storage.TableName))
                 {
-                    _creation.CreateSchema(storage);
+                    var mapping = new DocumentMapping(documentType);
+                    _creation.CreateSchema(this, mapping);
                 }
 
                 return storage;
