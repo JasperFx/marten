@@ -2,13 +2,13 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata;
 using FubuCore;
 using FubuCore.Csv;
 using Marten.Codegen;
 using Marten.Generation;
 using Marten.Generation.Templates;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Schema
 {
@@ -86,7 +86,7 @@ namespace Marten.Schema
 BLOCK:public class {DocumentType.Name}Storage : IDocumentStorage
 public Type DocumentType => typeof ({DocumentType.Name});
 
-public string TableName {{ get; }} = DocumentMapping.TableNameFor(typeof (T));
+public string TableName {{ get; }} = `{TableName}`;
 
 BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
 return UpsertCommand(({DocumentType.Name})document, json);
@@ -97,7 +97,7 @@ return new NpgsqlCommand(`select data from {TableName} where id = :id`).WithPara
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForId(object id)
-return new NpgsqlCommand(`delete from {TableName}` where id = :id).WithParameter(`id`, id);
+return new NpgsqlCommand(`delete from {TableName} where id = :id`).WithParameter(`id`, id);
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForEntity(object entity)
@@ -109,16 +109,16 @@ return new NpgsqlCommand(`select data from {TableName} where id = ANY(:ids)`).Wi
 END
 
 BLOCK:public NpgsqlCommand AnyCommand(QueryModel queryModel)
-return new DocumentQuery<T>(`{TableName}`, queryModel).ToAnyCommand();
+return new DocumentQuery<{DocumentType.Name}>(`{TableName}`, queryModel).ToAnyCommand();
 END
 
 BLOCK:public NpgsqlCommand CountCommand(QueryModel queryModel)
-return new DocumentQuery<T>(`{TableName}`, queryModel).ToCountCommand();
+return new DocumentQuery<{DocumentType.Name}>(`{TableName}`, queryModel).ToCountCommand();
 END
 
 // TODO: This wil need to get fancier later
 BLOCK:public NpgsqlCommand UpsertCommand({DocumentType.Name} document, string json)
-return new NpgsqlCommand(_upsertCommand)
+return new NpgsqlCommand(`{UpsertName}`)
     .AsSproc()
     .WithParameter(`id`, document.{IdMember.Name})
     .WithJsonParameter(`doc`, json);

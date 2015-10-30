@@ -86,6 +86,7 @@
     <Compile Include="Schema\DocumentMappingTests.cs" />
     <Compile Include="Schema\DocumentSchemaTests.cs" />
     <Compile Include="Schema\DocumentCleanerTests.cs" />
+    <Compile Include="Schema\DocumentStorageBuilderTests.cs" />
     <Compile Include="Schema\ProductionModeSchemeCreationTests.cs" />
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />

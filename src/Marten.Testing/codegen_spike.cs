@@ -42,14 +42,12 @@ namespace RoslynGenerationSpike
         // New helper for this mess called AssemblyGenerator
         var builder = new AssemblyGenerator();
 
-        // Exposes a StringWriter for appending code
-        builder.Text.WriteLine(code);
 
         // you might need to help it out w/ references
         builder.ReferenceAssembly(Assembly.GetExecutingAssembly());
 
         // Make the new Assembly
-        var assembly = builder.Generate();
+        var assembly = builder.Generate(code);
 
         // Do stuff with it
         var writerType = assembly.GetExportedTypes().Single();

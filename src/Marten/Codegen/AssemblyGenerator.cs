@@ -18,8 +18,6 @@ namespace Marten.Codegen
             ReferenceAssembly(typeof (Enumerable).Assembly);
         }
 
-        public StringWriter Text { get; } = new StringWriter();
-
         public void ReferenceAssembly(Assembly assembly)
         {
             _references.Add(MetadataReference.CreateFromFile(assembly.Location));
@@ -30,10 +28,10 @@ namespace Marten.Codegen
             ReferenceAssembly(typeof (T).Assembly);
         }
 
-        public Assembly Generate()
+        public Assembly Generate(string code)
         {
             var assemblyName = Path.GetRandomFileName();
-            var syntaxTree = CSharpSyntaxTree.ParseText(Text.ToString());
+            var syntaxTree = CSharpSyntaxTree.ParseText(code);
 
             var references = _references.ToArray();
             var compilation = CSharpCompilation.Create(assemblyName, new[] {syntaxTree}, references,
