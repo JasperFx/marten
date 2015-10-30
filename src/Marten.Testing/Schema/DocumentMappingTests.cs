@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Reflection;
+using Marten.Generation;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Marten.Testing.Generation;
 using Shouldly;
 
 namespace Marten.Testing.Schema
@@ -40,6 +42,19 @@ namespace Marten.Testing.Schema
             var mapping = new DocumentMapping(typeof(UpperCaseField));
             mapping.IdMember.ShouldBeAssignableTo<FieldInfo>()
                 .Name.ShouldBe(nameof(UpperCaseField.Id));
+        }
+
+        public void generate_simple_document_table()
+        {
+            var mapping = new DocumentMapping(typeof(SchemaBuilderTests.MySpecialDocument));
+            var builder = new SchemaBuilder();
+
+            builder.CreateTable(mapping.ToTable(null));
+
+            var sql = builder.ToSql();
+
+            sql.ShouldContain("CREATE TABLE mt_doc_myspecialdocument");
+            sql.ShouldContain("jsonb NOT NULL");
         }
 
         public class UpperCaseProperty

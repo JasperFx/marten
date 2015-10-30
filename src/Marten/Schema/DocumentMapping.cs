@@ -42,7 +42,14 @@ namespace Marten.Schema
         public TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
             // can do foreign keys
         {
-            throw new NotImplementedException();
+            // TODO -- blow up if no IdMember or no TableName
+
+            var pgIdType = TypeMappings.PgTypes[IdMember.GetMemberType()];
+            var table = new TableDefinition(TableName, new TableColumn("id", pgIdType));
+            table.Columns.Add(new TableColumn("data", "jsonb NOT NULL"));
+
+            return table;
+
         }
 
         public void GenerateDocumentStorage(AssemblyGenerator generator)

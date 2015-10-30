@@ -9,12 +9,8 @@ namespace Marten.Generation
     {
         private readonly StringWriter _writer = new StringWriter();
 
-        public void CreateTable(Type documentType, Type idType)
+        public void CreateTable(TableDefinition table)
         {
-            // TODO -- fancier later
-            var table = new TableDefinition(DocumentMapping.TableNameFor(documentType), new TableColumn("id", TypeMappings.PgTypes[idType]));
-            table.Columns.Add(new TableColumn("data", "jsonb NOT NULL"));
-
             table.Write(_writer);
 
             _writer.WriteLine();

@@ -13,17 +13,6 @@ namespace Marten.Testing.Generation
                 .ShouldBe("mt_doc_myspecialdocument");
         }
 
-        public void write_document_table()
-        {
-            var builder = new SchemaBuilder();
-            builder.CreateTable(typeof(MySpecialDocument), typeof(Guid));
-
-            var sql = builder.ToSql();
-
-            sql.ShouldContain("CREATE TABLE mt_doc_myspecialdocument");
-            sql.ShouldContain("jsonb NOT NULL");
-        }
-
         public void upsert_name_for_document_type()
         {
             DocumentMapping.UpsertNameFor(typeof(MySpecialDocument))
@@ -41,6 +30,9 @@ namespace Marten.Testing.Generation
             sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_myspecialdocument");
         }
 
-        public class MySpecialDocument { }
+        public class MySpecialDocument
+        {
+            public Guid Id { get; set; }
+        }
     }
 }

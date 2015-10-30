@@ -106,7 +106,8 @@ namespace Marten.Schema
 
         public void InitializeSchema(SchemaBuilder builder)
         {
-            builder.CreateTable(typeof (T), typeof (TKey));
+            var mapping = new DocumentMapping(typeof(T));
+            builder.CreateTable(mapping.ToTable(null));
             builder.DefineUpsert(typeof (T), typeof (TKey));
         }
 
