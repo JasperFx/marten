@@ -1,15 +1,13 @@
 using System;
-using System.Data;
-using System.IO;
 using FubuCore;
-using Marten.Generation;
 using Marten.Linq;
+using Marten.Util;
 using Npgsql;
-using NpgsqlTypes;
 using Remotion.Linq;
 
 namespace Marten.Schema
 {
+
     public class DocumentStorage<T, TKey> : IDocumentStorage
     {
         private readonly string _byArrayCommand =
@@ -32,38 +30,19 @@ namespace Marten.Schema
 
         public Type DocumentType => typeof (T);
 
-        NpgsqlCommand IDocumentStorage.UpsertCommand(object document, string json)
+        public NpgsqlCommand UpsertCommand(object document, string json)
         {
             return UpsertCommand(document.As<T>(), json);
         }
 
         public NpgsqlCommand LoaderCommand(object id)
         {
-            var command = new NpgsqlCommand(_loadCommand);
-
-            var param = new NpgsqlParameter
-            {
-                ParameterName = "id",
-                Value = id
-            };
-
-            command.Parameters.Add(param);
-
-            return command;
+            return new NpgsqlCommand(_loadCommand).WithParameter("id", id);
         }
 
         public NpgsqlCommand DeleteCommandForId(object id)
         {
-            var command = new NpgsqlCommand(_deleteCommand);
-            var param = new NpgsqlParameter
-            {
-                ParameterName = "id",
-                Value = id
-            };
-
-            command.Parameters.Add(param);
-
-            return command;
+            return new NpgsqlCommand(_deleteCommand).WithParameter("id", id);
         }
 
         public NpgsqlCommand DeleteCommandForEntity(object entity)
@@ -74,16 +53,7 @@ namespace Marten.Schema
 
         public NpgsqlCommand LoadByArrayCommand<TInput>(TInput[] ids)
         {
-            var command = new NpgsqlCommand(_byArrayCommand);
-            var param = new NpgsqlParameter
-            {
-                ParameterName = "ids",
-                Value = ids
-            };
-
-            command.Parameters.Add(param);
-
-            return command;
+            return new NpgsqlCommand(_byArrayCommand).WithParameter("ids", ids);
         }
 
         public NpgsqlCommand AnyCommand(QueryModel queryModel)
@@ -100,20 +70,10 @@ namespace Marten.Schema
 
         public NpgsqlCommand UpsertCommand(T document, string json)
         {
-            var command = new NpgsqlCommand(_upsertCommand)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-
-            command.Parameters.Add(new NpgsqlParameter
-            {
-                ParameterName = "id",
-                Value = _key(document)
-            });
-
-            command.Parameters.Add("doc", NpgsqlDbType.Json).Value = json;
-
-            return command;
+            return new NpgsqlCommand(_upsertCommand)
+                .AsSproc()
+                .WithParameter("id", _key(document))
+                .WithJsonParameter("doc", json);
         }
     }
 }

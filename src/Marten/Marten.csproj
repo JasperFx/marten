@@ -78,6 +78,7 @@
     <Compile Include="Util\AssemblyGenerator.cs" />
     <Compile Include="Util\CommandExtensions.cs" />
     <Compile Include="Util\MemberInfoExtensions.cs" />
+    <Compile Include="Util\SourceWriter.cs" />
     <Compile Include="Util\StringExtensions.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

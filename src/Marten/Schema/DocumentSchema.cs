@@ -12,6 +12,7 @@ namespace Marten.Schema
         private readonly CommandRunner _runner;
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes = new ConcurrentDictionary<Type, IDocumentStorage>(); 
 
+
         public DocumentSchema(IConnectionFactory connections, IDocumentSchemaCreation creation)
         {
             _creation = creation;
