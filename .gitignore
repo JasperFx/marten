@@ -200,3 +200,5 @@ FakesAssemblies/
 *.opt
 
 artifacts
+src/CommonAssemblyInfo.cs
+paket.lock

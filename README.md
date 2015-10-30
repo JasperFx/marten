@@ -4,10 +4,11 @@
 
 
 Hey, we're just getting started, but there'll be stuff here soon. Check the issue list as quasi-roadmap and feel free to jump into the Gitter room linked above.
+See this blog post http://jeremydmiller.com/2015/10/21/postgresql-as-a-document-db-for-net-development/ for more information
 
 ## Working with the Code
 
-Like I said, it's way, way early and this should get smoother later. For now, you'll need to have access to a Postgresql database. After cloning the code, put a file named `connection.txt` at `src/Marten.Testing` that just needs to contain the connection string to the Postgresql database you want to use as a testbed. See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about postgresql connection strings.
+Like I said, it's way, way early and this should get smoother later. For now, you'll need to have access to a Postgresql 9.5 server and a database. After cloning the code, put a file named `connection.txt` at `src/Marten.Testing` that just needs to contain the connection string to the Postgresql database you want to use as a testbed. See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about postgresql connection strings.
 
 Once you have the codebase and the connection.txt file, either:
 
