@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using FubuCore;
+using Marten.Codegen;
 using Marten.Testing;
 using Marten.Util;
 

@@ -6,7 +6,7 @@ using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace Marten.Util
+namespace Marten.Codegen
 {
     public class AssemblyGenerator
     {

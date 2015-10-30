@@ -4,9 +4,11 @@ using System.Linq;
 using System.Reflection;
 using FubuCore;
 using FubuCore.Csv;
+using Marten.Codegen;
 using Marten.Generation;
 using Marten.Generation.Templates;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Schema
 {
@@ -20,7 +22,11 @@ namespace Marten.Schema
                 ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
 
             TableName = TableNameFor(documentType);
+
+            UpsertName = UpsertNameFor(documentType);
         }
+
+        public string UpsertName { get; private set; }
 
         public Type DocumentType { get; private set; }
 
@@ -65,7 +71,7 @@ namespace Marten.Schema
 
             var sql = TemplateSource.UpsertDocument()
                 .Replace("%TABLE_NAME%", TableName)
-                .Replace("%SPROC_NAME%", UpsertNameFor(DocumentType))
+                .Replace("%SPROC_NAME%", UpsertName)
                 .Replace("%ID_TYPE%", pgIdType);
 
             writer.WriteLine(sql);
@@ -74,9 +80,54 @@ namespace Marten.Schema
             writer.WriteLine();
         }
 
-        public void GenerateDocumentStorage(AssemblyGenerator generator)
+        public void GenerateDocumentStorage(SourceWriter writer)
         {
-            throw new NotImplementedException();
+            writer.Write($@"
+BLOCK:public class {DocumentType.Name}Storage : IDocumentStorage
+public Type DocumentType => typeof ({DocumentType.Name});
+
+public string TableName {{ get; }} = DocumentMapping.TableNameFor(typeof (T));
+
+BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
+return UpsertCommand(({DocumentType.Name})document, json);
+END
+
+BLOCK:public NpgsqlCommand LoaderCommand(object id)
+return new NpgsqlCommand(`select data from {TableName} where id = :id`).WithParameter(`id`, id);
+END
+
+BLOCK:public NpgsqlCommand DeleteCommandForId(object id)
+return new NpgsqlCommand(`delete from {TableName}` where id = :id).WithParameter(`id`, id);
+END
+
+BLOCK:public NpgsqlCommand DeleteCommandForEntity(object entity)
+return DeleteCommandForId((({DocumentType.Name})entity).{IdMember.Name});
+END
+
+BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
+return new NpgsqlCommand(`select data from {TableName} where id = ANY(:ids)`).WithParameter(`ids`, ids);
+END
+
+BLOCK:public NpgsqlCommand AnyCommand(QueryModel queryModel)
+return new DocumentQuery<T>(`{TableName}`, queryModel).ToAnyCommand();
+END
+
+BLOCK:public NpgsqlCommand CountCommand(QueryModel queryModel)
+return new DocumentQuery<T>(`{TableName}`, queryModel).ToCountCommand();
+END
+
+// TODO: This wil need to get fancier later
+BLOCK:public NpgsqlCommand UpsertCommand({DocumentType.Name} document, string json)
+return new NpgsqlCommand(_upsertCommand)
+    .AsSproc()
+    .WithParameter(`id`, document.{IdMember.Name})
+    .WithJsonParameter(`doc`, json);
+END
+
+END
+
+");
+
         }
     }
 
