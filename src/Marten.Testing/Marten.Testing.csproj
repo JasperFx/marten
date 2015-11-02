@@ -57,7 +57,6 @@
     <Compile Include="Fixtures\OrderingFixture.cs" />
     <Compile Include="Fixtures\ResultSet.cs" />
     <Compile Include="Fixtures\Target.cs" />
-    <Compile Include="Generation\TemplateReadingTests.cs" />
     <Compile Include="Github\Documents.cs" />
     <Compile Include="Github\GhRepository.cs" />
     <Compile Include="Github\GhUser.cs" />

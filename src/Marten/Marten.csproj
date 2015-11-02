@@ -47,7 +47,6 @@
     <Compile Include="DocumentSession.cs" />
     <Compile Include="Generation\TableColumn.cs" />
     <Compile Include="Generation\TableDefinition.cs" />
-    <Compile Include="Generation\Templates\TemplateSource.cs" />
     <Compile Include="IConnectionFactory.cs" />
     <Compile Include="IDocumentSession.cs" />
     <Compile Include="IDocumentStore.cs" />
@@ -89,9 +88,6 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <ItemGroup>
-    <EmbeddedResource Include="Generation\Templates\UpsertDocument.txt" />
-  </ItemGroup>
   <ItemGroup>
     <Reference Include="FubuCore">
       <HintPath>..\..\packages\FubuCore\lib\FubuCore.dll</HintPath>

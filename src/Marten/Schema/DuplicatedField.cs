@@ -31,7 +31,7 @@ namespace Marten.Schema
         public DuplicatedField(MemberInfo[] memberPath)
         {
             MemberPath = memberPath;
-            UpsertArgument = new UpsertArgument();
+            ColumnName = MemberPath.Select(x => x.Name).Join("").SplitPascalCase().ToLower().Replace(" ", "_");
         }
 
         /// <summary>
@@ -44,12 +44,23 @@ namespace Marten.Schema
 
         public DuplicatedFieldRole Role { get; set; } = DuplicatedFieldRole.Search;
 
-        public UpsertArgument UpsertArgument { get; private set; }
+        public UpsertArgument UpsertArgument
+        {
+            get
+            {
+                return new UpsertArgument
+                {
+                    Arg = "arg_" + ColumnName.ToLower(),
+                    Column = ColumnName.ToLower(),
+                    PostgresType = TypeMappings.PgTypes[MemberPath.Last().GetMemberType()]
+                };
+            }
+        }
 
         // I say you don't need a ForeignKey 
         public virtual TableColumn ToColumn(IDocumentSchema schema)
         {
-            return new TableColumn(MemberPath.Select(x => x.Name).Join(""), TypeMappings.PgTypes[MemberPath.Last().GetMemberType()]);
+            return new TableColumn(ColumnName, TypeMappings.PgTypes[MemberPath.Last().GetMemberType()]);
         }
     }
 }

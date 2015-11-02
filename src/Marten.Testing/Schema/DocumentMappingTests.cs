@@ -65,7 +65,7 @@ namespace Marten.Testing.Schema
 
             var table = mapping.ToTable(null);
 
-            table.Columns.Any(x => x.Name == "FirstName").ShouldBeTrue();
+            table.Columns.Any(x => x.Name == "first_name").ShouldBeTrue();
         }
 
         public void generate_a_table_to_the_database_with_duplicated_field()
