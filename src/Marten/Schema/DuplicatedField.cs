@@ -62,5 +62,12 @@ namespace Marten.Schema
         {
             return new TableColumn(ColumnName, TypeMappings.PgTypes[MemberPath.Last().GetMemberType()]);
         }
+
+        public string WithParameterCode()
+        {
+            var accessor = MemberPath.Select(x => x.Name + "?").Join("").TrimEnd('?');
+
+            return $".WithParameter(`{UpsertArgument.Arg}`, document.{accessor})".Replace('`', '"');
+        }
     }
 }

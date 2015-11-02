@@ -106,6 +106,12 @@ namespace Marten.Schema
 
         public void GenerateDocumentStorage(SourceWriter writer)
         {
+            var extraUpsertArguments = DuplicatedFields.Any()
+                ? DuplicatedFields.Select(x => x.WithParameterCode()).Join("")
+                : "";
+
+
+
             writer.Write(
                 $@"
 BLOCK:public class {DocumentType.Name
@@ -164,9 +170,8 @@ BLOCK:public NpgsqlCommand UpsertCommand({
 return new NpgsqlCommand(`{UpsertName
                     }`)
     .AsSproc()
-    .WithParameter(`id`, document.{IdMember.Name
-                    })
-    .WithJsonParameter(`doc`, json);
+    .WithParameter(`id`, document.{IdMember.Name})
+    .WithJsonParameter(`doc`, json){extraUpsertArguments};
 END
 
 END
@@ -206,5 +211,6 @@ END
         {
             return $"{Arg} {PostgresType}";
         }
+
     }
 }
