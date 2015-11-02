@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -25,6 +26,8 @@ namespace Marten.Schema
 
             UpsertName = UpsertNameFor(documentType);
         }
+
+        public readonly IList<DuplicatedField> DuplicatedFields = new List<DuplicatedField>(); 
 
         public string UpsertName { get; private set; }
 
@@ -55,6 +58,9 @@ namespace Marten.Schema
             var pgIdType = TypeMappings.PgTypes[IdMember.GetMemberType()];
             var table = new TableDefinition(TableName, new TableColumn("id", pgIdType));
             table.Columns.Add(new TableColumn("data", "jsonb NOT NULL"));
+
+            DuplicatedFields.Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
+
 
             return table;
 
@@ -129,6 +135,11 @@ END
 ");
 
         }
+
+        public static DocumentMapping For<T>()
+        {
+            return new DocumentMapping(typeof(T));
+        }
     }
 
     // There would be others for sequences and hilo, etc.
@@ -144,33 +155,6 @@ END
     {
         Search,
         ForeignKey
-    }
-
-    public class DuplicatedField
-    {
-        public DuplicatedField(MemberInfo[] memberPath)
-        {
-            MemberPath = memberPath;
-            UpsertArgument = new UpsertArgument();
-        }
-
-        /// <summary>
-        ///     Because this could be a deeply nested property and maybe even an
-        ///     indexer? Or change to MemberInfo[] instead.
-        /// </summary>
-        public MemberInfo[] MemberPath { get; private set; }
-
-        public string ColumnName { get; set; }
-
-        public DuplicatedFieldRole Role { get; set; } = DuplicatedFieldRole.Search;
-
-        public UpsertArgument UpsertArgument { get; private set; }
-
-        // I say you don't need a ForeignKey 
-        public virtual ColumnDefinition ToColumn()
-        {
-            throw new NotImplementedException();
-        }
     }
 
     public class UpsertArgument

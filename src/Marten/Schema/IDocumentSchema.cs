@@ -9,5 +9,7 @@ namespace Marten.Schema
         IEnumerable<string> SchemaTableNames();
         string[] DocumentTables();
         IEnumerable<string> SchemaFunctionNames();
+
+        DocumentMapping MappingFor(Type documentType);
     }
 }

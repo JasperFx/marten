@@ -1,9 +1,11 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
+using StructureMap;
 
 namespace Marten.Testing.Schema
 {
@@ -55,6 +57,33 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("CREATE TABLE mt_doc_myspecialdocument");
             sql.ShouldContain("jsonb NOT NULL");
         }
+
+        public void generate_a_document_table_with_duplicated_tables()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.DuplicatedFields.Add(DuplicatedField.For<User>(x => x.FirstName));
+
+            var table = mapping.ToTable(null);
+
+            table.Columns.Any(x => x.Name == "FirstName").ShouldBeTrue();
+        }
+
+        public void generate_a_table_to_the_database_with_duplicated_field()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                container.GetInstance<DocumentCleaner>().CompletelyRemove(typeof(User));
+
+                var schema = container.GetInstance<IDocumentSchema>();
+
+                schema.MappingFor(typeof(User)).DuplicatedFields.Add(DuplicatedField.For<User>(x => x.FirstName));
+
+                var storage = schema.StorageFor(typeof (User));
+
+                schema.DocumentTables().ShouldContain(storage.TableName);
+            }
+        }
+
 
         public void write_upsert_sql()
         {

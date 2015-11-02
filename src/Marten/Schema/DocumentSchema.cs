@@ -11,7 +11,7 @@ namespace Marten.Schema
         private readonly IDocumentSchemaCreation _creation;
         private readonly CommandRunner _runner;
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes = new ConcurrentDictionary<Type, IDocumentStorage>(); 
-
+        private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings = new ConcurrentDictionary<Type, DocumentMapping>(); 
 
         public DocumentSchema(IConnectionFactory connections, IDocumentSchemaCreation creation)
         {
@@ -19,15 +19,20 @@ namespace Marten.Schema
             _runner = new CommandRunner(connections);
         }
 
+        public DocumentMapping MappingFor(Type documentType)
+        {
+            return _documentMappings.GetOrAdd(documentType, type => new DocumentMapping(type));
+        }
+
         public IDocumentStorage StorageFor(Type documentType)
         {
             return _documentTypes.GetOrAdd(documentType, type =>
             {
-                var storage = DocumentStorageBuilder.Build(type);
+                var mapping = MappingFor(documentType);
+                var storage = DocumentStorageBuilder.Build(mapping);
 
                 if (!DocumentTables().Contains(storage.TableName))
                 {
-                    var mapping = new DocumentMapping(documentType);
                     _creation.CreateSchema(this, mapping);
                 }
 

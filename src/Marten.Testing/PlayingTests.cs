@@ -59,9 +59,9 @@ namespace Marten.Testing
 
         public void try_ocktokit()
         {
-            //var basicAuth = new Credentials("jeremydmiller", "FAKEPASSWORD"); 
+            var basicAuth = new Credentials("jeremydmiller", "FAKE"); 
 
-            //var exporter = new GitHubExporter(basicAuth, AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("GitHub"));
+            var exporter = new GitHubExporter(basicAuth, AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("GitHub"));
 
             //exporter.Export("darthfubumvc", "HtmlTags");
             //exporter.Export("darthfubumvc", "FubuCore");
