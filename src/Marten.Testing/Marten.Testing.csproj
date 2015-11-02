@@ -58,6 +58,11 @@
     <Compile Include="Fixtures\ResultSet.cs" />
     <Compile Include="Fixtures\Target.cs" />
     <Compile Include="Generation\TemplateReadingTests.cs" />
+    <Compile Include="Github\Documents.cs" />
+    <Compile Include="Github\GhRepository.cs" />
+    <Compile Include="Github\GhUser.cs" />
+    <Compile Include="Github\GitHubExporter.cs" />
+    <Compile Include="Github\RepositoryHistory.cs" />
     <Compile Include="Linq\deep_searches_Tests.cs" />
     <Compile Include="Linq\invoking_queryable_any_Tests.cs">
       <SubType>Code</SubType>

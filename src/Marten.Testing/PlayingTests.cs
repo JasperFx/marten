@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
+using FubuCore;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
+using Marten.Testing.Github;
 using Npgsql;
 using Octokit;
 using Shouldly;
@@ -53,5 +56,19 @@ namespace Marten.Testing
             });
         }
 
+
+        public void try_ocktokit()
+        {
+            //var basicAuth = new Credentials("jeremydmiller", "FAKEPASSWORD"); 
+
+            //var exporter = new GitHubExporter(basicAuth, AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("GitHub"));
+
+            //exporter.Export("darthfubumvc", "HtmlTags");
+            //exporter.Export("darthfubumvc", "FubuCore");
+            //exporter.Export("darthfubumvc", "Bottles");
+            //exporter.Export("darthfubumvc", "FubuMVC");
+            //exporter.Export("structuremap", "structuremap");
+            //exporter.Export("storyteller", "storyteller");
+        }
     }
 }
