@@ -33,7 +33,7 @@ namespace Marten.Testing.Github
 
             var lookups = client.Repository.Commits.GetAll(owner, repoName).ContinueWith(t =>
             {
-                return t.Result.Select(c =>
+                return t.Result.Take(500).Select(c =>
                 {
                     return client.Repository.Commits.Get(owner, repoName, c.Sha);
                 });
