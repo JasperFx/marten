@@ -24,7 +24,7 @@ namespace Marten.Schema
             _schema.DocumentTables().Each(truncateTable);
         }
 
-        public void DocumentsFor(Type documentType)
+        public void DeleteDocumentsFor(Type documentType)
         {
             var tableName = DocumentMapping.TableNameFor(documentType);
             truncateTable(tableName);

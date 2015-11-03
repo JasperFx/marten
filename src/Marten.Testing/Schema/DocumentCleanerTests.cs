@@ -27,7 +27,7 @@ namespace Marten.Testing.Schema
 
                 var cleaner = container.GetInstance<DocumentCleaner>();
 
-                cleaner.DocumentsFor(typeof(Target));
+                cleaner.DeleteDocumentsFor(typeof(Target));
 
                 session.Query<Target>().Count().ShouldBe(0);
             }

@@ -17,6 +17,7 @@ namespace Marten.Schema
         NpgsqlCommand CountCommand(QueryModel queryModel);
 
         Type DocumentType { get; }
+        
     }
 
 }

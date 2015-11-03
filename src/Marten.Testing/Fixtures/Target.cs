@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using FubuCore;
 
 namespace Marten.Testing.Fixtures
@@ -12,6 +14,65 @@ namespace Marten.Testing.Fixtures
 
     public class Target
     {
+        private static Random _random = new Random(67);
+
+        private static string[] _strings = new[]
+        {"Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Violet", "Pink", "Gray", "Black"};
+
+
+        public static IEnumerable<Target> GenerateRandomData(int number)
+        {
+            var i = 0;
+            while (i < number)
+            {
+                yield return Random(true);
+
+                i++;
+            }
+        } 
+
+        public static Target Random(bool deep = false)
+        {
+            var target = new Target();
+            target.String = _strings[_random.Next(0, 10)];
+            target.Number = _random.Next();
+
+            switch (_random.Next(0, 2))
+            {
+                case 0:
+                    target.Color = Colors.Blue;
+                    break;
+
+                case 1: 
+                    target.Color = Colors.Green;
+                    break;
+
+                default: 
+                    target.Color = Colors.Red;
+                    break;
+            }
+
+            target.Long = 100*_random.Next();
+            target.Double = _random.NextDouble();
+            target.Long = _random.Next()*10000;
+
+            target.Date = DateTime.Today.AddDays(_random.Next(1, 100));
+
+            if (deep)
+            {
+                target.Inner = Random();
+
+                var number = _random.Next(1, 10);
+                target.Children = new Target[number];
+                for (int i = 0; i < number; i++)
+                {
+                    target.Children[i] = Random();
+                }
+            }
+
+            return target;
+        }
+
         public Target()
         {
             Id = Guid.NewGuid();
@@ -35,6 +96,8 @@ namespace Marten.Testing.Fixtures
         public DateTimeOffset DateOffset { get; set; }
 
         public int[] NumberArray { get; set; }
+
+        public Target[] Children { get; set; }
 
     }
 
