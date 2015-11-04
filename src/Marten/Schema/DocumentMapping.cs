@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,6 +15,7 @@ namespace Marten.Schema
 {
     public class DocumentMapping
     {
+        private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>(); 
         public readonly IList<DuplicatedField> DuplicatedFields = new List<DuplicatedField>();
 
         public DocumentMapping(Type documentType)
@@ -26,6 +28,30 @@ namespace Marten.Schema
             TableName = TableNameFor(documentType);
 
             UpsertName = UpsertNameFor(documentType);
+
+            documentType.GetProperties().Where(x => TypeMappings.HasTypeMapping(x.PropertyType)).Each(prop =>
+            {
+                var field = new LateralJoinField(prop);
+                _fields.AddOrUpdate(field.MemberName, field, (key, f) => f);
+            });
+
+            documentType.GetFields().Where(x => TypeMappings.HasTypeMapping(x.FieldType)).Each(fieldInfo =>
+            {
+                var field = new LateralJoinField(fieldInfo);
+                _fields.AddOrUpdate(field.MemberName, field, (key, f) => f);
+            });
+
+
+        }
+
+        public IField FieldFor(MemberInfo member)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IField FieldFor(string memberName)
+        {
+            return _fields[memberName];
         }
 
         public string UpsertName { get; }

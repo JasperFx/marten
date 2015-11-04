@@ -17,5 +17,11 @@ namespace Marten
             {typeof(DateTime), "date"},
             {typeof(DateTimeOffset), "timestamp with time zone"}
         };
+
+        public static bool HasTypeMapping(Type memberType)
+        {
+            // more complicated later
+            return PgTypes.ContainsKey(memberType);
+        }
     }
 }

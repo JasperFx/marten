@@ -116,6 +116,22 @@ namespace Marten.Testing.Schema
                 .ShouldBe("mt_upsert_myspecialdocument");
         }
 
+        public void find_field_for_immediate_property_that_is_not_duplicated()
+        {
+            var mapping = DocumentMapping.For<UpperCaseProperty>();
+            var field = mapping.FieldFor("Id").ShouldBeOfType<LateralJoinField>();
+            field.Members.Single().ShouldBeAssignableTo<PropertyInfo>()
+                .Name.ShouldBe("Id");
+        }
+
+        public void find_field_for_immediate_field_that_is_not_duplicated()
+        {
+            var mapping = DocumentMapping.For<UpperCaseField>();
+            var field = mapping.FieldFor("Id").ShouldBeOfType<LateralJoinField>();
+            field.Members.Single().ShouldBeAssignableTo<FieldInfo>()
+                .Name.ShouldBe("Id");
+        }
+
 
         public class UpperCaseProperty
         {
