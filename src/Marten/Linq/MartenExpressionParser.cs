@@ -50,7 +50,7 @@ namespace Marten.Linq
             if (expression is MemberExpression && expression.Type == typeof(bool))
             {
                 var locator = JsonLocator(mapping, expression.As<MemberExpression>());
-                return new WhereFragment("({0})::Boolean = True".ToFormat(locator), true);
+                return new WhereFragment("{0} = True".ToFormat(locator), true);
             }
 
             if (expression.NodeType == ExpressionType.Not)
@@ -164,12 +164,18 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
+        // TODO -- use the mapping off of DocumentQuery later
         public string JsonLocator(DocumentMapping mapping, Expression expression)
         {
             var visitor = new FindMembers();
             visitor.Visit(expression);
 
-            var field = new JsonLocatorField(visitor.Members.ToArray());
+            //return new JsonLocatorField(visitor.Members.ToArray()).SqlLocator;
+
+            var field = mapping.FieldFor(visitor.Members);
+
+            _query.RegisterField(field);
+
             return field.SqlLocator;
         }
 

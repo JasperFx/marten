@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using FubuCore;
 using Marten.Schema;
 using Npgsql;
 using Remotion.Linq;
@@ -28,20 +29,47 @@ namespace Marten.Linq
             var sql = "select (count(*) > 0) as result from " + _mapping.TableName + " as d";
 
             var command = new NpgsqlCommand();
-            sql = appendWhereClause(sql, command);
+
+            var where = buildWhereClause();
+
+            sql = appendLateralJoin(sql);
+
+            if (@where != null) sql += " where " + @where.ToSql(command);
 
             command.CommandText = sql;
 
             return command;
         }
 
+        public NpgsqlCommand ToCountCommand()
+        {
+            var sql = "select count(*) as number from " + _mapping.TableName + " as d";
+
+            var command = new NpgsqlCommand();
+            var where = buildWhereClause();
+
+            sql = appendLateralJoin(sql);
+            if (@where != null) sql += " where " + @where.ToSql(command);
+
+
+            command.CommandText = sql;
+
+            return command;
+        }
+
+
         public NpgsqlCommand ToCommand()
         {
             var command = new NpgsqlCommand();
             var sql = "select d.data from " + _mapping.TableName + " as d";
 
-            sql = appendWhereClause(sql, command);
-            sql = appendOrderClause(sql);
+            var where = buildWhereClause();
+            var orderBy = toOrderClause();
+
+            sql = appendLateralJoin(sql);
+            if (@where != null) sql += " where " + @where.ToSql(command);
+
+            if (orderBy.IsNotEmpty()) sql += orderBy;
 
             sql = appendLimit(sql);
             sql = appendOffset(sql);
@@ -67,12 +95,12 @@ namespace Marten.Linq
             return take == null ? sql : sql + " LIMIT " + take.Count + " ";
         }
 
-        private string appendOrderClause(string sql)
+        private string toOrderClause()
         {
             var orders = _query.BodyClauses.OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
-            if (!orders.Any()) return sql;
+            if (!orders.Any()) return string.Empty;
 
-            return sql += " order by " + orders.Select(ToOrderClause).Join(", ");
+            return " order by " + orders.Select(ToOrderClause).Join(", ");
         }
 
         public string ToOrderClause(Ordering clause)
@@ -83,31 +111,39 @@ namespace Marten.Linq
                 : locator + " desc";
         }
 
-        private string appendWhereClause(string sql, NpgsqlCommand command)
+        private IWhereFragment buildWhereClause()
         {
             var wheres = _query.BodyClauses.OfType<WhereClause>().ToArray();
-            if (wheres.Length == 0) return sql;
+            if (wheres.Length == 0) return null;
 
-            var where = wheres.Length == 1
+            return wheres.Length == 1
                 ? _parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
                 : new CompoundWhereFragment(_parser, _mapping, "and", wheres);
 
+        }
 
-            sql += " where " + where.ToSql(command);
+        private string appendLateralJoin(string sql)
+        {
+            var lateralFields =
+                _fields.Where(x => x.LateralJoinDeclaration.IsNotEmpty())
+                    .Select(x => x.LateralJoinDeclaration)
+                    .Distinct()
+                    .ToArray();
 
+            if (lateralFields.Any())
+            {
+                var laterals = lateralFields.Join(", ");
+                sql += $", LATERAL jsonb_to_record(d.data) as l({laterals})";
+            }
             return sql;
         }
 
-        public NpgsqlCommand ToCountCommand()
+
+        private readonly IList<IField> _fields = new List<IField>(); 
+
+        public void RegisterField(IField field)
         {
-            var sql = "select count(*) as number from " + _mapping.TableName + " as d";
-
-            var command = new NpgsqlCommand();
-            sql = appendWhereClause(sql, command);
-
-            command.CommandText = sql;
-
-            return command;
+            _fields.Add(field);
         }
     }
 }

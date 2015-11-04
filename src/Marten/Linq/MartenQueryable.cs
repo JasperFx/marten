@@ -10,7 +10,7 @@ namespace Marten.Linq
     {
         public MartenQueryable(IQueryParser queryParser, IMartenQueryExecutor executor) : base(queryParser, executor)
         {
-
+            
         }
 
         public MartenQueryable(IQueryProvider provider) : base(provider)
@@ -20,5 +20,6 @@ namespace Marten.Linq
         public MartenQueryable(IQueryProvider provider, Expression expression) : base(provider, expression)
         {
         }
+
     }
 }
