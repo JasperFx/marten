@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using FubuCore;
 
 namespace Marten
 {
@@ -22,6 +23,20 @@ namespace Marten
         {
             // more complicated later
             return PgTypes.ContainsKey(memberType);
+        }
+
+        public static string ApplyCastToLocator(this string locator, Type memberType)
+        {
+            if (memberType.IsEnum)
+            {
+                return "({0})::int".ToFormat(locator);
+            }
+
+            if (!TypeMappings.PgTypes.ContainsKey(memberType))
+                throw new ArgumentOutOfRangeException(nameof(memberType),
+                    "There is not a known Postgresql cast for member type " + memberType.FullName);
+
+            return "CAST({0} as {1})".ToFormat(locator, TypeMappings.PgTypes[memberType]);
         }
     }
 }

@@ -12,10 +12,10 @@ namespace Marten.Linq
         private readonly string _separator;
         private readonly IWhereFragment[] _children;
 
-        public CompoundWhereFragment(DocumentMapping mapping, string separator, IEnumerable<WhereClause> wheres)
+        public CompoundWhereFragment(MartenExpressionParser parser, DocumentMapping mapping, string separator, IEnumerable<WhereClause> wheres)
         {
             _separator = separator;
-            _children = wheres.Select(x => MartenExpressionParser.ParseWhereFragment(mapping, x.Predicate)).ToArray();
+            _children = wheres.Select(x => parser.ParseWhereFragment(mapping, x.Predicate)).ToArray();
         }
 
         public CompoundWhereFragment(string separator, params IWhereFragment[] children)

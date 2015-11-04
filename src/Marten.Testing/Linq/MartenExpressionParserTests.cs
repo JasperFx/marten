@@ -1,8 +1,5 @@
 ﻿using System.Linq.Expressions;
-using FubuCore.Reflection;
 using Marten.Linq;
-using Marten.Schema;
-using Marten.Testing.Documents;
 using Shouldly;
 
 namespace Marten.Testing.Linq
@@ -15,15 +12,6 @@ namespace Marten.Testing.Linq
 
             MartenExpressionParser.Value(constant)
                 .ShouldBe("foo");
-        }
-
-        public void json_locator_of_a_simple_property()
-        {
-            var variable = Expression.Variable(typeof(User), "foo");
-            var member = Expression.MakeMemberAccess(variable, ReflectionHelper.GetProperty<User>(x => x.FirstName));
-
-            MartenExpressionParser.JsonLocator(new DocumentMapping(typeof(User)), member)
-                .ShouldBe("d.data ->> 'FirstName'");
         }
     }
 }

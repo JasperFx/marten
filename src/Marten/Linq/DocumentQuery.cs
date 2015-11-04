@@ -14,11 +14,13 @@ namespace Marten.Linq
     {
         private readonly DocumentMapping _mapping;
         private readonly QueryModel _query;
+        private readonly MartenExpressionParser _parser;
 
         public DocumentQuery(DocumentMapping mapping, QueryModel query)
         {
             _mapping = mapping;
             _query = query;
+            _parser = new MartenExpressionParser(this);
         }
 
         public NpgsqlCommand ToAnyCommand()
@@ -75,7 +77,7 @@ namespace Marten.Linq
 
         public string ToOrderClause(Ordering clause)
         {
-            var locator = MartenExpressionParser.JsonLocator(_mapping, clause.Expression);
+            var locator = _parser.JsonLocator(_mapping, clause.Expression);
             return clause.OrderingDirection == OrderingDirection.Asc
                 ? locator
                 : locator + " desc";
@@ -87,8 +89,8 @@ namespace Marten.Linq
             if (wheres.Length == 0) return sql;
 
             var where = wheres.Length == 1
-                ? MartenExpressionParser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
-                : new CompoundWhereFragment(_mapping, "and", wheres);
+                ? _parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
+                : new CompoundWhereFragment(_parser, _mapping, "and", wheres);
 
 
             sql += " where " + where.ToSql(command);

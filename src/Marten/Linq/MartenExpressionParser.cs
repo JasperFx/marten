@@ -13,8 +13,9 @@ namespace Marten.Linq
 {
     
 
-    public static class MartenExpressionParser
+    public class MartenExpressionParser
     {
+        private readonly DocumentQuery _query;
         private static readonly string CONTAINS = ReflectionHelper.GetMethod<string>(x => x.Contains("null")).Name;
         private static readonly string STARTS_WITH = ReflectionHelper.GetMethod<string>(x => x.StartsWith("null")).Name;
         private static readonly string ENDS_WITH = ReflectionHelper.GetMethod<string>(x => x.EndsWith("null")).Name;
@@ -29,21 +30,12 @@ namespace Marten.Linq
             {ExpressionType.LessThanOrEqual, "<="}
         };
 
-        public static string ApplyCastToLocator(this string locator, Type memberType)
+        public MartenExpressionParser(DocumentQuery query)
         {
-            if (memberType.IsEnum)
-            {
-                return "({0})::int".ToFormat(locator);
-            }
-
-            if (!TypeMappings.PgTypes.ContainsKey(memberType))
-                throw new ArgumentOutOfRangeException(nameof(memberType),
-                    "There is not a known Postgresql cast for member type " + memberType.FullName);
-
-            return "CAST({0} as {1})".ToFormat(locator, TypeMappings.PgTypes[memberType]);
+            _query = query;
         }
 
-        public static IWhereFragment ParseWhereFragment(DocumentMapping mapping, Expression expression)
+        public IWhereFragment ParseWhereFragment(DocumentMapping mapping, Expression expression)
         {
             if (expression is BinaryExpression)
             {
@@ -70,7 +62,7 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        private static IWhereFragment GetNotWhereFragment(DocumentMapping mapping, Expression expression)
+        private IWhereFragment GetNotWhereFragment(DocumentMapping mapping, Expression expression)
         {
             if (expression is MemberExpression && expression.Type == typeof(bool))
             {
@@ -81,7 +73,7 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        private static IWhereFragment GetMethodCall(DocumentMapping mapping, MethodCallExpression expression)
+        private IWhereFragment GetMethodCall(DocumentMapping mapping, MethodCallExpression expression)
         {
 
             // TODO -- generalize this mess
@@ -122,7 +114,7 @@ namespace Marten.Linq
             throw new NotImplementedException();
         }
 
-        public static IWhereFragment GetWhereFragment(DocumentMapping mapping, BinaryExpression binary)
+        public IWhereFragment GetWhereFragment(DocumentMapping mapping, BinaryExpression binary)
         {
             if (_operators.ContainsKey(binary.NodeType))
             {
@@ -144,7 +136,7 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        private static IWhereFragment buildSimpleWhereClause(DocumentMapping mapping, BinaryExpression binary)
+        private IWhereFragment buildSimpleWhereClause(DocumentMapping mapping, BinaryExpression binary)
         {
             var jsonLocator = JsonLocator(mapping, binary.Left);
             
@@ -172,7 +164,7 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        public static string JsonLocator(DocumentMapping mapping, Expression expression)
+        public string JsonLocator(DocumentMapping mapping, Expression expression)
         {
             var visitor = new FindMembers();
             visitor.Visit(expression);
