@@ -23,7 +23,7 @@ namespace Marten.Linq
 
         public NpgsqlCommand ToAnyCommand()
         {
-            var sql = "select (count(*) > 0) as result from " + _mapping.TableName;
+            var sql = "select (count(*) > 0) as result from " + _mapping.TableName + " as d";
 
             var command = new NpgsqlCommand();
             sql = appendWhereClause(sql, command);
@@ -36,7 +36,7 @@ namespace Marten.Linq
         public NpgsqlCommand ToCommand()
         {
             var command = new NpgsqlCommand();
-            var sql = "select data from " + _mapping.TableName;
+            var sql = "select d.data from " + _mapping.TableName + " as d";
 
             sql = appendWhereClause(sql, command);
             sql = appendOrderClause(sql);
@@ -98,7 +98,7 @@ namespace Marten.Linq
 
         public NpgsqlCommand ToCountCommand()
         {
-            var sql = "select count(*) as number from " + _mapping.TableName;
+            var sql = "select count(*) as number from " + _mapping.TableName + " as d";
 
             var command = new NpgsqlCommand();
             sql = appendWhereClause(sql, command);

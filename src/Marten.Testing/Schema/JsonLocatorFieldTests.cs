@@ -55,7 +55,7 @@ namespace Marten.Testing.Schema
 
             var twodeep = new JsonLocatorField(new MemberInfo[] {inner, number});
 
-            twodeep.SqlLocator.ShouldBe("CAST(d.data ->> 'Inner' -> 'Number' as integer)");
+            twodeep.SqlLocator.ShouldBe("CAST(d.data -> 'Inner' ->> 'Number' as integer)");
         }
 
 
@@ -66,7 +66,7 @@ namespace Marten.Testing.Schema
 
             var deep = new JsonLocatorField(new MemberInfo[] { inner, inner, number });
 
-            deep.SqlLocator.ShouldBe("CAST(d.data ->> 'Inner' ->> 'Inner' -> 'Number' as integer)");
+            deep.SqlLocator.ShouldBe("CAST(d.data -> 'Inner' -> 'Inner' ->> 'Number' as integer)");
         }
 
         public void three_deep_members_json_locator_for_string_property()
@@ -76,7 +76,7 @@ namespace Marten.Testing.Schema
 
             var deep = new JsonLocatorField(new MemberInfo[] { inner, inner, stringProp });
 
-            deep.SqlLocator.ShouldBe("d.data ->> 'Inner' ->> 'Inner' -> 'String'");
+            deep.SqlLocator.ShouldBe("d.data -> 'Inner' -> 'Inner' ->> 'String'");
         }
     }
 }

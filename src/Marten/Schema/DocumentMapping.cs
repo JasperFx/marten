@@ -3,29 +3,17 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using FubuCore;
 using Marten.Codegen;
 using Marten.Generation;
-using Marten.Linq;
 using Marten.Util;
 
 namespace Marten.Schema
 {
+    // TODO - This is becoming a Blob class. Split out the Sql and C# generation maybe?
     public class DocumentMapping
     {
-        public static string TableNameFor(Type documentType)
-        {
-            return "mt_doc_" + documentType.Name.ToLower();
-        }
-
-        public static string UpsertNameFor(Type documentType)
-        {
-            return "mt_upsert_" + documentType.Name.ToLower();
-        }
-
-
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
         private PropertySearching _propertySearching = PropertySearching.JSONB_To_Record;
 
@@ -71,23 +59,27 @@ namespace Marten.Schema
                 if (_propertySearching == PropertySearching.JSONB_To_Record)
                 {
                     var fields = _fields.Values.Where(x => x.Members.Length == 1).OfType<JsonLocatorField>().ToArray();
-                    fields.Each(x =>
-                    {
-                        _fields[x.MemberName] = new LateralJoinField(x.Members.Last());
-                    });
+                    fields.Each(x => { _fields[x.MemberName] = new LateralJoinField(x.Members.Last()); });
                 }
                 else
                 {
                     var fields = _fields.Values.Where(x => x.Members.Length == 1).OfType<LateralJoinField>().ToArray();
-                    fields.Each(x =>
-                    {
-                        _fields[x.MemberName] = new JsonLocatorField(x.Members.Last());
-                    });
+                    fields.Each(x => { _fields[x.MemberName] = new JsonLocatorField(x.Members.Last()); });
                 }
             }
         }
 
         public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();
+
+        public static string TableNameFor(Type documentType)
+        {
+            return "mt_doc_" + documentType.Name.ToLower();
+        }
+
+        public static string UpsertNameFor(Type documentType)
+        {
+            return "mt_upsert_" + documentType.Name.ToLower();
+        }
 
         public IField FieldFor(MemberInfo member)
         {
@@ -170,35 +162,50 @@ namespace Marten.Schema
 
             writer.Write(
                 $@"
-BLOCK:public class {DocumentType.Name}Storage : IDocumentStorage
-public Type DocumentType => typeof ({DocumentType.Name});
+BLOCK:public class {DocumentType.Name
+                    }Storage : IDocumentStorage
+public Type DocumentType => typeof ({DocumentType.Name
+                    });
 
 BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
-return UpsertCommand(({DocumentType.Name})document, json);
+return UpsertCommand(({
+                    DocumentType.Name
+                    })document, json);
 END
 
 BLOCK:public NpgsqlCommand LoaderCommand(object id)
-return new NpgsqlCommand(`select data from {TableName} where id = :id`).WithParameter(`id`, id);
+return new NpgsqlCommand(`select data from {
+                    TableName
+                    } where id = :id`).WithParameter(`id`, id);
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForId(object id)
-return new NpgsqlCommand(`delete from {TableName} where id = :id`).WithParameter(`id`, id);
+return new NpgsqlCommand(`delete from {
+                    TableName
+                    } where id = :id`).WithParameter(`id`, id);
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForEntity(object entity)
-return DeleteCommandForId((({DocumentType.Name})entity).{IdMember.Name});
+return DeleteCommandForId((({
+                    DocumentType.Name})entity).{IdMember.Name
+                    });
 END
 
 BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
-return new NpgsqlCommand(`select data from {TableName} where id = ANY(:ids)`).WithParameter(`ids`, ids);
+return new NpgsqlCommand(`select data from {
+                    TableName
+                    } where id = ANY(:ids)`).WithParameter(`ids`, ids);
 END
 
 
 // TODO: This wil need to get fancier later
-BLOCK:public NpgsqlCommand UpsertCommand({DocumentType.Name} document, string json)
-return new NpgsqlCommand(`{UpsertName}`)
+BLOCK:public NpgsqlCommand UpsertCommand({
+                    DocumentType.Name} document, string json)
+return new NpgsqlCommand(`{UpsertName
+                    }`)
     .AsSproc()
-    .WithParameter(`id`, document.{IdMember.Name})
+    .WithParameter(`id`, document.{IdMember.Name
+                    })
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
 END
 
@@ -212,16 +219,6 @@ END
             return new DocumentMapping(typeof (T));
         }
 
-        public WhereFragment BuildWhereFragment(string pattern, Expression expression, params object[] parameters)
-        {
-            throw new NotImplementedException();
-        }
-
-        public WhereFragment BuildWhereFragment(string pattern, MemberInfo[] members, params object[] parameters)
-        {
-            throw new NotImplementedException();
-        }
-
         public DuplicatedField DuplicateField(string memberName)
         {
             var field = FieldFor(memberName);
@@ -231,30 +228,19 @@ END
 
             return duplicate;
         }
-    }
 
-    public enum PropertySearching
-    {
-        JSONB_To_Record,
-        JSON_Locator_Only
-    }
-
-    public enum DuplicatedFieldRole
-    {
-        Search,
-        ForeignKey
-    }
-
-    public class UpsertArgument
-    {
-        public string Arg { get; set; }
-        public string PostgresType { get; set; }
-
-        public string Column { get; set; }
-
-        public string ArgumentDeclaration()
+        public IField FieldFor(IEnumerable<MemberInfo> members)
         {
-            return $"{Arg} {PostgresType}";
+            if (members.Count() == 1)
+            {
+                return FieldFor(members.Single());
+            }
+
+            var key = members.Select(x => x.Name).Join("");
+            return _fields.GetOrAdd(key, _ =>
+            {
+                return new JsonLocatorField(members.ToArray());
+            });
         }
     }
 }

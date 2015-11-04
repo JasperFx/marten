@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using FubuCore.Reflection;
+using Marten.Linq;
 using Marten.Util;
 
 namespace Marten.Schema
@@ -38,12 +39,12 @@ namespace Marten.Schema
             var locator = "d.data";
             for (int i = 0; i < members.Length - 1; i++)
             {
-                locator += $" ->> '{members[i].Name}'";
+                locator += $" -> '{members[i].Name}'";
             }
 
-            locator += $" -> '{members.Last().Name}'";
+            locator += $" ->> '{members.Last().Name}'";
 
-            SqlLocator = MemberType == typeof (string) ? locator : $"CAST({locator} as {PgType})";
+            SqlLocator = MemberType == typeof (string) ? locator : locator.ApplyCastToLocator(MemberType);
         }
 
         public string SqlLocator { get; }

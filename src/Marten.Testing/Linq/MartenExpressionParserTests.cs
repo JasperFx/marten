@@ -23,7 +23,7 @@ namespace Marten.Testing.Linq
             var member = Expression.MakeMemberAccess(variable, ReflectionHelper.GetProperty<User>(x => x.FirstName));
 
             MartenExpressionParser.JsonLocator(new DocumentMapping(typeof(User)), member)
-                .ShouldBe("data ->> 'FirstName'");
+                .ShouldBe("d.data ->> 'FirstName'");
         }
     }
 }

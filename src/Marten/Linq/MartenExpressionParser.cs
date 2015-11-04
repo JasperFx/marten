@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using FubuCore;
 using FubuCore.Reflection;
 using Marten.Schema;
 using Marten.Util;
+using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
 {
@@ -172,49 +174,24 @@ namespace Marten.Linq
 
         public static string JsonLocator(DocumentMapping mapping, Expression expression)
         {
-            if (expression is MemberExpression)
-            {
-                var memberExpression = expression.As<MemberExpression>();
-                return JsonLocator(mapping, memberExpression);
-            }
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
 
-            if (expression is UnaryExpression)
-            {
-                return JsonLocator(mapping, expression.As<UnaryExpression>());
-            }
-
-            throw new NotSupportedException();
+            var field = new JsonLocatorField(visitor.Members.ToArray());
+            return field.SqlLocator;
         }
 
-        public static string JsonLocator(DocumentMapping mapping, UnaryExpression expression)
+
+    }
+
+    public class FindMembers : RelinqExpressionVisitor    {
+        public readonly IList<MemberInfo> Members = new List<MemberInfo>(); 
+
+        protected override Expression VisitMember(MemberExpression node)
         {
-            if (expression.NodeType == ExpressionType.Convert)
-            {
-                return JsonLocator(mapping, expression.Operand);
-            }
+            Members.Insert(0, node.Member);
 
-            throw new NotSupportedException();
-        }
-
-        public static string JsonLocator(DocumentMapping mapping, MemberExpression memberExpression)
-        {
-            var memberType = memberExpression.Member.GetMemberType();
-
-            var path = " ->> '{0}' ".ToFormat(memberExpression.Member.Name);
-            var parent = memberExpression.Expression as MemberExpression;
-            while (parent != null)
-            {
-                path = " -> '{0}' ".ToFormat(parent.Member.Name) + path;
-                parent = parent.Expression as MemberExpression;
-            }
-
-
-            var locator = "data{0}".ToFormat(path).TrimEnd();
-
-
-            if (memberType == typeof (string)) return locator;
-
-            return locator.ApplyCastToLocator(memberType);
+            return base.VisitMember(node);
         }
     }
 }

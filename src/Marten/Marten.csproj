@@ -66,6 +66,7 @@
     <Compile Include="Schema\DocumentSchema.cs" />
     <Compile Include="Schema\DocumentStorageBuilder.cs" />
     <Compile Include="Schema\DuplicatedField.cs" />
+    <Compile Include="Schema\DuplicatedFieldRole.cs" />
     <Compile Include="Schema\Field.cs" />
     <Compile Include="Schema\IDocumentCleaner.cs" />
     <Compile Include="Schema\IDocumentSchema.cs" />
@@ -76,6 +77,8 @@
     <Compile Include="Schema\JsonLocatorField.cs" />
     <Compile Include="Schema\LateralJoinField.cs" />
     <Compile Include="Schema\ProductionSchemaCreation.cs" />
+    <Compile Include="Schema\PropertySearching.cs" />
+    <Compile Include="Schema\UpsertArgument.cs" />
     <Compile Include="SerializerExtensions.cs" />
     <Compile Include="TypeMappings.cs" />
     <Compile Include="Codegen\AssemblyGenerator.cs" />
