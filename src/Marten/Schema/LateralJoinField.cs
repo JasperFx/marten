@@ -6,7 +6,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class LateralJoinField : IField
+    public class LateralJoinField : Field, IField
     {
         public static LateralJoinField For<T>(Expression<Func<T, object>> expression)
         {
@@ -16,32 +16,12 @@ namespace Marten.Schema
             return new LateralJoinField(property);
         }
 
-        public LateralJoinField(MemberInfo member)
+        public LateralJoinField(MemberInfo member) : base(member)
         {
-            MemberName = member.Name;
-            Members = new MemberInfo[] { member };
-
             SqlLocator = $"l.\"{member.Name}\"";
-
-            var memberType = member.GetMemberType();
-
-            if (memberType == typeof(string))
-            {
-                LateralJoinDeclaration = $"\"{member.Name}\" varchar";
-            }
-            else if (memberType.IsEnum)
-            {
-                LateralJoinDeclaration = $"\"{member.Name}\" integer";
-            }
-            else
-            {
-                var pgType = TypeMappings.PgTypes[memberType];
-                LateralJoinDeclaration = $"\"{member.Name}\" {pgType}";
-            }
+            LateralJoinDeclaration = $"\"{member.Name}\" {PgType}";
         }
 
-        public MemberInfo[] Members { get; private set; }
-        public string MemberName { get; private set; }
         public string SqlLocator { get; private set; }
         public string LateralJoinDeclaration { get; private set; }
     }

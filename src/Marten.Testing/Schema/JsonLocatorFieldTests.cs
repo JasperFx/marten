@@ -37,7 +37,7 @@ namespace Marten.Testing.Schema
 
         public void locator_for_enum()
         {
-            theEnumField.SqlLocator.ShouldBe("(d.data -> 'Color')::int");
+            theEnumField.SqlLocator.ShouldBe("CAST(d.data -> 'Color' as integer)");
         }
 
         public void the_lateral_join_declaration_is_null()

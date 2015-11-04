@@ -6,7 +6,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class JsonLocatorField : IField
+    public class JsonLocatorField : Field, IField
     {
         public static JsonLocatorField For<T>(Expression<Func<T, object>> expression)
         {
@@ -17,31 +17,22 @@ namespace Marten.Schema
         }
 
 
-        public JsonLocatorField(MemberInfo member)
+        public JsonLocatorField(MemberInfo member) : base(member)
         {
-            MemberName = member.Name;
-            Members = new MemberInfo[] {member};
-
             var memberType = member.GetMemberType();
             if (memberType == typeof (string))
             {
                 SqlLocator = $"d.data -> '{member.Name}'";
             }
-            else if (memberType.IsEnum)
-            {
-                SqlLocator = $"(d.data -> '{member.Name}')::int";
-            }
             else
             {
-                SqlLocator = $"CAST(d.data -> '{member.Name}' as {TypeMappings.PgTypes[memberType]})";
+                SqlLocator = $"CAST(d.data -> '{member.Name}' as {PgType})";
             }
 
 
         }
 
-        public MemberInfo[] Members { get; private set; }
-        public string MemberName { get; private set; }
-        public string SqlLocator { get; private set; }
+        public string SqlLocator { get; }
         public string LateralJoinDeclaration { get; } = null;
     }
 }

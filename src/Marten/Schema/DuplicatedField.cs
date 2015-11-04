@@ -10,7 +10,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class DuplicatedField
+    public class DuplicatedField : Field
     {
         public static DuplicatedField For<T>(Expression<Func<T, object>> expression)
         {
@@ -28,17 +28,10 @@ namespace Marten.Schema
             
         }
 
-        public DuplicatedField(MemberInfo[] memberPath)
+        public DuplicatedField(MemberInfo[] memberPath) : base(memberPath)
         {
-            MemberPath = memberPath;
-            ColumnName = MemberPath.Select(x => x.Name).Join("").SplitPascalCase().ToLower().Replace(" ", "_");
+            ColumnName = MemberName.SplitPascalCase().ToLower().Replace(" ", "_");
         }
-
-        /// <summary>
-        ///     Because this could be a deeply nested property and maybe even an
-        ///     indexer? Or change to MemberInfo[] instead.
-        /// </summary>
-        public MemberInfo[] MemberPath { get; private set; }
 
         public string ColumnName { get; set; }
 
@@ -48,18 +41,18 @@ namespace Marten.Schema
         {
             Arg = "arg_" + ColumnName.ToLower(),
             Column = ColumnName.ToLower(),
-            PostgresType = TypeMappings.PgTypes[MemberPath.Last().GetMemberType()]
+            PostgresType = TypeMappings.PgTypes[Members.Last().GetMemberType()]
         };
 
         // I say you don't need a ForeignKey 
         public virtual TableColumn ToColumn(IDocumentSchema schema)
         {
-            return new TableColumn(ColumnName, TypeMappings.PgTypes[MemberPath.Last().GetMemberType()]);
+            return new TableColumn(ColumnName, TypeMappings.PgTypes[Members.Last().GetMemberType()]);
         }
 
         public string WithParameterCode()
         {
-            var accessor = MemberPath.Select(x => x.Name + "?").Join("").TrimEnd('?');
+            var accessor = Members.Select(x => x.Name + "?").Join("").TrimEnd('?');
 
             return $".WithParameter(`{UpsertArgument.Arg}`, document.{accessor})".Replace('`', '"');
         }
