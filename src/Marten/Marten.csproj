@@ -66,6 +66,7 @@
     <Compile Include="Schema\DocumentSchema.cs" />
     <Compile Include="Schema\DocumentStorageBuilder.cs" />
     <Compile Include="Schema\DuplicatedField.cs" />
+    <Compile Include="Schema\Field.cs" />
     <Compile Include="Schema\IDocumentCleaner.cs" />
     <Compile Include="Schema\IDocumentSchema.cs" />
     <Compile Include="Schema\IDocumentSchemaCreation.cs" />

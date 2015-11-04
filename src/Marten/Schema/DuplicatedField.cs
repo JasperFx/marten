@@ -10,8 +10,10 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class DuplicatedField : Field
+    public class DuplicatedField : Field, IField
     {
+        private string _columnName;
+
         public static DuplicatedField For<T>(Expression<Func<T, object>> expression)
         {
             var accessor = ReflectionHelper.GetAccessor(expression);
@@ -33,7 +35,15 @@ namespace Marten.Schema
             ColumnName = MemberName.SplitPascalCase().ToLower().Replace(" ", "_");
         }
 
-        public string ColumnName { get; set; }
+        public string ColumnName
+        {
+            get { return _columnName; }
+            set
+            {
+                _columnName = value;
+                SqlLocator = "d." + _columnName;
+            }
+        }
 
         public DuplicatedFieldRole Role { get; set; } = DuplicatedFieldRole.Search;
 
@@ -56,5 +66,8 @@ namespace Marten.Schema
 
             return $".WithParameter(`{UpsertArgument.Arg}`, document.{accessor})".Replace('`', '"');
         }
+
+        public string SqlLocator { get; private set; }
+        public string LateralJoinDeclaration { get; } = null;
     }
 }

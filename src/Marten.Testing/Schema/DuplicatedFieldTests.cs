@@ -29,5 +29,23 @@ namespace Marten.Testing.Schema
             theField.UpsertArgument.Column.ShouldBe("first_name");
             theField.UpsertArgument.PostgresType.ShouldBe("varchar");
         }
+
+        public void sql_locator_with_default_column_name()
+        {
+            theField.SqlLocator.ShouldBe("d.first_name");
+        }
+
+        public void sql_locator_with_custom_column_name()
+        {
+            theField.ColumnName = "x_first_name";
+            theField.SqlLocator.ShouldBe("d.x_first_name");
+        }
+
+        public void lateral_join_is_always_null()
+        {
+            theField.LateralJoinDeclaration.ShouldBeNull();
+        }
+        
+
     }
 }
