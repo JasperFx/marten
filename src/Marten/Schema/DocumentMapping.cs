@@ -15,7 +15,19 @@ namespace Marten.Schema
 {
     public class DocumentMapping
     {
-        private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>(); 
+        public static string TableNameFor(Type documentType)
+        {
+            return "mt_doc_" + documentType.Name.ToLower();
+        }
+
+        public static string UpsertNameFor(Type documentType)
+        {
+            return "mt_upsert_" + documentType.Name.ToLower();
+        }
+
+
+        private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
+        private PropertySearching _propertySearching = PropertySearching.JSONB_To_Record;
 
         public DocumentMapping(Type documentType)
         {
@@ -39,9 +51,43 @@ namespace Marten.Schema
                 var field = new LateralJoinField(fieldInfo);
                 _fields.AddOrUpdate(field.MemberName, field, (key, f) => f);
             });
-
-
         }
+
+        public string UpsertName { get; }
+
+        public Type DocumentType { get; }
+
+        public string TableName { get; set; }
+
+        public MemberInfo IdMember { get; set; }
+
+        public PropertySearching PropertySearching
+        {
+            get { return _propertySearching; }
+            set
+            {
+                _propertySearching = value;
+
+                if (_propertySearching == PropertySearching.JSONB_To_Record)
+                {
+                    var fields = _fields.Values.Where(x => x.Members.Length == 1).OfType<JsonLocatorField>().ToArray();
+                    fields.Each(x =>
+                    {
+                        _fields[x.MemberName] = new LateralJoinField(x.Members.Last());
+                    });
+                }
+                else
+                {
+                    var fields = _fields.Values.Where(x => x.Members.Length == 1).OfType<LateralJoinField>().ToArray();
+                    fields.Each(x =>
+                    {
+                        _fields[x.MemberName] = new JsonLocatorField(x.Members.Last());
+                    });
+                }
+            }
+        }
+
+        public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();
 
         public IField FieldFor(MemberInfo member)
         {
@@ -58,26 +104,6 @@ namespace Marten.Schema
             return _fields[memberName];
         }
 
-        public string UpsertName { get; }
-
-        public Type DocumentType { get; }
-
-        public string TableName { get; set; }
-
-        public MemberInfo IdMember { get; set; }
-
-        public PropertySearching PropertySearching { get; set; } = PropertySearching.JSONB_To_Record;
-
-        public static string TableNameFor(Type documentType)
-        {
-            return "mt_doc_" + documentType.Name.ToLower();
-        }
-
-        public static string UpsertNameFor(Type documentType)
-        {
-            return "mt_upsert_" + documentType.Name.ToLower();
-        }
-
         public TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
             // can do foreign keys
         {
@@ -92,11 +118,6 @@ namespace Marten.Schema
 
             return table;
         }
-
-        public IEnumerable<DuplicatedField> DuplicatedFields
-        {
-            get { return _fields.Values.OfType<DuplicatedField>(); }
-        } 
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
@@ -145,7 +166,6 @@ namespace Marten.Schema
             var extraUpsertArguments = DuplicatedFields.Any()
                 ? DuplicatedFields.Select(x => x.WithParameterCode()).Join("")
                 : "";
-
 
 
             writer.Write(
@@ -206,7 +226,8 @@ BLOCK:public NpgsqlCommand UpsertCommand({
 return new NpgsqlCommand(`{UpsertName
                     }`)
     .AsSproc()
-    .WithParameter(`id`, document.{IdMember.Name})
+    .WithParameter(`id`, document.{IdMember.Name
+                    })
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
 END
 
@@ -264,6 +285,5 @@ END
         {
             return $"{Arg} {PostgresType}";
         }
-
     }
 }

@@ -145,6 +145,39 @@ namespace Marten.Testing.Schema
             mapping.FieldFor("LastName").ShouldNotBeOfType<DuplicatedField>();
         }
 
+        public void switch_to_only_using_json_locator_fields()
+        {
+            var mapping = DocumentMapping.For<User>();
+
+            mapping.DuplicateField("FirstName");
+
+            mapping.PropertySearching = PropertySearching.JSON_Locator_Only;
+
+            mapping.FieldFor("LastName").ShouldBeOfType<JsonLocatorField>();
+
+            // leave duplicates alone
+
+            mapping.FieldFor("FirstName").ShouldBeOfType<DuplicatedField>();
+        }
+
+        public void switch_back_to_lateral_join_searching_changes_the_non_duplicated_fields()
+        {
+            var mapping = DocumentMapping.For<User>();
+
+            mapping.DuplicateField("FirstName");
+
+            mapping.PropertySearching = PropertySearching.JSON_Locator_Only;
+
+            // put it back the way it was
+            mapping.PropertySearching = PropertySearching.JSONB_To_Record;
+
+            mapping.FieldFor("LastName").ShouldBeOfType<LateralJoinField>();
+
+            // leave duplicates alone
+
+            mapping.FieldFor("FirstName").ShouldBeOfType<DuplicatedField>();
+        }
+
 
         public class UpperCaseProperty
         {
