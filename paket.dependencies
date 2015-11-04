@@ -1,7 +1,7 @@
-
 source https://nuget.org/api/v2
 nuget Fixie
 nuget FubuCore
+nuget Jil
 nuget Newtonsoft.Json
 nuget Npgsql
 nuget Octokit
@@ -13,5 +13,3 @@ nuget structuremap
 
 source https://www.myget.org/F/roslyn-nightly/
 nuget Microsoft.CodeAnalysis.CSharp >= 1.2.0 prerelease
-
-

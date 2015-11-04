@@ -44,18 +44,12 @@ namespace Marten.Schema
 
         public DuplicatedFieldRole Role { get; set; } = DuplicatedFieldRole.Search;
 
-        public UpsertArgument UpsertArgument
+        public UpsertArgument UpsertArgument => new UpsertArgument
         {
-            get
-            {
-                return new UpsertArgument
-                {
-                    Arg = "arg_" + ColumnName.ToLower(),
-                    Column = ColumnName.ToLower(),
-                    PostgresType = TypeMappings.PgTypes[MemberPath.Last().GetMemberType()]
-                };
-            }
-        }
+            Arg = "arg_" + ColumnName.ToLower(),
+            Column = ColumnName.ToLower(),
+            PostgresType = TypeMappings.PgTypes[MemberPath.Last().GetMemberType()]
+        };
 
         // I say you don't need a ForeignKey 
         public virtual TableColumn ToColumn(IDocumentSchema schema)

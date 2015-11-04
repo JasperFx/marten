@@ -17,6 +17,12 @@ namespace Marten.Testing.Schema
             mapping.TableName.ShouldBe("mt_doc_user");
         }
 
+        public void default_search_mode_is_jsonb_to_record()
+        {
+            var mapping = new DocumentMapping(typeof(User));
+            mapping.PropertySearching.ShouldBe(PropertySearching.JSONB_To_Record);
+        }
+
         public void pick_up_upper_case_property_id()
         {
             var mapping = new DocumentMapping(typeof (UpperCaseProperty));

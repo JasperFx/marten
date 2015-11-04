@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using FubuCore;
 using Marten.Codegen;
 using Marten.Generation;
+using Marten.Linq;
 using Marten.Util;
 
 namespace Marten.Schema
@@ -34,8 +36,7 @@ namespace Marten.Schema
 
         public MemberInfo IdMember { get; set; }
 
-        // LATER?
-        public IdStrategy IdStrategy { get; set; }
+        public PropertySearching PropertySearching { get; set; } = PropertySearching.JSONB_To_Record;
 
         public static string TableNameFor(Type documentType)
         {
@@ -183,15 +184,22 @@ END
         {
             return new DocumentMapping(typeof (T));
         }
+
+        public WhereFragment BuildWhereFragment(string pattern, Expression expression, params object[] parameters)
+        {
+            throw new NotImplementedException();
+        }
+
+        public WhereFragment BuildWhereFragment(string pattern, MemberInfo[] members, params object[] parameters)
+        {
+            throw new NotImplementedException();
+        }
     }
 
-    // There would be others for sequences and hilo, etc.
-    public interface IdStrategy
+    public enum PropertySearching
     {
-    }
-
-    public class AssignGuid : IdStrategy
-    {
+        JSONB_To_Record,
+        JSON_Locator_Only
     }
 
     public enum DuplicatedFieldRole

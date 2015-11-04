@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using Jil;
 using Marten.Schema;
 using Marten.Testing.Fixtures;
 using NpgsqlTypes;
@@ -9,12 +11,33 @@ using StructureMap;
 
 namespace Marten.Testing
 {
+    public class JilSerializer : ISerializer
+    {
+        public string ToJson(object document)
+        {
+            return Jil.JSON.Serialize(document, new Options(dateFormat:DateTimeFormat.ISO8601));
+        }
+
+        public T FromJson<T>(string json)
+        {
+            return Jil.JSON.Deserialize<T>(json, new Options(dateFormat: DateTimeFormat.ISO8601));
+        }
+
+        public T FromJson<T>(Stream stream)
+        {
+            return Jil.JSON.Deserialize<T>(new StreamReader(stream), new Options(dateFormat: DateTimeFormat.ISO8601));
+        }
+    }
+
     public class performance_tuning
     {
         private readonly IContainer theContainer = Container.For<DevelopmentModeRegistry>();
 
         public void generate_data()
         {
+            theContainer.Inject<ISerializer>(new JilSerializer());
+            //theContainer.Inject<ISerializer>(new NetJSONSerializer());
+
             theContainer.GetInstance<DocumentCleaner>().CompletelyRemove(typeof(Target));
             // Get Roslyn spun up before measuring anything
             var schema = theContainer.GetInstance<IDocumentSchema>();
@@ -29,7 +52,7 @@ namespace Marten.Testing
             var serializer = theContainer.GetInstance<ISerializer>();
             for (int i = 0; i < 10; i++)
             {
-                var data = Target.GenerateRandomData(100000).ToArray();
+                var data = Target.GenerateRandomData(10000).ToArray();
                 Timings.Time("Using BinaryImport", () =>
                 {
                     runner.Execute(conn =>

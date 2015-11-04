@@ -94,6 +94,8 @@
     <Compile Include="Schema\DocumentCleanerTests.cs" />
     <Compile Include="Schema\DocumentStorageBuilderTests.cs" />
     <Compile Include="Schema\DuplicatedFieldTests.cs" />
+    <Compile Include="Schema\JsonLocatorFieldTests.cs" />
+    <Compile Include="Schema\LateralJoinFieldTests.cs" />
     <Compile Include="Schema\ProductionModeSchemeCreationTests.cs" />
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />
@@ -138,6 +140,20 @@
       <Paket>True</Paket>
     </Reference>
   </ItemGroup>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Jil">
+          <HintPath>..\..\packages\Jil\lib\net45\Jil.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="System.Runtime.Serialization">
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.0')">
       <ItemGroup>
@@ -720,6 +736,44 @@
       <ItemGroup>
         <Reference Include="Shouldly">
           <HintPath>..\..\packages\Shouldly\lib\net40\Shouldly.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v3.5'">
+      <ItemGroup>
+        <Reference Include="Sigil">
+          <HintPath>..\..\packages\Sigil\lib\net35\Sigil.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v2.0' Or $(TargetFrameworkVersion) == 'v3.0')">
+      <ItemGroup>
+        <Reference Include="Sigil">
+          <HintPath>..\..\packages\Sigil\lib\net20\Sigil.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.0')">
+      <ItemGroup>
+        <Reference Include="Sigil">
+          <HintPath>..\..\packages\Sigil\lib\net40\Sigil.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Sigil">
+          <HintPath>..\..\packages\Sigil\lib\net45\Sigil.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>

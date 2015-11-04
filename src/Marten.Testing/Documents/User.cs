@@ -24,5 +24,6 @@ namespace Marten.Testing.Documents
         public Address Address { get; set; }
 
         public Guid Id { get; set; }
+        public int Age { get; set; }
     }
 }

@@ -34,7 +34,7 @@ namespace Marten.Linq
             }
 
             if (!TypeMappings.PgTypes.ContainsKey(memberType))
-                throw new ArgumentOutOfRangeException("memberType",
+                throw new ArgumentOutOfRangeException(nameof(memberType),
                     "There is not a known Postgresql cast for member type " + memberType.FullName);
 
             return "CAST({0} as {1})".ToFormat(locator, TypeMappings.PgTypes[memberType]);
