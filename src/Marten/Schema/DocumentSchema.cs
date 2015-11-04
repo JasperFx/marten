@@ -24,6 +24,11 @@ namespace Marten.Schema
             return _documentMappings.GetOrAdd(documentType, type => new DocumentMapping(type));
         }
 
+        public void EnsureStorageExists(Type documentType)
+        {
+            StorageFor(documentType);
+        }
+
         public IDocumentStorage StorageFor(Type documentType)
         {
             return _documentTypes.GetOrAdd(documentType, type =>
@@ -31,7 +36,7 @@ namespace Marten.Schema
                 var mapping = MappingFor(documentType);
                 var storage = DocumentStorageBuilder.Build(mapping);
 
-                if (!DocumentTables().Contains(storage.TableName))
+                if (!DocumentTables().Contains(mapping.TableName))
                 {
                     _creation.CreateSchema(this, mapping);
                 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using FubuCore;
 using FubuCore.Reflection;
+using Marten.Schema;
 using Marten.Util;
 
 namespace Marten.Linq
@@ -40,45 +41,45 @@ namespace Marten.Linq
             return "CAST({0} as {1})".ToFormat(locator, TypeMappings.PgTypes[memberType]);
         }
 
-        public static IWhereFragment ParseWhereFragment(Type rootType, Expression expression)
+        public static IWhereFragment ParseWhereFragment(DocumentMapping mapping, Expression expression)
         {
             if (expression is BinaryExpression)
             {
-                return GetWhereFragment(rootType, expression.As<BinaryExpression>());
+                return GetWhereFragment(mapping, expression.As<BinaryExpression>());
             }
 
             if (expression.NodeType == ExpressionType.Call)
             {
-                return GetMethodCall(rootType, expression.As<MethodCallExpression>());
+                return GetMethodCall(mapping, expression.As<MethodCallExpression>());
             }
 
             if (expression is MemberExpression && expression.Type == typeof(bool))
             {
-                var locator = JsonLocator(rootType, expression.As<MemberExpression>());
+                var locator = JsonLocator(mapping, expression.As<MemberExpression>());
                 return new WhereFragment("({0})::Boolean = True".ToFormat(locator), true);
             }
 
             if (expression.NodeType == ExpressionType.Not)
             {
-                return GetNotWhereFragment(rootType, expression.As<UnaryExpression>().Operand);
+                return GetNotWhereFragment(mapping, expression.As<UnaryExpression>().Operand);
             }
 
 
             throw new NotSupportedException();
         }
 
-        private static IWhereFragment GetNotWhereFragment(Type rootType, Expression expression)
+        private static IWhereFragment GetNotWhereFragment(DocumentMapping mapping, Expression expression)
         {
             if (expression is MemberExpression && expression.Type == typeof(bool))
             {
-                var locator = JsonLocator(rootType, expression.As<MemberExpression>());
+                var locator = JsonLocator(mapping, expression.As<MemberExpression>());
                 return new WhereFragment("({0})::Boolean = False".ToFormat(locator));
             }
 
             throw new NotSupportedException();
         }
 
-        private static IWhereFragment GetMethodCall(Type rootType, MethodCallExpression expression)
+        private static IWhereFragment GetMethodCall(DocumentMapping mapping, MethodCallExpression expression)
         {
 
             // TODO -- generalize this mess
@@ -88,7 +89,7 @@ namespace Marten.Linq
 
                 if (@object.Type == typeof (string))
                 {
-                    var locator = JsonLocator(rootType, @object);
+                    var locator = JsonLocator(mapping, @object);
                     var value = Value(expression.Arguments.Single()).As<string>();
                     return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value + "%");
                 }
@@ -99,7 +100,7 @@ namespace Marten.Linq
                 var @object = expression.Object;
                 if (@object.Type == typeof(string))
                 {
-                    var locator = JsonLocator(rootType, @object);
+                    var locator = JsonLocator(mapping, @object);
                     var value = Value(expression.Arguments.Single()).As<string>();
                     return new WhereFragment("{0} like ?".ToFormat(locator), value + "%");
                 }
@@ -110,7 +111,7 @@ namespace Marten.Linq
                 var @object = expression.Object;
                 if (@object.Type == typeof(string))
                 {
-                    var locator = JsonLocator(rootType, @object);
+                    var locator = JsonLocator(mapping, @object);
                     var value = Value(expression.Arguments.Single()).As<string>();
                     return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value);
                 }
@@ -119,31 +120,31 @@ namespace Marten.Linq
             throw new NotImplementedException();
         }
 
-        public static IWhereFragment GetWhereFragment(Type rootType, BinaryExpression binary)
+        public static IWhereFragment GetWhereFragment(DocumentMapping mapping, BinaryExpression binary)
         {
             if (_operators.ContainsKey(binary.NodeType))
             {
-                return buildSimpleWhereClause(rootType, binary);
+                return buildSimpleWhereClause(mapping, binary);
             }
 
 
             switch (binary.NodeType)
             {
                 case ExpressionType.AndAlso:
-                    return new CompoundWhereFragment("and", ParseWhereFragment(rootType, binary.Left),
-                        ParseWhereFragment(rootType, binary.Right));
+                    return new CompoundWhereFragment("and", ParseWhereFragment(mapping, binary.Left),
+                        ParseWhereFragment(mapping, binary.Right));
 
                 case ExpressionType.OrElse:
-                    return new CompoundWhereFragment("or", ParseWhereFragment(rootType, binary.Left),
-                        ParseWhereFragment(rootType, binary.Right));
+                    return new CompoundWhereFragment("or", ParseWhereFragment(mapping, binary.Left),
+                        ParseWhereFragment(mapping, binary.Right));
             }
 
             throw new NotSupportedException();
         }
 
-        private static IWhereFragment buildSimpleWhereClause(Type rootType, BinaryExpression binary)
+        private static IWhereFragment buildSimpleWhereClause(DocumentMapping mapping, BinaryExpression binary)
         {
-            var jsonLocator = JsonLocator(rootType, binary.Left);
+            var jsonLocator = JsonLocator(mapping, binary.Left);
             
 
             var value = Value(binary.Right);
@@ -169,33 +170,33 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        public static string JsonLocator(Type rootType, Expression expression)
+        public static string JsonLocator(DocumentMapping mapping, Expression expression)
         {
             if (expression is MemberExpression)
             {
                 var memberExpression = expression.As<MemberExpression>();
-                return JsonLocator(rootType, memberExpression);
+                return JsonLocator(mapping, memberExpression);
             }
 
             if (expression is UnaryExpression)
             {
-                return JsonLocator(rootType, expression.As<UnaryExpression>());
+                return JsonLocator(mapping, expression.As<UnaryExpression>());
             }
 
             throw new NotSupportedException();
         }
 
-        public static string JsonLocator(Type rootType, UnaryExpression expression)
+        public static string JsonLocator(DocumentMapping mapping, UnaryExpression expression)
         {
             if (expression.NodeType == ExpressionType.Convert)
             {
-                return JsonLocator(rootType, expression.Operand);
+                return JsonLocator(mapping, expression.Operand);
             }
 
             throw new NotSupportedException();
         }
 
-        public static string JsonLocator(Type rootType, MemberExpression memberExpression)
+        public static string JsonLocator(DocumentMapping mapping, MemberExpression memberExpression)
         {
             var memberType = memberExpression.Member.GetMemberType();
 

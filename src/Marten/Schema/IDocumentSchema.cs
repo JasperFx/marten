@@ -11,5 +11,6 @@ namespace Marten.Schema
         IEnumerable<string> SchemaFunctionNames();
 
         DocumentMapping MappingFor(Type documentType);
+        void EnsureStorageExists(Type documentType);
     }
 }

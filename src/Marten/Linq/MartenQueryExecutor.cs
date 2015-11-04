@@ -28,10 +28,14 @@ namespace Marten.Linq
 
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
+            var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
+            var documentQuery = new DocumentQuery(mapping, queryModel);
+
+            _schema.EnsureStorageExists(mapping.DocumentType);
+
             if (queryModel.ResultOperators.OfType<AnyResultOperator>().Any())
             {
-                var storage = _schema.StorageFor(queryModel.SelectClause.Selector.Type);
-                var anyCommand = storage.AnyCommand(queryModel);
+                var anyCommand = documentQuery.ToAnyCommand();
 
                 return _runner.Execute(conn =>
                 {
@@ -42,8 +46,7 @@ namespace Marten.Linq
 
             if (queryModel.ResultOperators.OfType<CountResultOperator>().Any())
             {
-                var storage = _schema.StorageFor(queryModel.SelectClause.Selector.Type);
-                var countCommand = storage.CountCommand(queryModel);
+                var countCommand = documentQuery.ToCountCommand();
 
                 return _runner.Execute(conn =>
                 {
@@ -81,8 +84,8 @@ namespace Marten.Linq
 
         public NpgsqlCommand BuildCommand<T>(QueryModel queryModel)
         {
-            var tableName = _schema.StorageFor(typeof (T)).TableName;
-            var query = new DocumentQuery<T>(tableName, queryModel);
+            var mapping = _schema.MappingFor(typeof (T));
+            var query = new DocumentQuery(mapping, queryModel);
 
             return query.ToCommand();
         }

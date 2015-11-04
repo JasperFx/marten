@@ -170,64 +170,35 @@ namespace Marten.Schema
 
             writer.Write(
                 $@"
-BLOCK:public class {DocumentType.Name
-                    }Storage : IDocumentStorage
-public Type DocumentType => typeof ({DocumentType.Name
-                    });
-
-public string TableName {{ get; }} = `{TableName
-                    }`;
+BLOCK:public class {DocumentType.Name}Storage : IDocumentStorage
+public Type DocumentType => typeof ({DocumentType.Name});
 
 BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
-return UpsertCommand(({
-                    DocumentType.Name
-                    })document, json);
+return UpsertCommand(({DocumentType.Name})document, json);
 END
 
 BLOCK:public NpgsqlCommand LoaderCommand(object id)
-return new NpgsqlCommand(`select data from {
-                    TableName
-                    } where id = :id`).WithParameter(`id`, id);
+return new NpgsqlCommand(`select data from {TableName} where id = :id`).WithParameter(`id`, id);
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForId(object id)
-return new NpgsqlCommand(`delete from {
-                    TableName
-                    } where id = :id`).WithParameter(`id`, id);
+return new NpgsqlCommand(`delete from {TableName} where id = :id`).WithParameter(`id`, id);
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForEntity(object entity)
-return DeleteCommandForId((({
-                    DocumentType.Name})entity).{IdMember.Name
-                    });
+return DeleteCommandForId((({DocumentType.Name})entity).{IdMember.Name});
 END
 
 BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
-return new NpgsqlCommand(`select data from {
-                    TableName
-                    } where id = ANY(:ids)`).WithParameter(`ids`, ids);
+return new NpgsqlCommand(`select data from {TableName} where id = ANY(:ids)`).WithParameter(`ids`, ids);
 END
 
-BLOCK:public NpgsqlCommand AnyCommand(QueryModel queryModel)
-return new DocumentQuery<{
-                    DocumentType.Name}>(`{TableName
-                    }`, queryModel).ToAnyCommand();
-END
-
-BLOCK:public NpgsqlCommand CountCommand(QueryModel queryModel)
-return new DocumentQuery<{
-                    DocumentType.Name}>(`{TableName
-                    }`, queryModel).ToCountCommand();
-END
 
 // TODO: This wil need to get fancier later
-BLOCK:public NpgsqlCommand UpsertCommand({
-                    DocumentType.Name} document, string json)
-return new NpgsqlCommand(`{UpsertName
-                    }`)
+BLOCK:public NpgsqlCommand UpsertCommand({DocumentType.Name} document, string json)
+return new NpgsqlCommand(`{UpsertName}`)
     .AsSproc()
-    .WithParameter(`id`, document.{IdMember.Name
-                    })
+    .WithParameter(`id`, document.{IdMember.Name})
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
 END
 

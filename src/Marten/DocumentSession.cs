@@ -121,9 +121,11 @@ namespace Marten
 
         public IEnumerable<T> Query<T>(string sql, params object[] parameters)
         {
+            var mapping = _schema.MappingFor(typeof (T));
+
             if (!sql.Contains("select"))
             {
-                var tableName = _schema.StorageFor(typeof(T)).TableName;
+                var tableName = mapping.TableName;
                 sql = "select data from {0} {1}".ToFormat(tableName, sql);
             }
 

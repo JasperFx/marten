@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Marten.Schema;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -9,20 +10,20 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
 {
-    public class DocumentQuery<T>
+    public class DocumentQuery
     {
-        private readonly string _tableName;
+        private readonly DocumentMapping _mapping;
         private readonly QueryModel _query;
 
-        public DocumentQuery(string tableName, QueryModel query)
+        public DocumentQuery(DocumentMapping mapping, QueryModel query)
         {
-            _tableName = tableName;
+            _mapping = mapping;
             _query = query;
         }
 
         public NpgsqlCommand ToAnyCommand()
         {
-            var sql = "select (count(*) > 0) as result from " + _tableName;
+            var sql = "select (count(*) > 0) as result from " + _mapping.TableName;
 
             var command = new NpgsqlCommand();
             sql = appendWhereClause(sql, command);
@@ -35,10 +36,7 @@ namespace Marten.Linq
         public NpgsqlCommand ToCommand()
         {
             var command = new NpgsqlCommand();
-            var sql = "select data from " + _tableName;
-
-
-
+            var sql = "select data from " + _mapping.TableName;
 
             sql = appendWhereClause(sql, command);
             sql = appendOrderClause(sql);
@@ -77,7 +75,7 @@ namespace Marten.Linq
 
         public string ToOrderClause(Ordering clause)
         {
-            var locator = MartenExpressionParser.JsonLocator(typeof(T), clause.Expression);
+            var locator = MartenExpressionParser.JsonLocator(_mapping, clause.Expression);
             return clause.OrderingDirection == OrderingDirection.Asc
                 ? locator
                 : locator + " desc";
@@ -89,8 +87,8 @@ namespace Marten.Linq
             if (wheres.Length == 0) return sql;
 
             var where = wheres.Length == 1
-                ? MartenExpressionParser.ParseWhereFragment(typeof(T), wheres.Single().Predicate)
-                : new CompoundWhereFragment(typeof(T), "and", wheres);
+                ? MartenExpressionParser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
+                : new CompoundWhereFragment(_mapping, "and", wheres);
 
 
             sql += " where " + where.ToSql(command);
@@ -100,7 +98,7 @@ namespace Marten.Linq
 
         public NpgsqlCommand ToCountCommand()
         {
-            var sql = "select count(*) as number from " + _tableName;
+            var sql = "select count(*) as number from " + _mapping.TableName;
 
             var command = new NpgsqlCommand();
             sql = appendWhereClause(sql, command);

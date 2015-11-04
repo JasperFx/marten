@@ -82,11 +82,12 @@ namespace Marten.Testing.Schema
 
                 var schema = container.GetInstance<IDocumentSchema>();
 
-                schema.MappingFor(typeof(User)).DuplicateField("FirstName");
+                var mapping = schema.MappingFor(typeof(User));
+                mapping.DuplicateField("FirstName");
 
                 var storage = schema.StorageFor(typeof (User));
 
-                schema.DocumentTables().ShouldContain(storage.TableName);
+                schema.DocumentTables().ShouldContain(mapping.TableName);
             }
         }
 
