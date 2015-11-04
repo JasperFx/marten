@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using FubuCore;
 using Marten.Linq;
+using Marten.Schema;
 using StoryTeller;
 using StoryTeller.Grammars.Tables;
 using StructureMap;
@@ -85,6 +86,8 @@ namespace Marten.Testing.Fixtures
 
 
             AddSelectionValues("Expressions", _wheres.Keys.ToArray());
+
+            AddSelectionValues("Fields", typeof(Target).GetProperties().Where(x => TypeMappings.HasTypeMapping(x.PropertyType)).Select(x => x.Name).ToArray());
         }
 
         public override void SetUp()
@@ -111,6 +114,12 @@ namespace Marten.Testing.Fixtures
         {
             _session.Dispose();
             _container.Dispose();
+        }
+
+        [FormatAs("The field {field} is configured to be duplicated")]
+        public void FieldIsDuplicated([SelectionList("Fields")] string field)
+        {
+            _container.GetInstance<IDocumentSchema>().MappingFor(typeof (Target)).DuplicateField(field);
         }
 
         public IGrammar TheDocumentsAre()
