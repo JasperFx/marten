@@ -14,7 +14,8 @@ namespace Marten.Testing
                 container.GetInstance<DocumentCleaner>().CompletelyRemove(typeof(User));
 
                 var schema = container.GetInstance<IDocumentSchema>();
-                schema.MappingFor(typeof(User)).DuplicatedFields.Add(DuplicatedField.For<User>(x => x.FirstName));
+                schema.MappingFor(typeof (User)).DuplicateField("FirstName");
+
 
                 var user1 = new User {FirstName = "Byron", LastName = "Scott"};
                 using (var session = container.GetInstance<IDocumentSession>())

@@ -41,7 +41,8 @@ namespace Marten.Testing
             theContainer.GetInstance<DocumentCleaner>().CompletelyRemove(typeof(Target));
             // Get Roslyn spun up before measuring anything
             var schema = theContainer.GetInstance<IDocumentSchema>();
-            schema.MappingFor(typeof(Target)).DuplicatedFields.Add(DuplicatedField.For<Target>(x => x.Date));
+
+            schema.MappingFor(typeof (Target)).DuplicateField("Date");
 
             schema.StorageFor(typeof(Target)).ShouldNotBeNull();
 

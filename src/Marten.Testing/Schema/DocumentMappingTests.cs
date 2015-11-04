@@ -67,7 +67,7 @@ namespace Marten.Testing.Schema
         public void generate_a_document_table_with_duplicated_tables()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.DuplicatedFields.Add(DuplicatedField.For<User>(x => x.FirstName));
+            mapping.DuplicateField("FirstName");
 
             var table = mapping.ToTable(null);
 
@@ -82,7 +82,7 @@ namespace Marten.Testing.Schema
 
                 var schema = container.GetInstance<IDocumentSchema>();
 
-                schema.MappingFor(typeof(User)).DuplicatedFields.Add(DuplicatedField.For<User>(x => x.FirstName));
+                schema.MappingFor(typeof(User)).DuplicateField("FirstName");
 
                 var storage = schema.StorageFor(typeof (User));
 
@@ -130,6 +130,19 @@ namespace Marten.Testing.Schema
             var field = mapping.FieldFor("Id").ShouldBeOfType<LateralJoinField>();
             field.Members.Single().ShouldBeAssignableTo<FieldInfo>()
                 .Name.ShouldBe("Id");
+        }
+
+        public void duplicate_a_field()
+        {
+            var mapping = DocumentMapping.For<User>();
+
+            mapping.DuplicateField("FirstName");
+
+            mapping.FieldFor("FirstName").ShouldBeOfType<DuplicatedField>();
+
+            // other fields are still the same
+
+            mapping.FieldFor("LastName").ShouldNotBeOfType<DuplicatedField>();
         }
 
 

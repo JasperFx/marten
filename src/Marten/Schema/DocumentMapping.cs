@@ -16,7 +16,6 @@ namespace Marten.Schema
     public class DocumentMapping
     {
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>(); 
-        public readonly IList<DuplicatedField> DuplicatedFields = new List<DuplicatedField>();
 
         public DocumentMapping(Type documentType)
         {
@@ -32,7 +31,7 @@ namespace Marten.Schema
             documentType.GetProperties().Where(x => TypeMappings.HasTypeMapping(x.PropertyType)).Each(prop =>
             {
                 var field = new LateralJoinField(prop);
-                _fields.AddOrUpdate(field.MemberName, field, (key, f) => f);
+                _fields[field.MemberName] = field;
             });
 
             documentType.GetFields().Where(x => TypeMappings.HasTypeMapping(x.FieldType)).Each(fieldInfo =>
@@ -46,7 +45,12 @@ namespace Marten.Schema
 
         public IField FieldFor(MemberInfo member)
         {
-            throw new NotImplementedException();
+            return _fields.GetOrAdd(member.Name, name =>
+            {
+                return PropertySearching == PropertySearching.JSONB_To_Record
+                    ? (IField) new LateralJoinField(member)
+                    : new JsonLocatorField(member);
+            });
         }
 
         public IField FieldFor(string memberName)
@@ -83,11 +87,16 @@ namespace Marten.Schema
             var table = new TableDefinition(TableName, new TableColumn("id", pgIdType));
             table.Columns.Add(new TableColumn("data", "jsonb NOT NULL"));
 
-            DuplicatedFields.Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
+            _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
 
 
             return table;
         }
+
+        public IEnumerable<DuplicatedField> DuplicatedFields
+        {
+            get { return _fields.Values.OfType<DuplicatedField>(); }
+        } 
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
@@ -219,6 +228,16 @@ END
         public WhereFragment BuildWhereFragment(string pattern, MemberInfo[] members, params object[] parameters)
         {
             throw new NotImplementedException();
+        }
+
+        public DuplicatedField DuplicateField(string memberName)
+        {
+            var field = FieldFor(memberName);
+            var duplicate = new DuplicatedField(field.Members);
+
+            _fields[memberName] = duplicate;
+
+            return duplicate;
         }
     }
 
