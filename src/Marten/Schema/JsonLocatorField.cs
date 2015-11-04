@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using FubuCore.Reflection;
@@ -30,6 +31,19 @@ namespace Marten.Schema
             }
 
 
+        }
+
+        public JsonLocatorField(MemberInfo[] members) : base(members)
+        {
+            var locator = "d.data";
+            for (int i = 0; i < members.Length - 1; i++)
+            {
+                locator += $" ->> '{members[i].Name}'";
+            }
+
+            locator += $" -> '{members.Last().Name}'";
+
+            SqlLocator = MemberType == typeof (string) ? locator : $"CAST({locator} as {PgType})";
         }
 
         public string SqlLocator { get; }

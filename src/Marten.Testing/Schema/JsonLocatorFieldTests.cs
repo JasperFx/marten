@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using FubuCore.Reflection;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
@@ -47,6 +48,35 @@ namespace Marten.Testing.Schema
             theEnumField.LateralJoinDeclaration.ShouldBeNull();
         }
 
+        public void two_deep_members_json_locator()
+        {
+            var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);
+            var number = ReflectionHelper.GetProperty<Target>(x => x.Number);
 
+            var twodeep = new JsonLocatorField(new MemberInfo[] {inner, number});
+
+            twodeep.SqlLocator.ShouldBe("CAST(d.data ->> 'Inner' -> 'Number' as integer)");
+        }
+
+
+        public void three_deep_members_json_locator()
+        {
+            var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);
+            var number = ReflectionHelper.GetProperty<Target>(x => x.Number);
+
+            var deep = new JsonLocatorField(new MemberInfo[] { inner, inner, number });
+
+            deep.SqlLocator.ShouldBe("CAST(d.data ->> 'Inner' ->> 'Inner' -> 'Number' as integer)");
+        }
+
+        public void three_deep_members_json_locator_for_string_property()
+        {
+            var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);
+            var stringProp = ReflectionHelper.GetProperty<Target>(x => x.String);
+
+            var deep = new JsonLocatorField(new MemberInfo[] { inner, inner, stringProp });
+
+            deep.SqlLocator.ShouldBe("d.data ->> 'Inner' ->> 'Inner' -> 'String'");
+        }
     }
 }
