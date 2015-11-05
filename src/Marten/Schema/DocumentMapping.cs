@@ -29,6 +29,8 @@ namespace Marten.Schema
 
             UpsertName = UpsertNameFor(documentType);
 
+            documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
+
             documentType.GetProperties().Where(x => TypeMappings.HasTypeMapping(x.PropertyType)).Each(prop =>
             {
 

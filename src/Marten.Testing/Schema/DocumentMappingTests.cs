@@ -195,6 +195,13 @@ namespace Marten.Testing.Schema
             mapping.FieldFor(nameof(Organization.OtherProp)).ShouldNotBeOfType<DuplicatedField>();
         }
 
+        public void picks_up_marten_attibute_on_document_type()
+        {
+            var mapping = DocumentMapping.For<Organization>();
+            mapping.PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
+        }
+
+
 
 
         public class UpperCaseProperty
@@ -222,6 +229,7 @@ namespace Marten.Testing.Schema
             public Guid Id { get; set; }
         }
 
+        [PropertySearching(PropertySearching.JSON_Locator_Only)]
         public class Organization
         {
             public Guid Id { get; set; }
