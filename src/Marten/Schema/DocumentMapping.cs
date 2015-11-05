@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using FubuCore;
+using FubuCore.Reflection;
 using Marten.Codegen;
 using Marten.Generation;
 using Marten.Util;
@@ -30,14 +31,19 @@ namespace Marten.Schema
 
             documentType.GetProperties().Where(x => TypeMappings.HasTypeMapping(x.PropertyType)).Each(prop =>
             {
+
                 var field = new LateralJoinField(prop);
                 _fields[field.MemberName] = field;
+
+                prop.ForAttribute<MartenAttribute>(att => att.Modify(this, prop));
             });
 
             documentType.GetFields().Where(x => TypeMappings.HasTypeMapping(x.FieldType)).Each(fieldInfo =>
             {
                 var field = new LateralJoinField(fieldInfo);
                 _fields.AddOrUpdate(field.MemberName, field, (key, f) => f);
+
+                fieldInfo.ForAttribute<MartenAttribute>(att => att.Modify(this, fieldInfo));
             });
         }
 

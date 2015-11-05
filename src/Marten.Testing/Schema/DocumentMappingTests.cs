@@ -179,6 +179,23 @@ namespace Marten.Testing.Schema
             mapping.FieldFor("FirstName").ShouldBeOfType<DuplicatedField>();
         }
 
+        public void picks_up_searchable_attribute_on_fields()
+        {
+            var mapping = DocumentMapping.For<Organization>();
+
+            mapping.FieldFor("OtherName").ShouldBeOfType<DuplicatedField>();
+            mapping.FieldFor(nameof(Organization.OtherField)).ShouldNotBeOfType<DuplicatedField>();
+        }
+
+        public void picks_up_searchable_attribute_on_properties()
+        {
+            var mapping = DocumentMapping.For<Organization>();
+
+            mapping.FieldFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
+            mapping.FieldFor(nameof(Organization.OtherProp)).ShouldNotBeOfType<DuplicatedField>();
+        }
+
+
 
         public class UpperCaseProperty
         {
@@ -203,6 +220,20 @@ namespace Marten.Testing.Schema
         public class MySpecialDocument
         {
             public Guid Id { get; set; }
+        }
+
+        public class Organization
+        {
+            public Guid Id { get; set; }
+
+            [Searchable]
+            public string Name { get; set; }
+
+            [Searchable]
+            public string OtherName;
+
+            public string OtherProp;
+            public string OtherField { get; set; }
         }
     }
 }
