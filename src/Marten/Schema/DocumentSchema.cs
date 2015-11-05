@@ -104,5 +104,17 @@ AND type_udt_name != 'trigger';
         public void Dispose()
         {
         }
+
+        public void Apply<T>() where T : MartenRegistry, new()
+        {
+            Apply(new T());
+        }
+
+        public void Apply(MartenRegistry registry)
+        {
+            // TODO -- later, latch on MartenRegistry type? May not really matter
+            registry.Alter(this);
+        }
+
     }
 }

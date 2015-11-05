@@ -243,5 +243,6 @@ namespace Marten.Testing.Schema
             public string OtherProp;
             public string OtherField { get; set; }
         }
+
     }
 }

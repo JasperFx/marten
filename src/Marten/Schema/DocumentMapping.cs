@@ -250,5 +250,12 @@ END
                 return new JsonLocatorField(members.ToArray());
             });
         }
+
+        public void DuplicateField(MemberInfo[] members)
+        {
+            var memberName = members.Select(x => x.Name).Join("");
+
+            _fields[memberName] = new DuplicatedField(members);
+        }
     }
 }

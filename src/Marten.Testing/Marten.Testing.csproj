@@ -79,6 +79,7 @@
     <Compile Include="Linq\query_against_dateoffset_Tests.cs" />
     <Compile Include="Linq\query_with_enums_Tests.cs" />
     <Compile Include="Linq\using_multiple_where_clauses_Tests.cs" />
+    <Compile Include="MartenRegistryTests.cs" />
     <Compile Include="performance_tuning.cs" />
     <Compile Include="persisting_document_with_string_id_Tests.cs" />
     <Compile Include="persist_and_deleting_multiple_documents_Tests.cs" />

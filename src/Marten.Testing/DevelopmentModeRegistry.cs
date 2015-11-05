@@ -19,5 +19,6 @@ namespace Marten.Testing
 
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();
         }
+
     }
 }
