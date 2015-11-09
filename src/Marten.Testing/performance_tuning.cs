@@ -98,10 +98,70 @@ namespace Marten.Testing
         {
             Target[] data = Target.GenerateRandomData(1000).ToArray();
 
+            Debug.WriteLine("Newtonsoft Serializer, 1,000 documents");
+
+            time_query<JsonNetSerializer, JsonLocatorOnly>(data);
+            time_query<JsonNetSerializer, JsonBToRecord>(data);
+            time_query<JsonNetSerializer, DateIsSearchable>(data);
+            time_query<JsonNetSerializer, JsonLocatorOnly>(data);
+            time_query<JsonNetSerializer, JsonBToRecord>(data);
+            time_query<JsonNetSerializer, DateIsSearchable>(data);
+            Debug.WriteLine("");
+
+            Debug.WriteLine("Newtonsoft Serializer, 10,000 documents");
+            data = Target.GenerateRandomData(10000).ToArray();
+            time_query<JsonNetSerializer, JsonLocatorOnly>(data);
+            time_query<JsonNetSerializer, JsonBToRecord>(data);
+            time_query<JsonNetSerializer, DateIsSearchable>(data);
+            time_query<JsonNetSerializer, JsonLocatorOnly>(data);
+            time_query<JsonNetSerializer, JsonBToRecord>(data);
+            time_query<JsonNetSerializer, DateIsSearchable>(data);
+            Debug.WriteLine("");
+
+
+            return;
+            Debug.WriteLine("Newtonsoft Serializer, 100,000 documents");
+            data = Target.GenerateRandomData(100000).ToArray();
             time_query<JsonNetSerializer, JsonBToRecord>(data);
             time_query<JsonNetSerializer, JsonLocatorOnly>(data);
             time_query<JsonNetSerializer, DateIsSearchable>(data);
-            
+            Debug.WriteLine("");
+
+            Debug.WriteLine("Newtonsoft Serializer, 1M documents");
+            data = Target.GenerateRandomData(1000000).ToArray();
+            time_query<JsonNetSerializer, JsonBToRecord>(data);
+            time_query<JsonNetSerializer, JsonLocatorOnly>(data);
+            time_query<JsonNetSerializer, DateIsSearchable>(data);
+            Debug.WriteLine("");
+
+            Debug.WriteLine("Jil Serializer, 1,000 documents");
+            data = Target.GenerateRandomData(1000).ToArray();
+            time_query<JilSerializer, JsonBToRecord>(data);
+            time_query<JilSerializer, JsonLocatorOnly>(data);
+            time_query<JilSerializer, DateIsSearchable>(data);
+            Debug.WriteLine("");
+
+            Debug.WriteLine("Jil Serializer, 10,000 documents");
+            data = Target.GenerateRandomData(10000).ToArray();
+            time_query<JilSerializer, JsonBToRecord>(data);
+            time_query<JilSerializer, JsonLocatorOnly>(data);
+            time_query<JilSerializer, DateIsSearchable>(data);
+            Debug.WriteLine("");
+
+            Debug.WriteLine("Jil Serializer, 100,000 documents");
+            data = Target.GenerateRandomData(100000).ToArray();
+            time_query<JilSerializer, JsonBToRecord>(data);
+            time_query<JilSerializer, JsonLocatorOnly>(data);
+            time_query<JilSerializer, DateIsSearchable>(data);
+            Debug.WriteLine("");
+
+            Debug.WriteLine("Jil Serializer, 1M documents");
+            data = Target.GenerateRandomData(1000000).ToArray();
+            time_query<JilSerializer, JsonBToRecord>(data);
+            time_query<JilSerializer, JsonLocatorOnly>(data);
+            time_query<JilSerializer, DateIsSearchable>(data);
+            Debug.WriteLine("");
+
         }
     }
 
@@ -152,14 +212,15 @@ namespace Marten.Testing
 
             var theDate = DateTime.Today.AddDays(3);
             
-            Timings.Time(() =>
+            var one = Timings.Time(() =>
             {
-                session.Query<Target>().Where(x => x.Date == theDate).ToArray().Length.ShouldBeGreaterThan(0);
+                var sql = "select data from mt_doc_target where (data ->> 'Date')::date = ?";
+                session.Query<Target>(sql, theDate).ToArray().Length.ShouldBeGreaterThan(0);
             });
             
 
 
-            Timings.Time(() =>
+            var two = Timings.Time(() =>
             {
                 var sql =
                     "select r.data from mt_doc_target as r, LATERAL jsonb_to_record(r.data) as l(\"Date\" date) where l.\"Date\" = ?";
@@ -167,13 +228,15 @@ namespace Marten.Testing
                 session.Query<Target>(sql, theDate).ToArray().Count().ShouldBeGreaterThan(0);
             });
 
-            Timings.Time(() =>
+            var three = Timings.Time(() =>
             {
                 var sql =
                     "select r.data from mt_doc_target as r where r.date = ?";
 
                 session.Query<Target>(sql, theDate).ToArray().Count().ShouldBeGreaterThan(0);
             });
+
+            Debug.WriteLine($"json locator: {one}, lateral join: {two}, searchable field: {three}");
         }
     }
 
