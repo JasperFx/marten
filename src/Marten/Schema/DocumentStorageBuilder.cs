@@ -54,7 +54,7 @@ namespace Marten.Schema
             var writer = new SourceWriter();
 
             // TODO -- get rid of the magic strings
-            var namespaces = new List<string> {"System", "Marten", "Marten.Schema", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq", typeof(NpgsqlDbType).Namespace};
+            var namespaces = new List<string> {"System", "Marten", "Marten.Schema", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq", typeof(NpgsqlDbType).Namespace, typeof(IEnumerable<>).Namespace};
             namespaces.AddRange(mappings.Select(x => x.DocumentType.Namespace));
 
             namespaces.Distinct().OrderBy(x => x).Each(x => writer.WriteLine($"using {x};"));
@@ -83,7 +83,7 @@ namespace Marten.Schema
 
             writer.Write(
                 $@"
-BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage
+BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{mapping.DocumentType.Name}>
 public Type DocumentType => typeof ({mapping.DocumentType.Name});
 
 BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
@@ -107,12 +107,15 @@ return new NpgsqlCommand(`select data from {mapping.TableName} where id = ANY(:i
 END
 
 
-// TODO: This wil need to get fancier later
 BLOCK:public NpgsqlCommand UpsertCommand({mapping.DocumentType.Name} document, string json)
 return new NpgsqlCommand(`{mapping.UpsertName}`)
     .AsSproc()
     .WithParameter(`id`, document.{mapping.IdMember.Name})
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
+END
+
+BLOCK:public void Load(NpgsqlConnection conn, IEnumerable<{mapping.DocumentType.Name}> documents)
+throw new System.NotImplementedException();
 END
 
 END

@@ -69,6 +69,7 @@
     <Compile Include="Schema\DuplicatedField.cs" />
     <Compile Include="Schema\DuplicatedFieldRole.cs" />
     <Compile Include="Schema\Field.cs" />
+    <Compile Include="Schema\IBulkLoader.cs" />
     <Compile Include="Schema\IDocumentCleaner.cs" />
     <Compile Include="Schema\IDocumentSchema.cs" />
     <Compile Include="Schema\IDocumentSchemaCreation.cs" />
