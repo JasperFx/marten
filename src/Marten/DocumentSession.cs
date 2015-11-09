@@ -20,6 +20,7 @@ namespace Marten
 
     public class DocumentSession : IDocumentSession, IDiagnostics
     {
+        private readonly IdentityMap _identityMap = new IdentityMap();
         private readonly IList<NpgsqlCommand> _deletes = new List<NpgsqlCommand>();
         private readonly IQueryParser _parser;
         private readonly IMartenQueryExecutor _executor;
@@ -73,14 +74,14 @@ namespace Marten
             _deletes.Add(storage.DeleteCommandForId(id));
         }
 
-        public T Load<T>(string id)
+        public T Load<T>(string id) where T : class 
         {
-            return load<T>(id);
+            return _identityMap.Get<T>(id) ?? load<T>(id);
         }
 
-        public T Load<T>(ValueType id)
+        public T Load<T>(ValueType id) where T : class
         {
-            return load<T>(id);
+            return _identityMap.Get<T>(id) ?? load<T>(id);
         }
 
 
@@ -122,9 +123,10 @@ namespace Marten
             });
         }
 
-        public void Store(object entity)
+        public void Store<T>(T entity)
         {
             // TODO -- throw if null
+            _identityMap.Set<T>(entity);
             _updates.Add(entity);
         }
 

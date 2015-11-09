@@ -45,9 +45,11 @@
     </Compile>
     <Compile Include="CommandRunner.cs" />
     <Compile Include="DocumentSession.cs" />
+    <Compile Include="EntityKey.cs" />
     <Compile Include="Generation\TableColumn.cs" />
     <Compile Include="Generation\TableDefinition.cs" />
     <Compile Include="IConnectionFactory.cs" />
+    <Compile Include="IdentityMap.cs" />
     <Compile Include="IDocumentSession.cs" />
     <Compile Include="IDocumentStore.cs" />
     <Compile Include="ISerializer.cs" />

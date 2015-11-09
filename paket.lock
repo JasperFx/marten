@@ -9,7 +9,6 @@ NUGET
       Microsoft.Bcl.Build (>= 1.0.14)
     Microsoft.Bcl.Build (1.0.21) - import_targets: false
     Microsoft.CodeAnalysis.Analyzers (1.0.0)
-    Microsoft.DiaSymReader.Native (1.3.0)
     Microsoft.Net.Http (2.2.29)
       Microsoft.Bcl (>= 1.1.10)
       Microsoft.Bcl.Build (>= 1.0.14)
@@ -23,21 +22,21 @@ NUGET
     Storyteller (3.0.0.280-alpha)
     structuremap (3.1.6.186)
     System.Collections (4.0.10) - framework: dnxcore50
-      System.Diagnostics.Debug (>= 4.0.0) - framework: dnxcore50
-      System.Resources.ResourceManager (>= 4.0.0) - framework: dnxcore50
+      System.Diagnostics.Debug (>= 4.0.0)
+      System.Resources.ResourceManager (>= 4.0.0)
       System.Runtime (>= 4.0.0)
-      System.Runtime (>= 4.0.20) - framework: dnxcore50
-      System.Runtime.Extensions (>= 4.0.0) - framework: dnxcore50
-      System.Threading (>= 4.0.0) - framework: dnxcore50
+      System.Runtime (>= 4.0.20)
+      System.Runtime.Extensions (>= 4.0.0)
+      System.Threading (>= 4.0.0)
     System.Collections.Immutable (1.1.37)
-      System.Collections (>= 4.0.0) - framework: dnxcore50
-      System.Diagnostics.Debug (>= 4.0.0) - framework: dnxcore50
-      System.Globalization (>= 4.0.0) - framework: dnxcore50
-      System.Linq (>= 4.0.0) - framework: dnxcore50
-      System.Resources.ResourceManager (>= 4.0.0) - framework: dnxcore50
-      System.Runtime (>= 4.0.0) - framework: dnxcore50
-      System.Runtime.Extensions (>= 4.0.0) - framework: dnxcore50
-      System.Threading (>= 4.0.0) - framework: dnxcore50
+      System.Collections (>= 4.0.0)
+      System.Diagnostics.Debug (>= 4.0.0)
+      System.Globalization (>= 4.0.0)
+      System.Linq (>= 4.0.0)
+      System.Resources.ResourceManager (>= 4.0.0)
+      System.Runtime (>= 4.0.0)
+      System.Runtime.Extensions (>= 4.0.0)
+      System.Threading (>= 4.0.0)
     System.Diagnostics.Contracts (4.0.0) - framework: dnxcore50
       System.Runtime (>= 4.0.0)
     System.Diagnostics.Debug (4.0.10) - framework: dnxcore50
@@ -45,12 +44,12 @@ NUGET
     System.Globalization (4.0.10) - framework: dnxcore50
       System.Runtime (>= 4.0.0)
     System.IO (4.0.10) - framework: dnxcore50
-      System.Globalization (>= 4.0.0) - framework: dnxcore50
+      System.Globalization (>= 4.0.0)
       System.Runtime (>= 4.0.20)
       System.Text.Encoding (>= 4.0.0)
-      System.Text.Encoding (>= 4.0.10) - framework: dnxcore50
-      System.Text.Encoding.Extensions (>= 4.0.0) - framework: dnxcore50
-      System.Threading (>= 4.0.0) - framework: dnxcore50
+      System.Text.Encoding (>= 4.0.10)
+      System.Text.Encoding.Extensions (>= 4.0.0)
+      System.Threading (>= 4.0.0)
       System.Threading.Tasks (>= 4.0.0)
     System.Linq (4.0.0) - framework: dnxcore50
       System.Collections (>= 4.0.10)
@@ -64,15 +63,15 @@ NUGET
       System.Reflection.Primitives (>= 4.0.0)
       System.Runtime (>= 4.0.20)
     System.Reflection.Extensions (4.0.0)
-      System.Diagnostics.Debug (>= 4.0.10) - framework: dnxcore50
+      System.Diagnostics.Debug (>= 4.0.10)
       System.Reflection (>= 4.0.0)
-      System.Reflection (>= 4.0.10) - framework: dnxcore50
-      System.Reflection.Primitives (>= 4.0.0) - framework: dnxcore50
-      System.Reflection.TypeExtensions (>= 4.0.0) - framework: dnxcore50
-      System.Resources.ResourceManager (>= 4.0.0) - framework: dnxcore50
+      System.Reflection (>= 4.0.10)
+      System.Reflection.Primitives (>= 4.0.0)
+      System.Reflection.TypeExtensions (>= 4.0.0)
+      System.Resources.ResourceManager (>= 4.0.0)
       System.Runtime (>= 4.0.0)
-      System.Runtime (>= 4.0.20) - framework: dnxcore50
-      System.Runtime.Extensions (>= 4.0.10) - framework: dnxcore50
+      System.Runtime (>= 4.0.20)
+      System.Runtime.Extensions (>= 4.0.10)
     System.Reflection.Metadata (1.1.0)
       System.Collections (>= 4.0.0)
       System.Collections.Immutable (>= 1.1.37)
@@ -90,29 +89,29 @@ NUGET
       System.Threading (>= 4.0.0)
     System.Reflection.Primitives (4.0.0) - framework: dnxcore50
       System.Runtime (>= 4.0.0)
-      System.Threading (>= 4.0.0) - framework: dnxcore50
+      System.Threading (>= 4.0.0)
     System.Reflection.TypeExtensions (4.0.0) - framework: dnxcore50
-      System.Diagnostics.Contracts (>= 4.0.0) - framework: dnxcore50
-      System.Diagnostics.Debug (>= 4.0.10) - framework: dnxcore50
-      System.Linq (>= 4.0.0) - framework: dnxcore50
+      System.Diagnostics.Contracts (>= 4.0.0)
+      System.Diagnostics.Debug (>= 4.0.10)
+      System.Linq (>= 4.0.0)
       System.Reflection (>= 4.0.0)
-      System.Reflection (>= 4.0.10) - framework: dnxcore50
-      System.Reflection.Primitives (>= 4.0.0) - framework: dnxcore50
-      System.Resources.ResourceManager (>= 4.0.0) - framework: dnxcore50
+      System.Reflection (>= 4.0.10)
+      System.Reflection.Primitives (>= 4.0.0)
+      System.Resources.ResourceManager (>= 4.0.0)
       System.Runtime (>= 4.0.0)
-      System.Runtime (>= 4.0.20) - framework: dnxcore50
-      System.Runtime.Extensions (>= 4.0.10) - framework: dnxcore50
+      System.Runtime (>= 4.0.20)
+      System.Runtime.Extensions (>= 4.0.10)
     System.Resources.ResourceManager (4.0.0) - framework: dnxcore50
       System.Globalization (>= 4.0.0)
       System.Reflection (>= 4.0.0)
-      System.Reflection (>= 4.0.10) - framework: dnxcore50
+      System.Reflection (>= 4.0.10)
       System.Runtime (>= 4.0.0)
-      System.Runtime (>= 4.0.20) - framework: dnxcore50
+      System.Runtime (>= 4.0.20)
     System.Runtime (4.0.20) - framework: dnxcore50
-      System.Private.Uri (>= 4.0.0) - framework: dnxcore50
+      System.Private.Uri (>= 4.0.0)
     System.Runtime.Extensions (4.0.10) - framework: dnxcore50
       System.Runtime (>= 4.0.20)
-    System.Runtime.Handles (4.0.0)
+    System.Runtime.Handles (4.0.0) - framework: dnxcore50
       System.Runtime (>= 4.0.0)
     System.Runtime.InteropServices (4.0.20)
       System.Reflection (>= 4.0.0)
@@ -131,10 +130,9 @@ NUGET
       System.Runtime (>= 4.0.0)
   remote: https://www.myget.org/F/roslyn-nightly
   specs:
-    Microsoft.CodeAnalysis.Common (1.2.0-beta-20151028-07)
-      Microsoft.CodeAnalysis.Analyzers (>= 1.0.0)
-      Microsoft.DiaSymReader.Native (>= 1.2.0-rc)
+    Microsoft.CodeAnalysis.Common (1.2.0-beta-20151106-02)
+      Microsoft.CodeAnalysis.Analyzers (>= 1.0.0 < 1.2.0)
       System.Collections.Immutable (>= 1.1.37)
-      System.Reflection.Metadata (>= 1.1.0-beta-23413)
-    Microsoft.CodeAnalysis.CSharp (1.2.0-beta-20151028-07)
-      Microsoft.CodeAnalysis.Common (1.2.0-beta-20151028-07)
+      System.Reflection.Metadata (>= 1.1.0)
+    Microsoft.CodeAnalysis.CSharp (1.2.0-beta-20151106-02)
+      Microsoft.CodeAnalysis.Common (1.2.0-beta-20151106-02)

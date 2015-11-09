@@ -19,8 +19,8 @@ namespace Marten
         /// </summary>
         void SaveChanges();
 
-        T Load<T>(string id);
-        T Load<T>(ValueType id);
+        T Load<T>(string id) where T : class;
+        T Load<T>(ValueType id) where T : class;
 
         ILoadByKeys<T> Load<T>(); 
 
@@ -31,7 +31,7 @@ namespace Marten
         ///     <para>Forces concurrency check if the Id is not available during extraction.</para>
         /// </summary>
         /// <param name="entity">entity to store.</param>
-        void Store(object entity);
+        void Store<T>(T entity);
 
         IQueryable<T> Query<T>();
 

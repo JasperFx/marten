@@ -83,6 +83,7 @@
     <Compile Include="MartenRegistryTests.cs" />
     <Compile Include="performance_tuning.cs" />
     <Compile Include="persisting_document_with_string_id_Tests.cs" />
+    <Compile Include="load_not_yet_persisted_document_Tests.cs" />
     <Compile Include="persist_and_deleting_multiple_documents_Tests.cs" />
     <Compile Include="persist_and_load_documents_with_int_ids_Tests.cs" />
     <Compile Include="persist_and_load_documents_with_long_ids_Tests.cs" />
@@ -123,6 +124,9 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Codegen\" />
   </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
@@ -355,9 +359,6 @@
     <Analyzer Include="..\..\packages\Microsoft.CodeAnalysis.Analyzers\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Analyzers.dll">
       <Paket>True</Paket>
     </Analyzer>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Codegen\" />
   </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
