@@ -6,13 +6,11 @@ using System.Linq;
 using System.Reflection;
 using FubuCore;
 using FubuCore.Reflection;
-using Marten.Codegen;
 using Marten.Generation;
 using Marten.Util;
 
 namespace Marten.Schema
 {
-    // TODO - This is becoming a Blob class. Split out the Sql and C# generation maybe?
     public class DocumentMapping
     {
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
@@ -119,49 +117,6 @@ namespace Marten.Schema
 
             return table;
         }
-
-        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
-        {
-            var table = ToTable(schema);
-            table.Write(writer);
-            writer.WriteLine();
-            writer.WriteLine();
-
-            var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
-
-            var args = new List<UpsertArgument>
-            {
-                new UpsertArgument {Arg = "docId", PostgresType = pgIdType},
-                new UpsertArgument {Arg = "doc", PostgresType = "JSON"}
-            };
-
-            var duplicates = DuplicatedFields.Select(x => x.UpsertArgument).ToArray();
-            args.AddRange(duplicates);
-
-            var argList = args.Select(x => x.ArgumentDeclaration()).Join(", ");
-            var valueList = args.Select(x => x.Arg).Join(", ");
-
-            var updates = "data = doc";
-            if (duplicates.Any())
-            {
-                updates += ", " + duplicates.Select(x => $"{x.Column} = {x.Arg}").Join(", ");
-            }
-
-
-            writer.WriteLine($"CREATE OR REPLACE FUNCTION {UpsertName}({argList}) RETURNS VOID AS");
-            writer.WriteLine("$$");
-            writer.WriteLine("BEGIN");
-            writer.WriteLine($"INSERT INTO {TableName} VALUES ({valueList})");
-            writer.WriteLine($"  ON CONFLICT ON CONSTRAINT pk_{TableName}");
-            writer.WriteLine($"  DO UPDATE SET {updates};");
-            writer.WriteLine("END;");
-            writer.WriteLine("$$ LANGUAGE plpgsql;");
-
-
-            writer.WriteLine();
-            writer.WriteLine();
-        }
-
 
 
         public static DocumentMapping For<T>()

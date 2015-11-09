@@ -56,7 +56,7 @@ namespace Marten.Testing.Schema
             var mapping = new DocumentMapping(typeof (MySpecialDocument));
             var builder = new StringWriter();
 
-            mapping.WriteSchemaObjects(null, builder);
+            SchemaBuilder.WriteSchemaObjects(mapping, null, builder);
 
             var sql = builder.ToString();
 
@@ -97,7 +97,7 @@ namespace Marten.Testing.Schema
             var mapping = new DocumentMapping(typeof (MySpecialDocument));
             var builder = new StringWriter();
 
-            mapping.WriteSchemaObjects(null, builder);
+            SchemaBuilder.WriteSchemaObjects(mapping, null, builder);
 
             var sql = builder.ToString();
 

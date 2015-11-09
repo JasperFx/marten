@@ -81,6 +81,7 @@
     <Compile Include="Schema\ProductionSchemaCreation.cs" />
     <Compile Include="Schema\PropertySearching.cs" />
     <Compile Include="Schema\PropertySearchingAttribute.cs" />
+    <Compile Include="Schema\SchemaBuilder.cs" />
     <Compile Include="Schema\SearchableAttribute.cs" />
     <Compile Include="Schema\UpsertArgument.cs" />
     <Compile Include="SerializerExtensions.cs" />
