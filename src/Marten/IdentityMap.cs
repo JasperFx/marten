@@ -7,7 +7,7 @@ namespace Marten
     {
         private readonly Dictionary<EntityKey, object> _map = new Dictionary<EntityKey, object>();
 
-        public bool Set<T>(T entity)
+        public void Set<T>(T entity)
         {
             var id = GetOrSetId(entity);
             var key = new EntityKey(typeof(T), id);
@@ -18,10 +18,10 @@ namespace Marten
                 {
                     throw new InvalidOperationException($"Entity '{typeof(T).FullName}' with same Id already added to the session.");
                 }
+                return;
             }
 
             _map[key] = entity;
-            return true;
         }
 
         private static dynamic GetOrSetId<T>(T entity)
