@@ -3,6 +3,7 @@ NUGET
   specs:
     Fixie (1.0.0.33)
     FubuCore (1.3.0.278)
+    HtmlTags (3.0.0.186)
     Jil (2.12.1)
       Sigil (>= 4.5.0)
     Microsoft.Bcl (1.1.10)

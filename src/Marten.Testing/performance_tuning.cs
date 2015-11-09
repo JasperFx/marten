@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using HtmlTags;
 using Jil;
 using Marten.Schema;
 using Marten.Testing.Fixtures;
 using NpgsqlTypes;
 using StructureMap;
+using StructureMap.Util;
 
 namespace Marten.Testing
 {
@@ -30,8 +32,24 @@ namespace Marten.Testing
     }
 
 
+
+    public class SerializerTiming
+    {
+        public readonly LightweightCache<Type, Dictionary<int, double>> Timings 
+            = new LightweightCache<Type, Dictionary<int, double>>(x => new Dictionary<int, double>());
+
+        public void Record<T>(int count, double average)
+        {
+            Timings[typeof(T)].Add(count, average);            
+        }
+    }
+
+
     public class performance_measurements
     {
+        private readonly LightweightCache<Type, SerializerTiming> _timings = new LightweightCache<Type, SerializerTiming>(t => new SerializerTiming()); 
+         
+
         public class DateIsSearchable : MartenRegistry
         {
             public DateIsSearchable()
@@ -81,86 +99,122 @@ namespace Marten.Testing
 
                 Debug.WriteLine(session.Diagnostics.CommandFor(queryable).CommandText);
 
+                // Once to warm up
                 var time = Timings.Time(() =>
                 {
                     queryable.ToArray().Length.ShouldBeGreaterThan(0);
                 });
 
+
+                var times = new double[5];
+                for (var i = 0; i < 5; i++)
+                {
+                    times[i] = Timings.Time(() =>
+                    {
+                        queryable.ToArray().Length.ShouldBeGreaterThan(0);
+                    });
+                }
+
+                var average = times.Average(x => x);
+
                 var description =
-                    $"{data.Length} documents / {typeof (TSerializer).Name} / {typeof (TRegistry).Name}: {time}";
+                    $"{data.Length} documents / {typeof (TSerializer).Name} / {typeof (TRegistry).Name}: {average}";
 
                 Debug.WriteLine(description);
+
+                _timings[typeof(TSerializer)].Record<TRegistry>(data.Length, average);
 
             }
         }
 
-        public void measure_for_1000_documents()
+        private void create_timings(int length)
         {
-            Target[] data = Target.GenerateRandomData(1000).ToArray();
-
-            Debug.WriteLine("Newtonsoft Serializer, 1,000 documents");
+            Target[] data = Target.GenerateRandomData(length).ToArray();
 
             time_query<JsonNetSerializer, JsonLocatorOnly>(data);
             time_query<JsonNetSerializer, JsonBToRecord>(data);
             time_query<JsonNetSerializer, DateIsSearchable>(data);
-            time_query<JsonNetSerializer, JsonLocatorOnly>(data);
-            time_query<JsonNetSerializer, JsonBToRecord>(data);
-            time_query<JsonNetSerializer, DateIsSearchable>(data);
-            Debug.WriteLine("");
 
-            Debug.WriteLine("Newtonsoft Serializer, 10,000 documents");
-            data = Target.GenerateRandomData(10000).ToArray();
-            time_query<JsonNetSerializer, JsonLocatorOnly>(data);
-            time_query<JsonNetSerializer, JsonBToRecord>(data);
-            time_query<JsonNetSerializer, DateIsSearchable>(data);
-            time_query<JsonNetSerializer, JsonLocatorOnly>(data);
-            time_query<JsonNetSerializer, JsonBToRecord>(data);
-            time_query<JsonNetSerializer, DateIsSearchable>(data);
-            Debug.WriteLine("");
-
-
-            return;
-            Debug.WriteLine("Newtonsoft Serializer, 100,000 documents");
-            data = Target.GenerateRandomData(100000).ToArray();
-            time_query<JsonNetSerializer, JsonBToRecord>(data);
-            time_query<JsonNetSerializer, JsonLocatorOnly>(data);
-            time_query<JsonNetSerializer, DateIsSearchable>(data);
-            Debug.WriteLine("");
-
-            Debug.WriteLine("Newtonsoft Serializer, 1M documents");
-            data = Target.GenerateRandomData(1000000).ToArray();
-            time_query<JsonNetSerializer, JsonBToRecord>(data);
-            time_query<JsonNetSerializer, JsonLocatorOnly>(data);
-            time_query<JsonNetSerializer, DateIsSearchable>(data);
-            Debug.WriteLine("");
-
-            Debug.WriteLine("Jil Serializer, 1,000 documents");
-            data = Target.GenerateRandomData(1000).ToArray();
-            time_query<JilSerializer, JsonBToRecord>(data);
             time_query<JilSerializer, JsonLocatorOnly>(data);
-            time_query<JilSerializer, DateIsSearchable>(data);
-            Debug.WriteLine("");
-
-            Debug.WriteLine("Jil Serializer, 10,000 documents");
-            data = Target.GenerateRandomData(10000).ToArray();
             time_query<JilSerializer, JsonBToRecord>(data);
-            time_query<JilSerializer, JsonLocatorOnly>(data);
             time_query<JilSerializer, DateIsSearchable>(data);
-            Debug.WriteLine("");
+        }
 
-            Debug.WriteLine("Jil Serializer, 100,000 documents");
-            data = Target.GenerateRandomData(100000).ToArray();
-            time_query<JilSerializer, JsonBToRecord>(data);
-            time_query<JilSerializer, JsonLocatorOnly>(data);
-            time_query<JilSerializer, DateIsSearchable>(data);
-            Debug.WriteLine("");
 
-            Debug.WriteLine("Jil Serializer, 1M documents");
-            data = Target.GenerateRandomData(1000000).ToArray();
-            time_query<JilSerializer, JsonBToRecord>(data);
-            time_query<JilSerializer, JsonLocatorOnly>(data);
-            time_query<JilSerializer, DateIsSearchable>(data);
-            Debug.WriteLine("");
+        private void measure_and_report()
+        {
+            create_timings(1000);
+            create_timings(10000);
+            create_timings(100000);
+            create_timings(1000000);
+
+            var document = new HtmlDocument();
+            document.Add("h1").Text("Marten Query Timings");
+
+            document.Add(reportForSerializer(typeof (JsonNetSerializer)));
+            document.Add(reportForSerializer(typeof (JilSerializer)));
+
+            document.OpenInBrowser();
+        }
+
+        private HtmlTag reportForSerializer(Type serializerType)
+        {
+            var timing = _timings[serializerType];
+
+            var div = new HtmlTag("div");
+
+            div.Add("h3").Text("Serializer: " + serializerType.Name);
+
+            var table = new TableTag();
+            div.Append(table);
+
+            table.AddHeaderRow(tr =>
+            {
+                tr.Header("Query Type");
+                tr.Header("1K");
+                tr.Header("10K");
+                tr.Header("100K");
+                tr.Header("1M");
+            });
+
+            table.AddBodyRow(tr =>
+            {
+                tr.Header("JSON Locator Only");
+
+                var dict = timing.Timings[typeof (JsonLocatorOnly)];
+
+                tr.Cell(dict[1000].ToString());
+                tr.Cell(dict[10000].ToString());
+                tr.Cell(dict[100000].ToString());
+                tr.Cell(dict[1000000].ToString());
+            });
+
+            table.AddBodyRow(tr =>
+            {
+                tr.Header("jsonb_to_record + lateral join");
+
+                var dict = timing.Timings[typeof(JsonBToRecord)];
+
+                tr.Cell(dict[1000].ToString());
+                tr.Cell(dict[10000].ToString());
+                tr.Cell(dict[100000].ToString());
+                tr.Cell(dict[1000000].ToString());
+            });
+
+            table.AddBodyRow(tr =>
+            {
+                tr.Header("searching by duplicated field");
+
+                var dict = timing.Timings[typeof(DateIsSearchable)];
+
+                tr.Cell(dict[1000].ToString());
+                tr.Cell(dict[10000].ToString());
+                tr.Cell(dict[100000].ToString());
+                tr.Cell(dict[1000000].ToString());
+            });
+
+            return div;
+
 
         }
     }

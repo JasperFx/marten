@@ -1,6 +1,7 @@
 source https://nuget.org/api/v2
 nuget Fixie
 nuget FubuCore
+nuget HtmlTags
 nuget Jil
 nuget Newtonsoft.Json
 nuget Npgsql
