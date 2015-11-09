@@ -29,16 +29,102 @@ namespace Marten.Testing
         }
     }
 
+
+    public class performance_measurements
+    {
+        public class DateIsSearchable : MartenRegistry
+        {
+            public DateIsSearchable()
+            {
+                For<Target>().Searchable(x => x.Date);
+            }
+        }
+
+        public class JsonLocatorOnly : MartenRegistry
+        {
+            public JsonLocatorOnly()
+            {
+                For<Target>().PropertySearching(PropertySearching.JSON_Locator_Only);
+            }
+        }
+
+        public class JsonBToRecord : MartenRegistry
+        {
+            public JsonBToRecord()
+            {
+                For<Target>().PropertySearching(PropertySearching.JSONB_To_Record);
+            }
+        }
+
+        public void time_query<TSerializer, TRegistry>(Target[] data)
+            where TSerializer : ISerializer
+            where TRegistry : MartenRegistry, new()
+        {
+            var container = Container.For<DevelopmentModeRegistry>();
+            container.Configure(_ => _.For<ISerializer>().Use<TSerializer>());
+
+
+            // Completely removes all the database schema objects for the
+            // Target document type
+            container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
+
+            // Apply the schema customizations
+            container.GetInstance<IDocumentSchema>().Alter<TRegistry>();
+
+
+            using (var session = container.GetInstance<IDocumentSession>())
+            {
+                session.BulkLoad(data);
+
+                var theDate = DateTime.Today.AddDays(3);
+                var queryable = session.Query<Target>().Where(x => x.Date == theDate);
+
+                Debug.WriteLine(session.Diagnostics.CommandFor(queryable).CommandText);
+
+                var time = Timings.Time(() =>
+                {
+                    queryable.ToArray().Length.ShouldBeGreaterThan(0);
+                });
+
+                var description =
+                    $"{data.Length} documents / {typeof (TSerializer).Name} / {typeof (TRegistry).Name}: {time}";
+
+                Debug.WriteLine(description);
+
+            }
+        }
+
+        public void measure_for_1000_documents()
+        {
+            Target[] data = Target.GenerateRandomData(1000).ToArray();
+
+            time_query<JsonNetSerializer, JsonBToRecord>(data);
+            time_query<JsonNetSerializer, JsonLocatorOnly>(data);
+            time_query<JsonNetSerializer, DateIsSearchable>(data);
+            
+        }
+    }
+
+
+    
+
+
     public class performance_tuning
     {
         private readonly IContainer theContainer = Container.For<DevelopmentModeRegistry>();
 
+
+
+
+
+
+
         public void generate_data()
         {
-            theContainer.Inject<ISerializer>(new JilSerializer());
-            //theContainer.Inject<ISerializer>(new NetJSONSerializer());
+            //theContainer.Inject<ISerializer>(new JilSerializer());
 
             theContainer.GetInstance<DocumentCleaner>().CompletelyRemove(typeof(Target));
+
             // Get Roslyn spun up before measuring anything
             var schema = theContainer.GetInstance<IDocumentSchema>();
 
@@ -49,56 +135,31 @@ namespace Marten.Testing
             theContainer.GetInstance<DocumentCleaner>().DeleteDocumentsFor(typeof(Target));
 
 
-            var runner = theContainer.GetInstance<CommandRunner>();
-            var serializer = theContainer.GetInstance<ISerializer>();
-            for (int i = 0; i < 10; i++)
-            {
-                var data = Target.GenerateRandomData(10000).ToArray();
-                Timings.Time("Using BinaryImport", () =>
-                {
-                    runner.Execute(conn =>
-                    {
-                        using (var writer = conn.BeginBinaryImport("COPY mt_doc_target (id, data, date) FROM STDIN BINARY"))
-                        {
-                            data.Each(x =>
-                            {
-                                writer.StartRow();
-                                writer.Write(x.Id, NpgsqlDbType.Uuid);
-                                writer.Write(serializer.ToJson(x), NpgsqlDbType.Jsonb);
-                                writer.Write(x.Date, NpgsqlDbType.Date);
-                            });
-                        }
-                    });
-                });
-            }
-            
-
-            
-
-
-
             var session = theContainer.GetInstance<IDocumentSession>();
 
+            var data = Target.GenerateRandomData(10000).ToArray();
+            Timings.Time(() =>
+            {
+                session.BulkLoad(data);
+            });
+            
+            
+
+            
 
 
 
 
             var theDate = DateTime.Today.AddDays(3);
             
-            Timings.Time("Fetching as is", () =>
+            Timings.Time(() =>
             {
                 session.Query<Target>().Where(x => x.Date == theDate).ToArray().Length.ShouldBeGreaterThan(0);
             });
             
 
-            /*
-SELECT r.id 
-    FROM resources AS r,
-    LATERAL jsonb_to_record(r.fields) AS l(polled integer) 
-    WHERE l.polled > 50;
-    */
 
-            Timings.Time("Fetching with lateral join", () =>
+            Timings.Time(() =>
             {
                 var sql =
                     "select r.data from mt_doc_target as r, LATERAL jsonb_to_record(r.data) as l(\"Date\" date) where l.\"Date\" = ?";
@@ -106,7 +167,7 @@ SELECT r.id
                 session.Query<Target>(sql, theDate).ToArray().Count().ShouldBeGreaterThan(0);
             });
 
-            Timings.Time("Fetching with duplicated field", () =>
+            Timings.Time(() =>
             {
                 var sql =
                     "select r.data from mt_doc_target as r where r.date = ?";
@@ -118,7 +179,7 @@ SELECT r.id
 
     public static class Timings
     {
-        public static void Time(string description, Action action)
+        public static double Time(Action action)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -129,8 +190,9 @@ SELECT r.id
             finally
             {
                 stopwatch.Stop();
-                Debug.WriteLine(description + ": " + stopwatch.ElapsedMilliseconds);
             }
+
+            return stopwatch.ElapsedMilliseconds;
         }
     }
 }

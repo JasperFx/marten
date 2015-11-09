@@ -28,17 +28,17 @@ namespace Marten.Testing.Schema
 
         public void locator_for_string()
         {
-            theStringField.SqlLocator.ShouldBe("d.data -> 'FirstName'");
+            theStringField.SqlLocator.ShouldBe("d.data ->> 'FirstName'");
         }
 
         public void locator_for_number()
         {
-            theNumberField.SqlLocator.ShouldBe("CAST(d.data -> 'Age' as integer)");
+            theNumberField.SqlLocator.ShouldBe("CAST(d.data ->> 'Age' as integer)");
         }
 
         public void locator_for_enum()
         {
-            theEnumField.SqlLocator.ShouldBe("CAST(d.data -> 'Color' as integer)");
+            theEnumField.SqlLocator.ShouldBe("CAST(d.data ->> 'Color' as integer)");
         }
 
         public void the_lateral_join_declaration_is_null()

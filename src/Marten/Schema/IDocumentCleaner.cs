@@ -9,5 +9,6 @@ namespace Marten.Schema
         void DeleteDocumentsExcept(params Type[] documentTypes);
 
         void CompletelyRemove(Type documentType);
+        void CompletelyRemoveAll();
     }
 }

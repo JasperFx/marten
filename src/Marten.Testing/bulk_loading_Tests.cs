@@ -35,6 +35,23 @@ namespace Marten.Testing
                 .ShouldBeTrue();
         }
 
+        public void load_with_small_batch_and_duplicated_data_field()
+        {
+            theContainer.GetInstance<IDocumentSchema>().Alter(_ =>
+            {
+                _.For<Target>().Searchable(x => x.Date);
+            });
+
+            var data = Target.GenerateRandomData(100).ToArray();
+
+            theSession.BulkLoad(data);
+
+            theSession.Query<Target>().Count().ShouldBe(data.Length);
+
+            theSession.Query<Target>().Where(x => x.Date == data[0].Date).Any()
+                .ShouldBeTrue();
+        }
+
 
         public void load_with_multiple_batches()
         {

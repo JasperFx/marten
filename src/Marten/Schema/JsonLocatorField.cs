@@ -24,11 +24,11 @@ namespace Marten.Schema
             var memberType = member.GetMemberType();
             if (memberType == typeof (string))
             {
-                SqlLocator = $"d.data -> '{member.Name}'";
+                SqlLocator = $"d.data ->> '{member.Name}'";
             }
             else
             {
-                SqlLocator = $"CAST(d.data -> '{member.Name}' as {PgType})";
+                SqlLocator = $"CAST(d.data ->> '{member.Name}' as {PgType})";
             }
 
 
@@ -37,12 +37,24 @@ namespace Marten.Schema
         public JsonLocatorField(MemberInfo[] members) : base(members)
         {
             var locator = "d.data";
-            for (int i = 0; i < members.Length - 1; i++)
+
+
+            if (members.Length == 1)
             {
-                locator += $" -> '{members[i].Name}'";
+                locator += $" ->> '{members.Single().Name}'";
+            }
+            else
+            {
+                for (int i = 0; i < members.Length - 1; i++)
+                {
+                    locator += $" -> '{members[i].Name}'";
+                }
+
+                locator += $" ->> '{members.Last().Name}'";
+
             }
 
-            locator += $" ->> '{members.Last().Name}'";
+
 
             SqlLocator = MemberType == typeof (string) ? locator : locator.ApplyCastToLocator(MemberType);
         }

@@ -71,7 +71,6 @@ namespace Marten.Schema
             });
 
             writer.FinishBlock();
-
             return writer.Code();
         }
 
