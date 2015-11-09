@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using FubuCore;
+using NpgsqlTypes;
 
 namespace Marten
 {
@@ -18,6 +21,22 @@ namespace Marten
             {typeof(DateTime), "date"},
             {typeof(DateTimeOffset), "timestamp with time zone"}
         };
+
+        private static MethodInfo _getNgpsqlDbTypeMethod;
+
+        static TypeMappings()
+        {
+            var type = Type.GetType("Npgsql.TypeHandlerRegistry, Npgsql");
+            _getNgpsqlDbTypeMethod = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
+                .FirstOrDefault(x => x.Name == "ToNpgsqlDbType" && x.GetParameters().Count() == 1 && x.GetParameters().Single().ParameterType == typeof(Type));
+        }
+
+        public static NpgsqlDbType ToDbType(Type type)
+        {
+            if (type.IsNullable()) return ToDbType(type.GetInnerTypeFromNullable());
+
+            return (NpgsqlDbType) _getNgpsqlDbTypeMethod.Invoke(null, new object[] { type});
+        }
 
         public static string GetPgType(Type memberType)
         {

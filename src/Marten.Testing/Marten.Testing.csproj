@@ -100,6 +100,7 @@
     <Compile Include="Schema\LateralJoinFieldTests.cs" />
     <Compile Include="Schema\ProductionModeSchemeCreationTests.cs" />
     <Compile Include="SpecificationExtensions.cs" />
+    <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />
   </ItemGroup>
   <ItemGroup>
