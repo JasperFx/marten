@@ -41,11 +41,15 @@ namespace Marten.Testing.Schema
 
             var thirdTarget = targets.ElementAt(2);
 
-            var results = theSession.Query<Target>().Where(x => x.Inner.Date == thirdTarget.Inner.Date).ToArray();
+            var queryable = theSession.Query<Target>().Where(x => x.Inner.Date == thirdTarget.Inner.Date);
+            var results = queryable.ToArray();
             results
                 .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
 
+            Debug.WriteLine(theSession.Diagnostics.CommandFor(queryable).CommandText);
 
+            theSession.Diagnostics.CommandFor(queryable).CommandText
+                .ShouldContain("inner_date = :arg0");
         }
     }
 }

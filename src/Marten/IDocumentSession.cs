@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 
 namespace Marten
@@ -35,6 +36,8 @@ namespace Marten
         IQueryable<T> Query<T>();
 
         IEnumerable<T> Query<T>(string sql, params object[] parameters);
+
+        IDiagnostics Diagnostics { get; }
     }
 
     public interface ILoadByKeys<out TDoc>
@@ -42,4 +45,11 @@ namespace Marten
         IEnumerable<TDoc> ById<TKey>(params TKey[] keys);
         IEnumerable<TDoc> ById<TKey>(IEnumerable<TKey> keys);
     }
+
+    public interface IDiagnostics
+    {
+        IDbCommand CommandFor<T>(IQueryable<T> queryable);
+    }
+
+    
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using FubuCore;
 using Marten.Linq;
@@ -14,9 +15,10 @@ namespace Marten
     public interface IMartenQueryExecutor : IQueryExecutor
     {
         NpgsqlCommand BuildCommand<T>(QueryModel queryModel);
+        NpgsqlCommand BuildCommand<T>(IQueryable<T> queryable);
     }
 
-    public class DocumentSession : IDocumentSession
+    public class DocumentSession : IDocumentSession, IDiagnostics
     {
         private readonly IList<NpgsqlCommand> _deletes = new List<NpgsqlCommand>();
         private readonly IQueryParser _parser;
@@ -39,6 +41,18 @@ namespace Marten
 
         public void Dispose()
         {
+        }
+
+        public IDbCommand CommandFor<T>(IQueryable<T> queryable)
+        {
+            if (queryable is MartenQueryable<T>)
+            {
+                return _executor.BuildCommand<T>(queryable);
+
+            }
+            
+
+            throw new ArgumentOutOfRangeException(nameof(queryable), "This mechanism can only be used for MartenQueryable<T> objects");
         }
 
         public void Delete<T>(T entity)
@@ -141,6 +155,11 @@ namespace Marten
             cmd.CommandText = sql;
 
             return _serializer.FromJson<T>(_runner.QueryJson(cmd));
+        }
+
+        public IDiagnostics Diagnostics
+        {
+            get { return this; }
         }
 
         public ILoadByKeys<T> Load<T>()
