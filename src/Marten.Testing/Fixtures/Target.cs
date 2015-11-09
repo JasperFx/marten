@@ -99,6 +99,8 @@ namespace Marten.Testing.Fixtures
 
         public Target[] Children { get; set; }
 
+        public int? NullableNumber { get; set; }
+
     }
 
     public class Address

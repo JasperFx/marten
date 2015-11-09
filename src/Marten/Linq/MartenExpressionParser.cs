@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata;
 using FubuCore;
 using FubuCore.Reflection;
 using Marten.Schema;
@@ -68,6 +69,16 @@ namespace Marten.Linq
             {
                 var locator = JsonLocator(mapping, expression.As<MemberExpression>());
                 return new WhereFragment("({0})::Boolean = False".ToFormat(locator));
+            }
+
+            if (expression.Type == typeof (bool) && expression.NodeType == ExpressionType.NotEqual && expression is BinaryExpression)
+            {
+                var binaryExpression = expression.As<BinaryExpression>();
+                var locator = JsonLocator(mapping, binaryExpression.Left);
+                if (binaryExpression.Right.NodeType == ExpressionType.Constant && binaryExpression.Right.As<ConstantExpression>().Value == null)
+                {
+                    return new WhereFragment($"({locator})::Boolean IS NULL");
+                }
             }
 
             throw new NotSupportedException();
@@ -139,16 +150,20 @@ namespace Marten.Linq
         private IWhereFragment buildSimpleWhereClause(DocumentMapping mapping, BinaryExpression binary)
         {
             var jsonLocator = JsonLocator(mapping, binary.Left);
-            
+            var op = _operators[binary.NodeType];
 
             var value = Value(binary.Right);
 
             if (value == null)
             {
-                return new WhereFragment("{0} is null".ToFormat(jsonLocator));
+                var sql = binary.NodeType == ExpressionType.NotEqual
+                    ? $"{jsonLocator} is not null"
+                    : $"{jsonLocator} is null";
+
+                return new WhereFragment(sql);
             }
 
-            var op = _operators[binary.NodeType];
+            
             return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
         }
 

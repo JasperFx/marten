@@ -8,10 +8,18 @@ namespace Marten.Util
     {
         public static Type GetMemberType(this MemberInfo member)
         {
-            if (member is FieldInfo) return member.As<FieldInfo>().FieldType;
-            if (member is PropertyInfo) return member.As<PropertyInfo>().PropertyType;
+            Type rawType = null;
 
-            throw new NotSupportedException();
+            if (member is FieldInfo)
+            {
+                rawType = member.As<FieldInfo>().FieldType;
+            }
+            if (member is PropertyInfo)
+            {
+                rawType = member.As<PropertyInfo>().PropertyType;
+            }
+
+            return rawType.IsNullable() ? rawType.GetInnerTypeFromNullable() : rawType;
         }
     }
 }
