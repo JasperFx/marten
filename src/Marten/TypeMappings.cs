@@ -6,7 +6,7 @@ namespace Marten
 {
     public static class TypeMappings
     {
-        public static readonly Dictionary<Type, string> PgTypes = new Dictionary<Type, string>
+        private static readonly Dictionary<Type, string> PgTypes = new Dictionary<Type, string>
         {
             {typeof (int), "integer"},
             {typeof (long), "bigint"},
@@ -19,10 +19,24 @@ namespace Marten
             {typeof(DateTimeOffset), "timestamp with time zone"}
         };
 
+        public static string GetPgType(Type memberType)
+        {
+            if (memberType.IsEnum) return "integer";
+
+            if (memberType.IsNullable())
+            {
+                return GetPgType(memberType.GetInnerTypeFromNullable());
+            }
+
+            return PgTypes[memberType];
+        }
+
         public static bool HasTypeMapping(Type memberType)
         {
+
+
             // more complicated later
-            return PgTypes.ContainsKey(memberType);
+            return PgTypes.ContainsKey(memberType) || memberType.IsEnum;
         }
 
         public static string ApplyCastToLocator(this string locator, Type memberType)

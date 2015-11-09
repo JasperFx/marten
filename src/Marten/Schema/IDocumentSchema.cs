@@ -12,5 +12,8 @@ namespace Marten.Schema
 
         DocumentMapping MappingFor(Type documentType);
         void EnsureStorageExists(Type documentType);
+        void Alter(Action<MartenRegistry> configure);
+        void Alter<T>() where T : MartenRegistry, new();
+        void Alter(MartenRegistry registry);
     }
 }

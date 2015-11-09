@@ -9,6 +9,7 @@ using System.Reflection;
 using FubuCore;
 using Marten.Codegen;
 using Npgsql;
+using NpgsqlTypes;
 using Remotion.Linq;
 
 namespace Marten.Schema
@@ -38,7 +39,6 @@ namespace Marten.Schema
 
             mappings.Select(x => x.DocumentType.Assembly).Distinct().Each(assem => generator.ReferenceAssembly(assem));
 
-            
             var assembly = generator.Generate(code);
 
             return assembly
@@ -54,7 +54,7 @@ namespace Marten.Schema
             var writer = new SourceWriter();
 
             // TODO -- get rid of the magic strings
-            var namespaces = new List<string> {"System", "Marten", "Marten.Schema", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq"};
+            var namespaces = new List<string> {"System", "Marten", "Marten.Schema", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq", typeof(NpgsqlDbType).Namespace};
             namespaces.AddRange(mappings.Select(x => x.DocumentType.Namespace));
 
             namespaces.Distinct().OrderBy(x => x).Each(x => writer.WriteLine($"using {x};"));
@@ -71,8 +71,7 @@ namespace Marten.Schema
 
             writer.FinishBlock();
 
-            var code = writer.Code();
-            return code;
+            return writer.Code();
         }
     }
 }

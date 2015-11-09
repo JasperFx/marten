@@ -7,6 +7,8 @@ using FubuCore;
 using FubuCore.Reflection;
 using Marten.Generation;
 using Marten.Util;
+using Npgsql;
+
 
 namespace Marten.Schema
 {
@@ -33,6 +35,24 @@ namespace Marten.Schema
         public DuplicatedField(MemberInfo[] memberPath) : base(memberPath)
         {
             ColumnName = MemberName.SplitPascalCase().ToLower().Replace(" ", "_");
+
+            if (MemberType.IsEnum)
+            {
+                typeof(EnumRegistrar<>).CloseAndBuildAs<IEnumRegistrar>(MemberType).Register();
+            }
+        }
+
+        internal interface IEnumRegistrar
+        {
+            void Register();
+        }
+
+        internal class EnumRegistrar<T> : IEnumRegistrar where T : struct
+        {
+            public void Register()
+            {
+                NpgsqlConnection.RegisterEnumGlobally<T>();
+            }
         }
 
         public string ColumnName
@@ -51,18 +71,25 @@ namespace Marten.Schema
         {
             Arg = "arg_" + ColumnName.ToLower(),
             Column = ColumnName.ToLower(),
-            PostgresType = TypeMappings.PgTypes[Members.Last().GetMemberType()]
+            PostgresType = TypeMappings.GetPgType(Members.Last().GetMemberType())
         };
 
         // I say you don't need a ForeignKey 
         public virtual TableColumn ToColumn(IDocumentSchema schema)
         {
-            return new TableColumn(ColumnName, TypeMappings.PgTypes[Members.Last().GetMemberType()]);
+            var pgType = TypeMappings.GetPgType(Members.Last().GetMemberType());
+            return new TableColumn(ColumnName, pgType);
         }
 
         public string WithParameterCode()
         {
-            var accessor = Members.Select(x => x.Name + "?").Join("").TrimEnd('?');
+            var accessor = Members.Select(x => x.Name).Join("?.");
+            
+            if (MemberType == typeof (DateTime))
+            {
+                // TODO -- might have to correct things later   
+                return $".WithParameter(`{UpsertArgument.Arg}`, document.{accessor}, NpgsqlDbType.Date)".Replace('`', '"');
+            }
 
             return $".WithParameter(`{UpsertArgument.Arg}`, document.{accessor})".Replace('`', '"');
         }

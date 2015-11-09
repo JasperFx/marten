@@ -39,6 +39,17 @@ namespace Marten.Util
             return command;
         }
 
+        public static NpgsqlCommand WithParameter(this NpgsqlCommand command, string name, object value, NpgsqlDbType dbType)
+        {
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.Value = value ?? DBNull.Value;
+            parameter.NpgsqlDbType = NpgsqlDbType.Date;
+            command.Parameters.Add(parameter);
+
+            return command;
+        }
+
         public static NpgsqlCommand AsSproc(this NpgsqlCommand command)
         {
             command.CommandType = CommandType.StoredProcedure;

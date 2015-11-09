@@ -105,12 +105,20 @@ AND type_udt_name != 'trigger';
         {
         }
 
-        public void Apply<T>() where T : MartenRegistry, new()
+        public void Alter(Action<MartenRegistry> configure)
         {
-            Apply(new T());
+            var registry = new MartenRegistry();
+            configure(registry);
+
+            Alter(registry);
         }
 
-        public void Apply(MartenRegistry registry)
+        public void Alter<T>() where T : MartenRegistry, new()
+        {
+            Alter(new T());
+        }
+
+        public void Alter(MartenRegistry registry)
         {
             // TODO -- later, latch on MartenRegistry type? May not really matter
             registry.Alter(this);

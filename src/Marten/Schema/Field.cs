@@ -20,15 +20,7 @@ namespace Marten.Schema
 
             MemberType = members.Last().GetMemberType();
 
-            if (MemberType.IsEnum)
-            {
-                PgType = "integer";
-            }
-            else
-            {
-                PgType = TypeMappings.PgTypes[MemberType];
-            }
-            
+            PgType = TypeMappings.GetPgType(MemberType);
         }
 
         public Type MemberType { get; }

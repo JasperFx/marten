@@ -109,7 +109,8 @@ namespace Marten.Schema
         {
             // TODO -- blow up if no IdMember or no TableName
 
-            var pgIdType = TypeMappings.PgTypes[IdMember.GetMemberType()];
+
+            var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
             var table = new TableDefinition(TableName, new TableColumn("id", pgIdType));
             table.Columns.Add(new TableColumn("data", "jsonb NOT NULL"));
 
@@ -126,7 +127,7 @@ namespace Marten.Schema
             writer.WriteLine();
             writer.WriteLine();
 
-            var pgIdType = TypeMappings.PgTypes[IdMember.GetMemberType()];
+            var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
 
             var args = new List<UpsertArgument>
             {

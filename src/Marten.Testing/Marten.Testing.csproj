@@ -95,6 +95,7 @@
     <Compile Include="Schema\DocumentCleanerTests.cs" />
     <Compile Include="Schema\DocumentStorageBuilderTests.cs" />
     <Compile Include="Schema\DuplicatedFieldTests.cs" />
+    <Compile Include="Schema\duplicate_deep_accessor_and_query_Tests.cs" />
     <Compile Include="Schema\JsonLocatorFieldTests.cs" />
     <Compile Include="Schema\LateralJoinFieldTests.cs" />
     <Compile Include="Schema\ProductionModeSchemeCreationTests.cs" />

@@ -13,7 +13,7 @@ namespace Marten.Testing
         {
             theSchema = Container.For<DevelopmentModeRegistry>().GetInstance<DocumentSchema>();
 
-            theSchema.Apply<TestRegistry>();
+            theSchema.Alter<TestRegistry>();
         }
 
         public void property_searching_override()
