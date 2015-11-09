@@ -162,66 +162,7 @@ namespace Marten.Schema
             writer.WriteLine();
         }
 
-        public void GenerateDocumentStorage(SourceWriter writer)
-        {
-            var extraUpsertArguments = DuplicatedFields.Any()
-                ? DuplicatedFields.Select(x => x.WithParameterCode()).Join("")
-                : "";
 
-
-            writer.Write(
-                $@"
-BLOCK:public class {DocumentType.Name
-                    }Storage : IDocumentStorage
-public Type DocumentType => typeof ({DocumentType.Name
-                    });
-
-BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
-return UpsertCommand(({
-                    DocumentType.Name
-                    })document, json);
-END
-
-BLOCK:public NpgsqlCommand LoaderCommand(object id)
-return new NpgsqlCommand(`select data from {
-                    TableName
-                    } where id = :id`).WithParameter(`id`, id);
-END
-
-BLOCK:public NpgsqlCommand DeleteCommandForId(object id)
-return new NpgsqlCommand(`delete from {
-                    TableName
-                    } where id = :id`).WithParameter(`id`, id);
-END
-
-BLOCK:public NpgsqlCommand DeleteCommandForEntity(object entity)
-return DeleteCommandForId((({
-                    DocumentType.Name})entity).{IdMember.Name
-                    });
-END
-
-BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
-return new NpgsqlCommand(`select data from {
-                    TableName
-                    } where id = ANY(:ids)`).WithParameter(`ids`, ids);
-END
-
-
-// TODO: This wil need to get fancier later
-BLOCK:public NpgsqlCommand UpsertCommand({
-                    DocumentType.Name} document, string json)
-return new NpgsqlCommand(`{UpsertName
-                    }`)
-    .AsSproc()
-    .WithParameter(`id`, document.{IdMember.Name
-                    })
-    .WithJsonParameter(`doc`, json){extraUpsertArguments};
-END
-
-END
-
-");
-        }
 
         public static DocumentMapping For<T>()
         {

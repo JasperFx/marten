@@ -64,7 +64,7 @@ namespace Marten.Schema
 
             mappings.Each(x =>
             {
-                x.GenerateDocumentStorage(writer);
+                GenerateDocumentStorage(x, writer);
                 writer.BlankLine();
                 writer.BlankLine();
             });
@@ -72,6 +72,52 @@ namespace Marten.Schema
             writer.FinishBlock();
 
             return writer.Code();
+        }
+
+        public static void GenerateDocumentStorage(DocumentMapping mapping, SourceWriter writer)
+        {
+            var extraUpsertArguments = mapping.DuplicatedFields.Any()
+                ? mapping.DuplicatedFields.Select(x => x.WithParameterCode()).Join("")
+                : "";
+
+
+            writer.Write(
+                $@"
+BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage
+public Type DocumentType => typeof ({mapping.DocumentType.Name});
+
+BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
+return UpsertCommand(({mapping.DocumentType.Name})document, json);
+END
+
+BLOCK:public NpgsqlCommand LoaderCommand(object id)
+return new NpgsqlCommand(`select data from {mapping.TableName} where id = :id`).WithParameter(`id`, id);
+END
+
+BLOCK:public NpgsqlCommand DeleteCommandForId(object id)
+return new NpgsqlCommand(`delete from {mapping.TableName} where id = :id`).WithParameter(`id`, id);
+END
+
+BLOCK:public NpgsqlCommand DeleteCommandForEntity(object entity)
+return DeleteCommandForId((({mapping.DocumentType.Name})entity).{mapping.IdMember.Name});
+END
+
+BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
+return new NpgsqlCommand(`select data from {mapping.TableName} where id = ANY(:ids)`).WithParameter(`ids`, ids);
+END
+
+
+// TODO: This wil need to get fancier later
+BLOCK:public NpgsqlCommand UpsertCommand({mapping.DocumentType.Name} document, string json)
+return new NpgsqlCommand(`{mapping.UpsertName}`)
+    .AsSproc()
+    .WithParameter(`id`, document.{mapping.IdMember.Name})
+    .WithJsonParameter(`doc`, json){extraUpsertArguments};
+END
+
+END
+
+");
         }
     }
 }
