@@ -26,16 +26,13 @@ namespace Marten
 
         // Store by etag? Version strategy?
 
-        /// <summary>
-        ///     Stores entity in session, extracts Id from entity using Conventions or generates new one if it is not available.
-        ///     <para>Forces concurrency check if the Id is not available during extraction.</para>
-        /// </summary>
-        /// <param name="entity">entity to store.</param>
         void Store(object entity);
 
         IQueryable<T> Query<T>();
 
         IEnumerable<T> Query<T>(string sql, params object[] parameters);
+
+        void BulkLoad<T>(T[] documents, int batchSize = 1000);
 
         IDiagnostics Diagnostics { get; }
     }
