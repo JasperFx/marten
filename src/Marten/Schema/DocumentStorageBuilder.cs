@@ -8,6 +8,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using FubuCore;
 using Marten.Codegen;
+using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
@@ -54,7 +55,7 @@ namespace Marten.Schema
             var writer = new SourceWriter();
 
             // TODO -- get rid of the magic strings
-            var namespaces = new List<string> {"System", "Marten", "Marten.Schema", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq", typeof(NpgsqlDbType).Namespace};
+            var namespaces = new List<string> {"System", "Marten", "Marten.Schema", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq", typeof(NpgsqlDbType).Namespace, typeof(IEnumerable<>).Namespace};
             namespaces.AddRange(mappings.Select(x => x.DocumentType.Namespace));
 
             namespaces.Distinct().OrderBy(x => x).Each(x => writer.WriteLine($"using {x};"));
@@ -81,9 +82,24 @@ namespace Marten.Schema
                 : "";
 
 
+            // TODO -- move more of this into DocumentMapping, DuplicatedField, IField, etc.
+            var id_NpgsqlDbType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
+            var duplicatedFieldsInBulkLoading = mapping.DuplicatedFields.Any() 
+                ? ", " + mapping.DuplicatedFields.Select(x => x.ColumnName).Join(", ") 
+                : string.Empty;
+
+            var duplicatedFieldsInBulkLoadingWriter = "";
+            if (mapping.DuplicatedFields.Any())
+            {
+                duplicatedFieldsInBulkLoadingWriter = mapping.DuplicatedFields.Select(field =>
+                {
+                    return field.ToBulkWriterCode();
+                }).Join("\n");
+            }
+
             writer.Write(
                 $@"
-BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage
+BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{mapping.DocumentType.Name}>
 public Type DocumentType => typeof ({mapping.DocumentType.Name});
 
 BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
@@ -107,12 +123,22 @@ return new NpgsqlCommand(`select data from {mapping.TableName} where id = ANY(:i
 END
 
 
-// TODO: This wil need to get fancier later
 BLOCK:public NpgsqlCommand UpsertCommand({mapping.DocumentType.Name} document, string json)
 return new NpgsqlCommand(`{mapping.UpsertName}`)
     .AsSproc()
     .WithParameter(`id`, document.{mapping.IdMember.Name})
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
+END
+
+BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{mapping.DocumentType.Name}> documents)
+BLOCK:using (var writer = conn.BeginBinaryImport(`COPY {mapping.TableName}(id, data{duplicatedFieldsInBulkLoading}) FROM STDIN BINARY`))
+BLOCK:foreach (var x in documents)
+writer.StartRow();
+writer.Write(x.Id, NpgsqlDbType.{id_NpgsqlDbType});
+writer.Write(serializer.ToJson(x), NpgsqlDbType.Jsonb);
+{duplicatedFieldsInBulkLoadingWriter}
+END
+END
 END
 
 END

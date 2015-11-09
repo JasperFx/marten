@@ -43,6 +43,7 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="bulk_loading_Tests.cs" />
     <Compile Include="codegen_spike.cs" />
     <Compile Include="ConnectionSource.cs" />
     <Compile Include="DevelopmentModeRegistry.cs" />
@@ -101,6 +102,7 @@
     <Compile Include="Schema\LateralJoinFieldTests.cs" />
     <Compile Include="Schema\ProductionModeSchemeCreationTests.cs" />
     <Compile Include="SpecificationExtensions.cs" />
+    <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />
   </ItemGroup>
   <ItemGroup>

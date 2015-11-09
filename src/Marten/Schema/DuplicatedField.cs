@@ -94,6 +94,13 @@ namespace Marten.Schema
             return $".WithParameter(`{UpsertArgument.Arg}`, document.{accessor})".Replace('`', '"');
         }
 
+        public string ToBulkWriterCode()
+        {
+            var accessor = Members.Select(x => x.Name).Join("?.");
+
+            return $"writer.Write(x.{accessor}, NpgsqlDbType.{NpgsqlDbType});";
+        }
+
         public string SqlLocator { get; private set; }
         public string LateralJoinDeclaration { get; } = null;
     }

@@ -1,32 +1,37 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using FubuCore;
-using Marten.Testing.Documents;
+using Marten.Schema;
 using Marten.Testing.Fixtures;
 using Marten.Testing.Github;
-using Npgsql;
 using Octokit;
-using Shouldly;
 using StructureMap;
 
 namespace Marten.Testing
 {
     public class PlayingTests
     {
+        public void generate_code()
+        {
+            var mapping = new DocumentMapping(typeof (Target));
+            mapping.DuplicateField("Number");
+            mapping.DuplicateField("Date");
+
+            var code = DocumentStorageBuilder.GenerateDocumentStorageCode(new[] {mapping});
+            Debug.WriteLine(code);
+        }
+
         public void linq_spike()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
                 using (var session = container.GetInstance<IDocumentSession>())
                 {
-                    session.Store(new Target{Number = 1, NumberArray = new []{1, 2, 3}});
-                    session.Store(new Target{Number = 2, NumberArray = new []{4, 5, 6}});
-                    session.Store(new Target{Number = 3, NumberArray = new []{2, 3, 4}});
-                    session.Store(new Target{Number = 4});
+                    session.Store(new Target {Number = 1, NumberArray = new[] {1, 2, 3}});
+                    session.Store(new Target {Number = 2, NumberArray = new[] {4, 5, 6}});
+                    session.Store(new Target {Number = 3, NumberArray = new[] {2, 3, 4}});
+                    session.Store(new Target {Number = 4});
 
                     session.SaveChanges();
 
@@ -59,9 +64,10 @@ namespace Marten.Testing
 
         public void try_ocktokit()
         {
-            var basicAuth = new Credentials("jeremydmiller", "FAKE"); 
+            var basicAuth = new Credentials("jeremydmiller", "FAKE");
 
-            var exporter = new GitHubExporter(basicAuth, AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("GitHub"));
+            var exporter = new GitHubExporter(basicAuth,
+                AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("GitHub"));
 
             //exporter.Export("darthfubumvc", "HtmlTags");
             //exporter.Export("darthfubumvc", "FubuCore");

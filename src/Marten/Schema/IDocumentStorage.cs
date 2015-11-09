@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Npgsql;
 using Remotion.Linq;
 
@@ -14,7 +15,5 @@ namespace Marten.Schema
         NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids);
 
         Type DocumentType { get; }
-        
     }
-
 }

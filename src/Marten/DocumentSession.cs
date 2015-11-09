@@ -159,6 +159,46 @@ namespace Marten
             return _serializer.FromJson<T>(_runner.QueryJson(cmd));
         }
 
+        public void BulkLoad<T>(T[] documents, int batchSize = 1000)
+        {
+            var storage = _schema.StorageFor(typeof (T)).As<IBulkLoader<T>>();
+
+            _runner.Execute(conn =>
+            {
+                var tx = conn.BeginTransaction();
+                try
+                {
+                    if (documents.Length <= batchSize)
+                    {
+                        storage.Load(_serializer, conn, documents);
+                    }
+                    else
+                    {
+                        var total = 0;
+                        var page = 0;
+
+                        while (total < documents.Length)
+                        {
+                            var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
+                            storage.Load(_serializer, conn, batch);
+
+                            page++;
+                            total += batch.Length;
+                        }
+                    }
+
+                    
+
+                    tx.Commit();
+                }
+                catch (Exception)
+                {
+                    tx.Rollback();
+                }
+            });
+
+        }
+
         public IDiagnostics Diagnostics
         {
             get { return this; }
