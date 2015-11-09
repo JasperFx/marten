@@ -5,6 +5,6 @@ namespace Marten.Schema
 {
     public interface IBulkLoader<T>
     {
-        void Load(NpgsqlConnection conn, IEnumerable<T> documents);
+        void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents);
     }
 }

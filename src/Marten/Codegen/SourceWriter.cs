@@ -56,7 +56,7 @@ namespace Marten.Codegen
                 }
                 else if (line.StartsWith("END"))
                 {
-                    FinishBlock();
+                    FinishBlock(line.Substring(3));
                 }
                 else
                 {
@@ -81,10 +81,19 @@ namespace Marten.Codegen
             IndentionLevel++;
         }
 
-        public void FinishBlock()
+        public void FinishBlock(string extra = null)
         {
             IndentionLevel--;
-            WriteLine("}");
+
+            if (extra.IsEmpty())
+            {
+                WriteLine("}");
+            }
+            else
+            {
+                WriteLine("}" + extra);
+            }
+            
 
             BlankLine();
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Marten.Util;
+using NpgsqlTypes;
 
 namespace Marten.Schema
 {
@@ -28,5 +29,10 @@ namespace Marten.Schema
 
         public MemberInfo[] Members { get; }
         public string MemberName { get; }
+
+        public NpgsqlDbType NpgsqlDbType
+        {
+            get { return TypeMappings.ToDbType(MemberType); }
+        }
     }
 }

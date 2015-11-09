@@ -8,6 +8,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using FubuCore;
 using Marten.Codegen;
+using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
@@ -81,6 +82,21 @@ namespace Marten.Schema
                 : "";
 
 
+            // TODO -- move more of this into DocumentMapping, DuplicatedField, IField, etc.
+            var id_NpgsqlDbType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
+            var duplicatedFieldsInBulkLoading = mapping.DuplicatedFields.Any() 
+                ? ", " + mapping.DuplicatedFields.Select(x => x.ColumnName).Join(", ") 
+                : string.Empty;
+
+            var duplicatedFieldsInBulkLoadingWriter = "";
+            if (mapping.DuplicatedFields.Any())
+            {
+                duplicatedFieldsInBulkLoadingWriter = mapping.DuplicatedFields.Select(field =>
+                {
+                    return field.ToBulkWriterCode();
+                }).Join("\n");
+            }
+
             writer.Write(
                 $@"
 BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{mapping.DocumentType.Name}>
@@ -114,8 +130,15 @@ return new NpgsqlCommand(`{mapping.UpsertName}`)
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
 END
 
-BLOCK:public void Load(NpgsqlConnection conn, IEnumerable<{mapping.DocumentType.Name}> documents)
-throw new System.NotImplementedException();
+BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{mapping.DocumentType.Name}> documents)
+BLOCK:using (var writer = conn.BeginBinaryImport(`COPY {mapping.TableName}(id, data{duplicatedFieldsInBulkLoading}) FROM STDIN BINARY`))
+BLOCK:foreach (var x in documents)
+writer.StartRow();
+writer.Write(x.Id, NpgsqlDbType.{id_NpgsqlDbType});
+writer.Write(serializer.ToJson(x), NpgsqlDbType.Jsonb);
+{duplicatedFieldsInBulkLoadingWriter}
+END
+END
 END
 
 END
