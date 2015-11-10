@@ -21,6 +21,8 @@ namespace Marten.Schema.Sequences
             Increment = def.Increment;
         }
 
+        public string EntityName => _entityName;
+
         public long CurrentHi { get; private set; }
         public int CurrentLo { get; private set; }
 

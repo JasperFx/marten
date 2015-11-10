@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
@@ -13,7 +12,8 @@ namespace Marten.Testing.Schema.Sequences
     {
         private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
         private CommandRunner _runner;
-        private HiLoSequence theSequence;
+
+        private readonly HiLoSequence theSequence;
 
         public HiLoSequenceTests()
         {

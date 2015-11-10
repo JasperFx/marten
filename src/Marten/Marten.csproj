@@ -69,7 +69,10 @@
     <Compile Include="Schema\DuplicatedField.cs" />
     <Compile Include="Schema\DuplicatedFieldRole.cs" />
     <Compile Include="Schema\Field.cs" />
+    <Compile Include="Schema\IIdGeneration.cs" />
+    <Compile Include="Schema\Sequences\HiloIdGeneration.cs" />
     <Compile Include="Schema\IBulkLoader.cs" />
+    <Compile Include="Schema\IdAssignment.cs" />
     <Compile Include="Schema\IDocumentCleaner.cs" />
     <Compile Include="Schema\IDocumentSchema.cs" />
     <Compile Include="Schema\IDocumentSchemaCreation.cs" />
@@ -89,6 +92,7 @@
     <Compile Include="Schema\Sequences\ISequence.cs" />
     <Compile Include="Schema\Sequences\ISequences.cs" />
     <Compile Include="Schema\Sequences\SequenceFactory.cs" />
+    <Compile Include="Schema\StorageArgument.cs" />
     <Compile Include="Schema\UpsertArgument.cs" />
     <Compile Include="SerializerExtensions.cs" />
     <Compile Include="TypeMappings.cs" />
