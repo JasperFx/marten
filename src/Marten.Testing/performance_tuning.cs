@@ -50,21 +50,23 @@ namespace Marten.Testing
         private readonly LightweightCache<Type, SerializerTiming> _timings = new LightweightCache<Type, SerializerTiming>(t => new SerializerTiming()); 
          
 
-        public class DateIsSearchable : MartenRegistry
-        {
-            public DateIsSearchable()
-            {
-                For<Target>().Searchable(x => x.Date);
-            }
-        }
+public class DateIsSearchable : MartenRegistry
+{
+    public DateIsSearchable()
+    {
+        // This can also be done with attributes
+        For<Target>().Searchable(x => x.Date);
+    }
+}
 
-        public class JsonLocatorOnly : MartenRegistry
-        {
-            public JsonLocatorOnly()
-            {
-                For<Target>().PropertySearching(PropertySearching.JSON_Locator_Only);
-            }
-        }
+public class JsonLocatorOnly : MartenRegistry
+{
+    public JsonLocatorOnly()
+    {
+        // This can also be done with attributes
+        For<Target>().PropertySearching(PropertySearching.JSON_Locator_Only);
+    }
+}
 
         public class JsonBToRecord : MartenRegistry
         {
@@ -92,10 +94,10 @@ namespace Marten.Testing
 
             using (var session = container.GetInstance<IDocumentSession>())
             {
-                session.BulkLoad(data);
+                session.BulkInsert(data);
 
-                var theDate = DateTime.Today.AddDays(3);
-                var queryable = session.Query<Target>().Where(x => x.Date == theDate);
+var theDate = DateTime.Today.AddDays(3);
+var queryable = session.Query<Target>().Where(x => x.Date == theDate);
 
                 Debug.WriteLine(session.Diagnostics.CommandFor(queryable).CommandText);
 
@@ -254,7 +256,7 @@ namespace Marten.Testing
             var data = Target.GenerateRandomData(10000).ToArray();
             Timings.Time(() =>
             {
-                session.BulkLoad(data);
+                session.BulkInsert(data);
             });
             
             

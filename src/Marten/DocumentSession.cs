@@ -157,7 +157,7 @@ namespace Marten
             return _serializer.FromJson<T>(_runner.QueryJson(cmd));
         }
 
-        public void BulkLoad<T>(T[] documents, int batchSize = 1000)
+        public void BulkInsert<T>(T[] documents, int batchSize = 1000)
         {
             var storage = _schema.StorageFor(typeof (T)).As<IBulkLoader<T>>();
 

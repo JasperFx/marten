@@ -32,7 +32,7 @@ namespace Marten
 
         IEnumerable<T> Query<T>(string sql, params object[] parameters);
 
-        void BulkLoad<T>(T[] documents, int batchSize = 1000);
+        void BulkInsert<T>(T[] documents, int batchSize = 1000);
 
         IDiagnostics Diagnostics { get; }
     }
