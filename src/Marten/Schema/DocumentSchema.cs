@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using Marten.Schema.Sequences;
 
 namespace Marten.Schema
 {
@@ -17,6 +18,8 @@ namespace Marten.Schema
         {
             _creation = creation;
             _runner = new CommandRunner(connections);
+
+            Sequences = new SequenceFactory(this, _runner, _creation);
         }
 
         public DocumentMapping MappingFor(Type documentType)
@@ -124,5 +127,6 @@ AND type_udt_name != 'trigger';
             registry.Alter(this);
         }
 
+        public ISequences Sequences { get; }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Marten.Schema.Sequences;
 
 namespace Marten.Schema
 {
@@ -15,5 +16,9 @@ namespace Marten.Schema
         void Alter(Action<MartenRegistry> configure);
         void Alter<T>() where T : MartenRegistry, new();
         void Alter(MartenRegistry registry);
+
+        ISequences Sequences { get; }
     }
+
+
 }

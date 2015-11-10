@@ -103,6 +103,7 @@
     <Compile Include="Schema\LateralJoinFieldTests.cs" />
     <Compile Include="Schema\ProductionModeSchemeCreationTests.cs" />
     <Compile Include="Schema\SchemaBuilderTests.cs" />
+    <Compile Include="Schema\Sequences\HiLoSequenceTests.cs" />
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />
