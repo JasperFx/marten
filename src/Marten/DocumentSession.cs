@@ -126,7 +126,7 @@ namespace Marten
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            // TODO -- apply assignment right here!
+            _schema.StorageFor(typeof(T)).As<IdAssignment<T>>().Assign(entity);
 
 
             _updates.Add(entity);
