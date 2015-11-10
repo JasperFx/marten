@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Marten.Schema;
+using Marten.Schema.Sequences;
 using Marten.Testing.Documents;
 using Shouldly;
 using StructureMap;
@@ -201,8 +202,45 @@ namespace Marten.Testing.Schema
             mapping.PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
+        public void use_string_id_generation_for_string()
+        {
+            var mapping = DocumentMapping.For<StringId>();
+            mapping.IdStrategy.ShouldBeOfType<StringIdGeneration>();
+        }
+
+        public void use_guid_id_generation_for_guid_id()
+        {
+            var mapping = DocumentMapping.For<UpperCaseProperty>();
+            mapping.IdStrategy.ShouldBeOfType<GuidIdGeneration>();
+        }
+
+        public void use_hilo_id_generation_for_int_id()
+        {
+            DocumentMapping.For<IntId>()
+                .IdStrategy.ShouldBeOfType<HiloIdGeneration>();
+        }
+
+        public void use_hilo_id_generation_for_long_id()
+        {
+            DocumentMapping.For<LongId>()
+                .IdStrategy.ShouldBeOfType<HiloIdGeneration>();
+        }
 
 
+        public class IntId
+        {
+            public int Id;
+        }
+
+        public class LongId
+        {
+            public long Id;
+        }
+
+        public class StringId
+        {
+            public string Id;
+        }
 
         public class UpperCaseProperty
         {

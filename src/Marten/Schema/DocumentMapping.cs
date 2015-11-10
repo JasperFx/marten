@@ -7,6 +7,7 @@ using System.Reflection;
 using FubuCore;
 using FubuCore.Reflection;
 using Marten.Generation;
+using Marten.Schema.Sequences;
 using Marten.Util;
 
 namespace Marten.Schema
@@ -22,6 +23,9 @@ namespace Marten.Schema
 
             IdMember = (MemberInfo) documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
                        ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
+
+
+            assignIdStrategy(documentType);
 
             TableName = TableNameFor(documentType);
 
@@ -46,6 +50,30 @@ namespace Marten.Schema
                 fieldInfo.ForAttribute<MartenAttribute>(att => att.Modify(this, fieldInfo));
             });
         }
+
+        private void assignIdStrategy(Type documentType)
+        {
+            var idType = IdMember.GetMemberType();
+            if (idType == typeof (string))
+            {
+                IdStrategy = new StringIdGeneration();
+            }
+            else if (idType == typeof (Guid))
+            {
+                IdStrategy = new GuidIdGeneration();
+            }
+            else if (idType == typeof (int) || idType == typeof (long))
+            {
+                IdStrategy = new HiloIdGeneration(documentType);
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException(nameof(documentType),
+                    $"Marten cannot use the type {idType.FullName} as the Id for a persisted document. Use int, long, Guid, or string");
+            }
+        }
+
+        public IIdGeneration IdStrategy { get; set; } = new StringIdGeneration();
 
         public string UpsertName { get; }
 

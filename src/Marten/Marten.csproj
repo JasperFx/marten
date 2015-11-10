@@ -69,7 +69,9 @@
     <Compile Include="Schema\DuplicatedField.cs" />
     <Compile Include="Schema\DuplicatedFieldRole.cs" />
     <Compile Include="Schema\Field.cs" />
+    <Compile Include="Schema\GuidIdGeneration.cs" />
     <Compile Include="Schema\IIdGeneration.cs" />
+    <Compile Include="Schema\StringIdGeneration.cs" />
     <Compile Include="Schema\Sequences\HiloIdGeneration.cs" />
     <Compile Include="Schema\IBulkLoader.cs" />
     <Compile Include="Schema\IdAssignment.cs" />
