@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using FubuCore;
 using Marten.Util;
 
 namespace Marten.Schema
@@ -49,6 +52,21 @@ namespace Marten.Schema
             writer.WriteLine();
         }
 
+        public static void Write(StringWriter writer, string script)
+        {
+            var text = GetText(script);
+            writer.WriteLine(text);
+            writer.WriteLine();
+            writer.WriteLine();
+        }
 
+        public static string GetText(string script)
+        {
+            var name = $"{typeof (SchemaBuilder).Namespace}.SQL.{script}.sql";
+
+            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
+
+            return stream.ReadAllText();
+        }
     }
 }

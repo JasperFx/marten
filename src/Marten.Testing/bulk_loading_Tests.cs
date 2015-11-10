@@ -8,22 +8,22 @@ namespace Marten.Testing
 {
     public class bulk_loading_Tests : DocumentSessionFixture
     {
-public void load_with_small_batch()
-{
-    // This is just creating some randomized
-    // document data
-    var data = Target.GenerateRandomData(100).ToArray();
+        public void load_with_small_batch()
+        {
+            // This is just creating some randomized
+            // document data
+            var data = Target.GenerateRandomData(100).ToArray();
 
-    // Load all of these into a Marten-ized database
-    theSession.BulkInsert(data);
+            // Load all of these into a Marten-ized database
+            theSession.BulkInsert(data);
 
-    // And just checking that the data is actually there;)
-    theSession.Query<Target>().Count().ShouldBe(data.Length);
-    theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
+            // And just checking that the data is actually there;)
+            theSession.Query<Target>().Count().ShouldBe(data.Length);
+            theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
 
 
             Debug.WriteLine(DocumentStorageBuilder.GenerateDocumentStorageCode(new DocumentMapping[] {new DocumentMapping(typeof(Target)), }));
-}
+        }
 
         public void load_with_small_batch_and_duplicated_fields()
         {

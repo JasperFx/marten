@@ -62,7 +62,7 @@ namespace Marten.Schema
 
         public string[] DocumentTables()
         {
-            return SchemaTableNames().Where(x => x.Contains("_doc_")).ToArray();
+            return SchemaTableNames().Where(x => x.StartsWith("mt_doc_")).ToArray();
         }
 
         public IEnumerable<string> SchemaFunctionNames()
