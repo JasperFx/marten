@@ -15,5 +15,20 @@ namespace Marten.Schema
         }
 
         public abstract object GetValue(IDocumentSchema schema);
+
+        public string ToCtorArgument()
+        {
+            return $"{ArgType.FullName} {Name}";
+        }
+
+        public string ToCtorLine()
+        {
+            return $"_{Name} = {Name};";
+        }
+
+        public string ToFieldDeclaration()
+        {
+            return $"private readonly {ArgType.FullName} _{Name};";
+        }
     }
 }

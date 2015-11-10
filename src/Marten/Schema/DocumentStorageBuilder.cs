@@ -17,17 +17,17 @@ namespace Marten.Schema
 {
     public static class DocumentStorageBuilder
     {
-        public static IDocumentStorage Build(Type documentType)
+        public static IDocumentStorage Build(IDocumentSchema schema, Type documentType)
         {
-            return Build(new DocumentMapping(documentType));
+            return Build(schema, new DocumentMapping(documentType));
         }
 
-        public static IDocumentStorage Build(DocumentMapping mapping)
+        public static IDocumentStorage Build(IDocumentSchema schema, DocumentMapping mapping)
         {
-            return Build(new[] {mapping}).Single();
+            return Build(schema, new[] {mapping}).Single();
         }
 
-        public static IEnumerable<IDocumentStorage> Build(DocumentMapping[] mappings)
+        public static IEnumerable<IDocumentStorage> Build(IDocumentSchema schema, DocumentMapping[] mappings)
         {
             var code = GenerateDocumentStorageCode(mappings);
 
@@ -45,7 +45,19 @@ namespace Marten.Schema
             return assembly
                 .GetExportedTypes()
                 .Where(x => x.IsConcreteTypeOf<IDocumentStorage>())
-                .Select(x => Activator.CreateInstance(x).As<IDocumentStorage>());
+                .Select(x =>
+                {
+                    var docType =
+                        x.FindInterfaceThatCloses(typeof (IdAssignment<>)).GetGenericArguments().Single();
+
+                    var mapping = mappings.Single(m => m.DocumentType == docType);
+
+                    var arguments = mapping.IdStrategy.ToArguments().Select(arg => arg.GetValue(schema)).ToArray();
+
+                    var ctor = x.GetConstructors().Single();
+
+                    return ctor.Invoke(arguments).As<IDocumentStorage>();
+                });
         }
 
         
@@ -96,9 +108,21 @@ namespace Marten.Schema
                 }).Join("\n");
             }
 
+            var storageArguments = mapping.IdStrategy.ToArguments();
+            var ctorArgs = storageArguments.Select(x => x.ToCtorArgument()).Join(", ");
+            var ctorLines = storageArguments.Select(x => x.ToCtorLine()).Join("\n");
+            var fields = storageArguments.Select(x => x.ToFieldDeclaration()).Join("\n");
+
             writer.Write(
                 $@"
-BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{mapping.DocumentType.Name}>
+BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{mapping.DocumentType.Name}>, IdAssignment<{mapping.DocumentType.Name}>
+
+{fields}
+
+BLOCK:public {mapping.DocumentType.Name}Storage({ctorArgs})
+{ctorLines}
+END
+
 public Type DocumentType => typeof ({mapping.DocumentType.Name});
 
 BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
@@ -127,6 +151,10 @@ return new NpgsqlCommand(`{mapping.UpsertName}`)
     .AsSproc()
     .WithParameter(`id`, document.{mapping.IdMember.Name})
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
+END
+
+BLOCK:public void Assign({mapping.DocumentType.Name} document)
+{mapping.IdStrategy.AssignmentBodyCode(mapping.IdMember)}
 END
 
 BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{mapping.DocumentType.Name}> documents)

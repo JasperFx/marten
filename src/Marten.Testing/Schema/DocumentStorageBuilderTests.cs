@@ -9,7 +9,7 @@ namespace Marten.Testing.Schema
     {
         public void do_not_blow_up_building_one()
         {
-            var storage = DocumentStorageBuilder.Build(new DocumentMapping(typeof(User)));
+            var storage = DocumentStorageBuilder.Build(null, new DocumentMapping(typeof(User)));
 
             storage.ShouldNotBeNull();
         }
@@ -23,7 +23,7 @@ namespace Marten.Testing.Schema
                 new DocumentMapping(typeof(Issue)), 
             };
 
-            DocumentStorageBuilder.Build(mappings).Count()
+            DocumentStorageBuilder.Build(null, mappings).Count()
                 .ShouldBe(3);
         }
 

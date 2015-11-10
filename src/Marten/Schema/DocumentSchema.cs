@@ -37,7 +37,7 @@ namespace Marten.Schema
             return _documentTypes.GetOrAdd(documentType, type =>
             {
                 var mapping = MappingFor(documentType);
-                var storage = DocumentStorageBuilder.Build(mapping);
+                var storage = DocumentStorageBuilder.Build(this, mapping);
 
                 if (!DocumentTables().Contains(mapping.TableName))
                 {

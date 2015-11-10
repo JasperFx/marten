@@ -16,4 +16,5 @@ namespace Marten.Schema
 
         Type DocumentType { get; }
     }
+
 }
