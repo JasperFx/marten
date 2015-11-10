@@ -122,9 +122,13 @@ namespace Marten
             });
         }
 
-        public void Store(object entity)
+        public void Store<T>(T entity) where T : class
         {
-            // TODO -- throw if null
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            // TODO -- apply assignment right here!
+
+
             _updates.Add(entity);
         }
 

@@ -26,7 +26,7 @@ namespace Marten
 
         // Store by etag? Version strategy?
 
-        void Store(object entity);
+        void Store<T>(T entity) where T : class;
 
         IQueryable<T> Query<T>();
 
