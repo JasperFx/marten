@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Shouldly;
 
 namespace Marten.Testing
@@ -25,6 +26,31 @@ namespace Marten.Testing
                 session.Load<Account>("nonexistent@server.com")
                     .ShouldBeNull();
             }
+
+        }
+
+        public void throws_exception_if_trying_to_save_null_id()
+        {
+            var account = new Account {Id = null};
+
+            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+            {
+                theSession.Store(account);
+            });
+
+            
+        }
+
+
+        public void throws_exception_if_trying_to_save_empty_id()
+        {
+            var account = new Account { Id = string.Empty };
+
+            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+            {
+                theSession.Store(account);
+            });
+
 
         }
 
