@@ -1,47 +1,9 @@
-﻿using System;
+using System;
 using System.Data;
-using System.Diagnostics;
-using FubuCore;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Sequences
 {
-    public interface ISequences
-    {
-        ISequence HiLo(Type documentType, HiloDef def);
-    }
-
-    public class SequenceFactory : ISequences
-    {
-        private readonly IDocumentSchemaCreation _creation;
-        private readonly CommandRunner _runner;
-        private readonly IDocumentSchema _schema;
-
-        public SequenceFactory(IDocumentSchema schema, CommandRunner runner, IDocumentSchemaCreation creation)
-        {
-            _schema = schema;
-            _runner = runner;
-            _creation = creation;
-        }
-
-        public ISequence HiLo(Type documentType, HiloDef def)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public interface ISequence
-    {
-        int NextInt();
-        long NextLong();
-    }
-
-    public class HiloDef
-    {
-        public int Increment = 1;
-        public int MaxLo = 1000;
-    }
-
     public class HiLoSequence : ISequence
     {
         private readonly string _entityName;
