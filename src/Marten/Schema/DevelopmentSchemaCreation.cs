@@ -19,5 +19,12 @@ namespace Marten.Schema
 
             _runner.Execute(writer.ToString());
         }
+
+        public void RunScript(string script)
+        {
+            var sql = SchemaBuilder.GetText(script);
+
+            _runner.Execute(sql);
+        }
     }
 }

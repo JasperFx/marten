@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Marten.Schema.Sequences
 {
@@ -17,6 +18,14 @@ namespace Marten.Schema.Sequences
 
         public ISequence HiLo(Type documentType, HiloDef def)
         {
+            // TODO -- here, need to see if the mt_hilo table is created, and if not,
+            // do it through _creation.
+
+            if (!_schema.SchemaTableNames().Contains("mt_hilo"))
+            {
+                _creation.RunScript("mt_hilo");
+            }
+
             return new HiLoSequence(_runner, documentType.Name, def);
         }
     }
