@@ -51,6 +51,13 @@ namespace Marten
                 return this;
             }   
 
+            public DocumentMappingExpression<T> ConfigureUpsertType(PostgresUpsertType upsertType)
+            {
+                _parent._alterations.Add(s => s.UpsertType = upsertType);
+                
+                return this;
+            }
+
             private Action<DocumentMapping> alter
             {
                 set

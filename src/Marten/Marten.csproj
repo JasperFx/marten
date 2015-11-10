@@ -72,6 +72,7 @@
     <Compile Include="Schema\Field.cs" />
     <Compile Include="Schema\GuidIdGeneration.cs" />
     <Compile Include="Schema\IIdGeneration.cs" />
+    <Compile Include="Schema\PostgresUpsertType.cs" />
     <Compile Include="Schema\StringIdGeneration.cs" />
     <Compile Include="Schema\Sequences\HiloIdGeneration.cs" />
     <Compile Include="Schema\IBulkLoader.cs" />

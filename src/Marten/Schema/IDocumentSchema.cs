@@ -18,7 +18,7 @@ namespace Marten.Schema
         void Alter(MartenRegistry registry);
 
         ISequences Sequences { get; }
+
+        PostgresUpsertType UpsertType { get; set; }
     }
-
-
 }
