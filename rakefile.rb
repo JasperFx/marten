@@ -58,6 +58,8 @@ end
 
 desc 'Compile the code'
 task :compile => [:clean, :version] do
+	sh "paket.exe install"
+
 	msbuild = '"C:\Program Files (x86)\MSBuild\14.0\Bin\msbuild.exe"'
 
 	sh "#{msbuild} src/Marten.sln   /property:Configuration=#{COMPILE_TARGET} /v:m /t:rebuild /nr:False /maxcpucount:2"
