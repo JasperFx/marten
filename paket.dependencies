@@ -10,7 +10,4 @@ nuget Remotion.Linq
 nuget Shouldly
 nuget Storyteller 3.0.0.280-alpha
 nuget structuremap
-
-
-source https://www.myget.org/F/roslyn-nightly/
-nuget Microsoft.CodeAnalysis.CSharp = 1.2.0-beta-20151106-02 prerelease
+nuget Microsoft.CodeAnalysis.CSharp prerelease
