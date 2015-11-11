@@ -36,6 +36,49 @@ namespace Marten.Events
         void ReplaceEvent<T>(T @event);
     }
 
+    public class Events : IEvents
+    {
+        public void Append<T>(Guid stream, T @event) where T : IEvent
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AppendEvents(Guid stream, params IEvent[] events)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Guid StartStream<T>(params IEvent[] events)
+        {
+            throw new NotImplementedException();
+        }
+
+        public T FetchSnapshot<T>(Guid streamId) where T : IAggregate
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<IEvent> FetchStream<T>(Guid stringId) where T : IAggregate
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DeleteEvent<T>(Guid id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DeleteEvent<T>(T @event) where T : IEvent
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ReplaceEvent<T>(T @event)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public enum ProjectionTiming
     {
         inline,
