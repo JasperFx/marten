@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Newtonsoft.Json;
 
 namespace Marten
@@ -28,5 +29,11 @@ namespace Marten
         {
             return _serializer.Deserialize<T>(new JsonTextReader(new StreamReader(stream)));
         }
+
+        public object FromJson(Type type, string json)
+        {
+            return _serializer.Deserialize(new JsonTextReader(new StringReader(json)), type);
+        }
+
     }
 }
