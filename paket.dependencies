@@ -13,4 +13,4 @@ nuget structuremap
 
 
 source https://www.myget.org/F/roslyn-nightly/
-nuget Microsoft.CodeAnalysis.CSharp >= 1.2.0 prerelease
+nuget Microsoft.CodeAnalysis.CSharp = 1.2.0-beta-20151106-02 prerelease
