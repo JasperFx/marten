@@ -9,6 +9,7 @@ using FubuCore.Util;
 using Marten.Schema;
 using Marten.Util;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace Marten.Events
 {
@@ -63,8 +64,6 @@ namespace Marten.Events
         {
             var eventMapping = _graph.EventMappingFor<T>();
 
-            if (@event.Id == Guid.Empty) @event.Id = Guid.NewGuid();
-
             _runner.Execute(conn =>
             {
                 appendEvent(conn, eventMapping, stream, @event);
@@ -73,13 +72,16 @@ namespace Marten.Events
 
         private void appendEvent(NpgsqlConnection conn, EventMapping eventMapping, Guid stream, IEvent @event) 
         {
+            if (@event.Id == Guid.Empty) @event.Id = Guid.NewGuid();
+
             var cmd = conn.CreateCommand();
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "mt_append_event";
             cmd.AddParameter("stream", stream);
             cmd.AddParameter("stream_type", eventMapping.Stream.StreamTypeName);
             cmd.AddParameter("event_id", @event.Id);
-            cmd.AddParameter("body", _serializer.ToJson(@event));
+            cmd.AddParameter("event_type", eventMapping.EventTypeName);
+            cmd.AddParameter("body", _serializer.ToJson(@event)).NpgsqlDbType = NpgsqlDbType.Json;
 
             cmd.ExecuteNonQuery();
         }
@@ -99,6 +101,8 @@ namespace Marten.Events
 
                             appendEvent(conn, mapping, stream, @event);
                         });
+
+                        tx.Commit();
                     }
                     catch (Exception)
                     {

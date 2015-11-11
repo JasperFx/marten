@@ -44,7 +44,7 @@ DECLARE
 BEGIN
 	select mt_version_stream(stream, stream_type) into event_version;
 
-	insert into me_events (id, stream_id, version, data, type) values (event_id, stream, event_version, body, event_type);
+	insert into mt_events (id, stream_id, version, data, type) values (event_id, stream, event_version, body, event_type);
 
 	return event_version;
 END
