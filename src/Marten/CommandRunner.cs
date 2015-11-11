@@ -5,7 +5,7 @@ using Npgsql;
 
 namespace Marten
 {
-    public class CommandRunner
+    public class CommandRunner : ICommandRunner
     {
         private readonly IConnectionFactory _factory;
 

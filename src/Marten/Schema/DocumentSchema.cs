@@ -10,14 +10,14 @@ namespace Marten.Schema
     public class DocumentSchema : IDocumentSchema, IDisposable
     {
         private readonly IDocumentSchemaCreation _creation;
-        private readonly CommandRunner _runner;
+        private readonly ICommandRunner _runner;
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes = new ConcurrentDictionary<Type, IDocumentStorage>(); 
         private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings = new ConcurrentDictionary<Type, DocumentMapping>(); 
 
-        public DocumentSchema(IConnectionFactory connections, IDocumentSchemaCreation creation)
+        public DocumentSchema(ICommandRunner runner, IDocumentSchemaCreation creation)
         {
             _creation = creation;
-            _runner = new CommandRunner(connections);
+            _runner = runner;
 
             Sequences = new SequenceFactory(this, _runner, _creation);
         }

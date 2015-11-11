@@ -48,7 +48,9 @@ namespace Marten.Testing.Schema
             _schema.StorageFor(typeof (Issue)).ShouldNotBeNull();
             _schema.StorageFor(typeof (Company)).ShouldNotBeNull();
 
-            var schema = new DocumentSchema(new ConnectionSource(), new DevelopmentSchemaCreation(new ConnectionSource()));
+
+
+            var schema = Container.For<DevelopmentModeRegistry>().GetInstance<IDocumentSchema>();
             var tables = schema.SchemaTableNames();
             tables.ShouldContain(DocumentMapping.TableNameFor(typeof (User)).ToLower());
             tables.ShouldContain(DocumentMapping.TableNameFor(typeof (Issue)).ToLower());

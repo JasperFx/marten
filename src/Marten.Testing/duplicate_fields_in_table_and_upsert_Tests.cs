@@ -24,7 +24,7 @@ namespace Marten.Testing
                     session.SaveChanges();
                 }
 
-                var runner = container.GetInstance<CommandRunner>();
+                var runner = container.GetInstance<ICommandRunner>();
                 runner.QueryScalar<string>($"select first_name from mt_doc_user where id = '{user1.Id.ToString()}'")
                     .ShouldBe("Byron");
             }

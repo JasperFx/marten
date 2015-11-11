@@ -11,7 +11,7 @@ namespace Marten.Testing.Schema.Sequences
     public class HiLoSequenceTests
     {
         private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
-        private CommandRunner _runner;
+        private ICommandRunner _runner;
 
         private readonly HiLoSequence theSequence;
 
@@ -21,7 +21,7 @@ namespace Marten.Testing.Schema.Sequences
 
             var sql = SchemaBuilder.GetText("mt_hilo");
 
-            _runner = _container.GetInstance<CommandRunner>();
+            _runner = _container.GetInstance<ICommandRunner>();
             _runner.Execute(sql);
 
             theSequence = new HiLoSequence(_runner, "foo", new HiloDef());

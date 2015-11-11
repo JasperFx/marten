@@ -23,19 +23,19 @@ namespace Marten
         private readonly IList<NpgsqlCommand> _deletes = new List<NpgsqlCommand>();
         private readonly IQueryParser _parser;
         private readonly IMartenQueryExecutor _executor;
-        private readonly CommandRunner _runner;
+        private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
 
         private readonly IList<object> _updates = new List<object>();
 
-        public DocumentSession(IDocumentSchema schema, ISerializer serializer, IConnectionFactory factory, IQueryParser parser, IMartenQueryExecutor executor)
+        public DocumentSession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor)
         {
             _schema = schema;
             _serializer = serializer;
             _parser = parser;
             _executor = executor;
-            _runner = new CommandRunner(factory);
+            _runner = runner;
         }
 
 

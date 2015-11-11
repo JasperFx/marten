@@ -47,6 +47,7 @@
     <Compile Include="DocumentSession.cs" />
     <Compile Include="Generation\TableColumn.cs" />
     <Compile Include="Generation\TableDefinition.cs" />
+    <Compile Include="ICommandRunner.cs" />
     <Compile Include="IConnectionFactory.cs" />
     <Compile Include="IDocumentSession.cs" />
     <Compile Include="IDocumentStore.cs" />

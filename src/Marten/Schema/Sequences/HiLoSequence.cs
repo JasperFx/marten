@@ -8,9 +8,9 @@ namespace Marten.Schema.Sequences
     {
         private readonly string _entityName;
         private readonly object _lock = new object();
-        private readonly CommandRunner _runner;
+        private readonly ICommandRunner _runner;
 
-        public HiLoSequence(CommandRunner runner, string entityName, HiloDef def)
+        public HiLoSequence(ICommandRunner runner, string entityName, HiloDef def)
         {
             _runner = runner;
             _entityName = entityName;

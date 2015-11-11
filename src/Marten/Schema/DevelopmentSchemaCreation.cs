@@ -1,15 +1,14 @@
 using System.IO;
-using Marten.Generation;
 
 namespace Marten.Schema
 {
     public class DevelopmentSchemaCreation : IDocumentSchemaCreation
     {
-        private readonly CommandRunner _runner;
+        private readonly ICommandRunner _runner;
 
-        public DevelopmentSchemaCreation(IConnectionFactory factory)
+        public DevelopmentSchemaCreation(ICommandRunner runner)
         {
-            _runner = new CommandRunner(factory);
+            _runner = runner;
         }
 
         public void CreateSchema(IDocumentSchema schema, DocumentMapping mapping)

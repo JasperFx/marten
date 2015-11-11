@@ -46,21 +46,6 @@ namespace Marten.Testing
             }
         }
 
-        public void try_it_out()
-        {
-            var runner = new CommandRunner(new ConnectionSource());
-
-            runner.Execute(conn =>
-            {
-                var table = conn.GetSchema("Tables");
-
-                foreach (DataRow row in table.Rows)
-                {
-                    Debug.WriteLine("{0} / {1} / {2}", row[0], row[1], row[2]);
-                }
-            });
-        }
-
 
         public void try_ocktokit()
         {
