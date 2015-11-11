@@ -45,6 +45,7 @@
     </Compile>
     <Compile Include="CommandRunner.cs" />
     <Compile Include="DocumentSession.cs" />
+    <Compile Include="Events\EventClasses.cs" />
     <Compile Include="Generation\TableColumn.cs" />
     <Compile Include="Generation\TableDefinition.cs" />
     <Compile Include="ICommandRunner.cs" />
@@ -131,6 +132,12 @@
     <Analyzer Include="..\..\packages\Microsoft.CodeAnalysis.Analyzers\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Analyzers.dll">
       <Paket>True</Paket>
     </Analyzer>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Schema\SQL\mt_hilo.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Schema\SQL\mt_stream.sql" />
   </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
