@@ -10,10 +10,9 @@ namespace Marten.Testing
         public DevelopmentModeRegistry()
         {
             For<IConnectionFactory>().Use<ConnectionSource>();
-            ForSingletonOf<DocumentSchema>()
+            ForSingletonOf<IDocumentSchema>()
                 .Use<DocumentSchema>()
-                // todo: make this configurable via a Fixie CustomConvention
-                .OnCreation("", (ctx, schema) => schema.UpsertType = PostgresUpsertType.Legacy);
+                .OnCreation("", x => x.UpsertType = UpsertType);
             Forward<DocumentSchema, IDocumentSchema>();
             For<IDocumentSession>().Use<DocumentSession>();
             For<ISerializer>().Use<JsonNetSerializer>();
@@ -25,5 +24,6 @@ namespace Marten.Testing
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();
         }
 
+        public static PostgresUpsertType UpsertType { get; set; }
     }
 }

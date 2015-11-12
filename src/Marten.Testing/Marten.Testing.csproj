@@ -48,6 +48,7 @@
     <Compile Include="bulk_loading_Tests.cs" />
     <Compile Include="codegen_spike.cs" />
     <Compile Include="ConnectionSource.cs" />
+    <Compile Include="CustomConventions.cs" />
     <Compile Include="DevelopmentModeRegistry.cs" />
     <Compile Include="DocumentSessionFixture.cs" />
     <Compile Include="Documents\Company.cs" />

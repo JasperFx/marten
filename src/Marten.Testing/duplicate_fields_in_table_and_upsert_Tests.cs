@@ -25,7 +25,7 @@ namespace Marten.Testing
                 }
 
                 var runner = container.GetInstance<ICommandRunner>();
-                runner.QueryScalar<string>($"select first_name from mt_doc_user where id = '{user1.Id.ToString()}'")
+                runner.QueryScalar<string>($"select first_name from mt_doc_user where id = '{user1.Id}'")
                     .ShouldBe("Byron");
             }
         } 
