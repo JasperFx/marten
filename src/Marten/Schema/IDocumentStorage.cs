@@ -11,9 +11,7 @@ namespace Marten.Schema
         NpgsqlCommand LoaderCommand(object id);
         NpgsqlCommand DeleteCommandForId(object id);
         NpgsqlCommand DeleteCommandForEntity(object entity);
-
         NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids);
-
         Type DocumentType { get; }
     }
 

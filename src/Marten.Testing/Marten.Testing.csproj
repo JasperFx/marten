@@ -111,6 +111,7 @@
     <Compile Include="Schema\Sequences\HiLoIdGenerationTests.cs" />
     <Compile Include="Schema\Sequences\HiLoSequenceTests.cs" />
     <Compile Include="Schema\Sequences\SequenceFactoryTests.cs" />
+    <Compile Include="show_document_storage_code_in_diagnostics_Tests.cs" />
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />

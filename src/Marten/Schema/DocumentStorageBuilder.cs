@@ -29,9 +29,13 @@ namespace Marten.Schema
 
         public static IEnumerable<IDocumentStorage> Build(IDocumentSchema schema, DocumentMapping[] mappings)
         {
+            // Generate the actual source code
             var code = GenerateDocumentStorageCode(mappings);
 
             var generator = new AssemblyGenerator();
+
+            // Tell the generator which other assemblies that it should be referencing 
+            // for the compilation
             generator.ReferenceAssembly(Assembly.GetExecutingAssembly());
             generator.ReferenceAssemblyContainingType<NpgsqlConnection>();
             generator.ReferenceAssemblyContainingType<QueryModel>();
@@ -39,6 +43,9 @@ namespace Marten.Schema
             generator.ReferenceAssemblyContainingType<Component>();
 
             mappings.Select(x => x.DocumentType.Assembly).Distinct().Each(assem => generator.ReferenceAssembly(assem));
+
+            // build the new assembly -- this will blow up if there are any
+            // compilation errors with the list of errors and the actual code
 
             var assembly = generator.Generate(code);
 

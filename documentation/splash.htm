@@ -1,0 +1,171 @@
+<!--Title:Marten-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Stylish Portfolio - Start Bootstrap Theme</title>
+
+    <!-- Bootstrap Core CSS -->
+    <[css:content/bootstrap.min.css]>
+
+    <!-- Custom CSS -->
+    <[css:content/stylish-portfolio.css]>
+
+
+    <!-- Custom Fonts -->
+    <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" >
+</head>
+
+<body>
+
+
+    <!-- Navigation -->
+    <a id="menu-toggle" href="#" class="btn btn-dark btn-lg toggle"><i class="fa fa-bars"></i></a>
+    <nav id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <a id="menu-close" href="#" class="btn btn-light btn-lg pull-right toggle"><i class="fa fa-times"></i></a>
+            <li class="sidebar-brand">
+                <a href="#top"  onclick = $("#menu-close").click(); >Start Bootstrap</a>
+            </li>
+            <li>
+                <a href="#top" onclick = $("#menu-close").click(); >Home</a>
+            </li>
+            <li>
+                <a href="#about" onclick = $("#menu-close").click(); >About</a>
+            </li>
+            <li>
+                <a href="#services" onclick = $("#menu-close").click(); >Services</a>
+            </li>
+            <li>
+                <a href="#portfolio" onclick = $("#menu-close").click(); >Portfolio</a>
+            </li>
+            <li>
+                <a href="#contact" onclick = $("#menu-close").click(); >Contact</a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Header -->
+    <header id="top" class="header">
+        <div class="text-vertical-center">
+            <h1 style="color:white">Marten</h1>
+            <h3>Postgresql as Document Db &amp; Event Store for .Net Development</h3>
+            <br>
+            <a href="#about" class="btn btn-dark btn-lg">Find Out More</a>
+        </div>
+    </header>
+
+    <!-- About -->
+    <section id="about" class="about">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <h2>Some stuff about Marten and why Postgresql is awesome</h2>
+                    <p class="lead">A tag line of some kind</p>
+                </div>
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container -->
+    </section>
+
+    <div class="container">
+      <!-- Example row of columns -->
+      <div class="row">
+        <div class="col-md-4">
+          <h2>Document Database</h2>
+          <p>Describe the doc db stuff here.
+          </p>
+          <p><a class="btn btn-default" href="<[linkto:documentation/documents;{href}]>" role="button">View details &raquo;</a></p>
+        </div>
+        <div class="col-md-4">
+          <h2>Event Store</h2>
+          <p>Describe the event store stuff here. </p>
+          <p><a class="btn btn-default" href="<[linkto:documentation/events;{href}]>" role="button">View details &raquo;</a></p>
+       </div>
+        <div class="col-md-4">
+          <h2>Postgresql</h2>
+          <p>Talk about how Marten fits into the Postgresql world</p>
+          <p>Put badges here</p>
+          <p><a class="btn btn-default" href="<[linkto:documentation/postgres;{href}]>" role="button">View details &raquo;</a></p>
+        </div>
+      </div>
+
+      <hr>
+
+
+    </div> <!-- /container -->
+
+
+
+
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+
+    <!-- Custom Theme JavaScript -->
+    <script>
+    // Closes the sidebar menu
+    $("#menu-close").click(function(e) {
+        e.preventDefault();
+        $("#sidebar-wrapper").toggleClass("active");
+    });
+
+    // Opens the sidebar menu
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#sidebar-wrapper").toggleClass("active");
+    });
+
+    // Scrolls to the selected menu item on the page
+    $(function() {
+        $('a[href*=#]:not([href=#])').click(function() {
+            if (location.pathname.replace(/^\//, '') == this.pathname.replace(/^\//, '') || location.hostname == this.hostname) {
+
+                var target = $(this.hash);
+                target = target.length ? target : $('[name=' + this.hash.slice(1) + ']');
+                if (target.length) {
+                    $('html,body').animate({
+                        scrollTop: target.offset().top
+                    }, 1000);
+                    return false;
+                }
+            }
+        });
+    });
+    </script>
+
+</body>
+
+</html>
