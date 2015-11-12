@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using FubuCore;
-using FubuCore.Util;
 using Marten.Schema;
 using Marten.Util;
 using Npgsql;
@@ -11,36 +10,6 @@ using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public interface IEvent
-    {
-        Guid Id { get; set; }
-    }
-
-    public interface IAggregate
-    {
-        Guid Id { get; set; }
-    }
-
-
-    public interface IEvents
-    {
-        void Append<T>(Guid stream, T @event) where T : IEvent;
-
-        void AppendEvents(Guid stream, params IEvent[] events);
-
-        Guid StartStream<T>(params IEvent[] events) where T : IAggregate;
-
-        T FetchSnapshot<T>(Guid streamId) where T : IAggregate;
-
-        IEnumerable<IEvent> FetchStream<T>(Guid streamId) where T : IAggregate;
-
-        void DeleteEvent<T>(Guid id);
-        void DeleteEvent<T>(T @event) where T : IEvent;
-
-
-        void ReplaceEvent<T>(T @event);
-    }
-
     public class Events : IEvents
     {
         private readonly ICommandRunner _runner;
@@ -159,123 +128,5 @@ namespace Marten.Events
                 yield return _serializer.FromJson(mapping.DocumentType, json).As<IEvent>();
             }
         }
-    }
-
-    public enum ProjectionTiming
-    {
-        inline,
-        live,
-        async
-    }
-
-
-    public class EventGraph
-    {
-        private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
-        private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
-
-        private readonly Cache<Type, StreamMapping> _streams =
-            new Cache<Type, StreamMapping>(type => new StreamMapping(type));
-
-        public EventGraph()
-        {
-            _events.OnMissing = eventType =>
-            {
-                var stream = _streams.FirstOrDefault(x => x.HasEventType(eventType));
-
-                return stream?.EventMappingFor(eventType);
-            };
-
-            _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
-        }
-
-        public StreamMapping StreamMappingFor(Type aggregateType)
-        {
-            return _streams[aggregateType];
-        }
-
-        public StreamMapping StreamMappingFor<T>() where T : IAggregate
-        {
-            return StreamMappingFor(typeof (T));
-        }
-
-        public EventMapping EventMappingFor(Type eventType)
-        {
-            return _events[eventType];
-        }
-
-        public EventMapping EventMappingFor<T>() where T : IEvent
-        {
-            return EventMappingFor(typeof (T));
-        }
-
-        public IEnumerable<EventMapping> AllEvents()
-        {
-            return _streams.SelectMany(x => x.AllEvents());
-        }
-
-        public EventMapping EventMappingFor(string eventType)
-        {
-            return _byEventName[eventType];
-        }
-    }
-
-
-    public class StreamMapping : DocumentMapping
-    {
-        private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
-
-        public StreamMapping(Type aggregateType) : base(aggregateType)
-        {
-            if (!aggregateType.CanBeCastTo<IAggregate>())
-                throw new ArgumentOutOfRangeException(nameof(aggregateType),
-                    $"Only types implementing {typeof (IAggregate)} can be accepted");
-
-
-            _events.OnMissing = type => { return new EventMapping(this, type); };
-
-            StreamTypeName = aggregateType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
-        }
-
-        public string StreamTypeName { get; set; }
-
-        public EventMapping AddEvent(Type eventType)
-        {
-            return _events[eventType];
-        }
-
-        public EventMapping EventMappingFor(Type eventType)
-        {
-            return _events[eventType];
-        }
-
-
-        public bool HasEventType(Type eventType)
-        {
-            return _events.Has(eventType);
-        }
-
-        public IEnumerable<EventMapping> AllEvents()
-        {
-            return _events;
-        }
-    }
-
-    public class EventMapping : DocumentMapping
-    {
-        public EventMapping(StreamMapping parent, Type eventType) : base(eventType)
-        {
-            if (!eventType.CanBeCastTo<IEvent>())
-                throw new ArgumentOutOfRangeException(nameof(eventType),
-                    $"Only types implementing {typeof (IEvent)} can be accepted");
-
-            Stream = parent;
-
-            EventTypeName = eventType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
-        }
-
-        public string EventTypeName { get; set; }
-
-        public StreamMapping Stream { get; }
     }
 }

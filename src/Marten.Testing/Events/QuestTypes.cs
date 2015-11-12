@@ -21,4 +21,19 @@ namespace Marten.Testing.Events
 
         public string[] Members { get; set; }
     }
+
+    public class Issue : IAggregate
+    {
+        public Guid Id { get; set; }
+    }
+
+    public class IssueCreated : IEvent
+    {
+        public Guid Id { get; set; }
+    }
+
+    public class IssueAssigned : IEvent
+    {
+        public Guid Id { get; set; }
+    }
 }
