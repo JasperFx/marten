@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using Marten.Events;
 using Marten.Schema.Sequences;
 
 namespace Marten.Schema
@@ -20,6 +21,8 @@ namespace Marten.Schema
             _runner = runner;
 
             Sequences = new SequenceFactory(this, _runner, _creation);
+
+            Events = new EventGraph();
         }
 
         public DocumentMapping MappingFor(Type documentType)
@@ -47,6 +50,8 @@ namespace Marten.Schema
                 return storage;
             });
         }
+
+        public EventGraph Events { get; private set; }
 
         public IEnumerable<string> SchemaTableNames()
         {

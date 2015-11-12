@@ -12,14 +12,12 @@ namespace Marten.Testing.Events
 
         public void capture_events_to_a_new_stream_and_fetch_the_events_back()
         {
-            var graph = new EventGraph();
-
-            var quest = graph.StreamMappingFor<Quest>();
+            var schema = _container.GetInstance<IDocumentSchema>();
+            var quest = schema.Events.StreamMappingFor<Quest>();
 
             quest.AddEvent(typeof(MembersJoined));
             quest.AddEvent(typeof(MembersDeparted));
 
-            _container.Inject(graph);
 
             _container.GetInstance<IDocumentCleaner>().CompletelyRemoveAll();
 

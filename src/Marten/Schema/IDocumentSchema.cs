@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Marten.Events;
 using Marten.Schema.Sequences;
 
 namespace Marten.Schema
@@ -18,6 +19,8 @@ namespace Marten.Schema
         void Alter(MartenRegistry registry);
 
         ISequences Sequences { get; }
+
+        EventGraph Events { get; }
 
         PostgresUpsertType UpsertType { get; set; }
     }
