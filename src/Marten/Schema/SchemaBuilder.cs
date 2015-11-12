@@ -22,7 +22,7 @@ namespace Marten.Schema
             var args = new List<UpsertArgument>
             {
                 new UpsertArgument {Arg = "docId", PostgresType = pgIdType},
-                new UpsertArgument {Arg = "doc", PostgresType = "JSON"}
+                new UpsertArgument {Arg = "doc", PostgresType = "JSONB"}
             };
 
             var duplicates = mapping.DuplicatedFields.Select(x => x.UpsertArgument).ToArray();
@@ -37,15 +37,34 @@ namespace Marten.Schema
                 updates += ", " + duplicates.Select(x => $"{x.Column} = {x.Arg}").Join(", ");
             }
 
-
-            writer.WriteLine($"CREATE OR REPLACE FUNCTION {mapping.UpsertName}({argList}) RETURNS VOID AS");
-            writer.WriteLine("$$");
-            writer.WriteLine("BEGIN");
-            writer.WriteLine($"INSERT INTO {mapping.TableName} VALUES ({valueList})");
-            writer.WriteLine($"  ON CONFLICT ON CONSTRAINT pk_{mapping.TableName}");
-            writer.WriteLine($"  DO UPDATE SET {updates};");
-            writer.WriteLine("END;");
-            writer.WriteLine("$$ LANGUAGE plpgsql;");
+            if (schema != null && schema.UpsertType == PostgresUpsertType.Legacy)
+            {
+                var inserts = "id, data";
+                if (duplicates.Any())
+                {
+                    inserts += ", " + duplicates.Select(x => x.Column).Join(", ");
+                }
+                writer.WriteLine($"CREATE OR REPLACE FUNCTION {mapping.UpsertName}({argList}) RETURNS VOID AS");
+                writer.WriteLine("$$");
+                writer.WriteLine("BEGIN");
+                writer.WriteLine($"LOCK TABLE {mapping.TableName} IN SHARE ROW EXCLUSIVE MODE;");
+                writer.WriteLine($"  WITH upsert AS (UPDATE {mapping.TableName} SET {updates} WHERE id=docId RETURNING *) ");
+                writer.WriteLine($"  INSERT INTO {mapping.TableName} ({inserts})");
+                writer.WriteLine($"  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);");
+                writer.WriteLine("END;");
+                writer.WriteLine("$$ LANGUAGE plpgsql;");
+            }
+            else
+            {
+                writer.WriteLine($"CREATE OR REPLACE FUNCTION {mapping.UpsertName}({argList}) RETURNS VOID AS");
+                writer.WriteLine("$$");
+                writer.WriteLine("BEGIN");
+                writer.WriteLine($"INSERT INTO {mapping.TableName} VALUES ({valueList})");
+                writer.WriteLine($"  ON CONFLICT ON CONSTRAINT pk_{mapping.TableName}");
+                writer.WriteLine($"  DO UPDATE SET {updates};");
+                writer.WriteLine("END;");
+                writer.WriteLine("$$ LANGUAGE plpgsql;");
+            }
 
 
             writer.WriteLine();
@@ -62,7 +81,7 @@ namespace Marten.Schema
 
         public static string GetText(string script)
         {
-            var name = $"{typeof (SchemaBuilder).Namespace}.SQL.{script}.sql";
+            var name = $"{typeof(SchemaBuilder).Namespace}.SQL.{script}.sql";
 
             var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
 
