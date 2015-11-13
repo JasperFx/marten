@@ -2,6 +2,6 @@
 {
     public interface IdAssignment<T>
     {
-        void Assign(T document);
+        object Assign(T document);
     }
 }

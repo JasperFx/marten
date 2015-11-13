@@ -19,14 +19,14 @@ namespace Marten
         /// </summary>
         void SaveChanges();
 
-        T Load<T>(string id) where T : class;
-        T Load<T>(ValueType id) where T : class;
+        T Load<T>(string id);
+        T Load<T>(ValueType id);
 
         ILoadByKeys<T> Load<T>(); 
 
         // Store by etag? Version strategy?
 
-        void Store<T>(T entity) where T : class;
+        void Store<T>(T entity);
 
         IQueryable<T> Query<T>();
 

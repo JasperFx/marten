@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using FubuCore;
 using Marten.Linq;
+using Marten.Map;
 using Marten.Schema;
 using Marten.Util;
 using Npgsql;
@@ -20,15 +21,13 @@ namespace Marten
 
     public class DocumentSession : IDocumentSession, IDiagnostics
     {
-        private readonly IdentityMap _identityMap = new IdentityMap();
+        private readonly IDocumentMap _documentMap;
         private readonly IList<NpgsqlCommand> _deletes = new List<NpgsqlCommand>();
         private readonly IQueryParser _parser;
         private readonly IMartenQueryExecutor _executor;
         private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
-
-        private readonly IList<object> _updates = new List<object>();
 
         public DocumentSession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor)
         {
@@ -37,6 +36,7 @@ namespace Marten
             _parser = parser;
             _executor = executor;
             _runner = runner;
+            _documentMap = new DocumentMap(_serializer);
         }
 
 
@@ -49,9 +49,7 @@ namespace Marten
             if (queryable is MartenQueryable<T>)
             {
                 return _executor.BuildCommand<T>(queryable);
-
             }
-            
 
             throw new ArgumentOutOfRangeException(nameof(queryable), "This mechanism can only be used for MartenQueryable<T> objects");
         }
@@ -74,14 +72,16 @@ namespace Marten
             _deletes.Add(storage.DeleteCommandForId(id));
         }
 
-        public T Load<T>(string id) where T : class 
+        public T Load<T>(string id)
         {
-            return _identityMap.Get<T>(id) ?? load<T>(id);
+            var entry = _documentMap.Get<T>(id);
+            return entry != null ? entry.Document : load<T>(id);
         }
 
-        public T Load<T>(ValueType id) where T : class
+        public T Load<T>(ValueType id)
         {
-            return _identityMap.Get<T>(id) ?? load<T>(id);
+            var entry = _documentMap.Get<T>(id);
+            return entry != null ? entry.Document : load<T>(id);
         }
 
 
@@ -93,13 +93,13 @@ namespace Marten
             {
                 using (var tx = conn.BeginTransaction())
                 {
-                    _updates.Each(o =>
+                    var updates = _documentMap.GetUpdates();
+                    updates.Each(o =>
                     {
-                        var docType = o.GetType();
+                        var docType = o.Document.GetType();
                         var storage = _schema.StorageFor(docType);
 
-                        var json = _serializer.ToJson(o);
-                        using (var command = storage.UpsertCommand(o, json))
+                        using (var command = storage.UpsertCommand(o.Document, o.Json))
                         {
                             command.Connection = conn;
                             command.Transaction = tx;
@@ -118,21 +118,19 @@ namespace Marten
                     tx.Commit();
 
                     _deletes.Clear();
-                    _updates.Clear();
+                    _documentMap.Updated(updates);
                 }
             });
         }
 
-        public void Store<T>(T entity) where T : class
+        public void Store<T>(T entity)
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            _schema.StorageFor(typeof(T))
+            var id = _schema.StorageFor(typeof(T))
 				.As<IdAssignment<T>>().Assign(entity);
 				
-            _identityMap.Set<T>(entity);
-
-            _updates.Add(entity);
+            _documentMap.Set<T>(id, entity);
         }
 
         public IQueryable<T> Query<T>()
@@ -226,7 +224,9 @@ namespace Marten
 
                 if (json == null) return default(T);
 
-                return _serializer.FromJson<T>(json);
+                var document = _serializer.FromJson<T>(json);
+                _documentMap.Set(id, document, json);
+                return document;
             });
         }
 

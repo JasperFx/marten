@@ -56,6 +56,7 @@
     <Compile Include="Documents\User.cs" />
     <Compile Include="document_session_delete_a_single_document_Tests.cs" />
     <Compile Include="document_session_persist_and_load_single_documents_Tests.cs" />
+    <Compile Include="document_session_update_existing_document_Tests.cs" />
     <Compile Include="duplicate_fields_in_table_and_upsert_Tests.cs" />
     <Compile Include="Fixtures\LinqFixture.cs" />
     <Compile Include="Fixtures\OrderingFixture.cs" />
@@ -88,10 +89,11 @@
     <Compile Include="performance_report.cs" />
     <Compile Include="performance_tuning.cs" />
     <Compile Include="persisting_document_with_string_id_Tests.cs" />
-    <Compile Include="load_not_yet_persisted_document_Tests.cs" />
+    <Compile Include="document_session_load_not_yet_persisted_document_Tests.cs" />
     <Compile Include="persist_and_deleting_multiple_documents_Tests.cs" />
     <Compile Include="persist_and_load_documents_with_int_ids_Tests.cs" />
     <Compile Include="persist_and_load_documents_with_long_ids_Tests.cs" />
+    <Compile Include="DocumentMapTests.cs" />
     <Compile Include="PlayingTests.cs" />
     <Compile Include="ProductionModeRegistry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

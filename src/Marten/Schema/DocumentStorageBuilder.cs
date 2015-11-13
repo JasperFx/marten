@@ -153,7 +153,7 @@ return new NpgsqlCommand(`{mapping.UpsertName}`)
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
 END
 
-BLOCK:public void Assign({mapping.DocumentType.Name} document)
+BLOCK:public object Assign({mapping.DocumentType.Name} document)
 {mapping.IdStrategy.AssignmentBodyCode(mapping.IdMember)}
 END
 
