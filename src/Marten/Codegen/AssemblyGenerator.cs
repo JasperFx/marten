@@ -50,7 +50,7 @@ namespace Marten.Codegen
 
 
                     var message = failures.Select(x => $"{x.Id}: {x.GetMessage()}").Join("\n");
-                    throw new InvalidOperationException("Compilation failures!\n\n" + message);
+                    throw new InvalidOperationException("Compilation failures!\n\n" + message + "\n\nCode:\n\n" + code);
                 }
 
                 stream.Seek(0, SeekOrigin.Begin);

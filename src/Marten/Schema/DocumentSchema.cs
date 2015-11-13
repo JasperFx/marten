@@ -3,20 +3,23 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using Marten.Schema.Sequences;
 
 namespace Marten.Schema
 {
     public class DocumentSchema : IDocumentSchema, IDisposable
     {
         private readonly IDocumentSchemaCreation _creation;
-        private readonly CommandRunner _runner;
+        private readonly ICommandRunner _runner;
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes = new ConcurrentDictionary<Type, IDocumentStorage>(); 
         private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings = new ConcurrentDictionary<Type, DocumentMapping>(); 
 
-        public DocumentSchema(IConnectionFactory connections, IDocumentSchemaCreation creation)
+        public DocumentSchema(ICommandRunner runner, IDocumentSchemaCreation creation)
         {
             _creation = creation;
-            _runner = new CommandRunner(connections);
+            _runner = runner;
+
+            Sequences = new SequenceFactory(this, _runner, _creation);
         }
 
         public DocumentMapping MappingFor(Type documentType)
@@ -34,7 +37,7 @@ namespace Marten.Schema
             return _documentTypes.GetOrAdd(documentType, type =>
             {
                 var mapping = MappingFor(documentType);
-                var storage = DocumentStorageBuilder.Build(mapping);
+                var storage = DocumentStorageBuilder.Build(this, mapping);
 
                 if (!DocumentTables().Contains(mapping.TableName))
                 {
@@ -62,7 +65,7 @@ namespace Marten.Schema
 
         public string[] DocumentTables()
         {
-            return SchemaTableNames().Where(x => x.Contains("_doc_")).ToArray();
+            return SchemaTableNames().Where(x => x.StartsWith("mt_doc_")).ToArray();
         }
 
         public IEnumerable<string> SchemaFunctionNames()
@@ -124,5 +127,8 @@ AND type_udt_name != 'trigger';
             registry.Alter(this);
         }
 
+        public ISequences Sequences { get; }
+
+        public PostgresUpsertType UpsertType { get; set; }
     }
 }

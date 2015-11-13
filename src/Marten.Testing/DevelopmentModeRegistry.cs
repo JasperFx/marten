@@ -10,15 +10,20 @@ namespace Marten.Testing
         public DevelopmentModeRegistry()
         {
             For<IConnectionFactory>().Use<ConnectionSource>();
-            ForSingletonOf<IDocumentSchema>().Use<Marten.Schema.DocumentSchema>();
+            ForSingletonOf<IDocumentSchema>()
+                .Use<DocumentSchema>()
+                .OnCreation("", x => x.UpsertType = UpsertType);
+            Forward<DocumentSchema, IDocumentSchema>();
             For<IDocumentSession>().Use<DocumentSession>();
             For<ISerializer>().Use<JsonNetSerializer>();
             For<IDocumentSchemaCreation>().Use<DevelopmentSchemaCreation>();
+            For<ICommandRunner>().Use<CommandRunner>();
 
             For<IMartenQueryExecutor>().Use<MartenQueryExecutor>();
 
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();
         }
 
+        public static PostgresUpsertType UpsertType { get; set; }
     }
 }

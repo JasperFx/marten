@@ -13,17 +13,17 @@ namespace Marten.Linq
     public class MartenQueryExecutor : IMartenQueryExecutor
     {
         private readonly IQueryParser _parser;
-        private readonly CommandRunner _runner;
+        private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
 
-        public MartenQueryExecutor(IConnectionFactory factory, IDocumentSchema schema, ISerializer serializer,
+        public MartenQueryExecutor(ICommandRunner runner, IDocumentSchema schema, ISerializer serializer,
             IQueryParser parser)
         {
             _schema = schema;
             _serializer = serializer;
             _parser = parser;
-            _runner = new CommandRunner(factory);
+            _runner = runner;
         }
 
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)

@@ -33,6 +33,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -43,9 +44,11 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="auto_assign_missing_guid_ids_Tests.cs" />
     <Compile Include="bulk_loading_Tests.cs" />
     <Compile Include="codegen_spike.cs" />
     <Compile Include="ConnectionSource.cs" />
+    <Compile Include="CustomConventions.cs" />
     <Compile Include="DevelopmentModeRegistry.cs" />
     <Compile Include="DocumentSessionFixture.cs" />
     <Compile Include="Documents\Company.cs" />
@@ -82,6 +85,7 @@
     <Compile Include="Linq\query_with_nullable_types_Tests.cs" />
     <Compile Include="Linq\using_multiple_where_clauses_Tests.cs" />
     <Compile Include="MartenRegistryTests.cs" />
+    <Compile Include="performance_report.cs" />
     <Compile Include="performance_tuning.cs" />
     <Compile Include="persisting_document_with_string_id_Tests.cs" />
     <Compile Include="load_not_yet_persisted_document_Tests.cs" />
@@ -101,6 +105,10 @@
     <Compile Include="Schema\JsonLocatorFieldTests.cs" />
     <Compile Include="Schema\LateralJoinFieldTests.cs" />
     <Compile Include="Schema\ProductionModeSchemeCreationTests.cs" />
+    <Compile Include="Schema\SchemaBuilderTests.cs" />
+    <Compile Include="Schema\Sequences\HiLoIdGenerationTests.cs" />
+    <Compile Include="Schema\Sequences\HiLoSequenceTests.cs" />
+    <Compile Include="Schema\Sequences\SequenceFactoryTests.cs" />
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />
@@ -148,6 +156,17 @@
       <Paket>True</Paket>
     </Reference>
   </ItemGroup>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.0' Or $(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="HtmlTags">
+          <HintPath>..\..\packages\HtmlTags\lib\4.0\HtmlTags.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
       <ItemGroup>
@@ -402,6 +421,7 @@
       </ItemGroup>
     </When>
   </Choose>
+  <Import Project="..\..\packages\Microsoft.DiaSymReader.Native\build\Microsoft.DiaSymReader.Native.props" Condition="Exists('..\..\packages\Microsoft.DiaSymReader.Native\build\Microsoft.DiaSymReader.Native.props')" Label="Paket" />
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETCore'">
       <ItemGroup>

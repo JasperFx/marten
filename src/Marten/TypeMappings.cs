@@ -35,6 +35,8 @@ namespace Marten
         {
             if (type.IsNullable()) return ToDbType(type.GetInnerTypeFromNullable());
 
+            if (type == typeof(DateTime)) return NpgsqlDbType.Date;
+
             return (NpgsqlDbType) _getNgpsqlDbTypeMethod.Invoke(null, new object[] { type});
         }
 

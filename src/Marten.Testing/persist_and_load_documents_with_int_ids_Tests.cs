@@ -28,6 +28,22 @@ namespace Marten.Testing
 
         }
 
+        public void auto_assign_id_for_0_id()
+        {
+            var doc = new IntDoc {Id = 0};
+
+            theSession.Store(doc);
+
+            doc.Id.ShouldBeGreaterThan(0);
+
+            var doc2 = new IntDoc {Id = 0};
+            theSession.Store(doc2);
+
+            doc2.Id.ShouldNotBe(0);
+
+            doc2.Id.ShouldNotBe(doc.Id);
+        }
+
         public void persist_and_delete()
         {
             var IntDoc = new IntDoc { Id = 567 };

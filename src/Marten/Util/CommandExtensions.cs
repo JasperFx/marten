@@ -59,7 +59,7 @@ namespace Marten.Util
 
         public static NpgsqlCommand WithJsonParameter(this NpgsqlCommand command, string name, string json)
         {
-            command.Parameters.Add("doc", NpgsqlDbType.Json).Value = json;
+            command.Parameters.Add("doc", NpgsqlDbType.Jsonb).Value = json;
 
             return command;
         }

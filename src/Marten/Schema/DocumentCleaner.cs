@@ -2,21 +2,37 @@
 using System.Collections.Generic;
 using System.Linq;
 using FubuCore;
-using FubuCore.CommandLine;
-using Marten.Generation;
-using Npgsql;
 
 namespace Marten.Schema
 {
     public class DocumentCleaner : IDocumentCleaner
     {
-        private readonly IDocumentSchema _schema;
-        private readonly CommandRunner _runner;
+        private readonly string _dropAllFunctionSql = @"
+SELECT format('DROP FUNCTION %s(%s);'
+             ,oid::regproc
+             ,pg_get_function_identity_arguments(oid))
+FROM   pg_proc
+WHERE  proname like 'mt_%' 
+AND    pg_function_is_visible(oid)  
+                                  
+";
 
-        public DocumentCleaner(IConnectionFactory factory, IDocumentSchema schema)
+        private readonly string _dropFunctionSql = @"
+SELECT format('DROP FUNCTION %s(%s);'
+             ,oid::regproc
+             ,pg_get_function_identity_arguments(oid))
+FROM   pg_proc
+WHERE  proname = '{0}' 
+AND    pg_function_is_visible(oid)  
+                                  
+";
+        private readonly ICommandRunner _runner;
+        private readonly IDocumentSchema _schema;
+
+        public DocumentCleaner(ICommandRunner runner, IDocumentSchema schema)
         {
             _schema = schema;
-            _runner = new CommandRunner(factory);
+            _runner = runner;
         }
 
         public void DeleteAllDocuments()
@@ -30,18 +46,10 @@ namespace Marten.Schema
             truncateTable(tableName);
         }
 
-        private void truncateTable(string tableName)
-        {
-            var sql = "truncate {0} cascade".ToFormat(tableName);
-
-            _runner.Execute(sql);
-        }
-
         public void DeleteDocumentsExcept(params Type[] documentTypes)
         {
             var exemptedTables = documentTypes.Select(DocumentMapping.TableNameFor).ToArray();
             _schema.DocumentTables().Where(x => !exemptedTables.Contains(x)).Each(truncateTable);
-
         }
 
         public void CompletelyRemove(Type documentType)
@@ -59,6 +67,13 @@ namespace Marten.Schema
             _schema.SchemaTableNames().Each(dropTable);
 
             dropFunctions(_dropAllFunctionSql);
+        }
+
+        private void truncateTable(string tableName)
+        {
+            var sql = "truncate {0} cascade".ToFormat(tableName);
+
+            _runner.Execute(sql);
         }
 
         private void dropFunctions(string dropTargets)
@@ -88,28 +103,5 @@ namespace Marten.Schema
         {
             _runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(tableName));
         }
-
-
-        private readonly string _dropAllFunctionSql = @"
-SELECT format('DROP FUNCTION %s(%s);'
-             ,oid::regproc
-             ,pg_get_function_identity_arguments(oid))
-FROM   pg_proc
-WHERE  proname like 'mt_%' 
-AND    pg_function_is_visible(oid)  
-                                  
-";
-
-        private readonly string _dropFunctionSql = @"
-SELECT format('DROP FUNCTION %s(%s);'
-             ,oid::regproc
-             ,pg_get_function_identity_arguments(oid))
-FROM   pg_proc
-WHERE  proname = '{0}' 
-AND    pg_function_is_visible(oid)  
-                                  
-";
     }
-
-
 }

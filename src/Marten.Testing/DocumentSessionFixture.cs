@@ -11,7 +11,7 @@ namespace Marten.Testing
         protected DocumentSessionFixture()
         {
             ConnectionSource.CleanBasicDocuments();
-            theSession = theContainer.GetInstance<IDocumentSession>();
+            theSession = theContainer.GetInstance<IDocumentSession>();            
         }
 
         public void Dispose()

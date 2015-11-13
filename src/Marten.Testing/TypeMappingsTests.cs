@@ -8,7 +8,8 @@ namespace Marten.Testing
     {
         public void execute_to_db_type_as_date()
         {
-            TypeMappings.ToDbType(typeof(DateTime)).ShouldBe(NpgsqlDbType.Timestamp);
+            // I'm overriding the behavior in Npgsql itself here.
+            TypeMappings.ToDbType(typeof(DateTime)).ShouldBe(NpgsqlDbType.Date);
         }
 
         public void execute_to_db_type_as_int()

@@ -17,7 +17,7 @@ namespace Marten.Testing
 
             theSession.SaveChanges();
 
-            var runner = new CommandRunner(new ConnectionSource());
+            var runner = theContainer.GetInstance<ICommandRunner>();
             
             var json = runner.QueryScalar<string>("select data from mt_doc_user where id = '{0}'".ToFormat(user.Id));
 
