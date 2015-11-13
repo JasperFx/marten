@@ -55,7 +55,7 @@
     <Compile Include="Documents\Issue.cs" />
     <Compile Include="Documents\User.cs" />
     <Compile Include="document_session_delete_a_single_document_Tests.cs" />
-    <Compile Include="document_session_load_not_yet_persisted_document_Tests - Copy.cs" />
+    <Compile Include="document_session_load_already_loaded_document_Tests.cs" />
     <Compile Include="document_session_persist_and_load_single_documents_Tests.cs" />
     <Compile Include="document_session_update_existing_document_Tests.cs" />
     <Compile Include="duplicate_fields_in_table_and_upsert_Tests.cs" />
