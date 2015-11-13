@@ -39,7 +39,6 @@ namespace Marten
             _documentMap = new DocumentMap(_serializer);
         }
 
-
         public void Dispose()
         {
         }
@@ -74,14 +73,12 @@ namespace Marten
 
         public T Load<T>(string id)
         {
-            var entry = _documentMap.Get<T>(id);
-            return entry != null ? entry.Document : load<T>(id);
+            return load<T>(id);
         }
 
         public T Load<T>(ValueType id)
         {
-            var entry = _documentMap.Get<T>(id);
-            return entry != null ? entry.Document : load<T>(id);
+            return load<T>(id);
         }
 
 
@@ -159,7 +156,11 @@ namespace Marten
 
             cmd.CommandText = sql;
 
-            return _serializer.FromJson<T>(_runner.QueryJson(cmd));
+            var idRetriever = _schema.StorageFor(typeof(T)).As<IdRetriever<T>>();
+
+            return _runner.QueryJson(cmd)
+                .Select(json => fromMapOrSerialize(idRetriever, json))
+                .ToArray();
         }
 
         public void BulkInsert<T>(T[] documents, int batchSize = 1000)
@@ -214,22 +215,41 @@ namespace Marten
 
         private T load<T>(object id)
         {
+            var entry = _documentMap.Get<T>(id);
+            if (entry != null)
+            {
+                return entry.Document;
+            }
+
             var storage = _schema.StorageFor(typeof (T));
-            var loader = storage.LoaderCommand(id);
+            var idRetriever = storage.As<IdRetriever<T>>();
 
             return _runner.Execute(conn =>
             {
+                var loader = storage.LoaderCommand(id);
                 loader.Connection = conn;
                 var json = loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
 
-                if (json == null) return default(T);
-
-                var document = _serializer.FromJson<T>(json);
-                _documentMap.Set(id, document, json);
-                return document;
+                return fromMapOrSerialize(idRetriever, json);
             });
         }
 
+        private T fromMapOrSerialize<T>(IdRetriever<T> idRetriever, string json)
+        {
+            if (json == null) return default(T);
+
+            var document = _serializer.FromJson<T>(json);
+            var id = idRetriever.Retrieve(document);
+
+            var mapEntry = _documentMap.Get<T>(id);
+            if (mapEntry != null)
+            {
+                return mapEntry.Document;
+            }
+
+            _documentMap.Set(id, document, json);
+            return document;
+        }
 
         public class LoadByKeys<TDoc> : ILoadByKeys<TDoc>
         {
@@ -245,8 +265,10 @@ namespace Marten
                 var storage = _parent._schema.StorageFor(typeof (TDoc));
                 var cmd = storage.LoadByArrayCommand(keys);
 
+                var idRetriever = storage.As<IdRetriever<TDoc>>();
 
-                return _parent._runner.Query<TDoc>(cmd, _parent._serializer);
+                return _parent._runner.QueryJson(cmd)
+                    .Select(json => _parent.fromMapOrSerialize(idRetriever, json));
             }
 
             public IEnumerable<TDoc> ById<TKey>(IEnumerable<TKey> keys)

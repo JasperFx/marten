@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Npgsql;
 
 namespace Marten
@@ -95,11 +94,6 @@ namespace Marten
                     return (T)command.ExecuteScalar();
                 }
             });
-        }
-
-        public IEnumerable<T> Query<T>(NpgsqlCommand cmd, ISerializer serializer)
-        {
-            return QueryJson(cmd).Select(serializer.FromJson<T>);
         }
     }
 }

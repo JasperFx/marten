@@ -79,7 +79,7 @@ namespace Marten.Linq
         {
             var command = BuildCommand<T>(queryModel);
 
-            return _runner.Query<T>(command, _serializer);
+            return _runner.QueryJson(command).Select(_serializer.FromJson<T>);
         }
 
         public NpgsqlCommand BuildCommand<T>(QueryModel queryModel)

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Diagnostics;
+using System.Linq;
 using Marten.Testing.Documents;
 using Shouldly;
 
@@ -10,23 +11,32 @@ namespace Marten.Testing
         {
             var user = new User { FirstName = "Tim", LastName = "Cools" };
             theSession.Store(user);
+            theSession.SaveChanges();
 
-            var first = theSession.Load<User>(user.Id);
-            var second = theSession.Load<User>(user.Id);
+            using (var session = theContainer.GetInstance<IDocumentSession>())
+            {
+                var first = session.Load<User>(user.Id);
+                var second = session.Load<User>(user.Id);
 
-            first.ShouldBeSameAs(second);
+                first.ShouldBeSameAs(second);
+            }
         }
 
-        public void when_querying_then_the_document_should_be_returned()
+        public void when_loading_by_ids_then_the_same_document_should_be_returned()
         {
             var user = new User { FirstName = "Tim", LastName = "Cools" };
             theSession.Store(user);
+            theSession.SaveChanges();
 
-            var first = theSession.Load<User>(user.Id);
-            var second = theSession.Query<User>()
-                .FirstOrDefault(criteria => criteria.FirstName == "Tim");
+            using (var session = theContainer.GetInstance<IDocumentSession>())
+            {
+                var first = session.Load<User>(user.Id);
+                var second = session.Load<User>()
+                    .ById(user.Id)
+                    .SingleOrDefault();
 
-            first.ShouldBeSameAs(second);
+                first.ShouldBeSameAs(second);
+            }
         }
     }
 }

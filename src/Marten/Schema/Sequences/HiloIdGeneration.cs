@@ -30,8 +30,7 @@ namespace Marten.Schema.Sequences
         {
             var member = idMember.GetMemberType() == typeof (int) ? "NextInt" : "NextLong";
 
-            return $"if (document.{idMember.Name} == 0) document.{idMember.Name} = _sequence.{member}();" +
-                   $"return document.{idMember.Name};";
+            return $"if (document.{idMember.Name} == 0) document.{idMember.Name} = _sequence.{member}();";
         }
     }
 }
