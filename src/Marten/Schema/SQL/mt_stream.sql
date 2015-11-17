@@ -38,7 +38,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION mt_append_event(stream uuid, stream_type varchar, event_id uuid, event_type varchar, body json) RETURNS int AS $$
+CREATE OR REPLACE FUNCTION mt_append_event(stream uuid, stream_type varchar, event_id uuid, event_type varchar, body jsonb) RETURNS int AS $$
 DECLARE
 	event_version int;
 BEGIN

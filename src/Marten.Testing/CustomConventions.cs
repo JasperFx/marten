@@ -18,7 +18,7 @@ namespace Marten.Testing
             }
             else
             {
-                DevelopmentModeRegistry.UpsertType = PostgresUpsertType.Standard;
+                DevelopmentModeRegistry.UpsertType = PostgresUpsertType.Legacy;
             }
 
             Console.WriteLine("The UpsertStyle is " + DevelopmentModeRegistry.UpsertType);

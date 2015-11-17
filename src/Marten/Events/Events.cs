@@ -111,7 +111,7 @@ namespace Marten.Events
             cmd.AddParameter("stream_type", eventMapping.Stream.StreamTypeName);
             cmd.AddParameter("event_id", @event.Id);
             cmd.AddParameter("event_type", eventMapping.EventTypeName);
-            cmd.AddParameter("body", _serializer.ToJson(@event)).NpgsqlDbType = NpgsqlDbType.Json;
+            cmd.AddParameter("body", _serializer.ToJson(@event)).NpgsqlDbType = NpgsqlDbType.Jsonb;
 
             cmd.ExecuteNonQuery();
         }

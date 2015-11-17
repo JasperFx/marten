@@ -24,6 +24,6 @@ namespace Marten.Testing
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();
         }
 
-        public static PostgresUpsertType UpsertType { get; set; }
+        public static PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;
     }
 }
