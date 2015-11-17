@@ -14,7 +14,7 @@ namespace Marten
 {
     public interface IMartenQueryExecutor : IQueryExecutor
     {
-        NpgsqlCommand BuildCommand<T>(QueryModel queryModel);
+        NpgsqlCommand BuildCommand(QueryModel queryModel);
         NpgsqlCommand BuildCommand<T>(IQueryable<T> queryable);
     }
 
