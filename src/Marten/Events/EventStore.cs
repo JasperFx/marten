@@ -167,6 +167,7 @@ namespace Marten.Events
         public void RebuildEventStoreSchema()
         {
             _creation.RunScript("mt_stream");
+            _creation.RunScript("mt_initialize_projections");
 
             var js = SchemaBuilder.GetJavascript("mt_transforms");
             _runner.Execute(conn =>

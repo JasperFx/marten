@@ -8,32 +8,48 @@ namespace Marten.Testing.Events
 {
     public class event_administration_Tests : DocumentSessionFixture
     {
-
-        public void rebuild_event_store_schema()
+        public event_administration_Tests()
         {
-
             var events = theContainer.GetInstance<Marten.Events.EventStore>();
 
             events.RebuildEventStoreSchema();
+        }
 
-            var runner = theContainer.GetInstance<ICommandRunner>();
-
-
-
+        public void has_the_event_tables()
+        {
             var schema = theContainer.GetInstance<IDocumentSchema>();
             var tableNames = schema.SchemaTableNames();
             tableNames.ShouldContain("mt_streams");
             tableNames.ShouldContain("mt_events");
             tableNames.ShouldContain("mt_modules");
             tableNames.ShouldContain("mt_projections");
+        }
+
+        public void has_the_commands_for_appending_events()
+        {
+            var schema = theContainer.GetInstance<IDocumentSchema>();
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("mt_append_event");
             functions.ShouldContain("mt_load_projection_body");
+        }
+
+        public void loads_the_mt_transform_module()
+        {
+            var runner = theContainer.GetInstance<ICommandRunner>();
 
             var loadedModules = runner.GetStringList("select name from mt_modules");
             loadedModules.ShouldContain("mt_transforms");
         }
+
+        public void loads_the_initialize_projections_function()
+        {
+            var schema = theContainer.GetInstance<IDocumentSchema>();
+
+            var functions = schema.SchemaFunctionNames();
+            functions.ShouldContain("mt_initialize_projections");
+        }
+        
 
         public void load_projections()
         {
