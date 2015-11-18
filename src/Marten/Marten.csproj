@@ -44,7 +44,9 @@
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="CommandRunner.cs" />
-    <Compile Include="DocumentSession.cs" />
+    <Compile Include="IMartenQueryExecutor.cs" />
+    <Compile Include="ISession.cs" />
+    <Compile Include="ITrackingSession.cs" />
     <Compile Include="Map\DocumentIdentity.cs" />
     <Compile Include="Events\Events.cs" />
     <Compile Include="Events\EventGraph.cs" />
@@ -114,6 +116,8 @@
     <Compile Include="Schema\StorageArgument.cs" />
     <Compile Include="Schema\UpsertArgument.cs" />
     <Compile Include="SerializerExtensions.cs" />
+    <Compile Include="Session.cs" />
+    <Compile Include="TrackingSession.cs" />
     <Compile Include="TypeMappings.cs" />
     <Compile Include="Codegen\AssemblyGenerator.cs" />
     <Compile Include="Util\CommandExtensions.cs" />
@@ -190,7 +194,6 @@
       </ItemGroup>
     </When>
   </Choose>
-  <Import Project="..\..\packages\Microsoft.DiaSymReader.Native\build\Microsoft.DiaSymReader.Native.props" Condition="Exists('..\..\packages\Microsoft.DiaSymReader.Native\build\Microsoft.DiaSymReader.Native.props')" Label="Paket" />
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v3.5'">
       <ItemGroup>

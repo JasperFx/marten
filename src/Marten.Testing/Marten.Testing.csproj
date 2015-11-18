@@ -431,7 +431,6 @@
       </ItemGroup>
     </When>
   </Choose>
-  <Import Project="..\..\packages\Microsoft.DiaSymReader.Native\build\Microsoft.DiaSymReader.Native.props" Condition="Exists('..\..\packages\Microsoft.DiaSymReader.Native\build\Microsoft.DiaSymReader.Native.props')" Label="Paket" />
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETCore'">
       <ItemGroup>
