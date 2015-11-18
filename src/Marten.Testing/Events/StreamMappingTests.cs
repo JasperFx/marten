@@ -8,7 +8,7 @@ namespace Marten.Testing.Events
     {
         public void derives_the_stream_type_name()
         {
-            new StreamMapping(typeof(HouseRemodeling)).StreamTypeName.ShouldBe("house-remodeling");
+            new StreamMapping(typeof(HouseRemodeling)).StreamTypeName.ShouldBe("house_remodeling");
             new StreamMapping(typeof(Quest)).StreamTypeName.ShouldBe("quest");
         }
 

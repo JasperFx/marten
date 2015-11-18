@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using Marten.Events;
 using Marten.Schema;
 using Shouldly;
 using StructureMap;

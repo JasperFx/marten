@@ -41,9 +41,9 @@ namespace Marten.Testing.Events
             theGraph.StreamMappingFor<Quest>().AddEvent(typeof(MembersJoined));
             theGraph.StreamMappingFor<Quest>().AddEvent(typeof(MembersDeparted));
 
-            theGraph.EventMappingFor("members-joined").DocumentType.ShouldBe(typeof(MembersJoined));
+            theGraph.EventMappingFor("members_joined").DocumentType.ShouldBe(typeof(MembersJoined));
 
-            theGraph.EventMappingFor("issue-created").DocumentType.ShouldBe(typeof(IssueCreated));
+            theGraph.EventMappingFor("issue_created").DocumentType.ShouldBe(typeof(IssueCreated));
         }
     }
 }

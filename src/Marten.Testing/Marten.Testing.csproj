@@ -136,6 +136,8 @@
   -->
   <ItemGroup>
     <Content Include="connection.txt" />
+    <Content Include="Events\location.js" />
+    <Content Include="Events\party.js" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
