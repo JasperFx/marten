@@ -53,6 +53,11 @@ namespace Marten
             throw new ArgumentOutOfRangeException(nameof(queryable), "This mechanism can only be used for MartenQueryable<T> objects");
         }
 
+        public string DocumentStorageCodeFor<T>()
+        {
+            return DocumentStorageBuilder.GenerateDocumentStorageCode(new[] {_schema.MappingFor(typeof (T))});
+        }
+
         public void Delete<T>(T entity)
         {
             var storage = _schema.StorageFor(typeof (T));

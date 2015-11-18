@@ -1,6 +1,6 @@
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '0.0.1'
+BUILD_VERSION = '0.5.0'
 
 tc_build_number = ENV["BUILD_NUMBER"]
 build_revision = tc_build_number || Time.new.strftime('5%H%M')
@@ -33,7 +33,7 @@ task :version do
   
   options = {
 	:description => 'Postgresql as a Document Db and Event Store for .Net Development',
-	:product_name => 'StructureMap',
+	:product_name => 'Marten',
 	:copyright => 'Copyright 2015 Jeremy D. Miller et al. All rights reserved.',
 	:trademark => commit,
 	:version => asm_version,
@@ -92,4 +92,9 @@ task :open_st => [:compile] do
 	sh "packages/Storyteller/tools/st.exe open src/Marten.Testing"
 end
 
+"Launches the documentation project in editable mode"
+task :docs do
+	sh "paket.exe install"
+	sh "packages/Storyteller/tools/st.exe doc-run -v #{BUILD_VERSION}"
+end
 

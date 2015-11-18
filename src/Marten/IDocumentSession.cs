@@ -46,6 +46,7 @@ namespace Marten
     public interface IDiagnostics
     {
         IDbCommand CommandFor<T>(IQueryable<T> queryable);
+        string DocumentStorageCodeFor<T>();
     }
 
     

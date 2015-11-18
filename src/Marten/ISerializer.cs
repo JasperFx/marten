@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace Marten
 {
@@ -7,5 +8,6 @@ namespace Marten
         string ToJson(object document);
         T FromJson<T>(string json);
         T FromJson<T>(Stream stream);
+        object FromJson(Type type, string json);
     }
 }

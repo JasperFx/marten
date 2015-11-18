@@ -18,7 +18,7 @@ namespace Marten.Testing
             For<ISerializer>().Use<JsonNetSerializer>();
             For<IDocumentSchemaCreation>().Use<DevelopmentSchemaCreation>();
             For<ICommandRunner>().Use<CommandRunner>();
-
+            For<IDocumentCleaner>().Use<DocumentCleaner>();
             For<IMartenQueryExecutor>().Use<MartenQueryExecutor>();
 
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();

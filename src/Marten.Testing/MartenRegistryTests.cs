@@ -1,4 +1,5 @@
 ﻿using System;
+using Fixie;
 using Marten.Schema;
 using Shouldly;
 using StructureMap;
@@ -8,7 +9,7 @@ namespace Marten.Testing
     public class MartenRegistryTests
     {
         private DocumentSchema theSchema;
-
+        
         public MartenRegistryTests()
         {
             theSchema = Container.For<DevelopmentModeRegistry>().GetInstance<DocumentSchema>();

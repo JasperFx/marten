@@ -29,6 +29,11 @@ namespace Marten.Testing
         {
             return Jil.JSON.Deserialize<T>(new StreamReader(stream), new Options(dateFormat: DateTimeFormat.ISO8601));
         }
+
+        public object FromJson(Type type, string json)
+        {
+            return Jil.JSON.Deserialize(json, type, new Options(dateFormat: DateTimeFormat.ISO8601));
+        }
     }
 
 
