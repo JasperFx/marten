@@ -45,12 +45,12 @@
     </Compile>
     <Compile Include="CommandRunner.cs" />
     <Compile Include="DocumentSession.cs" />
-    <Compile Include="Events\Events.cs" />
+    <Compile Include="Events\EventStore.cs" />
     <Compile Include="Events\EventGraph.cs" />
     <Compile Include="Events\EventMapping.cs" />
     <Compile Include="Events\IAggregate.cs" />
     <Compile Include="Events\IEvent.cs" />
-    <Compile Include="Events\IEvents.cs" />
+    <Compile Include="Events\IEventStore.cs" />
     <Compile Include="Events\ProjectionTiming.cs" />
     <Compile Include="Events\ProjectionType.cs" />
     <Compile Include="Events\ProjectionUsage.cs" />

@@ -22,7 +22,7 @@ namespace Marten.Testing.Events
 
             _container.GetInstance<ICommandRunner>().Execute(SchemaBuilder.GetText("mt_stream"));
 
-            var events = _container.GetInstance<Marten.Events.Events>();
+            var events = _container.GetInstance<Marten.Events.EventStore>();
 
 
             var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };

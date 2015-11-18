@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using FubuCore;
 using Marten.Schema;
@@ -10,17 +11,19 @@ using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public class Events : IEvents, IEventStoreAdmin
+    public class EventStore : IEventStore, IEventStoreAdmin
     {
         private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
+        private readonly IDocumentSchemaCreation _creation;
 
-        public Events(ICommandRunner runner, IDocumentSchema schema, ISerializer serializer)
+        public EventStore(ICommandRunner runner, IDocumentSchema schema, ISerializer serializer, IDocumentSchemaCreation creation)
         {
             _runner = runner;
             _schema = schema;
             _serializer = serializer;
+            _creation = creation;
         }
 
         public void Append<T>(Guid stream, T @event) where T : IEvent
@@ -129,10 +132,26 @@ namespace Marten.Events
             }
         }
 
-        public IEventStoreAdmin Administration { get; }
+        public IEventStoreAdmin Administration => this;
+
         public void LoadProjections(string directory)
         {
-            throw new NotImplementedException();
+            var files = new FileSystem();
+
+            files.FindFiles(directory, FileSet.Deep("*.js")).Each(file =>
+            {
+                var body = files.ReadStringFromFile(file);
+                var name = Path.GetFileNameWithoutExtension(file);
+
+                _runner.Execute(conn =>
+                {
+                    conn.CreateSprocCommand("mt_load_projection_body")
+                        .WithParameter("proj_name", name)
+                        .WithParameter("body", body)
+                        .ExecuteNonQuery();
+
+                });
+            });
         }
 
         public void ClearAllProjections()
@@ -143,6 +162,11 @@ namespace Marten.Events
         public IEnumerable<ProjectionUsage> ProjectionUsages()
         {
             throw new NotImplementedException();
+        }
+
+        public void RebuildEventStoreSchema()
+        {
+            _creation.RunScript("mt_stream");
         }
     }
 }

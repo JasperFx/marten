@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Marten.Events
 {
-    public interface IEvents
+    public interface IEventStore
     {
         void Append<T>(Guid stream, T @event) where T : IEvent;
 
@@ -31,6 +31,8 @@ namespace Marten.Events
         void ClearAllProjections();
 
         IEnumerable<ProjectionUsage> ProjectionUsages();
+
+        void RebuildEventStoreSchema();
 
     }
 }

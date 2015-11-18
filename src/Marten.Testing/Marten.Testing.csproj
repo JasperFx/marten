@@ -60,6 +60,8 @@
     <Compile Include="Events\end_to_end_event_capture_and_fetching_the_stream_Tests.cs" />
     <Compile Include="Events\EventGraphTests.cs" />
     <Compile Include="Events\EventMappingTests.cs" />
+    <Compile Include="Events\event_administration_Tests.cs" />
+    <Compile Include="Events\FakeAggregate.cs" />
     <Compile Include="Events\QuestTypes.cs" />
     <Compile Include="Events\StreamMappingTests.cs" />
     <Compile Include="Events\using_the_schema_objects_Tests.cs" />
@@ -136,6 +138,7 @@
   -->
   <ItemGroup>
     <Content Include="connection.txt" />
+    <Content Include="Events\fake_aggregate.js" />
     <Content Include="Events\location.js" />
     <Content Include="Events\party.js" />
   </ItemGroup>

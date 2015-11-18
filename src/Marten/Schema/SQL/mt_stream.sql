@@ -63,4 +63,15 @@ END
 $$ LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION mt_load_projection_body(proj_name varchar, body varchar) RETURNS VOID AS $$
+BEGIN
+  delete from mt_projections where name = proj_name;
+  insert into mt_projections (name, definition) values (proj_name, body);
+END
+$$ LANGUAGE plpgsql;
+
+
+
+
+
 

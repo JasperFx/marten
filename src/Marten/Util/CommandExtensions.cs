@@ -63,5 +63,14 @@ namespace Marten.Util
 
             return command;
         }
+
+        public static NpgsqlCommand CreateSprocCommand(this NpgsqlConnection conn, string command)
+        {
+            var cmd = conn.CreateCommand();
+            cmd.CommandText = command;
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            return cmd;
+        }
     }
 }

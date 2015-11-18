@@ -30,5 +30,7 @@ namespace Marten.Testing.Util
 
             param.ParameterName.ShouldBe("arg1");
         }
+
+        
     }
 }
