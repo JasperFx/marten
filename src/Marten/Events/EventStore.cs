@@ -159,9 +159,21 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
+        public IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase()
+        {
+            _runner.Execute(conn =>
+            {
+                conn.CreateSprocCommand("mt_initialize_projections").ExecuteNonQuery();
+            });
+
+            return ProjectionUsages();
+        }
+
         public IEnumerable<ProjectionUsage> ProjectionUsages()
         {
-            throw new NotImplementedException();
+            var json = _runner.Execute(conn => conn.CreateSprocCommand("mt_get_projection_usage").ExecuteScalar().As<string>());
+
+            return _serializer.FromJson<ProjectionUsage[]>(json);
         }
 
         public void RebuildEventStoreSchema()

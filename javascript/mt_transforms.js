@@ -81,11 +81,51 @@ function Transform(def){
 }
 
 module.exports = {
+	transforms: {},
+
 	snapshot: function(def) {
-		return new Snapshot(def);
+		var snapshot = new Snapshot(def);
+		this.transforms[snapshot.name] = snapshot;
+
+		return snapshot;
 	},
 
 	transform: function(def){
-		return new Transform(def);
+		var transformer = new Transform(def);
+		this.transforms[transformer.name] = transformer;
+
+		return transformer;
+	},
+
+	usages: function(){
+		var list = [];
+
+		for (var key in this.transforms){
+			list = list.concat(this.transforms[key].usages());
+		}
+
+		return list;
+	},
+
+	// TODO: might add version here
+	apply_transformation: function(projection, event_type, event, stream_id, event_id){
+		if (this.transforms.hasOwnProperty(projection)){
+			return this.transforms[projection].transform(event_type, event, {id: event_id, stream: stream_id});
+		}
+
+		throw new Error('Unknown Projection: ' + projection);
+	},
+
+	apply_aggregation: function(projection, event_type, event, aggregate, stream_id, event_id){
+		if (this.transforms.hasOwnProperty(projection)){
+			return this.transforms[projection].transform(event_type, event, aggregate, {id: event_id, stream: stream_id});
+		}
+
+		throw new Error('Unknown Projection: ' + projection);
 	}
+
+
+
+
+
 }

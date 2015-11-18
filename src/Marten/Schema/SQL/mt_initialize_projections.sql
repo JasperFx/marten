@@ -38,8 +38,26 @@ var console = {
 	}
 }
 
+var transforms = require('mt_transforms');
+
+plv8.transforms = transforms;
+
+
 
 
 $$ LANGUAGE plv8;
+
+
+CREATE OR REPLACE FUNCTION mt_get_projection_usage() RETURNS JSON AS $$
+
+	if (!plv8.transforms){
+		plv8.execute('select mt_initialize_projections()');
+	}
+
+	return plv8.transforms.usages();
+		
+
+$$ LANGUAGE plv8;
+
 
 SET plv8.start_proc = plv8_initialize;

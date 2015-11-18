@@ -30,7 +30,9 @@ namespace Marten.Events
 
         void ClearAllProjections();
 
-        IEnumerable<ProjectionUsage> ProjectionUsages();
+        IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase();
+
+        IEnumerable<ProjectionUsage> ProjectionUsages(); 
 
         void RebuildEventStoreSchema();
 

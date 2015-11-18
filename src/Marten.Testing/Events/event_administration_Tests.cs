@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using FubuCore;
 using Marten.Schema;
 using Shouldly;
@@ -72,6 +73,12 @@ namespace Marten.Testing.Events
             list.ShouldContain("fake_aggregate");
             list.ShouldContain("location");
             list.ShouldContain("party");
+        }
+
+        public void initialize_can_run_without_blowing_up()
+        {
+            var events = theContainer.GetInstance<Marten.Events.EventStore>();
+            events.Administration.InitializeEventStoreInDatabase();
         }
     }
 }
