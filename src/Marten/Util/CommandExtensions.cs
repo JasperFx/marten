@@ -72,5 +72,13 @@ namespace Marten.Util
 
             return cmd;
         }
+
+        public static NpgsqlCommand CreateCommand(this NpgsqlConnection conn, string command)
+        {
+            var cmd = conn.CreateCommand();
+            cmd.CommandText = command;
+
+            return cmd;
+        }
     }
 }

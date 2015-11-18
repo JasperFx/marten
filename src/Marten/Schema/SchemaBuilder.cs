@@ -87,5 +87,14 @@ namespace Marten.Schema
 
             return stream.ReadAllText();
         }
+
+        public static string GetJavascript(string jsfile)
+        {
+            var name = $"{typeof(SchemaBuilder).Namespace}.SQL.{jsfile}.js";
+
+            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
+
+            return stream.ReadAllText();
+        }
     }
 }

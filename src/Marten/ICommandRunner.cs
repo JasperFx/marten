@@ -13,4 +13,30 @@ namespace Marten
         T QueryScalar<T>(string sql);
         IEnumerable<T> Query<T>(NpgsqlCommand cmd, ISerializer serializer);
     }
+
+    public static class CommandRunnerExtensions
+    {
+        public static IList<string> GetStringList(this ICommandRunner runner, string sql)
+        {
+            var list = new List<string>();
+
+            runner.Execute(conn =>
+            {
+                var cmd = conn.CreateCommand();
+                cmd.CommandText = sql;
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(reader.GetString(0));
+                    }
+
+                    reader.Close();
+                }
+            });
+
+            return list;
+        }  
+    }
 }

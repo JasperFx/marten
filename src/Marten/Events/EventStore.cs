@@ -167,6 +167,15 @@ namespace Marten.Events
         public void RebuildEventStoreSchema()
         {
             _creation.RunScript("mt_stream");
+
+            var js = SchemaBuilder.GetJavascript("mt_transforms");
+            _runner.Execute(conn =>
+            {
+                conn.CreateCommand("insert into mt_modules (name, definition) values (:name, :definition)")
+                    .WithParameter(":name", "mt_transforms")
+                    .WithParameter("definition", js)
+                    .ExecuteNonQuery();
+            });
         }
     }
 }
