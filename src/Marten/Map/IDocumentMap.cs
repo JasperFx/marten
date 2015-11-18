@@ -4,12 +4,17 @@ namespace Marten.Map
 {
     public interface IDocumentMap
     {
-        void Set<T>(object id, T document, string originalJson = null);
+        void Store<T>(object id, T document);
+
+        T Loaded<T>(object id, T document, string originalJson);
+
+        void DeleteDocument<T>(T document);
+        void DeleteById<T>(object id);
 
         DocumentMapEntry<T> Get<T>(object id);
 
-        IEnumerable<DocumentUpdate> GetUpdates();
+        IEnumerable<DocumentChange> GetChanges();
 
-        void Updated(IEnumerable<DocumentUpdate> updates);
+        void ChangesApplied(IEnumerable<DocumentChange> changes);
     }
 }
