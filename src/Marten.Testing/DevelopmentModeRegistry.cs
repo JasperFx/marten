@@ -1,3 +1,4 @@
+using Marten.Events;
 using Marten.Linq;
 using Marten.Schema;
 using Remotion.Linq.Parsing.Structure;
@@ -22,6 +23,8 @@ namespace Marten.Testing
             For<IMartenQueryExecutor>().Use<MartenQueryExecutor>();
 
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();
+
+            For<IEventStore>().Use<EventStore>();
         }
 
         public static PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;

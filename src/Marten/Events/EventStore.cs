@@ -11,7 +11,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public class EventStore : IEventStore, IEventStoreAdmin
+    public class EventStore : IEventStore, IEventStoreAdmin, ITransforms
     {
         private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
@@ -135,10 +135,10 @@ namespace Marten.Events
 
         public IEventStoreAdmin Administration => this;
 
+        public ITransforms Transforms => this;
+
         public void LoadProjections(string directory)
         {
-            
-
             _files.FindFiles(directory, FileSet.Deep("*.js")).Each(file =>
             {
                 var body = _files.ReadStringFromFile(file);
@@ -197,6 +197,41 @@ namespace Marten.Events
                     .WithParameter("definition", js)
                     .ExecuteNonQuery();
             });
+        }
+
+        public TTarget TransformTo<TEvent, TTarget>(Guid stream, TEvent @event) where TEvent : IEvent
+        {
+            throw new NotImplementedException();
+        }
+
+        public string Transform(string projectionName, Guid stream, IEvent @event)
+        {
+            var mapping = _schema.Events.EventMappingFor(@event.GetType());
+            var eventType = mapping.EventTypeName;
+
+            var eventJson = _serializer.ToJson(@event);
+
+            var json = _runner.Execute(conn =>
+            {
+                return conn.CreateSprocCommand("mt_apply_transform")
+                    .WithParameter("stream_id", stream)
+                    .WithParameter("event_id", @event.Id)
+                    .WithParameter("projection", projectionName)
+                    .WithParameter("event_type", eventType)
+                    .WithParameter("event", eventJson, NpgsqlDbType.Json).ExecuteScalar();
+            });
+
+            return json.ToString();
+        }
+
+        public TAggregate ApplySnapshot<TAggregate>(TAggregate aggregate, IEvent @event) where TAggregate : IAggregate
+        {
+            throw new NotImplementedException();
+        }
+
+        public T ApplyProjection<T>(string projectionName, T aggregate, IEvent @event) where T : IAggregate
+        {
+            throw new NotImplementedException();
         }
     }
 }

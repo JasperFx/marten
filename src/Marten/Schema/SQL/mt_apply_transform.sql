@@ -1,4 +1,4 @@
-﻿CREATE OR REPLACE FUNCTION mt_apply_transform(stream_id uuid, event_id uuid, projection varchar, event_type varchar, event jsonb) RETURNS jsonb AS $$
+﻿CREATE OR REPLACE FUNCTION mt_apply_transform(stream_id uuid, event_id uuid, projection varchar, event_type varchar, event json) RETURNS json AS $$
 	if (!plv8.transforms){
 		plv8.execute('select mt_initialize_projections()');
 	}

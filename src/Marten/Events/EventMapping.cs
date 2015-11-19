@@ -6,6 +6,11 @@ namespace Marten.Events
 {
     public class EventMapping : DocumentMapping
     {
+        public static string ToEventTypeName(Type eventType)
+        {
+            return eventType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
+        }
+
         public EventMapping(StreamMapping parent, Type eventType) : base(eventType)
         {
             if (!eventType.CanBeCastTo<IEvent>())
@@ -14,7 +19,7 @@ namespace Marten.Events
 
             Stream = parent;
 
-            EventTypeName = eventType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
+            EventTypeName = ToEventTypeName(eventType);
         }
 
         public string EventTypeName { get; set; }

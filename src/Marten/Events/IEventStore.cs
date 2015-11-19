@@ -22,6 +22,18 @@ namespace Marten.Events
         void ReplaceEvent<T>(T @event);
 
         IEventStoreAdmin Administration { get; }
+
+        ITransforms Transforms { get; }
+    }
+
+    public interface ITransforms
+    {
+        TTarget TransformTo<TEvent, TTarget>(Guid stream, TEvent @event) where TEvent : IEvent;
+        string Transform(string projectionName, Guid stream, IEvent @event) ;
+
+        TAggregate ApplySnapshot<TAggregate>(TAggregate aggregate, IEvent @event) where TAggregate : IAggregate;
+
+        T ApplyProjection<T>(string projectionName, T aggregate, IEvent @event) where T : IAggregate;
     }
 
     public interface IEventStoreAdmin

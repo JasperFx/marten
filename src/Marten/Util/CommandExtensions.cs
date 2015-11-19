@@ -44,7 +44,7 @@ namespace Marten.Util
             var parameter = command.CreateParameter();
             parameter.ParameterName = name;
             parameter.Value = value ?? DBNull.Value;
-            parameter.NpgsqlDbType = NpgsqlDbType.Date;
+            parameter.NpgsqlDbType = dbType;
             command.Parameters.Add(parameter);
 
             return command;
@@ -59,7 +59,7 @@ namespace Marten.Util
 
         public static NpgsqlCommand WithJsonParameter(this NpgsqlCommand command, string name, string json)
         {
-            command.Parameters.Add("doc", NpgsqlDbType.Jsonb).Value = json;
+            command.Parameters.Add(name, NpgsqlDbType.Jsonb).Value = json;
 
             return command;
         }
