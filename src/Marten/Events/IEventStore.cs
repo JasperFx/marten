@@ -34,6 +34,7 @@ namespace Marten.Events
         TAggregate ApplySnapshot<TAggregate>(TAggregate aggregate, IEvent @event) where TAggregate : IAggregate;
 
         T ApplyProjection<T>(string projectionName, T aggregate, IEvent @event) where T : IAggregate;
+        TAggregate StartSnapshot<TAggregate>(IEvent @event) where TAggregate : IAggregate;
     }
 
     public interface IEventStoreAdmin

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using FubuCore;
 using Marten.Events;
 using Marten.Schema;
@@ -15,8 +16,11 @@ namespace Marten.Testing.Events
             var directory =
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
-            theContainer.GetInstance<IDocumentSchema>().Events.StreamMappingFor<Quest>()
+            var eventGraph = theContainer.GetInstance<IDocumentSchema>().Events;
+            eventGraph.StreamMappingFor<Quest>()
                 .AddEvent(typeof (MembersJoined));
+
+            eventGraph.StreamMappingFor<FakeAggregate>().AddEvent(typeof (EventA));
 
 
             theEvents = theContainer.GetInstance<Marten.Events.IEventStore>();
@@ -44,6 +48,28 @@ namespace Marten.Testing.Events
                 .Replace('\'', '"');
 
             json.ShouldBe(expectation);
+        }
+
+        public void start_an_aggregate()
+        {
+            var aggregate = theEvents.Transforms.StartSnapshot<FakeAggregate>(new EventA {Name = "Alex Smith"});
+
+            aggregate.ANames.Single().ShouldBe("Alex Smith");
+        }
+
+        public void alter_an_existing_aggregate()
+        {
+            var aggregate = new FakeAggregate
+            {
+                ANames = new string[] {"Jamaal Charles", "Tamba Hali"},
+                Id = Guid.NewGuid()
+
+            };
+
+            var snapshotted = theEvents.Transforms.ApplySnapshot(aggregate, new EventA {Name = "Eric Fisher"});
+
+            snapshotted.Id.ShouldBe(aggregate.Id);
+            snapshotted.ANames.ShouldHaveTheSameElementsAs("Jamaal Charles", "Tamba Hali", "Eric Fisher");
         }
     }
 }

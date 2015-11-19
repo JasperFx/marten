@@ -118,7 +118,7 @@ module.exports = {
 
 	apply_aggregation: function(projection, event_type, event, aggregate, stream_id, event_id){
 		if (this.transforms.hasOwnProperty(projection)){
-			return this.transforms[projection].transform(event_type, event, aggregate, {id: event_id, stream: stream_id});
+			return this.transforms[projection].transform(event_type, event, aggregate, {id: event_id, stream: stream_id}) || aggregate;
 		}
 
 		throw new Error('Unknown Projection: ' + projection);

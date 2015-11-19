@@ -116,7 +116,7 @@ namespace Marten.Testing.Events
             var usages = events.Administration.InitializeEventStoreInDatabase();
 
             usages.Where(x => x.name == "location").Select(x => x.event_name).ShouldHaveTheSameElementsAs("members_joined", "members_departed");
-            usages.Where(x => x.name == "fake_aggregate").Select(x => x.event_name).ShouldHaveTheSameElementsAs("a_name", "b_name", "c_name", "d_name");
+            usages.Where(x => x.name == "fake_aggregate").Select(x => x.event_name).ShouldHaveTheSameElementsAs("event_a", "event_b", "event_c", "event_d");
 
             /*
 

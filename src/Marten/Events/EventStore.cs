@@ -224,9 +224,55 @@ namespace Marten.Events
             return json.ToString();
         }
 
+        public TAggregate StartSnapshot<TAggregate>(IEvent @event) where TAggregate : IAggregate
+        {
+            var aggregateId = Guid.NewGuid();
+            var projectionName = _schema.Events.StreamMappingFor<TAggregate>().StreamTypeName;
+
+            var eventType = _schema.Events.EventMappingFor(@event.GetType()).EventTypeName;
+
+            var json = _runner.Execute(conn =>
+            {
+                return conn.CreateSprocCommand("mt_start_aggregation")
+                    .WithParameter("stream_id", aggregateId)
+                    .WithParameter("event_id", @event.Id)
+                    .WithParameter("projection", projectionName)
+                    .WithParameter("event_type", eventType)
+                    .WithParameter("event", _serializer.ToJson(@event), NpgsqlDbType.Json)
+                    .ExecuteScalar().As<string>();
+            });
+
+            var returnValue = _serializer.FromJson<TAggregate>(json);
+
+            returnValue.Id = aggregateId;
+
+            return returnValue;
+        }
+
         public TAggregate ApplySnapshot<TAggregate>(TAggregate aggregate, IEvent @event) where TAggregate : IAggregate
         {
-            throw new NotImplementedException();
+            var aggregateId = aggregate.Id;
+            var aggregateJson = _serializer.ToJson(aggregate);
+            var projectionName = _schema.Events.StreamMappingFor<TAggregate>().StreamTypeName;
+
+            var eventType = _schema.Events.EventMappingFor(@event.GetType()).EventTypeName;
+
+            var json = _runner.Execute(conn =>
+            {
+                return conn.CreateSprocCommand("mt_apply_aggregation")
+                    .WithParameter("stream_id", aggregateId)
+                    .WithParameter("event_id", @event.Id)
+                    .WithParameter("projection", projectionName)
+                    .WithParameter("event_type", eventType)
+                    .WithParameter("event", _serializer.ToJson(@event), NpgsqlDbType.Json)
+                    .WithParameter("aggregate", aggregateJson, NpgsqlDbType.Json).ExecuteScalar().As<string>();
+            });
+
+            var returnValue = _serializer.FromJson<TAggregate>(json);
+
+            returnValue.Id = aggregateId;
+
+            return returnValue;
         }
 
         public T ApplyProjection<T>(string projectionName, T aggregate, IEvent @event) where T : IAggregate
