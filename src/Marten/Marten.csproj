@@ -131,6 +131,7 @@
     <Compile Include="Util\MemberInfoExtensions.cs" />
     <Compile Include="Codegen\SourceWriter.cs" />
     <Compile Include="Util\StringExtensions.cs" />
+    <Compile Include="Util\UpdateBatch.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

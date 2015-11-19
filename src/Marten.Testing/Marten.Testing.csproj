@@ -131,6 +131,7 @@
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />
+    <Compile Include="Util\update_batch_Tests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Marten\Marten.csproj">
