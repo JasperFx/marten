@@ -64,11 +64,9 @@ namespace Marten.Events
         {
             return _runner.Execute(conn =>
             {
-                var cmd = conn
-                .CreateCommand("select type, data from mt_events where stream_id = :id order by version")
-                .With("id", streamId);
-
-                using (var reader = cmd.ExecuteReader())
+                using (var reader = conn
+                    .CreateCommand("select type, data from mt_events where stream_id = :id order by version")
+                    .With("id", streamId).ExecuteReader())
                 {
                     return fetchStream(reader).ToArray();
                 }
