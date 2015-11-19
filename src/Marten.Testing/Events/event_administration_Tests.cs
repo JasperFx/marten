@@ -53,6 +53,14 @@ namespace Marten.Testing.Events
             functions.ShouldContain("mt_apply_aggregation");
         }
 
+        public void has_the_command_for_starting_a_new_aggregate()
+        {
+            var schema = theContainer.GetInstance<IDocumentSchema>();
+
+            var functions = schema.SchemaFunctionNames();
+            functions.ShouldContain("mt_start_aggregation");
+        }
+
         public void loads_the_mt_transform_module()
         {
             var runner = theContainer.GetInstance<ICommandRunner>();
