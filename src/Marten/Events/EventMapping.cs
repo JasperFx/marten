@@ -14,7 +14,7 @@ namespace Marten.Events
 
             Stream = parent;
 
-            EventTypeName = eventType.Name.SplitPascalCase().ToLower().Replace(" ", "-");
+            EventTypeName = eventType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
         }
 
         public string EventTypeName { get; set; }

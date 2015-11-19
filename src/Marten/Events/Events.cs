@@ -10,7 +10,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public class Events : IEvents
+    public class Events : IEvents, IEventStoreAdmin
     {
         private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
@@ -111,7 +111,7 @@ namespace Marten.Events
             cmd.AddParameter("stream_type", eventMapping.Stream.StreamTypeName);
             cmd.AddParameter("event_id", @event.Id);
             cmd.AddParameter("event_type", eventMapping.EventTypeName);
-            cmd.AddParameter("body", _serializer.ToJson(@event)).NpgsqlDbType = NpgsqlDbType.Json;
+            cmd.AddParameter("body", _serializer.ToJson(@event)).NpgsqlDbType = NpgsqlDbType.Jsonb;
 
             cmd.ExecuteNonQuery();
         }
@@ -127,6 +127,22 @@ namespace Marten.Events
 
                 yield return _serializer.FromJson(mapping.DocumentType, json).As<IEvent>();
             }
+        }
+
+        public IEventStoreAdmin Administration { get; }
+        public void LoadProjections(string directory)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ClearAllProjections()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<ProjectionUsage> ProjectionUsages()
+        {
+            throw new NotImplementedException();
         }
     }
 }

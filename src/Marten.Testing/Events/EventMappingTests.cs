@@ -9,7 +9,7 @@ namespace Marten.Testing.Events
         {
             var mapping = new EventMapping(new StreamMapping(typeof(Quest)), typeof(MembersJoined));
 
-            mapping.EventTypeName.ShouldBe("members-joined");
+            mapping.EventTypeName.ShouldBe("members_joined");
         }
     }
 }

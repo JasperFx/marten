@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using FubuCore;
 using Marten.Schema;
 using Npgsql;
@@ -64,7 +65,7 @@ namespace Marten.Linq
             var isFirst = queryModel.ResultOperators.OfType<FirstResultOperator>().Any();
 
             // TODO -- optimize by using Top 1
-            var cmd = BuildCommand<T>(queryModel);
+            var cmd = BuildCommand(queryModel);
             var all = _runner.QueryJson(cmd).ToArray();
 
             if (returnDefaultWhenEmpty && all.Length == 0) return default(T);
@@ -77,14 +78,20 @@ namespace Marten.Linq
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
         {
-            var command = BuildCommand<T>(queryModel);
+            var command = BuildCommand(queryModel);
 
-            return _runner.QueryJson(command).Select(_serializer.FromJson<T>);
+            if (queryModel.MainFromClause.ItemType == typeof (T))
+            {
+				return _runner.QueryJson(command).Select(_serializer.FromJson<T>);
+            }
+
+            throw new NotSupportedException("Marten does not yet support Select() projections from queryables. Use an intermediate .ToArray() or .ToList() before adding Select() clauses");
         }
 
-        public NpgsqlCommand BuildCommand<T>(QueryModel queryModel)
+
+        public NpgsqlCommand BuildCommand(QueryModel queryModel)
         {
-            var mapping = _schema.MappingFor(typeof (T));
+            var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
             var query = new DocumentQuery(mapping, queryModel);
 
             return query.ToCommand();
@@ -93,7 +100,7 @@ namespace Marten.Linq
         public NpgsqlCommand BuildCommand<T>(IQueryable<T> queryable)
         {
             var model = _parser.GetParsedQuery(queryable.Expression);
-            return BuildCommand<T>(model);
+            return BuildCommand(model);
         }
     }
 }

@@ -134,6 +134,6 @@ AND type_udt_name != 'trigger';
 
         public ISequences Sequences { get; }
 
-        public PostgresUpsertType UpsertType { get; set; }
+        public PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;
     }
 }

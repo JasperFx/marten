@@ -58,6 +58,8 @@
     <Compile Include="Events\IEvent.cs" />
     <Compile Include="Events\IEvents.cs" />
     <Compile Include="Events\ProjectionTiming.cs" />
+    <Compile Include="Events\ProjectionType.cs" />
+    <Compile Include="Events\ProjectionUsage.cs" />
     <Compile Include="Events\StreamMapping.cs" />
     <Compile Include="Generation\TableColumn.cs" />
     <Compile Include="Generation\TableDefinition.cs" />
@@ -143,6 +145,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Schema\SQL\mt_stream.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Schema\Javascript\" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FubuCore">

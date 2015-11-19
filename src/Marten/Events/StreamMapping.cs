@@ -19,7 +19,7 @@ namespace Marten.Events
 
             _events.OnMissing = type => { return new EventMapping(this, type); };
 
-            StreamTypeName = aggregateType.Name.SplitPascalCase().ToLower().Replace(" ", "-");
+            StreamTypeName = aggregateType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
         }
 
         public string StreamTypeName { get; set; }

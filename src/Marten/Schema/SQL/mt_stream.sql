@@ -19,6 +19,18 @@ CREATE TABLE mt_events (
 	CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version)
 );
 
+DROP TABLE IF EXISTS mt_projections CASCADE;
+CREATE TABLE mt_projections (
+	name			varchar(100) CONSTRAINT pk_mt_projections PRIMARY KEY,
+	definition		varchar(30000) NOT NULL
+);
+
+DROP TABLE IF EXISTS mt_modules CASCADE;
+CREATE TABLE mt_modules (
+	name			varchar(100) CONSTRAINT pk_mt_modules PRIMARY KEY,
+	definition		varchar(30000) NOT NULL
+);
+
 CREATE OR REPLACE FUNCTION mt_version_stream(stream uuid, stream_type varchar) RETURNS int AS $$
 DECLARE
   v_next int;
@@ -38,7 +50,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION mt_append_event(stream uuid, stream_type varchar, event_id uuid, event_type varchar, body json) RETURNS int AS $$
+CREATE OR REPLACE FUNCTION mt_append_event(stream uuid, stream_type varchar, event_id uuid, event_type varchar, body jsonb) RETURNS int AS $$
 DECLARE
 	event_version int;
 BEGIN

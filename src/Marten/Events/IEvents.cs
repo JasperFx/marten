@@ -20,5 +20,17 @@ namespace Marten.Events
 
 
         void ReplaceEvent<T>(T @event);
+
+        IEventStoreAdmin Administration { get; }
+    }
+
+    public interface IEventStoreAdmin
+    {
+        void LoadProjections(string directory);
+
+        void ClearAllProjections();
+
+        IEnumerable<ProjectionUsage> ProjectionUsages();
+
     }
 }
