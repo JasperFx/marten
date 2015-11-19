@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using FubuCore;
+using Marten.Util;
 
 namespace Marten.Schema
 {
@@ -81,9 +82,7 @@ AND    pg_function_is_visible(oid)
             var drops = new List<string>();
             _runner.Execute(conn =>
             {
-                var cmd = conn.CreateCommand();
-
-                cmd.CommandText = dropTargets;
+                var cmd = conn.CreateCommand(dropTargets);
 
                 using (var reader = cmd.ExecuteReader())
                 {

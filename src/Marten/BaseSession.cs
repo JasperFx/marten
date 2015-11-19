@@ -123,36 +123,24 @@ namespace Marten
         {
             var storage = _schema.StorageFor(typeof (T)).As<IBulkLoader<T>>();
 
-            _runner.Execute(conn =>
+            _runner.ExecuteInTransaction(conn =>
             {
-                using (var tx = conn.BeginTransaction())
+                if (documents.Length <= batchSize)
                 {
-                    try
+                    storage.Load(_serializer, conn, documents);
+                }
+                else
+                {
+                    var total = 0;
+                    var page = 0;
+
+                    while (total < documents.Length)
                     {
-                        if (documents.Length <= batchSize)
-                        {
-                            storage.Load(_serializer, conn, documents);
-                        }
-                        else
-                        {
-                            var total = 0;
-                            var page = 0;
+                        var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
+                        storage.Load(_serializer, conn, batch);
 
-                            while (total < documents.Length)
-                            {
-                                var batch = documents.Skip(page*batchSize).Take(batchSize).ToArray();
-                                storage.Load(_serializer, conn, batch);
-
-                                page++;
-                                total += batch.Length;
-                            }
-                        }
-
-                        tx.Commit();
-                    }
-                    catch (Exception)
-                    {
-                        tx.Rollback();
+                        page++;
+                        total += batch.Length;
                     }
                 }
             });

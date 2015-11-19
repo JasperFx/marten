@@ -29,7 +29,7 @@ namespace Marten.Util
             return parameter;
         }
 
-        public static NpgsqlCommand WithParameter(this NpgsqlCommand command, string name, object value)
+        public static NpgsqlCommand With(this NpgsqlCommand command, string name, object value)
         {
             var parameter = command.CreateParameter();
             parameter.ParameterName = name;
@@ -39,7 +39,7 @@ namespace Marten.Util
             return command;
         }
 
-        public static NpgsqlCommand WithParameter(this NpgsqlCommand command, string name, object value, NpgsqlDbType dbType)
+        public static NpgsqlCommand With(this NpgsqlCommand command, string name, object value, NpgsqlDbType dbType)
         {
             var parameter = command.CreateParameter();
             parameter.ParameterName = name;
@@ -71,6 +71,14 @@ namespace Marten.Util
             cmd.CommandType = CommandType.StoredProcedure;
 
             return cmd;
+        }
+
+        public static NpgsqlCommand Returns(this NpgsqlCommand command, string name, NpgsqlDbType type)
+        {
+            var parameter = command.AddParameter(name);
+            parameter.NpgsqlDbType = type;
+            parameter.Direction = ParameterDirection.ReturnValue;
+            return command;
         }
 
         public static NpgsqlCommand CreateCommand(this NpgsqlConnection conn, string command)

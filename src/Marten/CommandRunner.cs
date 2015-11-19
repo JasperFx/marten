@@ -30,6 +30,28 @@ namespace Marten
             }
         }
 
+        public void ExecuteInTransaction(Action<NpgsqlConnection> action)
+        {
+            Execute(conn =>
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        action(conn);
+
+                        tx.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        tx.Rollback();
+                        throw;
+                    }
+                }
+            });
+
+        }
+
         public T Execute<T>(Func<NpgsqlConnection, T> func)
         {
             using (var conn = _factory.Create())

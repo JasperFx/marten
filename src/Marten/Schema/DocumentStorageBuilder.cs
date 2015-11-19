@@ -137,11 +137,11 @@ return UpsertCommand(({mapping.DocumentType.Name})document, json);
 END
 
 BLOCK:public NpgsqlCommand LoaderCommand(object id)
-return new NpgsqlCommand(`select data from {mapping.TableName} where id = :id`).WithParameter(`id`, id);
+return new NpgsqlCommand(`select data from {mapping.TableName} where id = :id`).With(`id`, id);
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForId(object id)
-return new NpgsqlCommand(`delete from {mapping.TableName} where id = :id`).WithParameter(`id`, id);
+return new NpgsqlCommand(`delete from {mapping.TableName} where id = :id`).With(`id`, id);
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForEntity(object entity)
@@ -149,14 +149,14 @@ return DeleteCommandForId((({mapping.DocumentType.Name})entity).{mapping.IdMembe
 END
 
 BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
-return new NpgsqlCommand(`select data from {mapping.TableName} where id = ANY(:ids)`).WithParameter(`ids`, ids);
+return new NpgsqlCommand(`select data from {mapping.TableName} where id = ANY(:ids)`).With(`ids`, ids);
 END
 
 
 BLOCK:public NpgsqlCommand UpsertCommand({mapping.DocumentType.Name} document, string json)
 return new NpgsqlCommand(`{mapping.UpsertName}`)
     .AsSproc()
-    .WithParameter(`id`, document.{mapping.IdMember.Name})
+    .With(`id`, document.{mapping.IdMember.Name})
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
 END
 

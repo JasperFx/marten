@@ -88,10 +88,10 @@ namespace Marten.Schema
             if (MemberType == typeof (DateTime))
             {
                 // TODO -- might have to correct things later   
-                return $".WithParameter(`{UpsertArgument.Arg}`, document.{accessor}, NpgsqlDbType.Date)".Replace('`', '"');
+                return $".With(`{UpsertArgument.Arg}`, document.{accessor}, NpgsqlDbType.Date)".Replace('`', '"');
             }
 
-            return $".WithParameter(`{UpsertArgument.Arg}`, document.{accessor})".Replace('`', '"');
+            return $".With(`{UpsertArgument.Arg}`, document.{accessor})".Replace('`', '"');
         }
 
         public string ToBulkWriterCode()

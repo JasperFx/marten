@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Marten.Map;
+using Marten.Util;
 using Npgsql;
 
 namespace Marten
@@ -8,6 +9,9 @@ namespace Marten
     public interface ICommandRunner
     {
         void Execute(Action<NpgsqlConnection> action);
+
+        void ExecuteInTransaction(Action<NpgsqlConnection> action);
+
         T Execute<T>(Func<NpgsqlConnection, T> func);
         IEnumerable<string> QueryJson(NpgsqlCommand cmd);
         int Execute(string sql);
@@ -22,10 +26,7 @@ namespace Marten
 
             runner.Execute(conn =>
             {
-                var cmd = conn.CreateCommand();
-                cmd.CommandText = sql;
-
-                using (var reader = cmd.ExecuteReader())
+                using (var reader = conn.CreateCommand(sql).ExecuteReader())
                 {
                     while (reader.Read())
                     {

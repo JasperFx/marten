@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using Marten.Util;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Sequences
@@ -53,15 +54,10 @@ namespace Marten.Schema.Sequences
             {
                 using (var tx = conn.BeginTransaction(IsolationLevel.Serializable))
                 {
-                    var command = conn.CreateCommand();
-                    command.Transaction = tx;
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.CommandText = "mt_get_next_hi";
-                    command.Parameters.Add("entity", NpgsqlDbType.Varchar).Value = _entityName;
-                    var nextParam = command.Parameters.Add("next", NpgsqlDbType.Bigint);
-                    nextParam.Direction = ParameterDirection.ReturnValue;
+                    var raw = conn.CreateSprocCommand("mt_get_next_hi")
+                        .With("entity", _entityName)
+                        .Returns("next", NpgsqlDbType.Bigint).ExecuteScalar();
 
-                    var raw = command.ExecuteScalar();
                     CurrentHi = Convert.ToInt64(raw);
 
                     tx.Commit();
