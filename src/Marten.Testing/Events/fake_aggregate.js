@@ -1,6 +1,5 @@
-﻿var mt_transforms = required('mt_transforms');
-
-module.exports = mt_transforms.snapshot({
+﻿var mt_transforms = require('mt_transforms');
+mt_transforms.snapshot({
     name: 'fake_aggregate',
     $init: function() {
         return {ANames: [], BNames: [], CNames: [], DNames: []}

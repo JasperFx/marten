@@ -1,7 +1,7 @@
-﻿var mt_events = require('mt_events');
-
-module.exports = mt_events.snapshot({
-    timing: inline,
+﻿var mt_transforms = require('mt_transforms');
+mt_transforms.snapshot({
+    timing: 'inline',
+    name: 'party',
 
     $init: function(stream) {
         return {Quest: stream.id, Members:[], Day: 0, Location: 'Nowhere'}

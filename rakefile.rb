@@ -7,9 +7,9 @@ build_revision = tc_build_number || Time.new.strftime('5%H%M')
 build_number = "#{BUILD_VERSION}.#{build_revision}"
 BUILD_NUMBER = build_number 
 
-task :ci => [:default, :pack]
+task :ci => [:version, :default, :pack]
 
-task :default => [:test, :storyteller]
+task :default => [:mocha, :test, :storyteller]
 
 desc "Prepares the working directory for a new build"
 task :clean do
@@ -56,8 +56,14 @@ task :version do
 	end
 end
 
+desc 'Runs the Mocha tests'
+task :mocha do
+	sh "npm install"
+	sh "npm run test"
+end
+
 desc 'Compile the code'
-task :compile => [:clean, :version] do
+task :compile => [:clean] do
 	sh "paket.exe install"
 
 	msbuild = '"C:\Program Files (x86)\MSBuild\14.0\Bin\msbuild.exe"'

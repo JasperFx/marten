@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using FubuCore;
 using Marten.Schema;
@@ -50,6 +51,14 @@ namespace Marten.Testing.Events
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("mt_initialize_projections");
         }
+
+        public void loads_the_get_projection_usage_function()
+        {
+            var schema = theContainer.GetInstance<IDocumentSchema>();
+
+            var functions = schema.SchemaFunctionNames();
+            functions.ShouldContain("mt_get_projection_usage");
+        }
         
 
         public void load_projections()
@@ -73,6 +82,36 @@ namespace Marten.Testing.Events
             list.ShouldContain("fake_aggregate");
             list.ShouldContain("location");
             list.ShouldContain("party");
+        }
+
+        public void load_projections_and_initialize()
+        {
+            var directory =
+                AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
+
+
+
+            var events = theContainer.GetInstance<Marten.Events.EventStore>();
+
+            events.RebuildEventStoreSchema();
+
+            events.Administration.LoadProjections(directory);
+            var usages = events.Administration.InitializeEventStoreInDatabase();
+
+            usages.Where(x => x.name == "location").Select(x => x.event_name).ShouldHaveTheSameElementsAs("members_joined", "members_departed");
+            usages.Where(x => x.name == "fake_aggregate").Select(x => x.event_name).ShouldHaveTheSameElementsAs("a_name", "b_name", "c_name", "d_name");
+
+            /*
+
+            Projection fake_aggregate (snapshot) for Event a_name executed inline
+Projection fake_aggregate (snapshot) for Event b_name executed inline
+Projection fake_aggregate (snapshot) for Event c_name executed inline
+Projection fake_aggregate (snapshot) for Event d_name executed inline
+Projection location (transform) for Event members_joined executed inline
+Projection location (transform) for Event members_departed executed inline
+Projection party (snapshot) for Event members_joined executed inline
+Projection party (snapshot) for Event quest_started executed inline
+    */
         }
 
         public void initialize_can_run_without_blowing_up()

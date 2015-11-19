@@ -40,6 +40,13 @@ var console = {
 
 var transforms = require('mt_transforms');
 
+var results = plv8.execute("select definition from  mt_projections");
+
+for (var i = 0; i < results.length; i++){
+	eval(results[i].definition);
+}
+
+
 plv8.transforms = transforms;
 
 

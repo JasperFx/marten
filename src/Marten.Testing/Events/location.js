@@ -1,7 +1,7 @@
-﻿var mt_events = require('mt_events');
-
-module.exports = mt_events.transform({
-    timing: inline,
+﻿var mt_transforms = require('mt_transforms');
+mt_transforms.transform({
+    timing: 'inline',
+    name: 'location',
 
     // TODO -- like to capture the Stream here.
     members_joined: function(evt, stream) {
@@ -10,5 +10,5 @@ module.exports = mt_events.transform({
 
     members_departed: function (evt, stream) {
         return { Day: evt.Day, Location: evt.Location, Id: evt.Id, Quest: stream.id }
-    },
+    }
 });

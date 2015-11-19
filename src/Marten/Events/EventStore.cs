@@ -17,6 +17,7 @@ namespace Marten.Events
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
         private readonly IDocumentSchemaCreation _creation;
+        private readonly FileSystem _files = new FileSystem();
 
         public EventStore(ICommandRunner runner, IDocumentSchema schema, ISerializer serializer, IDocumentSchemaCreation creation)
         {
@@ -136,11 +137,11 @@ namespace Marten.Events
 
         public void LoadProjections(string directory)
         {
-            var files = new FileSystem();
+            
 
-            files.FindFiles(directory, FileSet.Deep("*.js")).Each(file =>
+            _files.FindFiles(directory, FileSet.Deep("*.js")).Each(file =>
             {
-                var body = files.ReadStringFromFile(file);
+                var body = _files.ReadStringFromFile(file);
                 var name = Path.GetFileNameWithoutExtension(file);
 
                 _runner.Execute(conn =>
@@ -152,6 +153,11 @@ namespace Marten.Events
 
                 });
             });
+        }
+
+        public void LoadProjection(string file)
+        {
+            throw new NotImplementedException();
         }
 
         public void ClearAllProjections()

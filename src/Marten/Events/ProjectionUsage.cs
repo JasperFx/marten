@@ -9,6 +9,9 @@ namespace Marten.Events
         public string event_name { get; set; }
         public ProjectionType type { get; set; }
 
-        public Guid id { get; set; }
+        public override string ToString()
+        {
+            return $"Projection {name} ({type}) for Event {event_name} executed {timing}";
+        }
     }
 }

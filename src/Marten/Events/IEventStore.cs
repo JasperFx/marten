@@ -28,6 +28,8 @@ namespace Marten.Events
     {
         void LoadProjections(string directory);
 
+        void LoadProjection(string file);
+
         void ClearAllProjections();
 
         IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase();
