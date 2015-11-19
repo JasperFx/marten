@@ -186,6 +186,8 @@ namespace Marten.Events
         {
             _creation.RunScript("mt_stream");
             _creation.RunScript("mt_initialize_projections");
+            _creation.RunScript("mt_apply_transform");
+            _creation.RunScript("mt_apply_aggregation");
 
             var js = SchemaBuilder.GetJavascript("mt_transforms");
             _runner.Execute(conn =>

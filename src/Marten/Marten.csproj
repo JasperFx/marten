@@ -142,6 +142,12 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Schema\SQL\mt_apply_transform.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Schema\SQL\mt_apply_aggregation.sql" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="FubuCore">
       <HintPath>..\..\packages\FubuCore\lib\FubuCore.dll</HintPath>
       <Private>True</Private>

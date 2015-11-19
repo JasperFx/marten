@@ -36,6 +36,23 @@ namespace Marten.Testing.Events
             functions.ShouldContain("mt_load_projection_body");
         }
 
+
+        public void has_the_command_for_transforming_events()
+        {
+            var schema = theContainer.GetInstance<IDocumentSchema>();
+
+            var functions = schema.SchemaFunctionNames();
+            functions.ShouldContain("mt_apply_transform");
+        }
+
+        public void has_the_command_for_applying_aggregation()
+        {
+            var schema = theContainer.GetInstance<IDocumentSchema>();
+
+            var functions = schema.SchemaFunctionNames();
+            functions.ShouldContain("mt_apply_aggregation");
+        }
+
         public void loads_the_mt_transform_module()
         {
             var runner = theContainer.GetInstance<ICommandRunner>();
