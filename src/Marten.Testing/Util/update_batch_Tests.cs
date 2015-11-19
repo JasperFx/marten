@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using Marten.Schema;
 using Marten.Testing.Fixtures;
 using Marten.Util;
@@ -47,5 +49,39 @@ namespace Marten.Testing.Util
 
             targets.Any(x => x.Id == initialTarget.Id).ShouldBeFalse();
         }
+
+        /*
+        public void time_perf()
+        {
+            var targets = Target.GenerateRandomData(50);
+
+
+            var time = Timings.Time(() =>
+            {
+                targets.Each(x => theSession.Store(x));
+                theSession.SaveChanges();
+            });
+
+            Debug.WriteLine("SaveChanges() is " + time);
+
+            theContainer.GetInstance<IDocumentCleaner>().DeleteAllDocuments();
+
+            var batch = theContainer.GetInstance<UpdateBatch>();
+            
+
+            var batchTime = Timings.Time(() =>
+            {
+                targets.Each(x => batch.Sproc(theMapping.UpsertName).Param(x.Id).JsonParam(x));
+                batch.Execute();
+            });
+
+            Debug.WriteLine("UpdateBatch time: " + batchTime);
+
+            theContainer.GetInstance<IDocumentCleaner>().DeleteAllDocuments();
+            var bulkTime = Timings.Time(() => theSession.BulkInsert(targets.ToArray()));
+
+            Debug.WriteLine("The bulk insert time was " + bulkTime);
+        }
+        */
     }
 }
