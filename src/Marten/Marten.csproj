@@ -44,8 +44,14 @@
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="CommandRunner.cs" />
-    <Compile Include="DocumentSession.cs" />
     <Compile Include="Events\EventStore.cs" />
+    <Compile Include="IMartenQueryExecutor.cs" />
+    <Compile Include="ISession.cs" />
+    <Compile Include="ITrackingSession.cs" />
+    <Compile Include="Map\DocumentChange.cs" />
+    <Compile Include="Map\DocumentDelete.cs" />
+    <Compile Include="Map\DocumentDeleteById.cs" />
+    <Compile Include="Map\DocumentIdentity.cs" />
     <Compile Include="Events\EventGraph.cs" />
     <Compile Include="Events\EventMapping.cs" />
     <Compile Include="Events\IAggregate.cs" />
@@ -59,8 +65,14 @@
     <Compile Include="Generation\TableDefinition.cs" />
     <Compile Include="ICommandRunner.cs" />
     <Compile Include="IConnectionFactory.cs" />
+    <Compile Include="Map\NonTrackedDocumentMap.cs" />
+    <Compile Include="Map\TrackedDocumentMap.cs" />
+    <Compile Include="Map\DocumentMapEntry.cs" />
+    <Compile Include="Map\DocumentUpdate.cs" />
+    <Compile Include="Map\IDocumentMap.cs" />
     <Compile Include="IDocumentSession.cs" />
     <Compile Include="IDocumentStore.cs" />
+    <Compile Include="Map\IDocumentMapEntry.cs" />
     <Compile Include="ISerializer.cs" />
     <Compile Include="JsonNetSerializer.cs" />
     <Compile Include="Linq\CompoundWhereFragment.cs" />
@@ -81,6 +93,7 @@
     <Compile Include="Schema\DuplicatedFieldRole.cs" />
     <Compile Include="Schema\Field.cs" />
     <Compile Include="Schema\GuidIdGeneration.cs" />
+    <Compile Include="Schema\IdRetriever.cs" />
     <Compile Include="Schema\IIdGeneration.cs" />
     <Compile Include="Schema\PostgresUpsertType.cs" />
     <Compile Include="Schema\StringIdGeneration.cs" />
@@ -109,6 +122,9 @@
     <Compile Include="Schema\StorageArgument.cs" />
     <Compile Include="Schema\UpsertArgument.cs" />
     <Compile Include="SerializerExtensions.cs" />
+    <Compile Include="BaseSession.cs" />
+    <Compile Include="Session.cs" />
+    <Compile Include="TrackingSession.cs" />
     <Compile Include="TypeMappings.cs" />
     <Compile Include="Codegen\AssemblyGenerator.cs" />
     <Compile Include="Util\CommandExtensions.cs" />
@@ -202,7 +218,6 @@
       </ItemGroup>
     </When>
   </Choose>
-  <Import Project="..\..\packages\Microsoft.DiaSymReader.Native\build\Microsoft.DiaSymReader.Native.props" Condition="Exists('..\..\packages\Microsoft.DiaSymReader.Native\build\Microsoft.DiaSymReader.Native.props')" Label="Paket" />
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v3.5'">
       <ItemGroup>

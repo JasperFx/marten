@@ -28,16 +28,9 @@ namespace Marten.Schema.Sequences
 
         public string AssignmentBodyCode(MemberInfo idMember)
         {
-            if (idMember.GetMemberType() == typeof (int))
-            {
-                return $"if (document.{idMember.Name} == 0) document.{idMember.Name} = _sequence.NextInt();";
-            }
-            else
-            {
-                return $"if (document.{idMember.Name} == 0) document.{idMember.Name} = _sequence.NextLong();";
-            }
+            var member = idMember.GetMemberType() == typeof (int) ? "NextInt" : "NextLong";
 
-            
+            return $"if (document.{idMember.Name} == 0) document.{idMember.Name} = _sequence.{member}();";
         }
     }
 }

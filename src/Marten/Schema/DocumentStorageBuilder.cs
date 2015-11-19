@@ -122,7 +122,7 @@ namespace Marten.Schema
 
             writer.Write(
                 $@"
-BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{mapping.DocumentType.Name}>, IdAssignment<{mapping.DocumentType.Name}>
+BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{mapping.DocumentType.Name}>, IdAssignment<{mapping.DocumentType.Name}>, IdRetriever<{mapping.DocumentType.Name}>
 
 {fields}
 
@@ -160,8 +160,13 @@ return new NpgsqlCommand(`{mapping.UpsertName}`)
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
 END
 
-BLOCK:public void Assign({mapping.DocumentType.Name} document)
+BLOCK:public object Assign({mapping.DocumentType.Name} document)
 {mapping.IdStrategy.AssignmentBodyCode(mapping.IdMember)}
+return document.{mapping.IdMember.Name};
+END
+
+BLOCK:public object Retrieve({mapping.DocumentType.Name} document)
+return document.{mapping.IdMember.Name};
 END
 
 BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{mapping.DocumentType.Name}> documents)

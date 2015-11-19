@@ -82,7 +82,7 @@ namespace Marten.Linq
 
             if (queryModel.MainFromClause.ItemType == typeof (T))
             {
-                return _runner.Query<T>(command, _serializer);
+				return _runner.QueryJson(command).Select(_serializer.FromJson<T>);
             }
 
             throw new NotSupportedException("Marten does not yet support Select() projections from queryables. Use an intermediate .ToArray() or .ToList() before adding Select() clauses");

@@ -1,22 +1,22 @@
 ﻿using System;
 using StructureMap;
 
-namespace Marten.Testing
+namespace Marten.Testing.TrackingSession
 {
-    public abstract class DocumentSessionFixture : IDisposable
+    public abstract class TrackingSessionFixture : IDisposable
     {
         protected readonly IContainer theContainer = Container.For<DevelopmentModeRegistry>();
-        protected readonly IDocumentSession theSession;
+        protected readonly ITrackingSession theSession;
 
-        protected DocumentSessionFixture()
+        protected TrackingSessionFixture()
         {
             ConnectionSource.CleanBasicDocuments();
             theSession = CreateSession();            
         }
 
-        protected IDocumentSession CreateSession()
+        protected ITrackingSession CreateSession()
         {
-            return theContainer.GetInstance<IDocumentSession>();
+            return theContainer.GetInstance<ITrackingSession>();
         }
 
         public void Dispose()
