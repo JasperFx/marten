@@ -8,7 +8,12 @@ See this blog post http://jeremydmiller.com/2015/10/21/postgresql-as-a-document-
 
 ## Working with the Code
 
-Like I said, it's way, way early and this should get smoother later. For now, you'll need to have access to a Postgresql 9.5 server and a database. After cloning the code, put a file named `connection.txt` at `src/Marten.Testing` that just needs to contain the connection string to the Postgresql database you want to use as a testbed. See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about postgresql connection strings.
+Like I said, it's way, way early and this should get smoother later. For now, you'll need to have access to a Postgresql **9.4** server and a database. After cloning the code, put a file named `connection.txt` at `src/Marten.Testing` that just needs to contain the connection string to the Postgresql database you want to use as a testbed. See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about postgresql connection strings.
+
+You will also need to enable the PLV8 extension inside of Postgresql for running Javascript stored procedures for the nascent projection support. See
+[this link](http://www.postgresonline.com/journal/archives/341-PLV8-binaries-for-PostgreSQL-9.4-windows-both-32-bit-and-64-bit.html) for pre-built binaries for PLV8 running on Windows. Just drop the folder structure from that download into your main Postgresql installation folder (`c:\program files\postgresql\9.4` on my box). Once the binaries are copied in, run the command `CREATE EXTENSION PLV8;` in your Postgresql database. 
+If you have any trouble with PLV8, please feel free to ask for help in the Gitter room.
+
 
 Once you have the codebase and the connection.txt file, either:
 
@@ -20,6 +25,12 @@ From there, open Visual Studio.Net or whatever editor you prefer and go to town.
 ## Tooling
 
 We're using [Fixie](https://github.com/fixie/fixie) and [Shouldly](https://github.com/shouldly/shouldly) for unit testing and [paket](https://fsprojects.github.io/Paket/) for improved Nuget workflow. We're temporarily using rake for build automation.
+
+## Mocha Specs
+
+To run the mocha tests on the little bit of custom Javascript for Marten, you will also need some version of Node.js that at least supports arrow function
+syntax (I'm using Node.js 4.*). Use `rake mocha` or `npm install` once, then `npm run test`. There is also `npm run tdd` to run the mocha specifications
+in a watched mode with growl turned on. 
 
 ## Storyteller Specs
 
