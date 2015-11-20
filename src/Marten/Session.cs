@@ -6,8 +6,8 @@ namespace Marten
 {
     public class Session : BaseSession
     {
-        public Session(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor) : 
-            base(schema, serializer, runner, parser, executor, new NonTrackedDocumentMap(serializer))
+        public Session(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IDiagnostics diagnostics) : 
+            base(schema, serializer, runner, parser, executor, new NonTrackedDocumentMap(serializer), diagnostics)
         {
         }
     }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using FubuCore;
 using Marten.Linq;
@@ -12,7 +11,7 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
-    public abstract class BaseSession : ISession, IDiagnostics
+    public abstract class BaseSession : ISession
     {
         private readonly IQueryParser _parser;
         private readonly IMartenQueryExecutor _executor;
@@ -21,7 +20,7 @@ namespace Marten
         private readonly ISerializer _serializer;
         private readonly IDocumentSchema _schema;
 
-        protected BaseSession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IDocumentMap documentMap)
+        protected BaseSession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IDocumentMap documentMap, IDiagnostics diagnostics)
         {
             _schema = schema;
             _serializer = serializer;
@@ -30,25 +29,11 @@ namespace Marten
             _parser = parser;
             _executor = executor;
             _documentMap = documentMap;
+            Diagnostics = diagnostics;
         }
 
         public void Dispose()
         {
-        }
-
-        public IDbCommand CommandFor<T>(IQueryable<T> queryable)
-        {
-            if (queryable is MartenQueryable<T>)
-            {
-                return _executor.BuildCommand<T>(queryable);
-            }
-
-            throw new ArgumentOutOfRangeException(nameof(queryable), "This mechanism can only be used for MartenQueryable<T> objects");
-        }
-
-        public string DocumentStorageCodeFor<T>()
-        {
-            return DocumentStorageBuilder.GenerateDocumentStorageCode(new[] {_schema.MappingFor(typeof (T))});
         }
 
         public void Delete<T>(T entity)
@@ -146,10 +131,7 @@ namespace Marten
             });
         }
 
-        public IDiagnostics Diagnostics
-        {
-            get { return this; }
-        }
+        public IDiagnostics Diagnostics { get; }
 
         public ILoadByKeys<T> Load<T>()
         {

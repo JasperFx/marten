@@ -44,6 +44,7 @@
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="CommandRunner.cs" />
+    <Compile Include="Diagnostics.cs" />
     <Compile Include="Events\EventStore.cs" />
     <Compile Include="IMartenQueryExecutor.cs" />
     <Compile Include="ISession.cs" />

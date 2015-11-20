@@ -26,6 +26,8 @@ namespace Marten.Testing
             For<IDocumentCleaner>().Use<DocumentCleaner>();
             For<IMartenQueryExecutor>().Use<MartenQueryExecutor>();
 
+            For<IDiagnostics>().Use<Diagnostics>();
+
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();
 
             For<IEventStore>().Use<EventStore>();
