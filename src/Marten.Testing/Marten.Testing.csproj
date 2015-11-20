@@ -130,6 +130,7 @@
     <Compile Include="show_document_storage_code_in_diagnostics_Tests.cs" />
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="TypeMappingsTests.cs" />
+    <Compile Include="UnitOfWorkTests.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />
     <Compile Include="Util\update_batch_Tests.cs" />
   </ItemGroup>

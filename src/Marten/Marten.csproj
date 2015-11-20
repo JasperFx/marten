@@ -127,6 +127,7 @@
     <Compile Include="TrackingSession.cs" />
     <Compile Include="TypeMappings.cs" />
     <Compile Include="Codegen\AssemblyGenerator.cs" />
+    <Compile Include="UnitOfWork.cs" />
     <Compile Include="Util\CommandExtensions.cs" />
     <Compile Include="Util\MemberInfoExtensions.cs" />
     <Compile Include="Codegen\SourceWriter.cs" />
