@@ -116,6 +116,8 @@ namespace Marten.Schema
                 }).Join("\n");
             }
 
+            
+
             var storageArguments = mapping.IdStrategy.ToArguments();
             var ctorArgs = storageArguments.Select(x => x.ToCtorArgument()).Join(", ");
             var ctorLines = storageArguments.Select(x => x.ToCtorLine()).Join("\n");
@@ -176,6 +178,8 @@ BLOCK:public object Identity(object document)
 return (({mapping.DocumentType})document).{mapping.IdMember.Name};
 END
 
+{toUpdateBatchMethod(mapping, id_NpgsqlDbType)}
+
 BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{mapping.DocumentType.Name}> documents)
 BLOCK:using (var writer = conn.BeginBinaryImport(`COPY {mapping.TableName}(id, data{duplicatedFieldsInBulkLoading}) FROM STDIN BINARY`))
 BLOCK:foreach (var x in documents)
@@ -190,6 +194,19 @@ END
 END
 
 ");
+        }
+
+        private static string toUpdateBatchMethod(DocumentMapping mapping, NpgsqlDbType idNpgsqlDbType)
+        {
+            var extras =
+                mapping.DuplicatedFields.Select(x => x.ToUpdateBatchParam()).Join("");
+
+            return $@"
+BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity)
+var document = ({mapping.DocumentType})entity;
+batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name}, NpgsqlDbType.{idNpgsqlDbType}).JsonParam(document){extras};
+END
+";
         }
     }
 }

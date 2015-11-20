@@ -114,21 +114,21 @@ namespace Marten.Util
 
             public SprocCall Param(Guid value)
             {
-                return addParameter(value, NpgsqlDbType.Uuid);
+                return Param(value, NpgsqlDbType.Uuid);
             }
 
             public SprocCall Param(string value)
             {
-                return addParameter(value, NpgsqlDbType.Varchar);
+                return Param(value, NpgsqlDbType.Varchar);
             }
 
             public SprocCall JsonParam(object value)
             {
                 var json = _parent._serializer.ToJson(value);
-                return addParameter(json, NpgsqlDbType.Jsonb);
+                return Param(json, NpgsqlDbType.Jsonb);
             }
 
-            private SprocCall addParameter(object value, NpgsqlDbType dbType)
+            public SprocCall Param(object value, NpgsqlDbType dbType)
             {
                 var param = _parent.addParameter(value, dbType);
 

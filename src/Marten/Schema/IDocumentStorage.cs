@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
@@ -18,6 +19,9 @@ namespace Marten.Schema
         object Identity(object document);
 
         NpgsqlDbType IdType { get; }
+
+
+        void RegisterUpdate(UpdateBatch batch, object entity);
     }
 
 }

@@ -83,7 +83,7 @@ namespace Marten.Schema
 
         public string WithParameterCode()
         {
-            var accessor = Members.Select(x => x.Name).Join("?.");
+            var accessor = accessorPath();
             
             if (MemberType == typeof (DateTime))
             {
@@ -94,14 +94,26 @@ namespace Marten.Schema
             return $".With(`{UpsertArgument.Arg}`, document.{accessor})".Replace('`', '"');
         }
 
-        public string ToBulkWriterCode()
+        private string accessorPath()
         {
             var accessor = Members.Select(x => x.Name).Join("?.");
+            return accessor;
+        }
+
+        public string ToBulkWriterCode()
+        {
+            var accessor = accessorPath();
 
             return $"writer.Write(x.{accessor}, NpgsqlDbType.{NpgsqlDbType});";
         }
 
         public string SqlLocator { get; private set; }
         public string LateralJoinDeclaration { get; } = null;
+
+        public string ToUpdateBatchParam()
+        {
+            var dbType = TypeMappings.ToDbType(Members.Last().GetMemberType());
+            return $".Param(document.{accessorPath()}, NpgsqlDbType.{dbType})";
+        }
     }
 }
