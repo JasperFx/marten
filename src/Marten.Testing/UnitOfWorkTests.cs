@@ -27,8 +27,6 @@ namespace Marten.Testing
 
             uow.ApplyChanges(batch);
 
-            batch.Execute();
-
             theSession.Query<User>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(user1.Id, user2.Id);
             theSession.Query<Issue>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(issue1.Id, issue2.Id);
             theSession.Query<Company>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(company1.Id, company2.Id);
@@ -52,7 +50,6 @@ namespace Marten.Testing
             uow1.Store(long1, long2);
             var batch1 = theContainer.GetInstance<UpdateBatch>();
             uow1.ApplyChanges(batch1);
-            batch1.Execute();
 
 
             var uow2 = theContainer.GetInstance<UnitOfWork>();
@@ -62,7 +59,6 @@ namespace Marten.Testing
             uow2.Delete(long2);
             var batch2 = theContainer.GetInstance<UpdateBatch>();
             uow2.ApplyChanges(batch2);
-            batch2.Execute();
 
             theSession.Query<StringDoc>().Single().Id.ShouldBe(stringDoc1.Id);
             theSession.Query<User>().Single().Id.ShouldBe(user1.Id);
@@ -91,7 +87,6 @@ namespace Marten.Testing
             uow1.Store(long1, long2);
             var batch1 = theContainer.GetInstance<UpdateBatch>();
             uow1.ApplyChanges(batch1);
-            batch1.Execute();
 
 
             var uow2 = theContainer.GetInstance<UnitOfWork>();
@@ -101,7 +96,6 @@ namespace Marten.Testing
             uow2.Delete<LongDoc>(long2.Id);
             var batch2 = theContainer.GetInstance<UpdateBatch>();
             uow2.ApplyChanges(batch2);
-            batch2.Execute();
 
             theSession.Query<StringDoc>().Single().Id.ShouldBe(stringDoc1.Id);
             theSession.Query<User>().Single().Id.ShouldBe(user1.Id);

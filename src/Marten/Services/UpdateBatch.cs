@@ -30,14 +30,14 @@ namespace Marten.Services
             return call;
         }
 
-        public int Execute()
+        public void Execute()
         {
-            return _runner.Execute(conn =>
+            _runner.ExecuteInTransaction(conn =>
             {
                 var cmd = BuildCommand();
                 cmd.Connection = conn;
 
-                return cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
             });
         }
 
