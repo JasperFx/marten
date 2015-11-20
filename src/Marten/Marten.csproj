@@ -75,6 +75,8 @@
     <Compile Include="IDocumentStore.cs" />
     <Compile Include="Map\IDocumentMapEntry.cs" />
     <Compile Include="ISerializer.cs" />
+    <Compile Include="Services\IdentityMap.cs" />
+    <Compile Include="Services\IIdentityMap.cs" />
     <Compile Include="Services\JsonNetSerializer.cs" />
     <Compile Include="Linq\CompoundWhereFragment.cs" />
     <Compile Include="Linq\DocumentQuery.cs" />
@@ -121,6 +123,7 @@
     <Compile Include="Schema\Sequences\SequenceFactory.cs" />
     <Compile Include="Schema\StorageArgument.cs" />
     <Compile Include="Schema\UpsertArgument.cs" />
+    <Compile Include="Services\NulloIdentityMap.cs" />
     <Compile Include="Util\SerializerExtensions.cs" />
     <Compile Include="BaseSession.cs" />
     <Compile Include="Session.cs" />
