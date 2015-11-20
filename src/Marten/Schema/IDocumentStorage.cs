@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Npgsql;
+using NpgsqlTypes;
 using Remotion.Linq;
 
 namespace Marten.Schema
@@ -13,6 +14,10 @@ namespace Marten.Schema
         NpgsqlCommand DeleteCommandForEntity(object entity);
         NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids);
         Type DocumentType { get; }
+
+        object Identity(object document);
+
+        NpgsqlDbType IdType { get; }
     }
 
 }

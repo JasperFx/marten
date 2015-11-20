@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -167,6 +168,12 @@ END
 
 BLOCK:public object Retrieve({mapping.DocumentType.Name} document)
 return document.{mapping.IdMember.Name};
+END
+
+public NpgsqlDbType IdType => NpgsqlDbType.{id_NpgsqlDbType.ToString()};
+
+BLOCK:public object Identity(object document)
+return (({mapping.DocumentType})document).{mapping.IdMember.Name};
 END
 
 BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{mapping.DocumentType.Name}> documents)
