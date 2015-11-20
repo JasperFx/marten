@@ -64,6 +64,8 @@
     <Compile Include="Events\StreamMapping.cs" />
     <Compile Include="Generation\TableColumn.cs" />
     <Compile Include="Generation\TableDefinition.cs" />
+    <Compile Include="Services\DirtyTrackingIdentityMap.cs" />
+    <Compile Include="Services\DocumentChange.cs" />
     <Compile Include="Services\ICommandRunner.cs" />
     <Compile Include="IConnectionFactory.cs" />
     <Compile Include="Map\NonTrackedDocumentMap.cs" />
@@ -76,6 +78,7 @@
     <Compile Include="Map\IDocumentMapEntry.cs" />
     <Compile Include="ISerializer.cs" />
     <Compile Include="Services\IdentityMap.cs" />
+    <Compile Include="Services\IDocumentTracker.cs" />
     <Compile Include="Services\IIdentityMap.cs" />
     <Compile Include="Services\JsonNetSerializer.cs" />
     <Compile Include="Linq\CompoundWhereFragment.cs" />
@@ -124,6 +127,7 @@
     <Compile Include="Schema\StorageArgument.cs" />
     <Compile Include="Schema\UpsertArgument.cs" />
     <Compile Include="Services\NulloIdentityMap.cs" />
+    <Compile Include="Services\TrackedEntity.cs" />
     <Compile Include="Util\SerializerExtensions.cs" />
     <Compile Include="BaseSession.cs" />
     <Compile Include="Session.cs" />

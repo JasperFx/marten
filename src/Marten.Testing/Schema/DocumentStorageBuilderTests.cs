@@ -10,9 +10,6 @@ namespace Marten.Testing.Schema
 {
     public class DocumentStorageBuilderTests
     {
-
-
-
         public void do_not_blow_up_building_one()
         {
             var storage = DocumentStorageBuilder.Build(null, new DocumentMapping(typeof(User)));
