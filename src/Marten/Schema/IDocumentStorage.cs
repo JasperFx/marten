@@ -20,5 +20,6 @@ namespace Marten.Schema
 
 
         void RegisterUpdate(UpdateBatch batch, object entity);
+        void RegisterUpdate(UpdateBatch batch, object entity, string json);
     }
 }

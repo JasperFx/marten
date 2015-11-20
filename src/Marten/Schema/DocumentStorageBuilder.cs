@@ -206,6 +206,11 @@ BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity)
 var document = ({mapping.DocumentType})entity;
 batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name}, NpgsqlDbType.{idNpgsqlDbType}).JsonEntity(document){extras};
 END
+
+BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity, string json)
+var document = ({mapping.DocumentType})entity;
+batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name}, NpgsqlDbType.{idNpgsqlDbType}).JsonBody(json){extras};
+END
 ";
         }
     }
