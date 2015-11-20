@@ -204,7 +204,7 @@ END
             return $@"
 BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity)
 var document = ({mapping.DocumentType})entity;
-batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name}, NpgsqlDbType.{idNpgsqlDbType}).JsonParam(document){extras};
+batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name}, NpgsqlDbType.{idNpgsqlDbType}).JsonEntity(document){extras};
 END
 ";
         }

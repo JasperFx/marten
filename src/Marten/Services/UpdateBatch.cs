@@ -123,11 +123,12 @@ namespace Marten.Services
                 return Param(value, NpgsqlDbType.Varchar);
             }
 
-            public SprocCall JsonParam(object value)
+            public SprocCall JsonEntity(object value)
             {
                 var json = _parent._serializer.ToJson(value);
                 return Param(json, NpgsqlDbType.Jsonb);
             }
+
 
             public SprocCall Param(object value, NpgsqlDbType dbType)
             {

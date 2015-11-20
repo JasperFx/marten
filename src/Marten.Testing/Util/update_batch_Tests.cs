@@ -34,9 +34,9 @@ namespace Marten.Testing.Util
 
             var upsertName = theMapping.UpsertName;
 
-            batch.Sproc(upsertName).Param(target1.Id).JsonParam(target1);
-            batch.Sproc(upsertName).Param(target2.Id).JsonParam(target2);
-            batch.Sproc(upsertName).Param(target3.Id).JsonParam(target3);
+            batch.Sproc(upsertName).Param(target1.Id).JsonEntity(target1);
+            batch.Sproc(upsertName).Param(target2.Id).JsonEntity(target2);
+            batch.Sproc(upsertName).Param(target3.Id).JsonEntity(target3);
             batch.Delete(theMapping.TableName, initialTarget.Id, NpgsqlDbType.Uuid);
 
             batch.Execute();
@@ -72,7 +72,7 @@ namespace Marten.Testing.Util
 
             var batchTime = Timings.Time(() =>
             {
-                targets.Each(x => batch.Sproc(theMapping.UpsertName).Param(x.Id).JsonParam(x));
+                targets.Each(x => batch.Sproc(theMapping.UpsertName).Param(x.Id).JsonEntity(x));
                 batch.Execute();
             });
 
