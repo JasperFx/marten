@@ -96,10 +96,8 @@ namespace Marten
 
                 cmd.CommandText = sql;
 
-                var idRetriever = _schema.StorageFor(typeof (T)).As<IdRetriever<T>>();
-
                 return _runner.QueryJson(cmd)
-                    .Select(json => SerializeLoadedDocument(idRetriever, json))
+                    .Select(SerializeLoadedDocument<T>)
                     .ToArray();
             }
         }
@@ -171,7 +169,6 @@ namespace Marten
             }
 
             var storage = _schema.StorageFor(typeof(T));
-            var idRetriever = storage.As<IdRetriever<T>>();
 
             return _runner.Execute(conn =>
             {
@@ -179,16 +176,16 @@ namespace Marten
                 loader.Connection = conn;
                 var json = loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
 
-                return SerializeLoadedDocument(idRetriever, json);
+                return SerializeLoadedDocument<T>(json);
             });
         }
 
-        private T SerializeLoadedDocument<T>(IdRetriever<T> idRetriever, string json)
+        private T SerializeLoadedDocument<T>(string json)
         {
             if (json == null) return default(T);
 
             var document = _serializer.FromJson<T>(json);
-            var id = idRetriever.Retrieve(document);
+            var id = _schema.StorageFor(typeof(T)).Identity(document);
 
             return _documentMap.Loaded(id, document, json);
         }
@@ -207,10 +204,8 @@ namespace Marten
                 var storage = _parent._schema.StorageFor(typeof (TDoc));
                 var cmd = storage.LoadByArrayCommand(keys);
 
-                var idRetriever = storage.As<IdRetriever<TDoc>>();
-
                 return _parent._runner.QueryJson(cmd)
-                    .Select(json => _parent.SerializeLoadedDocument(idRetriever, json));
+                    .Select(json => _parent.SerializeLoadedDocument<TDoc>(json));
             }
 
             public IEnumerable<TDoc> ById<TKey>(IEnumerable<TKey> keys)

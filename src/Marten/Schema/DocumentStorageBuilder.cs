@@ -125,7 +125,7 @@ namespace Marten.Schema
 
             writer.Write(
                 $@"
-BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{mapping.DocumentType.Name}>, IdAssignment<{mapping.DocumentType.Name}>, IdRetriever<{mapping.DocumentType.Name}>
+BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{mapping.DocumentType.Name}>, IdAssignment<{mapping.DocumentType.Name}>
 
 {fields}
 
