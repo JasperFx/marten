@@ -63,6 +63,7 @@ namespace Marten.Linq
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
             var isFirst = queryModel.ResultOperators.OfType<FirstResultOperator>().Any();
+            var isLast = queryModel.ResultOperators.OfType<LastResultOperator>().Any();
 
             // TODO -- optimize by using Top 1
             var cmd = BuildCommand(queryModel);
@@ -70,7 +71,19 @@ namespace Marten.Linq
 
             if (returnDefaultWhenEmpty && all.Length == 0) return default(T);
 
-            var data = isFirst ? all.First() : all.Single();
+            string data = null;
+            if (isFirst)
+            {
+                data = all.First();
+            }
+            else if (isLast)
+            {
+                data = all.Last();
+            }
+            else
+            {
+                data = all.Single();
+            }
 
             return _serializer.FromJson<T>(data);
         }

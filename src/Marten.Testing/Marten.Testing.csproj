@@ -55,6 +55,7 @@
     <Compile Include="Documents\Issue.cs" />
     <Compile Include="Documents\User.cs" />
     <Compile Include="document_session_delete_a_single_document_Tests.cs" />
+    <Compile Include="Linq\invoking_queryable_through_last_Tests.cs" />
     <Compile Include="Map\NonTrackedDocumentMapMapTests.cs" />
     <Compile Include="Session\document_session_load_not_yet_persisted_document_Tests.cs" />
     <Compile Include="TrackingSession\DocumentSessionFixture.cs" />
