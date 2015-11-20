@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Npgsql;
 
-namespace Marten
+namespace Marten.Services
 {
     public class CommandRunner : ICommandRunner
     {

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Schema;
 using Marten.Util;

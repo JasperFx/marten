@@ -5,6 +5,7 @@ using FubuCore;
 using Marten.Linq;
 using Marten.Map;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Parsing.Structure;

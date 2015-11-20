@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using FubuCore;
 using Marten.Schema;
+using Marten.Services;
 using Shouldly;
 
 namespace Marten.Testing.Events

@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Marten.Map;
 using Marten.Util;
 using Npgsql;
 
-namespace Marten
+namespace Marten.Services
 {
     public interface ICommandRunner
     {

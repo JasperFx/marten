@@ -5,7 +5,7 @@ using System.Reflection;
 using FubuCore;
 using NpgsqlTypes;
 
-namespace Marten
+namespace Marten.Util
 {
     public static class TypeMappings
     {

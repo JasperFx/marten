@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using Marten.Events;
 using Marten.Schema.Sequences;
+using Marten.Services;
 
 namespace Marten.Schema
 {

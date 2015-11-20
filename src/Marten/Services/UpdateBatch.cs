@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace Marten.Util
+namespace Marten.Services
 {
     public class UpdateBatch
     {

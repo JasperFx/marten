@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Marten.Schema;
+using Marten.Services;
 using Shouldly;
 using StructureMap;
 

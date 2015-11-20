@@ -1,5 +1,6 @@
 ﻿using System;
 using FubuCore;
+using Marten.Services;
 using Octokit;
 
 namespace Marten.Testing.Github

@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using FubuCore;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Util;
 using StoryTeller;
 using StoryTeller.Grammars.Tables;
 using StructureMap;

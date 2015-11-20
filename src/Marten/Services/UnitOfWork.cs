@@ -2,12 +2,10 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using FubuCore;
 using Marten.Schema;
-using Marten.Util;
 
-namespace Marten
+namespace Marten.Services
 {
     public class UnitOfWork
     {

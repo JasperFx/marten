@@ -1,4 +1,5 @@
 ﻿using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
 using StructureMap;

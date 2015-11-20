@@ -1,5 +1,7 @@
+using Marten.Linq;
 using Marten.Map;
 using Marten.Schema;
+using Marten.Services;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using FubuCore;
 using Marten.Schema;
+using Marten.Services;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.ResultOperators;

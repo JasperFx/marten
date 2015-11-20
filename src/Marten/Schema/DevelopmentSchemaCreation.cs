@@ -1,4 +1,5 @@
 using System.IO;
+using Marten.Services;
 
 namespace Marten.Schema
 {

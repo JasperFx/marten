@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 using Marten.Util;
 using NpgsqlTypes;

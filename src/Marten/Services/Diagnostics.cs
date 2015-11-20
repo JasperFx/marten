@@ -4,7 +4,7 @@ using System.Linq;
 using Marten.Linq;
 using Marten.Schema;
 
-namespace Marten
+namespace Marten.Services
 {
     public class Diagnostics : IDiagnostics
     {

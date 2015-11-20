@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Schema.Sequences;
+using Marten.Services;
 using Shouldly;
 using StructureMap;
 

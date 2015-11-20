@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using FubuCore;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;

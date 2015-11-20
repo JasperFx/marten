@@ -2,7 +2,7 @@ using System.Linq;
 using Npgsql;
 using Remotion.Linq;
 
-namespace Marten
+namespace Marten.Linq
 {
     public interface IMartenQueryExecutor : IQueryExecutor
     {

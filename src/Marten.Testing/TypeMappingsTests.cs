@@ -1,4 +1,5 @@
 ﻿using System;
+using Marten.Util;
 using NpgsqlTypes;
 using Shouldly;
 

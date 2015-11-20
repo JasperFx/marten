@@ -75,7 +75,7 @@ namespace Marten.Schema
             var writer = new SourceWriter();
 
             // TODO -- get rid of the magic strings
-            var namespaces = new List<string> {"System", "Marten", "Marten.Schema", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq", typeof(NpgsqlDbType).Namespace, typeof(IEnumerable<>).Namespace};
+            var namespaces = new List<string> {"System", "Marten", "Marten.Schema", "Marten.Services", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq", typeof(NpgsqlDbType).Namespace, typeof(IEnumerable<>).Namespace};
             namespaces.AddRange(mappings.Select(x => x.DocumentType.Namespace));
 
             namespaces.Distinct().OrderBy(x => x).Each(x => writer.WriteLine($"using {x};"));

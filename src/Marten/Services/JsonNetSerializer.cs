@@ -2,7 +2,7 @@
 using System.IO;
 using Newtonsoft.Json;
 
-namespace Marten
+namespace Marten.Services
 {
     public class JsonNetSerializer : ISerializer
     {

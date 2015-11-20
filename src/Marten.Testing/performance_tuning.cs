@@ -6,6 +6,7 @@ using System.Linq;
 using HtmlTags;
 using Jil;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 using NpgsqlTypes;
 using StructureMap;

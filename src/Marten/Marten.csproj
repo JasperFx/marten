@@ -43,10 +43,10 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="CommandRunner.cs" />
-    <Compile Include="Diagnostics.cs" />
+    <Compile Include="Services\CommandRunner.cs" />
+    <Compile Include="Services\Diagnostics.cs" />
     <Compile Include="Events\EventStore.cs" />
-    <Compile Include="IMartenQueryExecutor.cs" />
+    <Compile Include="Linq\IMartenQueryExecutor.cs" />
     <Compile Include="ISession.cs" />
     <Compile Include="ITrackingSession.cs" />
     <Compile Include="Map\DocumentChange.cs" />
@@ -64,7 +64,7 @@
     <Compile Include="Events\StreamMapping.cs" />
     <Compile Include="Generation\TableColumn.cs" />
     <Compile Include="Generation\TableDefinition.cs" />
-    <Compile Include="ICommandRunner.cs" />
+    <Compile Include="Services\ICommandRunner.cs" />
     <Compile Include="IConnectionFactory.cs" />
     <Compile Include="Map\NonTrackedDocumentMap.cs" />
     <Compile Include="Map\TrackedDocumentMap.cs" />
@@ -75,7 +75,7 @@
     <Compile Include="IDocumentStore.cs" />
     <Compile Include="Map\IDocumentMapEntry.cs" />
     <Compile Include="ISerializer.cs" />
-    <Compile Include="JsonNetSerializer.cs" />
+    <Compile Include="Services\JsonNetSerializer.cs" />
     <Compile Include="Linq\CompoundWhereFragment.cs" />
     <Compile Include="Linq\DocumentQuery.cs" />
     <Compile Include="Linq\IWhereFragment.cs" />
@@ -121,18 +121,18 @@
     <Compile Include="Schema\Sequences\SequenceFactory.cs" />
     <Compile Include="Schema\StorageArgument.cs" />
     <Compile Include="Schema\UpsertArgument.cs" />
-    <Compile Include="SerializerExtensions.cs" />
+    <Compile Include="Util\SerializerExtensions.cs" />
     <Compile Include="BaseSession.cs" />
     <Compile Include="Session.cs" />
     <Compile Include="TrackingSession.cs" />
-    <Compile Include="TypeMappings.cs" />
+    <Compile Include="Util\TypeMappings.cs" />
     <Compile Include="Codegen\AssemblyGenerator.cs" />
-    <Compile Include="UnitOfWork.cs" />
+    <Compile Include="Services\UnitOfWork.cs" />
     <Compile Include="Util\CommandExtensions.cs" />
     <Compile Include="Util\MemberInfoExtensions.cs" />
     <Compile Include="Codegen\SourceWriter.cs" />
     <Compile Include="Util\StringExtensions.cs" />
-    <Compile Include="Util\UpdateBatch.cs" />
+    <Compile Include="Services\UpdateBatch.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
