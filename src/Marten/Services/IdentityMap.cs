@@ -33,5 +33,11 @@ namespace Marten.Services
                 return _serializer.FromJson<T>(json);
             }).As<T>();
         }
+
+        public void Remove<T>(object id)
+        {
+            object value;
+            _objects[typeof (T)].TryRemove(id.GetHashCode(), out value);
+        }
     }
 }

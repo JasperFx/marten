@@ -7,5 +7,7 @@ namespace Marten.Services
     {
         T Get<T>(object id, Func<string> json);
         T Get<T>(object id, string json);
+
+        void Remove<T>(object id);
     }
 }

@@ -30,6 +30,12 @@ namespace Marten.Services
             return _objects[typeof(T)].GetOrAdd(id.GetHashCode(), _ => new TrackedEntity(id, _serializer, typeof(T), json)).Document.As<T>();
         }
 
+        public void Remove<T>(object id)
+        {
+            TrackedEntity value;
+            _objects[typeof(T)].TryRemove(id.GetHashCode(), out value);
+        }
+
         public IEnumerable<DocumentChange> DetectChanges()
         {
             return _objects.SelectMany(x => x.Values.Select(_ => _.DetectChange())).Where(x => x != null).ToArray();

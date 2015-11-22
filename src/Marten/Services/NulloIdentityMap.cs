@@ -20,5 +20,10 @@ namespace Marten.Services
         {
             return _serializer.FromJson<T>(json);
         }
+
+        public void Remove<T>(object id)
+        {
+            // nothing
+        }
     }
 }

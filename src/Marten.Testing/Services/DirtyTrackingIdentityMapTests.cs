@@ -164,5 +164,27 @@ namespace Marten.Testing.Services
 
             map.DetectChanges().Any().ShouldBeFalse();
         }
+
+        public void remove_item()
+        {
+            var target = Target.Random();
+            var target2 = Target.Random();
+            target2.Id = target.Id;
+
+            var serializer = new JilSerializer();
+
+            var map = new DirtyTrackingIdentityMap(serializer);
+
+            var target3 = map.Get<Target>(target.Id, serializer.ToJson(target));
+
+            // now remove it
+            map.Remove<Target>(target.Id);
+
+            var target4 = map.Get<Target>(target.Id, serializer.ToJson(target2));
+            target4.ShouldNotBeNull();
+            target4.ShouldNotBeTheSameAs(target3);
+
+        }
+
     }
 }

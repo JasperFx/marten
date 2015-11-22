@@ -44,6 +44,27 @@ namespace Marten.Testing.Services
             target2.ShouldBeTheSameAs(target5);
         }
 
+        public void remove_item()
+        {
+            var target = Target.Random();
+            var target2 = Target.Random();
+            target2.Id = target.Id;
+
+            var serializer = new JilSerializer();
+
+            var map = new IdentityMap(serializer);
+
+            var target3 = map.Get<Target>(target.Id, serializer.ToJson(target));
+
+            // now remove it
+            map.Remove<Target>(target.Id);
+
+            var target4 = map.Get<Target>(target.Id, serializer.ToJson(target2));
+            target4.ShouldNotBeNull();
+            target4.ShouldNotBeTheSameAs(target3);
+
+        }
+
         public void get_value_on_first_request_with_lazy_json()
         {
             var target = Target.Random();
