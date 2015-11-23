@@ -44,28 +44,28 @@ namespace Marten.Testing.Linq
                 .ShouldBeNull();
         }
 
-        public void first_hit_with_more_than_one_match()
+        public void first_correct_hit_with_more_than_one_match()
         {
             theSession.Store(new Target { Number = 1 });
-            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new Target { Number = 2, Flag = true });
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            theSession.Query<Target>().Where(x => x.Number == 2).First()
-                .ShouldNotBeNull();
+            theSession.Query<Target>().Where(x => x.Number == 2).First().Flag
+                .ShouldBeTrue();
         }
 
-        public void first_or_default_hit_with_more_than_one_match()
+        public void first_or_default_correct_hit_with_more_than_one_match()
         {
             theSession.Store(new Target { Number = 1 });
-            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new Target { Number = 2, Flag = true });
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            theSession.Query<Target>().Where(x => x.Number == 2).FirstOrDefault()
-                .ShouldNotBeNull();
+            theSession.Query<Target>().Where(x => x.Number == 2).FirstOrDefault().Flag
+                .ShouldBeTrue();
         }
 
         public void first_miss()
