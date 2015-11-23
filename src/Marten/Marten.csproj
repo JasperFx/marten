@@ -46,6 +46,7 @@
     <Compile Include="AdvancedOptions.cs" />
     <Compile Include="DocumentStore.cs" />
     <Compile Include="QuerySession.cs" />
+    <Compile Include="Schema\IndexDefinition.cs" />
     <Compile Include="Services\CommandRunner.cs" />
     <Compile Include="Services\Diagnostics.cs" />
     <Compile Include="Events\EventStore.cs" />
