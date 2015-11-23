@@ -152,7 +152,7 @@ return DeleteCommandForId((({mapping.DocumentType.Name})entity).{mapping.IdMembe
 END
 
 BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
-return new NpgsqlCommand(`select data from {mapping.TableName} where id = ANY(:ids)`).With(`ids`, ids);
+return new NpgsqlCommand(`select data, id from {mapping.TableName} where id = ANY(:ids)`).With(`ids`, ids);
 END
 
 

@@ -1,4 +1,5 @@
-﻿using Marten.Services;
+﻿using System;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 using Octokit;
 using Shouldly;
@@ -100,6 +101,61 @@ namespace Marten.Testing.Services
             target2.ShouldBeTheSameAs(target3);
             target2.ShouldBeTheSameAs(target4);
             target2.ShouldBeTheSameAs(target5);
+        }
+
+        public void store()
+        {
+            var target = Target.Random();
+            var serializer = new JilSerializer();
+
+            var map = new IdentityMap(serializer);
+
+            map.Store(target.Id, target);
+
+
+            map.Get<Target>(target.Id, "").ShouldBeTheSameAs(target);
+        }
+
+        public void get_with_miss_in_database()
+        {
+            var serializer = new JilSerializer();
+
+            var map = new IdentityMap(serializer);
+            map.Get<Target>(Guid.NewGuid(), () => null).ShouldBeNull();
+        }
+
+        public void has_positive()
+        {
+            var target = Target.Random();
+            var serializer = new JilSerializer();
+
+            var map = new IdentityMap(serializer);
+
+            map.Store(target.Id, target);
+
+            map.Has<Target>(target.Id).ShouldBeTrue();
+
+        }
+
+        public void has_negative()
+        {
+            var serializer = new JilSerializer();
+
+            var map = new IdentityMap(serializer);
+            map.Has<Target>(Guid.NewGuid()).ShouldBeFalse();
+        }
+
+        public void retrieve()
+        {
+            var target = Target.Random();
+            var serializer = new JilSerializer();
+
+            var map = new IdentityMap(serializer);
+
+            map.Store(target.Id, target);
+
+            map.Retrieve<Target>(target.Id).ShouldBeTheSameAs(target);
+
         }
     }
 }

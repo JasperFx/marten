@@ -16,12 +16,13 @@ namespace Marten
     {
         private readonly IQueryParser _parser;
         private readonly IMartenQueryExecutor _executor;
-        private readonly IDocumentMap _documentMap;
+        private readonly IIdentityMap _documentMap;
         private readonly ICommandRunner _runner;
         private readonly ISerializer _serializer;
         private readonly IDocumentSchema _schema;
+        private UnitOfWork _unitOfWork;
 
-        protected BaseSession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IDocumentMap documentMap, IDiagnostics diagnostics)
+        protected BaseSession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IIdentityMap documentMap, IDiagnostics diagnostics)
         {
             _schema = schema;
             _serializer = serializer;
@@ -30,6 +31,13 @@ namespace Marten
             _parser = parser;
             _executor = executor;
             _documentMap = documentMap;
+            _unitOfWork = new UnitOfWork(_schema);
+
+            if (_documentMap is IDocumentTracker)
+            {
+                _unitOfWork.AddTracker(_documentMap.As<IDocumentTracker>());
+            }
+
             Diagnostics = diagnostics;
         }
 
@@ -39,37 +47,58 @@ namespace Marten
 
         public void Delete<T>(T entity)
         {
-            _documentMap.DeleteDocument(entity);
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            _unitOfWork.Delete(entity);
+            _documentMap.Remove<T>(_schema.StorageFor(typeof(T)).Identity(entity));
         }
 
         public void Delete<T>(ValueType id)
         {
-            _documentMap.DeleteById<T>(id);
+            _unitOfWork.Delete<T>(id);
+            _documentMap.Remove<T>(id);
         }
 
         public void Delete<T>(string id)
         {
-            _documentMap.DeleteById<T>(id);
+            _unitOfWork.Delete<T>(id);
+            _documentMap.Remove<T>(id);
         }
 
-        public T Load<T>(string id)
+        public T Load<T>(string id) where T : class
         {
-            return LoadEntity<T>(id);
+            return load<T>(id);
         }
 
-        public T Load<T>(ValueType id)
+        public T Load<T>(ValueType id) where T : class
         {
-            return LoadEntity<T>(id);
+            return load<T>(id);
         }
 
-        public void Store<T>(T entity)
+        public void Store<T>(T entity) where T : class
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var id =_schema.StorageFor(typeof(T))
+            var storage = _schema.StorageFor(typeof(T));
+            var id =storage
                 .As<IdAssignment<T>>().Assign(entity);
 
-            _documentMap.Store(id, entity);
+            if (_documentMap.Has<T>(id))
+            {
+                var existing = _documentMap.Retrieve<T>(id);
+                if (!ReferenceEquals(existing, entity))
+                {
+                    throw new InvalidOperationException(
+                        $"Document '{typeof (T).FullName}' with same Id already added to the session.");
+                }
+            }
+            else
+            {
+                _unitOfWork.Store(entity);
+                _documentMap.Store(id, entity);
+            }
+
+
         }
 
         public IQueryable<T> Query<T>()
@@ -98,7 +127,7 @@ namespace Marten
                 cmd.CommandText = sql;
 
                 return _runner.QueryJson(cmd)
-                    .Select(SerializeLoadedDocument<T>)
+                    .Select(json => _serializer.FromJson<T>(json))
                     .ToArray();
             }
         }
@@ -132,66 +161,38 @@ namespace Marten
 
         public IDiagnostics Diagnostics { get; }
 
-        public ILoadByKeys<T> Load<T>()
+        public ILoadByKeys<T> Load<T>() where T : class
         {
             return new LoadByKeys<T>(this);
         }
 
         public void SaveChanges()
         {
-            _runner.Execute(conn =>
+            var batch = new UpdateBatch(_serializer, _runner);
+            _unitOfWork.ApplyChanges(batch);
+
+        }
+
+        private T load<T>(object id) where T : class
+        {
+            return _documentMap.Get<T>(id, () =>
             {
-                using (var tx = conn.BeginTransaction())
+                var storage = _schema.StorageFor(typeof(T));
+
+                return _runner.Execute(conn =>
                 {
-                    var changes = _documentMap.GetChanges();
-                    changes.Each(change =>
-                    {
-                        using (var command = change.CreateCommand(_schema))
-                        {
-                            command.Connection = conn;
-                            command.Transaction = tx;
-                            command.ExecuteNonQuery();
-                        }
-                    });
-
-                    tx.Commit();
-
-                    _documentMap.ChangesApplied(changes);
-                }
+                    var loader = storage.LoaderCommand(id);
+                    loader.Connection = conn;
+                    return loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
+                });
             });
-        }
-        
-        private T LoadEntity<T>(object id)
-        {
-            var entry = _documentMap.Get<T>(id);
-            if (entry != null)
-            {
-                return entry.Document;
-            }
 
-            var storage = _schema.StorageFor(typeof(T));
 
-            return _runner.Execute(conn =>
-            {
-                var loader = storage.LoaderCommand(id);
-                loader.Connection = conn;
-                var json = loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
 
-                return SerializeLoadedDocument<T>(json);
-            });
         }
 
-        private T SerializeLoadedDocument<T>(string json)
-        {
-            if (json == null) return default(T);
 
-            var document = _serializer.FromJson<T>(json);
-            var id = _schema.StorageFor(typeof(T)).Identity(document);
-
-            return _documentMap.Loaded(id, document, json);
-        }
-
-        private class LoadByKeys<TDoc> : ILoadByKeys<TDoc>
+        private class LoadByKeys<TDoc> : ILoadByKeys<TDoc> where TDoc : class
         {
             private readonly BaseSession _parent;
 
@@ -202,12 +203,42 @@ namespace Marten
 
             public IEnumerable<TDoc> ById<TKey>(params TKey[] keys)
             {
-                var storage = _parent._schema.StorageFor(typeof (TDoc));
+                var hits = keys.Where(key => _parent._documentMap.Has<TDoc>(key)).ToArray();
+                var misses = keys.Where(x => !hits.Contains(x)).ToArray();
+
+
+                return
+                    hits.Select(key => _parent._documentMap.Retrieve<TDoc>(key))
+                        .Concat(fetchDocuments(misses))
+                        .ToArray();
+            }
+
+            private IEnumerable<TDoc> fetchDocuments<TKey>(TKey[] keys) 
+            {
+                var storage = _parent._schema.StorageFor(typeof(TDoc));
                 var cmd = storage.LoadByArrayCommand(keys);
 
-                return _parent._runner.QueryJson(cmd)
-                    .Select(json => _parent.SerializeLoadedDocument<TDoc>(json));
-            }
+                var list = new List<TDoc>();
+
+                _parent._runner.Execute(conn =>
+                {
+                    cmd.Connection = conn;
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var id = reader[1];
+                            var json = reader.GetString(0);
+
+                            var doc = _parent._documentMap.Get<TDoc>(id, json);
+
+                            list.Add(doc);
+                        }
+                    }
+                });
+
+                return list;
+            } 
 
             public IEnumerable<TDoc> ById<TKey>(IEnumerable<TKey> keys)
             {

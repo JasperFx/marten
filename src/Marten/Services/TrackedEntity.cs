@@ -15,7 +15,16 @@ namespace Marten.Services
             DocumentType = documentType;
             _json = json;
 
-            Document = _serializer.FromJson(documentType, json);
+            if (json != null) Document = _serializer.FromJson(documentType, json);
+        }
+
+        public TrackedEntity(object id, ISerializer serializer, Type documentType, object document)
+        {
+            _serializer = serializer;
+            Id = id;
+            DocumentType = documentType;
+            Document = document;
+            _json = _serializer.ToJson(document);
         }
 
         public object Id { get; }
@@ -31,6 +40,8 @@ namespace Marten.Services
 
         public DocumentChange DetectChange()
         {
+            if (Document == null) return null;
+
             var newJson = _serializer.ToJson(Document);
             if (!JToken.DeepEquals(JObject.Parse(_json), JObject.Parse(newJson)))
             {

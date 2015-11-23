@@ -1,4 +1,5 @@
 using System;
+using FubuCore;
 
 namespace Marten.Services
 {
@@ -11,12 +12,15 @@ namespace Marten.Services
             _serializer = serializer;
         }
 
-        public T Get<T>(object id, Func<string> json)
+        public T Get<T>(object id, Func<string> json) where T : class
         {
-            return _serializer.FromJson<T>(json());
+            var text = json();
+            if (text.IsEmpty()) return null;
+
+            return _serializer.FromJson<T>(text);
         }
 
-        public T Get<T>(object id, string json)
+        public T Get<T>(object id, string json) where T : class
         {
             return _serializer.FromJson<T>(json);
         }
@@ -24,6 +28,21 @@ namespace Marten.Services
         public void Remove<T>(object id)
         {
             // nothing
+        }
+
+        public void Store<T>(object id, T entity)
+        {
+            // nothing
+        }
+
+        public bool Has<T>(object id)
+        {
+            return false;
+        }
+
+        public T Retrieve<T>(object id) where T : class
+        {
+            return null;
         }
     }
 }
