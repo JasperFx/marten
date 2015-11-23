@@ -92,7 +92,18 @@ namespace Marten.Linq
             var take =
                 _query.ResultOperators.OfType<TakeResultOperator>().OrderByDescending(x => x.Count).FirstOrDefault();
 
-            return take == null ? sql : sql + " LIMIT " + take.Count + " ";
+            var first = _query.ResultOperators.OfType<FirstResultOperator>().FirstOrDefault();
+
+            string limitNumber = null;
+            if (take != null)
+            {
+                limitNumber = take.Count.ToString();
+            }
+            else if (first != null)
+            {
+                limitNumber = "1";
+            }
+            return limitNumber == null ? sql : sql + " LIMIT " + limitNumber + " ";
         }
 
         private string toOrderClause()

@@ -63,7 +63,6 @@ namespace Marten.Linq
 
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
-            var isFirst = queryModel.ResultOperators.OfType<FirstResultOperator>().Any();
             var isLast = queryModel.ResultOperators.OfType<LastResultOperator>().Any();
 
             // TODO -- optimize by using Top 1
@@ -73,11 +72,7 @@ namespace Marten.Linq
             if (returnDefaultWhenEmpty && all.Length == 0) return default(T);
 
             string data = null;
-            if (isFirst)
-            {
-                data = all.First();
-            }
-            else if (isLast)
+            if (isLast)
             {
                 data = all.Last();
             }
