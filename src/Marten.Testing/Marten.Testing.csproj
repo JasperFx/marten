@@ -55,7 +55,6 @@
     <Compile Include="Documents\Issue.cs" />
     <Compile Include="Documents\User.cs" />
     <Compile Include="document_session_delete_a_single_document_Tests.cs" />
-    <Compile Include="Map\NonTrackedDocumentMapMapTests.cs" />
     <Compile Include="Services\DirtyTrackingIdentityMapTests.cs" />
     <Compile Include="Services\IdentityMapTests.cs" />
     <Compile Include="Services\NulloIdentityMapTests.cs" />
@@ -113,7 +112,6 @@
     <Compile Include="persist_and_deleting_multiple_documents_Tests.cs" />
     <Compile Include="persist_and_load_documents_with_int_ids_Tests.cs" />
     <Compile Include="persist_and_load_documents_with_long_ids_Tests.cs" />
-    <Compile Include="Map\TrackedDocumentMapMapTests.cs" />
     <Compile Include="PlayingTests.cs" />
     <Compile Include="ProductionModeRegistry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -49,10 +49,6 @@
     <Compile Include="Linq\IMartenQueryExecutor.cs" />
     <Compile Include="ISession.cs" />
     <Compile Include="ITrackingSession.cs" />
-    <Compile Include="Map\DocumentChange.cs" />
-    <Compile Include="Map\DocumentDelete.cs" />
-    <Compile Include="Map\DocumentDeleteById.cs" />
-    <Compile Include="Map\DocumentIdentity.cs" />
     <Compile Include="Events\EventGraph.cs" />
     <Compile Include="Events\EventMapping.cs" />
     <Compile Include="Events\IAggregate.cs" />
@@ -68,14 +64,8 @@
     <Compile Include="Services\DocumentChange.cs" />
     <Compile Include="Services\ICommandRunner.cs" />
     <Compile Include="IConnectionFactory.cs" />
-    <Compile Include="Map\NonTrackedDocumentMap.cs" />
-    <Compile Include="Map\TrackedDocumentMap.cs" />
-    <Compile Include="Map\DocumentMapEntry.cs" />
-    <Compile Include="Map\DocumentUpdate.cs" />
-    <Compile Include="Map\IDocumentMap.cs" />
     <Compile Include="IDocumentSession.cs" />
     <Compile Include="IDocumentStore.cs" />
-    <Compile Include="Map\IDocumentMapEntry.cs" />
     <Compile Include="ISerializer.cs" />
     <Compile Include="Services\IdentityMap.cs" />
     <Compile Include="Services\IDocumentTracker.cs" />

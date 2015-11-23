@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using FubuCore;
 using Marten.Linq;
-using Marten.Map;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
