@@ -28,6 +28,8 @@ namespace Marten.Testing
 
             For<IDiagnostics>().Use<Diagnostics>();
 
+            For<IDocumentStore>().Use<DocumentStore>();
+
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();
 
             For<IEventStore>().Use<EventStore>();

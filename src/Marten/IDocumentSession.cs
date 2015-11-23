@@ -39,9 +39,6 @@ namespace Marten
 
         void Store<T>(T entity) where T : class;
 
-        void BulkInsert<T>(T[] documents, int batchSize = 1000);
-
-        IDiagnostics Diagnostics { get; }
     }
 
     public interface ILoadByKeys<out TDoc>

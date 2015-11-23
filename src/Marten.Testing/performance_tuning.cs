@@ -100,12 +100,14 @@ public class JsonLocatorOnly : MartenRegistry
 
             using (var session = container.GetInstance<IDocumentSession>())
             {
-                session.BulkInsert(data);
+                var store = container.GetInstance<IDocumentStore>();
+
+                store.BulkInsert(data);
 
 var theDate = DateTime.Today.AddDays(3);
 var queryable = session.Query<Target>().Where(x => x.Date == theDate);
 
-                Debug.WriteLine(session.Diagnostics.CommandFor(queryable).CommandText);
+                Debug.WriteLine(store.Diagnostics.CommandFor(queryable).CommandText);
 
                 // Once to warm up
                 var time = Timings.Time(() =>
@@ -258,11 +260,12 @@ var queryable = session.Query<Target>().Where(x => x.Date == theDate);
 
 
             var session = theContainer.GetInstance<IDocumentSession>();
+            var store = theContainer.GetInstance<IDocumentStore>();
 
             var data = Target.GenerateRandomData(10000).ToArray();
             Timings.Time(() =>
             {
-                session.BulkInsert(data);
+                store.BulkInsert(data);
             });
             
             

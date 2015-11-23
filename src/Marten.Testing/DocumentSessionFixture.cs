@@ -8,16 +8,20 @@ namespace Marten.Testing
     public abstract class IntegratedFixture
     {
         protected readonly IContainer theContainer = Container.For<DevelopmentModeRegistry>();
+        protected readonly IDocumentStore theStore;
+
         protected IntegratedFixture()
         {
             ConnectionSource.CleanBasicDocuments();
+
+            theStore = theContainer.GetInstance<IDocumentStore>();
         }
     }
 
-    public abstract class DocumentSessionFixture<T> : IDisposable where T : IIdentityMap
+    public abstract class DocumentSessionFixture<T> : IntegratedFixture, IDisposable where T : IIdentityMap
     {
-        protected readonly IContainer theContainer = Container.For<DevelopmentModeRegistry>();
         protected readonly IDocumentSession theSession;
+        
 
         protected DocumentSessionFixture()
         {

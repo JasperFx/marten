@@ -118,7 +118,7 @@ namespace Marten.Testing.Util
             Debug.WriteLine("UpdateBatch time: " + batchTime);
 
             theContainer.GetInstance<IDocumentCleaner>().DeleteAllDocuments();
-            var bulkTime = Timings.Time(() => theSession.BulkInsert(targets.ToArray()));
+            var bulkTime = Timings.Time(() => theStore.BulkInsert(targets.ToArray()));
 
             Debug.WriteLine("The bulk insert time was " + bulkTime);
         }

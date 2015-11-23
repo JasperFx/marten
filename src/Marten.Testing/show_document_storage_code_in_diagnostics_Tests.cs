@@ -15,7 +15,7 @@ namespace Marten.Testing
                 _.For<Target>().Searchable(x => x.Date);
             });
 
-            var code = container.GetInstance<IDocumentSession>().Diagnostics.DocumentStorageCodeFor<Target>();
+            var code = container.GetInstance<IDocumentStore>().Diagnostics.DocumentStorageCodeFor<Target>();
             Debug.WriteLine(code);
         } 
 

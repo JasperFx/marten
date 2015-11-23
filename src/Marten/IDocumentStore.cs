@@ -6,20 +6,10 @@ namespace Marten
     {
         IDocumentSchema Schema { get; }
         AdvancedOptions Advanced { get; }
-    }
 
-    public class AdvancedOptions
-    {
-        private readonly IDocumentCleaner _cleaner;
 
-        public AdvancedOptions(IDocumentCleaner cleaner)
-        {
-            _cleaner = cleaner;
-        }
+        void BulkInsert<T>(T[] documents, int batchSize = 1000);
 
-        public IDocumentCleaner Clean
-        {
-            get { return _cleaner; }
-        }
+        IDiagnostics Diagnostics { get; }
     }
 }

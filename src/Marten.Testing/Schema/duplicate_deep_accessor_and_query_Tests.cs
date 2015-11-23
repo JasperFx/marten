@@ -47,9 +47,9 @@ namespace Marten.Testing.Schema
             results
                 .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
 
-            Debug.WriteLine(theSession.Diagnostics.CommandFor(queryable).CommandText);
+            Debug.WriteLine(theStore.Diagnostics.CommandFor(queryable).CommandText);
 
-            theSession.Diagnostics.CommandFor(queryable).CommandText
+            theStore.Diagnostics.CommandFor(queryable).CommandText
                 .ShouldContain("inner_date = :arg0");
         }
     }

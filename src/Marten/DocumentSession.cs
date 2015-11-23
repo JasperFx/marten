@@ -37,7 +37,7 @@ namespace Marten
                 _unitOfWork.AddTracker(_documentMap.As<IDocumentTracker>());
             }
 
-            Diagnostics = diagnostics;
+            
         }
 
         public void Dispose()
@@ -131,34 +131,8 @@ namespace Marten
             }
         }
 
-        public void BulkInsert<T>(T[] documents, int batchSize = 1000)
-        {
-            var storage = _schema.StorageFor(typeof (T)).As<IBulkLoader<T>>();
 
-            _runner.ExecuteInTransaction(conn =>
-            {
-                if (documents.Length <= batchSize)
-                {
-                    storage.Load(_serializer, conn, documents);
-                }
-                else
-                {
-                    var total = 0;
-                    var page = 0;
-
-                    while (total < documents.Length)
-                    {
-                        var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
-                        storage.Load(_serializer, conn, batch);
-
-                        page++;
-                        total += batch.Length;
-                    }
-                }
-            });
-        }
-
-        public IDiagnostics Diagnostics { get; }
+        
 
         public ILoadByKeys<T> Load<T>() where T : class
         {
