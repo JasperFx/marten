@@ -6,7 +6,7 @@ using System.Linq;
 namespace Marten
 {
 
-    public interface IQuerySession
+    public interface IQuerySession : IDisposable
     {
         T Load<T>(string id) where T : class;
         T Load<T>(ValueType id) where T : class;

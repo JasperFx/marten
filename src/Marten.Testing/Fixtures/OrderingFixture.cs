@@ -47,7 +47,7 @@ namespace Marten.Testing.Fixtures
 
             ConnectionSource.CleanBasicDocuments();
             _container = Container.For<DevelopmentModeRegistry>();
-            _session = _container.GetInstance<IDocumentSession>();
+            _session = _container.GetInstance<IDocumentStore>().OpenSession();
 
 
         }

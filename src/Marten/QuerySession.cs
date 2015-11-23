@@ -145,5 +145,10 @@ namespace Marten
                 return ById(keys.ToArray());
             }
         }
+
+        public void Dispose()
+        {
+            
+        }
     }
 }

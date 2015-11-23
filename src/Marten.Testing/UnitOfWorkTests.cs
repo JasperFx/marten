@@ -13,7 +13,7 @@ namespace Marten.Testing
 
         public UnitOfWorkTests()
         {
-            theSession = theContainer.GetInstance<IDocumentSession>();
+            theSession = theContainer.GetInstance<IDocumentStore>().OpenSession();
         }
 
         public void update_mixed_document_types()
@@ -34,7 +34,7 @@ namespace Marten.Testing
 
             uow.ApplyChanges(batch);
 
-            var theSession = theContainer.GetInstance<IDocumentSession>();
+            var theSession = theContainer.GetInstance<IDocumentStore>().OpenSession();
 
             theSession.Query<User>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(user1.Id, user2.Id);
             theSession.Query<Issue>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(issue1.Id, issue2.Id);

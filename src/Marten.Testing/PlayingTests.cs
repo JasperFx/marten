@@ -26,7 +26,7 @@ namespace Marten.Testing
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                using (var session = container.GetInstance<IDocumentSession>())
+                using (var session = container.GetInstance<IDocumentStore>().OpenSession())
                 {
                     session.Store(new Target {Number = 1, NumberArray = new[] {1, 2, 3}});
                     session.Store(new Target {Number = 2, NumberArray = new[] {4, 5, 6}});

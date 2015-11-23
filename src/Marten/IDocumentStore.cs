@@ -11,5 +11,20 @@ namespace Marten
         void BulkInsert<T>(T[] documents, int batchSize = 1000);
 
         IDiagnostics Diagnostics { get; }
+
+        IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly);
+
+        IDocumentSession LightweightSession();
+
+        IDocumentSession DirtyTrackedSession();
+
+        IQuerySession QuerySession();
+    }
+
+    public enum DocumentTracking
+    {
+        None,
+        IdentityOnly,
+        DirtyTracking
     }
 }

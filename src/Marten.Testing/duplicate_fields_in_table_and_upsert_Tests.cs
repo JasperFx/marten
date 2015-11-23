@@ -19,7 +19,7 @@ namespace Marten.Testing
 
 
                 var user1 = new User {FirstName = "Byron", LastName = "Scott"};
-                using (var session = container.GetInstance<IDocumentSession>())
+                using (var session = container.GetInstance<IDocumentStore>().OpenSession())
                 {
                     session.Store(user1);
                     session.SaveChanges();

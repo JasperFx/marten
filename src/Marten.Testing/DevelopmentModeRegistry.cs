@@ -18,7 +18,6 @@ namespace Marten.Testing
             Forward<DocumentSchema, IDocumentSchema>();
 
             For<IIdentityMap>().Use<NulloIdentityMap>();
-            For<IDocumentSession>().Use<DocumentSession>();
 
             For<ISerializer>().Use<JsonNetSerializer>();
             For<IDocumentSchemaCreation>().Use<DevelopmentSchemaCreation>();

@@ -73,11 +73,10 @@ namespace Marten
             }
             else
             {
-                _unitOfWork.Store(entity);
                 _documentMap.Store(id, entity);
             }
 
-
+            _unitOfWork.Store(entity);
         }
 
 

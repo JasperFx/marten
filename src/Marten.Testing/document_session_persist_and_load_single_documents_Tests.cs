@@ -46,7 +46,7 @@ namespace Marten.Testing
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session2 = theContainer.GetInstance<IDocumentSession>())
+            using (var session2 = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session2.ShouldNotBeSameAs(theSession);
 
@@ -78,7 +78,7 @@ namespace Marten.Testing
             theSession.Store(user5);
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 var users = session.Load<User>().ById(user2.Id, user3.Id, user4.Id);
                 users.Count().ShouldBe(3);

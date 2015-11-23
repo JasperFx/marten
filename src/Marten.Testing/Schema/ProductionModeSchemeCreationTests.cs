@@ -12,7 +12,7 @@ namespace Marten.Testing.Schema
         {
             using (var c1 = Container.For<DevelopmentModeRegistry>())
             {
-                using (var session = c1.GetInstance<IDocumentSession>())
+                using (var session = c1.GetInstance<IDocumentStore>().OpenSession())
                 {
                     session.Store(new User());
                     session.Store(new User());
@@ -23,7 +23,7 @@ namespace Marten.Testing.Schema
 
             using (var c2 = Container.For<ProductionModeRegistry>())
             {
-                using (var session = c2.GetInstance<IDocumentSession>())
+                using (var session = c2.GetInstance<IDocumentStore>().OpenSession())
                 {
                     session.Query<User>().Count().ShouldBeGreaterThan(0);
                 }
@@ -40,7 +40,7 @@ namespace Marten.Testing.Schema
 
             using (var c2 = Container.For<ProductionModeRegistry>())
             {
-                using (var session = c2.GetInstance<IDocumentSession>())
+                using (var session = c2.GetInstance<IDocumentStore>().OpenSession())
                 {
                     Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
                     {

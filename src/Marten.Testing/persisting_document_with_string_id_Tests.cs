@@ -19,7 +19,7 @@ namespace Marten.Testing
             theSession.Store(account);
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Load<Account>("email@server.com")
                     .ShouldNotBeNull();
@@ -62,13 +62,13 @@ namespace Marten.Testing
             theSession.Store(account);
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Delete<Account>(account.Id);
                 session.SaveChanges();
             }
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Load<Account>(account.Id)
                     .ShouldBeNull();
@@ -85,7 +85,7 @@ namespace Marten.Testing
 
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Load<Account>().ById("A", "B", "E").Count().ShouldBe(3);
             }

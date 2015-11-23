@@ -98,7 +98,7 @@ public class JsonLocatorOnly : MartenRegistry
             container.GetInstance<IDocumentSchema>().Alter<TRegistry>();
 
 
-            using (var session = container.GetInstance<IDocumentSession>())
+            using (var session = container.GetInstance<IDocumentStore>().OpenSession())
             {
                 var store = container.GetInstance<IDocumentStore>();
 
@@ -259,7 +259,7 @@ var queryable = session.Query<Target>().Where(x => x.Date == theDate);
             theContainer.GetInstance<DocumentCleaner>().DeleteDocumentsFor(typeof(Target));
 
 
-            var session = theContainer.GetInstance<IDocumentSession>();
+            var session = theContainer.GetInstance<IDocumentStore>().OpenSession();
             var store = theContainer.GetInstance<IDocumentStore>();
 
             var data = Target.GenerateRandomData(10000).ToArray();

@@ -31,9 +31,17 @@ namespace Marten.Testing
 
         protected IDocumentSession CreateSession()
         {
-            var map = theContainer.GetInstance<T>();
+            if (typeof (T) == typeof (NulloIdentityMap))
+            {
+                return theStore.OpenSession(DocumentTracking.None);
+            }
 
-            return theContainer.With<IIdentityMap>(map).GetInstance<IDocumentSession>();
+            if (typeof (T) == typeof (IdentityMap))
+            {
+                return theStore.OpenSession();
+            }
+
+            return theStore.DirtyTrackedSession();
         }
 
         public void Dispose()

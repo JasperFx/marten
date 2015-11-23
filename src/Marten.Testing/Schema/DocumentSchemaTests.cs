@@ -66,7 +66,7 @@ namespace Marten.Testing.Schema
         {
             using (var container1 = Container.For<DevelopmentModeRegistry>())
             {
-                using (var session = container1.GetInstance<IDocumentSession>())
+                using (var session = container1.GetInstance<IDocumentStore>().LightweightSession())
                 {
                     session.Store(new User());
                     session.Store(new User());
@@ -78,7 +78,7 @@ namespace Marten.Testing.Schema
 
             using (var container2 = Container.For<DevelopmentModeRegistry>())
             {
-                using (var session = container2.GetInstance<IDocumentSession>())
+                using (var session = container2.GetInstance<IDocumentStore>().LightweightSession())
                 {
                     session.Query<User>().Count().ShouldBeGreaterThanOrEqualTo(3);
                 }

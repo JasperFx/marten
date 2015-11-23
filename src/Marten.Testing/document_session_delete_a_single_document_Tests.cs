@@ -12,13 +12,13 @@ namespace Marten.Testing
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Delete(user);
                 session.SaveChanges();
             }
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Load<User>(user.Id).ShouldBeNull();
             }
@@ -30,13 +30,13 @@ namespace Marten.Testing
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Delete<User>(user.Id);
                 session.SaveChanges();
             }
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Load<User>(user.Id).ShouldBeNull();
             }

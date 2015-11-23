@@ -1,8 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using FubuCore;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
@@ -10,6 +12,7 @@ namespace Marten
     {
         private readonly ICommandRunner _runner;
         private readonly ISerializer _serializer;
+        private readonly IQueryParser _parser = new MartenQueryParser();
 
         public DocumentStore(IDocumentSchema schema, IDocumentCleaner cleaner, ICommandRunner runner, ISerializer serializer)
         {
@@ -20,7 +23,7 @@ namespace Marten
             Advanced = new AdvancedOptions(cleaner);
 
             // Not wanting Marten to be so dependent upon an IoC tool, so here's some poor man's DI
-            Diagnostics = new Diagnostics(schema, new MartenQueryExecutor(_runner, schema, serializer, new MartenQueryParser()));
+            Diagnostics = new Diagnostics(schema, new MartenQueryExecutor(_runner, schema, serializer, _parser));
         }
 
         public IDocumentSchema Schema { get; }
@@ -55,5 +58,46 @@ namespace Marten
         }
 
         public IDiagnostics Diagnostics { get; }
+
+        public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly)
+        {
+            var map = createMap(tracking);
+
+            return new DocumentSession(Schema, _serializer, _runner, _parser, new MartenQueryExecutor(_runner, Schema, _serializer, _parser), map);
+        }
+
+        private IIdentityMap createMap(DocumentTracking tracking)
+        {
+            switch (tracking)
+            {
+                case DocumentTracking.None:
+                    return new NulloIdentityMap(_serializer);
+
+                case DocumentTracking.IdentityOnly:
+                    return new IdentityMap(_serializer);
+
+                case DocumentTracking.DirtyTracking:
+                    return new DirtyTrackingIdentityMap(_serializer);
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(tracking));
+            }
+        }
+
+        public IDocumentSession DirtyTrackedSession()
+        {
+            return OpenSession(DocumentTracking.DirtyTracking);
+        }
+
+        public IDocumentSession LightweightSession()
+        {
+            return OpenSession(DocumentTracking.None);
+        }
+
+        public IQuerySession QuerySession()
+        {
+            var parser = new MartenQueryParser();
+            return new QuerySession(Schema, _serializer, _runner, parser, new MartenQueryExecutor(_runner, Schema, _serializer, parser), new NulloIdentityMap(_serializer));
+        }
     }
 }

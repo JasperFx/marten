@@ -14,7 +14,7 @@ namespace Marten.Testing.Schema
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                var session = container.GetInstance<IDocumentSession>();
+                var session = container.GetInstance<IDocumentStore>().OpenSession();
 
                 session.Store(new Target{Number = 1});
                 session.Store(new Target{Number = 2});
@@ -37,7 +37,7 @@ namespace Marten.Testing.Schema
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                var session = container.GetInstance<IDocumentSession>();
+                var session = container.GetInstance<IDocumentStore>().OpenSession();
 
                 session.Store(new Target { Number = 1 });
                 session.Store(new Target { Number = 2 });
@@ -62,7 +62,7 @@ namespace Marten.Testing.Schema
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                var session = container.GetInstance<IDocumentSession>();
+                var session = container.GetInstance<IDocumentStore>().OpenSession();
 
                 session.Store(new Target { Number = 1 });
                 session.Store(new Target { Number = 2 });
@@ -87,7 +87,7 @@ namespace Marten.Testing.Schema
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                var session = container.GetInstance<IDocumentSession>();
+                var session = container.GetInstance<IDocumentStore>().OpenSession();
 
                 session.Store(new Target { Number = 1 });
                 session.Store(new Target { Number = 2 });
@@ -113,7 +113,7 @@ namespace Marten.Testing.Schema
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                var session = container.GetInstance<IDocumentSession>();
+                var session = container.GetInstance<IDocumentStore>().OpenSession();
 
                 session.Store(new Target { Number = 1 });
                 session.Store(new Target { Number = 2 });
@@ -138,7 +138,7 @@ namespace Marten.Testing.Schema
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                var session = container.GetInstance<IDocumentSession>();
+                var session = container.GetInstance<IDocumentStore>().OpenSession();
 
                 session.Store(new Target { Number = 1 });
                 session.Store(new Target { Number = 2 });

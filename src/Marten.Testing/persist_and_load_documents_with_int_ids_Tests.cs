@@ -18,7 +18,7 @@ namespace Marten.Testing
             theSession.Store(IntDoc);
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Load<IntDoc>(456)
                     .ShouldNotBeNull();
@@ -52,13 +52,13 @@ namespace Marten.Testing
             theSession.Store(IntDoc);
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Delete<IntDoc>(IntDoc.Id);
                 session.SaveChanges();
             }
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Load<IntDoc>(IntDoc.Id)
                     .ShouldBeNull();
@@ -74,7 +74,7 @@ namespace Marten.Testing
             theSession.Store(new IntDoc { Id = 7 });
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentSession>())
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
                 session.Load<IntDoc>().ById(4, 5, 6).Count().ShouldBe(3);
             }
