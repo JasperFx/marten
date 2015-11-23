@@ -81,6 +81,8 @@ namespace Marten
                     index.Expression = "? jsonb_path_ops";
 
                     configureIndex?.Invoke(index);
+
+                    mapping.PropertySearching = Schema.PropertySearching.ContainmentOperator;
                 };
 
                 return this;

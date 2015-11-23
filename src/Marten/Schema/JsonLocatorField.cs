@@ -3,7 +3,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using FubuCore.Reflection;
-using Marten.Linq;
 using Marten.Util;
 
 namespace Marten.Schema

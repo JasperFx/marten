@@ -45,6 +45,7 @@
     </Compile>
     <Compile Include="AdvancedOptions.cs" />
     <Compile Include="DocumentStore.cs" />
+    <Compile Include="Linq\ContainmentWhereFragment.cs" />
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\IndexDefinition.cs" />
     <Compile Include="Services\CommandRunner.cs" />

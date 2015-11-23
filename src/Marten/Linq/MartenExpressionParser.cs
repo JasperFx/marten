@@ -149,10 +149,16 @@ namespace Marten.Linq
 
         private IWhereFragment buildSimpleWhereClause(DocumentMapping mapping, BinaryExpression binary)
         {
-            var jsonLocator = JsonLocator(mapping, binary.Left);
             var op = _operators[binary.NodeType];
 
             var value = Value(binary.Right);
+
+            if (mapping.PropertySearching == PropertySearching.ContainmentOperator && binary.NodeType == ExpressionType.Equal && value != null)
+            {
+                return new ContainmentWhereFragment(mapping, binary);
+            }
+
+            var jsonLocator = JsonLocator(mapping, binary.Left);
 
             if (value == null)
             {

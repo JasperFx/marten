@@ -2,6 +2,7 @@
 using System.Linq;
 using Fixie;
 using Marten.Schema;
+using Marten.Testing.Documents;
 using Shouldly;
 using StructureMap;
 
@@ -22,7 +23,7 @@ namespace Marten.Testing
 
         public void property_searching_override()
         {
-            theSchema.MappingFor(typeof(Organization))
+            theSchema.MappingFor(typeof(User))
                 .PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
@@ -68,16 +69,24 @@ namespace Marten.Testing
             index.Expression.ShouldBe("? jsonb_path_ops");
         }
 
+        public void mapping_is_set_to_containment_if_gin_index_is_added()
+        {
+            var mapping = theSchema.MappingFor(typeof(Organization));
+            mapping.PropertySearching.ShouldBe(PropertySearching.ContainmentOperator);
+        }
+
         public class TestRegistry : MartenRegistry
         {
             public TestRegistry()
             {
-                For<Organization>().PropertySearching(PropertySearching.JSON_Locator_Only)
+                For<Organization>()
                     .Searchable(x => x.Name).Searchable(x => x.OtherName, x =>
                     {
                         x.IndexName = "mt_special";
                     })
                     .GinIndexJsonData(x => x.IndexName = "my_gin_index");
+
+                For<User>().PropertySearching(PropertySearching.JSON_Locator_Only);
             }
         }
 

@@ -8,7 +8,6 @@ using Jil;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Fixtures;
-using NpgsqlTypes;
 using StructureMap;
 using StructureMap.Util;
 
@@ -18,69 +17,42 @@ namespace Marten.Testing
     {
         public string ToJson(object document)
         {
-            return Jil.JSON.Serialize(document, new Options(dateFormat:DateTimeFormat.ISO8601));
+            return JSON.Serialize(document, new Options(dateFormat: DateTimeFormat.ISO8601));
         }
 
         public T FromJson<T>(string json)
         {
-            return Jil.JSON.Deserialize<T>(json, new Options(dateFormat: DateTimeFormat.ISO8601));
+            return JSON.Deserialize<T>(json, new Options(dateFormat: DateTimeFormat.ISO8601));
         }
 
         public T FromJson<T>(Stream stream)
         {
-            return Jil.JSON.Deserialize<T>(new StreamReader(stream), new Options(dateFormat: DateTimeFormat.ISO8601));
+            return JSON.Deserialize<T>(new StreamReader(stream), new Options(dateFormat: DateTimeFormat.ISO8601));
         }
 
         public object FromJson(Type type, string json)
         {
-            return Jil.JSON.Deserialize(json, type, new Options(dateFormat: DateTimeFormat.ISO8601));
+            return JSON.Deserialize(json, type, new Options(dateFormat: DateTimeFormat.ISO8601));
         }
     }
 
 
-
     public class SerializerTiming
     {
-        public readonly LightweightCache<Type, Dictionary<int, double>> Timings 
+        public readonly LightweightCache<Type, Dictionary<int, double>> Timings
             = new LightweightCache<Type, Dictionary<int, double>>(x => new Dictionary<int, double>());
 
         public void Record<T>(int count, double average)
         {
-            Timings[typeof(T)].Add(count, average);            
+            Timings[typeof (T)].Add(count, average);
         }
     }
 
 
     public class performance_measurements
     {
-        private readonly LightweightCache<Type, SerializerTiming> _timings = new LightweightCache<Type, SerializerTiming>(t => new SerializerTiming()); 
-         
-
-public class DateIsSearchable : MartenRegistry
-{
-    public DateIsSearchable()
-    {
-        // This can also be done with attributes
-        For<Target>().Searchable(x => x.Date);
-    }
-}
-
-public class JsonLocatorOnly : MartenRegistry
-{
-    public JsonLocatorOnly()
-    {
-        // This can also be done with attributes
-        For<Target>().PropertySearching(PropertySearching.JSON_Locator_Only);
-    }
-}
-
-        public class JsonBToRecord : MartenRegistry
-        {
-            public JsonBToRecord()
-            {
-                For<Target>().PropertySearching(PropertySearching.JSONB_To_Record);
-            }
-        }
+        private readonly LightweightCache<Type, SerializerTiming> _timings =
+            new LightweightCache<Type, SerializerTiming>(t => new SerializerTiming());
 
         public void time_query<TSerializer, TRegistry>(Target[] data)
             where TSerializer : ISerializer
@@ -104,25 +76,19 @@ public class JsonLocatorOnly : MartenRegistry
 
                 store.BulkInsert(data);
 
-var theDate = DateTime.Today.AddDays(3);
-var queryable = session.Query<Target>().Where(x => x.Date == theDate);
+                var theDate = DateTime.Today.AddDays(3);
+                var queryable = session.Query<Target>().Where(x => x.Date == theDate);
 
                 Debug.WriteLine(store.Diagnostics.CommandFor(queryable).CommandText);
 
                 // Once to warm up
-                var time = Timings.Time(() =>
-                {
-                    queryable.ToArray().Length.ShouldBeGreaterThan(0);
-                });
+                var time = Timings.Time(() => { queryable.ToArray().Length.ShouldBeGreaterThan(0); });
 
 
                 var times = new double[5];
                 for (var i = 0; i < 5; i++)
                 {
-                    times[i] = Timings.Time(() =>
-                    {
-                        queryable.ToArray().Length.ShouldBeGreaterThan(0);
-                    });
+                    times[i] = Timings.Time(() => { queryable.ToArray().Length.ShouldBeGreaterThan(0); });
                 }
 
                 var average = times.Average(x => x);
@@ -132,14 +98,13 @@ var queryable = session.Query<Target>().Where(x => x.Date == theDate);
 
                 Debug.WriteLine(description);
 
-                _timings[typeof(TSerializer)].Record<TRegistry>(data.Length, average);
-
+                _timings[typeof (TSerializer)].Record<TRegistry>(data.Length, average);
             }
         }
 
         private void create_timings(int length)
         {
-            Target[] data = Target.GenerateRandomData(length).ToArray();
+            var data = Target.GenerateRandomData(length).ToArray();
 
             time_query<JsonNetSerializer, JsonLocatorOnly>(data);
             time_query<JsonNetSerializer, JsonBToRecord>(data);
@@ -154,9 +119,9 @@ var queryable = session.Query<Target>().Where(x => x.Date == theDate);
         private void measure_and_report()
         {
             create_timings(1000);
-            create_timings(10000);
-            create_timings(100000);
-            create_timings(1000000);
+            //create_timings(10000);
+            //create_timings(100000);
+            //create_timings(1000000);
 
             var document = new HtmlDocument();
             document.Add("h1").Text("Marten Query Timings");
@@ -203,7 +168,7 @@ var queryable = session.Query<Target>().Where(x => x.Date == theDate);
             {
                 tr.Header("jsonb_to_record + lateral join");
 
-                var dict = timing.Timings[typeof(JsonBToRecord)];
+                var dict = timing.Timings[typeof (JsonBToRecord)];
 
                 tr.Cell(dict[1000].ToString());
                 tr.Cell(dict[10000].ToString());
@@ -215,7 +180,7 @@ var queryable = session.Query<Target>().Where(x => x.Date == theDate);
             {
                 tr.Header("searching by duplicated field");
 
-                var dict = timing.Timings[typeof(DateIsSearchable)];
+                var dict = timing.Timings[typeof (DateIsSearchable)];
 
                 tr.Cell(dict[1000].ToString());
                 tr.Cell(dict[10000].ToString());
@@ -224,13 +189,43 @@ var queryable = session.Query<Target>().Where(x => x.Date == theDate);
             });
 
             return div;
+        }
 
 
+        public class DateIsSearchable : MartenRegistry
+        {
+            public DateIsSearchable()
+            {
+                // This can also be done with attributes
+                For<Target>().Searchable(x => x.Date);
+            }
+        }
+
+        public class JsonLocatorOnly : MartenRegistry
+        {
+            public JsonLocatorOnly()
+            {
+                // This can also be done with attributes
+                For<Target>().GinIndexJsonData().PropertySearching(PropertySearching.JSON_Locator_Only);
+            }
+        }
+
+        public class ContainmentOperator : MartenRegistry
+        {
+            public ContainmentOperator()
+            {
+                For<Target>().GinIndexJsonData().PropertySearching(PropertySearching.ContainmentOperator);
+            }
+        }
+
+        public class JsonBToRecord : MartenRegistry
+        {
+            public JsonBToRecord()
+            {
+                For<Target>().GinIndexJsonData().PropertySearching(PropertySearching.JSONB_To_Record);
+            }
         }
     }
-
-
-    
 
 
     public class performance_tuning
@@ -238,51 +233,36 @@ var queryable = session.Query<Target>().Where(x => x.Date == theDate);
         private readonly IContainer theContainer = Container.For<DevelopmentModeRegistry>();
 
 
-
-
-
-
-
         public void generate_data()
         {
             //theContainer.Inject<ISerializer>(new JilSerializer());
 
-            theContainer.GetInstance<DocumentCleaner>().CompletelyRemove(typeof(Target));
+            theContainer.GetInstance<DocumentCleaner>().CompletelyRemove(typeof (Target));
 
             // Get Roslyn spun up before measuring anything
             var schema = theContainer.GetInstance<IDocumentSchema>();
 
             schema.MappingFor(typeof (Target)).DuplicateField("Date");
 
-            schema.StorageFor(typeof(Target)).ShouldNotBeNull();
+            schema.StorageFor(typeof (Target)).ShouldNotBeNull();
 
-            theContainer.GetInstance<DocumentCleaner>().DeleteDocumentsFor(typeof(Target));
+            theContainer.GetInstance<DocumentCleaner>().DeleteDocumentsFor(typeof (Target));
 
 
             var session = theContainer.GetInstance<IDocumentStore>().OpenSession();
             var store = theContainer.GetInstance<IDocumentStore>();
 
             var data = Target.GenerateRandomData(10000).ToArray();
-            Timings.Time(() =>
-            {
-                store.BulkInsert(data);
-            });
-            
-            
-
-            
-
-
+            Timings.Time(() => { store.BulkInsert(data); });
 
 
             var theDate = DateTime.Today.AddDays(3);
-            
+
             var one = Timings.Time(() =>
             {
                 var sql = "select data from mt_doc_target where (data ->> 'Date')::date = ?";
                 session.Query<Target>(sql, theDate).ToArray().Length.ShouldBeGreaterThan(0);
             });
-            
 
 
             var two = Timings.Time(() =>
