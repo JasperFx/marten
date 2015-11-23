@@ -11,7 +11,7 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
-    public abstract class BaseSession : ISession
+    public class DocumentSession : IDocumentSession
     {
         private readonly IQueryParser _parser;
         private readonly IMartenQueryExecutor _executor;
@@ -19,9 +19,9 @@ namespace Marten
         private readonly ICommandRunner _runner;
         private readonly ISerializer _serializer;
         private readonly IDocumentSchema _schema;
-        private UnitOfWork _unitOfWork;
+        private readonly UnitOfWork _unitOfWork;
 
-        protected BaseSession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IIdentityMap documentMap, IDiagnostics diagnostics)
+        public DocumentSession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IIdentityMap documentMap, IDiagnostics diagnostics)
         {
             _schema = schema;
             _serializer = serializer;
@@ -193,9 +193,9 @@ namespace Marten
 
         private class LoadByKeys<TDoc> : ILoadByKeys<TDoc> where TDoc : class
         {
-            private readonly BaseSession _parent;
+            private readonly DocumentSession _parent;
 
-            public LoadByKeys(BaseSession parent)
+            public LoadByKeys(DocumentSession parent)
             {
                 _parent = parent;
             }

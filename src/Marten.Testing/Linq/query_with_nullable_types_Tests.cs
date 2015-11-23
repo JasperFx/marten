@@ -1,10 +1,11 @@
 ﻿using System.Linq;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_nullable_types_Tests : DocumentSessionFixture
+    public class query_with_nullable_types_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void query_against_non_null()
         {

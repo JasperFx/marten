@@ -4,15 +4,19 @@ using FubuCore;
 using Marten.Events;
 using Marten.Schema;
 using Shouldly;
+using StructureMap;
 
 namespace Marten.Testing.Events
 {
-    public class plv8_transformation_functions_Tests : DocumentSessionFixture
+    public class plv8_transformation_functions_Tests
     {
         private readonly IEventStore theEvents;
+        private IContainer theContainer;
 
         public plv8_transformation_functions_Tests()
         {
+            theContainer = Container.For<DevelopmentModeRegistry>();
+
             var directory =
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 

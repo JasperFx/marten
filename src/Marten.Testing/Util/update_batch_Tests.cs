@@ -7,16 +7,19 @@ using Marten.Testing.Fixtures;
 using Marten.Util;
 using NpgsqlTypes;
 using Shouldly;
+using StructureMap;
 
 namespace Marten.Testing.Util
 {
-    public class update_batch_Tests : DocumentSessionFixture
+    public class update_batch_Tests : IntegratedFixture
     {
         private DocumentMapping theMapping;
+        private IDocumentSession theSession;
 
         public update_batch_Tests()
         {
             theMapping = theContainer.GetInstance<IDocumentSchema>().MappingFor(typeof (Target));
+            theSession = theContainer.GetInstance<IDocumentSession>();
         }
 
         public void write_multiple_calls()

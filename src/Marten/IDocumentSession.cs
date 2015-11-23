@@ -5,10 +5,25 @@ using System.Linq;
 
 namespace Marten
 {
+
+    public interface IQuerySession
+    {
+        T Load<T>(string id) where T : class;
+        T Load<T>(ValueType id) where T : class;
+
+        ILoadByKeys<T> Load<T>() where T : class;
+
+
+        IQueryable<T> Query<T>();
+
+        IEnumerable<T> Query<T>(string sql, params object[] parameters);
+
+    }
+
     /// <summary>
     ///     Interface for document session
     /// </summary>
-    public interface IDocumentSession : IDisposable
+    public interface IDocumentSession : IQuerySession, IDisposable
     {
         void Delete<T>(T entity);
         void Delete<T>(ValueType id);
@@ -19,18 +34,10 @@ namespace Marten
         /// </summary>
         void SaveChanges();
 
-        T Load<T>(string id) where T : class;
-        T Load<T>(ValueType id) where T : class;
-
-        ILoadByKeys<T> Load<T>() where T : class; 
 
         // Store by etag? Version strategy?
 
         void Store<T>(T entity) where T : class;
-
-        IQueryable<T> Query<T>();
-
-        IEnumerable<T> Query<T>(string sql, params object[] parameters);
 
         void BulkInsert<T>(T[] documents, int batchSize = 1000);
 

@@ -1,10 +1,11 @@
 ﻿using System;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
 
 namespace Marten.Testing.Session
 {
-    public class not_tracked_document_session_load_not_yet_persisted_document_Tests : DocumentSessionFixture
+    public class not_tracked_document_session_load_not_yet_persisted_document_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void then_a_new_document_should_be_returned()
         {

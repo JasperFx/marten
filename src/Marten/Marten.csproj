@@ -47,8 +47,6 @@
     <Compile Include="Services\Diagnostics.cs" />
     <Compile Include="Events\EventStore.cs" />
     <Compile Include="Linq\IMartenQueryExecutor.cs" />
-    <Compile Include="ISession.cs" />
-    <Compile Include="ITrackingSession.cs" />
     <Compile Include="Events\EventGraph.cs" />
     <Compile Include="Events\EventMapping.cs" />
     <Compile Include="Events\IAggregate.cs" />
@@ -119,9 +117,7 @@
     <Compile Include="Services\NulloIdentityMap.cs" />
     <Compile Include="Services\TrackedEntity.cs" />
     <Compile Include="Util\SerializerExtensions.cs" />
-    <Compile Include="BaseSession.cs" />
-    <Compile Include="Session.cs" />
-    <Compile Include="TrackingSession.cs" />
+    <Compile Include="DocumentSession.cs" />
     <Compile Include="Util\TypeMappings.cs" />
     <Compile Include="Codegen\AssemblyGenerator.cs" />
     <Compile Include="Services\UnitOfWork.cs" />

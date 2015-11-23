@@ -1,10 +1,14 @@
 ﻿using System;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
 
 namespace Marten.Testing.TrackingSession
 {
-    public class document_session_load_not_yet_persisted_document_Tests : TrackingSessionFixture
+    public class document_session_load_not_yet_persisted_document_IdentityMap_Tests : document_session_load_not_yet_persisted_document_Tests<IdentityMap> { }
+    public class document_session_load_not_yet_persisted_document_DirtyChecking_Tests : document_session_load_not_yet_persisted_document_Tests<DirtyTrackingIdentityMap> { }
+
+    public class document_session_load_not_yet_persisted_document_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
     {
         public void then_the_document_should_be_returned()
         {

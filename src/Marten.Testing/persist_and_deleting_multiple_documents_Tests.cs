@@ -1,9 +1,14 @@
-﻿using Marten.Testing.Documents;
+﻿using Marten.Services;
+using Marten.Testing.Documents;
 using Shouldly;
 
 namespace Marten.Testing
 {
-    public class persist_and_deleting_multiple_documents_Tests : DocumentSessionFixture
+    public class persist_and_deleting_multiple_documents_with_Nullo_Tests : persist_and_deleting_multiple_documents_Tests<NulloIdentityMap> { }
+    public class persist_and_deleting_multiple_documents_with_IdentityMap_Tests : persist_and_deleting_multiple_documents_Tests<IdentityMap> { }
+    public class persist_and_deleting_multiple_documents_with_DirtyTracking_Tests : persist_and_deleting_multiple_documents_Tests<DirtyTrackingIdentityMap> { }
+
+    public class persist_and_deleting_multiple_documents_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
     {
         public void multiple_documents()
         {

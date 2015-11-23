@@ -1,10 +1,16 @@
 ﻿using System.Linq;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
 
 namespace Marten.Testing.Session
 {
-    public class document_session_load_already_loaded_document_Tests : DocumentSessionFixture
+
+
+    public class document_session_load_already_loaded_document_with_IdentityMap_Tests : document_session_load_already_loaded_document_Tests<IdentityMap> { }
+    public class document_session_load_already_loaded_document_with_DirtyTracking_Tests : document_session_load_already_loaded_document_Tests<DirtyTrackingIdentityMap> { }
+
+    public class document_session_load_already_loaded_document_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
     {
         public void when_loading_then_a_different_document_should_be_returned()
         {
@@ -17,7 +23,7 @@ namespace Marten.Testing.Session
                 var first = session.Load<User>(user.Id);
                 var second = session.Load<User>(user.Id);
 
-                first.ShouldNotBeSameAs(second);
+                first.ShouldBeSameAs(second);
             }
         }
 
@@ -34,7 +40,7 @@ namespace Marten.Testing.Session
                     .ById(user.Id)
                     .SingleOrDefault();
 
-                first.ShouldNotBeSameAs(second);
+                first.ShouldBeSameAs(second);
             }
         }
     }

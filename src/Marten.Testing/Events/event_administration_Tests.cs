@@ -1,19 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using FubuCore;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Services;
 using Shouldly;
+using StructureMap;
 
 namespace Marten.Testing.Events
 {
-    public class event_administration_Tests : DocumentSessionFixture
+    public class event_administration_Tests
     {
+        private readonly IContainer theContainer;
+
         public event_administration_Tests()
         {
-            var events = theContainer.GetInstance<Marten.Events.EventStore>();
+            theContainer = Container.For<DevelopmentModeRegistry>();
+
+            var events = theContainer.GetInstance<EventStore>();
 
             events.RebuildEventStoreSchema();
         }
@@ -85,7 +89,7 @@ namespace Marten.Testing.Events
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("mt_get_projection_usage");
         }
-        
+
 
         public void load_projections()
         {
@@ -93,8 +97,7 @@ namespace Marten.Testing.Events
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
 
-
-            var events = theContainer.GetInstance<Marten.Events.EventStore>();
+            var events = theContainer.GetInstance<EventStore>();
 
             events.RebuildEventStoreSchema();
 
@@ -116,16 +119,19 @@ namespace Marten.Testing.Events
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
 
-
-            var events = theContainer.GetInstance<Marten.Events.EventStore>();
+            var events = theContainer.GetInstance<EventStore>();
 
             events.RebuildEventStoreSchema();
 
             events.Administration.LoadProjections(directory);
             var usages = events.Administration.InitializeEventStoreInDatabase();
 
-            usages.Where(x => x.name == "location").Select(x => x.event_name).ShouldHaveTheSameElementsAs("members_joined", "members_departed");
-            usages.Where(x => x.name == "fake_aggregate").Select(x => x.event_name).ShouldHaveTheSameElementsAs("event_a", "event_b", "event_c", "event_d");
+            usages.Where(x => x.name == "location")
+                .Select(x => x.event_name)
+                .ShouldHaveTheSameElementsAs("members_joined", "members_departed");
+            usages.Where(x => x.name == "fake_aggregate")
+                .Select(x => x.event_name)
+                .ShouldHaveTheSameElementsAs("event_a", "event_b", "event_c", "event_d");
 
             /*
 
@@ -142,7 +148,7 @@ Projection party (snapshot) for Event quest_started executed inline
 
         public void initialize_can_run_without_blowing_up()
         {
-            var events = theContainer.GetInstance<Marten.Events.EventStore>();
+            var events = theContainer.GetInstance<EventStore>();
             events.Administration.InitializeEventStoreInDatabase();
         }
     }

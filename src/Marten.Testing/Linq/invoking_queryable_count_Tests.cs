@@ -1,10 +1,11 @@
 ﻿using System.Linq;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_count_Tests : DocumentSessionFixture
+    public class invoking_queryable_count_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void count_without_any_where()
         {

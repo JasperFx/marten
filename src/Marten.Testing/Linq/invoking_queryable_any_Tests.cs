@@ -1,9 +1,10 @@
 using System.Linq;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_any_Tests : DocumentSessionFixture
+    public class invoking_queryable_any_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
 
         public void any_miss_with_query()

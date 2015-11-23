@@ -1,9 +1,11 @@
-﻿using Marten.Testing.Documents;
+﻿using Marten.Services;
+using Marten.Testing.Documents;
 using Shouldly;
 
 namespace Marten.Testing.TrackingSession
 {
-    public class document_session_update_existing_document_Tests : TrackingSessionFixture
+
+    public class document_session_update_existing_document_Tests : DocumentSessionFixture<DirtyTrackingIdentityMap>
     {
         public void store_a_document()
         {

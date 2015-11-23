@@ -2,13 +2,20 @@
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Schema;
-using Marten.Util;
 using Shouldly;
+using StructureMap;
 
 namespace Marten.Testing
 {
-    public class UnitOfWorkTests : DocumentSessionFixture
+    public class UnitOfWorkTests : IntegratedFixture
     {
+        private readonly IDocumentSession theSession;
+
+        public UnitOfWorkTests()
+        {
+            theSession = theContainer.GetInstance<IDocumentSession>();
+        }
+
         public void update_mixed_document_types()
         {
             var user1 = new User ();
@@ -26,6 +33,8 @@ namespace Marten.Testing
             var batch = theContainer.GetInstance<UpdateBatch>();
 
             uow.ApplyChanges(batch);
+
+            var theSession = theContainer.GetInstance<IDocumentSession>();
 
             theSession.Query<User>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(user1.Id, user2.Id);
             theSession.Query<Issue>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(issue1.Id, issue2.Id);

@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Linq;
+using Marten.Services;
 using Marten.Testing.Documents;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_query_with_select_Tests : DocumentSessionFixture
+    public class invoking_query_with_select_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void use_select_in_query()
         {

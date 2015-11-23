@@ -1,9 +1,10 @@
 ﻿using System.Linq;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 
 namespace Marten.Testing.Linq
 {
-    public class deep_searches_Tests : DocumentSessionFixture
+    public class deep_searches_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void query_two_deep()
         {

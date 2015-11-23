@@ -1,9 +1,10 @@
 ﻿using System.Linq;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 
 namespace Marten.Testing.Linq
 {
-    public class using_multiple_where_clauses_Tests : DocumentSessionFixture
+    public class using_multiple_where_clauses_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void two_where_clauses()
         {

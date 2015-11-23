@@ -1,9 +1,10 @@
 ﻿using System.Linq;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_enums_Tests : DocumentSessionFixture
+    public class query_with_enums_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void use_enum_values()
         {

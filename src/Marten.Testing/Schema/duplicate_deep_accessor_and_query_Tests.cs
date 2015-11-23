@@ -2,11 +2,12 @@
 using System.Diagnostics;
 using System.Linq;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 
 namespace Marten.Testing.Schema
 {
-    public class duplicate_deep_accessor_and_query_Tests : DocumentSessionFixture
+    public class duplicate_deep_accessor_and_query_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void duplicate_and_search_off_of_deep_accessor_by_number()
         {

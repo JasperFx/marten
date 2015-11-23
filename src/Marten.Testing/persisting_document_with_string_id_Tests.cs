@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Marten.Services;
 using Shouldly;
 
 namespace Marten.Testing
@@ -9,7 +10,7 @@ namespace Marten.Testing
         public string Id { get;set; }
     }
 
-    public class persisting_document_with_string_id_Tests : DocumentSessionFixture
+    public class persisting_document_with_string_id_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void persist_and_load()
         {

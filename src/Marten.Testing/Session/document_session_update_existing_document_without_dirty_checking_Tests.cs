@@ -1,9 +1,15 @@
-﻿using Marten.Testing.Documents;
+﻿using Marten.Services;
+using Marten.Testing.Documents;
 using Shouldly;
 
 namespace Marten.Testing.Session
 {
-    public class document_session_update_existing_document_Tests : DocumentSessionFixture
+    public class DocumentSessionUpdateExistingDocumentWithNulloWithoutDirtyCheckingTests : document_session_update_existing_document_without_dirty_checking_Tests<NulloIdentityMap> { }
+    public class DocumentSessionUpdateExistingDocumentWithIdentityMapWithoutDirtyCheckingTests : document_session_update_existing_document_without_dirty_checking_Tests<IdentityMap> { }
+
+
+
+    public class document_session_update_existing_document_without_dirty_checking_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
     {
         public void store_a_document()
         {

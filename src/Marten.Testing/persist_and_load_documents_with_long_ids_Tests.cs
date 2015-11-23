@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Marten.Services;
 using Shouldly;
 
 namespace Marten.Testing
@@ -8,7 +9,7 @@ namespace Marten.Testing
         public long Id { get; set; }
     }
 
-    public class persist_and_load_documents_with_long_ids_Tests : DocumentSessionFixture
+    public class persist_and_load_documents_with_long_ids_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void persist_and_load()
         {

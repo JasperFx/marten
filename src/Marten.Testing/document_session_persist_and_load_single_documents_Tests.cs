@@ -7,7 +7,13 @@ using Shouldly;
 
 namespace Marten.Testing
 {
-    public class document_session_persist_and_load_single_documents_Tests : DocumentSessionFixture
+    public class document_session_persist_and_load_single_documents_with_nullo_Tests : document_session_persist_and_load_single_documents_Tests<NulloIdentityMap> { }
+    public class document_session_persist_and_load_single_documents_with_identity_map_Tests : document_session_persist_and_load_single_documents_Tests<IdentityMap> { }
+    public class document_session_persist_and_load_single_documents_with_dirty_tracking_Tests : document_session_persist_and_load_single_documents_Tests<DirtyTrackingIdentityMap> { }
+
+
+
+    public class document_session_persist_and_load_single_documents_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
     {
         public void persist_a_single_document()
         {

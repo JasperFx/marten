@@ -17,9 +17,8 @@ namespace Marten.Testing
                 .OnCreation("", x => x.UpsertType = UpsertType);
             Forward<DocumentSchema, IDocumentSchema>();
 
-            For<IDocumentSession>().Use<Marten.Session>();
-            For<ISession>().Use<Marten.Session>();
-            For<ITrackingSession>().Use<Marten.TrackingSession>();
+            For<IIdentityMap>().Use<NulloIdentityMap>();
+            For<IDocumentSession>().Use<DocumentSession>();
 
             For<ISerializer>().Use<JsonNetSerializer>();
             For<IDocumentSchemaCreation>().Use<DevelopmentSchemaCreation>();

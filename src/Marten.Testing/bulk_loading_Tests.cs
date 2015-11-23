@@ -1,12 +1,13 @@
 ﻿using System.Diagnostics;
 using System.Linq;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
 
 namespace Marten.Testing
 {
-    public class bulk_loading_Tests : DocumentSessionFixture
+    public class bulk_loading_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void load_with_small_batch()
         {

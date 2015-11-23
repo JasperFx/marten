@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Linq;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_through_first_Tests : DocumentSessionFixture
+    public class invoking_queryable_through_first_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public void first_hit_with_only_one_document()
         {
