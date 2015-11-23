@@ -41,12 +41,16 @@ namespace Marten
                 return this;
             }  
 
-            public DocumentMappingExpression<T> Searchable(Expression<Func<T, object>> expression)
+            public DocumentMappingExpression<T> Searchable(Expression<Func<T, object>> expression, Action<IndexDefinition> configureIndex = null)
             {
                 var visitor = new FindMembers();
                 visitor.Visit(expression);
 
-                alter = mapping => mapping.DuplicateField(visitor.Members.ToArray());
+                alter = mapping =>
+                {
+                   var index =  mapping.DuplicateField(visitor.Members.ToArray());
+                    configureIndex?.Invoke(index);
+                };
 
                 return this;
             }   
@@ -66,6 +70,20 @@ namespace Marten
 
                     _parent._alterations.Add(alteration);
                 }
+            }
+
+            public DocumentMappingExpression<T> GinIndexJsonData(Action<IndexDefinition> configureIndex = null)
+            {
+                alter = mapping =>
+                {
+                    var index = mapping.AddIndex("data");
+                    index.Method = IndexMethod.gin;
+                    index.Expression = "? jsonb_path_ops";
+
+                    configureIndex?.Invoke(index);
+                };
+
+                return this;
             }
         }
     }

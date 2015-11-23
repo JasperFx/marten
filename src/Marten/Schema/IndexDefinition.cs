@@ -35,6 +35,8 @@ namespace Marten.Schema
 
         public string Modifier { get; set; }
 
+        public IEnumerable<string> Columns => _columns;
+
         public string ToDDL()
         {
             var index = IsUnique ? "CREATE UNIQUE INDEX" : "CREATE INDEX";

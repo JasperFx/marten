@@ -191,11 +191,19 @@ namespace Marten.Schema
             });
         }
 
-        public void DuplicateField(MemberInfo[] members)
+        public IndexDefinition DuplicateField(MemberInfo[] members)
         {
             var memberName = members.Select(x => x.Name).Join("");
 
-            _fields[memberName] = new DuplicatedField(members);
+            var duplicatedField = new DuplicatedField(members);
+            _fields[memberName] = duplicatedField;
+
+            return AddIndex(duplicatedField.ColumnName);
+        }
+
+        public IEnumerable<IndexDefinition> IndexesFor(string column)
+        {
+            return _indexes.Where(x => x.Columns.Contains(column));
         }
     }
 }
