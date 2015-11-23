@@ -91,6 +91,16 @@ namespace Marten.Testing.Schema
                 .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target USING gin (foo)");
         }
 
+        public void generate_ddl_for_gin_with_jsonb_path_ops_index()
+        {
+            var definition = new IndexDefinition(mapping, "foo");
+            definition.Method = IndexMethod.gin;
+            definition.Expression = "? jsonb_path_ops";
+
+            definition.ToDDL()
+                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target USING gin (foo jsonb_path_ops)");
+        }
+
         public void generate_ddl_for_gist_index()
         {
             var definition = new IndexDefinition(mapping, "foo");

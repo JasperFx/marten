@@ -66,9 +66,16 @@ namespace Marten.Schema
                 writer.WriteLine("$$ LANGUAGE plpgsql;");
             }
 
+            mapping.Indexes.Each(x =>
+            {
+                writer.WriteLine();
+                writer.WriteLine(x.ToDDL());
+            });
 
             writer.WriteLine();
             writer.WriteLine();
+
+
         }
 
         public static void Write(StringWriter writer, string script)

@@ -16,6 +16,7 @@ namespace Marten.Schema
     {
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
         private PropertySearching _propertySearching = PropertySearching.JSONB_To_Record;
+        private readonly IList<IndexDefinition> _indexes = new List<IndexDefinition>(); 
 
         public DocumentMapping(Type documentType)
         {
@@ -49,6 +50,20 @@ namespace Marten.Schema
 
                 fieldInfo.ForAttribute<MartenAttribute>(att => att.Modify(this, fieldInfo));
             });
+        }
+
+        public IndexDefinition AddIndex(params string[] columns)
+        {
+            var index = new IndexDefinition(this, columns);
+            _indexes.Add(index);
+
+            return index;
+        }
+
+
+        public IList<IndexDefinition> Indexes
+        {
+            get { return _indexes; }
         }
 
         private void assignIdStrategy(Type documentType)

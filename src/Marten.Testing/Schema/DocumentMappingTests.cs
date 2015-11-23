@@ -65,6 +65,25 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("jsonb NOT NULL");
         }
 
+        public void generate_table_with_indexes()
+        {
+            var mapping = new DocumentMapping(typeof(User));
+            var i1 = mapping.AddIndex("first_name");
+            var i2 = mapping.AddIndex("last_name");
+
+            var builder = new StringWriter();
+
+            SchemaBuilder.WriteSchemaObjects(mapping, null, builder);
+
+            var sql = builder.ToString();
+
+            
+
+            sql.ShouldContain(i1.ToDDL());
+            sql.ShouldContain(i2.ToDDL());
+
+        }
+
         public void generate_a_document_table_with_duplicated_tables()
         {
             var mapping = DocumentMapping.For<User>();

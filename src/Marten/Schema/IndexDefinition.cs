@@ -44,6 +44,7 @@ namespace Marten.Schema
             }
 
             index += $" {IndexName} ON {_parent.TableName}";
+
             if (Method != IndexMethod.btree)
             {
                 index += $" USING {Method}";
