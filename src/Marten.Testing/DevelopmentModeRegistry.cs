@@ -32,6 +32,8 @@ namespace Marten.Testing
 
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();
 
+            For<IQuerySession>().Use<QuerySession>().Ctor<IIdentityMap>().Is<NulloIdentityMap>();
+
             For<IEventStore>().Use<EventStore>();
         }
 
