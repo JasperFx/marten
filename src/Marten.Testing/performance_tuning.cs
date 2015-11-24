@@ -37,20 +37,22 @@ namespace Marten.Testing
     }
 
 
-    public class SerializerTiming
-    {
-        public readonly LightweightCache<Type, Dictionary<int, double>> Timings
-            = new LightweightCache<Type, Dictionary<int, double>>(x => new Dictionary<int, double>());
 
-        public void Record<T>(int count, double average)
-        {
-            Timings[typeof (T)].Add(count, average);
-        }
-    }
 
 
     public class performance_measurements
     {
+        public class SerializerTiming
+        {
+            public readonly LightweightCache<Type, Dictionary<int, double>> Timings
+                = new LightweightCache<Type, Dictionary<int, double>>(x => new Dictionary<int, double>());
+
+            public void Record<T>(int count, double average)
+            {
+                Timings[typeof(T)].Add(count, average);
+            }
+        }
+
         private readonly LightweightCache<Type, SerializerTiming> _timings =
             new LightweightCache<Type, SerializerTiming>(t => new SerializerTiming());
 
@@ -76,7 +78,7 @@ namespace Marten.Testing
 
                 store.BulkInsert(data);
 
-                var theDate = DateTime.Today.AddDays(3);
+                var theDate = data.ElementAt(0).Date;
                 var queryable = session.Query<Target>().Where(x => x.Date == theDate);
 
                 Debug.WriteLine(store.Diagnostics.CommandFor(queryable).CommandText);
@@ -102,25 +104,64 @@ namespace Marten.Testing
             }
         }
 
+        public void time_inserts<TSerializer, TRegistry>(Target[] data)
+            where TSerializer : ISerializer
+            where TRegistry : MartenRegistry, new()
+        {
+            var container = Container.For<DevelopmentModeRegistry>();
+            container.Configure(_ => _.For<ISerializer>().Use<TSerializer>());
+
+
+            // Completely removes all the database schema objects for the
+            // Target document type
+            container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
+            
+            // Apply the schema customizations
+            container.GetInstance<IDocumentSchema>().Alter<TRegistry>();
+
+
+            using (var session = container.GetInstance<IDocumentStore>().OpenSession())
+            {
+                var store = container.GetInstance<IDocumentStore>();
+
+                // Once to warm up
+                var time = Timings.Time(() => { store.BulkInsert(data); });
+
+                var description =
+                    $"{data.Length} documents / {typeof(TSerializer).Name} / {typeof(TRegistry).Name}: {time}";
+
+                Debug.WriteLine(description);
+
+                _timings[typeof(TSerializer)].Record<TRegistry>(data.Length, time);
+            }
+        }
+
+
         private void create_timings(int length)
         {
             var data = Target.GenerateRandomData(length).ToArray();
-
+            
             time_query<JsonNetSerializer, JsonLocatorOnly>(data);
             time_query<JsonNetSerializer, JsonBToRecord>(data);
             time_query<JsonNetSerializer, DateIsSearchable>(data);
+            time_query<JsonNetSerializer, ContainmentOperator>(data);
 
             time_query<JilSerializer, JsonLocatorOnly>(data);
             time_query<JilSerializer, JsonBToRecord>(data);
             time_query<JilSerializer, DateIsSearchable>(data);
+            
+            time_query<JilSerializer, ContainmentOperator>(data);
         }
+
+
+
 
 
         private void measure_and_report()
         {
             create_timings(1000);
-            //create_timings(10000);
-            //create_timings(100000);
+            create_timings(10000);
+            create_timings(100000);
             //create_timings(1000000);
 
             var document = new HtmlDocument();
@@ -149,7 +190,7 @@ namespace Marten.Testing
                 tr.Header("1K");
                 tr.Header("10K");
                 tr.Header("100K");
-                tr.Header("1M");
+                //tr.Header("1M");
             });
 
             table.AddBodyRow(tr =>
@@ -161,7 +202,7 @@ namespace Marten.Testing
                 tr.Cell(dict[1000].ToString());
                 tr.Cell(dict[10000].ToString());
                 tr.Cell(dict[100000].ToString());
-                tr.Cell(dict[1000000].ToString());
+                //tr.Cell(dict[1000000].ToString());
             });
 
             table.AddBodyRow(tr =>
@@ -173,7 +214,7 @@ namespace Marten.Testing
                 tr.Cell(dict[1000].ToString());
                 tr.Cell(dict[10000].ToString());
                 tr.Cell(dict[100000].ToString());
-                tr.Cell(dict[1000000].ToString());
+                //tr.Cell(dict[1000000].ToString());
             });
 
             table.AddBodyRow(tr =>
@@ -185,7 +226,19 @@ namespace Marten.Testing
                 tr.Cell(dict[1000].ToString());
                 tr.Cell(dict[10000].ToString());
                 tr.Cell(dict[100000].ToString());
-                tr.Cell(dict[1000000].ToString());
+                //tr.Cell(dict[1000000].ToString());
+            });
+
+            table.AddBodyRow(tr =>
+            {
+                tr.Header("searching by containment operator");
+
+                var dict = timing.Timings[typeof(ContainmentOperator)];
+
+                tr.Cell(dict[1000].ToString());
+                tr.Cell(dict[10000].ToString());
+                tr.Cell(dict[100000].ToString());
+                //tr.Cell(dict[1000000].ToString());
             });
 
             return div;
@@ -303,4 +356,7 @@ namespace Marten.Testing
             return stopwatch.ElapsedMilliseconds;
         }
     }
+
+
+
 }

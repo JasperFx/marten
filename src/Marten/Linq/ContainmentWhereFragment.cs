@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using FubuCore;
 using Marten.Schema;
 using Newtonsoft.Json;
 using Npgsql;
@@ -11,12 +12,13 @@ namespace Marten.Linq
 {
     public class ContainmentWhereFragment : IWhereFragment
     {
-        private readonly static JsonSerializer _serializer = new JsonSerializer {TypeNameHandling = TypeNameHandling.None, DateFormatHandling = DateFormatHandling.IsoDateFormat};
+        private readonly ISerializer _serializer;
         private readonly IDictionary<string, object> _dictionary = new Dictionary<string, object>(); 
 
-        public ContainmentWhereFragment(DocumentMapping mapping, BinaryExpression binary)
+        public ContainmentWhereFragment(ISerializer serializer, BinaryExpression binary)
         {
-            
+            _serializer = serializer;
+
 
             var visitor = new FindMembers();
             visitor.Visit(binary.Left);
@@ -30,7 +32,8 @@ namespace Marten.Linq
             else
             {
                 var member = members.Single();
-                _dictionary.Add(member.Name, MartenExpressionParser.Value(binary.Right));
+                var value = MartenExpressionParser.Value(binary.Right);
+                _dictionary.Add(member.Name, value);
 
 
             }
@@ -39,10 +42,9 @@ namespace Marten.Linq
 
         public string ToSql(NpgsqlCommand command)
         {
-            var stringWriter = new StringWriter();
-            _serializer.Serialize(new JsonTextWriter(stringWriter), _dictionary);
+            var json = _serializer.ToJson(_dictionary);
 
-            return  $"data @> '{stringWriter}'";
+            return  $"data @> '{json}'";
         }
     }
 }

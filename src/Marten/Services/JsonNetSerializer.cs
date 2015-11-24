@@ -9,7 +9,7 @@ namespace Marten.Services
         private readonly JsonSerializer _serializer = new JsonSerializer
         {
             TypeNameHandling = TypeNameHandling.Auto,
-            
+            DateFormatHandling = DateFormatHandling.IsoDateFormat
         };
 
         public string ToJson(object document)

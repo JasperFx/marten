@@ -90,38 +90,7 @@ namespace Marten.Testing.Util
         }
 
 
-        /*
-        public void time_perf()
-        {
-            var targets = Target.GenerateRandomData(50);
 
-
-            var time = Timings.Time(() =>
-            {
-                targets.Each(x => theSession.Store(x));
-                theSession.SaveChanges();
-            });
-
-            Debug.WriteLine("SaveChanges() is " + time);
-
-            theContainer.GetInstance<IDocumentCleaner>().DeleteAllDocuments();
-
-            var batch = theContainer.GetInstance<UpdateBatch>();
-            
-
-            var batchTime = Timings.Time(() =>
-            {
-                targets.Each(x => batch.Sproc(theMapping.UpsertName).Param(x.Id).JsonEntity(x));
-                batch.Execute();
-            });
-
-            Debug.WriteLine("UpdateBatch time: " + batchTime);
-
-            theContainer.GetInstance<IDocumentCleaner>().DeleteAllDocuments();
-            var bulkTime = Timings.Time(() => theStore.BulkInsert(targets.ToArray()));
-
-            Debug.WriteLine("The bulk insert time was " + bulkTime);
-        }
-        */
+        
     }
 }

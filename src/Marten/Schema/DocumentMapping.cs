@@ -52,6 +52,8 @@ namespace Marten.Schema
             });
         }
 
+        public int BatchSize = 100;
+
         public IndexDefinition AddIndex(params string[] columns)
         {
             var index = new IndexDefinition(this, columns);

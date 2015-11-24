@@ -31,7 +31,7 @@ namespace Marten.Linq
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
             var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
-            var documentQuery = new DocumentQuery(mapping, queryModel);
+            var documentQuery = new DocumentQuery(mapping, queryModel, _serializer);
 
             _schema.EnsureStorageExists(mapping.DocumentType);
 
@@ -106,7 +106,7 @@ namespace Marten.Linq
         public NpgsqlCommand BuildCommand(QueryModel queryModel)
         {
             var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
-            var query = new DocumentQuery(mapping, queryModel);
+            var query = new DocumentQuery(mapping, queryModel, _serializer);
 
             return query.ToCommand();
         }

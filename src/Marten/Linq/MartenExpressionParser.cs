@@ -17,6 +17,7 @@ namespace Marten.Linq
     public class MartenExpressionParser
     {
         private readonly DocumentQuery _query;
+        private readonly ISerializer _serializer;
         private static readonly string CONTAINS = ReflectionHelper.GetMethod<string>(x => x.Contains("null")).Name;
         private static readonly string STARTS_WITH = ReflectionHelper.GetMethod<string>(x => x.StartsWith("null")).Name;
         private static readonly string ENDS_WITH = ReflectionHelper.GetMethod<string>(x => x.EndsWith("null")).Name;
@@ -31,9 +32,10 @@ namespace Marten.Linq
             {ExpressionType.LessThanOrEqual, "<="}
         };
 
-        public MartenExpressionParser(DocumentQuery query)
+        public MartenExpressionParser(DocumentQuery query, ISerializer serializer)
         {
             _query = query;
+            _serializer = serializer;
         }
 
         public IWhereFragment ParseWhereFragment(DocumentMapping mapping, Expression expression)
@@ -155,7 +157,7 @@ namespace Marten.Linq
 
             if (mapping.PropertySearching == PropertySearching.ContainmentOperator && binary.NodeType == ExpressionType.Equal && value != null)
             {
-                return new ContainmentWhereFragment(mapping, binary);
+                return new ContainmentWhereFragment(_serializer, binary);
             }
 
             var jsonLocator = JsonLocator(mapping, binary.Left);
