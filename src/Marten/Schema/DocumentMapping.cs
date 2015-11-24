@@ -15,7 +15,7 @@ namespace Marten.Schema
     public class DocumentMapping
     {
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
-        private PropertySearching _propertySearching = PropertySearching.JSONB_To_Record;
+        private PropertySearching _propertySearching = PropertySearching.JSON_Locator_Only;
         private readonly IList<IndexDefinition> _indexes = new List<IndexDefinition>(); 
 
         public DocumentMapping(Type documentType)

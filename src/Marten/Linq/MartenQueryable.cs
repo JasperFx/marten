@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using System.Linq.Expressions;
-using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Parsing.Structure;
 

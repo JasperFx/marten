@@ -21,7 +21,7 @@ namespace Marten.Testing.Schema
         public void default_search_mode_is_jsonb_to_record()
         {
             var mapping = new DocumentMapping(typeof(User));
-            mapping.PropertySearching.ShouldBe(PropertySearching.JSONB_To_Record);
+            mapping.PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
         public void pick_up_upper_case_property_id()

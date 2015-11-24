@@ -30,10 +30,6 @@ namespace Marten
             }
         }
 
-        public void Dispose()
-        {
-        }
-
         public void Delete<T>(T entity)
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
