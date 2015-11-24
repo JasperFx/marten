@@ -13,7 +13,7 @@ namespace Marten.Linq
     public class ContainmentWhereFragment : IWhereFragment
     {
         private readonly ISerializer _serializer;
-        private readonly IDictionary<string, object> _dictionary = new Dictionary<string, object>(); 
+        private IDictionary<string, object> _dictionary; 
 
         public ContainmentWhereFragment(ISerializer serializer, BinaryExpression binary)
         {
@@ -27,10 +27,22 @@ namespace Marten.Linq
 
             if (members.Count > 1)
             {
-                throw new NotSupportedException("Not sure that the containment operator can do deep searches yet");
+                var dict = new Dictionary<string, object>();
+                var member = members.Last();
+                var value = MartenExpressionParser.Value(binary.Right);
+                dict.Add(member.Name, value);
+
+                members.Reverse().Skip(1).Each(m =>
+                {
+                    dict = new Dictionary<string, object> { { m.Name, dict}};
+                });
+
+                _dictionary = dict;
             }
             else
             {
+                _dictionary = new Dictionary<string, object>();
+
                 var member = members.Single();
                 var value = MartenExpressionParser.Value(binary.Right);
                 _dictionary.Add(member.Name, value);
@@ -42,7 +54,7 @@ namespace Marten.Linq
 
         public string ToSql(NpgsqlCommand command)
         {
-            var json = _serializer.ToJson(_dictionary);
+            var json = _serializer.ToCleanJson(_dictionary);
 
             return  $"data @> '{json}'";
         }

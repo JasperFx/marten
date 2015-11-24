@@ -9,5 +9,7 @@ namespace Marten
         T FromJson<T>(string json);
         T FromJson<T>(Stream stream);
         object FromJson(Type type, string json);
+
+        string ToCleanJson(object document);
     }
 }

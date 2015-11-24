@@ -34,6 +34,11 @@ namespace Marten.Testing
         {
             return JSON.Deserialize(json, type, new Options(dateFormat: DateTimeFormat.ISO8601));
         }
+
+        public string ToCleanJson(object document)
+        {
+            return ToJson(document);
+        }
     }
 
 

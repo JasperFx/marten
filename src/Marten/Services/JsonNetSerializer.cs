@@ -6,6 +6,12 @@ namespace Marten.Services
 {
     public class JsonNetSerializer : ISerializer
     {
+        private readonly JsonSerializer _clean = new JsonSerializer
+        {
+            TypeNameHandling =  TypeNameHandling.None,
+            DateFormatHandling = DateFormatHandling.IsoDateFormat
+        };
+
         private readonly JsonSerializer _serializer = new JsonSerializer
         {
             TypeNameHandling = TypeNameHandling.Auto,
@@ -35,5 +41,12 @@ namespace Marten.Services
             return _serializer.Deserialize(new JsonTextReader(new StringReader(json)), type);
         }
 
+        public string ToCleanJson(object document)
+        {
+            var writer = new StringWriter();
+            _clean.Serialize(writer, document);
+
+            return writer.ToString();
+        }
     }
 }
