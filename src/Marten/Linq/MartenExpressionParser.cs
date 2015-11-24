@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -8,6 +9,8 @@ using FubuCore;
 using FubuCore.Reflection;
 using Marten.Schema;
 using Marten.Util;
+using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
@@ -61,8 +64,27 @@ namespace Marten.Linq
                 return GetNotWhereFragment(mapping, expression.As<UnaryExpression>().Operand);
             }
 
+            if (expression is SubQueryExpression)
+            {
+                return GetWhereFragment(mapping, expression.As<SubQueryExpression>());
+            }
 
             throw new NotSupportedException();
+        }
+
+        private IWhereFragment GetWhereFragment(DocumentMapping mapping, SubQueryExpression expression)
+        {
+            var queryType = expression.QueryModel.MainFromClause.ItemType;
+            if (TypeMappings.HasTypeMapping(queryType))
+            {
+                var contains = expression.QueryModel.ResultOperators.OfType<ContainsResultOperator>().FirstOrDefault();
+                if (contains != null)
+                {
+                    return ContainmentWhereFragment.SimpleArrayContains(_serializer, expression.QueryModel, contains);
+                }
+            }
+
+            throw new NotImplementedException();
         }
 
         private IWhereFragment GetNotWhereFragment(DocumentMapping mapping, Expression expression)

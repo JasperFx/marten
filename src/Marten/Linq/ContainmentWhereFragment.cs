@@ -3,17 +3,27 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.InteropServices;
 using FubuCore;
 using Marten.Schema;
 using Newtonsoft.Json;
 using Npgsql;
+using Remotion.Linq;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
 {
     public class ContainmentWhereFragment : IWhereFragment
     {
         private readonly ISerializer _serializer;
-        private IDictionary<string, object> _dictionary; 
+        private IDictionary<string, object> _dictionary;
+
+
+        public ContainmentWhereFragment(ISerializer serializer, IDictionary<string, object> dictionary)
+        {
+            _serializer = serializer;
+            _dictionary = dictionary;
+        }
 
         public ContainmentWhereFragment(ISerializer serializer, BinaryExpression binary)
         {
@@ -57,6 +67,36 @@ namespace Marten.Linq
             var json = _serializer.ToCleanJson(_dictionary);
 
             return  $"data @> '{json}'";
+        }
+
+        public static IWhereFragment SimpleArrayContains(ISerializer serializer, QueryModel queryModel, ContainsResultOperator contains)
+        {
+            var from = queryModel.MainFromClause.FromExpression;
+            var visitor = new FindMembers();
+            visitor.Visit(from);
+
+            var members = visitor.Members;
+
+            var constant = contains.Item as ConstantExpression;
+
+            if (constant != null)
+            {
+                var array = Array.CreateInstance(constant.Type, 1);
+                array.SetValue(constant.Value, 0);
+
+                var dict = new Dictionary<string, object>();
+                dict.Add(members.Last().Name, array);
+
+                members.Reverse().Skip(1).Each(m =>
+                {
+                    dict = new Dictionary<string, object>() { {m.Name, dict} };
+                });
+
+                return new ContainmentWhereFragment(serializer, dict);
+            }
+
+
+            throw new NotSupportedException();
         }
     }
 }

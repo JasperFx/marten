@@ -37,6 +37,9 @@ namespace Marten.Testing.Fixtures
             target.String = _strings[_random.Next(0, 10)];
             target.Number = _random.Next();
 
+
+            target.NumberArray = new int[] {_random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) };
+
             switch (_random.Next(0, 2))
             {
                 case 0:
@@ -96,6 +99,8 @@ namespace Marten.Testing.Fixtures
         public DateTimeOffset DateOffset { get; set; }
 
         public int[] NumberArray { get; set; }
+
+        
 
         public Target[] Children { get; set; }
 
