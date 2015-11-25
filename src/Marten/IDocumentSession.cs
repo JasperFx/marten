@@ -17,7 +17,6 @@ namespace Marten
         IQueryable<T> Query<T>();
 
         IEnumerable<T> Query<T>(string sql, params object[] parameters);
-
     }
 
     /// <summary>

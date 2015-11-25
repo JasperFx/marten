@@ -60,7 +60,7 @@ namespace Marten
                     .ToArray();
             }
         }
-
+        
         public T Load<T>(string id) where T : class
         {
             return load<T>(id);
