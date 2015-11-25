@@ -5,12 +5,12 @@ namespace Marten
 {
     public class AdvancedOptions
     {
-        public RequestCounterThreshold RequstThreshold { get; }
+        public RequestCounterThreshold RequestThreshold { get; }
         private readonly IDocumentCleaner _cleaner;
 
-        public AdvancedOptions(IDocumentCleaner cleaner, RequestCounterThreshold requstThreshold)
+        public AdvancedOptions(IDocumentCleaner cleaner, RequestCounterThreshold requestThreshold)
         {
-            RequstThreshold = requstThreshold;
+            RequestThreshold = requestThreshold;
             _cleaner = cleaner;
         }
 
