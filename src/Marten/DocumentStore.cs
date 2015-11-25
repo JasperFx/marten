@@ -8,6 +8,8 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
+    
+
     public class DocumentStore : IDocumentStore
     {
         private readonly ICommandRunner _runner;

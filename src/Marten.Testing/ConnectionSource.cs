@@ -7,9 +7,11 @@ using StructureMap;
 
 namespace Marten.Testing
 {
-    public class ConnectionSource : IConnectionFactory
+    public class ConnectionSource : ConnectionFactory
     {
-        private static readonly Lazy<string> _connectionString = new Lazy<string>(() =>
+        public static readonly string ConnectionString;
+
+        static ConnectionSource()
         {
             var path = AppDomain.CurrentDomain.BaseDirectory.AppendPath("connection.txt");
             if (!File.Exists(path))
@@ -21,17 +23,12 @@ namespace Marten.Testing
             }
 
 
-            return new FileSystem().ReadStringFromFile(path);
-        });
-
-        public static string ConnectionString
-        {
-            get { return _connectionString.Value; }
+            ConnectionString = new FileSystem().ReadStringFromFile(path);
         }
 
-        public NpgsqlConnection Create()
+
+        public ConnectionSource() : base(ConnectionString)
         {
-            return new NpgsqlConnection(ConnectionString);
         }
 
         public static void CleanBasicDocuments()
