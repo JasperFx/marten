@@ -55,7 +55,7 @@ namespace Marten
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_runner, Schema);
-            Advanced = new AdvancedOptions(cleaner);
+            Advanced = new AdvancedOptions(cleaner, options.RequstThreshold());
 
             Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser));
         }
@@ -101,7 +101,7 @@ namespace Marten
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly)
         {
             var map = createMap(tracking);
-            var requestCounter = new RequestCounter(_runner);
+            var requestCounter = new RequestCounter(_runner, Advanced.RequstThreshold);
             return new DocumentSession(Schema, _serializer, requestCounter, _parser, new MartenQueryExecutor(requestCounter, Schema, _serializer, _parser), map);
         }
 
@@ -136,7 +136,7 @@ namespace Marten
         public IQuerySession QuerySession()
         {
             var parser = new MartenQueryParser();
-            var requestCounter = new RequestCounter(_runner);
+            var requestCounter = new RequestCounter(_runner, Advanced.RequstThreshold);
             return new QuerySession(Schema, _serializer, requestCounter, parser, new MartenQueryExecutor(requestCounter, Schema, _serializer, parser), new NulloIdentityMap(_serializer));
         }
     }
