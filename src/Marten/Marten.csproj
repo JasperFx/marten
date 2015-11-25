@@ -46,6 +46,7 @@
     <Compile Include="AdvancedOptions.cs" />
     <Compile Include="ConnectionFactory.cs" />
     <Compile Include="DocumentStore.cs" />
+    <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\IndexDefinition.cs" />
@@ -122,6 +123,7 @@
     <Compile Include="Schema\UpsertArgument.cs" />
     <Compile Include="Services\NulloIdentityMap.cs" />
     <Compile Include="Services\TrackedEntity.cs" />
+    <Compile Include="StoreOptions.cs" />
     <Compile Include="Util\SerializerExtensions.cs" />
     <Compile Include="DocumentSession.cs" />
     <Compile Include="Util\TypeMappings.cs" />

@@ -26,6 +26,16 @@ namespace Marten
             _alterations.Each(x => x(schema));
         }
 
+        public void Include<T>() where T : MartenRegistry, new()
+        {
+            alter = x => new T().Alter(x);
+        }
+
+        public void Include(MartenRegistry registry)
+        {
+            alter = registry.Alter;
+        }
+
         public class DocumentMappingExpression<T>
         {
             private readonly MartenRegistry _parent;

@@ -11,29 +11,35 @@ namespace Marten.Testing
     {
         public DevelopmentModeRegistry()
         {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = true;
+                
+            });
+
+            store.Schema.UpsertType = UpsertType;
+
+            For<IDocumentStore>().Use(store);
+
+
+            For<IDocumentSchema>().Use(store.Schema);
             For<IConnectionFactory>().Use<ConnectionSource>();
-            ForSingletonOf<IDocumentSchema>()
-                .Use<DocumentSchema>()
-                .OnCreation("", x => x.UpsertType = UpsertType);
-            Forward<DocumentSchema, IDocumentSchema>();
 
-            For<IIdentityMap>().Use<NulloIdentityMap>();
-
-            For<ISerializer>().Use<JsonNetSerializer>();
-            For<IDocumentSchemaCreation>().Use<DevelopmentSchemaCreation>();
+            For<IDocumentSession>().Use<DocumentSession>();
             For<ICommandRunner>().Use<CommandRunner>();
             For<IDocumentCleaner>().Use<DocumentCleaner>();
-            For<IMartenQueryExecutor>().Use<MartenQueryExecutor>();
+            For<ISerializer>().Use<JsonNetSerializer>();
 
-            For<IDiagnostics>().Use<Diagnostics>();
-
-            For<IDocumentStore>().Use<DocumentStore>();
 
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();
 
             For<IQuerySession>().Use<QuerySession>().Ctor<IIdentityMap>().Is<NulloIdentityMap>();
 
             For<IEventStore>().Use<EventStore>();
+            For<IMartenQueryExecutor>().Use<MartenQueryExecutor>();
+
+            For<IDocumentSchemaCreation>().Use<DevelopmentSchemaCreation>();
         }
 
         public static PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;

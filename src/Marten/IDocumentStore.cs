@@ -1,8 +1,9 @@
-﻿using Marten.Schema;
+﻿using System;
+using Marten.Schema;
 
 namespace Marten
 {
-    public interface IDocumentStore
+    public interface IDocumentStore : IDisposable
     {
         IDocumentSchema Schema { get; }
         AdvancedOptions Advanced { get; }

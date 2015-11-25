@@ -20,14 +20,18 @@ namespace Marten.Testing.Schema
                 }
             }
 
-
-            using (var c2 = Container.For<ProductionModeRegistry>())
+            using (var store = DocumentStore.For(_ =>
             {
-                using (var session = c2.GetInstance<IDocumentStore>().OpenSession())
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = false;
+            }))
+            {
+                using (var session = store.OpenSession())
                 {
                     session.Query<User>().Count().ShouldBeGreaterThan(0);
                 }
             }
+
         }
 
         public void throw_exception_when_table_does_not_exist()
@@ -37,10 +41,13 @@ namespace Marten.Testing.Schema
                 c1.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
             }
 
-
-            using (var c2 = Container.For<ProductionModeRegistry>())
+            using (var store = DocumentStore.For(_ =>
             {
-                using (var session = c2.GetInstance<IDocumentStore>().OpenSession())
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = false;
+            }))
+            {
+                using (var session = store.OpenSession())
                 {
                     Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
                     {
@@ -51,6 +58,8 @@ namespace Marten.Testing.Schema
 
                 }
             }
+
+            
         }
 
     }

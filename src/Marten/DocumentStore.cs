@@ -8,24 +8,61 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
-    
-
     public class DocumentStore : IDocumentStore
     {
         private readonly ICommandRunner _runner;
         private readonly ISerializer _serializer;
         private readonly IQueryParser _parser = new MartenQueryParser();
 
-        public DocumentStore(IDocumentSchema schema, IDocumentCleaner cleaner, ICommandRunner runner, ISerializer serializer)
+        /// <summary>
+        /// Quick way to stand up a DocumentStore to the given database connection
+        /// in the "development" mode for auto-creating schema objects as needed
+        /// with the default behaviors
+        /// </summary>
+        /// <param name="connectionString"></param>
+        /// <returns></returns>
+        public static DocumentStore For(string connectionString)
         {
-            Schema = schema;
-            _runner = runner;
-            _serializer = serializer;
+            return DocumentStore.For(_ =>
+            {
+                _.Connection(connectionString);
+            });
+        }
 
+        public static DocumentStore For<T>() where T : StoreOptions, new()
+        {
+            return new DocumentStore(new T());
+        }
+
+        public static DocumentStore For(Action<StoreOptions> configure)
+        {
+            var options = new StoreOptions();
+            configure(options);
+
+            return new DocumentStore(options);
+        }
+
+        public DocumentStore(StoreOptions options)
+        {
+            _runner = new CommandRunner(options.ConnectionFactory());
+
+            var creation = options.AutoCreateSchemaObjects
+                ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_runner)
+                : new ProductionSchemaCreation();
+
+            Schema = new DocumentSchema(_runner, creation);
+
+            _serializer = options.Serializer();
+
+            var cleaner = new DocumentCleaner(_runner, Schema);
             Advanced = new AdvancedOptions(cleaner);
 
-            // Not wanting Marten to be so dependent upon an IoC tool, so here's some poor man's DI
-            Diagnostics = new Diagnostics(schema, new MartenQueryExecutor(_runner, schema, serializer, _parser));
+            Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser));
+        }
+
+        public void Dispose()
+        {
+            
         }
 
         public IDocumentSchema Schema { get; }
