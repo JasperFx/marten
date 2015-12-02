@@ -101,8 +101,7 @@ namespace Marten
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly)
         {
             var map = createMap(tracking);
-            var requestCounter = new RequestCounter(_runner, Advanced.RequestThreshold);
-            return new DocumentSession(Schema, _serializer, requestCounter, _parser, new MartenQueryExecutor(requestCounter, Schema, _serializer, _parser), map);
+            return new DocumentSession(Schema, _serializer, GetCommandRunnerForSession(), _parser, new MartenQueryExecutor(GetCommandRunnerForSession(), Schema, _serializer, _parser), map);
         }
 
         private IIdentityMap createMap(DocumentTracking tracking)
@@ -136,8 +135,13 @@ namespace Marten
         public IQuerySession QuerySession()
         {
             var parser = new MartenQueryParser();
-            var requestCounter = new RequestCounter(_runner, Advanced.RequestThreshold);
-            return new QuerySession(Schema, _serializer, requestCounter, parser, new MartenQueryExecutor(requestCounter, Schema, _serializer, parser), new NulloIdentityMap(_serializer));
+            
+            return new QuerySession(Schema, _serializer, GetCommandRunnerForSession(), parser, new MartenQueryExecutor(GetCommandRunnerForSession(), Schema, _serializer, parser), new NulloIdentityMap(_serializer));
+        }
+
+        private ICommandRunner GetCommandRunnerForSession()
+        {
+            return Advanced.RequestThreshold.HasThreshold ? new RequestCounter(_runner, Advanced.RequestThreshold) : _runner;
         }
     }
 }

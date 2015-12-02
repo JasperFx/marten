@@ -4,30 +4,6 @@ using Npgsql;
 
 namespace Marten.Services
 {
-    public class RequestCounterThreshold
-    {
-        public static RequestCounterThreshold Empty { get { return new RequestCounterThreshold(0, () => { }); } }
-
-        public int Threshold { get; }
-        public Action ExceedingThresholdAction { get; }
-        
-        public RequestCounterThreshold(int threshold, Action exceedingThresholdAction)
-        {
-            Threshold = threshold;
-            ExceedingThresholdAction = exceedingThresholdAction;
-        }
-
-        public void ValidateCounter(int currentCount)
-        {
-            if (Threshold == 0) return;
-
-            if (currentCount > Threshold)
-            {
-                ExceedingThresholdAction();
-            }
-        }
-    }
-
     public class RequestCounter : ICommandRunner
     {
         private readonly ICommandRunner _commandRunner;

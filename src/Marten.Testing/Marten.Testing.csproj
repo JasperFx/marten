@@ -112,6 +112,7 @@
     <Compile Include="Session\document_session_load_already_loaded_document_Tests.cs" />
     <Compile Include="Session\document_session_load_not_yet_persisted_document_Tests.cs" />
     <Compile Include="Session\document_session_update_existing_document_without_dirty_checking_Tests.cs" />
+    <Compile Include="Session\RequestCounter\request_counter_threshold_Tests.cs" />
     <Compile Include="Session\RequestCounter\request_counter_with_threshold_set_Tests.cs" />
     <Compile Include="TrackingSession\document_session_load_already_loaded_document_Tests.cs" />
     <Compile Include="TrackingSession\document_session_load_not_yet_persisted_document_Tests.cs" />

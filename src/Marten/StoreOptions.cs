@@ -8,8 +8,7 @@ namespace Marten
     {
         private ISerializer _serializer;
         private IConnectionFactory _factory;
-
-
+        
         public void Connection(string connectionString)
         {
             _factory = new ConnectionFactory(connectionString);
@@ -61,7 +60,5 @@ namespace Marten
 
             return _factory;
         }
-
-       
     }
 }
