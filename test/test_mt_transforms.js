@@ -21,7 +21,7 @@ describe('mt_transforms', function() {
 			expect(transformer.name).to.equal('location');
 		});
 
-		it('makes the default timing as inline', () => {
+		it('makes the default timing as inline', function() {
 			expect(transformer.timing).to.equal('inline');
 		});
 
