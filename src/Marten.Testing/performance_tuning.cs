@@ -250,14 +250,15 @@ namespace Marten.Testing
         }
 
 
-        public class DateIsSearchable : MartenRegistry
-        {
-            public DateIsSearchable()
-            {
-                // This can also be done with attributes
-                For<Target>().Searchable(x => x.Date);
-            }
-        }
+public class DateIsSearchable : MartenRegistry
+{
+    public DateIsSearchable()
+    {
+        // This can also be done with attributes
+        // This automatically adds a "BTree" index
+        For<Target>().Searchable(x => x.Date);
+    }
+}
 
         public class JsonLocatorOnly : MartenRegistry
         {
@@ -268,13 +269,22 @@ namespace Marten.Testing
             }
         }
 
-        public class ContainmentOperator : MartenRegistry
-        {
-            public ContainmentOperator()
-            {
-                For<Target>().GinIndexJsonData().PropertySearching(PropertySearching.ContainmentOperator);
-            }
-        }
+public class ContainmentOperator : MartenRegistry
+{
+    public ContainmentOperator()
+    {
+        // For persisting a document type called 'Target'
+        For<Target>()
+
+            // Use a gin index against the json data field
+            .GinIndexJsonData()
+
+            // directs Marten to try to use the containment
+            // operator for querying against this document type
+            // in the Linq support
+            .PropertySearching(PropertySearching.ContainmentOperator);
+    }
+}
 
         public class JsonBToRecord : MartenRegistry
         {
