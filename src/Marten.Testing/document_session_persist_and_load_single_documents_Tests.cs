@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using FubuCore;
+using Baseline;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;

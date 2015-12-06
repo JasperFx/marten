@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
-using FubuCore.Reflection;
+using Baseline.Reflection;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using FubuCore;
+using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;

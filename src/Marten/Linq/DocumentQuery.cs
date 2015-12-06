@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using FubuCore;
+using Baseline;
 using Marten.Schema;
 using Npgsql;
 using Remotion.Linq;

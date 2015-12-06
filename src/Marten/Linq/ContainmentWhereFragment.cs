@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.InteropServices;
-using FubuCore;
+using Baseline;
 using Marten.Schema;
 using Newtonsoft.Json;
 using Npgsql;

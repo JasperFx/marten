@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Fixtures;

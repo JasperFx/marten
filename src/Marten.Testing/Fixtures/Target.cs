@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using FubuCore;
+using Baseline;
 
 namespace Marten.Testing.Fixtures
 {

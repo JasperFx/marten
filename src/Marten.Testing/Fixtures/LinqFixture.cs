@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
-using FubuCore;
+using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Util;

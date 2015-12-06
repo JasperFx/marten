@@ -1,7 +1,6 @@
 Fixie
 Npgsql
 Shouldly
-FubuCore
 Newtonsoft.Json
 structuremap
 Remotion.Linq
@@ -10,3 +9,4 @@ Octokit
 Microsoft.CodeAnalysis.CSharp
 Jil
 HtmlTags
+Baseline

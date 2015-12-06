@@ -1,6 +1,6 @@
 source https://nuget.org/api/v2
+nuget Baseline
 nuget Fixie
-nuget FubuCore
 nuget HtmlTags
 nuget Jil
 nuget Newtonsoft.Json

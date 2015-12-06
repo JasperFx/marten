@@ -166,13 +166,17 @@
   <ItemGroup>
     <EmbeddedResource Include="Schema\SQL\mt_apply_aggregation.sql" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="FubuCore">
-      <HintPath>..\..\packages\FubuCore\lib\FubuCore.dll</HintPath>
-      <Private>True</Private>
-      <Paket>True</Paket>
-    </Reference>
-  </ItemGroup>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Baseline">
+          <HintPath>..\..\packages\Baseline\lib\net45\Baseline.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
   <ItemGroup>
     <Analyzer Include="..\..\packages\Microsoft.CodeAnalysis.Analyzers\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll">
       <Paket>True</Paket>

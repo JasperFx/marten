@@ -1,5 +1,5 @@
 ﻿using System;
-using FubuCore;
+using Baseline;
 using Marten.Testing.Fixtures;
 
 namespace Marten.Testing.Documents

@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using FubuCore.Reflection;
+using Baseline.Reflection;
 using Marten.Util;
 
 namespace Marten.Schema

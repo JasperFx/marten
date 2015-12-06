@@ -1,8 +1,8 @@
 NUGET
   remote: https://nuget.org/api/v2
   specs:
+    Baseline (0.5.0.6)
     Fixie (1.0.0.33)
-    FubuCore (2.0.0.311)
     HtmlTags (3.0.0.186)
     Jil (2.12.1)
       Sigil (>= 4.5.0)
@@ -118,7 +118,7 @@ NUGET
       System.Private.Uri (>= 4.0.0)
     System.Runtime.Extensions (4.0.10) - framework: dnxcore50
       System.Runtime (>= 4.0.20)
-    System.Runtime.Handles (4.0.0)
+    System.Runtime.Handles (4.0.0) - framework: dnxcore50
       System.Runtime (>= 4.0.0)
     System.Runtime.InteropServices (4.0.20)
       System.Reflection (>= 4.0.0)

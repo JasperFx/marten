@@ -7,7 +7,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using FubuCore;
+using Baseline;
 using Marten.Codegen;
 using Marten.Util;
 using Npgsql;
