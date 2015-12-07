@@ -23,6 +23,7 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
 
+        // SAMPLE: query_against_string_array
         public void query_against_string_array()
         {
             var doc1 = new DocWithArrays { Strings = new string[] {"a", "b", "c"} };
@@ -39,6 +40,7 @@ namespace Marten.Testing.Linq
             theSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToArray()
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
+        // ENDSAMPLE
 
         public void query_against_date_array()
         {

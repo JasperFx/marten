@@ -13,8 +13,15 @@ namespace Marten
 
         ILoadByKeys<T> Load<T>() where T : class;
 
-
+        // SAMPLE: querying_with_linq
+        /// <summary>
+        /// Use Linq operators to query the documents
+        /// stored in Postgresql
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         IQueryable<T> Query<T>();
+        // ENDSAMPLE
 
         IEnumerable<T> Query<T>(string sql, params object[] parameters);
 

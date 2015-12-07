@@ -8,6 +8,7 @@ namespace Marten.Testing.Linq
 {
     public class invoking_queryable_through_single_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        // SAMPLE: single_and_single_or_default
         public void single_hit_with_only_one_document()
         {
             theSession.Store(new Target{Number = 1});
@@ -31,6 +32,7 @@ namespace Marten.Testing.Linq
             theSession.Query<Target>().SingleOrDefault(x => x.Number == 3)
                 .ShouldNotBeNull();
         }
+        // ENDSAMPLE
 
         public void single_or_default_miss()
         {
