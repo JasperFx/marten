@@ -2,7 +2,7 @@ document_ids
 json
 linq
 sql
-saved_queries
+compiled_queries
 persisting
 partial_updates
 bulk_insert

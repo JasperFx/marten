@@ -3,7 +3,7 @@
 namespace Marten.Testing.Examples
 {
     // SAMPLE: id_samples
-    public class User
+    public class Division
     {
         // String property as Id
         public string Id { get; set; }
@@ -15,7 +15,7 @@ namespace Marten.Testing.Examples
         public Guid Id;
     }
 
-    public class Company
+    public class Invoide
     {
         // int's and long's can be the Id
         // "id" is accepted

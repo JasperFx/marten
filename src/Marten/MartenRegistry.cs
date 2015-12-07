@@ -22,6 +22,11 @@ namespace Marten
             set { _alterations.Add(value); }
         }
 
+        public PostgresUpsertType UpsertType
+        {
+            set { alter = x => x.UpsertType = value; }
+        }
+
         internal void Alter(IDocumentSchema schema)
         {
             _alterations.Each(x => x(schema));

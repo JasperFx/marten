@@ -46,6 +46,7 @@
     <Compile Include="AdvancedOptions.cs" />
     <Compile Include="ConnectionFactory.cs" />
     <Compile Include="DocumentStore.cs" />
+    <Compile Include="DocumentTracking.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />
     <Compile Include="QuerySession.cs" />
