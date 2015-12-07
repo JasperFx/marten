@@ -13,26 +13,30 @@ using StructureMap.Util;
 
 namespace Marten.Testing
 {
+    // SAMPLE: JilSerializer
     public class JilSerializer : ISerializer
     {
+        private readonly Options _options 
+            = new Options(dateFormat: DateTimeFormat.ISO8601);
+
         public string ToJson(object document)
         {
-            return JSON.Serialize(document, new Options(dateFormat: DateTimeFormat.ISO8601));
+            return JSON.Serialize(document, _options);
         }
 
         public T FromJson<T>(string json)
         {
-            return JSON.Deserialize<T>(json, new Options(dateFormat: DateTimeFormat.ISO8601));
+            return JSON.Deserialize<T>(json, _options);
         }
 
         public T FromJson<T>(Stream stream)
         {
-            return JSON.Deserialize<T>(new StreamReader(stream), new Options(dateFormat: DateTimeFormat.ISO8601));
+            return JSON.Deserialize<T>(new StreamReader(stream), _options);
         }
 
         public object FromJson(Type type, string json)
         {
-            return JSON.Deserialize(json, type, new Options(dateFormat: DateTimeFormat.ISO8601));
+            return JSON.Deserialize(json, type, _options);
         }
 
         public string ToCleanJson(object document)
@@ -40,8 +44,29 @@ namespace Marten.Testing
             return ToJson(document);
         }
     }
+    // ENDSAMPLE
+
+    public static class JilSamples
+    {
+        public static void Build_With_Jil()
+        {
+            // SAMPLE: replacing_serializer_with_jil
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection("the connection string");
+
+                // Replace the ISerializer w/ the JilSerializer
+                _.Serializer<JilSerializer>();
+            });
+            // ENDSAMPLE
+        }
 
 
+        public static void custom_newtonsoft()
+        {
+            
+        }
+    }
 
 
 
