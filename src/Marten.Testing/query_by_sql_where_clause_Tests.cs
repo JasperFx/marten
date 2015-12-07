@@ -26,13 +26,16 @@ namespace Marten.Testing
                     session.Store(u);
                     session.SaveChanges();
 
+                    // SAMPLE: use_all_your_own_sql
                     var user = session.Query<User>("select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'").Single();
+                    // ENDSAMPLE
                     user.LastName.ShouldBe("Miller");
                     user.Id.ShouldBe(u.Id);
                 }
             }
         }
 
+        // SAMPLE: query_with_only_the_where_clause
         public void query_for_single_document()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -49,6 +52,7 @@ namespace Marten.Testing
                 }
             }
         }
+        // ENDSAMPLE
 
         public void query_for_multiple_documents()
         {
@@ -107,11 +111,12 @@ namespace Marten.Testing
                     session.Store(new User { FirstName = "Max", LastName = "Miller" });
                     session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
                     session.SaveChanges();
-
+                    // SAMPLE: using_parameterized_sql
                     var user =
                         session.Query<User>("where data ->> 'FirstName' = ? and data ->> 'LastName' = ?", "Jeremy",
                             "Miller")
                             .Single();
+                    // ENDSAMPLE
 
                     user.ShouldNotBeNull();
                 }
