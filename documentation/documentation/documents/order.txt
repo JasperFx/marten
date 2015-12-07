@@ -6,6 +6,7 @@ saved_queries
 persisting
 partial_updates
 bulk_insert
+identitymap
 loading
 deleting
 async

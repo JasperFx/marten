@@ -66,6 +66,7 @@
     <Compile Include="Events\QuestTypes.cs" />
     <Compile Include="Events\StreamMappingTests.cs" />
     <Compile Include="Events\using_the_schema_objects_Tests.cs" />
+    <Compile Include="Examples\IdExamples.cs" />
     <Compile Include="Fixtures\LinqFixture.cs" />
     <Compile Include="Fixtures\OrderingFixture.cs" />
     <Compile Include="Fixtures\ResultSet.cs" />
