@@ -11,6 +11,7 @@ namespace Marten.Testing
     {
         public void load_with_small_batch()
         {
+            // SAMPLE: using_bulk_insert
             // This is just creating some randomized
             // document data
             var data = Target.GenerateRandomData(100).ToArray();
@@ -20,6 +21,9 @@ namespace Marten.Testing
 
             // And just checking that the data is actually there;)
             theSession.Query<Target>().Count().ShouldBe(data.Length);
+            // ENDSAMPLE
+
+
             theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
 
 
