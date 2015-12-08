@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Marten</RootNamespace>
     <AssemblyName>Marten</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -325,17 +325,6 @@
       <ItemGroup>
         <Reference Include="Remotion.Linq">
           <HintPath>..\..\packages\Remotion.Linq\lib\portable-net45+win+wpa81+wp80\Remotion.Linq.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
-      <ItemGroup>
-        <Reference Include="StoryTeller">
-          <HintPath>..\..\packages\Storyteller\lib\net45\StoryTeller.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>

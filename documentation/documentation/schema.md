@@ -17,6 +17,9 @@ The code above creates the following SQL script below, with these elements:
 1. You'll see an index named `mt_doc_user_idx_user_name` that is on a duplicated, searchable field for the `User` document (it's configured by attribute)
 1. `mt_hilo` and `mt_get_next_hi` that support Marten's HiLo numeric identifier strategy.
 
+
+The full DDL exported from above is:
+
 <pre>
 
 

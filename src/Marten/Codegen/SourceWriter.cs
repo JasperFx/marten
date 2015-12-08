@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using Baseline;
-using StoryTeller.Grammars;
 
 namespace Marten.Codegen
 {
