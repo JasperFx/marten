@@ -92,13 +92,9 @@ namespace Marten
             {
                 alter = mapping =>
                 {
-                    var index = mapping.AddIndex("data");
-                    index.Method = IndexMethod.gin;
-                    index.Expression = "? jsonb_path_ops";
+                    var index = mapping.AddGinIndexToData();
 
                     configureIndex?.Invoke(index);
-
-                    mapping.PropertySearching = Schema.PropertySearching.ContainmentOperator;
                 };
 
                 return this;

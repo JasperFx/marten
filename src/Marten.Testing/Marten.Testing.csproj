@@ -73,6 +73,7 @@
     <Compile Include="Examples\IdExamples.cs" />
     <Compile Include="Examples\LinqExamples.cs" />
     <Compile Include="Examples\Load_by_Id.cs" />
+    <Compile Include="Examples\MartenRegistryExamples.cs" />
     <Compile Include="Examples\TradeStorage.cs" />
     <Compile Include="Examples\UnitOfWorkMechanics.cs" />
     <Compile Include="Fixtures\LinqFixture.cs" />

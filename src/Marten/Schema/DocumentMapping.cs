@@ -54,6 +54,17 @@ namespace Marten.Schema
 
         public int BatchSize = 100;
 
+        public IndexDefinition AddGinIndexToData()
+        {
+            var index = AddIndex("data");
+            index.Method = IndexMethod.gin;
+            index.Expression = "? jsonb_path_ops";
+
+            PropertySearching = Schema.PropertySearching.ContainmentOperator;
+
+            return index;
+        }
+
         public IndexDefinition AddIndex(params string[] columns)
         {
             var index = new IndexDefinition(this, columns);
