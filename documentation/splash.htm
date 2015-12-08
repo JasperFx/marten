@@ -12,7 +12,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Stylish Portfolio - Start Bootstrap Theme</title>
+    <title>Marten</title>
 
     <!-- Bootstrap Core CSS -->
     <[css:content/bootstrap.min.css]>
@@ -24,9 +24,12 @@
     <!-- Custom Fonts -->
     <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
     <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" >
+
 </head>
 
 <body>
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; left: 0; border: 0;" src="https://camo.githubusercontent.com/82b228a3648bf44fc1163ef44c62fcc60081495e/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_red_007200.png"></a>
+
 
 
     <!-- Navigation -->
@@ -35,23 +38,24 @@
         <ul class="sidebar-nav">
             <a id="menu-close" href="#" class="btn btn-light btn-lg pull-right toggle"><i class="fa fa-times"></i></a>
             <li class="sidebar-brand">
-                <a href="#top"  onclick = $("#menu-close").click(); >Start Bootstrap</a>
+                <a href="getting_started"  onclick = $("#menu-close").click(); >Getting Started</a>
             </li>
             <li>
-                <a href="#top" onclick = $("#menu-close").click(); >Home</a>
+                <a href="documentation" onclick = $("#menu-close").click(); >Documentation</a>
             </li>
             <li>
-                <a href="#about" onclick = $("#menu-close").click(); >About</a>
+                <a href="https://github.com/JasperFx/Marten" onclick = $("#menu-close").click(); >Marten on GitHub</a>
+            </li>
+             <li>
+                <a href="https://gitter.im/JasperFx/Marten?utm_source=share-link&utm_medium=link&utm_campaign=share-link" onclick = $("#menu-close").click(); >Gitter Room</a>
             </li>
             <li>
-                <a href="#services" onclick = $("#menu-close").click(); >Services</a>
+                <a href="http://build.fubu-project.org/project.html?projectId=Marten&branch_Marten=__all_branches__" onclick = $("#menu-close").click(); >TeamCity Page</a>
             </li>
             <li>
-                <a href="#portfolio" onclick = $("#menu-close").click(); >Portfolio</a>
+                <a href="https://www.nuget.org/packages/Marten/" onclick = $("#menu-close").click(); >Nuget Downloads</a>
             </li>
-            <li>
-                <a href="#contact" onclick = $("#menu-close").click(); >Contact</a>
-            </li>
+
         </ul>
     </nav>
 
@@ -70,8 +74,14 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-12 text-center">
-                    <h2>Some stuff about Marten and why Postgresql is awesome</h2>
-                    <p class="lead">A tag line of some kind</p>
+                    <h2>Polyglot Persistence for .Net Systems using the Rock Solid Postgresql Database</h2>
+                    <p class="lead">
+                        <a href="http://build.fubu-project.org/project.html?projectId=Marten&tab=projectOverview"><img src="https://img.shields.io/teamcity/http/build.fubu-project.org/s/marten_master.svg"></img></a>
+                        <a href="https://www.nuget.org/packages/Marten/"><img src="https://img.shields.io/nuget/v/Marten.svg"></img></a>
+
+
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+                    </p>
                 </div>
             </div>
             <!-- /.row -->
@@ -82,6 +92,7 @@
     <div class="container">
       <!-- Example row of columns -->
       <div class="row">
+        <div class="col-md-1"></div>
         <div class="col-md-4">
           <h2>Document Database</h2>
           <p>The Marten library provides .Net developers with the ability to easily use the proven <a href="http://www.postgresql.org">Postgresql database engine</a>
@@ -90,17 +101,13 @@ over relational databases with or without an ORM tool.
           </p>
           <p><a class="btn btn-default" href="<[linkto:documentation/documents;{href}]>" role="button">View details &raquo;</a></p>
         </div>
+        <div class="col-md-2"></div>
         <div class="col-md-4">
           <h2>Event Store</h2>
-          <p>Describe the event store stuff here. </p>
+          <p>Event Sourcing can be a powerful technique in applications that are workflow centric or have any need for historical queries. Marten utilizes the strong JSONB support to expose an ACID-compliant event store implementation over the Postgresql database. Even better yet, Marten
+            takes advantage of Postgresql's embedded Javascript support to enable effective user-defined projections against your event streams.</p>
           <p><a class="btn btn-default" href="<[linkto:documentation/events;{href}]>" role="button">View details &raquo;</a></p>
        </div>
-        <div class="col-md-4">
-          <h2>Postgresql</h2>
-          <p>Talk about how Marten fits into the Postgresql world</p>
-          <p>Put badges here</p>
-          <p><a class="btn btn-default" href="<[linkto:documentation/postgres;{href}]>" role="button">View details &raquo;</a></p>
-        </div>
       </div>
 
       <hr>
