@@ -1,5 +1,0 @@
-documents
-events
-schema
-postgres
-architecture
