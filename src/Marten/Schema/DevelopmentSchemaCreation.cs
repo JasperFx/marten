@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.IO;
+using Baseline;
 using Marten.Services;
 
 namespace Marten.Schema
@@ -19,6 +21,7 @@ namespace Marten.Schema
 
             _runner.Execute(writer.ToString());
         }
+
 
         public void RunScript(string script)
         {

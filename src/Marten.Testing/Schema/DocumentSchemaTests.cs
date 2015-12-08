@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using Marten.Generation;
 using Marten.Schema;
@@ -40,6 +41,23 @@ namespace Marten.Testing.Schema
 
             _schema.StorageFor(typeof (Company))
                 .ShouldBeSameAs(_schema.StorageFor(typeof (Company)));
+        }
+
+        public void generate_ddl()
+        {
+            _schema.StorageFor(typeof (User));
+            _schema.StorageFor(typeof (Issue));
+            _schema.StorageFor(typeof (Company));
+
+            var sql = _schema.ToDDL();
+
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_get_next_hi");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_user");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_issue");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_company");
+            sql.ShouldContain("CREATE TABLE mt_doc_user");
+            sql.ShouldContain("CREATE TABLE mt_doc_issue");
+            sql.ShouldContain("CREATE TABLE mt_doc_company");
         }
 
         public void builds_schema_objects_on_the_fly_as_needed()

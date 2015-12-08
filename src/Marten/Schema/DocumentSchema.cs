@@ -2,7 +2,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
+using Baseline;
 using Marten.Events;
 using Marten.Schema.Sequences;
 using Marten.Services;
@@ -136,5 +138,22 @@ AND type_udt_name != 'trigger';
         public ISequences Sequences { get; }
 
         public PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;
+
+        public void WriteDDL(string filename)
+        {
+            var sql = ToDDL();
+            new FileSystem().WriteStringToFile(filename, sql);
+        }
+
+        public string ToDDL()
+        {
+            var writer = new StringWriter();
+
+            _documentMappings.Values.Each(x => SchemaBuilder.WriteSchemaObjects(x, this, writer));
+
+            writer.WriteLine(SchemaBuilder.GetText("mt_hilo"));
+
+            return writer.ToString();
+        }
     }
 }
