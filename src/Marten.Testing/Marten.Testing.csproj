@@ -68,10 +68,12 @@
     <Compile Include="Events\using_the_schema_objects_Tests.cs" />
     <Compile Include="Examples\ConfiguringDocumentStore.cs" />
     <Compile Include="Examples\Deletes.cs" />
+    <Compile Include="Examples\DiagnosticsExamples.cs" />
     <Compile Include="Examples\IdentityMapTests.cs" />
     <Compile Include="Examples\IdExamples.cs" />
     <Compile Include="Examples\LinqExamples.cs" />
     <Compile Include="Examples\Load_by_Id.cs" />
+    <Compile Include="Examples\TradeStorage.cs" />
     <Compile Include="Examples\UnitOfWorkMechanics.cs" />
     <Compile Include="Fixtures\LinqFixture.cs" />
     <Compile Include="Fixtures\OrderingFixture.cs" />
