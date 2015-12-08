@@ -88,7 +88,7 @@ end
 
 desc 'Build the Nupkg file'
 task :pack => [:compile] do
-	sh "paket.exe pack output artifacts"
+	sh "paket.exe pack output artifacts version #{BUILD_NUMBER}"
 end
 
 
