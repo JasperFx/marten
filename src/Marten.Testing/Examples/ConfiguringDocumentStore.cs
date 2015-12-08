@@ -1,9 +1,20 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Marten.Schema;
 using Marten.Testing.Documents;
 
 namespace Marten.Testing.Examples
 {
+    // SAMPLE: user_document
+    public class User
+    {
+        public Guid Id { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public bool Internal { get; set; }
+        public string UserName { get; set; }
+    }
+    // ENDSAMPLE
     public class ConfiguringDocumentStore
     {
         public void start_a_basic_store()
@@ -36,7 +47,10 @@ namespace Marten.Testing.Examples
             // updating documents with a backing "Identity Map"
             using (var session = store.OpenSession())
             {
-
+                var existing = session
+                    .Query<User>()
+                    .Where(x => x.FirstName == "Han" && x.LastName == "Solo")
+                    .Single();
             }
 
             // Open a session for querying, loading, and 

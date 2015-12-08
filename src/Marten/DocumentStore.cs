@@ -23,8 +23,9 @@ namespace Marten
         /// <returns></returns>
         public static DocumentStore For(string connectionString)
         {
-            return DocumentStore.For(_ =>
+            return For(_ =>
             {
+                _.AutoCreateSchemaObjects = true;
                 _.Connection(connectionString);
             });
         }
