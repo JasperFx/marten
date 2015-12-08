@@ -1,0 +1,14 @@
+source https://nuget.org/api/v2
+nuget Baseline
+nuget Fixie
+nuget HtmlTags
+nuget ilrepack
+nuget Jil
+nuget Newtonsoft.Json
+nuget Npgsql
+nuget Octokit
+nuget Remotion.Linq
+nuget Shouldly
+nuget Storyteller 3.0.0.280-alpha
+nuget structuremap
+nuget Microsoft.CodeAnalysis.CSharp prerelease

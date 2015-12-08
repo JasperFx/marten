@@ -1,0 +1,181 @@
+<!--Title:Marten-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Marten</title>
+
+    <!-- Bootstrap Core CSS -->
+    <[css:content/bootstrap.min.css]>
+
+    <!-- Custom CSS -->
+    <[css:content/stylish-portfolio.css]>
+
+
+    <!-- Custom Fonts -->
+    <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" >
+
+</head>
+
+<body>
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; left: 0; border: 0;" src="https://camo.githubusercontent.com/82b228a3648bf44fc1163ef44c62fcc60081495e/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_red_007200.png"></a>
+
+
+
+    <!-- Navigation -->
+    <a id="menu-toggle" href="#" class="btn btn-dark btn-lg toggle"><i class="fa fa-bars"></i></a>
+    <nav id="sidebar-wrapper">
+        <ul class="sidebar-nav">
+            <a id="menu-close" href="#" class="btn btn-light btn-lg pull-right toggle"><i class="fa fa-times"></i></a>
+            <li class="sidebar-brand">
+                <a href="getting_started"  onclick = $("#menu-close").click(); >Getting Started</a>
+            </li>
+            <li>
+                <a href="documentation" onclick = $("#menu-close").click(); >Documentation</a>
+            </li>
+            <li>
+                <a href="https://github.com/JasperFx/Marten" onclick = $("#menu-close").click(); >Marten on GitHub</a>
+            </li>
+             <li>
+                <a href="https://gitter.im/JasperFx/Marten?utm_source=share-link&utm_medium=link&utm_campaign=share-link" onclick = $("#menu-close").click(); >Gitter Room</a>
+            </li>
+            <li>
+                <a href="http://build.fubu-project.org/project.html?projectId=Marten&branch_Marten=__all_branches__" onclick = $("#menu-close").click(); >TeamCity Page</a>
+            </li>
+            <li>
+                <a href="https://www.nuget.org/packages/Marten/" onclick = $("#menu-close").click(); >Nuget Downloads</a>
+            </li>
+
+        </ul>
+    </nav>
+
+    <!-- Header -->
+    <header id="top" class="header">
+        <div class="text-vertical-center">
+            <h1 style="color:white">Marten</h1>
+            <h3>Postgresql as Document Db &amp; Event Store for .Net Development</h3>
+            <br>
+            <a href="#about" class="btn btn-dark btn-lg">Find Out More</a>
+            <a href="getting_started" class="btn btn-dark btn-lg">Get started!</a>
+        </div>
+    </header>
+
+    <!-- About -->
+    <section id="about" class="about">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <h2>Polyglot Persistence for .Net Systems using the Rock Solid Postgresql Database</h2>
+                    <p class="lead">
+                        <a href="http://build.fubu-project.org/project.html?projectId=Marten&tab=projectOverview"><img src="https://img.shields.io/teamcity/http/build.fubu-project.org/s/marten_master.svg"></img></a>
+                        <a href="https://www.nuget.org/packages/Marten/"><img src="https://img.shields.io/nuget/v/Marten.svg"></img></a>
+
+
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+                    </p>
+                </div>
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container -->
+    </section>
+
+    <div class="container">
+      <!-- Example row of columns -->
+      <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-4">
+          <h2>Document Database</h2>
+          <p>The Marten library provides .Net developers with the ability to easily use the proven <a href="http://www.postgresql.org">Postgresql database engine</a>
+and its <a href="https://www.compose.io/articles/is-postgresql-your-next-json-database/">fantastic JSON support</a> as a fully fledged <a href="https://en.wikipedia.org/wiki/Document-oriented_database">document database</a>. The Marten team believes that a document database has far reaching benefits for developer productivity
+over relational databases with or without an ORM tool. 
+          </p>
+          <p><a class="btn btn-default" href="<[linkto:documentation/documents;{href}]>" role="button">View details &raquo;</a></p>
+        </div>
+        <div class="col-md-2"></div>
+        <div class="col-md-4">
+          <h2>Event Store</h2>
+          <p>Event Sourcing can be a powerful technique in applications that are workflow centric or have any need for historical queries. Marten utilizes the strong JSONB support to expose an ACID-compliant event store implementation over the Postgresql database. Even better yet, Marten
+            takes advantage of Postgresql's embedded Javascript support to enable effective user-defined projections against your event streams.</p>
+          <p><a class="btn btn-default" href="<[linkto:documentation/events;{href}]>" role="button">View details &raquo;</a></p>
+       </div>
+      </div>
+
+      <hr>
+
+
+    </div> <!-- /container -->
+
+
+
+
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+
+    <!-- Custom Theme JavaScript -->
+    <script>
+    // Closes the sidebar menu
+    $("#menu-close").click(function(e) {
+        e.preventDefault();
+        $("#sidebar-wrapper").toggleClass("active");
+    });
+
+    // Opens the sidebar menu
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#sidebar-wrapper").toggleClass("active");
+    });
+
+    // Scrolls to the selected menu item on the page
+    $(function() {
+        $('a[href*=#]:not([href=#])').click(function() {
+            if (location.pathname.replace(/^\//, '') == this.pathname.replace(/^\//, '') || location.hostname == this.hostname) {
+
+                var target = $(this.hash);
+                target = target.length ? target : $('[name=' + this.hash.slice(1) + ']');
+                if (target.length) {
+                    $('html,body').animate({
+                        scrollTop: target.offset().top
+                    }, 1000);
+                    return false;
+                }
+            }
+        });
+    });
+    </script>
+
+</body>
+
+</html>

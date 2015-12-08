@@ -1,0 +1,5 @@
+configuration
+appending
+snapshots
+streams
+projections

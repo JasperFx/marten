@@ -1,0 +1,18 @@
+<Spec id="17b30540-f57c-4844-bd38-13eb3afdb2e4" maxRetries="0" tags="" lifecycle="Regression" name="Searching within a string field that is duplicated in storage" lastUpdated="Wednesday, November 04, 2015" expirationPeriod="0">
+  <Linq id="8036293a-c4a0-4237-a24f-bcdca2ef1150">
+    <FieldIsDuplicated field="String" />
+    <TheDocumentsAre>
+      <Rows id="84ddca71-8ca5-4d38-a123-a4902c70ec0d" active-cells="Number=False,Long=False">
+        <TheDocumentsAre-row Name="First" String="ABC" Flag="false" Double="1" Decimal="1" Date="TODAY" InnerFlag="False" />
+        <TheDocumentsAre-row Name="Second" String="CDE" Flag="false" Double="1" Decimal="1" Date="TODAY" InnerFlag="False" />
+        <TheDocumentsAre-row Name="Third" String="BAT" Flag="false" Double="1" Decimal="1" Date="TODAY" InnerFlag="False" />
+        <TheDocumentsAre-row Name="Fourth" String="TOM" Flag="false" Double="1" Decimal="1" Date="TODAY" InnerFlag="False" />
+      </Rows>
+    </TheDocumentsAre>
+    <ExecutingQuery>
+      <table id="69304219-5d27-4d09-b490-29adc89528a0">
+        <ExecutingQuery-row WhereClause="x.String.Contains(&quot;B&quot;" Results="First, Third" />
+      </table>
+    </ExecutingQuery>
+  </Linq>
+</Spec>
