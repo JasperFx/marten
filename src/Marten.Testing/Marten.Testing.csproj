@@ -70,6 +70,7 @@
     <Compile Include="Examples\Deletes.cs" />
     <Compile Include="Examples\DiagnosticsExamples.cs" />
     <Compile Include="Examples\DocumentCleanerExamples.cs" />
+    <Compile Include="Examples\ExportingDDL.cs" />
     <Compile Include="Examples\IdentityMapTests.cs" />
     <Compile Include="Examples\IdExamples.cs" />
     <Compile Include="Examples\LinqExamples.cs" />

@@ -52,6 +52,8 @@ namespace Marten
 
             Schema = new DocumentSchema(_runner, creation);
 
+            Schema.Alter(options.Schema);
+
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_runner, Schema);

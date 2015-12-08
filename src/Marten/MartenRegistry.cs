@@ -49,6 +49,8 @@ namespace Marten
             public DocumentMappingExpression(MartenRegistry parent)
             {
                 _parent = parent;
+
+                _parent.alter = schema => schema.MappingFor(typeof (T));
             }
 
             public DocumentMappingExpression<T> PropertySearching(PropertySearching searching)
