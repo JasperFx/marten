@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
@@ -75,13 +77,16 @@ namespace Marten
             _unitOfWork.Store(entity);
         }
 
-
         public void SaveChanges()
         {
             var batch = new UpdateBatch(_serializer, _runner);
             _unitOfWork.ApplyChanges(batch);
-
         }
 
+        public async Task SaveChangesAsync(CancellationToken token)
+        {
+            var batch = new UpdateBatch(_serializer, _runner);
+            await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
+        }
     }
 }

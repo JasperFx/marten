@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 
 namespace Marten.Services
@@ -16,23 +18,26 @@ namespace Marten.Services
             _serializer = serializer;
         }
 
-
         public T Get<T>(object id, Func<string> json) where T : class
         {
             return _objects[typeof (T)].GetOrAdd(id.GetHashCode(), _ =>
             {
                 var text = json();
-                if (text.IsEmpty()) return null;
-
-                return _serializer.FromJson<T>(text);
+                return Deserialize<T>(text);
             }).As<T>();
+        }
+
+        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<string>> json, CancellationToken token) where T : class
+        {
+            var jsonString = await json(token);
+            return Get<T>(id, jsonString);
         }
 
         public T Get<T>(object id, string json) where T : class
         {
             return _objects[typeof(T)].GetOrAdd(id.GetHashCode(), _ =>
             {
-                return _serializer.FromJson<T>(json);
+                return Deserialize<T>(json);
             }).As<T>();
         }
 
@@ -59,6 +64,16 @@ namespace Marten.Services
             var dict = _objects[typeof(T)];
             var hashCode = id.GetHashCode();
             return dict.ContainsKey(hashCode) ? dict[hashCode] as T : null;
+        }
+
+        private T Deserialize<T>(string text) where T : class
+        {
+            if (text.IsEmpty())
+            {
+                return null;
+            }
+
+            return _serializer.FromJson<T>(text);
         }
     }
 }

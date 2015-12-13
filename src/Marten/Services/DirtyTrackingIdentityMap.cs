@@ -2,6 +2,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 
 namespace Marten.Services
@@ -25,6 +27,12 @@ namespace Marten.Services
             {
                 return new TrackedEntity(id, _serializer, typeof (T), json());
             }).Document as T;
+        }
+
+        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<string>> json, CancellationToken token) where T : class
+        {
+            var jsonString = await json(token);
+            return Get<T>(id, jsonString);
         }
 
         public T Get<T>(object id, string json) where T : class

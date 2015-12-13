@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Shouldly;
 
@@ -28,6 +29,21 @@ namespace Marten.Testing
                     .ShouldBeNull();
             }
 
+        }
+
+        public async Task persist_and_load_async()
+        {
+            var account = new Account { Id = "email@server.com" };
+
+            theSession.Store(account);
+            await theSession.SaveChangesAsync();
+
+            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
+            {
+                (await session.LoadAsync<Account>("email@server.com")).ShouldNotBeNull();
+
+                (await session.LoadAsync<Account>("nonexistent@server.com")).ShouldBeNull();
+            }
         }
 
         public void throws_exception_if_trying_to_save_null_id()

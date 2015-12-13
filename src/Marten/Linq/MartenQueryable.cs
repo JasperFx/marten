@@ -1,17 +1,14 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Remotion.Linq;
-using Remotion.Linq.Parsing.Structure;
 
 namespace Marten.Linq
 {
-    public class MartenQueryable<T> : QueryableBase<T>
+    public class MartenQueryable<T> : QueryableBase<T>, IMartenQueryable<T>
     {
-        public MartenQueryable(IQueryParser queryParser, IMartenQueryExecutor executor) : base(queryParser, executor)
-        {
-            
-        }
-
         public MartenQueryable(IQueryProvider provider) : base(provider)
         {
         }
@@ -20,5 +17,10 @@ namespace Marten.Linq
         {
         }
 
+        public async Task<IEnumerable<T>> ExecuteCollectionAsync(CancellationToken token)
+        {
+            var queryProvider = (IMartenQueryProvider)Provider;
+            return await queryProvider.ExecuteCollectionAsync<T>(Expression, token);
+        }
     }
 }
