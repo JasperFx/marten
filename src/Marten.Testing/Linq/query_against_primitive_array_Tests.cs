@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Linq;
 using Marten.Services;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
     public class query_against_primitive_array_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void query_against_number_array()
         {
             var doc1 = new DocWithArrays {Numbers = new int[] {1, 2, 3}};
@@ -23,6 +25,7 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
 
+        [Fact]
         // SAMPLE: query_against_string_array
         public void query_against_string_array()
         {
@@ -42,6 +45,7 @@ namespace Marten.Testing.Linq
         }
         // ENDSAMPLE
 
+        [Fact]
         public void query_against_date_array()
         {
             var doc1 = new DocWithArrays {Dates = new [] {DateTime.Today, DateTime.Today.AddDays(1), DateTime.Today.AddDays(2)}};

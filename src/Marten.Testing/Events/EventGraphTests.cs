@@ -1,5 +1,6 @@
 ﻿using Marten.Events;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Events
 {
@@ -7,18 +8,21 @@ namespace Marten.Testing.Events
     {
         private readonly EventGraph theGraph = new EventGraph();
 
+        [Fact]
         public void find_stream_mapping_initially()
         {
             theGraph.StreamMappingFor<Issue>()
                 .DocumentType.ShouldBe(typeof(Issue));
         }
 
+        [Fact]
         public void caches_the_stream_mapping()
         {
             theGraph.StreamMappingFor<Issue>()
                 .ShouldBeSameAs(theGraph.StreamMappingFor<Issue>());
         }
 
+        [Fact]
         public void register_event_types_and_retrieve()
         {
             theGraph.StreamMappingFor<Issue>().AddEvent(typeof (IssueAssigned));
@@ -34,6 +38,7 @@ namespace Marten.Testing.Events
         }
 
 
+        [Fact]
         public void find_event_by_event_type_name()
         {
             theGraph.StreamMappingFor<Issue>().AddEvent(typeof(IssueAssigned));

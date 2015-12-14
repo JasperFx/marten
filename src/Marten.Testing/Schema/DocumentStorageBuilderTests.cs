@@ -5,11 +5,13 @@ using Marten.Testing.Documents;
 using NpgsqlTypes;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Schema
 {
     public class DocumentStorageBuilderTests
     {
+        [Fact]
         public void do_not_blow_up_building_one()
         {
             var storage = DocumentStorageBuilder.Build(null, new DocumentMapping(typeof(User)));
@@ -20,6 +22,7 @@ namespace Marten.Testing.Schema
             storage.IdType.ShouldBe(NpgsqlDbType.Uuid);
         }
 
+        [Fact]
         public void implements_the_id_type()
         {
             DocumentStorageBuilder.Build(null, new DocumentMapping(typeof(User))).IdType.ShouldBe(NpgsqlDbType.Uuid);
@@ -33,6 +36,7 @@ namespace Marten.Testing.Schema
 
 
 
+        [Fact]
         public void implements_the_identity_method()
         {
             var schema = Container.For<DevelopmentModeRegistry>().GetInstance<IDocumentSchema>();
@@ -47,6 +51,7 @@ namespace Marten.Testing.Schema
 
         }
 
+        [Fact]
         public void do_not_blow_up_building_more_than_one()
         {
             var mappings = new DocumentMapping[]

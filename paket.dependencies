@@ -12,3 +12,4 @@ nuget Shouldly
 nuget Storyteller 3.0.0.280-alpha
 nuget structuremap
 nuget Microsoft.CodeAnalysis.CSharp prerelease
+nuget xunit

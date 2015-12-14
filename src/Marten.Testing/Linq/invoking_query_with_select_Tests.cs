@@ -2,11 +2,13 @@
 using System.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
     public class invoking_query_with_select_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void use_select_in_query()
         {
             theSession.Store(new User {FirstName = "Hank"});

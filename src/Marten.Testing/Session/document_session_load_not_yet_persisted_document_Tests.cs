@@ -2,11 +2,13 @@
 using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Session
 {
     public class not_tracked_document_session_load_not_yet_persisted_document_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void then_a_new_document_should_be_returned()
         {
             var user1 = new User { FirstName = "Tim", LastName = "Cools" };
@@ -18,6 +20,7 @@ namespace Marten.Testing.Session
             fromSession.ShouldNotBeSameAs(user1);
         }
 
+        [Fact]
         public void given_document_is_already_added_then_a_new_document_should_be_returned()
         {
             var user1 = new User { FirstName = "Tim", LastName = "Cools" };
@@ -30,6 +33,7 @@ namespace Marten.Testing.Session
             fromSession.ShouldNotBeSameAs(user1);
         }
 
+        [Fact]
         public void given_document_with_same_id_is_already_added_then_exception_should_occur()
         {
             var user1 = new User { FirstName = "Tim", LastName = "Cools" };

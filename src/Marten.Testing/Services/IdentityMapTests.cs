@@ -3,11 +3,13 @@ using Marten.Services;
 using Marten.Testing.Fixtures;
 using Octokit;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Services
 {
     public class IdentityMapTests
     {
+        [Fact]
         public void get_value_on_first_request()
         {
             var target = Target.Random();
@@ -22,6 +24,7 @@ namespace Marten.Testing.Services
             target2.ShouldNotBeTheSameAs(target);
         }
 
+        [Fact]
         public void get_value_on_subsequent_requests()
         {
             var target = Target.Random();
@@ -45,6 +48,7 @@ namespace Marten.Testing.Services
             target2.ShouldBeTheSameAs(target5);
         }
 
+        [Fact]
         public void remove_item()
         {
             var target = Target.Random();
@@ -66,6 +70,7 @@ namespace Marten.Testing.Services
 
         }
 
+        [Fact]
         public void get_value_on_first_request_with_lazy_json()
         {
             var target = Target.Random();
@@ -80,6 +85,7 @@ namespace Marten.Testing.Services
             target2.ShouldNotBeTheSameAs(target);
         }
 
+        [Fact]
         public void get_value_on_subsequent_requests_with_lazy_json()
         {
             var target = Target.Random();
@@ -103,6 +109,7 @@ namespace Marten.Testing.Services
             target2.ShouldBeTheSameAs(target5);
         }
 
+        [Fact]
         public void store()
         {
             var target = Target.Random();
@@ -116,6 +123,7 @@ namespace Marten.Testing.Services
             map.Get<Target>(target.Id, "").ShouldBeTheSameAs(target);
         }
 
+        [Fact]
         public void get_with_miss_in_database()
         {
             var serializer = new JilSerializer();
@@ -124,6 +132,7 @@ namespace Marten.Testing.Services
             map.Get<Target>(Guid.NewGuid(), () => null).ShouldBeNull();
         }
 
+        [Fact]
         public void has_positive()
         {
             var target = Target.Random();
@@ -137,6 +146,7 @@ namespace Marten.Testing.Services
 
         }
 
+        [Fact]
         public void has_negative()
         {
             var serializer = new JilSerializer();
@@ -145,6 +155,7 @@ namespace Marten.Testing.Services
             map.Has<Target>(Guid.NewGuid()).ShouldBeFalse();
         }
 
+        [Fact]
         public void retrieve()
         {
             var target = Target.Random();

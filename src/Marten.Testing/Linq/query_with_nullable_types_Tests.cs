@@ -2,11 +2,13 @@
 using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
     public class query_with_nullable_types_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void query_against_non_null()
         {
             theSession.Store(new Target {NullableNumber = 3});
@@ -21,6 +23,7 @@ namespace Marten.Testing.Linq
                 .ShouldBe(3);
         }
 
+        [Fact]
         public void query_against_null_1()
         {
             theSession.Store(new Target { NullableNumber = 3 });
@@ -35,6 +38,7 @@ namespace Marten.Testing.Linq
                 .ShouldBe(3);
         }
 
+        [Fact]
         public void query_against_null_2()
         {
             theSession.Store(new Target { NullableNumber = 3 });
@@ -50,6 +54,7 @@ namespace Marten.Testing.Linq
 
         }
 
+        [Fact]
         public void query_against_not_null()
         {
             theSession.Store(new Target { NullableNumber = 3 });

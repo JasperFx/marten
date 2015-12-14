@@ -2,11 +2,13 @@
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Fixtures;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
     public class deep_searches_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void query_two_deep()
         {
             theSession.Store(new Target{Inner = new Target{Number = 1, String = "Jeremy"}});
@@ -22,6 +24,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Lindsey", "Max");
         }
 
+        [Fact]
         public void query_three_deep()
         {
             theSession.Store(new Target{Number = 1, Inner = new Target{Inner = new Target{Long = 1}}});
@@ -35,6 +38,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs(1, 3);
         }
 
+        [Fact]
         public void order_by_2_deep()
         {
             theSession.Store(new Target { Inner = new Target { Number = 1, String = "Jeremy" } });
@@ -50,6 +54,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Lindsey", "Max");
         }
 
+        [Fact]
         public void query_two_deep_with_containment_operator()
         {
             theStore.Schema.MappingFor(typeof(Target)).PropertySearching = PropertySearching.ContainmentOperator;
@@ -67,6 +72,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Lindsey", "Max");
         }
 
+        [Fact]
         public void query_three_deep_with_containment_operator()
         {
             theStore.Schema.MappingFor(typeof(Target)).PropertySearching = PropertySearching.ContainmentOperator;
@@ -82,6 +88,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs(1, 3);
         }
 
+        [Fact]
         public void order_by_2_deep_with_containment_operator()
         {
             theStore.Schema.MappingFor(typeof(Target)).PropertySearching = PropertySearching.ContainmentOperator;

@@ -3,11 +3,13 @@ using System.Linq;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Schema
 {
     public class ProductionModeSchemeCreationTests
     {
+        [Fact]
         public void work_with_existing_tables()
         {
             using (var c1 = Container.For<DevelopmentModeRegistry>())
@@ -34,6 +36,7 @@ namespace Marten.Testing.Schema
 
         }
 
+        [Fact]
         public void throw_exception_when_table_does_not_exist()
         {
             using (var c1 = Container.For<DevelopmentModeRegistry>())

@@ -2,6 +2,7 @@
 using System.Linq;
 using Marten.Services;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing
 {
@@ -12,6 +13,7 @@ namespace Marten.Testing
 
     public class persisting_document_with_string_id_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void persist_and_load()
         {
             var account = new Account{Id = "email@server.com"};
@@ -30,6 +32,7 @@ namespace Marten.Testing
 
         }
 
+        [Fact]
         public void throws_exception_if_trying_to_save_null_id()
         {
             var account = new Account {Id = null};
@@ -43,6 +46,7 @@ namespace Marten.Testing
         }
 
 
+        [Fact]
         public void throws_exception_if_trying_to_save_empty_id()
         {
             var account = new Account { Id = string.Empty };
@@ -55,6 +59,7 @@ namespace Marten.Testing
 
         }
 
+        [Fact]
         public void persist_and_delete()
         {
             var account = new Account { Id = "email@server.com" };
@@ -75,6 +80,7 @@ namespace Marten.Testing
             }
         }
 
+        [Fact]
         public void load_by_array_of_ids()
         {
             theSession.Store(new Account { Id = "A" });
