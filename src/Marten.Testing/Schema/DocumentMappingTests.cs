@@ -7,23 +7,27 @@ using Marten.Schema.Sequences;
 using Marten.Testing.Documents;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Schema
 {
     public class DocumentMappingTests
     {
+        [Fact]
         public void default_table_name()
         {
             var mapping = new DocumentMapping(typeof (User));
             mapping.TableName.ShouldBe("mt_doc_user");
         }
 
+        [Fact]
         public void default_search_mode_is_jsonb_to_record()
         {
             var mapping = new DocumentMapping(typeof(User));
             mapping.PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
+        [Fact]
         public void pick_up_upper_case_property_id()
         {
             var mapping = new DocumentMapping(typeof (UpperCaseProperty));
@@ -31,6 +35,7 @@ namespace Marten.Testing.Schema
                 .Name.ShouldBe(nameof(UpperCaseProperty.Id));
         }
 
+        [Fact]
         public void pick_up_lower_case_property_id()
         {
             var mapping = new DocumentMapping(typeof (LowerCaseProperty));
@@ -38,6 +43,7 @@ namespace Marten.Testing.Schema
                 .Name.ShouldBe(nameof(LowerCaseProperty.id));
         }
 
+        [Fact]
         public void pick_up_lower_case_field_id()
         {
             var mapping = new DocumentMapping(typeof (LowerCaseField));
@@ -45,6 +51,7 @@ namespace Marten.Testing.Schema
                 .Name.ShouldBe(nameof(LowerCaseField.id));
         }
 
+        [Fact]
         public void pick_up_upper_case_field_id()
         {
             var mapping = new DocumentMapping(typeof (UpperCaseField));
@@ -52,6 +59,7 @@ namespace Marten.Testing.Schema
                 .Name.ShouldBe(nameof(UpperCaseField.Id));
         }
 
+        [Fact]
         public void generate_simple_document_table()
         {
             var mapping = new DocumentMapping(typeof (MySpecialDocument));
@@ -65,6 +73,7 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("jsonb NOT NULL");
         }
 
+        [Fact]
         public void generate_table_with_indexes()
         {
             var mapping = new DocumentMapping(typeof(User));
@@ -84,6 +93,7 @@ namespace Marten.Testing.Schema
 
         }
 
+        [Fact]
         public void generate_a_document_table_with_duplicated_tables()
         {
             var mapping = DocumentMapping.For<User>();
@@ -94,6 +104,7 @@ namespace Marten.Testing.Schema
             table.Columns.Any(x => x.Name == "first_name").ShouldBeTrue();
         }
 
+        [Fact]
         public void generate_a_table_to_the_database_with_duplicated_field()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -112,6 +123,7 @@ namespace Marten.Testing.Schema
         }
 
 
+        [Fact]
         public void write_upsert_sql()
         {
             var mapping = new DocumentMapping(typeof (MySpecialDocument));
@@ -125,18 +137,21 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_myspecialdocument");
         }
 
+        [Fact]
         public void table_name_for_document()
         {
             DocumentMapping.TableNameFor(typeof (MySpecialDocument))
                 .ShouldBe("mt_doc_myspecialdocument");
         }
 
+        [Fact]
         public void upsert_name_for_document_type()
         {
             DocumentMapping.UpsertNameFor(typeof (MySpecialDocument))
                 .ShouldBe("mt_upsert_myspecialdocument");
         }
 
+        [Fact]
         public void find_field_for_immediate_property_that_is_not_duplicated()
         {
             var mapping = DocumentMapping.For<UpperCaseProperty>();
@@ -145,6 +160,7 @@ namespace Marten.Testing.Schema
                 .Name.ShouldBe("Id");
         }
 
+        [Fact]
         public void find_field_for_immediate_field_that_is_not_duplicated()
         {
             var mapping = DocumentMapping.For<UpperCaseField>();
@@ -153,6 +169,7 @@ namespace Marten.Testing.Schema
                 .Name.ShouldBe("Id");
         }
 
+        [Fact]
         public void duplicate_a_field()
         {
             var mapping = DocumentMapping.For<User>();
@@ -166,6 +183,7 @@ namespace Marten.Testing.Schema
             mapping.FieldFor("LastName").ShouldNotBeOfType<DuplicatedField>();
         }
 
+        [Fact]
         public void switch_to_only_using_json_locator_fields()
         {
             var mapping = DocumentMapping.For<User>();
@@ -181,6 +199,7 @@ namespace Marten.Testing.Schema
             mapping.FieldFor("FirstName").ShouldBeOfType<DuplicatedField>();
         }
 
+        [Fact]
         public void switch_back_to_lateral_join_searching_changes_the_non_duplicated_fields()
         {
             var mapping = DocumentMapping.For<User>();
@@ -199,6 +218,7 @@ namespace Marten.Testing.Schema
             mapping.FieldFor("FirstName").ShouldBeOfType<DuplicatedField>();
         }
 
+        [Fact]
         public void picks_up_searchable_attribute_on_fields()
         {
             var mapping = DocumentMapping.For<Organization>();
@@ -207,6 +227,7 @@ namespace Marten.Testing.Schema
             mapping.FieldFor(nameof(Organization.OtherField)).ShouldNotBeOfType<DuplicatedField>();
         }
 
+        [Fact]
         public void picks_up_searchable_attribute_on_properties()
         {
             var mapping = DocumentMapping.For<Organization>();
@@ -215,30 +236,35 @@ namespace Marten.Testing.Schema
             mapping.FieldFor(nameof(Organization.OtherProp)).ShouldNotBeOfType<DuplicatedField>();
         }
 
+        [Fact]
         public void picks_up_marten_attibute_on_document_type()
         {
             var mapping = DocumentMapping.For<Organization>();
             mapping.PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
+        [Fact]
         public void use_string_id_generation_for_string()
         {
             var mapping = DocumentMapping.For<StringId>();
             mapping.IdStrategy.ShouldBeOfType<StringIdGeneration>();
         }
 
+        [Fact]
         public void use_guid_id_generation_for_guid_id()
         {
             var mapping = DocumentMapping.For<UpperCaseProperty>();
             mapping.IdStrategy.ShouldBeOfType<GuidIdGeneration>();
         }
 
+        [Fact]
         public void use_hilo_id_generation_for_int_id()
         {
             DocumentMapping.For<IntId>()
                 .IdStrategy.ShouldBeOfType<HiloIdGeneration>();
         }
 
+        [Fact]
         public void use_hilo_id_generation_for_long_id()
         {
             DocumentMapping.For<LongId>()

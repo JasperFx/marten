@@ -1,11 +1,13 @@
 ﻿using System.Linq;
 using Marten.Services;
 using Marten.Testing.Fixtures;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
     public class using_multiple_where_clauses_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void two_where_clauses()
         {
             var target1 = new Target{Number = 1, String = "Foo"};
@@ -25,6 +27,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs(target1.Id, target4.Id);
         }
 
+        [Fact]
         public void three_where_clauses()
         {
             var target1 = new Target { Number = 1, String = "Foo", Long = 5};

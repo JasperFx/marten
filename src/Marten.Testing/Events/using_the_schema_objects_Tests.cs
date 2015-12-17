@@ -2,11 +2,13 @@
 using Marten.Services;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Events
 {
     public class using_the_schema_objects_Tests
     {
+        [Fact]
         public void can_build_the_mt_stream_schema_objects()
         {
             var container = Container.For<DevelopmentModeRegistry>();

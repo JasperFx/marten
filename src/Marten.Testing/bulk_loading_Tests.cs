@@ -4,11 +4,13 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing
 {
     public class bulk_loading_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void load_with_small_batch()
         {
             // SAMPLE: using_bulk_insert
@@ -30,6 +32,7 @@ namespace Marten.Testing
             Debug.WriteLine(DocumentStorageBuilder.GenerateDocumentStorageCode(new DocumentMapping[] {new DocumentMapping(typeof(Target)), }));
         }
 
+        [Fact]
         public void load_with_small_batch_and_duplicated_fields()
         {
             theContainer.GetInstance<IDocumentSchema>().Alter(_ =>
@@ -47,6 +50,7 @@ namespace Marten.Testing
                 .ShouldBeTrue();
         }
 
+        [Fact]
         public void load_with_small_batch_and_duplicated_data_field()
         {
             theContainer.GetInstance<IDocumentSchema>().Alter(_ =>
@@ -65,6 +69,7 @@ namespace Marten.Testing
         }
 
 
+        [Fact]
         public void load_with_multiple_batches()
         {
             var data = Target.GenerateRandomData(100).ToArray();

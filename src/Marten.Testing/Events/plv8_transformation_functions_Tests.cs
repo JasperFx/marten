@@ -5,6 +5,7 @@ using Marten.Events;
 using Marten.Schema;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Events
 {
@@ -34,6 +35,7 @@ namespace Marten.Testing.Events
 
         }
 
+        [Fact]
         public void apply_a_simple_transformation()
         {
             var joined = new MembersJoined
@@ -54,6 +56,7 @@ namespace Marten.Testing.Events
             json.ShouldBe(expectation);
         }
 
+        [Fact]
         public void start_an_aggregate()
         {
             var aggregate = theEvents.Transforms.StartSnapshot<FakeAggregate>(new EventA {Name = "Alex Smith"});
@@ -61,6 +64,7 @@ namespace Marten.Testing.Events
             aggregate.ANames.Single().ShouldBe("Alex Smith");
         }
 
+        [Fact]
         public void alter_an_existing_aggregate()
         {
             var aggregate = new FakeAggregate

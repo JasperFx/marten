@@ -6,6 +6,7 @@ using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Schema
 {
@@ -15,32 +16,38 @@ namespace Marten.Testing.Schema
         public readonly JsonLocatorField theNumberField = JsonLocatorField.For<User>(x => x.Age);
         public readonly JsonLocatorField theEnumField = JsonLocatorField.For<Target>(x => x.Color);
 
+        [Fact]
         public void member_name_is_derived()
         {
             theStringField.MemberName.ShouldBe("FirstName");
         }
 
+        [Fact]
         public void has_the_member_path()
         {
             theStringField.Members.Single().ShouldBeAssignableTo<PropertyInfo>()
                 .Name.ShouldBe("FirstName");
         }
 
+        [Fact]
         public void locator_for_string()
         {
             theStringField.SqlLocator.ShouldBe("d.data ->> 'FirstName'");
         }
 
+        [Fact]
         public void locator_for_number()
         {
             theNumberField.SqlLocator.ShouldBe("CAST(d.data ->> 'Age' as integer)");
         }
 
+        [Fact]
         public void locator_for_enum()
         {
             theEnumField.SqlLocator.ShouldBe("CAST(d.data ->> 'Color' as integer)");
         }
 
+        [Fact]
         public void the_lateral_join_declaration_is_null()
         {
             theStringField.LateralJoinDeclaration.ShouldBeNull();
@@ -48,6 +55,7 @@ namespace Marten.Testing.Schema
             theEnumField.LateralJoinDeclaration.ShouldBeNull();
         }
 
+        [Fact]
         public void two_deep_members_json_locator()
         {
             var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);
@@ -59,6 +67,7 @@ namespace Marten.Testing.Schema
         }
 
 
+        [Fact]
         public void three_deep_members_json_locator()
         {
             var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);
@@ -69,6 +78,7 @@ namespace Marten.Testing.Schema
             deep.SqlLocator.ShouldBe("CAST(d.data -> 'Inner' -> 'Inner' ->> 'Number' as integer)");
         }
 
+        [Fact]
         public void three_deep_members_json_locator_for_string_property()
         {
             var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);

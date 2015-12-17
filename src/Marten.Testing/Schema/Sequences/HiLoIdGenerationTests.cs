@@ -4,11 +4,13 @@ using Marten.Schema.Sequences;
 using Marten.Testing.Fixtures;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Schema.Sequences
 {
     public class HiLoIdGenerationTests
     {
+        [Fact]
         public void create_argument_value()
         {
             var container = Container.For<DevelopmentModeRegistry>();
@@ -22,6 +24,7 @@ namespace Marten.Testing.Schema.Sequences
  
         }
 
+        [Fact]
         public void arguments_just_returns_itself()
         {
             var generation = new HiloIdGeneration(typeof(Target));

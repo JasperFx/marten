@@ -4,6 +4,7 @@ using Baseline;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing
 {
@@ -13,8 +14,9 @@ namespace Marten.Testing
 
 
 
-    public class document_session_persist_and_load_single_documents_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
+    public abstract class document_session_persist_and_load_single_documents_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
     {
+        [Fact]
         public void persist_a_single_document()
         {
             var user = new User {FirstName = "Magic", LastName = "Johnson"};
@@ -38,6 +40,7 @@ namespace Marten.Testing
             
         }
 
+        [Fact]
         public void persist_and_reload_a_document()
         {
             var user = new User { FirstName = "James", LastName = "Worthy" };
@@ -58,11 +61,13 @@ namespace Marten.Testing
             }
         }
 
+        [Fact]
         public void try_to_load_a_document_that_does_not_exist()
         {
             theSession.Load<User>(Guid.NewGuid()).ShouldBeNull();
         }
 
+        [Fact]
         public void load_by_id_array()
         {
             var user1 = new User { FirstName = "Magic", LastName = "Johnson" };

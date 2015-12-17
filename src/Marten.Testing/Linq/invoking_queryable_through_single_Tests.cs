@@ -3,12 +3,14 @@ using System.Linq;
 using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
     public class invoking_queryable_through_single_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         // SAMPLE: single_and_single_or_default
+        [Fact]
         public void single_hit_with_only_one_document()
         {
             theSession.Store(new Target{Number = 1});
@@ -21,6 +23,7 @@ namespace Marten.Testing.Linq
                 .ShouldNotBeNull();
         }
 
+        [Fact]
         public void single_or_default_hit_with_only_one_document()
         {
             theSession.Store(new Target { Number = 1 });
@@ -34,6 +37,7 @@ namespace Marten.Testing.Linq
         }
         // ENDSAMPLE
 
+        [Fact]
         public void single_or_default_miss()
         {
             theSession.Store(new Target { Number = 1 });
@@ -46,6 +50,7 @@ namespace Marten.Testing.Linq
                 .ShouldBeNull();
         }
 
+        [Fact]
         public void single_hit_with_more_than_one_match()
         {
             theSession.Store(new Target { Number = 1 });
@@ -60,6 +65,7 @@ namespace Marten.Testing.Linq
             });
         }
 
+        [Fact]
         public void single_or_default_hit_with_more_than_one_match()
         {
             theSession.Store(new Target { Number = 1 });
@@ -74,6 +80,7 @@ namespace Marten.Testing.Linq
             });
         }
 
+        [Fact]
         public void single_miss()
         {
             theSession.Store(new Target { Number = 1 });

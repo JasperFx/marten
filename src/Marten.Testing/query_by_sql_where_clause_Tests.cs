@@ -3,6 +3,7 @@ using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing
 {
@@ -16,6 +17,7 @@ namespace Marten.Testing
             }
         }
 
+        [Fact]
         public void query_with_select_in_query()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -35,6 +37,7 @@ namespace Marten.Testing
             }
         }
 
+        [Fact]
         // SAMPLE: query_with_only_the_where_clause
         public void query_for_single_document()
         {
@@ -54,6 +57,7 @@ namespace Marten.Testing
         }
         // ENDSAMPLE
 
+        [Fact]
         public void query_for_multiple_documents()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -77,6 +81,7 @@ namespace Marten.Testing
             }
         }
 
+        [Fact]
         public void query_by_one_parameter()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -100,6 +105,7 @@ namespace Marten.Testing
             }
         }
 
+        [Fact]
         public void query_by_two_parameters()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -124,6 +130,7 @@ namespace Marten.Testing
         }
 
 
+        [Fact]
         public void query_for_multiple_documents_with_ordering()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())

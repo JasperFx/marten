@@ -5,6 +5,7 @@ using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing
 {
@@ -19,26 +20,28 @@ namespace Marten.Testing
             theSchema.Alter<TestRegistry>();
         }
 
-
-
+        [Fact]
         public void property_searching_override()
         {
             theSchema.MappingFor(typeof(User))
                 .PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
+        [Fact]
         public void picks_up_searchable_on_property()
         {
             theSchema.MappingFor(typeof (Organization))
                 .FieldFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
         }
 
+        [Fact]
         public void picks_up_searchable_on_field()
         {
             theSchema.MappingFor(typeof(Organization))
                 .FieldFor(nameof(Organization.OtherName)).ShouldBeOfType<DuplicatedField>();
         }
 
+        [Fact]
         public void searchable_field_is_also_indexed()
         {
             var mapping = theSchema.MappingFor(typeof (Organization));
@@ -49,6 +52,7 @@ namespace Marten.Testing
         }
 
 
+        [Fact]
         public void can_customize_the_index_on_a_searchable_field()
         {
             var mapping = theSchema.MappingFor(typeof(Organization));
@@ -58,6 +62,7 @@ namespace Marten.Testing
             index.Columns.ShouldHaveTheSameElementsAs("other_name");
         }
 
+        [Fact]
         public void can_set_up_gin_index_on_json_data()
         {
             var mapping = theSchema.MappingFor(typeof(Organization));
@@ -69,6 +74,7 @@ namespace Marten.Testing
             index.Expression.ShouldBe("? jsonb_path_ops");
         }
 
+        [Fact]
         public void mapping_is_set_to_containment_if_gin_index_is_added()
         {
             var mapping = theSchema.MappingFor(typeof(Organization));

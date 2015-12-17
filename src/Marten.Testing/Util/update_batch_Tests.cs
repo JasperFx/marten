@@ -8,6 +8,7 @@ using Marten.Util;
 using NpgsqlTypes;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Util
 {
@@ -22,6 +23,7 @@ namespace Marten.Testing.Util
             theSession = theContainer.GetInstance<IDocumentStore>().OpenSession();
         }
 
+        [Fact]
         public void write_multiple_calls()
         {
             // Just forcing the table and schema objects to be created
@@ -55,6 +57,7 @@ namespace Marten.Testing.Util
         }
 
 
+        [Fact]
         public void write_multiple_calls_with_json_supplied()
         {
             // Just forcing the table and schema objects to be created
