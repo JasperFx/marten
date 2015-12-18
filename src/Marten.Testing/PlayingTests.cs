@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Data;
 using System.Diagnostics;
-using FubuCore;
+using Baseline;
 using Marten.Schema;
 using Marten.Testing.Fixtures;
 using Marten.Testing.Github;
 using Octokit;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing
 {
     public class PlayingTests
     {
+        [Fact]
         public void generate_code()
         {
             var mapping = new DocumentMapping(typeof (Target));
@@ -22,6 +24,7 @@ namespace Marten.Testing
             Debug.WriteLine(code);
         }
 
+        [Fact]
         public void linq_spike()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -47,6 +50,7 @@ namespace Marten.Testing
         }
 
 
+        [Fact]
         public void try_ocktokit()
         {
             var basicAuth = new Credentials("jeremydmiller", "FAKE");
@@ -55,7 +59,7 @@ namespace Marten.Testing
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("GitHub"));
 
             //exporter.Export("darthfubumvc", "HtmlTags");
-            //exporter.Export("darthfubumvc", "FubuCore");
+            //exporter.Export("darthfubumvc", "Baseline");
             //exporter.Export("darthfubumvc", "Bottles");
             //exporter.Export("darthfubumvc", "FubuMVC");
             //exporter.Export("structuremap", "structuremap");

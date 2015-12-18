@@ -1,8 +1,8 @@
 var mt_transforms = require('./../javascript/mt_transforms');
 var expect = require('chai').expect;
 
-describe('mt_transforms', () => {
-	describe('Transforms', () => {
+describe('mt_transforms', function() {
+	describe('Transforms', function() {
 		var transformer = mt_transforms.transform({
 			name: 'location',
 			members_joined: function(e, metadata){
@@ -13,19 +13,19 @@ describe('mt_transforms', () => {
 			}
 		});
 
-		it('should always have the type transform', () => {
+		it('should always have the type transform', function() {
 			expect(transformer.type).to.equal('transform');
 		});
 
-		it('should copy the name', () => {
+		it('should copy the name', function() {
 			expect(transformer.name).to.equal('location');
 		});
 
-		it('makes the default timing as inline', () => {
+		it('makes the default timing as inline', function() {
 			expect(transformer.timing).to.equal('inline');
 		});
 
-		it('can use explicit timing', () => {
+		it('can use explicit timing', function() {
 			var t = mt_transforms.transform({
 				name: 'location',
 				timing: 'live',
@@ -37,7 +37,7 @@ describe('mt_transforms', () => {
 			expect(t.timing).to.equal('live');
 		});
 
-		it('can transform', () => {
+		it('can transform', function() {
 			expect(transformer.transform('members_joined', {day: 1, location: "Emond's Field"}))
 				.to.deep.equal({day: 1, place: "Emond's Field"});
 
@@ -45,7 +45,7 @@ describe('mt_transforms', () => {
 				.to.deep.equal({subject: 'members_departed'});
 		});
 
-		it('can derive its usages', () => {
+		it('can derive its usages', function() {
 			expect(transformer.usages()).to.deep.equal([
 				{timing: 'inline', name: 'location', event_name: 'members_joined', type: 'transform'},
 				{timing: 'inline', name: 'location', event_name: 'members_departed', type: 'transform'}
@@ -54,7 +54,7 @@ describe('mt_transforms', () => {
 	});
 
 
-	describe('Snapshot', () => {
+	describe('Snapshot', function() {
 		var snapshot = mt_transforms.snapshot({
 			name: 'quest',
 			$init: function(){
@@ -69,19 +69,19 @@ describe('mt_transforms', () => {
 
 		});
 
-		it('sets the default timing to inline', () => {
+		it('sets the default timing to inline', function() {
 			expect(snapshot.timing).to.equal('inline');
 		});
 
-		it('should always have the type transform', () => {
+		it('should always have the type transform', function() {
 			expect(snapshot.type).to.equal('snapshot');
 		});
 
-		it('should copy the name', () => {
+		it('should copy the name', function() {
 			expect(snapshot.name).to.equal('quest');
 		});
 
-		it('allows you to override the timing', () => {
+		it('allows you to override the timing', function() {
 			var s = mt_transforms.snapshot({
 				name: 'quest',
 				timing: 'live',
@@ -100,20 +100,20 @@ describe('mt_transforms', () => {
 			expect(s.timing).to.equal('live');
 		});
 
-		it('can calculate its usages', () => {
+		it('can calculate its usages', function() {
 			expect(snapshot.usages()).to.deep.equal([
 				{timing: 'inline', name: 'quest', event_name: 'members_joined', type: 'snapshot'},
 				{timing: 'inline', name: 'quest', event_name: 'members_departed', type: 'snapshot'}
 			]);
 		});
 
-		it('can start a transformation', () => {
+		it('can start a transformation', function() {
 			var aggregate = snapshot.transform("foo", {}, null, null);
 
 			expect(aggregate).to.deep.equal({quest: 'yes', day: 0, members: []});
 		});
 
-		it('can transform an existing aggregate', () => {
+		it('can transform an existing aggregate', function() {
 			var starting = {};
 
 			var result = snapshot.transform('members_joined', {members: ['Rand', 'Mat']})

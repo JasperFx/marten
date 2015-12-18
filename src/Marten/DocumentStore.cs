@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using FubuCore;
+using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
@@ -23,8 +23,9 @@ namespace Marten
         /// <returns></returns>
         public static DocumentStore For(string connectionString)
         {
-            return DocumentStore.For(_ =>
+            return For(_ =>
             {
+                _.AutoCreateSchemaObjects = true;
                 _.Connection(connectionString);
             });
         }
@@ -51,6 +52,8 @@ namespace Marten
                 : new ProductionSchemaCreation();
 
             Schema = new DocumentSchema(_runner, creation);
+
+            Schema.Alter(options.Schema);
 
             _serializer = options.Serializer();
 

@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Marten.Services;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing
 {
@@ -11,6 +12,7 @@ namespace Marten.Testing
 
     public class persist_and_load_documents_with_int_ids_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void persist_and_load()
         {
             var IntDoc = new IntDoc { Id = 456 };
@@ -29,6 +31,7 @@ namespace Marten.Testing
 
         }
 
+        [Fact]
         public void auto_assign_id_for_0_id()
         {
             var doc = new IntDoc {Id = 0};
@@ -45,6 +48,7 @@ namespace Marten.Testing
             doc2.Id.ShouldNotBe(doc.Id);
         }
 
+        [Fact]
         public void persist_and_delete()
         {
             var IntDoc = new IntDoc { Id = 567 };
@@ -65,6 +69,7 @@ namespace Marten.Testing
             }
         }
 
+        [Fact]
         public void load_by_array_of_ids()
         {
             theSession.Store(new IntDoc { Id = 3 });

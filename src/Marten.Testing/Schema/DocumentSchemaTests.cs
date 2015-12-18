@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using Marten.Generation;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Schema
 {
@@ -24,12 +26,14 @@ namespace Marten.Testing.Schema
             _schema.Dispose();
         }
 
+        [Fact]
         public void can_create_a_new_storage_for_an_IDocument_type()
         {
             var storage = _schema.StorageFor(typeof (User));
             storage.ShouldNotBeNull();
         }
 
+        [Fact]
         public void caches_storage_for_a_document_type()
         {
             _schema.StorageFor(typeof (User))
@@ -42,6 +46,25 @@ namespace Marten.Testing.Schema
                 .ShouldBeSameAs(_schema.StorageFor(typeof (Company)));
         }
 
+        [Fact]
+        public void generate_ddl()
+        {
+            _schema.StorageFor(typeof (User));
+            _schema.StorageFor(typeof (Issue));
+            _schema.StorageFor(typeof (Company));
+
+            var sql = _schema.ToDDL();
+
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_get_next_hi");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_user");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_issue");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_company");
+            sql.ShouldContain("CREATE TABLE mt_doc_user");
+            sql.ShouldContain("CREATE TABLE mt_doc_issue");
+            sql.ShouldContain("CREATE TABLE mt_doc_company");
+        }
+
+        [Fact]
         public void builds_schema_objects_on_the_fly_as_needed()
         {
             _schema.StorageFor(typeof (User)).ShouldNotBeNull();
@@ -62,6 +85,7 @@ namespace Marten.Testing.Schema
             functions.ShouldContain(DocumentMapping.UpsertNameFor(typeof (Company)).ToLower());
         }
 
+        [Fact]
         public void do_not_rebuild_a_table_that_already_exists()
         {
             using (var container1 = Container.For<DevelopmentModeRegistry>())

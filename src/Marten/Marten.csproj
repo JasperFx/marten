@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Marten</RootNamespace>
     <AssemblyName>Marten</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -46,6 +46,7 @@
     <Compile Include="AdvancedOptions.cs" />
     <Compile Include="ConnectionFactory.cs" />
     <Compile Include="DocumentStore.cs" />
+    <Compile Include="DocumentTracking.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />
     <Compile Include="QuerySession.cs" />
@@ -168,13 +169,17 @@
   <ItemGroup>
     <EmbeddedResource Include="Schema\SQL\mt_apply_aggregation.sql" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="FubuCore">
-      <HintPath>..\..\packages\FubuCore\lib\FubuCore.dll</HintPath>
-      <Private>True</Private>
-      <Paket>True</Paket>
-    </Reference>
-  </ItemGroup>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Baseline">
+          <HintPath>..\..\packages\Baseline\lib\net45\Baseline.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
   <ItemGroup>
     <Analyzer Include="..\..\packages\Microsoft.CodeAnalysis.Analyzers\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll">
       <Paket>True</Paket>
@@ -322,17 +327,6 @@
       <ItemGroup>
         <Reference Include="Remotion.Linq">
           <HintPath>..\..\packages\Remotion.Linq\lib\portable-net45+win+wpa81+wp80\Remotion.Linq.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
-      <ItemGroup>
-        <Reference Include="StoryTeller">
-          <HintPath>..\..\packages\Storyteller\lib\net45\StoryTeller.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>

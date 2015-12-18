@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Metadata;
-using FubuCore;
-using FubuCore.Reflection;
+using Baseline;
 using Marten.Schema;
 using Marten.Util;
 using Remotion.Linq.Clauses.Expressions;
@@ -15,15 +12,11 @@ using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
 {
-    
-
     public class MartenExpressionParser
     {
-        private readonly DocumentQuery _query;
-        private readonly ISerializer _serializer;
-        private static readonly string CONTAINS = ReflectionHelper.GetMethod<string>(x => x.Contains("null")).Name;
-        private static readonly string STARTS_WITH = ReflectionHelper.GetMethod<string>(x => x.StartsWith("null")).Name;
-        private static readonly string ENDS_WITH = ReflectionHelper.GetMethod<string>(x => x.EndsWith("null")).Name;
+        private static readonly string CONTAINS = nameof(string.Contains);
+        private static readonly string STARTS_WITH = nameof(string.StartsWith);
+        private static readonly string ENDS_WITH = nameof(string.EndsWith);
 
         private static readonly IDictionary<ExpressionType, string> _operators = new Dictionary<ExpressionType, string>
         {
@@ -34,6 +27,9 @@ namespace Marten.Linq
             {ExpressionType.LessThan, "<"},
             {ExpressionType.LessThanOrEqual, "<="}
         };
+
+        private readonly DocumentQuery _query;
+        private readonly ISerializer _serializer;
 
         public MartenExpressionParser(DocumentQuery query, ISerializer serializer)
         {
@@ -53,7 +49,7 @@ namespace Marten.Linq
                 return GetMethodCall(mapping, expression.As<MethodCallExpression>());
             }
 
-            if (expression is MemberExpression && expression.Type == typeof(bool))
+            if (expression is MemberExpression && expression.Type == typeof (bool))
             {
                 var locator = JsonLocator(mapping, expression.As<MemberExpression>());
                 return new WhereFragment("{0} = True".ToFormat(locator), true);
@@ -89,17 +85,19 @@ namespace Marten.Linq
 
         private IWhereFragment GetNotWhereFragment(DocumentMapping mapping, Expression expression)
         {
-            if (expression is MemberExpression && expression.Type == typeof(bool))
+            if (expression is MemberExpression && expression.Type == typeof (bool))
             {
                 var locator = JsonLocator(mapping, expression.As<MemberExpression>());
                 return new WhereFragment("({0})::Boolean = False".ToFormat(locator));
             }
 
-            if (expression.Type == typeof (bool) && expression.NodeType == ExpressionType.NotEqual && expression is BinaryExpression)
+            if (expression.Type == typeof (bool) && expression.NodeType == ExpressionType.NotEqual &&
+                expression is BinaryExpression)
             {
                 var binaryExpression = expression.As<BinaryExpression>();
                 var locator = JsonLocator(mapping, binaryExpression.Left);
-                if (binaryExpression.Right.NodeType == ExpressionType.Constant && binaryExpression.Right.As<ConstantExpression>().Value == null)
+                if (binaryExpression.Right.NodeType == ExpressionType.Constant &&
+                    binaryExpression.Right.As<ConstantExpression>().Value == null)
                 {
                     return new WhereFragment($"({locator})::Boolean IS NULL");
                 }
@@ -110,7 +108,6 @@ namespace Marten.Linq
 
         private IWhereFragment GetMethodCall(DocumentMapping mapping, MethodCallExpression expression)
         {
-
             // TODO -- generalize this mess
             if (expression.Method.Name == CONTAINS)
             {
@@ -127,7 +124,7 @@ namespace Marten.Linq
             if (expression.Method.Name == STARTS_WITH)
             {
                 var @object = expression.Object;
-                if (@object.Type == typeof(string))
+                if (@object.Type == typeof (string))
                 {
                     var locator = JsonLocator(mapping, @object);
                     var value = Value(expression.Arguments.Single()).As<string>();
@@ -138,7 +135,7 @@ namespace Marten.Linq
             if (expression.Method.Name == ENDS_WITH)
             {
                 var @object = expression.Object;
-                if (@object.Type == typeof(string))
+                if (@object.Type == typeof (string))
                 {
                     var locator = JsonLocator(mapping, @object);
                     var value = Value(expression.Arguments.Single()).As<string>();
@@ -177,7 +174,8 @@ namespace Marten.Linq
 
             var value = Value(binary.Right);
 
-            if (mapping.PropertySearching == PropertySearching.ContainmentOperator && binary.NodeType == ExpressionType.Equal && value != null)
+            if (mapping.PropertySearching == PropertySearching.ContainmentOperator &&
+                binary.NodeType == ExpressionType.Equal && value != null)
             {
                 return new ContainmentWhereFragment(_serializer, binary);
             }
@@ -193,7 +191,7 @@ namespace Marten.Linq
                 return new WhereFragment(sql);
             }
 
-            
+
             return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
         }
 
@@ -223,12 +221,11 @@ namespace Marten.Linq
 
             return field.SqlLocator;
         }
-
-
     }
 
-    public class FindMembers : RelinqExpressionVisitor    {
-        public readonly IList<MemberInfo> Members = new List<MemberInfo>(); 
+    public class FindMembers : RelinqExpressionVisitor
+    {
+        public readonly IList<MemberInfo> Members = new List<MemberInfo>();
 
         protected override Expression VisitMember(MemberExpression node)
         {

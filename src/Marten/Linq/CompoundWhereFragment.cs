@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Npgsql;
 using System.Collections.Generic;
+using Baseline;
 using Marten.Schema;
 using Remotion.Linq.Clauses;
 

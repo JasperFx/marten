@@ -5,11 +5,13 @@ using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Schema
 {
     public class DocumentCleanerTests
     {
+        [Fact]
         public void clean_table()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -33,6 +35,7 @@ namespace Marten.Testing.Schema
             }
         }
 
+        [Fact]
         public void delete_all_documents()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -58,6 +61,7 @@ namespace Marten.Testing.Schema
             }
         }
 
+        [Fact]
         public void completely_remove_document_type()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -83,6 +87,7 @@ namespace Marten.Testing.Schema
             }
         }
 
+        [Fact]
         public void completely_remove_document_removes_the_upsert_command_too()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -109,6 +114,7 @@ namespace Marten.Testing.Schema
             }
         }
 
+        [Fact]
         public void completely_remove_everything()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -134,6 +140,7 @@ namespace Marten.Testing.Schema
             }
         }
 
+        [Fact]
         public void delete_except_types()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())

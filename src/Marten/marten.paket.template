@@ -1,0 +1,17 @@
+type file
+id Marten
+description Postgresql as a Document Db and Event Store for .Net Development
+authors Jeremy D. Miller, Tim Cools, Jeff Doolittle, et al
+title Marten
+owners Jeremy D. Miller
+licenseUrl https://github.com/JasperFX/marten/blob/master/LICENSE.txt
+projectUrl http://jasperfx.github.io/marten
+version 0.5.0
+
+files
+    bin\release\Marten.dll ==> lib/net45
+
+dependencies
+    Npgsql ~> 3.0.3
+
+     

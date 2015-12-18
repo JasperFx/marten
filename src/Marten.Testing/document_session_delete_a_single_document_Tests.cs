@@ -1,11 +1,13 @@
 ﻿using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing
 {
-    public class document_session_delete_a_single_document_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
+    public abstract class document_session_delete_a_single_document_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
     {
+        [Fact]
         public void persist_and_delete_a_document_by_entity()
         {
             var user = new User {FirstName = "Mychal", LastName = "Thompson"};
@@ -24,6 +26,7 @@ namespace Marten.Testing
             }
         }
 
+        [Fact]
         public void persist_and_delete_a_document_by_id()
         {
             var user = new User { FirstName = "Mychal", LastName = "Thompson" };

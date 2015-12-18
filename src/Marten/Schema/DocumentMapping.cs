@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using FubuCore;
-using FubuCore.Reflection;
+using Baseline;
+using Baseline.Reflection;
 using Marten.Generation;
 using Marten.Schema.Sequences;
 using Marten.Util;
@@ -53,6 +53,17 @@ namespace Marten.Schema
         }
 
         public int BatchSize = 100;
+
+        public IndexDefinition AddGinIndexToData()
+        {
+            var index = AddIndex("data");
+            index.Method = IndexMethod.gin;
+            index.Expression = "? jsonb_path_ops";
+
+            PropertySearching = Schema.PropertySearching.ContainmentOperator;
+
+            return index;
+        }
 
         public IndexDefinition AddIndex(params string[] columns)
         {

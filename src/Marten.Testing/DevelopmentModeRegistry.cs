@@ -4,6 +4,7 @@ using Marten.Schema;
 using Marten.Services;
 using Remotion.Linq.Parsing.Structure;
 using StructureMap.Configuration.DSL;
+using StructureMap.Pipeline;
 
 namespace Marten.Testing
 {
@@ -44,4 +45,27 @@ namespace Marten.Testing
 
         public static PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;
     }
+
+    // SAMPLE: MartenServices
+    public class MartenServices : Registry
+    {
+        public MartenServices()
+        {
+            ForSingletonOf<IDocumentStore>().Use("Build the DocumentStore", () =>
+            {
+                return DocumentStore.For(_ =>
+                {
+                    _.Connection("your connection string");
+                    _.AutoCreateSchemaObjects = false;
+                    
+                    // other Marten configuration options
+                });
+            });
+
+            For<IDocumentSession>()
+                .LifecycleIs<ContainerLifecycle>() // not really necessary in some frameworks
+                .Use(c => c.GetInstance<IDocumentStore>().LightweightSession());
+        }
+    }
+    // ENDSAMPLE
 }

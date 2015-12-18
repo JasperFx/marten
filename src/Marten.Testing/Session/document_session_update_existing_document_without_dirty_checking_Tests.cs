@@ -1,6 +1,7 @@
 ﻿using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Session
 {
@@ -9,8 +10,9 @@ namespace Marten.Testing.Session
 
 
 
-    public class document_session_update_existing_document_without_dirty_checking_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
+    public abstract class document_session_update_existing_document_without_dirty_checking_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
     {
+        [Fact]
         public void store_a_document()
         {
             var user = new User { FirstName = "James", LastName = "Worthy" };
@@ -26,6 +28,7 @@ namespace Marten.Testing.Session
             }
         }
 
+        [Fact]
         public void store_and_update_a_document_then_document_should_not_be_updated()
         {
             var user = new User { FirstName = "James", LastName = "Worthy" };
@@ -52,6 +55,7 @@ namespace Marten.Testing.Session
             }
         }
 
+        [Fact]
         public void store_and_update_a_document_in_same_session_then_document_should_not_be_updated()
         {
             var user = new User { FirstName = "James", LastName = "Worthy" };
@@ -71,6 +75,7 @@ namespace Marten.Testing.Session
             }
         }
 
+        [Fact]
         public void store_reload_and_update_a_document_in_same_session_then_document_should_not_be_updated()
         {
             var user = new User { FirstName = "James", LastName = "Worthy" };

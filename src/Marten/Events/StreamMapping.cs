@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using FubuCore;
-using FubuCore.Util;
+using Baseline;
 using Marten.Schema;
 
 namespace Marten.Events

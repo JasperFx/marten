@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Baseline;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;

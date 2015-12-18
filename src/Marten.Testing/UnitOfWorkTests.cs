@@ -4,6 +4,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Schema;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing
 {
@@ -16,6 +17,7 @@ namespace Marten.Testing
             theSession = theContainer.GetInstance<IDocumentStore>().OpenSession();
         }
 
+        [Fact]
         public void update_mixed_document_types()
         {
             var user1 = new User ();
@@ -41,6 +43,7 @@ namespace Marten.Testing
             theSession.Query<Company>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(company1.Id, company2.Id);
         }
 
+        [Fact]
         public void apply_updates_via_the_actual_document()
         {
             var stringDoc1 = new StringDoc {Id = "Foo"};
@@ -78,6 +81,7 @@ namespace Marten.Testing
 
 
 
+        [Fact]
         public void apply_updates_via_the_id()
         {
             var stringDoc1 = new StringDoc { Id = "Foo" };

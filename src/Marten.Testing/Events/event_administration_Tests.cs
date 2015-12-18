@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Linq;
-using FubuCore;
+using Baseline;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Services;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Events
 {
@@ -22,6 +23,7 @@ namespace Marten.Testing.Events
             events.RebuildEventStoreSchema();
         }
 
+        [Fact]
         public void has_the_event_tables()
         {
             var schema = theContainer.GetInstance<IDocumentSchema>();
@@ -32,6 +34,7 @@ namespace Marten.Testing.Events
             tableNames.ShouldContain("mt_projections");
         }
 
+        [Fact]
         public void has_the_commands_for_appending_events()
         {
             var schema = theContainer.GetInstance<IDocumentSchema>();
@@ -42,6 +45,7 @@ namespace Marten.Testing.Events
         }
 
 
+        [Fact]
         public void has_the_command_for_transforming_events()
         {
             var schema = theContainer.GetInstance<IDocumentSchema>();
@@ -50,6 +54,7 @@ namespace Marten.Testing.Events
             functions.ShouldContain("mt_apply_transform");
         }
 
+        [Fact]
         public void has_the_command_for_applying_aggregation()
         {
             var schema = theContainer.GetInstance<IDocumentSchema>();
@@ -58,6 +63,7 @@ namespace Marten.Testing.Events
             functions.ShouldContain("mt_apply_aggregation");
         }
 
+        [Fact]
         public void has_the_command_for_starting_a_new_aggregate()
         {
             var schema = theContainer.GetInstance<IDocumentSchema>();
@@ -66,6 +72,7 @@ namespace Marten.Testing.Events
             functions.ShouldContain("mt_start_aggregation");
         }
 
+        [Fact]
         public void loads_the_mt_transform_module()
         {
             var runner = theContainer.GetInstance<ICommandRunner>();
@@ -74,6 +81,7 @@ namespace Marten.Testing.Events
             loadedModules.ShouldContain("mt_transforms");
         }
 
+        [Fact]
         public void loads_the_initialize_projections_function()
         {
             var schema = theContainer.GetInstance<IDocumentSchema>();
@@ -82,6 +90,7 @@ namespace Marten.Testing.Events
             functions.ShouldContain("mt_initialize_projections");
         }
 
+        [Fact]
         public void loads_the_get_projection_usage_function()
         {
             var schema = theContainer.GetInstance<IDocumentSchema>();
@@ -91,6 +100,7 @@ namespace Marten.Testing.Events
         }
 
 
+        [Fact]
         public void load_projections()
         {
             var directory =
@@ -113,6 +123,7 @@ namespace Marten.Testing.Events
             list.ShouldContain("party");
         }
 
+        [Fact]
         public void load_projections_and_initialize()
         {
             var directory =
@@ -146,6 +157,7 @@ Projection party (snapshot) for Event quest_started executed inline
     */
         }
 
+        [Fact]
         public void initialize_can_run_without_blowing_up()
         {
             var events = theContainer.GetInstance<EventStore>();

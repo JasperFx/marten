@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
+using Baseline;
 using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
@@ -16,6 +17,7 @@ namespace Marten.Testing.Linq
             });
         }
 
+        [Fact]
         public void query_by_string()
         {
             theSession.Store(new Target {String = "Python"});
@@ -29,6 +31,7 @@ namespace Marten.Testing.Linq
             theSession.Query<Target>().Where(x => x.String == "Python").Single().String.ShouldBe("Python");
         }
 
+        [Fact]
         public void query_by_number()
         {
             theSession.Store(new Target {Number = 1});
@@ -43,6 +46,7 @@ namespace Marten.Testing.Linq
             theSession.Query<Target>().Where(x => x.Number == 3).Single().Number.ShouldBe(3);
         }
 
+        [Fact]
         public void query_by_date()
         {
             var targets = Target.GenerateRandomData(6).ToArray();

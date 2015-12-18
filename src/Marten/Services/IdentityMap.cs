@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
-using FubuCore;
-using FubuCore.Util;
+using Baseline;
 
 namespace Marten.Services
 {

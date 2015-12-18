@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 
@@ -19,6 +20,11 @@ namespace Marten
         private Action<IDocumentSchema> alter
         {
             set { _alterations.Add(value); }
+        }
+
+        public PostgresUpsertType UpsertType
+        {
+            set { alter = x => x.UpsertType = value; }
         }
 
         internal void Alter(IDocumentSchema schema)
@@ -43,6 +49,8 @@ namespace Marten
             public DocumentMappingExpression(MartenRegistry parent)
             {
                 _parent = parent;
+
+                _parent.alter = schema => schema.MappingFor(typeof (T));
             }
 
             public DocumentMappingExpression<T> PropertySearching(PropertySearching searching)
@@ -86,13 +94,9 @@ namespace Marten
             {
                 alter = mapping =>
                 {
-                    var index = mapping.AddIndex("data");
-                    index.Method = IndexMethod.gin;
-                    index.Expression = "? jsonb_path_ops";
+                    var index = mapping.AddGinIndexToData();
 
                     configureIndex?.Invoke(index);
-
-                    mapping.PropertySearching = Schema.PropertySearching.ContainmentOperator;
                 };
 
                 return this;

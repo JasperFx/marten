@@ -1,12 +1,14 @@
 using System.Linq;
 using Marten.Services;
 using Marten.Testing.Fixtures;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
     public class invoking_queryable_any_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
 
+        [Fact]
         public void any_miss_with_query()
         {
             theSession.Store(new Target { Number = 1 });
@@ -21,6 +23,7 @@ namespace Marten.Testing.Linq
         }
 
         
+        [Fact]
         public void naked_any_miss()
         {
             theSession.Query<Target>().Any()
@@ -28,6 +31,7 @@ namespace Marten.Testing.Linq
 
         }
         
+        [Fact]
         public void naked_any_hit()
         {
             theSession.Store(new Target { Number = 1 });
@@ -40,6 +44,7 @@ namespace Marten.Testing.Linq
         }
         
         
+        [Fact]
         public void any_hit_with_only_one_document()
         {
             theSession.Store(new Target { Number = 1 });
@@ -53,6 +58,7 @@ namespace Marten.Testing.Linq
         }
         
 
+        [Fact]
         public void any_hit_with_more_than_one_match()
         {
             theSession.Store(new Target { Number = 1 });

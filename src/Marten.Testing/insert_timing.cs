@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Baseline;
 using HtmlTags;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Fixtures;
 using StructureMap;
 using StructureMap.Util;
+using Xunit;
 
 namespace Marten.Testing
 {
@@ -62,6 +64,7 @@ namespace Marten.Testing
         }
 
 
+        [Fact]
         public void run_all_inserts()
         {
             var data = Target.GenerateRandomData(500).ToArray();

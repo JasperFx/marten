@@ -6,6 +6,7 @@ using Marten.Schema.Sequences;
 using Marten.Services;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Schema.Sequences
 {
@@ -28,6 +29,7 @@ namespace Marten.Testing.Schema.Sequences
             theSequence = new HiLoSequence(_runner, "foo", new HiloDef());
         }
 
+        [Fact]
         public void default_values()
         {
             theSequence.CurrentHi.ShouldBe(-1);
@@ -35,11 +37,13 @@ namespace Marten.Testing.Schema.Sequences
             theSequence.MaxLo.ShouldBe(1000);
         }
 
+        [Fact]
         public void should_advance_initial_case()
         {
             theSequence.ShouldAdvanceHi().ShouldBeTrue();
         }
 
+        [Fact]
         public void advance_to_next_hi_from_initial_state()
         {
             theSequence.AdvanceToNextHi();
@@ -48,6 +52,7 @@ namespace Marten.Testing.Schema.Sequences
             theSequence.CurrentHi.ShouldBe(0);
         }
 
+        [Fact]
         public void advance_to_next_hi_several_times()
         {
             theSequence.AdvanceToNextHi();
@@ -62,6 +67,7 @@ namespace Marten.Testing.Schema.Sequences
             theSequence.CurrentHi.ShouldBe(3);
         }
 
+        [Fact]
         public void advance_value_from_initial_state()
         {
             // Gotta do this at least once
@@ -74,6 +80,7 @@ namespace Marten.Testing.Schema.Sequences
             theSequence.AdvanceValue().ShouldBe(5);
         }
 
+        [Fact]
         public void read_from_a_single_thread_from_0_to_5000()
         {
             for (var i = 0; i < 5000; i++)
@@ -98,6 +105,7 @@ namespace Marten.Testing.Schema.Sequences
         }
 
 
+        [Fact]
         public void is_thread_safe()
         {
             var tasks = new Task<List<int>>[] {startThread(), startThread(), startThread(), startThread(), startThread(), startThread()};

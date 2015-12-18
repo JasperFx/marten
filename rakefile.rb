@@ -1,13 +1,14 @@
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
 BUILD_VERSION = '0.5.0'
+CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
 build_revision = tc_build_number || Time.new.strftime('5%H%M')
 build_number = "#{BUILD_VERSION}.#{build_revision}"
 BUILD_NUMBER = build_number 
 
-task :ci => [:version, :default, :pack]
+task :ci => [:connection, :version, :default, :pack]
 
 task :default => [:mocha, :test, :storyteller]
 
@@ -56,6 +57,14 @@ task :version do
 	end
 end
 
+desc 'Builds the connection string file'
+task :connection do
+	File.open('src/Marten.Testing/connection.txt', 'w') do |file|
+		file.write CONNECTION
+	end
+end
+
+
 desc 'Runs the Mocha tests'
 task :mocha do
 	sh "npm install"
@@ -69,7 +78,19 @@ task :compile => [:clean] do
 	msbuild = '"C:\Program Files (x86)\MSBuild\14.0\Bin\msbuild.exe"'
 
 	sh "#{msbuild} src/Marten.sln   /property:Configuration=#{COMPILE_TARGET} /v:m /t:rebuild /nr:False /maxcpucount:2"
+	
+	sh "ILMerge.exe /out:src/Marten/bin/#{COMPILE_TARGET}/Marten.dll /lib:src/Marten/bin/#{COMPILE_TARGET} /target:library /targetplatform:v4 /internalize /ndebug src/Marten/bin/#{COMPILE_TARGET}/Marten.dll src/Marten/bin/#{COMPILE_TARGET}/Newtonsoft.Json.dll src/Marten/bin/#{COMPILE_TARGET}/Baseline.dll  src/Marten/bin/#{COMPILE_TARGET}/Microsoft.CodeAnalysis.dll src/Marten/bin/#{COMPILE_TARGET}/Microsoft.CodeAnalysis.CSharp.dll src/Marten/bin/#{COMPILE_TARGET}/Remotion.Linq.dll src/Marten/bin/#{COMPILE_TARGET}/System.Reflection.Metadata.dll src/Marten/bin/#{COMPILE_TARGET}/System.Collections.Immutable.dll"
+
+
+	# FileUtils.cp "src/Marten/bin/#{COMPILE_TARGET}/Marten.dll", "src/Marten.Testing/bin/#{COMPILE_TARGET}/Marten.dll"
+
 end
+
+desc 'Build the Nupkg file'
+task :pack => [:compile] do
+	sh "paket.exe pack output artifacts version #{BUILD_NUMBER}"
+end
+
 
 desc 'Run the unit tests'
 task :test => [:compile] do

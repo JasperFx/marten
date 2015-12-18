@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using FubuCore;
+using Baseline;
 using NpgsqlTypes;
 
 namespace Marten.Util

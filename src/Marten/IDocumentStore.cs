@@ -8,7 +8,6 @@ namespace Marten
         IDocumentSchema Schema { get; }
         AdvancedOptions Advanced { get; }
 
-
         void BulkInsert<T>(T[] documents, int batchSize = 1000);
 
         IDiagnostics Diagnostics { get; }
@@ -20,12 +19,5 @@ namespace Marten
         IDocumentSession DirtyTrackedSession();
 
         IQuerySession QuerySession();
-    }
-
-    public enum DocumentTracking
-    {
-        None,
-        IdentityOnly,
-        DirtyTracking
     }
 }

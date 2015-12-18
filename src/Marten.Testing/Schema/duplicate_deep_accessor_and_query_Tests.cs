@@ -1,14 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Fixtures;
+using Xunit;
 
 namespace Marten.Testing.Schema
 {
     public class duplicate_deep_accessor_and_query_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void duplicate_and_search_off_of_deep_accessor_by_number()
         {
             var targets = Target.GenerateRandomData(10).ToArray();
@@ -29,6 +32,7 @@ namespace Marten.Testing.Schema
 
         }
 
+        [Fact]
         public void duplicate_and_search_off_of_deep_accessor_by_date()
         {
             var targets = Target.GenerateRandomData(10).ToArray();

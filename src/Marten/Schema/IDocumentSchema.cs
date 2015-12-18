@@ -23,5 +23,19 @@ namespace Marten.Schema
         EventGraph Events { get; }
 
         PostgresUpsertType UpsertType { get; set; }
+
+        /// <summary>
+        /// Write the SQL script to build the database schema
+        /// objects to a file
+        /// </summary>
+        /// <param name="filename"></param>
+        void WriteDDL(string filename);
+
+        /// <summary>
+        /// Creates all the SQL script that would build all the database
+        /// schema objects for the configured schema
+        /// </summary>
+        /// <returns></returns>
+        string ToDDL();
     }
 }
