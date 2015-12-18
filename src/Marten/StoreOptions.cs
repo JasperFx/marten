@@ -44,7 +44,7 @@ namespace Marten
         public bool AutoCreateSchemaObjects = false;
         private RequestCounterThreshold _threshold = RequestCounterThreshold.Empty;
 
-        internal RequestCounterThreshold RequstThreshold()
+        internal RequestCounterThreshold RequestThreshold()
         {
             return _threshold;
         }

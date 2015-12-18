@@ -55,7 +55,7 @@ namespace Marten
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_runner, Schema);
-            Advanced = new AdvancedOptions(cleaner, options.RequstThreshold());
+            Advanced = new AdvancedOptions(cleaner, options.RequestThreshold());
 
             Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser));
         }
