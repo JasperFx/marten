@@ -5,17 +5,20 @@ using Marten.Services;
 using Marten.Testing.Documents;
 using Npgsql;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Session.RequestCounter
 {
     public class request_counter_Tests
     {
+        [Fact]
         public void no_requests_should_keep_counter_on_zero()
         {
             var requestCounter = CreateCounter();
             requestCounter.NumberOfRequests.ShouldBe(0);
         }
 
+        [Fact]
         public void number_of_requests_should_increment_on_execute()
         {
             var requestCounter = CreateCounter();
@@ -25,6 +28,7 @@ namespace Marten.Testing.Session.RequestCounter
             requestCounter.NumberOfRequests.ShouldBe(1);
         }
 
+        [Fact]
         public void number_of_requests_should_increment_on_execute_in_transaction()
         {
             var requestCounter = CreateCounter();
@@ -34,6 +38,7 @@ namespace Marten.Testing.Session.RequestCounter
             requestCounter.NumberOfRequests.ShouldBe(1);
         }
 
+        [Fact]
         public void number_of_requests_should_increment_on_execute_sql()
         {
             var requestCounter = CreateCounter();
@@ -43,6 +48,7 @@ namespace Marten.Testing.Session.RequestCounter
             requestCounter.NumberOfRequests.ShouldBe(1);
         }
 
+        [Fact]
         public void number_of_requests_should_increment_on_execute_T()
         {
             var requestCounter = CreateCounter();
@@ -52,6 +58,7 @@ namespace Marten.Testing.Session.RequestCounter
             requestCounter.NumberOfRequests.ShouldBe(1);
         }
 
+        [Fact]
         public void number_of_requests_should_increment_on_query_json()
         {
             var requestCounter = CreateCounter();
@@ -61,6 +68,7 @@ namespace Marten.Testing.Session.RequestCounter
             requestCounter.NumberOfRequests.ShouldBe(1);
         }
 
+        [Fact]
         public void number_of_requests_should_increment_on_query_scalar()
         {
             var requestCounter = CreateCounter();
@@ -70,6 +78,7 @@ namespace Marten.Testing.Session.RequestCounter
             requestCounter.NumberOfRequests.ShouldBe(1);
         }
 
+        [Fact]
         public void subsequent_number_of_requests_should_increment_on_execute()
         {
             var requestCounter = CreateCounter();

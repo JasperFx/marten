@@ -1,10 +1,12 @@
 ﻿using Marten.Services;
 using Marten.Testing.Documents;
+using Xunit;
 
 namespace Marten.Testing.Session.RequestCounter
 {
     public class document_session_with_request_counter_threshold_Tests
     {
+        [Fact]
         public void should_invoke_defined_action_if_threshold_is_exceeded()
         {
             bool wasInvoked = false;
