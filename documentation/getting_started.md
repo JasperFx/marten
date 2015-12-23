@@ -4,7 +4,7 @@
 First, go get the Marten library from Nuget:
 
 <pre>
-PM> Install-Package StructureMap
+PM> Install-Package Marten
 </pre>
 
 Or, using paket:
@@ -53,4 +53,4 @@ There are really only two key points here:
    bus applications.
 
 
-There's a lot more capabilities than what we're showing here, so head on over to <[linkto:documentation/documentation]> to see what else Marten offers.
+There's a lot more capabilities than what we're showing here, so head on over to <[linkto:documentation]> to see what else Marten offers.

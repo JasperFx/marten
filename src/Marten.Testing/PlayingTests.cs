@@ -7,11 +7,13 @@ using Marten.Testing.Fixtures;
 using Marten.Testing.Github;
 using Octokit;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing
 {
     public class PlayingTests
     {
+        [Fact]
         public void generate_code()
         {
             var mapping = new DocumentMapping(typeof (Target));
@@ -22,6 +24,7 @@ namespace Marten.Testing
             Debug.WriteLine(code);
         }
 
+        [Fact]
         public void linq_spike()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -47,6 +50,7 @@ namespace Marten.Testing
         }
 
 
+        [Fact]
         public void try_ocktokit()
         {
             var basicAuth = new Credentials("jeremydmiller", "FAKE");

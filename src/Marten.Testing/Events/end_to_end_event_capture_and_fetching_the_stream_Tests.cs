@@ -3,6 +3,7 @@ using Marten.Schema;
 using Marten.Services;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Events
 {
@@ -10,6 +11,7 @@ namespace Marten.Testing.Events
     {
         private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
 
+        [Fact]
         public void capture_events_to_a_new_stream_and_fetch_the_events_back()
         {
             var schema = _container.GetInstance<IDocumentSchema>();

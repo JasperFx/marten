@@ -2,11 +2,13 @@
 using System.Linq;
 using Marten.Services;
 using Marten.Testing.Fixtures;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
     public class query_against_dateoffset_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void query()
         {
             theSession.Store(new Target{Number = 1, DateOffset = DateTimeOffset.Now.AddMinutes(5)});

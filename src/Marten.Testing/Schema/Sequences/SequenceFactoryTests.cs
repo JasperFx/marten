@@ -3,6 +3,7 @@ using Marten.Schema.Sequences;
 using Marten.Testing.Fixtures;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing.Schema.Sequences
 {
@@ -15,6 +16,7 @@ namespace Marten.Testing.Schema.Sequences
             _container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
         }
 
+        [Fact]
         public void can_create_table_on_fly_if_necessary()
         {
             var factory = _container.GetInstance<SequenceFactory>();

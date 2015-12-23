@@ -4,11 +4,13 @@ using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Util;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
     public class invoking_queryable_through_to_list_async_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public async Task use_to_list_async_in_query()
         {
             theSession.Store(new User { FirstName = "Hank" });

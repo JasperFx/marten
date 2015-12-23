@@ -2,11 +2,13 @@
 using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Services
 {
     public class NulloIdentityMapTests
     {
+        [Fact]
         public void lazy_get_hit()
         {
             var serializer = new JilSerializer();
@@ -20,6 +22,7 @@ namespace Marten.Testing.Services
            
         }
 
+        [Fact]
         public void lazy_get_miss()
         {
             var map = new NulloIdentityMap(new JilSerializer());
@@ -27,6 +30,7 @@ namespace Marten.Testing.Services
             map.Get<Target>(Guid.NewGuid(), () => null).ShouldBeNull();
         }
 
+        [Fact]
         public void get_with_json()
         {
             var serializer = new JilSerializer();

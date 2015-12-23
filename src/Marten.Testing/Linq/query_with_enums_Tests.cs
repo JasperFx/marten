@@ -1,11 +1,13 @@
 ﻿using System.Linq;
 using Marten.Services;
 using Marten.Testing.Fixtures;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
     public class query_with_enums_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
         public void use_enum_values()
         {
             theSession.Store(new Target{Color = Colors.Blue, Number = 1});

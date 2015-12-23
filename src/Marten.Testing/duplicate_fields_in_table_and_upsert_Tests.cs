@@ -3,11 +3,13 @@ using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
 using StructureMap;
+using Xunit;
 
 namespace Marten.Testing
 {
     public class duplicate_fields_in_table_and_upsert_Tests
     {
+        [Fact]
         public void end_to_end()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
