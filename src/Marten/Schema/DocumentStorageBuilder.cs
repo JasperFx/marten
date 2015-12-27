@@ -78,7 +78,7 @@ namespace Marten.Schema
 
             // TODO -- get rid of the magic strings
             var namespaces = new List<string> { "System", "Marten", "Marten.Schema", "Marten.Services", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq", typeof(NpgsqlDbType).Namespace, typeof(IEnumerable<>).Namespace };
-            namespaces.AddRange(mappings.SelectMany(m => GetBaseTypeNamespacesFor(m.DocumentType)));
+            namespaces.AddRange(mappings.Select(x => x.DocumentType.Namespace));
 
             namespaces.Distinct().OrderBy(x => x).Each(x => writer.WriteLine($"using {x};"));
             writer.BlankLine();
@@ -94,16 +94,6 @@ namespace Marten.Schema
 
             writer.FinishBlock();
             return writer.Code();
-        }
-
-        private static IEnumerable<string> GetBaseTypeNamespacesFor(Type type)
-        {
-            var namespaces = new List<string>();
-            namespaces.Add(type.Namespace);
-
-            if (type.BaseType != typeof(object))
-                namespaces.AddRange(GetBaseTypeNamespacesFor(type.BaseType));
-            return namespaces;
         }
 
         private static IEnumerable<Assembly> GetBaseTypeAssembliesFor(Type type)
