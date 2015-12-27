@@ -46,12 +46,14 @@
     </Compile>
     <Compile Include="auto_assign_missing_guid_ids_Tests.cs" />
     <Compile Include="bulk_loading_Tests.cs" />
+    <Compile Include="document_session_storing_from_another_assembly_Tests.cs" />
     <Compile Include="codegen_spike.cs" />
     <Compile Include="ConnectionSource.cs" />
     <Compile Include="CustomConventions.cs" />
     <Compile Include="DevelopmentModeRegistry.cs" />
     <Compile Include="DocumentSessionFixture.cs" />
     <Compile Include="Documents\Company.cs" />
+    <Compile Include="Documents\UserWithInheritedId.cs" />
     <Compile Include="Documents\Issue.cs" />
     <Compile Include="Documents\User.cs" />
     <Compile Include="document_session_delete_a_single_document_Tests.cs" />
@@ -152,6 +154,10 @@
     <Compile Include="Util\update_batch_Tests.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj">
+      <Project>{ee53c3d3-65ae-42ef-92f4-116e8d6889dd}</Project>
+      <Name>Marten.Testing.OtherAssembly</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Marten\Marten.csproj">
       <Project>{3d44a648-636e-4d4e-b943-361d103f1fa2}</Project>
       <Name>Marten</Name>

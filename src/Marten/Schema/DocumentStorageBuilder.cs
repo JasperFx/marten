@@ -43,7 +43,9 @@ namespace Marten.Schema
             generator.ReferenceAssemblyContainingType<DbCommand>();
             generator.ReferenceAssemblyContainingType<Component>();
 
-            mappings.Select(x => x.DocumentType.Assembly).Distinct().Each(assem => generator.ReferenceAssembly(assem));
+            mappings.SelectMany(x => GetBaseTypeAssembliesFor(x.DocumentType))
+                    .Distinct()
+                    .Each(assem => generator.ReferenceAssembly(assem));
 
             // build the new assembly -- this will blow up if there are any
             // compilation errors with the list of errors and the actual code
@@ -68,15 +70,15 @@ namespace Marten.Schema
                 });
         }
 
-        
+
 
         public static string GenerateDocumentStorageCode(DocumentMapping[] mappings)
         {
             var writer = new SourceWriter();
 
             // TODO -- get rid of the magic strings
-            var namespaces = new List<string> {"System", "Marten", "Marten.Schema", "Marten.Services", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq", typeof(NpgsqlDbType).Namespace, typeof(IEnumerable<>).Namespace};
-            namespaces.AddRange(mappings.Select(x => x.DocumentType.Namespace));
+            var namespaces = new List<string> { "System", "Marten", "Marten.Schema", "Marten.Services", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq", typeof(NpgsqlDbType).Namespace, typeof(IEnumerable<>).Namespace };
+            namespaces.AddRange(mappings.SelectMany(m => GetBaseTypeNamespacesFor(m.DocumentType)));
 
             namespaces.Distinct().OrderBy(x => x).Each(x => writer.WriteLine($"using {x};"));
             writer.BlankLine();
@@ -92,6 +94,26 @@ namespace Marten.Schema
 
             writer.FinishBlock();
             return writer.Code();
+        }
+
+        private static IEnumerable<string> GetBaseTypeNamespacesFor(Type type)
+        {
+            var namespaces = new List<string>();
+            namespaces.Add(type.Namespace);
+
+            if (type.BaseType != typeof(object))
+                namespaces.AddRange(GetBaseTypeNamespacesFor(type.BaseType));
+            return namespaces;
+        }
+
+        private static IEnumerable<Assembly> GetBaseTypeAssembliesFor(Type type)
+        {
+            var assemblies = new List<Assembly>();
+            assemblies.Add(type.Assembly);
+
+            if (type.BaseType != typeof(object))
+                assemblies.AddRange(GetBaseTypeAssembliesFor(type.BaseType));
+            return assemblies;
         }
 
         public static void GenerateDocumentStorage(DocumentMapping mapping, SourceWriter writer)
@@ -116,7 +138,7 @@ namespace Marten.Schema
                 }).Join("\n");
             }
 
-            
+
 
             var storageArguments = mapping.IdStrategy.ToArguments();
             var ctorArgs = storageArguments.Select(x => x.ToCtorArgument()).Join(", ");
