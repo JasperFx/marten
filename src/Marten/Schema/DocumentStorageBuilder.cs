@@ -43,9 +43,7 @@ namespace Marten.Schema
             generator.ReferenceAssemblyContainingType<DbCommand>();
             generator.ReferenceAssemblyContainingType<Component>();
 
-            mappings.SelectMany(x => GetBaseTypeAssembliesFor(x.DocumentType))
-                    .Distinct()
-                    .Each(assem => generator.ReferenceAssembly(assem));
+            mappings.Select(x => x.DocumentType.Assembly).Distinct().Each(assem => generator.ReferenceAssembly(assem));
 
             // build the new assembly -- this will blow up if there are any
             // compilation errors with the list of errors and the actual code
@@ -94,16 +92,6 @@ namespace Marten.Schema
 
             writer.FinishBlock();
             return writer.Code();
-        }
-
-        private static IEnumerable<Assembly> GetBaseTypeAssembliesFor(Type type)
-        {
-            var assemblies = new List<Assembly>();
-            assemblies.Add(type.Assembly);
-
-            if (type.BaseType != typeof(object))
-                assemblies.AddRange(GetBaseTypeAssembliesFor(type.BaseType));
-            return assemblies;
         }
 
         public static void GenerateDocumentStorage(DocumentMapping mapping, SourceWriter writer)
