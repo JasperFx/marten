@@ -102,6 +102,7 @@
     <Compile Include="Linq\invoking_queryable_through_single_Tests.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Linq\invoking_queryable_through_to_list_async_Tests.cs" />
     <Compile Include="Linq\invoking_query_with_select_Tests.cs" />
     <Compile Include="Linq\MartenExpressionParserTests.cs" />
     <Compile Include="Linq\query_against_dateoffset_Tests.cs" />

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
@@ -110,6 +111,19 @@ namespace Marten.Linq
         {
             var model = _parser.GetParsedQuery(queryable.Expression);
             return BuildCommand(model);
+        }
+
+        async Task<IEnumerable<T>> IMartenQueryExecutor.ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token)
+        {
+            var command = BuildCommand(queryModel);
+
+            if (queryModel.MainFromClause.ItemType == typeof(T))
+            {
+                var queryJsonAsync = await _runner.QueryJsonAsync(command, token);
+                return queryJsonAsync.Select(_serializer.FromJson<T>);
+            }
+
+            throw new NotSupportedException("Marten does not yet support Select() projections from queryables. Use an intermediate .ToArray() or .ToList() before adding Select() clauses");
         }
     }
 }

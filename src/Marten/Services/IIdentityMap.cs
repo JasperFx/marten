@@ -1,11 +1,13 @@
 ﻿using System;
-using Marten.Schema;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Marten.Services
 {
     public interface IIdentityMap
     {
         T Get<T>(object id, Func<string> json) where T : class;
+        Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<string>> json, CancellationToken token = default(CancellationToken)) where T : class;
         T Get<T>(object id, string json) where T : class;
 
         void Remove<T>(object id);

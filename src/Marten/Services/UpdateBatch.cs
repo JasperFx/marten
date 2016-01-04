@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Util;
 using Npgsql;
@@ -40,6 +42,17 @@ namespace Marten.Services
 
                 cmd.ExecuteNonQuery();
             });
+        }
+
+        public async Task ExecuteAsync(CancellationToken token)
+        {
+            await _runner.ExecuteInTransactionAsync(async (conn, tkn) =>
+            {
+                var cmd = BuildCommand();
+                cmd.Connection = conn;
+
+                await cmd.ExecuteNonQueryAsync(tkn);
+            }, token);
         }
 
         public void Delete(string tableName, object id, NpgsqlDbType dbType)

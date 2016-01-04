@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 
 namespace Marten.Services
@@ -15,13 +17,19 @@ namespace Marten.Services
         public T Get<T>(object id, Func<string> json) where T : class
         {
             var text = json();
-            if (text.IsEmpty()) return null;
+            return Get<T>(id, text);
+        }
 
-            return _serializer.FromJson<T>(text);
+        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<string>> json, CancellationToken token) where T : class
+        {
+            var text = await json(token);
+            return Get<T>(id, text);
         }
 
         public T Get<T>(object id, string json) where T : class
         {
+            if (json.IsEmpty()) return null;
+
             return _serializer.FromJson<T>(json);
         }
 

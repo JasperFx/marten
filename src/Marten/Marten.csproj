@@ -49,6 +49,9 @@
     <Compile Include="DocumentTracking.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />
+    <Compile Include="Linq\IMartenQueryable.cs" />
+    <Compile Include="Linq\IMartenQueryProvider.cs" />
+    <Compile Include="Linq\MartenQueryProvider.cs" />
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\IndexDefinition.cs" />
     <Compile Include="Services\CommandRunner.cs" />
@@ -125,6 +128,7 @@
     <Compile Include="Services\NulloIdentityMap.cs" />
     <Compile Include="Services\TrackedEntity.cs" />
     <Compile Include="StoreOptions.cs" />
+    <Compile Include="Util\QueryableExtensions.cs" />
     <Compile Include="Util\SerializerExtensions.cs" />
     <Compile Include="DocumentSession.cs" />
     <Compile Include="Util\TypeMappings.cs" />

@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 
@@ -62,6 +64,24 @@ namespace Marten.Services
 
         public void ApplyChanges(UpdateBatch batch)
         {
+            var documentChanges = GetChanges(batch);
+
+            batch.Execute();
+
+            ClearChanges(documentChanges);
+        }
+
+        public async Task ApplyChangesAsync(UpdateBatch batch, CancellationToken token)
+        {
+            var documentChanges = GetChanges(batch);
+
+            await batch.ExecuteAsync(token);
+
+            ClearChanges(documentChanges);
+        }
+
+        private DocumentChange[] GetChanges(UpdateBatch batch)
+        {
             _updates.Keys.Each(type =>
             {
                 var storage = _schema.StorageFor(type);
@@ -88,13 +108,14 @@ namespace Marten.Services
                 });
             });
 
-            batch.Execute();
+            return changes;
+        }
 
+        private void ClearChanges(DocumentChange[] changes)
+        {
             _deletes.Clear();
             _updates.Clear();
             changes.Each(x => x.ChangeCommitted());
         }
-
-        
     }
 }

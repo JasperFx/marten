@@ -10,7 +10,7 @@ namespace Marten.Testing
         public CustomConventions()
         {
             Classes.NameEndsWith("Tests");
-            Methods.Where(x => x.IsVoid());
+            Methods.Where(x => x.IsVoid() || x.IsAsync());
 
             if (Options.Contains("upsert"))
             {
