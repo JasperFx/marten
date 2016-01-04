@@ -8,6 +8,7 @@ using Marten.Schema;
 using Marten.Services;
 using Npgsql;
 using Remotion.Linq;
+using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing.Structure;
 
@@ -19,6 +20,7 @@ namespace Marten.Linq
         private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
+        private readonly IList<Type> _scalarResultOperators;
 
         public MartenQueryExecutor(ICommandRunner runner, IDocumentSchema schema, ISerializer serializer,
             IQueryParser parser)
@@ -27,6 +29,12 @@ namespace Marten.Linq
             _serializer = serializer;
             _parser = parser;
             _runner = runner;
+            _scalarResultOperators = new[]
+            {
+                typeof (AnyResultOperator),
+                typeof (CountResultOperator),
+                typeof (LongCountResultOperator),
+            };
         }
 
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
@@ -124,6 +132,89 @@ namespace Marten.Linq
             }
 
             throw new NotSupportedException("Marten does not yet support Select() projections from queryables. Use an intermediate .ToArray() or .ToList() before adding Select() clauses");
+        }
+
+        public async Task<T> ExecuteAsync<T>(QueryModel queryModel, CancellationToken token)
+        {
+            var scalarResultOperator = queryModel.ResultOperators.SingleOrDefault(x => _scalarResultOperators.Contains(x.GetType()));
+            if (scalarResultOperator != null)
+            {
+                return await ExecuteScalar<T>(scalarResultOperator, queryModel, token);
+            }
+
+            var choiceResultOperator = queryModel.ResultOperators.OfType<ChoiceResultOperatorBase>().Single();
+
+            // TODO -- optimize by using Top 1
+            var cmd = BuildCommand(queryModel);
+            var enumerable = await _runner.QueryJsonAsync(cmd, token);
+            var all = enumerable.ToArray();
+
+            if (choiceResultOperator.ReturnDefaultWhenEmpty && all.Length == 0)
+            {
+                return default(T);
+            }
+
+            string data;
+            if (choiceResultOperator is LastResultOperator)
+            {
+                data = all.Last();
+            }
+            else if (choiceResultOperator is SingleResultOperator || choiceResultOperator is FirstResultOperator)
+            {
+                data = all.Single();
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+
+            return _serializer.FromJson<T>(data);
+        }
+
+        private async Task<T> ExecuteScalar<T>(ResultOperatorBase scalarResultOperator, QueryModel queryModel, CancellationToken token)
+        {
+            var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
+            var documentQuery = new DocumentQuery(mapping, queryModel, _serializer);
+
+            _schema.EnsureStorageExists(mapping.DocumentType);
+
+            if (scalarResultOperator is AnyResultOperator)
+            {
+                var anyCommand = documentQuery.ToAnyCommand();
+
+                return await _runner.ExecuteAsync(async (conn, tkn) =>
+                {
+                    anyCommand.Connection = conn;
+                    var result = await anyCommand.ExecuteScalarAsync(tkn);
+                    return (T)result;
+                }, token);
+            }
+
+            if (scalarResultOperator is CountResultOperator)
+            {
+                var countCommand = documentQuery.ToCountCommand();
+
+                return await _runner.ExecuteAsync(async (conn, tkn) =>
+                {
+                    countCommand.Connection = conn;
+                    var returnValue = await countCommand.ExecuteScalarAsync(tkn);
+                    return Convert.ToInt32(returnValue).As<T>();
+                }, token);
+            }
+
+            if (scalarResultOperator is LongCountResultOperator)
+            {
+                var countCommand = documentQuery.ToCountCommand();
+
+                return await _runner.ExecuteAsync(async (conn, tkn) =>
+                {
+                    countCommand.Connection = conn;
+                    var returnValue = await countCommand.ExecuteScalarAsync(tkn);
+                    return Convert.ToInt64(returnValue).As<T>();
+                }, token);
+            }
+
+            throw new NotSupportedException();
         }
     }
 }
