@@ -88,6 +88,11 @@
     <Compile Include="Github\GitHubExporter.cs" />
     <Compile Include="Github\RepositoryHistory.cs" />
     <Compile Include="insert_timing.cs" />
+    <Compile Include="Linq\invoking_queryable_any_async_Tests.cs" />
+    <Compile Include="Linq\invoking_queryable_count_async_Tests.cs" />
+    <Compile Include="Linq\invoking_queryable_through_first_async_Tests.cs" />
+    <Compile Include="Linq\invoking_queryable_through_last_async_Tests.cs" />
+    <Compile Include="Linq\invoking_queryable_through_single_async_Tests.cs" />
     <Compile Include="Linq\deep_searches_Tests.cs" />
     <Compile Include="Linq\invoking_queryable_any_Tests.cs">
       <SubType>Code</SubType>
