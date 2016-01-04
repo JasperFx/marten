@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Persisting Documents and Unit Of Work</title>
-		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/" class="navbar-brand">Marten</a>
+		      <a href="/marten" class="navbar-brand">Marten</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/getting_started">Getting Started</a>
+              <a href="/marten/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/documentation">Documentation</a>
+		          <a href="/marten/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/documentation/documents/saved_queries" title="Compiled Queries">Previous</a></li>
-		      	<li><a href="/documentation/documents/partial_updates" title="Partial Document Updates">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/saved_queries" title="Compiled Queries">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/partial_updates" title="Partial Document Updates">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li class="active">Persisting Documents and Unit Of Work</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Persisting Documents and Unit Of Work</li></ol>
 		  	</nav>
 		  </div>
 
@@ -76,8 +76,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/partial_updates">Partial Document Updates</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/saved_queries">Compiled Queries</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/partial_updates">Partial Document Updates</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/saved_queries">Compiled Queries</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -91,7 +91,7 @@
 			      	<div id="main-pane">
 			      		<!--Title:Persisting Documents and Unit Of Work-->
 <!--Url:persisting-->
-<p>At this point, the <code>IDocumentSession</code> is the sole <a href="http://martinfowler.com/eaaCatalog/unitOfWork.html">unit of work</a> for transactional updates -- but that may change later as Marten outgrows its origin as a replacement for RavenDb. As <a href="/documentation/documents">shown before</a>, document sessions come in three flavors (lightweight, identity map tracking, and identity map + dirty checking), but there are only two modes of change tracking:</p>
+<p>At this point, the <code>IDocumentSession</code> is the sole <a href="http://martinfowler.com/eaaCatalog/unitOfWork.html">unit of work</a> for transactional updates -- but that may change later as Marten outgrows its origin as a replacement for RavenDb. As <a href="/marten/documentation/documents">shown before</a>, document sessions come in three flavors (lightweight, identity map tracking, and identity map + dirty checking), but there are only two modes of change tracking:</p>
 <ol>
 <li>Lightweight and the standard &quot;identity map&quot; sessions require users to do all the change tracking manually and tell the <code>IDocumentSession</code>
 what documents have changed</li>
@@ -123,7 +123,7 @@ what documents have changed</li>
             }
         }
 </code></pre>
-<p>Do note that Marten's .Net API makes no distinctions between inserts and updates. The Postgresql functions generated by Marten to update the document storage tables perform &quot;upserts&quot; for you. Anytime a document is registered through <code>IDocumentSession.Store(document)</code>, Marten runs the &quot;auto-assignment&quot; policy for the id type of that document. See <a href="/documentation/documents/document_ids">Document Id's</a> for more information on document id's.</p>
+<p>Do note that Marten's .Net API makes no distinctions between inserts and updates. The Postgresql functions generated by Marten to update the document storage tables perform &quot;upserts&quot; for you. Anytime a document is registered through <code>IDocumentSession.Store(document)</code>, Marten runs the &quot;auto-assignment&quot; policy for the id type of that document. See <a href="/marten/documentation/documents/document_ids">Document Id's</a> for more information on document id's.</p>
 <h2>Automatic Dirty Tracking Session</h2>
 <p>In the case an <code>IDocumentSession</code> opened with the dirty checking enabled, the session will try to detect changes to any of the documents loaded by that
 session. The dirty checking is done by keeping the original JSON fetched from Postgresql and using Newtonsoft.Json to do a node by node comparison of the
@@ -154,7 +154,7 @@ JSON representation of the document at the time that <code>IDocumentSession</cod
 <p>The call to <code>IDocumentSession.SaveChanges()</code> tries to batch all the queued updates and deletes into a single ADO.Net call to Postgresql. Our testing has
 shown that this technique is much faster than issuing one ADO.Net call at a time.</p>
 <h2>Bulk Inserts</h2>
-<p>See also <a href="/documentation/documents/bulk_insert">Bulk Insert</a> for an alternative for inserting a large number of one kind of document at a time. Also see the section on <a href="/documentation/documents/identitymap">Identity Map Mechanics</a>.</p>
+<p>See also <a href="/marten/documentation/documents/bulk_insert">Bulk Insert</a> for an alternative for inserting a large number of one kind of document at a time. Also see the section on <a href="/marten/documentation/documents/identitymap">Identity Map Mechanics</a>.</p>
 
 
 			      	</div>
@@ -163,12 +163,12 @@ shown that this technique is much faster than issuing one ADO.Net call at a time
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/documentation/documents/saved_queries">Compiled Queries</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/saved_queries">Compiled Queries</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/documentation/documents/partial_updates">Partial Document Updates</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/partial_updates">Partial Document Updates</a>
 
 				        </span>
 			      	</nav>
@@ -185,10 +185,10 @@ shown that this technique is much faster than issuing one ADO.Net call at a time
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/content/embed.js"></script>
-        <script type="text/javascript" src="/content/prism.js"></script>
-        <script type="text/javascript" src="/content/sidebar.js"></script>
-        <script type="text/javascript" src="/content/affix.js"></script>
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){
