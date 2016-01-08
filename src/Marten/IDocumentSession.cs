@@ -16,6 +16,11 @@ namespace Marten
 
         ILoadByKeys<T> Load<T>() where T : class;
 
+        string FindJsonById<T>(string id) where T : class;
+        string FindJsonById<T>(ValueType id) where T : class;
+        Task<string> FindJsonByIdAsync<T>(string id, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<string> FindJsonByIdAsync<T>(ValueType id, CancellationToken token = default(CancellationToken)) where T : class;
+
         // SAMPLE: querying_with_linq
         /// <summary>
         /// Use Linq operators to query the documents
