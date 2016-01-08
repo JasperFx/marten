@@ -106,37 +106,66 @@ namespace Marten
         {
             return _documentMap.Get<T>(id, () =>
             {
-                var storage = _schema.StorageFor(typeof(T));
-
-                return _runner.Execute(conn =>
-                {
-                    var loader = storage.LoaderCommand(id);
-                    loader.Connection = conn;
-                    return loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
-                });
+                return findJsonById<T>(id);
             });
-
         }
 
         private async Task<T> loadAsync<T>(object id, CancellationToken token) where T : class
         {
             return await _documentMap.GetAsync<T>(id, async getAsyncToken =>
             {
-                var storage = _schema.StorageFor(typeof(T));
-
-                return await _runner.ExecuteAsync(async (conn, executeAsyncToken) =>
-                {
-                    var loader = storage.LoaderCommand(id);
-                    loader.Connection = conn;
-                    var result = await loader.ExecuteScalarAsync(executeAsyncToken);
-                    return result as string; // Maybe do this as a stream later for big docs?
-                }, getAsyncToken);
+                return await findJsonByIdAsync<T>(id, getAsyncToken);
             }, token);
         }
 
         public ILoadByKeys<T> Load<T>() where T : class
         {
             return new LoadByKeys<T>(this);
+        }
+
+        public string FindJsonById<T>(string id) where T : class
+        {
+            return findJsonById<T>(id);
+        }
+
+        public string FindJsonById<T>(ValueType id) where T : class
+        {
+            return findJsonById<T>(id);
+        }
+
+        public async Task<string> FindJsonByIdAsync<T>(string id, CancellationToken token) where T : class
+        {
+            return await findJsonByIdAsync<T>(id, token).ConfigureAwait(false);
+        }
+
+        public async Task<string> FindJsonByIdAsync<T>(ValueType id, CancellationToken token) where T : class
+        {
+            return await findJsonByIdAsync<T>(id, token).ConfigureAwait(false);
+        }
+
+        private string findJsonById<T>(object id)
+        {
+            var storage = _schema.StorageFor(typeof(T));
+
+            return _runner.Execute(conn =>
+            {
+                var loader = storage.LoaderCommand(id);
+                loader.Connection = conn;
+                return loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
+            });
+        }
+
+        private async Task<string> findJsonByIdAsync<T>(object id, CancellationToken token)
+        {
+            var storage = _schema.StorageFor(typeof(T));
+
+            return await _runner.ExecuteAsync(async (conn, executeAsyncToken) =>
+            {
+                var loader = storage.LoaderCommand(id);
+                loader.Connection = conn;
+                var result = await loader.ExecuteScalarAsync(executeAsyncToken);
+                return result as string; // Maybe do this as a stream later for big docs?
+            }, token);
         }
 
         private class LoadByKeys<TDoc> : ILoadByKeys<TDoc> where TDoc : class
