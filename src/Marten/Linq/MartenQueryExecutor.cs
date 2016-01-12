@@ -112,6 +112,8 @@ namespace Marten.Linq
             var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
             var query = new DocumentQuery(mapping, queryModel, _serializer);
 
+            _schema.EnsureStorageExists(mapping.DocumentType);
+
             return query.ToCommand();
         }
 
