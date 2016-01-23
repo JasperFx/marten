@@ -26,5 +26,15 @@ namespace Marten.Testing.Linq
                 .ToListAsync();
             users.Single().FirstName.ShouldBe("Sam");
         }
+
+        [Fact]
+        public async Task should_return_empty_list()
+        {
+            var users = await theSession
+                .Query<User>()
+                .Where(x => x.FirstName == "Sam")
+                .ToListAsync();
+            users.ShouldBeEmpty();
+        }
     }
 }
