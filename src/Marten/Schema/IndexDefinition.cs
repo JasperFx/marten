@@ -68,7 +68,7 @@ namespace Marten.Schema
                 index += " " + Modifier;
             }
 
-            return index;
+            return index + ";";
         }
     }
 
