@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Services;
 
 namespace Marten.Generation
 {
@@ -60,6 +61,30 @@ namespace Marten.Generation
         public TableColumn Column(string name)
         {
             return Columns.FirstOrDefault(x => x.Name == name);
+        }
+
+        protected bool Equals(TableDefinition other)
+        {
+            return Columns.SequenceEqual(other.Columns) && Equals(PrimaryKey, other.PrimaryKey) && string.Equals(Name, other.Name);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((TableDefinition) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = (Columns != null ? Columns.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (PrimaryKey != null ? PrimaryKey.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (Name != null ? Name.GetHashCode() : 0);
+                return hashCode;
+            }
         }
     }
 }
