@@ -146,7 +146,6 @@ namespace Marten.Linq
 
             var choiceResultOperator = queryModel.ResultOperators.OfType<ChoiceResultOperatorBase>().Single();
 
-            // TODO -- optimize by using Top 1
             var cmd = BuildCommand(queryModel);
             var enumerable = await _runner.QueryJsonAsync(cmd, token);
             var all = enumerable.ToArray();
@@ -159,9 +158,10 @@ namespace Marten.Linq
             string data;
             if (choiceResultOperator is LastResultOperator)
             {
-                data = all.Last();
+                throw new InvalidOperationException("Marten does not support Last()/LastOrDefault(). Use ordering and First()/FirstOrDefault() instead");
             }
-            else if (choiceResultOperator is SingleResultOperator || choiceResultOperator is FirstResultOperator)
+
+            if (choiceResultOperator is SingleResultOperator || choiceResultOperator is FirstResultOperator)
             {
                 data = all.Single();
             }
