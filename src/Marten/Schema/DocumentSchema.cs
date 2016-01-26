@@ -8,6 +8,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Schema.Sequences;
 using Marten.Services;
+using Marten.Util;
 
 namespace Marten.Schema
 {
@@ -58,16 +59,12 @@ namespace Marten.Schema
 
         public IEnumerable<string> SchemaTableNames()
         {
+            var sql =
+                "select table_name from information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema') AND table_name like 'mt_%'";
+
             return _runner.Execute(conn =>
             {
-                var table = conn.GetSchema("Tables");
-                var tables = new List<string>();
-                foreach (DataRow row in table.Rows)
-                {
-                    tables.Add(row[2].ToString());
-                }
-
-                return tables.Where(name => name.StartsWith("mt_")).ToArray();
+                return conn.Fetch(sql, r => r.GetString(0));
             });
         }
 
