@@ -44,6 +44,7 @@
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="AdvancedOptions.cs" />
+    <Compile Include="Codegen\AssemblyReferenceException.cs" />
     <Compile Include="ConnectionFactory.cs" />
     <Compile Include="DocumentStore.cs" />
     <Compile Include="DocumentTracking.cs" />
