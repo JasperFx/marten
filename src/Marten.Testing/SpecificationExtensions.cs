@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Baseline;
 using Shouldly;
 
@@ -25,11 +26,27 @@ namespace Marten.Testing
 
             exception.ShouldNotBeNull("An exception was expected, but not thrown by the given action.");
 
+            return exception;
+        }
+
+        public static async Task<T> ShouldBeThrownByAsync(Func<Task> action)
+        {
+            T exception = null;
+
+            try
+            {
+                await action();
+            }
+            catch (Exception e)
+            {
+                exception = e.ShouldBeOfType<T>();
+            }
+
+            exception.ShouldNotBeNull("An exception was expected, but not thrown by the given action.");
 
             return exception;
         }
     }
-
 
     public delegate void MethodThatThrows();
 

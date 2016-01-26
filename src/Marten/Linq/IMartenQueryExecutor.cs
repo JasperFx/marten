@@ -12,5 +12,6 @@ namespace Marten.Linq
         NpgsqlCommand BuildCommand(QueryModel queryModel);
         NpgsqlCommand BuildCommand<T>(IQueryable<T> queryable);
         Task<IEnumerable<T>> ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token);
+        Task<T> ExecuteAsync<T>(QueryModel queryModel, CancellationToken token);
     }
 }

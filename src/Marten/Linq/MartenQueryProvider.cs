@@ -29,5 +29,12 @@ namespace Marten.Linq
             var queryExecutor = (IMartenQueryExecutor)Executor;
             return await queryExecutor.ExecuteCollectionAsync<T>(queryModel, token);
         }
+
+        public async Task<T> ExecuteAsync<T>(Expression expression, CancellationToken token)
+        {
+            var queryModel = QueryParser.GetParsedQuery(expression);
+            var queryExecutor = (IMartenQueryExecutor)Executor;
+            return await queryExecutor.ExecuteAsync<T>(queryModel, token);
+        }
     }
 }
