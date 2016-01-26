@@ -54,6 +54,7 @@
     <Compile Include="Linq\MartenQueryProvider.cs" />
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\IndexDefinition.cs" />
+    <Compile Include="Schema\MartenSchemaException.cs" />
     <Compile Include="Services\CommandRunner.cs" />
     <Compile Include="Services\Diagnostics.cs" />
     <Compile Include="Events\EventStore.cs" />
