@@ -56,13 +56,23 @@ namespace Marten.Schema
                 var mapping = MappingFor(documentType);
                 var storage = DocumentStorageBuilder.Build(this, mapping);
 
-                if (!DocumentTables().Contains(mapping.TableName))
+                if (shouldRegenerate(mapping))
                 {
                     _creation.CreateSchema(this, mapping);
                 }
 
                 return storage;
             });
+        }
+
+        private bool shouldRegenerate(DocumentMapping mapping)
+        {
+            if (!DocumentTables().Contains(mapping.TableName)) return true;
+
+            var existing = TableSchema(mapping.TableName);
+            var expected = mapping.ToTable(this);
+
+            return !expected.Equals(existing);
         }
 
         public EventGraph Events { get; }
@@ -125,7 +135,7 @@ namespace Marten.Schema
             return writer.ToString();
         }
 
-        public TableDefinition SchemaTable(string tableName)
+        public TableDefinition TableSchema(string tableName)
         {
             if (!DocumentTables().Contains(tableName.ToLower()))
                 throw new Exception($"No Marten table exists named '{tableName}'");

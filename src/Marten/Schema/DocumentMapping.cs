@@ -166,7 +166,7 @@ namespace Marten.Schema
 
             var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
             var table = new TableDefinition(TableName, new TableColumn("id", pgIdType));
-            table.Columns.Add(new TableColumn("data", "jsonb NOT NULL"));
+            table.Columns.Add(new TableColumn("data", "jsonb") {Directive = "NOT NULL" });
 
             _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
 
