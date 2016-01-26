@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Generation;
@@ -12,6 +13,18 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
+    [Serializable]
+    public class InvalidDocumentException : Exception
+    {
+        public InvalidDocumentException(string message) : base(message)
+        {
+        }
+
+        protected InvalidDocumentException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
+    }
+
     public class DocumentMapping
     {
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
@@ -24,6 +37,11 @@ namespace Marten.Schema
 
             IdMember = (MemberInfo) documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
                        ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
+
+            if (IdMember == null)
+            {
+                throw new InvalidDocumentException($"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
+            }
 
 
             assignIdStrategy(documentType);
