@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Util;
 using Npgsql;
 
@@ -26,13 +28,20 @@ namespace Marten.Services
 
     public static class CommandRunnerExtensions
     {
-        public static IList<string> GetStringList(this ICommandRunner runner, string sql)
+        public static IList<string> GetStringList(this ICommandRunner runner, string sql, params object[] parameters)
         {
             var list = new List<string>();
 
             runner.Execute(conn =>
             {
-                using (var reader = conn.CreateCommand(sql).ExecuteReader())
+                var cmd = conn.CreateCommand(sql);
+                parameters.Each(x =>
+                {
+                    var param = cmd.AddParameter(x);
+                    cmd.CommandText = cmd.CommandText.UseParameter(param);
+                });
+
+                using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
@@ -44,6 +53,21 @@ namespace Marten.Services
             });
 
             return list;
-        }  
+        }
+
+        public static IEnumerable<T> Fetch<T>(this ICommandRunner runner, string sql, Func<IDataReader, T> transform, params object[] parameters)
+        {
+            return runner.Execute(conn =>
+            {
+                try
+                {
+                    return conn.Fetch(sql, transform, parameters);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"Error trying to fetch w/ sql '{sql}'", e);
+                }
+            });
+        } 
     }
 }

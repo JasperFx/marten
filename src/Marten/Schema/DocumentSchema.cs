@@ -6,18 +6,23 @@ using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Events;
+using Marten.Generation;
 using Marten.Schema.Sequences;
 using Marten.Services;
-using Marten.Util;
 
 namespace Marten.Schema
 {
     public class DocumentSchema : IDocumentSchema, IDisposable
     {
         private readonly IDocumentSchemaCreation _creation;
+
+        private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
+            new ConcurrentDictionary<Type, DocumentMapping>();
+
+        private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
+            new ConcurrentDictionary<Type, IDocumentStorage>();
+
         private readonly ICommandRunner _runner;
-        private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes = new ConcurrentDictionary<Type, IDocumentStorage>(); 
-        private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings = new ConcurrentDictionary<Type, DocumentMapping>(); 
 
         public DocumentSchema(ICommandRunner runner, IDocumentSchemaCreation creation)
         {
@@ -27,6 +32,11 @@ namespace Marten.Schema
             Sequences = new SequenceFactory(this, _runner, _creation);
 
             Events = new EventGraph();
+        }
+
+
+        public void Dispose()
+        {
         }
 
         public DocumentMapping MappingFor(Type documentType)
@@ -55,17 +65,14 @@ namespace Marten.Schema
             });
         }
 
-        public EventGraph Events { get; private set; }
+        public EventGraph Events { get; }
 
         public IEnumerable<string> SchemaTableNames()
         {
             var sql =
-                "select table_name from information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema') AND table_name like 'mt_%'";
+                "select table_name from information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema') ";
 
-            return _runner.Execute(conn =>
-            {
-                return conn.Fetch(sql, r => r.GetString(0));
-            });
+            return _runner.GetStringList(sql);
         }
 
         public string[] DocumentTables()
@@ -76,41 +83,6 @@ namespace Marten.Schema
         public IEnumerable<string> SchemaFunctionNames()
         {
             return findFunctionNames().ToArray();
-        }
-
-        private IEnumerable<string> findFunctionNames()
-        {
-            return _runner.Execute(conn =>
-            {
-                var sql = @"
-SELECT routine_name
-FROM information_schema.routines
-WHERE specific_schema NOT IN ('pg_catalog', 'information_schema')
-AND type_udt_name != 'trigger';
-";
-
-                var command = conn.CreateCommand();
-                command.CommandText = sql;
-
-                var list = new List<string>();
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        list.Add(reader.GetString(0));
-                    }
-
-                    reader.Close();
-                }
-
-                return list;
-            });
-
-        }
-
-
-        public void Dispose()
-        {
         }
 
         public void Alter(Action<MartenRegistry> configure)
@@ -151,6 +123,73 @@ AND type_udt_name != 'trigger';
             writer.WriteLine(SchemaBuilder.GetText("mt_hilo"));
 
             return writer.ToString();
+        }
+
+        public TableDefinition SchemaTable(string tableName)
+        {
+            if (!DocumentTables().Contains(tableName.ToLower()))
+                throw new Exception($"No Marten table exists named '{tableName}'");
+
+
+            var columns = findTableColumns(tableName);
+            var pkName = primaryKeysFor(tableName).SingleOrDefault();
+
+            return new TableDefinition(tableName, pkName, columns);
+        }
+
+        private string[] primaryKeysFor(string tableName)
+        {
+            var sql = @"
+SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
+FROM pg_index i
+JOIN   pg_attribute a ON a.attrelid = i.indrelid
+                     AND a.attnum = ANY(i.indkey)
+WHERE i.indrelid = ?::regclass
+AND i.indisprimary; 
+";
+
+            return _runner.GetStringList(sql, tableName).ToArray();
+        }
+
+        private IEnumerable<TableColumn> findTableColumns(string tableName)
+        {
+            Func<IDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));
+
+            var sql = "select column_name, data_type from information_schema.columns where table_name = ? order by ordinal_position";
+            return
+                _runner.Fetch(
+                    sql,
+                    transform, tableName);
+        }
+
+
+        private IEnumerable<string> findFunctionNames()
+        {
+            return _runner.Execute(conn =>
+            {
+                var sql = @"
+SELECT routine_name
+FROM information_schema.routines
+WHERE specific_schema NOT IN ('pg_catalog', 'information_schema')
+AND type_udt_name != 'trigger';
+";
+
+                var command = conn.CreateCommand();
+                command.CommandText = sql;
+
+                var list = new List<string>();
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(reader.GetString(0));
+                    }
+
+                    reader.Close();
+                }
+
+                return list;
+            });
         }
     }
 }

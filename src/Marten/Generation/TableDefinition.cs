@@ -20,6 +20,18 @@ namespace Marten.Generation
             Columns.Add(primaryKey);
         }
 
+        public TableDefinition(string name, string pkName, IEnumerable<TableColumn> columns)
+        {
+            Name = name;
+            Columns.AddRange(columns);
+
+            PrimaryKey = columns.FirstOrDefault(x => x.Name == pkName);
+            if (PrimaryKey != null)
+            {
+                PrimaryKey.Directive = "CONSTRAINT pk_{0} PRIMARY KEY".ToFormat(name);
+            }
+        }
+
         public string Name { get; set; }
 
         public void Write(StringWriter writer)
@@ -43,6 +55,11 @@ namespace Marten.Generation
             });
 
             writer.WriteLine(");");
+        }
+
+        public TableColumn Column(string name)
+        {
+            return Columns.FirstOrDefault(x => x.Name == name);
         }
     }
 }

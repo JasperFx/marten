@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
-using Marten.Generation;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -32,6 +31,7 @@ namespace Marten.Testing.Schema
             var storage = _schema.StorageFor(typeof (User));
             storage.ShouldNotBeNull();
         }
+
 
         [Fact]
         public void caches_storage_for_a_document_type()
