@@ -8,8 +8,7 @@ namespace Marten
     {
         private ISerializer _serializer;
         private IConnectionFactory _factory;
-
-
+        
         public void Connection(string connectionString)
         {
             _factory = new ConnectionFactory(connectionString);
@@ -35,6 +34,8 @@ namespace Marten
             _serializer = new T();
         }
 
+        public RequestCounterThreshold RequestCounterThreshold { get; set; } = RequestCounterThreshold.Empty;
+
         public readonly MartenRegistry Schema = new MartenRegistry();
 
         public bool AutoCreateSchemaObjects = false;
@@ -51,7 +52,5 @@ namespace Marten
 
             return _factory;
         }
-
-       
     }
 }

@@ -1,19 +1,18 @@
 using Marten.Schema;
+using Marten.Services;
 
 namespace Marten
 {
     public class AdvancedOptions
     {
-        private readonly IDocumentCleaner _cleaner;
+        public RequestCounterThreshold RequestThreshold { get; }
 
-        public AdvancedOptions(IDocumentCleaner cleaner)
+        public AdvancedOptions(IDocumentCleaner cleaner, RequestCounterThreshold requestThreshold)
         {
-            _cleaner = cleaner;
+            RequestThreshold = requestThreshold;
+            Clean = cleaner;
         }
 
-        public IDocumentCleaner Clean
-        {
-            get { return _cleaner; }
-        }
+        public IDocumentCleaner Clean { get; }
     }
 }
