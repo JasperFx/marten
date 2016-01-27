@@ -27,11 +27,19 @@ namespace Marten.Codegen
                 if (alreadyReferenced)
                     return;
 
-                _references.Add(MetadataReference.CreateFromFile(assembly.Location));
-                foreach (var assemblyName in assembly.GetReferencedAssemblies())
+
+                try
                 {
-                    var referencedAssembly = Assembly.Load(assemblyName);
-                    ReferenceAssembly(referencedAssembly);
+                    _references.Add(MetadataReference.CreateFromFile(assembly.Location));
+                    foreach (var assemblyName in assembly.GetReferencedAssemblies())
+                    {
+                        var referencedAssembly = Assembly.Load(assemblyName);
+                        ReferenceAssembly(referencedAssembly);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Could not make an assembly reference to {assembly.FullName}\n\n{e}");
                 }
             }
             catch (AssemblyReferenceException)
