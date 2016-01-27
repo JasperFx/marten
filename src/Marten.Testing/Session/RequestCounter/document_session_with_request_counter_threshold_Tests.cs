@@ -13,6 +13,7 @@ namespace Marten.Testing.Session.RequestCounter
 
             var documentStore = DocumentStore.For(opt =>
             {
+                opt.AutoCreateSchemaObjects = true;
                 opt.Connection(ConnectionSource.ConnectionString);
                 opt.WithRequestThreshold(new RequestCounterThreshold(1, () => wasInvoked = true));
             });

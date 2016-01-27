@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Npgsql;
@@ -126,6 +128,22 @@ namespace Marten.Testing.Session.RequestCounter
         public T QueryScalar<T>(string sql)
         {
             return default(T);
+        }
+
+        public Task ExecuteAsync(Func<NpgsqlConnection, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                Execute(conn => action(conn, new CancellationTokenSource().Token));
+            });
+        }
+
+        public Task<T> ExecuteAsync<T>(Func<NpgsqlConnection, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                return Execute<T>(conn => func(conn, new CancellationTokenSource().Token).Result);
+            });
         }
     }
 }

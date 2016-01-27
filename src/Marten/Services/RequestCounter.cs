@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Npgsql;
 
 namespace Marten.Services
@@ -23,47 +25,29 @@ namespace Marten.Services
 
         public void Execute(Action<NpgsqlConnection> action)
         {
-            IncrementRequestCount();
-
+            incrementRequestCount();
             _commandRunner.Execute(action);
         }
-        
-        public void ExecuteInTransaction(Action<NpgsqlConnection> action)
-        {
-            IncrementRequestCount();
 
-            _commandRunner.ExecuteInTransaction(action);
+        public Task ExecuteAsync(Func<NpgsqlConnection, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
+        {
+            incrementRequestCount();
+            return _commandRunner.ExecuteAsync(action, token);
         }
 
         public T Execute<T>(Func<NpgsqlConnection, T> func)
         {
-            IncrementRequestCount();
-
+            incrementRequestCount();
             return _commandRunner.Execute(func);
         }
 
-        public IEnumerable<string> QueryJson(NpgsqlCommand cmd)
+        public Task<T> ExecuteAsync<T>(Func<NpgsqlConnection, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
         {
-            IncrementRequestCount();
-
-            return _commandRunner.QueryJson(cmd);
+            incrementRequestCount();
+            return _commandRunner.ExecuteAsync(func, token);
         }
 
-        public int Execute(string sql)
-        {
-            IncrementRequestCount();
-
-            return _commandRunner.Execute(sql);
-        }
-
-        public T QueryScalar<T>(string sql)
-        {
-            IncrementRequestCount();
-
-            return _commandRunner.QueryScalar<T>(sql);
-        }
-
-        private void IncrementRequestCount()
+        private void incrementRequestCount()
         {
             _threshold.ValidateCounter(++NumberOfRequests);
         }
