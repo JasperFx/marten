@@ -78,7 +78,7 @@ namespace Marten.Services
             }, token).ConfigureAwait(false);
         }
 
-        public static void ExecuteInTransaction(this ICommandRunner runner, Action<NpgsqlConnection> action)
+        public static void ExecuteInTransaction(this ICommandRunner runner, Action<NpgsqlConnection, NpgsqlTransaction> action)
         {
             runner.Execute(conn =>
             {
@@ -86,7 +86,7 @@ namespace Marten.Services
                 {
                     try
                     {
-                        action(conn);
+                        action(conn, tx);
 
                         tx.Commit();
                     }
@@ -99,7 +99,7 @@ namespace Marten.Services
             });
         }
 
-        public static async Task ExecuteInTransactionAsync(this ICommandRunner runner, Func<NpgsqlConnection, CancellationToken, Task> action, CancellationToken token)
+        public static async Task ExecuteInTransactionAsync(this ICommandRunner runner, Func<NpgsqlConnection, NpgsqlTransaction, CancellationToken, Task> action, CancellationToken token)
         {
             await runner.ExecuteAsync(async (conn, tkn) =>
             {
@@ -107,7 +107,7 @@ namespace Marten.Services
                 {
                     try
                     {
-                        await action(conn, tkn);
+                        await action(conn, tx, tkn);
 
                         tx.Commit();
                     }

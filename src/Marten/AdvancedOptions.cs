@@ -1,15 +1,14 @@
 using Marten.Schema;
-using Marten.Services;
 
 namespace Marten
 {
     public class AdvancedOptions
     {
-        public RequestCounterThreshold RequestThreshold { get; }
+        public StoreOptions Options { get; }
 
-        public AdvancedOptions(IDocumentCleaner cleaner, RequestCounterThreshold requestThreshold)
+        public AdvancedOptions(IDocumentCleaner cleaner, StoreOptions options)
         {
-            RequestThreshold = requestThreshold;
+            Options = options;
             Clean = cleaner;
         }
 

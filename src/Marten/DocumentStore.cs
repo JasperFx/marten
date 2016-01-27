@@ -45,6 +45,7 @@ namespace Marten
 
         public DocumentStore(StoreOptions options)
         {
+            _options = options;
             _runner = new CommandRunner(options.ConnectionFactory());
 
             var creation = options.AutoCreateSchemaObjects
@@ -58,7 +59,7 @@ namespace Marten
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_runner, Schema);
-            Advanced = new AdvancedOptions(cleaner, options.RequestCounterThreshold);
+            Advanced = new AdvancedOptions(cleaner, options);
 
             Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser));
 
@@ -73,7 +74,8 @@ namespace Marten
             }
         }
 
-        private readonly Func<ICommandRunner> _runnerForSession; 
+        private readonly Func<ICommandRunner> _runnerForSession;
+        private readonly StoreOptions _options;
 
         public void Dispose()
         {
@@ -88,7 +90,7 @@ namespace Marten
         {
             var storage = Schema.StorageFor(typeof(T)).As<IBulkLoader<T>>();
 
-            _runner.ExecuteInTransaction(conn =>
+            _runner.ExecuteInTransaction((conn, tx) =>
             {
                 if (documents.Length <= batchSize)
                 {
@@ -116,7 +118,7 @@ namespace Marten
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly)
         {
             var map = createMap(tracking);
-            return new DocumentSession(Schema, _serializer, _runnerForSession(), _parser, new MartenQueryExecutor(_runnerForSession(), Schema, _serializer, _parser), map);
+            return new DocumentSession(_options, Schema, _serializer, _runnerForSession(), _parser, new MartenQueryExecutor(_runnerForSession(), Schema, _serializer, _parser), map);
         }
 
         private IIdentityMap createMap(DocumentTracking tracking)

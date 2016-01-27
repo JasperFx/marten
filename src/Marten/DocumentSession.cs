@@ -14,11 +14,13 @@ namespace Marten
         private readonly IIdentityMap _documentMap;
         private readonly ICommandRunner _runner;
         private readonly ISerializer _serializer;
+        private readonly StoreOptions _options;
         private readonly IDocumentSchema _schema;
         private readonly UnitOfWork _unitOfWork;
 
-        public DocumentSession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IIdentityMap documentMap) : base(schema, serializer, runner, parser, executor, documentMap)
+        public DocumentSession(StoreOptions options, IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IIdentityMap documentMap) : base(schema, serializer, runner, parser, executor, documentMap)
         {
+            _options = options;
             _schema = schema;
             _serializer = serializer;
             _runner = runner;
@@ -80,13 +82,13 @@ namespace Marten
 
         public void SaveChanges()
         {
-            var batch = new UpdateBatch(_serializer, _runner);
+            var batch = new UpdateBatch(_options, _serializer, _runner);
             _unitOfWork.ApplyChanges(batch);
         }
 
         public async Task SaveChangesAsync(CancellationToken token)
         {
-            var batch = new UpdateBatch(_serializer, _runner);
+            var batch = new UpdateBatch(_options, _serializer, _runner);
             await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
         }
     }

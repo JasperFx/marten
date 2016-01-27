@@ -44,6 +44,8 @@ namespace Marten
 
         public HiloDef HiloSequenceDefaults { get; } = new HiloDef();
 
+        public int UpdateBatchSize { get; set; } = 500;
+
         internal ISerializer Serializer()
         {
             return _serializer ?? new JsonNetSerializer();

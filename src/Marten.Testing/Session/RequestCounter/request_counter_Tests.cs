@@ -35,7 +35,7 @@ namespace Marten.Testing.Session.RequestCounter
         {
             var requestCounter = CreateCounter();
 
-            requestCounter.ExecuteInTransaction((a) => { });
+            requestCounter.ExecuteInTransaction((a, tx) => { });
 
             requestCounter.NumberOfRequests.ShouldBe(1);
         }
