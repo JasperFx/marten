@@ -58,10 +58,22 @@ namespace Marten
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_runner, Schema);
-            Advanced = new AdvancedOptions(cleaner, options.RequestThreshold());
+            Advanced = new AdvancedOptions(cleaner, options.RequestCounterThreshold);
 
             Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser));
+
+
+            if (options.RequestCounterThreshold.HasThreshold)
+            {
+                _runnerForSession = () => new RequestCounter(_runner, options.RequestCounterThreshold);
+            }
+            else
+            {
+                _runnerForSession = () => _runner;
+            }
         }
+
+        private readonly Func<ICommandRunner> _runnerForSession; 
 
         public void Dispose()
         {
@@ -104,7 +116,7 @@ namespace Marten
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly)
         {
             var map = createMap(tracking);
-            return new DocumentSession(Schema, _serializer, GetCommandRunnerForSession(), _parser, new MartenQueryExecutor(GetCommandRunnerForSession(), Schema, _serializer, _parser), map);
+            return new DocumentSession(Schema, _serializer, _runnerForSession(), _parser, new MartenQueryExecutor(_runnerForSession(), Schema, _serializer, _parser), map);
         }
 
         private IIdentityMap createMap(DocumentTracking tracking)
@@ -139,12 +151,9 @@ namespace Marten
         {
             var parser = new MartenQueryParser();
             
-            return new QuerySession(Schema, _serializer, GetCommandRunnerForSession(), parser, new MartenQueryExecutor(GetCommandRunnerForSession(), Schema, _serializer, parser), new NulloIdentityMap(_serializer));
+            return new QuerySession(Schema, _serializer, _runnerForSession(), parser, new MartenQueryExecutor(_runnerForSession(), Schema, _serializer, parser), new NulloIdentityMap(_serializer));
         }
 
-        private ICommandRunner GetCommandRunnerForSession()
-        {
-            return Advanced.RequestThreshold.HasThreshold ? new RequestCounter(_runner, Advanced.RequestThreshold) : _runner;
-        }
+
     }
 }

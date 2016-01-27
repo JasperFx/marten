@@ -15,7 +15,7 @@ namespace Marten.Testing.Session.RequestCounter
             {
                 opt.AutoCreateSchemaObjects = true;
                 opt.Connection(ConnectionSource.ConnectionString);
-                opt.WithRequestThreshold(new RequestCounterThreshold(1, () => wasInvoked = true));
+                opt.RequestCounterThreshold = new RequestCounterThreshold(1, () => wasInvoked = true);
             });
 
             using (var session = documentStore.OpenSession())
