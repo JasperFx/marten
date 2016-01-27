@@ -51,7 +51,7 @@ namespace Marten
                 ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_runner)
                 : new ProductionSchemaCreation();
 
-            Schema = new DocumentSchema(_runner, creation);
+            Schema = new DocumentSchema(_runner, creation) {StoreOptions = options};
 
             Schema.Alter(options.Schema);
 

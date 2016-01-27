@@ -29,9 +29,13 @@ namespace Marten.Schema
     {
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
         private PropertySearching _propertySearching = PropertySearching.JSON_Locator_Only;
-        private readonly IList<IndexDefinition> _indexes = new List<IndexDefinition>(); 
 
-        public DocumentMapping(Type documentType)
+        public DocumentMapping(Type documentType) : this(documentType, new StoreOptions())
+        {
+
+        }
+
+        public DocumentMapping(Type documentType, StoreOptions options)
         {
             DocumentType = documentType;
 
@@ -44,7 +48,7 @@ namespace Marten.Schema
             }
 
 
-            assignIdStrategy(documentType);
+            assignIdStrategy(documentType, options);
 
             TableName = TableNameFor(documentType);
 
@@ -86,18 +90,15 @@ namespace Marten.Schema
         public IndexDefinition AddIndex(params string[] columns)
         {
             var index = new IndexDefinition(this, columns);
-            _indexes.Add(index);
+            Indexes.Add(index);
 
             return index;
         }
 
 
-        public IList<IndexDefinition> Indexes
-        {
-            get { return _indexes; }
-        }
+        public IList<IndexDefinition> Indexes { get; } = new List<IndexDefinition>();
 
-        private void assignIdStrategy(Type documentType)
+        private void assignIdStrategy(Type documentType, StoreOptions options)
         {
             var idType = IdMember.GetMemberType();
             if (idType == typeof (string))
@@ -110,13 +111,18 @@ namespace Marten.Schema
             }
             else if (idType == typeof (int) || idType == typeof (long))
             {
-                IdStrategy = new HiloIdGeneration(documentType);
+                IdStrategy = new HiloIdGeneration(documentType, options.HiloSequenceDefaults);
             }
             else
             {
                 throw new ArgumentOutOfRangeException(nameof(documentType),
                     $"Marten cannot use the type {idType.FullName} as the Id for a persisted document. Use int, long, Guid, or string");
             }
+        }
+
+        public void HiLoSettings(HiloDef hilo)
+        {
+            throw new NotImplementedException();
         }
 
         public IIdGeneration IdStrategy { get; set; } = new StringIdGeneration();
@@ -234,7 +240,7 @@ namespace Marten.Schema
 
         public IEnumerable<IndexDefinition> IndexesFor(string column)
         {
-            return _indexes.Where(x => x.Columns.Contains(column));
+            return Indexes.Where(x => x.Columns.Contains(column));
         }
     }
 }

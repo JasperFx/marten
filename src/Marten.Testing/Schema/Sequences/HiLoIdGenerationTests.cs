@@ -17,7 +17,7 @@ namespace Marten.Testing.Schema.Sequences
 
             var schema = container.GetInstance<IDocumentSchema>();
 
-            var generation = new HiloIdGeneration(typeof(Target));
+            var generation = new HiloIdGeneration(typeof(Target), new HiloDef());
 
             generation.GetValue(schema).ShouldBeOfType<HiLoSequence>()
                 .EntityName.ShouldBe("Target");
@@ -27,7 +27,7 @@ namespace Marten.Testing.Schema.Sequences
         [Fact]
         public void arguments_just_returns_itself()
         {
-            var generation = new HiloIdGeneration(typeof(Target));
+            var generation = new HiloIdGeneration(typeof(Target), new HiloDef());
             generation.ToArguments().Single().ShouldBeSameAs(generation);
         }
 

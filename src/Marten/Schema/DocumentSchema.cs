@@ -34,6 +34,8 @@ namespace Marten.Schema
             Events = new EventGraph();
         }
 
+        public StoreOptions StoreOptions { get; set; } = new StoreOptions();
+
 
         public void Dispose()
         {
@@ -41,7 +43,7 @@ namespace Marten.Schema
 
         public DocumentMapping MappingFor(Type documentType)
         {
-            return _documentMappings.GetOrAdd(documentType, type => new DocumentMapping(type));
+            return _documentMappings.GetOrAdd(documentType, type => new DocumentMapping(type, StoreOptions));
         }
 
         public void EnsureStorageExists(Type documentType)

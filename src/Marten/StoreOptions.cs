@@ -1,4 +1,5 @@
 ﻿using System;
+using Marten.Schema.Sequences;
 using Marten.Services;
 using Npgsql;
 
@@ -40,6 +41,8 @@ namespace Marten
 
         public bool AutoCreateSchemaObjects = false;
 
+
+        public HiloDef HiloSequenceDefaults { get; } = new HiloDef();
 
         internal ISerializer Serializer()
         {
