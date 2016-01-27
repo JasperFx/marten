@@ -80,6 +80,11 @@ namespace Marten.Linq
                 }
             }
 
+            if (expression.QueryModel.ResultOperators.Any(x => x is AnyResultOperator))
+            {
+                return new CollectionAnyContainmentWhereFragment(_serializer, expression);
+            }
+
             throw new NotImplementedException();
         }
 

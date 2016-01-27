@@ -33,7 +33,7 @@ namespace Marten
         {
             _serializer = new T();
         }
-
+        
         public RequestCounterThreshold RequestCounterThreshold { get; set; } = RequestCounterThreshold.Empty;
 
         public readonly MartenRegistry Schema = new MartenRegistry();
