@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Schema.Sequences;
 
 namespace Marten
 {
@@ -79,6 +80,12 @@ namespace Marten
                 
                 return this;
             }
+
+            public DocumentMappingExpression<T> HiLoSettings(HiloDef settings)
+            {
+                alter = mapping => mapping.HiLoSettings(settings);
+                return this;
+            }    
 
             private Action<DocumentMapping> alter
             {

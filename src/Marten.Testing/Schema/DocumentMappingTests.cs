@@ -271,6 +271,30 @@ namespace Marten.Testing.Schema
                 .IdStrategy.ShouldBeOfType<HiloIdGeneration>();
         }
 
+        [Fact]
+        public void can_replace_hilo_def_settings()
+        {
+            var mapping = DocumentMapping.For<LongId>();
+
+            var newDef = new HiloDef {Increment = 3, MaxLo = 33};
+
+            mapping.HiLoSettings(newDef);
+
+            var sequence = mapping.IdStrategy.ShouldBeOfType<HiloIdGeneration>();
+            sequence.MaxLo.ShouldBe(newDef.MaxLo);
+            sequence.Increment.ShouldBe(newDef.Increment);
+            
+        }
+
+        [Fact]
+        public void trying_to_replace_the_hilo_settings_when_not_using_hilo_for_the_sequence_throws()
+        {
+            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+            {
+                DocumentMapping.For<StringId>().HiLoSettings(new HiloDef());
+            });
+        }
+
 
         public class IntId
         {

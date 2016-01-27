@@ -74,8 +74,6 @@ namespace Marten.Schema
             });
         }
 
-        public int BatchSize = 100;
-
         public IndexDefinition AddGinIndexToData()
         {
             var index = AddIndex("data");
@@ -122,7 +120,14 @@ namespace Marten.Schema
 
         public void HiLoSettings(HiloDef hilo)
         {
-            throw new NotImplementedException();
+            if (IdStrategy is HiloIdGeneration)
+            {
+                IdStrategy = new HiloIdGeneration(DocumentType, hilo);
+            }
+            else
+            {
+                throw new InvalidOperationException($"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override HiLo sequence configuration");
+            }
         }
 
         public IIdGeneration IdStrategy { get; set; } = new StringIdGeneration();
