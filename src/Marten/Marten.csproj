@@ -129,6 +129,8 @@
     <Compile Include="Schema\StorageArgument.cs" />
     <Compile Include="Schema\UpsertArgument.cs" />
     <Compile Include="Services\NulloIdentityMap.cs" />
+    <Compile Include="Services\RequestCounter.cs" />
+    <Compile Include="Services\RequestCounterThreshold.cs" />
     <Compile Include="Services\TrackedEntity.cs" />
     <Compile Include="StoreOptions.cs" />
     <Compile Include="Util\QueryableExtensions.cs" />

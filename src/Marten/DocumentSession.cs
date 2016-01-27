@@ -30,6 +30,7 @@ namespace Marten
             {
                 _unitOfWork.AddTracker(_documentMap.As<IDocumentTracker>());
             }
+
         }
 
         public void Delete<T>(T entity)

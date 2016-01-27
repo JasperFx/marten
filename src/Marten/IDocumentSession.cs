@@ -32,6 +32,7 @@ namespace Marten
         // ENDSAMPLE
 
         IEnumerable<T> Query<T>(string sql, params object[] parameters);
+
         Task<IEnumerable<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters);
     }
 

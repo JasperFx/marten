@@ -58,7 +58,7 @@ namespace Marten
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_runner, Schema);
-            Advanced = new AdvancedOptions(cleaner);
+            Advanced = new AdvancedOptions(cleaner, options.RequestThreshold());
 
             Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser));
         }
@@ -104,8 +104,7 @@ namespace Marten
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly)
         {
             var map = createMap(tracking);
-
-            return new DocumentSession(Schema, _serializer, _runner, _parser, new MartenQueryExecutor(_runner, Schema, _serializer, _parser), map);
+            return new DocumentSession(Schema, _serializer, GetCommandRunnerForSession(), _parser, new MartenQueryExecutor(GetCommandRunnerForSession(), Schema, _serializer, _parser), map);
         }
 
         private IIdentityMap createMap(DocumentTracking tracking)
@@ -139,7 +138,13 @@ namespace Marten
         public IQuerySession QuerySession()
         {
             var parser = new MartenQueryParser();
-            return new QuerySession(Schema, _serializer, _runner, parser, new MartenQueryExecutor(_runner, Schema, _serializer, parser), new NulloIdentityMap(_serializer));
+            
+            return new QuerySession(Schema, _serializer, GetCommandRunnerForSession(), parser, new MartenQueryExecutor(GetCommandRunnerForSession(), Schema, _serializer, parser), new NulloIdentityMap(_serializer));
+        }
+
+        private ICommandRunner GetCommandRunnerForSession()
+        {
+            return Advanced.RequestThreshold.HasThreshold ? new RequestCounter(_runner, Advanced.RequestThreshold) : _runner;
         }
     }
 }
