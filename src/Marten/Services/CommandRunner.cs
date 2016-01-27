@@ -49,47 +49,6 @@ namespace Marten.Services
             }
         }
 
-        public void ExecuteInTransaction(Action<NpgsqlConnection> action)
-        {
-            Execute(conn =>
-            {
-                using (var tx = conn.BeginTransaction())
-                {
-                    try
-                    {
-                        action(conn);
-
-                        tx.Commit();
-                    }
-                    catch (Exception)
-                    {
-                        tx.Rollback();
-                        throw;
-                    }
-                }
-            });
-        }
-
-        public async Task ExecuteInTransactionAsync(Func<NpgsqlConnection, CancellationToken, Task> action, CancellationToken token)
-        {
-            await ExecuteAsync(async (conn, tkn) =>
-            {
-                using (var tx = conn.BeginTransaction())
-                {
-                    try
-                    {
-                        await action(conn, tkn);
-
-                        tx.Commit();
-                    }
-                    catch (Exception)
-                    {
-                        tx.Rollback();
-                        throw;
-                    }
-                }
-            }, token).ConfigureAwait(false);
-        }
 
         public T Execute<T>(Func<NpgsqlConnection, T> func)
         {
@@ -125,95 +84,9 @@ namespace Marten.Services
             }
         }
 
-        public IEnumerable<string> QueryJson(NpgsqlCommand cmd)
-        {
-            return Execute(conn =>
-            {
-                cmd.Connection = conn;
 
-                var list = new List<string>();
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        list.Add(reader.GetString(0));
-                    }
 
-                    reader.Close();
-                }
 
-                return list;
-            });
-        }
 
-        public async Task<IEnumerable<string>> QueryJsonAsync(NpgsqlCommand cmd, CancellationToken token)
-        {
-            return await ExecuteAsync(async (conn, tkn) =>
-            {
-                cmd.Connection = conn;
-
-                var list = new List<string>();
-                using (var reader = await cmd.ExecuteReaderAsync(tkn))
-                {
-                    while (await reader.ReadAsync(tkn))
-                    {
-                        list.Add(reader.GetString(0));
-                    }
-
-                    reader.Close();
-                }
-
-                return list;
-            }, token).ConfigureAwait(false);
-        }
-
-        public int Execute(string sql)
-        {
-            return Execute(conn =>
-            {
-                using (var command = conn.CreateCommand())
-                {
-                    command.CommandText = sql;
-                    return command.ExecuteNonQuery();
-                }
-            });
-        }
-
-        public async Task<int> ExecuteAsync(string sql, CancellationToken token)
-        {
-            return await ExecuteAsync(async (conn, tkn) =>
-            {
-                using (var command = conn.CreateCommand())
-                {
-                    command.CommandText = sql;
-                    return await command.ExecuteNonQueryAsync(tkn);
-                }
-            }, token).ConfigureAwait(false);
-        }
-
-        public T QueryScalar<T>(string sql)
-        {
-            return Execute(conn =>
-            {
-                using (var command = conn.CreateCommand())
-                {
-                    command.CommandText = sql;
-                    return (T)command.ExecuteScalar();
-                }
-            });
-        }
-
-        public async Task<T> QueryScalarAsync<T>(string sql, CancellationToken token)
-        {
-            return await ExecuteAsync(async (conn, tkn) =>
-            {
-                using (var command = conn.CreateCommand())
-                {
-                    command.CommandText = sql;
-                    var result = await command.ExecuteScalarAsync(tkn);
-                    return (T)result;
-                }
-            }, token).ConfigureAwait(false);
-        }
     }
 }
