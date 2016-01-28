@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.5.0</h3>
+		      	<h3>Marten 0.6.0</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -97,10 +97,27 @@ JSON serialization extensible and configurable through the native mechanisms in 
 <pre><code class="language-csharp">
     public interface ISerializer
     {
+        /// &lt;summary&gt;
+        /// Serialize the document object into a JSON string
+        /// &lt;/summary&gt;
+        /// &lt;param name=&quot;document&quot;&gt;&lt;/param&gt;
+        /// &lt;returns&gt;&lt;/returns&gt;
         string ToJson(object document);
-        T FromJson&lt;T&gt;(string json);
-        T FromJson&lt;T&gt;(Stream stream);
 
+        /// &lt;summary&gt;
+        /// Deserialize a JSON string into an object of type T
+        /// &lt;/summary&gt;
+        /// &lt;typeparam name=&quot;T&quot;&gt;&lt;/typeparam&gt;
+        /// &lt;param name=&quot;json&quot;&gt;&lt;/param&gt;
+        /// &lt;returns&gt;&lt;/returns&gt;
+        T FromJson&lt;T&gt;(string json);
+
+        /// &lt;summary&gt;
+        /// Deserialize a JSON string into the supplied Type
+        /// &lt;/summary&gt;
+        /// &lt;param name=&quot;type&quot;&gt;&lt;/param&gt;
+        /// &lt;param name=&quot;json&quot;&gt;&lt;/param&gt;
+        /// &lt;returns&gt;&lt;/returns&gt;
         object FromJson(Type type, string json);
 
         /// &lt;summary&gt;

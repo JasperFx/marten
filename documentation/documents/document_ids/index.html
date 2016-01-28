@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.5.0</h3>
+		      	<h3>Marten 0.6.0</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -92,12 +92,12 @@
 			      		<!--title:Document Id's-->
 <p>Besides being serializable, Marten's only other requirement for a .Net type to be a document is the existence of an identifier field or property that Marten can use as the primary key for the document type. The <code>Id</code> can be either a public field or property, and the name must be either <code>id</code> or <code>Id</code>. As of this time, Marten supports these <code>Id</code> types:</p>
 <ol>
-<li><code>String</code>. It might be valuable to use a natural key as the identifier, especially if it is valuable within the
+<li><code>String</code>. It might be valuable to use a <a href="https://en.wikipedia.org/wiki/Natural_key">natural key</a> as the identifier, especially if it is valuable within the
 <a href="/marten/documentation/documents/identitymap">Identity Map</a> feature of Marten Db. In this case, the user will
 be responsible for supplying the identifier.</li>
 <li><code>Guid</code>. If the id is a Guid, Marten will assign a new value for you when you persist the document for the first time if the id is empty.
 <em>And for the record, it's pronounced &quot;gwid&quot;</em>.</li>
-<li><code>Int</code> or <code>Long</code>. As of right now, Marten uses a <a href="id_samples">HiLo</a> generator approach to assigning numeric identifiers by document type.
+<li><code>Int</code> or <code>Long</code>. As of right now, Marten uses a <a href="http://stackoverflow.com/questions/282099/whats-the-hi-lo-algorithm">HiLo generator</a> approach to assigning numeric identifiers by document type.
 Marten may support Postgresql sequences or star-based algorithms as later alternatives.</li>
 </ol>
 <p>You can see some example id usages below:</p>
@@ -120,6 +120,37 @@ Marten may support Postgresql sequences or star-based algorithms as later altern
         // &quot;id&quot; is accepted
         public int id { get; set; }
     }
+</code></pre>
+<h2>Hilo Sequences</h2>
+<p>The <em>Hilo</em> sequence generation can be customized with either global defaults or document type specific overrides. By default, the Hilo sequence generation in Marten increments by 1 and uses a &quot;maximum lo&quot; number of 1000.</p>
+<p>To set different global defaults, use the <code>StoreOptions.HiloSequenceDefaults</code> property like this sample:</p>
+<pre><code class="language-csharp">
+            var store = DocumentStore.For(_ =&gt;
+            {
+                _.HiloSequenceDefaults.Increment = 2;
+                _.HiloSequenceDefaults.MaxLo = 55;
+                _.Connection(&quot;something&quot;);
+            });
+</code></pre>
+<p>To override the Hilo configuration for a specific document type, you can decorate the document type with the <code>[HiloSequence]</code> attribute
+as in this example:</p>
+<pre><code class="language-csharp">
+    [HiloSequence(Increment = 3, MaxLo = 33)]
+    public class OverriddenHiloDoc
+    {
+        public int Id { get; set; }
+    }
+</code></pre>
+<p>You can also use the <code>MartenRegistry</code> fluent interface to override the Hilo configuration for a document type as in this example:</p>
+<pre><code class="language-csharp">
+            var store = DocumentStore.For(_ =&gt;
+            {
+                // Overriding the Hilo settings for the document type &quot;IntDoc&quot;
+                _.Schema.For&lt;IntDoc&gt;()
+                    .HiloSettings(new HiloSettings {Increment = 6, MaxLo = 66});
+
+                _.Connection(&quot;something&quot;);
+            });
 </code></pre>
 
 

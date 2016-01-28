@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.5.0</h3>
+		      	<h3>Marten 0.6.0</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -147,7 +147,10 @@ queries using the duplicated field.</p>
     {
         public int Id;
 
-        [Searchable]
+        // You can optionally override the Postgresql
+        // type for the duplicated column in the document
+        // storage table
+        [Searchable(PgType = &quot;text&quot;)]
         public string Category;
     }
 </code></pre>
@@ -162,12 +165,13 @@ customize the generated index with the syntax shown below:</p>
             For&lt;User&gt;().GinIndexJsonData();
 
             // Adds a basic btree index to the duplicated
-            // field for this property
-            For&lt;User&gt;().Searchable(x =&gt; x.FirstName);
+            // field for this property that also overrides
+            // the Postgresql database type for the column
+            For&lt;User&gt;().Searchable(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);
 
             // Customize the index on the duplicated field
             // for FirstName 
-            For&lt;User&gt;().Searchable(x =&gt; x.FirstName, idx =&gt;
+            For&lt;User&gt;().Searchable(x =&gt; x.FirstName, configure:idx =&gt;
             {
                 idx.IndexName = &quot;idx_special&quot;;
                 idx.Method = IndexMethod.hash;
@@ -188,12 +192,13 @@ the JSON field in the database:</p>
             For&lt;User&gt;().GinIndexJsonData();
 
             // Adds a basic btree index to the duplicated
-            // field for this property
-            For&lt;User&gt;().Searchable(x =&gt; x.FirstName);
+            // field for this property that also overrides
+            // the Postgresql database type for the column
+            For&lt;User&gt;().Searchable(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);
 
             // Customize the index on the duplicated field
             // for FirstName 
-            For&lt;User&gt;().Searchable(x =&gt; x.FirstName, idx =&gt;
+            For&lt;User&gt;().Searchable(x =&gt; x.FirstName, configure:idx =&gt;
             {
                 idx.IndexName = &quot;idx_special&quot;;
                 idx.Method = IndexMethod.hash;

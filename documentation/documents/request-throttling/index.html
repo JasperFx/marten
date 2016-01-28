@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Compiled Queries</title>
+		<title>Marten - Request Counting and Throttling</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/sql" title="Querying Documents with Postgresql SQL">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/persisting" title="Persisting Documents and Unit Of Work">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/projections" title="Document Projections">Previous</a></li>
+		      	<li><a href="/marten/documentation/events" title="Marten as Event Store">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Compiled Queries</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Request Counting and Throttling</li></ol>
 		  	</nav>
 		  </div>
 
@@ -76,25 +76,51 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/persisting">Persisting Documents and Unit Of Work</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/sql">Querying Documents with Postgresql SQL</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events">Marten as Event Store</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/projections">Document Projections</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Compiled Queries <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/compiled_queries.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Request Counting and Throttling <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/request-throttling.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title:Compiled Queries-->
-<!--Url:saved_queries-->
-<p>Marten doesn't support anything yet, but we've talked about possibly supporting something like EF's <a href="https://msdn.microsoft.com/library/bb896297(v=vs.100).aspx">Compiled Queries</a>.</p>
-<p>The point is just to avoid the extra cost of parsing Expression trees and building up SQL strings for a query that's going to be frequently used.</p>
-<p>See the <a href="https://github.com/JasperFx/Marten/issues/25">GitHub issue for any activity</a>.</p>
-<p>There's also a chance that Marten will eventually be an EF7 plugin to get this functionality.</p>
+			      		<!--Title: Request Counting and Throttling-->
+<p>For the purpose of ensuring that your system under development is not being too &quot;chatty&quot; to the database, Marten provides an &quot;opt in&quot; feature
+called the &quot;Request Counter&quot; that can be used to either record or assert failure conditions if a single <code>IQuerySession</code> or <code>IDocumentSession</code> passes a configured number of database requests.</p>
+<div class="alert alert-warning" role="alert">The Marten team strongly recommends that you do not use the request counter with thrown exceptions in production. This functionality has been a major source of aggravation with other document databases.</div>
+<p>For the first example, let's just say that we want to get some output to the debug output if a session has more than 25 calls to the underlying database:</p>
+<pre><code class="language-csharp">
+            var store1 = DocumentStore.For(opt =&gt;
+            {
+                opt.Connection(&quot;some connection string&quot;);
+                opt.RequestCounterThreshold = new RequestCounterThreshold(1, () =&gt;
+                {
+                    Debug.WriteLine(&quot;Too many database requests!&quot;);
+                });
+            });
+</code></pre>
+<p>For another example, if at development time you want to throw an exception if a session has more than 25 calls to the underlying database:</p>
+<pre><code class="language-csharp">
+            var store2 = DocumentStore.For(opt =&gt;
+            {
+                opt.Connection(&quot;some connection string&quot;);
+
+                // Use some kind of conditional logic to know when it&#39;s valid
+                // to opt into the request counter threshold
+                if (isOurAppInDevelopmentMode())
+                {
+                    opt.RequestCounterThreshold = new RequestCounterThreshold(1, () =&gt;
+                    {
+                        throw new InvalidOperationException(&quot;Too many database requests!&quot;);
+                    });
+                }
+            });
+</code></pre>
 
 
 			      	</div>
@@ -103,12 +129,12 @@
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/sql">Querying Documents with Postgresql SQL</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/projections">Document Projections</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/persisting">Persisting Documents and Unit Of Work</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/events">Marten as Event Store</a>
 
 				        </span>
 			      	</nav>

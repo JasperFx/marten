@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.5.0</h3>
+		      	<h3>Marten 0.6.0</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -274,6 +274,22 @@ Marten using the <code>IQuerySession.Query&lt;T&gt;()</code> or <code>IDocumentS
             // or
             session.Query&lt;Target&gt;().Where(x =&gt; x.Flag == false).ToArray();
         }
+</code></pre>
+<h2>Querying within Child Collections</h2>
+<p>As of Marten v0.6, you can use rudimentary <code>Any()</code> searches on child collections, <strong>but Marten can only
+query for equality of fields or properties within the Any() subquery.</strong></p>
+<pre><code class="language-csharp">
+            var results = theSession.Query&lt;Target&gt;()
+                .Where(x =&gt; x.Children.Any(_ =&gt; _.Number == 6))
+                .ToArray();
+</code></pre>
+<p>You can search on equality of multiple fields or properties within the child collection
+using the <code>&amp;&amp;</code> operator:</p>
+<pre><code class="language-csharp">
+            var results = theSession
+                .Query&lt;Target&gt;()
+                .Where(x =&gt; x.Children.Any(_ =&gt; _.Number == 6 &amp;&amp; _.Double == -1))
+                .ToArray();
 </code></pre>
 <h2>Supported Types</h2>
 <p>At this point, Marten's Linq support has been tested against these .Net types:</p>
