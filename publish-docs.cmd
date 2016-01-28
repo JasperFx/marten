@@ -1,4 +1,4 @@
-packages\storyteller\tools\ST.exe doc-export c:\code\marten-docs ProjectWebsite --version 0.5.0 --project marten
+packages\storyteller\tools\ST.exe doc-export c:\code\marten-docs ProjectWebsite --version 0.6.0 --project marten
 
 cd \code\marten-docs
 
