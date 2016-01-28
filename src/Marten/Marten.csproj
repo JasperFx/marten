@@ -48,6 +48,7 @@
     <Compile Include="ConnectionFactory.cs" />
     <Compile Include="DocumentStore.cs" />
     <Compile Include="DocumentTracking.cs" />
+    <Compile Include="IDiagnostics.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="Linq\CollectionAnyContainmentWhereFragment.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />

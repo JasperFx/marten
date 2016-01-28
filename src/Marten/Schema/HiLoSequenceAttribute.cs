@@ -3,6 +3,9 @@ using Marten.Schema.Sequences;
 
 namespace Marten.Schema
 {
+    /// <summary>
+    /// Use to customize the Hilo sequence generation for a single document type
+    /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
     public class HiloSequenceAttribute : MartenAttribute
     {

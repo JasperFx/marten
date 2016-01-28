@@ -3,6 +3,10 @@ using System.Reflection;
 
 namespace Marten.Schema
 {
+    /// <summary>
+    /// Base type of an Attribute that can be extended to add per field/property
+    /// or per document type customization to the document storage
+    /// </summary>
     // SAMPLE: MartenAttribute
     public abstract class MartenAttribute : Attribute
     {

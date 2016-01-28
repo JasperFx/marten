@@ -8,6 +8,9 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
+    /// <summary>
+    /// The main entry way to using Marten
+    /// </summary>
     public class DocumentStore : IDocumentStore
     {
         private readonly ICommandRunner _runner;
@@ -30,11 +33,21 @@ namespace Marten
             });
         }
 
+        /// <summary>
+        /// Configures a DocumentStore for an existing StoreOptions type
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public static DocumentStore For<T>() where T : StoreOptions, new()
         {
             return new DocumentStore(new T());
         }
 
+        /// <summary>
+        /// Configures a DocumentStore by defining the StoreOptions settings first
+        /// </summary>
+        /// <param name="configure"></param>
+        /// <returns></returns>
         public static DocumentStore For(Action<StoreOptions> configure)
         {
             var options = new StoreOptions();
@@ -43,6 +56,10 @@ namespace Marten
             return new DocumentStore(options);
         }
 
+        /// <summary>
+        /// Creates a new DocumentStore with the supplied StoreOptions
+        /// </summary>
+        /// <param name="options"></param>
         public DocumentStore(StoreOptions options)
         {
             _options = options;
