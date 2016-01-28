@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
 using System.Runtime.Serialization;
 using Baseline;
 using Baseline.Reflection;
@@ -209,10 +210,14 @@ namespace Marten.Schema
             return new DocumentMapping(typeof (T));
         }
 
-        public DuplicatedField DuplicateField(string memberName)
+        public DuplicatedField DuplicateField(string memberName, string pgType = null)
         {
             var field = FieldFor(memberName);
             var duplicate = new DuplicatedField(field.Members);
+            if (pgType.IsNotEmpty())
+            {
+                duplicate.PgType = pgType;
+            }
 
             _fields[memberName] = duplicate;
 
@@ -233,11 +238,16 @@ namespace Marten.Schema
             });
         }
 
-        public IndexDefinition DuplicateField(MemberInfo[] members)
+        public IndexDefinition DuplicateField(MemberInfo[] members, string pgType = null)
         {
             var memberName = members.Select(x => x.Name).Join("");
 
             var duplicatedField = new DuplicatedField(members);
+            if (pgType.IsNotEmpty())
+            {
+                duplicatedField.PgType = pgType;
+            }
+
             _fields[memberName] = duplicatedField;
 
             return AddIndex(duplicatedField.ColumnName);

@@ -60,15 +60,15 @@ namespace Marten
                 return this;
             }  
 
-            public DocumentMappingExpression<T> Searchable(Expression<Func<T, object>> expression, Action<IndexDefinition> configureIndex = null)
+            public DocumentMappingExpression<T> Searchable(Expression<Func<T, object>> expression, string pgType = null, Action<IndexDefinition> configure = null)
             {
                 var visitor = new FindMembers();
                 visitor.Visit(expression);
 
                 alter = mapping =>
                 {
-                   var index =  mapping.DuplicateField(visitor.Members.ToArray());
-                    configureIndex?.Invoke(index);
+                   var index =  mapping.DuplicateField(visitor.Members.ToArray(), pgType);
+                    configure?.Invoke(index);
                 };
 
                 return this;

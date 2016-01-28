@@ -8,7 +8,9 @@ namespace Marten.Schema
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
-            mapping.DuplicateField(member.Name);
+            mapping.DuplicateField(member.Name, PgType);
         }
+
+        public string PgType { get; set; } = null;
     }
 }

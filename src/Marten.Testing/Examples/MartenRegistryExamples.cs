@@ -62,7 +62,7 @@ var store = DocumentStore.For(_ =>
 
             // Customize the index on the duplicated field
             // for FirstName 
-            For<User>().Searchable(x => x.FirstName, idx =>
+            For<User>().Searchable(x => x.FirstName, configure:idx =>
             {
                 idx.IndexName = "idx_special";
                 idx.Method = IndexMethod.hash;
