@@ -115,6 +115,7 @@ namespace Marten.Testing
         [Fact]
         public async Task load_by_id_array_async()
         {
+            // SAMPLE: saving-changes-async
             var user1 = new User { FirstName = "Magic", LastName = "Johnson" };
             var user2 = new User { FirstName = "James", LastName = "Worthy" };
             var user3 = new User { FirstName = "Michael", LastName = "Cooper" };
@@ -126,13 +127,19 @@ namespace Marten.Testing
             theSession.Store(user3);
             theSession.Store(user4);
             theSession.Store(user5);
-            await theSession.SaveChangesAsync();
 
-            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
+            await theSession.SaveChangesAsync();
+            // ENDSAMPLE
+
+            var store = theContainer.GetInstance<IDocumentStore>();
+
+            // SAMPLE: load_by_id_array_async
+            using (var session = store.OpenSession())
             {
                 var users = await session.Load<User>().ByIdAsync(user2.Id, user3.Id, user4.Id);
                 users.Count().ShouldBe(3);
             }
+            // ENDSAMPLE
         }
     }
 }

@@ -33,6 +33,7 @@ namespace Marten.Testing
 
         }
 
+        // SAMPLE: persist_and_load_async
         [Fact]
         public async Task persist_and_load_async()
         {
@@ -48,6 +49,7 @@ namespace Marten.Testing
                 (await session.LoadAsync<Account>("nonexistent@server.com")).ShouldBeNull();
             }
         }
+        // ENDSAMPLE
 
         [Fact]
         public void throws_exception_if_trying_to_save_null_id()

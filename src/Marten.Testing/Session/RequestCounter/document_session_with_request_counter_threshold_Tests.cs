@@ -1,4 +1,6 @@
-﻿using Marten.Services;
+﻿using System;
+using System.Diagnostics;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Xunit;
 
@@ -28,6 +30,42 @@ namespace Marten.Testing.Session.RequestCounter
             }
 
             wasInvoked.ShouldBeTrue();
-        }    
+        }
+
+        private bool isOurAppInDevelopmentMode()
+        {
+            return true;
+        }
+
+        public void samples()
+        {
+            // SAMPLE: request-counter-trips-off-debug-message
+            var store1 = DocumentStore.For(opt =>
+            {
+                opt.Connection("some connection string");
+                opt.RequestCounterThreshold = new RequestCounterThreshold(1, () =>
+                {
+                    Debug.WriteLine("Too many database requests!");
+                });
+            });
+            // ENDSAMPLE
+
+            // SAMPLE: request-counter-throws-exception
+            var store2 = DocumentStore.For(opt =>
+            {
+                opt.Connection("some connection string");
+
+                // Use some kind of conditional logic to know when it's valid
+                // to opt into the request counter threshold
+                if (isOurAppInDevelopmentMode())
+                {
+                    opt.RequestCounterThreshold = new RequestCounterThreshold(1, () =>
+                    {
+                        throw new InvalidOperationException("Too many database requests!");
+                    });
+                }
+            });
+            // ENDSAMPLE
+        }
     }
 }

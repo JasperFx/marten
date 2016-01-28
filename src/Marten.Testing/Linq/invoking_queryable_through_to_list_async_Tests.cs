@@ -10,6 +10,7 @@ namespace Marten.Testing.Linq
 {
     public class invoking_queryable_through_to_list_async_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        // SAMPLE: using-to-list-async
         [Fact]
         public async Task use_to_list_async_in_query()
         {
@@ -24,8 +25,10 @@ namespace Marten.Testing.Linq
                 .Query<User>()
                 .Where(x => x.FirstName == "Sam")
                 .ToListAsync();
+
             users.Single().FirstName.ShouldBe("Sam");
         }
+        // ENDSAMPLE
 
         [Fact]
         public async Task should_return_empty_list()

@@ -1,6 +1,8 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Microsoft.CodeAnalysis.CSharp;
 using Shouldly;
 using StructureMap;
 using Xunit;
@@ -34,6 +36,31 @@ namespace Marten.Testing
                     user.LastName.ShouldBe("Miller");
                     user.Id.ShouldBe(u.Id);
                 }
+            }
+        }
+
+        [Fact]
+        public async Task query_with_select_in_query_async()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                var store = container.GetInstance<IDocumentStore>();
+
+                // SAMPLE: using-queryasync
+                using (var session = store.OpenSession())
+                {
+                    var u = new User { FirstName = "Jeremy", LastName = "Miller" };
+                    session.Store(u);
+                    session.SaveChanges();
+
+                    var users = await session.QueryAsync<User>("select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'");
+                    var user = users.Single();
+
+                    user.LastName.ShouldBe("Miller");
+                    user.Id.ShouldBe(u.Id);
+                }
+                // ENDSAMPLE
+
             }
         }
 

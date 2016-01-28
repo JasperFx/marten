@@ -8,6 +8,7 @@ namespace Marten.Testing.Session
 {
     public class document_session_find_json_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        // SAMPLE: find-json-by-id
         [Fact]
         public void when_find_then_a_json_should_be_returned()
         {
@@ -19,6 +20,7 @@ namespace Marten.Testing.Session
             var json = theSession.FindJsonById<Issue>(issue.Id);
             json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Title\": \"Issue 1\"}}");
         }
+        // ENDSAMPLE
 
         [Fact]
         public void when_find_then_a_null_should_be_returned()

@@ -24,12 +24,14 @@ namespace Marten.Testing.Schema.Sequences
         [Fact]
         public void override_the_global_settings()
         {
+            // SAMPLE: configuring-global-hilo-defaults
             var store = DocumentStore.For(_ =>
             {
                 _.HiloSequenceDefaults.Increment = 2;
                 _.HiloSequenceDefaults.MaxLo = 55;
                 _.Connection("something");
             });
+            // ENDSAMPLE
 
             var mapping = store.Schema.MappingFor(typeof(IntDoc));
 
@@ -42,11 +44,16 @@ namespace Marten.Testing.Schema.Sequences
         [Fact]
         public void override_by_document_on_marten_registry()
         {
+            // SAMPLE: overriding-hilo-with-marten-registry
             var store = DocumentStore.For(_ =>
             {
-                _.Schema.For<IntDoc>().HiloSettings(new HiloSettings {Increment = 6, MaxLo = 66});
+                // Overriding the Hilo settings for the document type "IntDoc"
+                _.Schema.For<IntDoc>()
+                    .HiloSettings(new HiloSettings {Increment = 6, MaxLo = 66});
+
                 _.Connection("something");
             });
+            // ENDSAMPLE
 
             var mapping = store.Schema.MappingFor(typeof(IntDoc));
 
@@ -75,9 +82,11 @@ namespace Marten.Testing.Schema.Sequences
         }
     }
 
+    // SAMPLE: overriding-hilo-with-attribute
     [HiloSequence(Increment = 3, MaxLo = 33)]
     public class OverriddenHiloDoc
     {
         public int Id { get; set; }
     }
+    // ENDSAMPLE
 }
