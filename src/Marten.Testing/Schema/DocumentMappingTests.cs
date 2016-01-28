@@ -276,9 +276,9 @@ namespace Marten.Testing.Schema
         {
             var mapping = DocumentMapping.For<LongId>();
 
-            var newDef = new HiloDef {Increment = 3, MaxLo = 33};
+            var newDef = new HiloSettings {Increment = 3, MaxLo = 33};
 
-            mapping.HiLoSettings(newDef);
+            mapping.HiloSettings(newDef);
 
             var sequence = mapping.IdStrategy.ShouldBeOfType<HiloIdGeneration>();
             sequence.MaxLo.ShouldBe(newDef.MaxLo);
@@ -291,7 +291,7 @@ namespace Marten.Testing.Schema
         {
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
-                DocumentMapping.For<StringId>().HiLoSettings(new HiloDef());
+                DocumentMapping.For<StringId>().HiloSettings(new HiloSettings());
             });
         }
 

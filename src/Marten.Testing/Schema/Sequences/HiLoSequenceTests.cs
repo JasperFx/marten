@@ -10,14 +10,14 @@ using Xunit;
 
 namespace Marten.Testing.Schema.Sequences
 {
-    public class HiLoSequenceTests
+    public class HiloSequenceTests
     {
         private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
         private ICommandRunner _runner;
 
-        private readonly HiLoSequence theSequence;
+        private readonly HiloSequence theSequence;
 
-        public HiLoSequenceTests()
+        public HiloSequenceTests()
         {
             _container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
@@ -26,7 +26,7 @@ namespace Marten.Testing.Schema.Sequences
             _runner = _container.GetInstance<ICommandRunner>();
             _runner.Execute(sql);
 
-            theSequence = new HiLoSequence(_runner, "foo", new HiloDef());
+            theSequence = new HiloSequence(_runner, "foo", new HiloSettings());
         }
 
         [Fact]

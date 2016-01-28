@@ -17,7 +17,7 @@ namespace Marten.Schema.Sequences
             _creation = creation;
         }
 
-        public ISequence HiLo(Type documentType, HiloDef def)
+        public ISequence Hilo(Type documentType, HiloSettings settings)
         {
             // TODO -- here, need to see if the mt_hilo table is created, and if not,
             // do it through _creation.
@@ -27,7 +27,7 @@ namespace Marten.Schema.Sequences
                 _creation.RunScript("mt_hilo");
             }
 
-            return new HiLoSequence(_runner, documentType.Name, def);
+            return new HiloSequence(_runner, documentType.Name, settings);
         }
     }
 }

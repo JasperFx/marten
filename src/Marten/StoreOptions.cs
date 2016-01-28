@@ -42,7 +42,7 @@ namespace Marten
         public bool AutoCreateSchemaObjects = false;
 
 
-        public HiloDef HiloSequenceDefaults { get; } = new HiloDef();
+        public HiloSettings HiloSequenceDefaults { get; } = new HiloSettings();
 
         public int UpdateBatchSize { get; set; } = 500;
 

@@ -7,21 +7,21 @@ namespace Marten.Schema.Sequences
 {
     public class HiloIdGeneration : StorageArgument, IIdGeneration
     {
-        private readonly HiloDef _hiloDef;
+        private readonly HiloSettings _hiloSettings;
         public Type DocumentType { get; private set; }
 
-        public HiloIdGeneration(Type documentType, HiloDef hiloDef) : base("sequence", typeof(ISequence))
+        public HiloIdGeneration(Type documentType, HiloSettings hiloSettings) : base("sequence", typeof(ISequence))
         {
-            _hiloDef = hiloDef;
+            _hiloSettings = hiloSettings;
             DocumentType = documentType;
         }
 
-        public int Increment => _hiloDef.Increment;
-        public int MaxLo => _hiloDef.MaxLo;
+        public int Increment => _hiloSettings.Increment;
+        public int MaxLo => _hiloSettings.MaxLo;
 
         public override object GetValue(IDocumentSchema schema)
         {
-            return schema.Sequences.HiLo(DocumentType, _hiloDef);
+            return schema.Sequences.Hilo(DocumentType, _hiloSettings);
         }
 
         public IEnumerable<StorageArgument> ToArguments()

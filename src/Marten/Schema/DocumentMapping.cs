@@ -119,7 +119,7 @@ namespace Marten.Schema
             }
         }
 
-        public void HiLoSettings(HiloDef hilo)
+        public void HiloSettings(HiloSettings hilo)
         {
             if (IdStrategy is HiloIdGeneration)
             {
@@ -127,7 +127,7 @@ namespace Marten.Schema
             }
             else
             {
-                throw new InvalidOperationException($"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override HiLo sequence configuration");
+                throw new InvalidOperationException($"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override Hilo sequence configuration");
             }
         }
 

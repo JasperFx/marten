@@ -10,7 +10,7 @@ namespace Marten.Testing.Schema.Sequences
         [Fact]
         public void default_everything()
         {
-            var defaults = new HiloDef();
+            var defaults = new HiloSettings();
 
             var store = DocumentStore.For("something");
             var mapping = store.Schema.MappingFor(typeof (IntDoc));
@@ -44,7 +44,7 @@ namespace Marten.Testing.Schema.Sequences
         {
             var store = DocumentStore.For(_ =>
             {
-                _.Schema.For<IntDoc>().HiLoSettings(new HiloDef {Increment = 6, MaxLo = 66});
+                _.Schema.For<IntDoc>().HiloSettings(new HiloSettings {Increment = 6, MaxLo = 66});
                 _.Connection("something");
             });
 
@@ -75,7 +75,7 @@ namespace Marten.Testing.Schema.Sequences
         }
     }
 
-    [HiLoSequence(Increment = 3, MaxLo = 33)]
+    [HiloSequence(Increment = 3, MaxLo = 33)]
     public class OverriddenHiloDoc
     {
         public int Id { get; set; }

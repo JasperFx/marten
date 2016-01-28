@@ -81,9 +81,9 @@ namespace Marten
                 return this;
             }
 
-            public DocumentMappingExpression<T> HiLoSettings(HiloDef settings)
+            public DocumentMappingExpression<T> HiloSettings(HiloSettings settings)
             {
-                alter = mapping => mapping.HiLoSettings(settings);
+                alter = mapping => mapping.HiloSettings(settings);
                 return this;
             }    
 

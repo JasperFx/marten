@@ -124,7 +124,7 @@
     <Compile Include="Schema\PropertySearchingAttribute.cs" />
     <Compile Include="Schema\SchemaBuilder.cs" />
     <Compile Include="Schema\SearchableAttribute.cs" />
-    <Compile Include="Schema\Sequences\HiloDef.cs" />
+    <Compile Include="Schema\Sequences\HiloSettings.cs" />
     <Compile Include="Schema\Sequences\HiLoSequence.cs" />
     <Compile Include="Schema\Sequences\ISequence.cs" />
     <Compile Include="Schema\Sequences\ISequences.cs" />

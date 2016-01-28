@@ -4,25 +4,25 @@ using Marten.Schema.Sequences;
 namespace Marten.Schema
 {
     [AttributeUsage(AttributeTargets.Class)]
-    public class HiLoSequenceAttribute : MartenAttribute
+    public class HiloSequenceAttribute : MartenAttribute
     {
-        private readonly HiloDef _def = new HiloDef();
+        private readonly HiloSettings _settings = new HiloSettings();
 
         public int Increment
         {
-            set { _def.Increment = value; }
-            get { return _def.Increment; }
+            set { _settings.Increment = value; }
+            get { return _settings.Increment; }
         }
 
         public int MaxLo
         {
-            set { _def.MaxLo = value; }
-            get { return _def.MaxLo; }
+            set { _settings.MaxLo = value; }
+            get { return _settings.MaxLo; }
         }
 
         public override void Modify(DocumentMapping mapping)
         {
-            mapping.HiLoSettings(_def);
+            mapping.HiloSettings(_settings);
         }
     }
 }
