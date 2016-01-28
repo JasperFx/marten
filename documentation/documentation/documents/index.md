@@ -14,6 +14,8 @@ with Marten can be as simple as opening a `DocumentStore` to your new Postgresql
 The code sample above sets up document storage against the Postgresql at the connection string you supplied. In this "quickstart" configuration,
 Marten will build new database tables and functions for each new document type as needed **if those database schema objects do not already exist**.
 
+<div class="alert alert-info">As of Marten v0.6, document storage tables will also be dropped and rebuilt if the actual database table does not match up with the document storage configuration. So if you add a searchable field or change the id type of a document type, Marten will regenerate the database schema objects when running with AutoCreateSchemaObjects = true.</div>
+
 While the default "auto-create" database schema objects is fantastic for a development time experience, you may not want Marten to be building out new database schema objects at production time. You might also want to override the default JSON serialization, tweak the document storage for performance, or opt into Postgresql 9.5's fancy new "upsert" capability. For customization, you have a different syntax for bootstrapping a `DocumentStore`:
 
 <[sample:start_a_complex_store]>

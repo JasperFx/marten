@@ -43,7 +43,10 @@ var store = DocumentStore.For(_ =>
     {
         public int Id;
 
-        [Searchable]
+        // You can optionally override the Postgresql
+        // type for the duplicated column in the document
+        // storage table
+        [Searchable(PgType = "text")]
         public string Category;
     }
     // ENDSAMPLE
@@ -57,8 +60,9 @@ var store = DocumentStore.For(_ =>
             For<User>().GinIndexJsonData();
 
             // Adds a basic btree index to the duplicated
-            // field for this property
-            For<User>().Searchable(x => x.FirstName);
+            // field for this property that also overrides
+            // the Postgresql database type for the column
+            For<User>().Searchable(x => x.FirstName, pgType: "varchar(50)");
 
             // Customize the index on the duplicated field
             // for FirstName 

@@ -48,8 +48,13 @@ namespace Marten.Testing.Linq
         [Fact]
         public void can_query_with_an_any_operator()
         {
-            theSession.Query<Target>().Where(x => x.Children.Any(_ => _.Number == 6))
-                .ToArray()
+            // SAMPLE: any-query-through-child-collections
+            var results = theSession.Query<Target>()
+                .Where(x => x.Children.Any(_ => _.Number == 6))
+                .ToArray();
+            // ENDSAMPLE
+
+            results
                 .Select(x => x.Id)
                 .ShouldHaveTheSameElementsAs(targets[5].Id, targets[9].Id, targets[12].Id);
         }
@@ -57,8 +62,14 @@ namespace Marten.Testing.Linq
         [Fact]
         public void can_query_with_an_any_operator_that_does_a_multiple_search_within_the_collection()
         {
-            theSession.Query<Target>().Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
-                .ToArray()
+            // SAMPLE: any-query-through-child-collection-with-and
+            var results = theSession
+                .Query<Target>()
+                .Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
+                .ToArray();
+            // ENDSAMPLE
+
+            results
                 .Select(x => x.Id)
                 .ShouldHaveTheSameElementsAs(targets[5].Id, targets[9].Id);
         }
