@@ -31,7 +31,7 @@ namespace Marten.Services
 
         public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<string>> json, CancellationToken token) where T : class
         {
-            var jsonString = await json(token);
+            var jsonString = await json(token).ConfigureAwait(false);
             return Get<T>(id, jsonString);
         }
 

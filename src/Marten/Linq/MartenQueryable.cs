@@ -17,10 +17,10 @@ namespace Marten.Linq
         {
         }
 
-        public async Task<IEnumerable<T>> ExecuteCollectionAsync(CancellationToken token)
+        public Task<IEnumerable<T>> ExecuteCollectionAsync(CancellationToken token)
         {
             var queryProvider = (IMartenQueryProvider)Provider;
-            return await queryProvider.ExecuteCollectionAsync<T>(Expression, token);
+            return queryProvider.ExecuteCollectionAsync<T>(Expression, token);
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Marten.Services
 
         public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<string>> json, CancellationToken token) where T : class
         {
-            var text = await json(token);
+            var text = await json(token).ConfigureAwait(false);
             return Get<T>(id, text);
         }
 

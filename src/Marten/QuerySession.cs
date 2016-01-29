@@ -87,9 +87,9 @@ namespace Marten
             return load<T>(id);
         }
 
-        public async Task<T> LoadAsync<T>(string id, CancellationToken token) where T : class
+        public Task<T> LoadAsync<T>(string id, CancellationToken token) where T : class
         {
-            return await loadAsync<T>(id, token).ConfigureAwait(false);
+            return loadAsync<T>(id, token);
         }
 
         public T Load<T>(ValueType id) where T : class
@@ -97,9 +97,9 @@ namespace Marten
             return load<T>(id);
         }
 
-        public async Task<T> LoadAsync<T>(ValueType id, CancellationToken token) where T : class
+        public Task<T> LoadAsync<T>(ValueType id, CancellationToken token) where T : class
         {
-            return await loadAsync<T>(id, token).ConfigureAwait(false);
+            return loadAsync<T>(id, token);
         }
 
         private T load<T>(object id) where T : class
@@ -110,11 +110,11 @@ namespace Marten
             });
         }
 
-        private async Task<T> loadAsync<T>(object id, CancellationToken token) where T : class
+        private Task<T> loadAsync<T>(object id, CancellationToken token) where T : class
         {
-            return await _documentMap.GetAsync<T>(id, async getAsyncToken =>
+            return _documentMap.GetAsync<T>(id, getAsyncToken =>
             {
-                return await findJsonByIdAsync<T>(id, getAsyncToken);
+                return findJsonByIdAsync<T>(id, getAsyncToken);
             }, token);
         }
 
@@ -133,14 +133,14 @@ namespace Marten
             return findJsonById<T>(id);
         }
 
-        public async Task<string> FindJsonByIdAsync<T>(string id, CancellationToken token) where T : class
+        public Task<string> FindJsonByIdAsync<T>(string id, CancellationToken token) where T : class
         {
-            return await findJsonByIdAsync<T>(id, token).ConfigureAwait(false);
+            return findJsonByIdAsync<T>(id, token);
         }
 
-        public async Task<string> FindJsonByIdAsync<T>(ValueType id, CancellationToken token) where T : class
+        public Task<string> FindJsonByIdAsync<T>(ValueType id, CancellationToken token) where T : class
         {
-            return await findJsonByIdAsync<T>(id, token).ConfigureAwait(false);
+            return findJsonByIdAsync<T>(id, token);
         }
 
         private string findJsonById<T>(object id)
@@ -155,15 +155,15 @@ namespace Marten
             });
         }
 
-        private async Task<string> findJsonByIdAsync<T>(object id, CancellationToken token)
+        private Task<string> findJsonByIdAsync<T>(object id, CancellationToken token)
         {
             var storage = _schema.StorageFor(typeof(T));
 
-            return await _runner.ExecuteAsync(async (conn, executeAsyncToken) =>
+            return _runner.ExecuteAsync(async (conn, executeAsyncToken) =>
             {
                 var loader = storage.LoaderCommand(id);
                 loader.Connection = conn;
-                var result = await loader.ExecuteScalarAsync(executeAsyncToken);
+                var result = await loader.ExecuteScalarAsync(executeAsyncToken).ConfigureAwait(false);
                 return result as string; // Maybe do this as a stream later for big docs?
             }, token);
         }
@@ -255,15 +255,15 @@ namespace Marten
                 await _parent._runner.ExecuteAsync(async (conn, tkn) =>
                 {
                     cmd.Connection = conn;
-                    using (var reader = await cmd.ExecuteReaderAsync(tkn))
+                    using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                     {
-                        while (await reader.ReadAsync(tkn))
+                        while (await reader.ReadAsync(tkn).ConfigureAwait(false))
                         {
                             var doc = ReadDoc(reader);
                             list.Add(doc);
                         }
                     }
-                }, token);
+                }, token).ConfigureAwait(false);
 
                 return list;
             }

@@ -50,14 +50,12 @@ namespace Marten.Services
 
                     cmd.ExecuteNonQuery();
                 }
-
-
             });
         }
 
-        public async Task ExecuteAsync(CancellationToken token)
+        public Task ExecuteAsync(CancellationToken token)
         {
-            await _runner.ExecuteInTransactionAsync(async (conn, tx, tkn) =>
+            return _runner.ExecuteInTransactionAsync(async (conn, tx, tkn) =>
             {
                 foreach (var batch in _commands.ToArray())
                 {
@@ -65,7 +63,7 @@ namespace Marten.Services
                     cmd.Connection = conn;
                     cmd.Transaction = tx;
 
-                    await cmd.ExecuteNonQueryAsync(tkn);
+                    await cmd.ExecuteNonQueryAsync(tkn).ConfigureAwait(false);
                 }                
             }, token);
         }
