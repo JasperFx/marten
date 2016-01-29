@@ -40,7 +40,7 @@ namespace Marten.Services
 
                 try
                 {
-                    await action(conn, token);
+                    await action(conn, token).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -75,7 +75,7 @@ namespace Marten.Services
 
                 try
                 {
-                    return await func(conn, token);
+                    return await func(conn, token).ConfigureAwait(false);
                 }
                 finally
                 {

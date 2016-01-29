@@ -129,7 +129,7 @@ namespace Marten.Linq
 
             if (queryModel.MainFromClause.ItemType == typeof(T))
             {
-                var queryJsonAsync = await _runner.QueryJsonAsync(command, token);
+                var queryJsonAsync = await _runner.QueryJsonAsync(command, token).ConfigureAwait(false);
                 return queryJsonAsync.Select(_serializer.FromJson<T>);
             }
 
@@ -141,13 +141,13 @@ namespace Marten.Linq
             var scalarResultOperator = queryModel.ResultOperators.SingleOrDefault(x => _scalarResultOperators.Contains(x.GetType()));
             if (scalarResultOperator != null)
             {
-                return await ExecuteScalar<T>(scalarResultOperator, queryModel, token);
+                return await ExecuteScalar<T>(scalarResultOperator, queryModel, token).ConfigureAwait(false);
             }
 
             var choiceResultOperator = queryModel.ResultOperators.OfType<ChoiceResultOperatorBase>().Single();
 
             var cmd = BuildCommand(queryModel);
-            var enumerable = await _runner.QueryJsonAsync(cmd, token);
+            var enumerable = await _runner.QueryJsonAsync(cmd, token).ConfigureAwait(false);
             var all = enumerable.ToArray();
 
             if (choiceResultOperator.ReturnDefaultWhenEmpty && all.Length == 0)
@@ -173,7 +173,7 @@ namespace Marten.Linq
             return _serializer.FromJson<T>(data);
         }
 
-        private async Task<T> ExecuteScalar<T>(ResultOperatorBase scalarResultOperator, QueryModel queryModel, CancellationToken token)
+        private Task<T> ExecuteScalar<T>(ResultOperatorBase scalarResultOperator, QueryModel queryModel, CancellationToken token)
         {
             var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
             var documentQuery = new DocumentQuery(mapping, queryModel, _serializer);
@@ -184,10 +184,10 @@ namespace Marten.Linq
             {
                 var anyCommand = documentQuery.ToAnyCommand();
 
-                return await _runner.ExecuteAsync(async (conn, tkn) =>
+                return _runner.ExecuteAsync(async (conn, tkn) =>
                 {
                     anyCommand.Connection = conn;
-                    var result = await anyCommand.ExecuteScalarAsync(tkn);
+                    var result = await anyCommand.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                     return (T)result;
                 }, token);
             }
@@ -196,10 +196,10 @@ namespace Marten.Linq
             {
                 var countCommand = documentQuery.ToCountCommand();
 
-                return await _runner.ExecuteAsync(async (conn, tkn) =>
+                return _runner.ExecuteAsync(async (conn, tkn) =>
                 {
                     countCommand.Connection = conn;
-                    var returnValue = await countCommand.ExecuteScalarAsync(tkn);
+                    var returnValue = await countCommand.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                     return Convert.ToInt32(returnValue).As<T>();
                 }, token);
             }
@@ -208,10 +208,10 @@ namespace Marten.Linq
             {
                 var countCommand = documentQuery.ToCountCommand();
 
-                return await _runner.ExecuteAsync(async (conn, tkn) =>
+                return _runner.ExecuteAsync(async (conn, tkn) =>
                 {
                     countCommand.Connection = conn;
-                    var returnValue = await countCommand.ExecuteScalarAsync(tkn);
+                    var returnValue = await countCommand.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                     return Convert.ToInt64(returnValue).As<T>();
                 }, token);
             }

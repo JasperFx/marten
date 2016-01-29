@@ -86,10 +86,10 @@ namespace Marten
             _unitOfWork.ApplyChanges(batch);
         }
 
-        public async Task SaveChangesAsync(CancellationToken token)
+        public Task SaveChangesAsync(CancellationToken token)
         {
             var batch = new UpdateBatch(_options, _serializer, _runner);
-            await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
+            return _unitOfWork.ApplyChangesAsync(batch, token);
         }
     }
 }

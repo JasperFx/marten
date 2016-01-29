@@ -23,16 +23,16 @@ namespace Marten.Services
             });
         }
 
-        public static async Task<int> ExecuteAsync(this ICommandRunner runner, string sql, CancellationToken token)
+        public static Task<int> ExecuteAsync(this ICommandRunner runner, string sql, CancellationToken token)
         {
-            return await runner.ExecuteAsync(async (conn, tkn) =>
+            return runner.ExecuteAsync(async (conn, tkn) =>
             {
                 using (var command = conn.CreateCommand())
                 {
                     command.CommandText = sql;
-                    return await command.ExecuteNonQueryAsync(tkn);
+                    return await command.ExecuteNonQueryAsync(tkn).ConfigureAwait(false);
                 }
-            }, token).ConfigureAwait(false);
+            }, token);
         }
 
 
@@ -64,9 +64,9 @@ namespace Marten.Services
                 cmd.Connection = conn;
 
                 var list = new List<string>();
-                using (var reader = await cmd.ExecuteReaderAsync(tkn))
+                using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                 {
-                    while (await reader.ReadAsync(tkn))
+                    while (await reader.ReadAsync(tkn).ConfigureAwait(false))
                     {
                         list.Add(reader.GetString(0));
                     }
@@ -99,15 +99,15 @@ namespace Marten.Services
             });
         }
 
-        public static async Task ExecuteInTransactionAsync(this ICommandRunner runner, Func<NpgsqlConnection, NpgsqlTransaction, CancellationToken, Task> action, CancellationToken token)
+        public static Task ExecuteInTransactionAsync(this ICommandRunner runner, Func<NpgsqlConnection, NpgsqlTransaction, CancellationToken, Task> action, CancellationToken token)
         {
-            await runner.ExecuteAsync(async (conn, tkn) =>
+            return runner.ExecuteAsync(async (conn, tkn) =>
             {
                 using (var tx = conn.BeginTransaction())
                 {
                     try
                     {
-                        await action(conn, tx, tkn);
+                        await action(conn, tx, tkn).ConfigureAwait(false);
 
                         tx.Commit();
                     }
@@ -117,7 +117,7 @@ namespace Marten.Services
                         throw;
                     }
                 }
-            }, token).ConfigureAwait(false);
+            }, token);
         }
 
         public static IList<string> GetStringList(this ICommandRunner runner, string sql, params object[] parameters)
@@ -174,17 +174,17 @@ namespace Marten.Services
             });
         }
 
-        public static async Task<T> QueryScalarAsync<T>(this ICommandRunner runner, string sql, CancellationToken token)
+        public static Task<T> QueryScalarAsync<T>(this ICommandRunner runner, string sql, CancellationToken token)
         {
-            return await runner.ExecuteAsync(async (conn, tkn) =>
+            return runner.ExecuteAsync(async (conn, tkn) =>
             {
                 using (var command = conn.CreateCommand())
                 {
                     command.CommandText = sql;
-                    var result = await command.ExecuteScalarAsync(tkn);
+                    var result = await command.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                     return (T)result;
                 }
-            }, token).ConfigureAwait(false);
+            }, token);
         }
     }
 }
