@@ -34,7 +34,7 @@ namespace Marten.Schema
             var updates = "data = doc";
             if (duplicates.Any())
             {
-                updates += ", " + duplicates.Select(x => $"{x.Column} = {x.Arg}").Join(", ");
+                updates += ", " + duplicates.Select(x => $"\"{x.Column}\" = {x.Arg}").Join(", ");
             }
 
             if (schema != null && schema.UpsertType == PostgresUpsertType.Legacy)
@@ -42,7 +42,7 @@ namespace Marten.Schema
                 var inserts = "id, data";
                 if (duplicates.Any())
                 {
-                    inserts += ", " + duplicates.Select(x => x.Column).Join(", ");
+                    inserts += ", " + duplicates.Select(x => $"\"{x.Column}\"").Join(", ");
                 }
                 writer.WriteLine($"CREATE OR REPLACE FUNCTION {mapping.UpsertName}({argList}) RETURNS VOID AS");
                 writer.WriteLine("$$");
