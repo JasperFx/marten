@@ -20,13 +20,10 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void When_Property_Is_Null_Exception_Should_Be_Null_Reference_Exception()
         {
-            var ex = Exception<BadLinqExpressionException>.ShouldBeThrownBy(() =>
+            Exception<BadLinqExpressionException>.ShouldBeThrownBy(() =>
             {
                 theSession.Query<TestClass>().Where(x => x.Id == TestNullObject.Id).ToList();
             });
-
-            Debug.WriteLine(ex);
-
         }
     }
 }

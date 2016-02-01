@@ -29,8 +29,16 @@ namespace Marten.Linq
 
         public static void CreateDictionaryForSearch(BinaryExpression binary, IDictionary<string, object> dict)
         {
+            var expressionValue = MartenExpressionParser.Value(binary.Right);
+            var memberExpression = binary.Left;
+
+            CreateDictionaryForSearch(dict, memberExpression, expressionValue);
+        }
+
+        public static void CreateDictionaryForSearch(IDictionary<string, object> dict, Expression memberExpression, object expressionValue)
+        {
             var visitor = new FindMembers();
-            visitor.Visit(binary.Left);
+            visitor.Visit(memberExpression);
 
             var members = visitor.Members;
 
@@ -38,7 +46,7 @@ namespace Marten.Linq
             {
                 var temp = new Dictionary<string, object>();
                 var member = members.Last();
-                var value = MartenExpressionParser.Value(binary.Right);
+                var value = expressionValue;
                 temp.Add(member.Name, value);
 
                 members.Reverse().Skip(1).Each(m => { temp = new Dictionary<string, object> {{m.Name, temp}}; });
@@ -49,10 +57,9 @@ namespace Marten.Linq
             else
             {
                 var member = members.Single();
-                var value = MartenExpressionParser.Value(binary.Right);
+                var value = expressionValue;
                 dict.Add(member.Name, value);
             }
-
         }
 
         public string ToSql(NpgsqlCommand command)
@@ -62,21 +69,18 @@ namespace Marten.Linq
             return $"data @> '{json}'";
         }
 
-        public static IWhereFragment SimpleArrayContains(ISerializer serializer, QueryModel queryModel,
-            ContainsResultOperator contains)
+        public static IWhereFragment SimpleArrayContains(ISerializer serializer, Expression from,
+            object value)
         {
-            var from = queryModel.MainFromClause.FromExpression;
             var visitor = new FindMembers();
             visitor.Visit(from);
 
             var members = visitor.Members;
 
-            var constant = contains.Item as ConstantExpression;
-
-            if (constant != null)
+            if (value != null)
             {
-                var array = Array.CreateInstance(constant.Type, 1);
-                array.SetValue(constant.Value, 0);
+                var array = Array.CreateInstance(value.GetType(), 1);
+                array.SetValue(value, 0);
 
                 var dict = new Dictionary<string, object>();
                 dict.Add(members.Last().Name, array);

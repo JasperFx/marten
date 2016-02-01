@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Marten.Services;
 using Xunit;
@@ -62,6 +63,60 @@ namespace Marten.Testing.Linq
             theSession.Query<DocWithArrays>().Where(x => x.Dates.Contains(DateTime.Today.AddDays(2))).ToArray()
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
+
+        [Fact]
+        public void query_against_number_list()
+        {
+            var doc1 = new DocWithLists { Numbers = new List<int> { 1, 2, 3 } };
+            var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
+            var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7 } };
+
+
+            theSession.Store(doc1);
+            theSession.Store(doc2);
+            theSession.Store(doc3);
+
+            theSession.SaveChanges();
+
+            theSession.Query<DocWithLists>().Where(x => x.Numbers.Contains(3)).ToArray()
+                .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
+        }
+
+        [Fact]
+        public void query_against_number_IList()
+        {
+            var doc1 = new DocWithLists2 { Numbers = new List<int> { 1, 2, 3 } };
+            var doc2 = new DocWithLists2 { Numbers = new List<int> { 3, 4, 5 } };
+            var doc3 = new DocWithLists2 { Numbers = new List<int> { 5, 6, 7 } };
+
+
+            theSession.Store(doc1);
+            theSession.Store(doc2);
+            theSession.Store(doc3);
+
+            theSession.SaveChanges();
+
+            theSession.Query<DocWithLists2>().Where(x => x.Numbers.Contains(3)).ToArray()
+                .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
+        }
+
+        [Fact]
+        public void query_against_number_IEnumerable()
+        {
+            var doc1 = new DocWithLists3 { Numbers = new List<int> { 1, 2, 3 } };
+            var doc2 = new DocWithLists3 { Numbers = new List<int> { 3, 4, 5 } };
+            var doc3 = new DocWithLists3 { Numbers = new List<int> { 5, 6, 7 } };
+
+
+            theSession.Store(doc1);
+            theSession.Store(doc2);
+            theSession.Store(doc3);
+
+            theSession.SaveChanges();
+
+            theSession.Query<DocWithLists3>().Where(x => x.Numbers.Contains(3)).ToArray()
+                .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
+        }
     }
 
     public class DocWithArrays
@@ -73,5 +128,29 @@ namespace Marten.Testing.Linq
         public string[] Strings;
 
         public DateTime[] Dates;
+    }
+
+    public class DocWithLists
+    {
+        public Guid Id;
+
+        public List<int> Numbers;
+
+    }
+
+    public class DocWithLists2
+    {
+        public Guid Id;
+
+        public IList<int> Numbers;
+
+    }
+
+    public class DocWithLists3
+    {
+        public Guid Id;
+
+        public IEnumerable<int> Numbers;
+
     }
 }

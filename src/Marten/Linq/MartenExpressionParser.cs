@@ -77,7 +77,7 @@ namespace Marten.Linq
                 var contains = expression.QueryModel.ResultOperators.OfType<ContainsResultOperator>().FirstOrDefault();
                 if (contains != null)
                 {
-                    return ContainmentWhereFragment.SimpleArrayContains(_serializer, expression.QueryModel, contains);
+                    return ContainmentWhereFragment.SimpleArrayContains(_serializer, expression.QueryModel.MainFromClause.FromExpression, Value(contains.Item));
                 }
             }
 
@@ -124,6 +124,13 @@ namespace Marten.Linq
                     var locator = JsonLocator(mapping, @object);
                     var value = Value(expression.Arguments.Single()).As<string>();
                     return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value + "%");
+                }
+
+                if (@object.Type.IsGenericEnumerable())
+                {
+                    var value = Value(expression.Arguments.Single());
+                    return ContainmentWhereFragment.SimpleArrayContains(_serializer, @object,
+                        value);
                 }
             }
 
