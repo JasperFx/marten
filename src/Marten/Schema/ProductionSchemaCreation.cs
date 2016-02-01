@@ -7,7 +7,10 @@ namespace Marten.Schema
     {
         public void CreateSchema(IDocumentSchema schema, DocumentMapping mapping)
         {
-            throw new InvalidOperationException("No document storage exists for type {0} and cannot be created dynamically in production mode".ToFormat(mapping.DocumentType.FullName));
+            var className = nameof(StoreOptions);
+            var propName = nameof(StoreOptions.AutoCreateSchemaObjects);
+
+            throw new InvalidOperationException($"No document storage exists for type {mapping.DocumentType.FullName} and cannot be created dynamically unless the {className}.{propName} = true. See http://jasperfx.github.io/marten/documentation/documents/ for more information");
         }
 
         public void RunScript(string script)
