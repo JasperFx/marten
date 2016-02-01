@@ -116,7 +116,7 @@ namespace Marten.Schema
                 }).Join("\n");
             }
 
-
+            var typeName = mapping.DocumentType.IsNested ? $"{mapping.DocumentType.DeclaringType.Name}.{mapping.DocumentType.Name}" : mapping.DocumentType.Name;
 
             var storageArguments = mapping.IdStrategy.ToArguments();
             var ctorArgs = storageArguments.Select(x => x.ToCtorArgument()).Join(", ");
@@ -125,7 +125,7 @@ namespace Marten.Schema
 
             writer.Write(
                 $@"
-BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{mapping.DocumentType.Name}>, IdAssignment<{mapping.DocumentType.Name}>
+BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{typeName}>, IdAssignment<{typeName}>
 
 {fields}
 
@@ -133,10 +133,10 @@ BLOCK:public {mapping.DocumentType.Name}Storage({ctorArgs})
 {ctorLines}
 END
 
-public Type DocumentType => typeof ({mapping.DocumentType.Name});
+public Type DocumentType => typeof ({typeName});
 
 BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
-return UpsertCommand(({mapping.DocumentType.Name})document, json);
+return UpsertCommand(({typeName})document, json);
 END
 
 BLOCK:public NpgsqlCommand LoaderCommand(object id)
@@ -148,7 +148,7 @@ return new NpgsqlCommand(`delete from {mapping.TableName} where id = :id`).With(
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForEntity(object entity)
-return DeleteCommandForId((({mapping.DocumentType.Name})entity).{mapping.IdMember.Name});
+return DeleteCommandForId((({typeName})entity).{mapping.IdMember.Name});
 END
 
 BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
@@ -156,31 +156,31 @@ return new NpgsqlCommand(`select data, id from {mapping.TableName} where id = AN
 END
 
 
-BLOCK:public NpgsqlCommand UpsertCommand({mapping.DocumentType.Name} document, string json)
+BLOCK:public NpgsqlCommand UpsertCommand({typeName} document, string json)
 return new NpgsqlCommand(`{mapping.UpsertName}`)
     .AsSproc()
     .With(`id`, document.{mapping.IdMember.Name})
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
 END
 
-BLOCK:public object Assign({mapping.DocumentType.Name} document)
+BLOCK:public object Assign({typeName} document)
 {mapping.IdStrategy.AssignmentBodyCode(mapping.IdMember)}
 return document.{mapping.IdMember.Name};
 END
 
-BLOCK:public object Retrieve({mapping.DocumentType.Name} document)
+BLOCK:public object Retrieve({typeName} document)
 return document.{mapping.IdMember.Name};
 END
 
 public NpgsqlDbType IdType => NpgsqlDbType.{id_NpgsqlDbType.ToString()};
 
 BLOCK:public object Identity(object document)
-return (({mapping.DocumentType})document).{mapping.IdMember.Name};
+return (({typeName})document).{mapping.IdMember.Name};
 END
 
-{toUpdateBatchMethod(mapping, id_NpgsqlDbType)}
+{toUpdateBatchMethod(mapping, id_NpgsqlDbType, typeName)}
 
-BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{mapping.DocumentType.Name}> documents)
+BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{typeName}> documents)
 BLOCK:using (var writer = conn.BeginBinaryImport(`COPY {mapping.TableName}(id, data{duplicatedFieldsInBulkLoading}) FROM STDIN BINARY`))
 BLOCK:foreach (var x in documents)
 writer.StartRow();
@@ -196,19 +196,19 @@ END
 ");
         }
 
-        private static string toUpdateBatchMethod(DocumentMapping mapping, NpgsqlDbType idNpgsqlDbType)
+        private static string toUpdateBatchMethod(DocumentMapping mapping, NpgsqlDbType idNpgsqlDbType, string typeName)
         {
             var extras =
                 mapping.DuplicatedFields.Select(x => x.ToUpdateBatchParam()).Join("");
 
             return $@"
 BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity)
-var document = ({mapping.DocumentType})entity;
+var document = ({typeName})entity;
 batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name}, NpgsqlDbType.{idNpgsqlDbType}).JsonEntity(document){extras};
 END
 
 BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity, string json)
-var document = ({mapping.DocumentType})entity;
+var document = ({typeName})entity;
 batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name}, NpgsqlDbType.{idNpgsqlDbType}).JsonBody(json){extras};
 END
 ";
