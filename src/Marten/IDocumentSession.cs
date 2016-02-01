@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Services;
 
 namespace Marten
 {
@@ -111,6 +112,8 @@ namespace Marten
         /// <param name="parameters"></param>
         /// <returns></returns>
         Task<IEnumerable<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters);
+
+        IBatchedQuery CreateBatchQuery();
     }
 
     /// <summary>

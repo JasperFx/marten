@@ -70,6 +70,7 @@
     <Compile Include="Schema\SubClassMapping.cs" />
     <Compile Include="Schema\UpsertFunction.cs" />
     <Compile Include="Services\BatchCommand.cs" />
+    <Compile Include="Services\Batching.cs" />
     <Compile Include="Services\CommandRunner.cs" />
     <Compile Include="Services\CommandRunnerExtensions.cs" />
     <Compile Include="Services\Diagnostics.cs" />
