@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.Serialization;
 using Baseline;
 using Marten.Schema;
 using Marten.Util;
@@ -202,6 +203,14 @@ namespace Marten.Linq
 
         public static object Value(Expression expression)
         {
+            if (expression is PartialEvaluationExceptionExpression)
+            {
+                var partialEvaluationExceptionExpression = expression.As<PartialEvaluationExceptionExpression>();
+                var inner = partialEvaluationExceptionExpression.Exception;
+
+                throw new BadLinqExpressionException($"Error in value expression inside of the query for '{partialEvaluationExceptionExpression.EvaluatedExpression}'. See the inner exception:", inner);
+            }
+
             if (expression is ConstantExpression)
             {
                 // TODO -- handle nulls
@@ -237,6 +246,18 @@ namespace Marten.Linq
             Members.Insert(0, node.Member);
 
             return base.VisitMember(node);
+        }
+    }
+
+    [Serializable]
+    public class BadLinqExpressionException : Exception
+    {
+        public BadLinqExpressionException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected BadLinqExpressionException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
         }
     }
 }

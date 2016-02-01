@@ -46,7 +46,7 @@
     </Compile>
     <Compile Include="auto_assign_missing_guid_ids_Tests.cs" />
     <Compile Include="Bugs\ability_to_persist_nested_types_Tests.cs" />
-    <Compile Include="Bugs\Nested.cs" />
+    <Compile Include="Bugs\Bug118_bad_exception_message_Tests.cs" />
     <Compile Include="bulk_loading_Tests.cs" />
     <Compile Include="document_session_storing_from_another_assembly_Tests.cs" />
     <Compile Include="codegen_spike.cs" />
