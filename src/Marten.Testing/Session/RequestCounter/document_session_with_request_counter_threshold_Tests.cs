@@ -43,7 +43,7 @@ namespace Marten.Testing.Session.RequestCounter
             var store1 = DocumentStore.For(opt =>
             {
                 opt.Connection("some connection string");
-                opt.RequestCounterThreshold = new RequestCounterThreshold(1, () =>
+                opt.RequestCounterThreshold = new RequestCounterThreshold(25, () =>
                 {
                     Debug.WriteLine("Too many database requests!");
                 });
@@ -59,7 +59,7 @@ namespace Marten.Testing.Session.RequestCounter
                 // to opt into the request counter threshold
                 if (isOurAppInDevelopmentMode())
                 {
-                    opt.RequestCounterThreshold = new RequestCounterThreshold(1, () =>
+                    opt.RequestCounterThreshold = new RequestCounterThreshold(25, () =>
                     {
                         throw new InvalidOperationException("Too many database requests!");
                     });
