@@ -165,12 +165,24 @@ namespace Marten.Schema
 
         public static string TableNameFor(Type documentType)
         {
-            return "mt_doc_" + documentType.Name.ToLower();
+            return "mt_doc_" + DocumentPersistentName(documentType);
         }
 
         public static string UpsertNameFor(Type documentType)
         {
-            return "mt_upsert_" + documentType.Name.ToLower();
+            return "mt_upsert_" + DocumentPersistentName(documentType);
+        }
+
+        private static string DocumentPersistentName(Type documentType)
+        {
+            var parts = new List<string>();
+            parts.Add(documentType.Name.ToLower());
+            if (documentType.IsNested)
+            {
+                parts.Insert(0, documentType.DeclaringType.Name.ToLower());
+            }
+
+            return string.Join("_", parts);
         }
 
         public IField FieldFor(MemberInfo member)

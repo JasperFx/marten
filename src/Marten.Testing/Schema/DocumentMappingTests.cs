@@ -69,7 +69,7 @@ namespace Marten.Testing.Schema
 
             var sql = builder.ToString();
 
-            sql.ShouldContain("CREATE TABLE mt_doc_myspecialdocument");
+            sql.ShouldContain("CREATE TABLE mt_doc_documentmappingtests_myspecialdocument");
             sql.ShouldContain("jsonb NOT NULL");
         }
 
@@ -133,22 +133,22 @@ namespace Marten.Testing.Schema
 
             var sql = builder.ToString();
 
-            sql.ShouldContain("INSERT INTO mt_doc_myspecialdocument");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_myspecialdocument");
+            sql.ShouldContain("INSERT INTO mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void table_name_for_document()
         {
             DocumentMapping.TableNameFor(typeof (MySpecialDocument))
-                .ShouldBe("mt_doc_myspecialdocument");
+                .ShouldBe("mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void upsert_name_for_document_type()
         {
             DocumentMapping.UpsertNameFor(typeof (MySpecialDocument))
-                .ShouldBe("mt_upsert_myspecialdocument");
+                .ShouldBe("mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
