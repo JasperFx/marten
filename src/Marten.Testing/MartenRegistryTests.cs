@@ -47,7 +47,7 @@ namespace Marten.Testing
             var mapping = theSchema.MappingFor(typeof (Organization));
 
             var index = mapping.IndexesFor("name").Single();
-            index.IndexName.ShouldBe("mt_doc_organization_idx_name");
+            index.IndexName.ShouldBe("mt_doc_martenregistrytests_organization_idx_name");
             index.Columns.ShouldHaveTheSameElementsAs("name");
         }
 
