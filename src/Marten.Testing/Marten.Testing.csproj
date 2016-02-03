@@ -118,6 +118,7 @@
     <Compile Include="Linq\MartenExpressionParserTests.cs" />
     <Compile Include="Linq\query_against_dateoffset_Tests.cs" />
     <Compile Include="Linq\query_against_primitive_array_Tests.cs" />
+    <Compile Include="Linq\query_running_through_the_IdentityMap_Tests.cs" />
     <Compile Include="Linq\query_with_any_within_child_collection_Tests.cs" />
     <Compile Include="Linq\query_with_enums_Tests.cs" />
     <Compile Include="Linq\query_with_nullable_types_Tests.cs" />
