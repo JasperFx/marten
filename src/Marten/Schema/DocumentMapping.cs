@@ -137,7 +137,7 @@ namespace Marten.Schema
 
         public Type DocumentType { get; }
 
-        public string TableName { get; set; }
+        public string TableName { get; }
 
         public MemberInfo IdMember { get; set; }
 

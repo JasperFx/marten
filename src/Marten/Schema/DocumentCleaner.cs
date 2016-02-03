@@ -44,22 +44,23 @@ AND    pg_function_is_visible(oid)
 
         public void DeleteDocumentsFor(Type documentType)
         {
-            var tableName = DocumentMapping.TableNameFor(documentType);
+            var tableName = _schema.MappingFor(documentType).TableName;
             truncateTable(tableName);
         }
 
         public void DeleteDocumentsExcept(params Type[] documentTypes)
         {
-            var exemptedTables = documentTypes.Select(DocumentMapping.TableNameFor).ToArray();
+            var exemptedTables = documentTypes.Select(x => _schema.MappingFor(x).TableName).ToArray();
             _schema.DocumentTables().Where(x => !exemptedTables.Contains(x)).Each(truncateTable);
         }
 
         public void CompletelyRemove(Type documentType)
         {
-            var tableName = DocumentMapping.TableNameFor(documentType);
-            dropTable(tableName);
+            var mapping = _schema.MappingFor(documentType);
 
-            var dropTargets = _dropFunctionSql.ToFormat(DocumentMapping.UpsertNameFor(documentType));
+            dropTable(mapping.TableName);
+
+            var dropTargets = _dropFunctionSql.ToFormat(mapping.UpsertName);
             dropFunctions(dropTargets);
         }
 
