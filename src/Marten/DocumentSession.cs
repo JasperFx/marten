@@ -11,26 +11,26 @@ namespace Marten
 {
     public class DocumentSession : QuerySession, IDocumentSession
     {
-        private readonly IIdentityMap _documentMap;
+        private readonly IIdentityMap _identityMap;
         private readonly ICommandRunner _runner;
         private readonly ISerializer _serializer;
         private readonly StoreOptions _options;
         private readonly IDocumentSchema _schema;
         private readonly UnitOfWork _unitOfWork;
 
-        public DocumentSession(StoreOptions options, IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IIdentityMap documentMap) : base(schema, serializer, runner, parser, executor, documentMap)
+        public DocumentSession(StoreOptions options, IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IIdentityMap identityMap) : base(schema, serializer, runner, parser, identityMap)
         {
             _options = options;
             _schema = schema;
             _serializer = serializer;
             _runner = runner;
 
-            _documentMap = documentMap;
+            _identityMap = identityMap;
             _unitOfWork = new UnitOfWork(_schema);
 
-            if (_documentMap is IDocumentTracker)
+            if (_identityMap is IDocumentTracker)
             {
-                _unitOfWork.AddTracker(_documentMap.As<IDocumentTracker>());
+                _unitOfWork.AddTracker(_identityMap.As<IDocumentTracker>());
             }
 
         }
@@ -40,19 +40,19 @@ namespace Marten
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
             _unitOfWork.Delete(entity);
-            _documentMap.Remove<T>(_schema.StorageFor(typeof(T)).Identity(entity));
+            _identityMap.Remove<T>(_schema.StorageFor(typeof(T)).Identity(entity));
         }
 
         public void Delete<T>(ValueType id)
         {
             _unitOfWork.Delete<T>(id);
-            _documentMap.Remove<T>(id);
+            _identityMap.Remove<T>(id);
         }
 
         public void Delete<T>(string id)
         {
             _unitOfWork.Delete<T>(id);
-            _documentMap.Remove<T>(id);
+            _identityMap.Remove<T>(id);
         }
 
         public void Store<T>(T entity) where T : class
@@ -63,9 +63,9 @@ namespace Marten
             var id =storage
                 .As<IdAssignment<T>>().Assign(entity);
 
-            if (_documentMap.Has<T>(id))
+            if (_identityMap.Has<T>(id))
             {
-                var existing = _documentMap.Retrieve<T>(id);
+                var existing = _identityMap.Retrieve<T>(id);
                 if (!ReferenceEquals(existing, entity))
                 {
                     throw new InvalidOperationException(
@@ -74,7 +74,7 @@ namespace Marten
             }
             else
             {
-                _documentMap.Store(id, entity);
+                _identityMap.Store(id, entity);
             }
 
             _unitOfWork.Store(entity);

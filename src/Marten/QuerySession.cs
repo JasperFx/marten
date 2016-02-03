@@ -20,22 +20,22 @@ namespace Marten
         private readonly ISerializer _serializer;
         private readonly ICommandRunner _runner;
         private readonly IQueryParser _parser;
-        private readonly IMartenQueryExecutor _executor;
-        private readonly IIdentityMap _documentMap;
+        private readonly IIdentityMap _identityMap;
 
-        public QuerySession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IIdentityMap documentMap)
+        public QuerySession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IIdentityMap identityMap)
         {
             _schema = schema;
             _serializer = serializer;
             _runner = runner;
             _parser = parser;
-            _executor = executor;
-            _documentMap = documentMap;
+            _identityMap = identityMap;
         }
 
         public IQueryable<T> Query<T>()
         {
-            var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, _executor);
+            var executor = new MartenQueryExecutor(_runner, _schema, _serializer, _parser);
+
+            var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, executor);
             return new MartenQueryable<T>(queryProvider);
         }
 
@@ -104,7 +104,7 @@ namespace Marten
 
         private T load<T>(object id) where T : class
         {
-            return _documentMap.Get<T>(id, () =>
+            return _identityMap.Get<T>(id, () =>
             {
                 return findJsonById<T>(id);
             });
@@ -112,7 +112,7 @@ namespace Marten
 
         private Task<T> loadAsync<T>(object id, CancellationToken token) where T : class
         {
-            return _documentMap.GetAsync<T>(id, getAsyncToken =>
+            return _identityMap.GetAsync<T>(id, getAsyncToken =>
             {
                 return findJsonByIdAsync<T>(id, getAsyncToken);
             }, token);
@@ -210,14 +210,14 @@ namespace Marten
             private IEnumerable<TDoc> ConcatDocuments<TKey>(TKey[] hits, IEnumerable<TDoc> documents)
             {
                 return
-                    hits.Select(key => _parent._documentMap.Retrieve<TDoc>(key))
+                    hits.Select(key => _parent._identityMap.Retrieve<TDoc>(key))
                         .Concat(documents)
                         .ToArray();
             }
 
             private Tuple<TKey[], TKey[]> GetHitsAndMisses<TKey>(TKey[] keys)
             {
-                var hits = keys.Where(key => _parent._documentMap.Has<TDoc>(key)).ToArray();
+                var hits = keys.Where(key => _parent._identityMap.Has<TDoc>(key)).ToArray();
                 var misses = keys.Where(x => !hits.Contains(x)).ToArray();
                 return new Tuple<TKey[], TKey[]>(hits, misses);
             }
@@ -273,7 +273,7 @@ namespace Marten
                 var id = reader[1];
                 var json = reader.GetString(0);
 
-                return _parent._documentMap.Get<TDoc>(id, json);
+                return _parent._identityMap.Get<TDoc>(id, json);
             }
         }
 

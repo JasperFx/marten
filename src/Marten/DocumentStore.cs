@@ -170,7 +170,7 @@ namespace Marten
         {
             var parser = new MartenQueryParser();
             
-            return new QuerySession(Schema, _serializer, _runnerForSession(), parser, new MartenQueryExecutor(_runnerForSession(), Schema, _serializer, parser), new NulloIdentityMap(_serializer));
+            return new QuerySession(Schema, _serializer, _runnerForSession(), parser, new NulloIdentityMap(_serializer));
         }
 
 
