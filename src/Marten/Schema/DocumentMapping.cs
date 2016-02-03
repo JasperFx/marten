@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
-using System.Runtime.Serialization;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Generation;
@@ -14,22 +13,13 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    [Serializable]
-    public class InvalidDocumentException : Exception
-    {
-        public InvalidDocumentException(string message) : base(message)
-        {
-        }
-
-        protected InvalidDocumentException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
-    }
-
     public class DocumentMapping
     {
+        public const string TablePrefix = "mt_doc_";
+        private const string UpsertPrefix = "mt_upsert_";
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
         private PropertySearching _propertySearching = PropertySearching.JSON_Locator_Only;
+        private string _alias;
 
         public DocumentMapping(Type documentType) : this(documentType, new StoreOptions())
         {
@@ -39,6 +29,7 @@ namespace Marten.Schema
         public DocumentMapping(Type documentType, StoreOptions options)
         {
             DocumentType = documentType;
+            Alias = defaultDocumentAliasName(documentType);
 
             IdMember = (MemberInfo) documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
                        ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
@@ -50,10 +41,6 @@ namespace Marten.Schema
 
 
             assignIdStrategy(documentType, options);
-
-            TableName = TableNameFor(documentType);
-
-            UpsertName = UpsertNameFor(documentType);
 
             documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
 
@@ -73,6 +60,22 @@ namespace Marten.Schema
 
                 fieldInfo.ForAttribute<MartenAttribute>(att => att.Modify(this, fieldInfo));
             });
+        }
+
+        public string Alias
+        {
+            get
+            {
+                return _alias;
+            }
+            set
+            {
+                if (value.IsEmpty()) throw new ArgumentNullException(nameof(value));
+
+                _alias = value;
+                TableName = TablePrefix + _alias;
+                UpsertName = UpsertPrefix + _alias;
+            }
         }
 
         public IndexDefinition AddGinIndexToData()
@@ -133,11 +136,11 @@ namespace Marten.Schema
 
         public IIdGeneration IdStrategy { get; set; } = new StringIdGeneration();
 
-        public string UpsertName { get; }
+        public string UpsertName { get; private set; }
 
         public Type DocumentType { get; }
 
-        public string TableName { get; }
+        public string TableName { get; private set; }
 
         public MemberInfo IdMember { get; set; }
 
@@ -163,20 +166,9 @@ namespace Marten.Schema
 
         public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();
 
-        public static string TableNameFor(Type documentType)
+        private static string defaultDocumentAliasName(Type documentType)
         {
-            return "mt_doc_" + DocumentPersistentName(documentType);
-        }
-
-        public static string UpsertNameFor(Type documentType)
-        {
-            return "mt_upsert_" + DocumentPersistentName(documentType);
-        }
-
-        private static string DocumentPersistentName(Type documentType)
-        {
-            var parts = new List<string>();
-            parts.Add(documentType.Name.ToLower());
+            var parts = new List<string> {documentType.Name.ToLower()};
             if (documentType.IsNested)
             {
                 parts.Insert(0, documentType.DeclaringType.Name.ToLower());

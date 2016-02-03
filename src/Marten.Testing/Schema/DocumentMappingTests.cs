@@ -140,14 +140,14 @@ namespace Marten.Testing.Schema
         [Fact]
         public void table_name_for_document()
         {
-            DocumentMapping.TableNameFor(typeof (MySpecialDocument))
+            new DocumentMapping(typeof(MySpecialDocument)).TableName
                 .ShouldBe("mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void upsert_name_for_document_type()
         {
-            DocumentMapping.UpsertNameFor(typeof (MySpecialDocument))
+            new DocumentMapping(typeof(MySpecialDocument)).UpsertName
                 .ShouldBe("mt_upsert_documentmappingtests_myspecialdocument");
         }
 

@@ -75,14 +75,15 @@ namespace Marten.Testing.Schema
 
             var schema = Container.For<DevelopmentModeRegistry>().GetInstance<IDocumentSchema>();
             var tables = schema.SchemaTableNames();
-            tables.ShouldContain(DocumentMapping.TableNameFor(typeof (User)).ToLower());
-            tables.ShouldContain(DocumentMapping.TableNameFor(typeof (Issue)).ToLower());
-            tables.ShouldContain(DocumentMapping.TableNameFor(typeof (Company)).ToLower());
+            tables.ShouldContain(schema.MappingFor(typeof(User)).TableName);
+            tables.ShouldContain(schema.MappingFor(typeof(Issue)).TableName);
+            tables.ShouldContain(schema.MappingFor(typeof(Company)).TableName);
 
             var functions = schema.SchemaFunctionNames();
-            functions.ShouldContain(DocumentMapping.UpsertNameFor(typeof (User)).ToLower());
-            functions.ShouldContain(DocumentMapping.UpsertNameFor(typeof (Issue)).ToLower());
-            functions.ShouldContain(DocumentMapping.UpsertNameFor(typeof (Company)).ToLower());
+            functions.ShouldContain(schema.MappingFor(typeof(User)).UpsertName);
+            functions.ShouldContain(schema.MappingFor(typeof(Issue)).UpsertName);
+            functions.ShouldContain(schema.MappingFor(typeof(Company)).UpsertName);
+
         }
 
         [Fact]

@@ -1,5 +1,6 @@
 ﻿using Marten.Schema;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing
@@ -7,9 +8,34 @@ namespace Marten.Testing
     public class DocumentMappingTests
     {
         [Fact]
-        public void you_cannot_assign_a_table_name_that_is_not_prefaced_with_mt_doc()
+        public void default_alias_for_a_type_that_is_not_nested()
         {
             var mapping = DocumentMapping.For<User>();
-        } 
+            mapping.Alias.ShouldBe("user");
+        }
+
+        [Fact]
+        public void default_table_name()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.TableName.ShouldBe("mt_doc_user");
+        }
+
+        [Fact]
+        public void default_upsert_name()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.UpsertName.ShouldBe("mt_upsert_user");
+        }
+
+        [Fact]
+        public void override_the_alias()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.Alias = "users";
+
+            mapping.TableName.ShouldBe("mt_doc_users");
+            mapping.UpsertName.ShouldBe("mt_upsert_users");
+        }
     }
 }
