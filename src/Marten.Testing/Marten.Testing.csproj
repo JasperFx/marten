@@ -172,6 +172,7 @@
     <Compile Include="Schema\Sequences\SequenceFactoryTests.cs" />
     <Compile Include="show_document_storage_code_in_diagnostics_Tests.cs" />
     <Compile Include="SpecificationExtensions.cs" />
+    <Compile Include="TrackingSession\document_session_update_existing_documents_in_collection_Tests.cs" />
     <Compile Include="TrackingSession\document_session_update_existing_document_Tests.cs" />
     <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="UnitOfWorkTests.cs" />
