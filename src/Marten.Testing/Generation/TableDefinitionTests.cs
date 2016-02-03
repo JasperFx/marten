@@ -43,5 +43,41 @@ namespace Marten.Testing.Generation
 
             table2.ShouldNotBe(table1);
         }
+
+        [Fact]
+        public void equivalency_with_the_postgres_synonym_issue()
+        {
+            // This was meant to address GH-127
+
+            var users = DocumentMapping.For<User>();
+            users.DuplicateField("FirstName");
+
+            var table1 = users.ToTable(null);
+            var table2 = users.ToTable(null);
+
+            table1.Column("first_name").Type = "varchar";
+            table2.Column("first_name").Type = "character varying";
+
+            table1.Equals(table2).ShouldBeTrue();
+            table2.Equals(table1).ShouldBeTrue();
+
+            table1.Column("first_name").Type = "character varying";
+            table2.Column("first_name").Type = "varchar";
+
+            table1.Equals(table2).ShouldBeTrue();
+            table2.Equals(table1).ShouldBeTrue();
+
+            table1.Column("first_name").Type = "character varying";
+            table2.Column("first_name").Type = "character varying";
+
+            table1.Equals(table2).ShouldBeTrue();
+            table2.Equals(table1).ShouldBeTrue();
+
+            table1.Column("first_name").Type = "varchar";
+            table2.Column("first_name").Type = "varchar";
+
+            table1.Equals(table2).ShouldBeTrue();
+            table2.Equals(table1).ShouldBeTrue();
+        }
     }
 }

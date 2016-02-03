@@ -1,3 +1,5 @@
+using Marten.Util;
+
 namespace Marten.Generation
 {
     public class TableColumn
@@ -14,7 +16,7 @@ namespace Marten.Generation
 
         protected bool Equals(TableColumn other)
         {
-            return string.Equals(Name, other.Name) && string.Equals(Type, other.Type);
+            return string.Equals(Name, other.Name) && string.Equals(TypeMappings.ConvertSynonyms(Type), TypeMappings.ConvertSynonyms(other.Type));
         }
 
         public override bool Equals(object obj)
