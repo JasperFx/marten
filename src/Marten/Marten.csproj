@@ -51,6 +51,7 @@
     <Compile Include="IDiagnostics.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="Linq\CollectionAnyContainmentWhereFragment.cs" />
+    <Compile Include="Linq\CompiledQuery.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />
     <Compile Include="Linq\IMartenQueryable.cs" />
     <Compile Include="Linq\IMartenQueryProvider.cs" />
