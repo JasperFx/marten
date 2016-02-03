@@ -37,7 +37,7 @@ namespace Marten.Testing.TrackingSession
 
                 using (var session2 = CreateSession())
                 {
-                    var users = session2.Query<User>().Where(x => x.FirstName == "James").ToList();
+                    var users = session2.Query<User>().Where(x => x.FirstName == "James").OrderBy(x => x.LastName).ToList();
 
                     users.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Worthy 1 - updated", "Worthy 2 - updated", "Worthy 3 - updated");
                 }
@@ -73,7 +73,7 @@ namespace Marten.Testing.TrackingSession
 
                 using (var session2 = CreateSession())
                 {
-                    var users = session2.Query<User>().Where(x => x.FirstName == "James").ToList();
+                    var users = session2.Query<User>().Where(x => x.FirstName == "James").OrderBy(x => x.LastName).ToList();
 
                     users.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Worthy 1 - updated", "Worthy 2 - updated", "Worthy 3 - updated");
                 }
