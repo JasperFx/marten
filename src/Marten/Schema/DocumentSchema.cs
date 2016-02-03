@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -186,7 +187,7 @@ AND i.indisprimary;
 
         private IEnumerable<TableColumn> findTableColumns(string tableName)
         {
-            Func<IDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));
+            Func<DbDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));
 
             var sql = "select column_name, data_type from information_schema.columns where table_name = ? order by ordinal_position";
             return

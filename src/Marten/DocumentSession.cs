@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Remotion.Linq.Parsing.Structure;

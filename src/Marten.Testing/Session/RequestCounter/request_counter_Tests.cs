@@ -60,15 +60,6 @@ namespace Marten.Testing.Session.RequestCounter
             requestCounter.NumberOfRequests.ShouldBe(1);
         }
 
-        [Fact]
-        public void number_of_requests_should_increment_on_query_json()
-        {
-            var requestCounter = CreateCounter();
-
-            requestCounter.QueryJson(new NpgsqlCommand());
-
-            requestCounter.NumberOfRequests.ShouldBe(1);
-        }
 
         [Fact]
         public void number_of_requests_should_increment_on_query_scalar()

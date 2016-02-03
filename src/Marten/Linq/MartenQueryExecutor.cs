@@ -83,26 +83,18 @@ namespace Marten.Linq
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
             var isLast = queryModel.ResultOperators.OfType<LastResultOperator>().Any();
+            if (isLast)
+            {
+                throw new InvalidOperationException("Marten does not support Last()/LastOrDefault() querying. Reverse your ordering and use First()/FirstOrDefault() instead");
+            }
 
             // TODO -- optimize by using Top 1
             var cmd = BuildCommand(queryModel);
-            var all = _runner.QueryJson(cmd).ToArray();
+            var all = _runner.Resolve(cmd, resolver<T>(), _identityMap).ToArray();
 
             if (returnDefaultWhenEmpty && all.Length == 0) return default(T);
 
-            string data = null;
-            if (isLast)
-            {
-                data = all.Last();
-            }
-            else
-            {
-                data = all.Single();
-            }
-
-            
-
-            return _serializer.FromJson<T>(data);
+            return all.Single();
         }
 
 
@@ -112,7 +104,7 @@ namespace Marten.Linq
 
             if (queryModel.MainFromClause.ItemType == typeof (T))
             {
-				return _runner.QueryJson(command).Select(_serializer.FromJson<T>);
+                return _runner.Resolve(command, resolver<T>(), _identityMap);
             }
 
             throw new NotSupportedException("Marten does not yet support Select() projections from queryables. Use an intermediate .ToArray() or .ToList() before adding Select() clauses");
@@ -141,8 +133,7 @@ namespace Marten.Linq
 
             if (queryModel.MainFromClause.ItemType == typeof(T))
             {
-                var queryJsonAsync = await _runner.QueryJsonAsync(command, token).ConfigureAwait(false);
-                return queryJsonAsync.Select(_serializer.FromJson<T>);
+                return await _runner.ResolveAsync(command, resolver<T>(), _identityMap, token).ConfigureAwait(false);
             }
 
             throw new NotSupportedException("Marten does not yet support Select() projections from queryables. Use an intermediate .ToArray() or .ToList() before adding Select() clauses");
@@ -159,7 +150,7 @@ namespace Marten.Linq
             var choiceResultOperator = queryModel.ResultOperators.OfType<ChoiceResultOperatorBase>().Single();
 
             var cmd = BuildCommand(queryModel);
-            var enumerable = await _runner.QueryJsonAsync(cmd, token).ConfigureAwait(false);
+            var enumerable = await _runner.ResolveAsync(cmd, resolver<T>(), _identityMap, token).ConfigureAwait(false);
             var all = enumerable.ToArray();
 
             if (choiceResultOperator.ReturnDefaultWhenEmpty && all.Length == 0)
@@ -167,7 +158,6 @@ namespace Marten.Linq
                 return default(T);
             }
 
-            string data;
             if (choiceResultOperator is LastResultOperator)
             {
                 throw new InvalidOperationException("Marten does not support Last()/LastOrDefault(). Use ordering and First()/FirstOrDefault() instead");
@@ -175,14 +165,10 @@ namespace Marten.Linq
 
             if (choiceResultOperator is SingleResultOperator || choiceResultOperator is FirstResultOperator)
             {
-                data = all.Single();
-            }
-            else
-            {
-                throw new NotSupportedException();
+                return all.Single();
             }
 
-            return _serializer.FromJson<T>(data);
+            throw new NotSupportedException();
         }
 
         private Task<T> ExecuteScalar<T>(ResultOperatorBase scalarResultOperator, QueryModel queryModel, CancellationToken token)

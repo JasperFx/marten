@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Schema;
 using Marten.Util;
 using Npgsql;
 
@@ -36,6 +38,47 @@ namespace Marten.Services
         }
 
 
+        public static IEnumerable<T> Resolve<T>(this ICommandRunner runner, NpgsqlCommand cmd, IResolver<T> resolver, IIdentityMap map)
+        {
+            return runner.Execute(conn =>
+            {
+                cmd.Connection = conn;
+                var list = new List<T>();
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(resolver.Resolve(reader, map));
+                    }
+                }
+
+                return list;
+            });
+        }
+
+        public static async Task<IEnumerable<T>> ResolveAsync<T>(this ICommandRunner runner, NpgsqlCommand cmd, IResolver<T> resolver, IIdentityMap map, CancellationToken token)
+        {
+            return await runner.ExecuteAsync(async (conn, tkn) =>
+            {
+                cmd.Connection = conn;
+
+                var list = new List<T>();
+                using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
+                {
+                    while (await reader.ReadAsync(tkn).ConfigureAwait(false))
+                    {
+                        list.Add(resolver.Resolve(reader, map));
+                    }
+
+                    reader.Close();
+                }
+
+                return list;
+            }, token).ConfigureAwait(false);
+        }
+
+        [Obsolete("this needs to go away when we get to the identity map on query functionality")]
         public static IEnumerable<string> QueryJson(this ICommandRunner runner, NpgsqlCommand cmd)
         {
             return runner.Execute(conn =>
@@ -57,6 +100,7 @@ namespace Marten.Services
             });
         }
 
+        [Obsolete("this needs to go away when we get to the identity map on query functionality")]
         public static async Task<IEnumerable<string>> QueryJsonAsync(this ICommandRunner runner, NpgsqlCommand cmd, CancellationToken token)
         {
             return await runner.ExecuteAsync(async (conn, tkn) =>
@@ -147,7 +191,7 @@ namespace Marten.Services
             return list;
         }
 
-        public static IEnumerable<T> Fetch<T>(this ICommandRunner runner, string sql, Func<IDataReader, T> transform, params object[] parameters)
+        public static IEnumerable<T> Fetch<T>(this ICommandRunner runner, string sql, Func<DbDataReader, T> transform, params object[] parameters)
         {
             return runner.Execute(conn =>
             {
