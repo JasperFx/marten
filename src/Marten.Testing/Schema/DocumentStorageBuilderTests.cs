@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Documents;
 using NpgsqlTypes;
 using Shouldly;
@@ -65,7 +68,16 @@ namespace Marten.Testing.Schema
                 .ShouldBe(3);
         }
 
+        [Fact]
+        public void generates_the_resolve_method()
+        {
+            var storage = DocumentStorageBuilder.Build(null, DocumentMapping.For<User>());
+
+            storage.ShouldBeAssignableTo<IResolver<User>>();
+        }
+
     }
+
 
     public class StringDoc
     {

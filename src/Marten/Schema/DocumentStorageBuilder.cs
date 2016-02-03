@@ -2,10 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Common;
-using System.Diagnostics;
-using System.Dynamic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
 using Marten.Codegen;
@@ -42,6 +39,7 @@ namespace Marten.Schema
             generator.ReferenceAssemblyContainingType<QueryModel>();
             generator.ReferenceAssemblyContainingType<DbCommand>();
             generator.ReferenceAssemblyContainingType<Component>();
+            generator.ReferenceAssemblyContainingType<DbDataReader>();
 
             mappings.Select(x => x.DocumentType.Assembly).Distinct().Each(assem => generator.ReferenceAssembly(assem));
 
@@ -69,13 +67,25 @@ namespace Marten.Schema
         }
 
 
-
         public static string GenerateDocumentStorageCode(DocumentMapping[] mappings)
         {
             var writer = new SourceWriter();
 
             // TODO -- get rid of the magic strings
-            var namespaces = new List<string> { "System", "Marten", "Marten.Schema", "Marten.Services", "Marten.Linq", "Marten.Util", "Npgsql", "Remotion.Linq", typeof(NpgsqlDbType).Namespace, typeof(IEnumerable<>).Namespace };
+            var namespaces = new List<string>
+            {
+                "System",
+                "Marten",
+                "Marten.Schema",
+                "Marten.Services",
+                "Marten.Linq",
+                "Marten.Util",
+                "Npgsql",
+                "Remotion.Linq",
+                typeof (NpgsqlDbType).Namespace,
+                typeof (IEnumerable<>).Namespace,
+                typeof(DbDataReader).Namespace
+            };
             namespaces.AddRange(mappings.Select(x => x.DocumentType.Namespace));
 
             namespaces.Distinct().OrderBy(x => x).Each(x => writer.WriteLine($"using {x};"));
@@ -103,20 +113,20 @@ namespace Marten.Schema
 
             // TODO -- move more of this into DocumentMapping, DuplicatedField, IField, etc.
             var id_NpgsqlDbType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
-            var duplicatedFieldsInBulkLoading = mapping.DuplicatedFields.Any() 
-                ? ", " + mapping.DuplicatedFields.Select(x => x.ColumnName).Join(", ") 
+            var duplicatedFieldsInBulkLoading = mapping.DuplicatedFields.Any()
+                ? ", " + mapping.DuplicatedFields.Select(x => x.ColumnName).Join(", ")
                 : string.Empty;
 
             var duplicatedFieldsInBulkLoadingWriter = "";
             if (mapping.DuplicatedFields.Any())
             {
-                duplicatedFieldsInBulkLoadingWriter = mapping.DuplicatedFields.Select(field =>
-                {
-                    return field.ToBulkWriterCode();
-                }).Join("\n");
+                duplicatedFieldsInBulkLoadingWriter =
+                    mapping.DuplicatedFields.Select(field => { return field.ToBulkWriterCode(); }).Join("\n");
             }
 
-            var typeName = mapping.DocumentType.IsNested ? $"{mapping.DocumentType.DeclaringType.Name}.{mapping.DocumentType.Name}" : mapping.DocumentType.Name;
+            var typeName = mapping.DocumentType.IsNested
+                ? $"{mapping.DocumentType.DeclaringType.Name}.{mapping.DocumentType.Name}"
+                : mapping.DocumentType.Name;
 
             var storageArguments = mapping.IdStrategy.ToArguments();
             var ctorArgs = storageArguments.Select(x => x.ToCtorArgument()).Join(", ");
@@ -125,71 +135,109 @@ namespace Marten.Schema
 
             writer.Write(
                 $@"
-BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{typeName}>, IdAssignment<{typeName}>
+BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{typeName
+                    }>, IdAssignment<{typeName}>, IResolver<{typeName}>
 
 {fields}
 
-BLOCK:public {mapping.DocumentType.Name}Storage({ctorArgs})
+BLOCK:public {mapping.DocumentType.Name}Storage({
+                    ctorArgs})
 {ctorLines}
 END
 
-public Type DocumentType => typeof ({typeName});
+public Type DocumentType => typeof ({typeName
+                    });
 
 BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
-return UpsertCommand(({typeName})document, json);
+return UpsertCommand(({
+                    typeName
+                    })document, json);
 END
 
 BLOCK:public NpgsqlCommand LoaderCommand(object id)
-return new NpgsqlCommand(`select data from {mapping.TableName} where id = :id`).With(`id`, id);
+return new NpgsqlCommand(`select data from {
+                    mapping.TableName
+                    } where id = :id`).With(`id`, id);
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForId(object id)
-return new NpgsqlCommand(`delete from {mapping.TableName} where id = :id`).With(`id`, id);
+return new NpgsqlCommand(`delete from {
+                    mapping.TableName
+                    } where id = :id`).With(`id`, id);
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForEntity(object entity)
-return DeleteCommandForId((({typeName})entity).{mapping.IdMember.Name});
+return DeleteCommandForId((({
+                    typeName})entity).{mapping.IdMember.Name
+                    });
 END
 
 BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
-return new NpgsqlCommand(`select data, id from {mapping.TableName} where id = ANY(:ids)`).With(`ids`, ids);
+return new NpgsqlCommand(`select data, id from {
+                    mapping.TableName
+                    } where id = ANY(:ids)`).With(`ids`, ids);
 END
 
 
-BLOCK:public NpgsqlCommand UpsertCommand({typeName} document, string json)
-return new NpgsqlCommand(`{mapping.UpsertName}`)
+BLOCK:public NpgsqlCommand UpsertCommand({
+                    typeName} document, string json)
+return new NpgsqlCommand(`{mapping.UpsertName
+                    }`)
     .AsSproc()
-    .With(`id`, document.{mapping.IdMember.Name})
+    .With(`id`, document.{mapping.IdMember.Name
+                    })
     .WithJsonParameter(`doc`, json){extraUpsertArguments};
 END
 
-BLOCK:public object Assign({typeName} document)
+BLOCK:public object Assign({
+                    typeName} document)
 {mapping.IdStrategy.AssignmentBodyCode(mapping.IdMember)}
-return document.{mapping.IdMember.Name};
+return document.{
+                    mapping.IdMember.Name};
 END
 
 BLOCK:public object Retrieve({typeName} document)
-return document.{mapping.IdMember.Name};
+return document.{
+                    mapping.IdMember.Name};
 END
 
-public NpgsqlDbType IdType => NpgsqlDbType.{id_NpgsqlDbType.ToString()};
+public NpgsqlDbType IdType => NpgsqlDbType.{id_NpgsqlDbType
+                    };
 
 BLOCK:public object Identity(object document)
-return (({typeName})document).{mapping.IdMember.Name};
+return (({typeName})document).{
+                    mapping.IdMember.Name};
 END
 
-{toUpdateBatchMethod(mapping, id_NpgsqlDbType, typeName)}
 
-BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{typeName}> documents)
-BLOCK:using (var writer = conn.BeginBinaryImport(`COPY {mapping.TableName}(id, data{duplicatedFieldsInBulkLoading}) FROM STDIN BINARY`))
+BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
+var json = reader.GetString(0);
+var id = reader[1];
+            
+return map.Get<{typeName}>(id, json);
+END
+
+
+
+{toUpdateBatchMethod(mapping, id_NpgsqlDbType, typeName)
+                    }
+
+BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{typeName
+                    }> documents)
+BLOCK:using (var writer = conn.BeginBinaryImport(`COPY {mapping.TableName}(id, data{
+                    duplicatedFieldsInBulkLoading
+                    }) FROM STDIN BINARY`))
 BLOCK:foreach (var x in documents)
 writer.StartRow();
-writer.Write(x.Id, NpgsqlDbType.{id_NpgsqlDbType});
+writer.Write(x.Id, NpgsqlDbType.{
+                    id_NpgsqlDbType});
 writer.Write(serializer.ToJson(x), NpgsqlDbType.Jsonb);
-{duplicatedFieldsInBulkLoadingWriter}
+{
+                    duplicatedFieldsInBulkLoadingWriter}
 END
 END
 END
+
 
 END
 
@@ -201,15 +249,21 @@ END
             var extras =
                 mapping.DuplicatedFields.Select(x => x.ToUpdateBatchParam()).Join("");
 
-            return $@"
+            return
+                $@"
 BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity)
-var document = ({typeName})entity;
-batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name}, NpgsqlDbType.{idNpgsqlDbType}).JsonEntity(document){extras};
+var document = ({typeName
+                    })entity;
+batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name
+                    }, NpgsqlDbType.{idNpgsqlDbType}).JsonEntity(document){extras
+                    };
 END
 
 BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity, string json)
-var document = ({typeName})entity;
-batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name}, NpgsqlDbType.{idNpgsqlDbType}).JsonBody(json){extras};
+var document = ({
+                    typeName})entity;
+batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name
+                    }, NpgsqlDbType.{idNpgsqlDbType}).JsonBody(json){extras};
 END
 ";
         }
