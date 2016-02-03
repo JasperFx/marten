@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using Baseline;
 using Marten.Events;
 using Marten.Generation;
@@ -55,7 +56,12 @@ namespace Marten.Schema
         {
             return _documentTypes.GetOrAdd(documentType, type =>
             {
+
+
                 var mapping = MappingFor(documentType);
+                assertNoDuplicateDocumentAliases();
+
+
                 var storage = DocumentStorageBuilder.Build(this, mapping);
 
                 if (shouldRegenerate(mapping))
@@ -65,6 +71,21 @@ namespace Marten.Schema
 
                 return storage;
             });
+        }
+
+        private void assertNoDuplicateDocumentAliases()
+        {
+            var duplicates = _documentMappings.Values.GroupBy(x => x.Alias).Where(x => x.Count() > 1).ToArray();
+            if (duplicates.Any())
+            {
+                var message = duplicates.Select(group =>
+                {
+                    return
+                        $"Document types {@group.Select(x => x.DocumentType.Name).Join(", ")} all have the same document alias '{@group.Key}'. You must explicitly make document type aliases to disambiguate the database schema objects";
+                }).Join("\n");
+
+                throw new AmbiguousDocumentTypeAliasesException(message);
+            }
         }
 
         private bool shouldRegenerate(DocumentMapping mapping)
@@ -202,6 +223,18 @@ AND type_udt_name != 'trigger';
 
                 return list;
             });
+        }
+    }
+
+    [Serializable]
+    public class AmbiguousDocumentTypeAliasesException : Exception
+    {
+        public AmbiguousDocumentTypeAliasesException(string message) : base(message)
+        {
+        }
+
+        protected AmbiguousDocumentTypeAliasesException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
         }
     }
 }

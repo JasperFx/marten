@@ -110,5 +110,23 @@ namespace Marten.Testing.Schema
             }
 
         }
+
+        [Fact]
+        public void throw_ambigous_alias_exception_when_you_have_duplicate_document_aliases()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                var schema = container.GetInstance<IDocumentSchema>();
+
+                schema.StorageFor(typeof (Examples.User)).ShouldNotBeNull();
+
+                Exception<AmbiguousDocumentTypeAliasesException>.ShouldBeThrownBy(() =>
+                {
+                    schema.StorageFor(typeof (User));
+                });
+            }
+
+
+        }
     }
 }

@@ -85,6 +85,19 @@ namespace Marten
             {
                 alter = m => m.PropertySearching = searching; 
                 return this;
+            }
+
+            /// <summary>
+            /// Override the Postgresql schema alias for this document type in order
+            /// to disambiguate similarly named document types. The default is just
+            /// the document type name to lower case.
+            /// </summary>
+            /// <param name="alias"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> DocumentAlias(string alias)
+            {
+                alter = m => m.Alias = alias;
+                return this;
             }  
 
             /// <summary>
