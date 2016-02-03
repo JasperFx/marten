@@ -9,6 +9,7 @@ using Remotion.Linq.Clauses.Expressions;
 
 namespace Marten.Linq
 {
+    // TODO -- this is going to have to get redone
     public class CollectionAnyContainmentWhereFragment : IWhereFragment
     {
         private readonly ISerializer _serializer;
@@ -35,28 +36,49 @@ namespace Marten.Linq
                 throw new NotImplementedException();
             }
 
-            var search = new Dictionary<string, object>();
-            wheres.OfType<BinaryExpression>()
-                .Each(x =>
-                {
-                    gatherSearch(x, search);
-                    
-                });
 
             var visitor = new FindMembers();
             visitor.Visit(_expression.QueryModel.MainFromClause.FromExpression);
 
             var members = visitor.Members;
+            var binaryExpressions = wheres.OfType<BinaryExpression>().ToArray();
             var dictionary = new Dictionary<string, object>();
 
-            if (members.Count == 1)
+            // Are we querying directly againt the elements as you would for primitive types?
+            if (binaryExpressions.All(x => x.Left is QuerySourceReferenceExpression && x.Right is ConstantExpression))
             {
-                dictionary.Add(members.Single().Name, new[] {search});
+                if (binaryExpressions.Any(x => x.NodeType != ExpressionType.Equal))
+                {
+                    throw new NotSupportedException("Only the equality operator is supported on Collection.Any(x => x) searches directly against the element");
+                }
+
+                var values = binaryExpressions.Select(x => MartenExpressionParser.Value(x.Right)).ToArray();
+                if (members.Count == 1)
+                {
+                    dictionary.Add(members.Single().Name, values);
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
             }
             else
             {
-                throw new NotImplementedException();
+                var search = new Dictionary<string, object>();
+                binaryExpressions.Each(x => gatherSearch(x, search));
+
+
+                if (members.Count == 1)
+                {
+                    dictionary.Add(members.Single().Name, new[] { search });
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
             }
+
+
 
 
             var json = _serializer.ToCleanJson(dictionary);
