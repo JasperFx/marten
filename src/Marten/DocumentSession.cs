@@ -18,7 +18,7 @@ namespace Marten
         private readonly IDocumentSchema _schema;
         private readonly UnitOfWork _unitOfWork;
 
-        public DocumentSession(StoreOptions options, IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IIdentityMap identityMap) : base(schema, serializer, runner, parser, identityMap)
+        public DocumentSession(StoreOptions options, IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IIdentityMap identityMap) : base(schema, serializer, runner, parser, identityMap)
         {
             _options = options;
             _schema = schema;

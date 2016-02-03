@@ -17,18 +17,21 @@ namespace Marten.Linq
     public class MartenQueryExecutor : IMartenQueryExecutor
     {
         private readonly IQueryParser _parser;
+        private readonly IIdentityMap _identityMap;
         private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
         private readonly IList<Type> _scalarResultOperators;
 
-        public MartenQueryExecutor(ICommandRunner runner, IDocumentSchema schema, ISerializer serializer,
-            IQueryParser parser)
+        public MartenQueryExecutor(ICommandRunner runner, IDocumentSchema schema, ISerializer serializer, IQueryParser parser, IIdentityMap identityMap)
         {
             _schema = schema;
             _serializer = serializer;
             _parser = parser;
+            _identityMap = identityMap;
             _runner = runner;
+            
+
             _scalarResultOperators = new[]
             {
                 typeof (AnyResultOperator),
@@ -37,6 +40,13 @@ namespace Marten.Linq
             };
         }
 
+
+        private IResolver<T> resolver<T>()
+        {
+            return _schema.StorageFor(typeof (T)).As<IResolver<T>>();
+        }
+            
+            
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
             var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
@@ -89,6 +99,8 @@ namespace Marten.Linq
             {
                 data = all.Single();
             }
+
+            
 
             return _serializer.FromJson<T>(data);
         }

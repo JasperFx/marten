@@ -33,7 +33,7 @@ namespace Marten
 
         public IQueryable<T> Query<T>()
         {
-            var executor = new MartenQueryExecutor(_runner, _schema, _serializer, _parser);
+            var executor = new MartenQueryExecutor(_runner, _schema, _serializer, _parser, _identityMap);
 
             var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, executor);
             return new MartenQueryable<T>(queryProvider);

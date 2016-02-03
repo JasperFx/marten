@@ -78,7 +78,7 @@ namespace Marten
             var cleaner = new DocumentCleaner(_runner, Schema);
             Advanced = new AdvancedOptions(cleaner, options);
 
-            Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser));
+            Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser, new NulloIdentityMap(_serializer)));
 
 
             if (options.RequestCounterThreshold.HasThreshold)
@@ -135,7 +135,7 @@ namespace Marten
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly)
         {
             var map = createMap(tracking);
-            return new DocumentSession(_options, Schema, _serializer, _runnerForSession(), _parser, new MartenQueryExecutor(_runnerForSession(), Schema, _serializer, _parser), map);
+            return new DocumentSession(_options, Schema, _serializer, _runnerForSession(), _parser, map);
         }
 
         private IIdentityMap createMap(DocumentTracking tracking)
