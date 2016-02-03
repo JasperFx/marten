@@ -37,5 +37,12 @@ namespace Marten.Testing
             mapping.TableName.ShouldBe("mt_doc_users");
             mapping.UpsertName.ShouldBe("mt_upsert_users");
         }
+
+        [Fact]
+        public void select_fields_for_non_hierarchy_mapping()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.SelectFields("d").ShouldBe("d.data, d.id");
+        }
     }
 }

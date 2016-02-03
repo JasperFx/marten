@@ -144,6 +144,11 @@ namespace Marten.Schema
 
         public MemberInfo IdMember { get; set; }
 
+        public string SelectFields(string tableAlias)
+        {
+            return $"{tableAlias}.data, {tableAlias}.id";
+        }
+
         public PropertySearching PropertySearching
         {
             get { return _propertySearching; }

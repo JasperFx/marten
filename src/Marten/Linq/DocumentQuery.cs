@@ -66,7 +66,8 @@ namespace Marten.Linq
             }
 
             var command = new NpgsqlCommand();
-            var sql = "select d.data from " + _mapping.TableName + " as d";
+            var select = _mapping.SelectFields("d");
+            var sql = $"select {select} from {_mapping.TableName} as d";
 
             var where = buildWhereClause();
             var orderBy = toOrderClause();
