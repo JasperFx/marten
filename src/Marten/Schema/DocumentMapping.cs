@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.PortableExecutable;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Generation;
@@ -13,23 +11,6 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public interface IDocumentMapping
-    {
-        string UpsertName { get; }
-        Type DocumentType { get; }
-        string TableName { get; }
-        PropertySearching PropertySearching { get; }
-        IIdGeneration IdStrategy { get;}
-        IEnumerable<DuplicatedField> DuplicatedFields { get; }
-        MemberInfo IdMember { get; }
-        IList<IndexDefinition> Indexes { get; }
-        string SelectFields(string tableAlias);
-
-        TableDefinition ToTable(IDocumentSchema schema);
-
-        IField FieldFor(IEnumerable<MemberInfo> members);
-    }
-
     public class DocumentMapping : IDocumentMapping
     {
         public const string TablePrefix = "mt_doc_";
@@ -40,7 +21,6 @@ namespace Marten.Schema
 
         public DocumentMapping(Type documentType) : this(documentType, new StoreOptions())
         {
-
         }
 
         public DocumentMapping(Type documentType, StoreOptions options)
@@ -53,7 +33,8 @@ namespace Marten.Schema
 
             if (IdMember == null)
             {
-                throw new InvalidDocumentException($"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
+                throw new InvalidDocumentException(
+                    $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
             }
 
 
@@ -63,7 +44,6 @@ namespace Marten.Schema
 
             documentType.GetProperties().Where(x => TypeMappings.HasTypeMapping(x.PropertyType)).Each(prop =>
             {
-
                 var field = new LateralJoinField(prop);
                 _fields[field.MemberName] = field;
 
@@ -81,10 +61,7 @@ namespace Marten.Schema
 
         public string Alias
         {
-            get
-            {
-                return _alias;
-            }
+            get { return _alias; }
             set
             {
                 if (value.IsEmpty()) throw new ArgumentNullException(nameof(value));
@@ -101,7 +78,7 @@ namespace Marten.Schema
             index.Method = IndexMethod.gin;
             index.Expression = "? jsonb_path_ops";
 
-            PropertySearching = Schema.PropertySearching.ContainmentOperator;
+            PropertySearching = PropertySearching.ContainmentOperator;
 
             return index;
         }
@@ -147,7 +124,8 @@ namespace Marten.Schema
             }
             else
             {
-                throw new InvalidOperationException($"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override Hilo sequence configuration");
+                throw new InvalidOperationException(
+                    $"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override Hilo sequence configuration");
             }
         }
 
@@ -222,7 +200,7 @@ namespace Marten.Schema
 
             var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
             var table = new TableDefinition(TableName, new TableColumn("id", pgIdType));
-            table.Columns.Add(new TableColumn("data", "jsonb") {Directive = "NOT NULL" });
+            table.Columns.Add(new TableColumn("data", "jsonb") {Directive = "NOT NULL"});
 
             _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
 
@@ -258,10 +236,7 @@ namespace Marten.Schema
             }
 
             var key = members.Select(x => x.Name).Join("");
-            return _fields.GetOrAdd(key, _ =>
-            {
-                return new JsonLocatorField(members.ToArray());
-            });
+            return _fields.GetOrAdd(key, _ => { return new JsonLocatorField(members.ToArray()); });
         }
 
         public IndexDefinition DuplicateField(MemberInfo[] members, string pgType = null)
