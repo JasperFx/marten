@@ -215,10 +215,11 @@ namespace Marten.Testing
                 {
                     data.Each(t =>
                     {
-                        var cmd = storage.UpsertCommand(t, serializer.ToJson(t));
-                        cmd.Connection = conn;
-                        cmd.Transaction = tx;
-                        cmd.ExecuteNonQuery();
+                        throw new NotSupportedException("This mechanism is no long supported");
+                        //var cmd = storage.UpsertCommand(t, serializer.ToJson(t));
+                        //cmd.Connection = conn;
+                        //cmd.Transaction = tx;
+                        //cmd.ExecuteNonQuery();
                     });
                 });
             });

@@ -10,7 +10,6 @@ namespace Marten.Schema
         Type DocumentType { get; }
 
         NpgsqlDbType IdType { get; }
-        NpgsqlCommand UpsertCommand(object document, string json);
         NpgsqlCommand LoaderCommand(object id);
         NpgsqlCommand DeleteCommandForId(object id);
         NpgsqlCommand DeleteCommandForEntity(object entity);
