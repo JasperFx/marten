@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Schema.Sequences
 {
-    public class HiLoIdGenerationTests
+    public class HiloIdGenerationTests
     {
         [Fact]
         public void create_argument_value()
@@ -17,9 +17,9 @@ namespace Marten.Testing.Schema.Sequences
 
             var schema = container.GetInstance<IDocumentSchema>();
 
-            var generation = new HiloIdGeneration(typeof(Target));
+            var generation = new HiloIdGeneration(typeof(Target), new HiloSettings());
 
-            generation.GetValue(schema).ShouldBeOfType<HiLoSequence>()
+            generation.GetValue(schema).ShouldBeOfType<HiloSequence>()
                 .EntityName.ShouldBe("Target");
  
         }
@@ -27,7 +27,7 @@ namespace Marten.Testing.Schema.Sequences
         [Fact]
         public void arguments_just_returns_itself()
         {
-            var generation = new HiloIdGeneration(typeof(Target));
+            var generation = new HiloIdGeneration(typeof(Target), new HiloSettings());
             generation.ToArguments().Single().ShouldBeSameAs(generation);
         }
 

@@ -22,7 +22,7 @@ namespace Marten.Testing
             store.Schema.UpsertType = UpsertType;
 
             For<IDocumentStore>().Use(store);
-
+            For<IIdentityMap>().Use<NulloIdentityMap>();
 
             For<IDocumentSchema>().Use(store.Schema);
             For<IConnectionFactory>().Use<ConnectionSource>();

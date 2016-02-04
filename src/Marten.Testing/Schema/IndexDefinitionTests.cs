@@ -49,7 +49,7 @@ namespace Marten.Testing.Schema
         public void generate_ddl_for_single_column_all_defaults()
         {
             new IndexDefinition(mapping, "foo").ToDDL()
-                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target (foo)");
+                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target (\"foo\");");
         }
 
         [Fact]
@@ -59,7 +59,7 @@ namespace Marten.Testing.Schema
             definition.IsUnique = true;
 
             definition.ToDDL()
-                .ShouldBe("CREATE UNIQUE INDEX mt_doc_target_idx_foo ON mt_doc_target (foo)");
+                .ShouldBe("CREATE UNIQUE INDEX mt_doc_target_idx_foo ON mt_doc_target (\"foo\");");
         }
 
         [Fact]
@@ -70,7 +70,7 @@ namespace Marten.Testing.Schema
             definition.Modifier = "WITH (fillfactor = 70)";
 
             definition.ToDDL()
-                .ShouldBe("CREATE UNIQUE INDEX mt_doc_target_idx_foo ON mt_doc_target (foo) WITH (fillfactor = 70)");
+                .ShouldBe("CREATE UNIQUE INDEX mt_doc_target_idx_foo ON mt_doc_target (\"foo\") WITH (fillfactor = 70);");
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace Marten.Testing.Schema
             definition.IsConcurrent = true;
 
             definition.ToDDL()
-                .ShouldBe("CREATE INDEX CONCURRENTLY mt_doc_target_idx_foo ON mt_doc_target (foo)");
+                .ShouldBe("CREATE INDEX CONCURRENTLY mt_doc_target_idx_foo ON mt_doc_target (\"foo\");");
         }
 
         [Fact]
@@ -91,7 +91,7 @@ namespace Marten.Testing.Schema
             definition.IsUnique = true;
 
             definition.ToDDL()
-                .ShouldBe("CREATE UNIQUE INDEX CONCURRENTLY mt_doc_target_idx_foo ON mt_doc_target (foo)");
+                .ShouldBe("CREATE UNIQUE INDEX CONCURRENTLY mt_doc_target_idx_foo ON mt_doc_target (\"foo\");");
         }
 
         [Fact]
@@ -101,7 +101,7 @@ namespace Marten.Testing.Schema
             definition.Method = IndexMethod.gin;
 
             definition.ToDDL()
-                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target USING gin (foo)");
+                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target USING gin (\"foo\");");
         }
 
         [Fact]
@@ -112,7 +112,7 @@ namespace Marten.Testing.Schema
             definition.Expression = "? jsonb_path_ops";
 
             definition.ToDDL()
-                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target USING gin (foo jsonb_path_ops)");
+                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target USING gin (\"foo\" jsonb_path_ops);");
         }
 
         [Fact]
@@ -122,7 +122,7 @@ namespace Marten.Testing.Schema
             definition.Method = IndexMethod.gist;
 
             definition.ToDDL()
-                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target USING gist (foo)");
+                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target USING gist (\"foo\");");
         }
 
         [Fact]
@@ -132,7 +132,7 @@ namespace Marten.Testing.Schema
             definition.Method = IndexMethod.hash;
 
             definition.ToDDL()
-                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target USING hash (foo)");
+                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON mt_doc_target USING hash (\"foo\");");
         }
     }
 }

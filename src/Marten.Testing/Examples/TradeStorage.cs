@@ -10,11 +10,12 @@ using NpgsqlTypes;
 using Remotion.Linq;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 
 namespace Marten.GeneratedCode
 {
 
-    public class TradeStorage : IDocumentStorage, IBulkLoader<Trade>, IdAssignment<Trade>
+    public class TradeStorage : IDocumentStorage, IBulkLoader<Trade>, IdAssignment<Trade>, IResolver<Trade>
     {
 
         private readonly Marten.Schema.Sequences.ISequence _sequence;
@@ -120,7 +121,13 @@ namespace Marten.GeneratedCode
 
         }
 
-
+        public Trade Resolve(DbDataReader reader, IIdentityMap map)
+        {
+            var json = reader.GetString(0);
+            var id = reader[1];
+            
+            return map.Get<Trade>(id, json);
+        }
     }
 
 

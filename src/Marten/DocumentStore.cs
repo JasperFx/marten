@@ -8,6 +8,9 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
+    /// <summary>
+    /// The main entry way to using Marten
+    /// </summary>
     public class DocumentStore : IDocumentStore
     {
         private readonly ICommandRunner _runner;
@@ -30,11 +33,21 @@ namespace Marten
             });
         }
 
+        /// <summary>
+        /// Configures a DocumentStore for an existing StoreOptions type
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public static DocumentStore For<T>() where T : StoreOptions, new()
         {
             return new DocumentStore(new T());
         }
 
+        /// <summary>
+        /// Configures a DocumentStore by defining the StoreOptions settings first
+        /// </summary>
+        /// <param name="configure"></param>
+        /// <returns></returns>
         public static DocumentStore For(Action<StoreOptions> configure)
         {
             var options = new StoreOptions();
@@ -43,25 +56,43 @@ namespace Marten
             return new DocumentStore(options);
         }
 
+        /// <summary>
+        /// Creates a new DocumentStore with the supplied StoreOptions
+        /// </summary>
+        /// <param name="options"></param>
         public DocumentStore(StoreOptions options)
         {
+            _options = options;
             _runner = new CommandRunner(options.ConnectionFactory());
 
             var creation = options.AutoCreateSchemaObjects
                 ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_runner)
                 : new ProductionSchemaCreation();
 
-            Schema = new DocumentSchema(_runner, creation);
+            Schema = new DocumentSchema(_runner, creation) {StoreOptions = options};
 
             Schema.Alter(options.Schema);
 
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_runner, Schema);
-            Advanced = new AdvancedOptions(cleaner);
+            Advanced = new AdvancedOptions(cleaner, options);
 
-            Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser));
+            Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser, new NulloIdentityMap(_serializer)));
+
+
+            if (options.RequestCounterThreshold.HasThreshold)
+            {
+                _runnerForSession = () => new RequestCounter(_runner, options.RequestCounterThreshold);
+            }
+            else
+            {
+                _runnerForSession = () => _runner;
+            }
         }
+
+        private readonly Func<ICommandRunner> _runnerForSession;
+        private readonly StoreOptions _options;
 
         public void Dispose()
         {
@@ -76,7 +107,7 @@ namespace Marten
         {
             var storage = Schema.StorageFor(typeof(T)).As<IBulkLoader<T>>();
 
-            _runner.ExecuteInTransaction(conn =>
+            _runner.ExecuteInTransaction((conn, tx) =>
             {
                 if (documents.Length <= batchSize)
                 {
@@ -104,8 +135,7 @@ namespace Marten
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly)
         {
             var map = createMap(tracking);
-
-            return new DocumentSession(Schema, _serializer, _runner, _parser, new MartenQueryExecutor(_runner, Schema, _serializer, _parser), map);
+            return new DocumentSession(_options, Schema, _serializer, _runnerForSession(), _parser, map);
         }
 
         private IIdentityMap createMap(DocumentTracking tracking)
@@ -139,7 +169,10 @@ namespace Marten
         public IQuerySession QuerySession()
         {
             var parser = new MartenQueryParser();
-            return new QuerySession(Schema, _serializer, _runner, parser, new MartenQueryExecutor(_runner, Schema, _serializer, parser), new NulloIdentityMap(_serializer));
+            
+            return new QuerySession(Schema, _serializer, _runnerForSession(), parser, new NulloIdentityMap(_serializer));
         }
+
+
     }
 }

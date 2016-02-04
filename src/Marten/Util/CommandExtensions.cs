@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
+using Baseline;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -7,6 +10,31 @@ namespace Marten.Util
 {
     public static class CommandExtensions
     {
+        public static IEnumerable<T> Fetch<T>(this NpgsqlConnection conn, string sql, Func<DbDataReader, T> transform, params object[] parameters)
+        {
+            var cmd = conn.CreateCommand(sql);
+            cmd.CommandType = CommandType.Text;
+            parameters.Each(x =>
+            {
+                var param = cmd.AddParameter(x);
+                cmd.CommandText = cmd.CommandText.UseParameter(param);
+            });
+
+             
+
+            var list = new List<T>();
+
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    list.Add(transform(reader));
+                }
+            }
+
+            return list;
+        } 
+
         public static NpgsqlParameter AddParameter(this NpgsqlCommand command, object value)
         {
             var name = "arg" + command.Parameters.Count;

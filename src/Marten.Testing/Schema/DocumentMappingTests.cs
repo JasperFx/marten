@@ -69,7 +69,7 @@ namespace Marten.Testing.Schema
 
             var sql = builder.ToString();
 
-            sql.ShouldContain("CREATE TABLE mt_doc_myspecialdocument");
+            sql.ShouldContain("CREATE TABLE mt_doc_documentmappingtests_myspecialdocument");
             sql.ShouldContain("jsonb NOT NULL");
         }
 
@@ -133,22 +133,22 @@ namespace Marten.Testing.Schema
 
             var sql = builder.ToString();
 
-            sql.ShouldContain("INSERT INTO mt_doc_myspecialdocument");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_myspecialdocument");
+            sql.ShouldContain("INSERT INTO mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void table_name_for_document()
         {
-            DocumentMapping.TableNameFor(typeof (MySpecialDocument))
-                .ShouldBe("mt_doc_myspecialdocument");
+            new DocumentMapping(typeof(MySpecialDocument)).TableName
+                .ShouldBe("mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void upsert_name_for_document_type()
         {
-            DocumentMapping.UpsertNameFor(typeof (MySpecialDocument))
-                .ShouldBe("mt_upsert_myspecialdocument");
+            new DocumentMapping(typeof(MySpecialDocument)).UpsertName
+                .ShouldBe("mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
@@ -269,6 +269,30 @@ namespace Marten.Testing.Schema
         {
             DocumentMapping.For<LongId>()
                 .IdStrategy.ShouldBeOfType<HiloIdGeneration>();
+        }
+
+        [Fact]
+        public void can_replace_hilo_def_settings()
+        {
+            var mapping = DocumentMapping.For<LongId>();
+
+            var newDef = new HiloSettings {Increment = 3, MaxLo = 33};
+
+            mapping.HiloSettings(newDef);
+
+            var sequence = mapping.IdStrategy.ShouldBeOfType<HiloIdGeneration>();
+            sequence.MaxLo.ShouldBe(newDef.MaxLo);
+            sequence.Increment.ShouldBe(newDef.Increment);
+            
+        }
+
+        [Fact]
+        public void trying_to_replace_the_hilo_settings_when_not_using_hilo_for_the_sequence_throws()
+        {
+            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+            {
+                DocumentMapping.For<StringId>().HiloSettings(new HiloSettings());
+            });
         }
 
 

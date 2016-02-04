@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Linq;
+using System.Threading.Tasks;
+using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Fixtures;
@@ -14,13 +14,53 @@ namespace Marten.Testing.Util
 {
     public class update_batch_Tests : IntegratedFixture
     {
-        private DocumentMapping theMapping;
-        private IDocumentSession theSession;
+        private readonly DocumentMapping theMapping;
+        private readonly IDocumentSession theSession;
 
         public update_batch_Tests()
         {
-            theMapping = theContainer.GetInstance<IDocumentSchema>().MappingFor(typeof (Target));
+            theMapping = theContainer.GetInstance<IDocumentSchema>().MappingFor(typeof(Target));
             theSession = theContainer.GetInstance<IDocumentStore>().OpenSession();
+        }
+
+        [Fact]
+        public void can_make_updates_with_more_than_one_batch()
+        {
+            var targets = Target.GenerateRandomData(100);
+            var container = Container.For<DevelopmentModeRegistry>();
+            using (var store = container.GetInstance<IDocumentStore>())
+            {
+                store.Advanced.Options.UpdateBatchSize = 10;
+
+                using (var session = store.LightweightSession())
+                {
+                    targets.Each(x => session.Store(x));
+                    session.SaveChanges();
+
+                    session.Query<Target>().Count().ShouldBe(100);
+                }
+            }
+        }
+
+
+        [Fact]
+        public async Task can_make_updates_with_more_than_one_batch_async()
+        {
+            var targets = Target.GenerateRandomData(100);
+            var container = Container.For<DevelopmentModeRegistry>();
+            using (var store = container.GetInstance<IDocumentStore>())
+            {
+                store.Advanced.Options.UpdateBatchSize = 10;
+
+                using (var session = store.LightweightSession())
+                {
+                    targets.Each(x => session.Store(x));
+                    await session.SaveChangesAsync();
+
+                    var t = await session.Query<Target>().CountAsync();
+                    t.ShouldBe(100);
+                }
+            }
         }
 
         [Fact]
@@ -91,9 +131,5 @@ namespace Marten.Testing.Util
 
             targets.Any(x => x.Id == initialTarget.Id).ShouldBeFalse();
         }
-
-
-
-        
     }
 }

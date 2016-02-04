@@ -20,22 +20,22 @@ namespace Marten
         private readonly ISerializer _serializer;
         private readonly ICommandRunner _runner;
         private readonly IQueryParser _parser;
-        private readonly IMartenQueryExecutor _executor;
-        private readonly IIdentityMap _documentMap;
+        private readonly IIdentityMap _identityMap;
 
-        public QuerySession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IMartenQueryExecutor executor, IIdentityMap documentMap)
+        public QuerySession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IIdentityMap identityMap)
         {
             _schema = schema;
             _serializer = serializer;
             _runner = runner;
             _parser = parser;
-            _executor = executor;
-            _documentMap = documentMap;
+            _identityMap = identityMap;
         }
 
         public IQueryable<T> Query<T>()
         {
-            var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, _executor);
+            var executor = new MartenQueryExecutor(_runner, _schema, _serializer, _parser, _identityMap);
+
+            var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, executor);
             return new MartenQueryable<T>(queryProvider);
         }
 
@@ -81,15 +81,15 @@ namespace Marten
 
             return cmd;
         }
-
+        
         public T Load<T>(string id) where T : class
         {
             return load<T>(id);
         }
 
-        public async Task<T> LoadAsync<T>(string id, CancellationToken token) where T : class
+        public Task<T> LoadAsync<T>(string id, CancellationToken token) where T : class
         {
-            return await loadAsync<T>(id, token).ConfigureAwait(false);
+            return loadAsync<T>(id, token);
         }
 
         public T Load<T>(ValueType id) where T : class
@@ -97,24 +97,24 @@ namespace Marten
             return load<T>(id);
         }
 
-        public async Task<T> LoadAsync<T>(ValueType id, CancellationToken token) where T : class
+        public Task<T> LoadAsync<T>(ValueType id, CancellationToken token) where T : class
         {
-            return await loadAsync<T>(id, token).ConfigureAwait(false);
+            return loadAsync<T>(id, token);
         }
 
         private T load<T>(object id) where T : class
         {
-            return _documentMap.Get<T>(id, () =>
+            return _identityMap.Get<T>(id, () =>
             {
                 return findJsonById<T>(id);
             });
         }
 
-        private async Task<T> loadAsync<T>(object id, CancellationToken token) where T : class
+        private Task<T> loadAsync<T>(object id, CancellationToken token) where T : class
         {
-            return await _documentMap.GetAsync<T>(id, async getAsyncToken =>
+            return _identityMap.GetAsync<T>(id, getAsyncToken =>
             {
-                return await findJsonByIdAsync<T>(id, getAsyncToken);
+                return findJsonByIdAsync<T>(id, getAsyncToken);
             }, token);
         }
 
@@ -133,14 +133,14 @@ namespace Marten
             return findJsonById<T>(id);
         }
 
-        public async Task<string> FindJsonByIdAsync<T>(string id, CancellationToken token) where T : class
+        public Task<string> FindJsonByIdAsync<T>(string id, CancellationToken token) where T : class
         {
-            return await findJsonByIdAsync<T>(id, token).ConfigureAwait(false);
+            return findJsonByIdAsync<T>(id, token);
         }
 
-        public async Task<string> FindJsonByIdAsync<T>(ValueType id, CancellationToken token) where T : class
+        public Task<string> FindJsonByIdAsync<T>(ValueType id, CancellationToken token) where T : class
         {
-            return await findJsonByIdAsync<T>(id, token).ConfigureAwait(false);
+            return findJsonByIdAsync<T>(id, token);
         }
 
         private string findJsonById<T>(object id)
@@ -155,15 +155,15 @@ namespace Marten
             });
         }
 
-        private async Task<string> findJsonByIdAsync<T>(object id, CancellationToken token)
+        private Task<string> findJsonByIdAsync<T>(object id, CancellationToken token)
         {
             var storage = _schema.StorageFor(typeof(T));
 
-            return await _runner.ExecuteAsync(async (conn, executeAsyncToken) =>
+            return _runner.ExecuteAsync(async (conn, executeAsyncToken) =>
             {
                 var loader = storage.LoaderCommand(id);
                 loader.Connection = conn;
-                var result = await loader.ExecuteScalarAsync(executeAsyncToken);
+                var result = await loader.ExecuteScalarAsync(executeAsyncToken).ConfigureAwait(false);
                 return result as string; // Maybe do this as a stream later for big docs?
             }, token);
         }
@@ -210,14 +210,14 @@ namespace Marten
             private IEnumerable<TDoc> ConcatDocuments<TKey>(TKey[] hits, IEnumerable<TDoc> documents)
             {
                 return
-                    hits.Select(key => _parent._documentMap.Retrieve<TDoc>(key))
+                    hits.Select(key => _parent._identityMap.Retrieve<TDoc>(key))
                         .Concat(documents)
                         .ToArray();
             }
 
             private Tuple<TKey[], TKey[]> GetHitsAndMisses<TKey>(TKey[] keys)
             {
-                var hits = keys.Where(key => _parent._documentMap.Has<TDoc>(key)).ToArray();
+                var hits = keys.Where(key => _parent._identityMap.Has<TDoc>(key)).ToArray();
                 var misses = keys.Where(x => !hits.Contains(x)).ToArray();
                 return new Tuple<TKey[], TKey[]>(hits, misses);
             }
@@ -255,15 +255,15 @@ namespace Marten
                 await _parent._runner.ExecuteAsync(async (conn, tkn) =>
                 {
                     cmd.Connection = conn;
-                    using (var reader = await cmd.ExecuteReaderAsync(tkn))
+                    using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                     {
-                        while (await reader.ReadAsync(tkn))
+                        while (await reader.ReadAsync(tkn).ConfigureAwait(false))
                         {
                             var doc = ReadDoc(reader);
                             list.Add(doc);
                         }
                     }
-                }, token);
+                }, token).ConfigureAwait(false);
 
                 return list;
             }
@@ -273,7 +273,7 @@ namespace Marten
                 var id = reader[1];
                 var json = reader.GetString(0);
 
-                return _parent._documentMap.Get<TDoc>(id, json);
+                return _parent._identityMap.Get<TDoc>(id, json);
             }
         }
 

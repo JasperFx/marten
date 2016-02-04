@@ -4,16 +4,20 @@ namespace Marten
 {
     public class AdvancedOptions
     {
-        private readonly IDocumentCleaner _cleaner;
+        /// <summary>
+        /// The original StoreOptions used to configure the current DocumentStore
+        /// </summary>
+        public StoreOptions Options { get; }
 
-        public AdvancedOptions(IDocumentCleaner cleaner)
+        public AdvancedOptions(IDocumentCleaner cleaner, StoreOptions options)
         {
-            _cleaner = cleaner;
+            Options = options;
+            Clean = cleaner;
         }
 
-        public IDocumentCleaner Clean
-        {
-            get { return _cleaner; }
-        }
+        /// <summary>
+        /// Used to remove document data and tables from the current Postgresql database
+        /// </summary>
+        public IDocumentCleaner Clean { get; }
     }
 }

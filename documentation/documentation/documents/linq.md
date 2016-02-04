@@ -88,6 +88,19 @@ Linq queries against boolean properties can use shorthand mechanisms in `Where()
 <[sample:boolean_queries]>
 
 
+## Querying within Child Collections
+
+As of Marten v0.6, you can use rudimentary `Any()` searches on child collections, **but Marten can only
+query for equality of fields or properties within the Any() subquery.**
+
+<[sample:any-query-through-child-collections]>
+
+You can search on equality of multiple fields or properties within the child collection
+using the `&&` operator:
+
+<[sample:any-query-through-child-collection-with-and]>
+
+
 ## Supported Types
 
 At this point, Marten's Linq support has been tested against these .Net types:

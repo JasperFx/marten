@@ -2,6 +2,9 @@ using System;
 
 namespace Marten.Schema
 {
+    /// <summary>
+    /// Customize the PropertySearching mode of a single document type
+    /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
     public class PropertySearchingAttribute : MartenAttribute
     {

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
@@ -10,9 +9,8 @@ namespace Marten.Schema
 {
     public abstract class Field
     {
-        protected Field(MemberInfo member) : this(new[] { member})
+        protected Field(MemberInfo member) : this(new[] {member})
         {
-
         }
 
         protected Field(MemberInfo[] members)
@@ -26,14 +24,11 @@ namespace Marten.Schema
         }
 
         public Type MemberType { get; }
-        public string PgType { get; }
+        public string PgType { get; set; } // settable so it can be overidden by users
 
         public MemberInfo[] Members { get; }
         public string MemberName { get; }
 
-        public NpgsqlDbType NpgsqlDbType
-        {
-            get { return TypeMappings.ToDbType(MemberType); }
-        }
+        public NpgsqlDbType NpgsqlDbType => TypeMappings.ToDbType(MemberType);
     }
 }

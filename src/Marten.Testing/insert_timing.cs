@@ -211,12 +211,13 @@ namespace Marten.Testing
 
             return Timings.Time(() =>
             {
-                runner.ExecuteInTransaction(conn =>
+                runner.ExecuteInTransaction((conn, tx) =>
                 {
                     data.Each(t =>
                     {
                         var cmd = storage.UpsertCommand(t, serializer.ToJson(t));
                         cmd.Connection = conn;
+                        cmd.Transaction = tx;
                         cmd.ExecuteNonQuery();
                     });
                 });

@@ -75,7 +75,7 @@ namespace Marten.Services
         {
             var documentChanges = GetChanges(batch);
 
-            await batch.ExecuteAsync(token);
+            await batch.ExecuteAsync(token).ConfigureAwait(false);
 
             ClearChanges(documentChanges);
         }

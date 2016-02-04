@@ -66,22 +66,25 @@ namespace Marten.Testing.Schema
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                var session = container.GetInstance<IDocumentStore>().OpenSession();
+                var store = container.GetInstance<IDocumentStore>();
+                var session = store.OpenSession();
 
                 session.Store(new Target { Number = 1 });
                 session.Store(new Target { Number = 2 });
 
                 session.SaveChanges();
 
+                var tableName = store.Schema.MappingFor(typeof (Target)).TableName;
+
                 var schema = container.GetInstance<Marten.Schema.DocumentSchema>();
-                schema.DocumentTables().Contains(DocumentMapping.TableNameFor(typeof(Target)))
+                schema.DocumentTables().Contains(tableName)
                     .ShouldBeTrue();
 
                 var cleaner = container.GetInstance<DocumentCleaner>();
 
                 cleaner.CompletelyRemove(typeof(Target));
 
-                schema.DocumentTables().Contains(DocumentMapping.TableNameFor(typeof(Target)))
+                schema.DocumentTables().Contains(tableName)
                     .ShouldBeFalse();
 
             }
@@ -92,7 +95,8 @@ namespace Marten.Testing.Schema
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                var session = container.GetInstance<IDocumentStore>().OpenSession();
+                var store = container.GetInstance<IDocumentStore>();
+                var session = store.OpenSession();
 
                 session.Store(new Target { Number = 1 });
                 session.Store(new Target { Number = 2 });
@@ -100,15 +104,17 @@ namespace Marten.Testing.Schema
                 session.SaveChanges();
 
                 var schema = container.GetInstance<DocumentSchema>();
-                
-                schema.SchemaFunctionNames().Contains(DocumentMapping.UpsertNameFor(typeof(Target)))
+
+                var upsertName = schema.MappingFor(typeof (Target)).UpsertName;
+
+                schema.SchemaFunctionNames().Contains(upsertName)
                     .ShouldBeTrue();
 
                 var cleaner = container.GetInstance<DocumentCleaner>();
 
                 cleaner.CompletelyRemove(typeof(Target));
 
-                schema.SchemaFunctionNames().Contains(DocumentMapping.UpsertNameFor(typeof(Target)))
+                schema.SchemaFunctionNames().Contains(upsertName)
                     .ShouldBeFalse();
 
             }

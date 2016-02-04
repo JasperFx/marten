@@ -17,18 +17,21 @@ namespace Marten.Linq
     public class MartenQueryExecutor : IMartenQueryExecutor
     {
         private readonly IQueryParser _parser;
+        private readonly IIdentityMap _identityMap;
         private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
         private readonly IList<Type> _scalarResultOperators;
 
-        public MartenQueryExecutor(ICommandRunner runner, IDocumentSchema schema, ISerializer serializer,
-            IQueryParser parser)
+        public MartenQueryExecutor(ICommandRunner runner, IDocumentSchema schema, ISerializer serializer, IQueryParser parser, IIdentityMap identityMap)
         {
             _schema = schema;
             _serializer = serializer;
             _parser = parser;
+            _identityMap = identityMap;
             _runner = runner;
+            
+
             _scalarResultOperators = new[]
             {
                 typeof (AnyResultOperator),
@@ -37,6 +40,13 @@ namespace Marten.Linq
             };
         }
 
+
+        private IResolver<T> resolver<T>()
+        {
+            return _schema.StorageFor(typeof (T)).As<IResolver<T>>();
+        }
+            
+            
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
             var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
@@ -73,24 +83,18 @@ namespace Marten.Linq
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
             var isLast = queryModel.ResultOperators.OfType<LastResultOperator>().Any();
+            if (isLast)
+            {
+                throw new InvalidOperationException("Marten does not support Last()/LastOrDefault() querying. Reverse your ordering and use First()/FirstOrDefault() instead");
+            }
 
             // TODO -- optimize by using Top 1
             var cmd = BuildCommand(queryModel);
-            var all = _runner.QueryJson(cmd).ToArray();
+            var all = _runner.Resolve(cmd, resolver<T>(), _identityMap).ToArray();
 
             if (returnDefaultWhenEmpty && all.Length == 0) return default(T);
 
-            string data = null;
-            if (isLast)
-            {
-                data = all.Last();
-            }
-            else
-            {
-                data = all.Single();
-            }
-
-            return _serializer.FromJson<T>(data);
+            return all.Single();
         }
 
 
@@ -100,7 +104,7 @@ namespace Marten.Linq
 
             if (queryModel.MainFromClause.ItemType == typeof (T))
             {
-				return _runner.QueryJson(command).Select(_serializer.FromJson<T>);
+                return _runner.Resolve(command, resolver<T>(), _identityMap);
             }
 
             throw new NotSupportedException("Marten does not yet support Select() projections from queryables. Use an intermediate .ToArray() or .ToList() before adding Select() clauses");
@@ -129,8 +133,7 @@ namespace Marten.Linq
 
             if (queryModel.MainFromClause.ItemType == typeof(T))
             {
-                var queryJsonAsync = await _runner.QueryJsonAsync(command, token);
-                return queryJsonAsync.Select(_serializer.FromJson<T>);
+                return await _runner.ResolveAsync(command, resolver<T>(), _identityMap, token).ConfigureAwait(false);
             }
 
             throw new NotSupportedException("Marten does not yet support Select() projections from queryables. Use an intermediate .ToArray() or .ToList() before adding Select() clauses");
@@ -141,14 +144,13 @@ namespace Marten.Linq
             var scalarResultOperator = queryModel.ResultOperators.SingleOrDefault(x => _scalarResultOperators.Contains(x.GetType()));
             if (scalarResultOperator != null)
             {
-                return await ExecuteScalar<T>(scalarResultOperator, queryModel, token);
+                return await ExecuteScalar<T>(scalarResultOperator, queryModel, token).ConfigureAwait(false);
             }
 
             var choiceResultOperator = queryModel.ResultOperators.OfType<ChoiceResultOperatorBase>().Single();
 
-            // TODO -- optimize by using Top 1
             var cmd = BuildCommand(queryModel);
-            var enumerable = await _runner.QueryJsonAsync(cmd, token);
+            var enumerable = await _runner.ResolveAsync(cmd, resolver<T>(), _identityMap, token).ConfigureAwait(false);
             var all = enumerable.ToArray();
 
             if (choiceResultOperator.ReturnDefaultWhenEmpty && all.Length == 0)
@@ -156,24 +158,20 @@ namespace Marten.Linq
                 return default(T);
             }
 
-            string data;
             if (choiceResultOperator is LastResultOperator)
             {
-                data = all.Last();
-            }
-            else if (choiceResultOperator is SingleResultOperator || choiceResultOperator is FirstResultOperator)
-            {
-                data = all.Single();
-            }
-            else
-            {
-                throw new NotSupportedException();
+                throw new InvalidOperationException("Marten does not support Last()/LastOrDefault(). Use ordering and First()/FirstOrDefault() instead");
             }
 
-            return _serializer.FromJson<T>(data);
+            if (choiceResultOperator is SingleResultOperator || choiceResultOperator is FirstResultOperator)
+            {
+                return all.Single();
+            }
+
+            throw new NotSupportedException();
         }
 
-        private async Task<T> ExecuteScalar<T>(ResultOperatorBase scalarResultOperator, QueryModel queryModel, CancellationToken token)
+        private Task<T> ExecuteScalar<T>(ResultOperatorBase scalarResultOperator, QueryModel queryModel, CancellationToken token)
         {
             var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
             var documentQuery = new DocumentQuery(mapping, queryModel, _serializer);
@@ -184,10 +182,10 @@ namespace Marten.Linq
             {
                 var anyCommand = documentQuery.ToAnyCommand();
 
-                return await _runner.ExecuteAsync(async (conn, tkn) =>
+                return _runner.ExecuteAsync(async (conn, tkn) =>
                 {
                     anyCommand.Connection = conn;
-                    var result = await anyCommand.ExecuteScalarAsync(tkn);
+                    var result = await anyCommand.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                     return (T)result;
                 }, token);
             }
@@ -196,10 +194,10 @@ namespace Marten.Linq
             {
                 var countCommand = documentQuery.ToCountCommand();
 
-                return await _runner.ExecuteAsync(async (conn, tkn) =>
+                return _runner.ExecuteAsync(async (conn, tkn) =>
                 {
                     countCommand.Connection = conn;
-                    var returnValue = await countCommand.ExecuteScalarAsync(tkn);
+                    var returnValue = await countCommand.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                     return Convert.ToInt32(returnValue).As<T>();
                 }, token);
             }
@@ -208,10 +206,10 @@ namespace Marten.Linq
             {
                 var countCommand = documentQuery.ToCountCommand();
 
-                return await _runner.ExecuteAsync(async (conn, tkn) =>
+                return _runner.ExecuteAsync(async (conn, tkn) =>
                 {
                     countCommand.Connection = conn;
-                    var returnValue = await countCommand.ExecuteScalarAsync(tkn);
+                    var returnValue = await countCommand.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                     return Convert.ToInt64(returnValue).As<T>();
                 }, token);
             }

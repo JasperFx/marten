@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.Serialization;
 using Baseline;
 using Marten.Schema;
 using Marten.Util;
@@ -76,8 +77,13 @@ namespace Marten.Linq
                 var contains = expression.QueryModel.ResultOperators.OfType<ContainsResultOperator>().FirstOrDefault();
                 if (contains != null)
                 {
-                    return ContainmentWhereFragment.SimpleArrayContains(_serializer, expression.QueryModel, contains);
+                    return ContainmentWhereFragment.SimpleArrayContains(_serializer, expression.QueryModel.MainFromClause.FromExpression, Value(contains.Item));
                 }
+            }
+
+            if (expression.QueryModel.ResultOperators.Any(x => x is AnyResultOperator))
+            {
+                return new CollectionAnyContainmentWhereFragment(_serializer, expression);
             }
 
             throw new NotImplementedException();
@@ -118,6 +124,13 @@ namespace Marten.Linq
                     var locator = JsonLocator(mapping, @object);
                     var value = Value(expression.Arguments.Single()).As<string>();
                     return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value + "%");
+                }
+
+                if (@object.Type.IsGenericEnumerable())
+                {
+                    var value = Value(expression.Arguments.Single());
+                    return ContainmentWhereFragment.SimpleArrayContains(_serializer, @object,
+                        value);
                 }
             }
 
@@ -197,6 +210,14 @@ namespace Marten.Linq
 
         public static object Value(Expression expression)
         {
+            if (expression is PartialEvaluationExceptionExpression)
+            {
+                var partialEvaluationExceptionExpression = expression.As<PartialEvaluationExceptionExpression>();
+                var inner = partialEvaluationExceptionExpression.Exception;
+
+                throw new BadLinqExpressionException($"Error in value expression inside of the query for '{partialEvaluationExceptionExpression.EvaluatedExpression}'. See the inner exception:", inner);
+            }
+
             if (expression is ConstantExpression)
             {
                 // TODO -- handle nulls
@@ -232,6 +253,18 @@ namespace Marten.Linq
             Members.Insert(0, node.Member);
 
             return base.VisitMember(node);
+        }
+    }
+
+    [Serializable]
+    public class BadLinqExpressionException : Exception
+    {
+        public BadLinqExpressionException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected BadLinqExpressionException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
         }
     }
 }

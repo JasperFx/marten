@@ -4,6 +4,6 @@ namespace Marten.Schema.Sequences
 {
     public interface ISequences
     {
-        ISequence HiLo(Type documentType, HiloDef def);
+        ISequence Hilo(Type documentType, HiloSettings settings);
     }
 }

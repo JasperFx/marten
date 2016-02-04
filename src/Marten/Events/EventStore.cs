@@ -37,7 +37,7 @@ namespace Marten.Events
 
         public void AppendEvents(Guid stream, params IEvent[] events)
         {
-            _runner.ExecuteInTransaction(conn =>
+            _runner.ExecuteInTransaction((conn, tx) =>
             {
                 events.Each(@event =>
                 {

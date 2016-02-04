@@ -21,15 +21,34 @@ namespace Marten.Codegen
 
         public void ReferenceAssembly(Assembly assembly)
         {
-            bool alreadyReferenced = _references.Any(x => x.Display == assembly.Location);
-            if (alreadyReferenced)
-                return;
-
-            _references.Add(MetadataReference.CreateFromFile(assembly.Location));
-            foreach (var assemblyName in assembly.GetReferencedAssemblies())
+            try
             {
-                var referencedAssembly = Assembly.Load(assemblyName);
-                ReferenceAssembly(referencedAssembly);
+                bool alreadyReferenced = _references.Any(x => x.Display == assembly.Location);
+                if (alreadyReferenced)
+                    return;
+
+
+                try
+                {
+                    _references.Add(MetadataReference.CreateFromFile(assembly.Location));
+                    foreach (var assemblyName in assembly.GetReferencedAssemblies())
+                    {
+                        var referencedAssembly = Assembly.Load(assemblyName);
+                        ReferenceAssembly(referencedAssembly);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Could not make an assembly reference to {assembly.FullName}\n\n{e}");
+                }
+            }
+            catch (AssemblyReferenceException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new AssemblyReferenceException(assembly, e);
             }
         }
 

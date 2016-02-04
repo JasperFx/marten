@@ -47,7 +47,7 @@ namespace Marten.Testing
             var mapping = theSchema.MappingFor(typeof (Organization));
 
             var index = mapping.IndexesFor("name").Single();
-            index.IndexName.ShouldBe("mt_doc_organization_idx_name");
+            index.IndexName.ShouldBe("mt_doc_martenregistrytests_organization_idx_name");
             index.Columns.ShouldHaveTheSameElementsAs("name");
         }
 
@@ -86,7 +86,7 @@ namespace Marten.Testing
             public TestRegistry()
             {
                 For<Organization>()
-                    .Searchable(x => x.Name).Searchable(x => x.OtherName, x =>
+                    .Searchable(x => x.Name).Searchable(x => x.OtherName, configure:x =>
                     {
                         x.IndexName = "mt_special";
                     })

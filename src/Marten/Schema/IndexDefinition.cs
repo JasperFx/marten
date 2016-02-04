@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Baseline;
 
 namespace Marten.Schema
@@ -52,8 +53,7 @@ namespace Marten.Schema
                 index += $" USING {Method}";
             }
 
-
-            var columns = _columns.Join(", ");
+            var columns = _columns.Select(column => $"\"{column}\"").Join(", ");
             if (Expression.IsEmpty())
             {
                 index += $" ({columns})";
@@ -68,7 +68,7 @@ namespace Marten.Schema
                 index += " " + Modifier;
             }
 
-            return index;
+            return index + ";";
         }
     }
 

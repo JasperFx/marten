@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Generation;
@@ -14,23 +15,32 @@ namespace Marten.Schema
 {
     public class DocumentMapping
     {
+        public const string TablePrefix = "mt_doc_";
+        private const string UpsertPrefix = "mt_upsert_";
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
         private PropertySearching _propertySearching = PropertySearching.JSON_Locator_Only;
-        private readonly IList<IndexDefinition> _indexes = new List<IndexDefinition>(); 
+        private string _alias;
 
-        public DocumentMapping(Type documentType)
+        public DocumentMapping(Type documentType) : this(documentType, new StoreOptions())
+        {
+
+        }
+
+        public DocumentMapping(Type documentType, StoreOptions options)
         {
             DocumentType = documentType;
+            Alias = defaultDocumentAliasName(documentType);
 
             IdMember = (MemberInfo) documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
                        ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
 
+            if (IdMember == null)
+            {
+                throw new InvalidDocumentException($"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
+            }
 
-            assignIdStrategy(documentType);
 
-            TableName = TableNameFor(documentType);
-
-            UpsertName = UpsertNameFor(documentType);
+            assignIdStrategy(documentType, options);
 
             documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
 
@@ -52,7 +62,21 @@ namespace Marten.Schema
             });
         }
 
-        public int BatchSize = 100;
+        public string Alias
+        {
+            get
+            {
+                return _alias;
+            }
+            set
+            {
+                if (value.IsEmpty()) throw new ArgumentNullException(nameof(value));
+
+                _alias = value;
+                TableName = TablePrefix + _alias;
+                UpsertName = UpsertPrefix + _alias;
+            }
+        }
 
         public IndexDefinition AddGinIndexToData()
         {
@@ -68,18 +92,15 @@ namespace Marten.Schema
         public IndexDefinition AddIndex(params string[] columns)
         {
             var index = new IndexDefinition(this, columns);
-            _indexes.Add(index);
+            Indexes.Add(index);
 
             return index;
         }
 
 
-        public IList<IndexDefinition> Indexes
-        {
-            get { return _indexes; }
-        }
+        public IList<IndexDefinition> Indexes { get; } = new List<IndexDefinition>();
 
-        private void assignIdStrategy(Type documentType)
+        private void assignIdStrategy(Type documentType, StoreOptions options)
         {
             var idType = IdMember.GetMemberType();
             if (idType == typeof (string))
@@ -92,7 +113,7 @@ namespace Marten.Schema
             }
             else if (idType == typeof (int) || idType == typeof (long))
             {
-                IdStrategy = new HiloIdGeneration(documentType);
+                IdStrategy = new HiloIdGeneration(documentType, options.HiloSequenceDefaults);
             }
             else
             {
@@ -101,15 +122,32 @@ namespace Marten.Schema
             }
         }
 
+        public void HiloSettings(HiloSettings hilo)
+        {
+            if (IdStrategy is HiloIdGeneration)
+            {
+                IdStrategy = new HiloIdGeneration(DocumentType, hilo);
+            }
+            else
+            {
+                throw new InvalidOperationException($"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override Hilo sequence configuration");
+            }
+        }
+
         public IIdGeneration IdStrategy { get; set; } = new StringIdGeneration();
 
-        public string UpsertName { get; }
+        public string UpsertName { get; private set; }
 
         public Type DocumentType { get; }
 
-        public string TableName { get; set; }
+        public string TableName { get; private set; }
 
         public MemberInfo IdMember { get; set; }
+
+        public string SelectFields(string tableAlias)
+        {
+            return $"{tableAlias}.data, {tableAlias}.id";
+        }
 
         public PropertySearching PropertySearching
         {
@@ -133,14 +171,15 @@ namespace Marten.Schema
 
         public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();
 
-        public static string TableNameFor(Type documentType)
+        private static string defaultDocumentAliasName(Type documentType)
         {
-            return "mt_doc_" + documentType.Name.ToLower();
-        }
+            var parts = new List<string> {documentType.Name.ToLower()};
+            if (documentType.IsNested)
+            {
+                parts.Insert(0, documentType.DeclaringType.Name.ToLower());
+            }
 
-        public static string UpsertNameFor(Type documentType)
-        {
-            return "mt_upsert_" + documentType.Name.ToLower();
+            return string.Join("_", parts);
         }
 
         public IField FieldFor(MemberInfo member)
@@ -166,7 +205,7 @@ namespace Marten.Schema
 
             var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
             var table = new TableDefinition(TableName, new TableColumn("id", pgIdType));
-            table.Columns.Add(new TableColumn("data", "jsonb NOT NULL"));
+            table.Columns.Add(new TableColumn("data", "jsonb") {Directive = "NOT NULL" });
 
             _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
 
@@ -180,10 +219,14 @@ namespace Marten.Schema
             return new DocumentMapping(typeof (T));
         }
 
-        public DuplicatedField DuplicateField(string memberName)
+        public DuplicatedField DuplicateField(string memberName, string pgType = null)
         {
             var field = FieldFor(memberName);
             var duplicate = new DuplicatedField(field.Members);
+            if (pgType.IsNotEmpty())
+            {
+                duplicate.PgType = pgType;
+            }
 
             _fields[memberName] = duplicate;
 
@@ -204,11 +247,16 @@ namespace Marten.Schema
             });
         }
 
-        public IndexDefinition DuplicateField(MemberInfo[] members)
+        public IndexDefinition DuplicateField(MemberInfo[] members, string pgType = null)
         {
             var memberName = members.Select(x => x.Name).Join("");
 
             var duplicatedField = new DuplicatedField(members);
+            if (pgType.IsNotEmpty())
+            {
+                duplicatedField.PgType = pgType;
+            }
+
             _fields[memberName] = duplicatedField;
 
             return AddIndex(duplicatedField.ColumnName);
@@ -216,7 +264,7 @@ namespace Marten.Schema
 
         public IEnumerable<IndexDefinition> IndexesFor(string column)
         {
-            return _indexes.Where(x => x.Columns.Contains(column));
+            return Indexes.Where(x => x.Columns.Contains(column));
         }
     }
 }

@@ -9,6 +9,7 @@ namespace Marten.Testing.Session
 {
     public class document_session_find_json_async_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        // SAMPLE: find-json-by-id-async
         [Fact]
         public async Task when_find_then_a_json_should_be_returned()
         {
@@ -20,6 +21,7 @@ namespace Marten.Testing.Session
             var json = await theSession.FindJsonByIdAsync<Issue>(issue.Id);
             json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Title\": \"Issue 2\"}}");
         }
+        // ENDSAMPLE
 
         [Fact]
         public async Task when_find_then_a_null_should_be_returned()

@@ -21,8 +21,8 @@ namespace Marten.Testing.Schema.Sequences
         {
             var factory = _container.GetInstance<SequenceFactory>();
 
-            factory.HiLo(typeof (Target), new HiloDef())
-                .ShouldBeOfType<HiLoSequence>();
+            factory.Hilo(typeof (Target), new HiloSettings())
+                .ShouldBeOfType<HiloSequence>();
 
             var schema = _container.GetInstance<IDocumentSchema>();
             schema.SchemaTableNames()

@@ -6,21 +6,21 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Sequences
 {
-    public class HiLoSequence : ISequence
+    public class HiloSequence : ISequence
     {
         private readonly string _entityName;
         private readonly object _lock = new object();
         private readonly ICommandRunner _runner;
 
-        public HiLoSequence(ICommandRunner runner, string entityName, HiloDef def)
+        public HiloSequence(ICommandRunner runner, string entityName, HiloSettings settings)
         {
             _runner = runner;
             _entityName = entityName;
 
             CurrentHi = -1;
             CurrentLo = 1;
-            MaxLo = def.MaxLo;
-            Increment = def.Increment;
+            MaxLo = settings.MaxLo;
+            Increment = settings.Increment;
         }
 
         public string EntityName => _entityName;

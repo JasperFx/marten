@@ -60,8 +60,14 @@ namespace Marten.Linq
 
         public NpgsqlCommand ToCommand()
         {
+            if (_query.ResultOperators.OfType<LastResultOperator>().Any())
+            {
+                throw new InvalidOperationException("Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
+            }
+
             var command = new NpgsqlCommand();
-            var sql = "select d.data from " + _mapping.TableName + " as d";
+            var select = _mapping.SelectFields("d");
+            var sql = $"select {select} from {_mapping.TableName} as d";
 
             var where = buildWhereClause();
             var orderBy = toOrderClause();
@@ -92,17 +98,21 @@ namespace Marten.Linq
             var take =
                 _query.ResultOperators.OfType<TakeResultOperator>().OrderByDescending(x => x.Count).FirstOrDefault();
 
-            var first = _query.ResultOperators.OfType<FirstResultOperator>().FirstOrDefault();
-
             string limitNumber = null;
             if (take != null)
             {
                 limitNumber = take.Count.ToString();
             }
-            else if (first != null)
+            else if (_query.ResultOperators.Any(x => x is FirstResultOperator))
             {
                 limitNumber = "1";
             }
+            // Got to return more than 1 to make it fail if there is more than one in the db
+            else if (_query.ResultOperators.Any(x => x is SingleResultOperator))
+            {
+                limitNumber = "2";
+            }
+
             return limitNumber == null ? sql : sql + " LIMIT " + limitNumber + " ";
         }
 

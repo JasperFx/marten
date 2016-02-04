@@ -23,18 +23,18 @@ namespace Marten.Linq
             return (IQueryable<T>)Activator.CreateInstance(_queryableType.MakeGenericType(typeof(T)), this, expression);
         }
 
-        public async Task<IEnumerable<T>> ExecuteCollectionAsync<T>(Expression expression, CancellationToken token)
+        public Task<IEnumerable<T>> ExecuteCollectionAsync<T>(Expression expression, CancellationToken token)
         {
             var queryModel = QueryParser.GetParsedQuery(expression);
             var queryExecutor = (IMartenQueryExecutor)Executor;
-            return await queryExecutor.ExecuteCollectionAsync<T>(queryModel, token);
+            return queryExecutor.ExecuteCollectionAsync<T>(queryModel, token);
         }
 
-        public async Task<T> ExecuteAsync<T>(Expression expression, CancellationToken token)
+        public Task<T> ExecuteAsync<T>(Expression expression, CancellationToken token)
         {
             var queryModel = QueryParser.GetParsedQuery(expression);
             var queryExecutor = (IMartenQueryExecutor)Executor;
-            return await queryExecutor.ExecuteAsync<T>(queryModel, token);
+            return queryExecutor.ExecuteAsync<T>(queryModel, token);
         }
     }
 }

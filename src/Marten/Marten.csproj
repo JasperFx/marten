@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Marten</RootNamespace>
     <AssemblyName>Marten</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -44,17 +44,28 @@
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="AdvancedOptions.cs" />
+    <Compile Include="Codegen\AssemblyReferenceException.cs" />
     <Compile Include="ConnectionFactory.cs" />
     <Compile Include="DocumentStore.cs" />
     <Compile Include="DocumentTracking.cs" />
+    <Compile Include="IDiagnostics.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
+    <Compile Include="Linq\CollectionAnyContainmentWhereFragment.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />
     <Compile Include="Linq\IMartenQueryable.cs" />
     <Compile Include="Linq\IMartenQueryProvider.cs" />
     <Compile Include="Linq\MartenQueryProvider.cs" />
     <Compile Include="QuerySession.cs" />
+    <Compile Include="Schema\DocumentAliasAttribute.cs" />
+    <Compile Include="Schema\GinIndexedAttribute.cs" />
+    <Compile Include="Schema\HiLoSequenceAttribute.cs" />
     <Compile Include="Schema\IndexDefinition.cs" />
+    <Compile Include="Schema\InvalidDocumentException.cs" />
+    <Compile Include="Schema\IResolver.cs" />
+    <Compile Include="Schema\MartenSchemaException.cs" />
+    <Compile Include="Services\BatchCommand.cs" />
     <Compile Include="Services\CommandRunner.cs" />
+    <Compile Include="Services\CommandRunnerExtensions.cs" />
     <Compile Include="Services\Diagnostics.cs" />
     <Compile Include="Events\EventStore.cs" />
     <Compile Include="Linq\IMartenQueryExecutor.cs" />
@@ -118,7 +129,7 @@
     <Compile Include="Schema\PropertySearchingAttribute.cs" />
     <Compile Include="Schema\SchemaBuilder.cs" />
     <Compile Include="Schema\SearchableAttribute.cs" />
-    <Compile Include="Schema\Sequences\HiloDef.cs" />
+    <Compile Include="Schema\Sequences\HiloSettings.cs" />
     <Compile Include="Schema\Sequences\HiLoSequence.cs" />
     <Compile Include="Schema\Sequences\ISequence.cs" />
     <Compile Include="Schema\Sequences\ISequences.cs" />
@@ -126,6 +137,8 @@
     <Compile Include="Schema\StorageArgument.cs" />
     <Compile Include="Schema\UpsertArgument.cs" />
     <Compile Include="Services\NulloIdentityMap.cs" />
+    <Compile Include="Services\RequestCounter.cs" />
+    <Compile Include="Services\RequestCounterThreshold.cs" />
     <Compile Include="Services\TrackedEntity.cs" />
     <Compile Include="StoreOptions.cs" />
     <Compile Include="Util\QueryableExtensions.cs" />

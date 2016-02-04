@@ -1,4 +1,6 @@
-﻿using Marten.Schema;
+﻿using System.Diagnostics;
+using Baseline;
+using Marten.Schema;
 using Marten.Services;
 using Shouldly;
 using StructureMap;

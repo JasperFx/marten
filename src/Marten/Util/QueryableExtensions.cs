@@ -225,18 +225,7 @@ namespace Marten.Util
             return ExecuteAsync<TSource, TSource>(_last, source, cancellationToken);
         }
 
-        private static readonly MethodInfo _lastPredicate = GetMethod(nameof(Queryable.Last), 1);
 
-        public static Task<TSource> LastAsync<TSource>(
-            this IQueryable<TSource> source,
-            Expression<Func<TSource, bool>> predicate,
-            CancellationToken cancellationToken = default(CancellationToken))
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
-
-            return ExecuteAsync<TSource, TSource>(_lastPredicate, source, predicate, cancellationToken);
-        }
 
         private static readonly MethodInfo _lastOrDefault = GetMethod(nameof(Queryable.LastOrDefault));
 

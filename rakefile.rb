@@ -1,6 +1,6 @@
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '0.5.0'
+BUILD_VERSION = '0.6.3'
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
@@ -95,6 +95,7 @@ end
 desc 'Run the unit tests'
 task :test => [:compile] do
 	Dir.mkdir RESULTS_DIR
+
 
 	#puts "Running the unit tests under the '9.5 Upsert' mode"
 	#sh "packages/Fixie/lib/net45/Fixie.Console.exe src/Marten.Testing/bin/#{COMPILE_TARGET}/Marten.Testing.dll --NUnitXml results/TestResult.xml --upsert Standard"

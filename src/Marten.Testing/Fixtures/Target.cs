@@ -19,6 +19,8 @@ namespace Marten.Testing.Fixtures
         private static string[] _strings = new[]
         {"Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Violet", "Pink", "Gray", "Black"};
 
+        private static string[] _otherStrings = new[]
+            {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"};
 
         public static IEnumerable<Target> GenerateRandomData(int number)
         {
@@ -35,8 +37,8 @@ namespace Marten.Testing.Fixtures
         {
             var target = new Target();
             target.String = _strings[_random.Next(0, 10)];
+            target.AnotherString = _otherStrings[_random.Next(0, 10)];
             target.Number = _random.Next();
-
 
             target.NumberArray = new int[] {_random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) };
 
@@ -86,6 +88,7 @@ namespace Marten.Testing.Fixtures
         public int Number { get; set; }
         public long Long { get; set; }
         public string String { get; set; }
+        public string AnotherString { get; set; }
 
         public Target Inner { get; set; }
 

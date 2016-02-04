@@ -9,7 +9,7 @@ projectUrl http://jasperfx.github.io/marten
 version 0.5.0
 
 files
-    bin\release\Marten.dll ==> lib/net45
+    bin\release\Marten.dll ==> lib/net46
 
 dependencies
     Npgsql ~> 3.0.3

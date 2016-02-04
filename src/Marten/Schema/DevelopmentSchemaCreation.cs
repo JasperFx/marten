@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
-using Baseline;
 using Marten.Services;
 
 namespace Marten.Schema
@@ -19,7 +19,15 @@ namespace Marten.Schema
             var writer= new StringWriter();
             SchemaBuilder.WriteSchemaObjects(mapping, schema, writer);
 
-            _runner.Execute(writer.ToString());
+            var sql = writer.ToString();
+            try
+            {
+                _runner.Execute(sql);
+            }
+            catch (Exception e)
+            {
+                throw new MartenSchemaException(mapping.DocumentType, sql, e);
+            }
         }
 
 
@@ -27,7 +35,14 @@ namespace Marten.Schema
         {
             var sql = SchemaBuilder.GetText(script);
 
-            _runner.Execute(sql);
+            try
+            {
+                _runner.Execute(sql);
+            }
+            catch (Exception e)
+            {
+                throw new MartenSchemaException(sql, e);
+            }
         }
     }
 }

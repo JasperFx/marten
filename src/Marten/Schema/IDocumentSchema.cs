@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Marten.Events;
+using Marten.Generation;
 using Marten.Schema.Sequences;
 
 namespace Marten.Schema
@@ -37,5 +38,7 @@ namespace Marten.Schema
         /// </summary>
         /// <returns></returns>
         string ToDDL();
+
+        TableDefinition TableSchema(string tableName);
     }
 }

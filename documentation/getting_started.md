@@ -1,6 +1,8 @@
 <!--Title:Getting Started-->
 <!--Url:getting_started-->
 
+<div class="alert alert-info">As of v0.6, Marten only targets .Net 4.6. CoreCLR support <i>should</i> follow in the first quarter of 2016</div>
+
 First, go get the Marten library from Nuget:
 
 <pre>

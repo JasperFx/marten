@@ -77,8 +77,7 @@ namespace Marten.Schema
         // I say you don't need a ForeignKey 
         public virtual TableColumn ToColumn(IDocumentSchema schema)
         {
-            var pgType = TypeMappings.GetPgType(Members.Last().GetMemberType());
-            return new TableColumn(ColumnName, pgType);
+            return new TableColumn(ColumnName, PgType);
         }
 
         public string WithParameterCode()

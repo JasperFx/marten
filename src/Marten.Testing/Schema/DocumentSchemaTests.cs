@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
-using Marten.Generation;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -32,6 +31,7 @@ namespace Marten.Testing.Schema
             var storage = _schema.StorageFor(typeof (User));
             storage.ShouldNotBeNull();
         }
+
 
         [Fact]
         public void caches_storage_for_a_document_type()
@@ -75,14 +75,15 @@ namespace Marten.Testing.Schema
 
             var schema = Container.For<DevelopmentModeRegistry>().GetInstance<IDocumentSchema>();
             var tables = schema.SchemaTableNames();
-            tables.ShouldContain(DocumentMapping.TableNameFor(typeof (User)).ToLower());
-            tables.ShouldContain(DocumentMapping.TableNameFor(typeof (Issue)).ToLower());
-            tables.ShouldContain(DocumentMapping.TableNameFor(typeof (Company)).ToLower());
+            tables.ShouldContain(schema.MappingFor(typeof(User)).TableName);
+            tables.ShouldContain(schema.MappingFor(typeof(Issue)).TableName);
+            tables.ShouldContain(schema.MappingFor(typeof(Company)).TableName);
 
             var functions = schema.SchemaFunctionNames();
-            functions.ShouldContain(DocumentMapping.UpsertNameFor(typeof (User)).ToLower());
-            functions.ShouldContain(DocumentMapping.UpsertNameFor(typeof (Issue)).ToLower());
-            functions.ShouldContain(DocumentMapping.UpsertNameFor(typeof (Company)).ToLower());
+            functions.ShouldContain(schema.MappingFor(typeof(User)).UpsertName);
+            functions.ShouldContain(schema.MappingFor(typeof(Issue)).UpsertName);
+            functions.ShouldContain(schema.MappingFor(typeof(Company)).UpsertName);
+
         }
 
         [Fact]
@@ -107,6 +108,24 @@ namespace Marten.Testing.Schema
                     session.Query<User>().Count().ShouldBeGreaterThanOrEqualTo(3);
                 }
             }
+
+        }
+
+        [Fact]
+        public void throw_ambigous_alias_exception_when_you_have_duplicate_document_aliases()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                var schema = container.GetInstance<IDocumentSchema>();
+
+                schema.StorageFor(typeof (Examples.User)).ShouldNotBeNull();
+
+                Exception<AmbiguousDocumentTypeAliasesException>.ShouldBeThrownBy(() =>
+                {
+                    schema.StorageFor(typeof (User));
+                });
+            }
+
 
         }
     }
