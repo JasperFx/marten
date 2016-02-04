@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Marten.Generation;
+using Marten.Linq;
 
 namespace Marten.Schema
 {
@@ -22,5 +23,7 @@ namespace Marten.Schema
         IField FieldFor(IEnumerable<MemberInfo> members);
 
         string ToResolveMethod(string typeName);
+
+        IWhereFragment FilterDocuments(IWhereFragment query);
     }
 }

@@ -137,10 +137,11 @@ namespace Marten.Linq
             var wheres = _query.BodyClauses.OfType<WhereClause>().ToArray();
             if (wheres.Length == 0) return null;
 
-            return wheres.Length == 1
+            var where = wheres.Length == 1
                 ? _parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
                 : new CompoundWhereFragment(_parser, _mapping, "and", wheres);
 
+            return _mapping.FilterDocuments(where);
         }
 
         private string appendLateralJoin(string sql)

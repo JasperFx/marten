@@ -58,6 +58,7 @@
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\DocumentAliasAttribute.cs" />
     <Compile Include="Schema\GinIndexedAttribute.cs" />
+    <Compile Include="Schema\Hierarchies\HierarchyClasses.cs" />
     <Compile Include="Schema\HiLoSequenceAttribute.cs" />
     <Compile Include="Schema\IDocumentMapping.cs" />
     <Compile Include="Schema\IndexDefinition.cs" />

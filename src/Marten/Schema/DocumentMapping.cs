@@ -6,6 +6,7 @@ using System.Reflection;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Generation;
+using Marten.Linq;
 using Marten.Schema.Sequences;
 using Marten.Util;
 
@@ -139,7 +140,7 @@ namespace Marten.Schema
 
         public MemberInfo IdMember { get; set; }
 
-        public string SelectFields(string tableAlias)
+        public virtual string SelectFields(string tableAlias)
         {
             return $"{tableAlias}.data, {tableAlias}.id";
         }
@@ -192,7 +193,7 @@ namespace Marten.Schema
             return _fields[memberName];
         }
 
-        public TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
+        public virtual TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
             // can do foreign keys
         {
             // TODO -- blow up if no IdMember or no TableName
@@ -239,7 +240,7 @@ namespace Marten.Schema
             return _fields.GetOrAdd(key, _ => { return new JsonLocatorField(members.ToArray()); });
         }
 
-        public string ToResolveMethod(string typeName)
+        public virtual string ToResolveMethod(string typeName)
         {
             return $@"
 BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
@@ -249,6 +250,11 @@ var id = reader[1];
 return map.Get<{typeName}>(id, json);
 END
 ";
+        }
+
+        public IWhereFragment FilterDocuments(IWhereFragment query)
+        {
+            return query;
         }
 
         public IndexDefinition DuplicateField(MemberInfo[] members, string pgType = null)
