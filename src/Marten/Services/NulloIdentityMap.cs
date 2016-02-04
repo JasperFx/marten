@@ -33,6 +33,13 @@ namespace Marten.Services
             return _serializer.FromJson<T>(json);
         }
 
+        public T Get<T>(object id, Type concreteType, string json) where T : class
+        {
+            if (json.IsEmpty()) return null;
+
+            return _serializer.FromJson(concreteType, json).As<T>();
+        }
+
         public void Remove<T>(object id)
         {
             // nothing

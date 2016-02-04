@@ -25,6 +25,23 @@ namespace Marten.Testing.Services
         }
 
         [Fact]
+        public void get_with_concrete_type()
+        {
+            var serializer = new JsonNetSerializer();
+            var camaro = new NulloIdentityMapTests.Camaro();
+
+            var json = serializer.ToJson(camaro);
+
+            var map = new IdentityMap(serializer);
+
+            map.Get<NulloIdentityMapTests.Car>(camaro.Id, typeof(NulloIdentityMapTests.Camaro), json)
+                .ShouldBeOfType<NulloIdentityMapTests.Camaro>()
+                .Id.ShouldBe(camaro.Id);
+
+
+        }
+
+        [Fact]
         public void get_value_on_subsequent_requests()
         {
             var target = Target.Random();

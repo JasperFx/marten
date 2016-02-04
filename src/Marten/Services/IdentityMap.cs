@@ -41,6 +41,14 @@ namespace Marten.Services
             }).As<T>();
         }
 
+        public T Get<T>(object id, Type concreteType, string json) where T : class
+        {
+            return (T) _objects[typeof (T)].GetOrAdd(id.GetHashCode(), _ =>
+            {
+                return json.IsEmpty() ? null : _serializer.FromJson(concreteType, json);
+            });
+        }
+
         public void Remove<T>(object id)
         {
             object value;

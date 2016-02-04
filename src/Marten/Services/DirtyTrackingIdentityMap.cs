@@ -40,6 +40,11 @@ namespace Marten.Services
             return _objects[typeof(T)].GetOrAdd(id.GetHashCode(), _ => new TrackedEntity(id, _serializer, typeof(T), json)).Document.As<T>();
         }
 
+        public T Get<T>(object id, Type concreteType, string json) where T : class
+        {
+            return _objects[typeof(T)].GetOrAdd(id.GetHashCode(), _ => new TrackedEntity(id, _serializer, concreteType, json)).Document.As<T>();
+        }
+
         public void Remove<T>(object id)
         {
             TrackedEntity value;
