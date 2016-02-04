@@ -47,6 +47,7 @@
     <Compile Include="auto_assign_missing_guid_ids_Tests.cs" />
     <Compile Include="Bugs\ability_to_persist_nested_types_Tests.cs" />
     <Compile Include="Bugs\Bug118_bad_exception_message_Tests.cs" />
+    <Compile Include="Bugs\Bug_130_enable_case_insensitive_custom_sql_queries_Tests.cs" />
     <Compile Include="Bugs\Bug_127_do_not_recreate_a_table_with_duplicated_string_field_Tests.cs" />
     <Compile Include="bulk_loading_Tests.cs" />
     <Compile Include="DocumentMappingTests.cs" />

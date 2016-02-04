@@ -65,25 +65,6 @@ namespace Marten.Testing
         }
 
         [Fact]
-        public void query_with_upper_case_select_in_query()
-        {
-            using (var container = Container.For<DevelopmentModeRegistry>())
-            {
-                using (var session = container.GetInstance<IDocumentStore>().OpenSession())
-                {
-                    var u = new User { FirstName = "Jeremy", LastName = "Miller" };
-                    session.Store(u);
-                    session.SaveChanges();
-
-                    var user = session.Query<User>("SELECT data FROM mt_doc_user WHERE data ->> 'FirstName' = 'Jeremy'").Single();
-
-                    user.LastName.ShouldBe("Miller");
-                    user.Id.ShouldBe(u.Id);
-                }
-            }
-        }
-
-        [Fact]
         // SAMPLE: query_with_only_the_where_clause
         public void query_for_single_document()
         {
