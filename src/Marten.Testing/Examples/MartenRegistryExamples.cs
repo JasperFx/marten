@@ -22,9 +22,6 @@ var store = DocumentStore.For(_ =>
     {
         public MyMartenRegistry()
         {
-            // Opt into the Postgres 9.5 upsert style
-            UpsertType = PostgresUpsertType.Standard;
-            
             // I'm going to search for user by UserName
             // pretty frequently, so I want that to be 
             // a duplicated, searchable field
@@ -76,8 +73,10 @@ var store = DocumentStore.For(_ =>
     }
     // ENDSAMPLE
 
+
+
     // SAMPLE: setting_upsert_style
-    public class SettingUpsertStyle : MartenRegistry
+    public class SettingUpsertStyle : StoreOptions
     {
         public SettingUpsertStyle()
         {

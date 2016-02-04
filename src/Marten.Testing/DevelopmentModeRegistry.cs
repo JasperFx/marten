@@ -16,10 +16,8 @@ namespace Marten.Testing
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = true;
-                
+                _.UpsertType = UpsertType;
             });
-
-            store.Schema.UpsertType = UpsertType;
 
             For<IDocumentStore>().Use(store);
             For<IIdentityMap>().Use<NulloIdentityMap>();

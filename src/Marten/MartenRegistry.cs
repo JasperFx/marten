@@ -31,16 +31,6 @@ namespace Marten
             set { _alterations.Add(value); }
         }
 
-        /// <summary>
-        /// Override the "upsert" type for this DocumentStore. The default is the "Legacy"
-        /// mode for version Postgresql 9.4 and below. Postgresql 9.5 and above users can
-        /// opt into the newer, built in "Standard" upsert mechanism
-        /// </summary>
-        public PostgresUpsertType UpsertType
-        {
-            set { alter = x => x.UpsertType = value; }
-        }
-
         internal void Alter(IDocumentSchema schema)
         {
             _alterations.Each(x => x(schema));
@@ -122,17 +112,6 @@ namespace Marten
                 return this;
             }   
 
-            /// <summary>
-            /// Overrides the "Upsert" style for just this document type
-            /// </summary>
-            /// <param name="upsertType"></param>
-            /// <returns></returns>
-            public DocumentMappingExpression<T> ConfigureUpsertType(PostgresUpsertType upsertType)
-            {
-                _parent._alterations.Add(s => s.UpsertType = upsertType);
-                
-                return this;
-            }
 
             /// <summary>
             /// Overrides the Hilo sequence increment and "maximum low" number for document types that

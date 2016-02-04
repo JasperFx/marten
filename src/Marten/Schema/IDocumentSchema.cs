@@ -23,7 +23,7 @@ namespace Marten.Schema
 
         EventGraph Events { get; }
 
-        PostgresUpsertType UpsertType { get; set; }
+        PostgresUpsertType UpsertType { get; }
 
         /// <summary>
         /// Write the SQL script to build the database schema

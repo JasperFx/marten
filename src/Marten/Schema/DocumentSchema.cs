@@ -102,6 +102,7 @@ namespace Marten.Schema
         }
 
         public EventGraph Events { get; }
+        public PostgresUpsertType UpsertType => StoreOptions.UpsertType;
 
         public IEnumerable<string> SchemaTableNames()
         {
@@ -141,8 +142,6 @@ namespace Marten.Schema
         }
 
         public ISequences Sequences { get; }
-
-        public PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;
 
         public void WriteDDL(string filename)
         {

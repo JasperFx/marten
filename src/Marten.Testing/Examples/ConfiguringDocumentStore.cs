@@ -81,7 +81,7 @@ namespace Marten.Testing.Examples
 
                 // We're getting ahead of ourselves, but this
                 // opts into Postgresql 9.5 style upserts
-                _.Schema.UpsertType = PostgresUpsertType.Standard;
+                _.UpsertType = PostgresUpsertType.Standard;
             });
             // ENDSAMPLE
         }

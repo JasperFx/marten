@@ -1,4 +1,5 @@
 ﻿using System;
+using Marten.Schema;
 using Marten.Schema.Sequences;
 using Marten.Services;
 using Npgsql;
@@ -14,7 +15,14 @@ namespace Marten
     {
         private ISerializer _serializer;
         private IConnectionFactory _factory;
-        
+
+        /// <summary>
+        /// Upsert syntax options. Defaults to Postgresql <=9.4, but you can opt into
+        /// the more efficient Postgresql 9.5 style upserts
+        /// </summary>
+        public PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;
+
+
         /// <summary>
         /// Supply the connection string to the Postgresql database
         /// </summary>
