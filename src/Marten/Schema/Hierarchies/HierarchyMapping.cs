@@ -39,9 +39,7 @@ namespace Marten.Schema.Hierarchies
 
         public override string ToResolveMethod(string typeName)
         {
-            var subclassStatements = _subClasses
-                .Select(x => x.ToResolveStatement())
-                .Join("\n");
+
 
             return $@"
 BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
@@ -49,9 +47,7 @@ var json = reader.GetString(0);
 var id = reader[1];
 var typeAlias = reader.GetString(1);
 
-{subclassStatements}
-            
-return map.Get<{typeName}>(id, json);
+return map.Get<{typeName}>(id, _hierarchy.TypeFor(typeAlias), json);
 END
 ";
         }
@@ -83,7 +79,9 @@ END
                 Arg = "docType",
                 Column = DocumentTypeColumn,
                 DbType = NpgsqlDbType.Varchar,
-                PostgresType = "varchar"
+                PostgresType = "varchar",
+                BatchUpdatePattern = ".Param(_hierarchy.AliasFor(document.GetType()), NpgsqlDbType.Varchar)",
+                BulkInsertPattern = "writer.Write(_hierarchy.AliasFor(x.GetType()), NpgsqlDbType.Varchar);"
             });
 
             return function;

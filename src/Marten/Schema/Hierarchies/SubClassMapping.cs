@@ -21,11 +21,6 @@ namespace Marten.Schema.Hierarchies
             Alias = alias ?? documentType.GetTypeName().Replace(".", "_").SplitCamelCase().Replace(" ", "_").ToLowerInvariant();
         }
 
-        public string ToResolveStatement()
-        {
-            return $"if (typeAlias == `{Alias}`) return map.Get<{DocumentType.GetFullName()}>(id, json);";
-        }
-
         public IEnumerable<StorageArgument> ToArguments()
         {
             return _parent.ToArguments();
