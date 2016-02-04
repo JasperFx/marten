@@ -1,14 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using Baseline;
 using Marten.Generation;
 using Marten.Linq;
+using Marten.Util;
+using NpgsqlTypes;
 
 namespace Marten.Schema.Hierarchies
 {
     public class HierarchyMapping : DocumentMapping
     {
         public static readonly string DocumentTypeColumn = "mt_doc_type";
+        private readonly IList<SubClassMapping> _subClasses = new List<SubClassMapping>(); 
 
         public HierarchyMapping(Type documentType, StoreOptions options) : base(documentType, options)
         {
@@ -17,17 +22,62 @@ namespace Marten.Schema.Hierarchies
 
         public override string SelectFields(string tableAlias)
         {
-            return base.SelectFields(tableAlias);
+            return $"{tableAlias}.data, {tableAlias}.id, {tableAlias}.{DocumentTypeColumn}";
         }
 
         public override string ToResolveMethod(string typeName)
         {
-            return base.ToResolveMethod(typeName);
+            var subclassStatements = _subClasses
+                .Select(x => x.ToResolveStatement())
+                .Join("\n");
+
+            return $@"
+BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
+var json = reader.GetString(0);
+var id = reader[1];
+var typeAlias = reader.GetString(1);
+
+{subclassStatements}
+            
+return map.Get<{typeName}>(id, json);
+END
+";
         }
+
+
 
         public override TableDefinition ToTable(IDocumentSchema schema)
         {
-            return base.ToTable(schema);
+            var table = base.ToTable(schema);
+            table.Columns.Add(new TableColumn(DocumentTypeColumn, "varchar"));
+
+            return table;
+        }
+
+        public override UpsertFunction ToUpsertFunction()
+        {
+            var function = base.ToUpsertFunction();
+            function.Arguments.Add(new UpsertArgument
+            {
+                Arg = "docType",
+                Column = DocumentTypeColumn,
+                DbType = NpgsqlDbType.Varchar,
+                PostgresType = "varchar"
+            });
+
+            return function;
+        }
+
+        public void AddSubClass(Type subclassType, string alias = null)
+        {
+            if (!subclassType.CanBeCastTo(DocumentType))
+            {
+                throw new ArgumentOutOfRangeException(nameof(subclassType), 
+                    $"Type '{subclassType.GetFullName()}' cannot be cast to '{DocumentType.GetFullName()}'");
+            }
+
+            var subclass = new SubClassMapping(subclassType, this, alias);
+            _subClasses.Add(subclass);
         }
     }
 
@@ -36,12 +86,19 @@ namespace Marten.Schema.Hierarchies
         private readonly HierarchyMapping _parent;
         private readonly DocumentMapping _inner;
 
-        public SubClassMapping(Type documentType, HierarchyMapping parent)
+        public SubClassMapping(Type documentType, HierarchyMapping parent, string alias = null)
         {
             DocumentType = documentType;
             _inner = new DocumentMapping(documentType);
             _parent = parent;
+            Alias = alias ?? documentType.GetTypeName().Replace(".", "_").SplitCamelCase().Replace(" ", "_").ToLowerInvariant();
         }
+
+        public string ToResolveStatement()
+        {
+            return $"if (typeAlias == `{Alias}`) return map.Get<{DocumentType.GetFullName()}>(id, json);";
+        }
+
 
         public string Alias { get; set; }
 

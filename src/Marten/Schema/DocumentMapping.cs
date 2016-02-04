@@ -196,9 +196,6 @@ namespace Marten.Schema
         public virtual TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
             // can do foreign keys
         {
-            // TODO -- blow up if no IdMember or no TableName
-
-
             var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
             var table = new TableDefinition(TableName, new TableColumn("id", pgIdType));
             table.Columns.Add(new TableColumn("data", "jsonb") {Directive = "NOT NULL"});
@@ -209,7 +206,7 @@ namespace Marten.Schema
             return table;
         }
 
-        public UpsertFunction ToUpsertFunction()
+        public virtual UpsertFunction ToUpsertFunction()
         {
             var function = new UpsertFunction(this);
             function.Arguments.AddRange(DuplicatedFields.Select(x => x.UpsertArgument));

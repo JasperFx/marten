@@ -110,13 +110,9 @@ namespace Marten.Schema
 
             var id_NpgsqlDbType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
 
+            var typeName = mapping.DocumentType.GetTypeName();
 
-
-            var typeName = mapping.DocumentType.IsNested
-                ? $"{mapping.DocumentType.DeclaringType.Name}.{mapping.DocumentType.Name}"
-                : mapping.DocumentType.Name;
-
-            var storageArguments = mapping.IdStrategy.ToArguments();
+            var storageArguments = mapping.IdStrategy.ToArguments().ToArray();
             var ctorArgs = storageArguments.Select(x => x.ToCtorArgument()).Join(", ");
             var ctorLines = storageArguments.Select(x => x.ToCtorLine()).Join("\n");
             var fields = storageArguments.Select(x => x.ToFieldDeclaration()).Join("\n");

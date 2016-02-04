@@ -152,7 +152,7 @@
     <Compile Include="Codegen\AssemblyGenerator.cs" />
     <Compile Include="Services\UnitOfWork.cs" />
     <Compile Include="Util\CommandExtensions.cs" />
-    <Compile Include="Util\MemberInfoExtensions.cs" />
+    <Compile Include="Util\ReflectionExtensions.cs" />
     <Compile Include="Codegen\SourceWriter.cs" />
     <Compile Include="Util\StringExtensions.cs" />
     <Compile Include="Services\UpdateBatch.cs" />
