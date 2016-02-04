@@ -26,8 +26,22 @@ namespace Marten.Schema
             PgIdType = TypeMappings.GetPgType(idType);
             Id_NpgsqlDbType = TypeMappings.ToDbType(idType);
 
-            Arguments.Add(new UpsertArgument { Arg = "docId", PostgresType = PgIdType, Column = "id",  Members = new[] {mapping.IdMember}});
-            Arguments.Add(new UpsertArgument { Arg = "doc", PostgresType = "JSONB", DbType = NpgsqlDbType.Jsonb, Column = "data", BulkInsertPattern = "writer.Write(serializer.ToJson(x), NpgsqlDbType.Jsonb);" });
+            Arguments.Add(new UpsertArgument
+            {
+                Arg = "docId",
+                PostgresType = PgIdType,
+                Column = "id",
+                Members = new[] {mapping.IdMember}
+            });
+            Arguments.Add(new UpsertArgument
+            {
+                Arg = "doc",
+                PostgresType = "JSONB",
+                DbType = NpgsqlDbType.Jsonb,
+                Column = "data",
+                BulkInsertPattern = "writer.Write(serializer.ToJson(x), NpgsqlDbType.Jsonb);",
+                BatchUpdatePattern = "*"
+            });
         }
 
         public NpgsqlDbType Id_NpgsqlDbType { get; }
@@ -74,7 +88,19 @@ namespace Marten.Schema
 
         public string ToUpdateBatchMethod(string typeName)
         {
-            throw new NotImplementedException();
+            var parameters = Arguments.Select(x => x.ToUpdateBatchParameter()).Join("");
+
+            return $@"
+BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity)
+var document = ({typeName})entity;
+batch.Sproc(`{FunctionName}`){parameters.Replace("*", ".JsonEntity(document)")};
+END
+
+BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity, string json)
+var document = ({typeName})entity;
+batch.Sproc(`{FunctionName}`){parameters.Replace("*", ".JsonBody(json)")};
+END
+";
         }
 
         public string ToBulkInsertMethod(string typeName)

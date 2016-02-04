@@ -172,7 +172,7 @@ END
 
 {mapping.ToResolveMethod(typeName)}
 
-{toUpdateBatchMethod(mapping, id_NpgsqlDbType, typeName)}
+{upsertFunction.ToUpdateBatchMethod(typeName)}
 
 {upsertFunction.ToBulkInsertMethod(typeName)}
 
@@ -182,23 +182,5 @@ END
 ");
         }
 
-        private static string toUpdateBatchMethod(IDocumentMapping mapping, NpgsqlDbType idNpgsqlDbType, string typeName)
-        {
-            var extras =
-                mapping.DuplicatedFields.Select(x => x.ToUpdateBatchParam()).Join("");
-
-            return
-                $@"
-BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity)
-var document = ({typeName})entity;
-batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name}, NpgsqlDbType.{idNpgsqlDbType}).JsonEntity(document){extras};
-END
-
-BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity, string json)
-var document = ({typeName})entity;
-batch.Sproc(`{mapping.UpsertName}`).Param(document.{mapping.IdMember.Name}, NpgsqlDbType.{idNpgsqlDbType}).JsonBody(json){extras};
-END
-";
-        }
     }
 }
