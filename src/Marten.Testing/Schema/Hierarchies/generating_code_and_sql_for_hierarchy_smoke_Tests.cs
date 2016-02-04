@@ -48,7 +48,7 @@ namespace Marten.Testing.Schema.Hierarchies
         [Fact]
         public void generate_document_storage_code_for_the_hierarchy_without_blowing_up()
         {
-            //DocumentStorageBuilder.Build(null, theHierarchy).ShouldNotBeNull();
+            DocumentStorageBuilder.Build(null, theHierarchy).ShouldNotBeNull();
         }
     }
 
