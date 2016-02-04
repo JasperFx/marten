@@ -172,16 +172,13 @@ return document.{mapping.IdMember.Name};
 END
 
 BLOCK:public object Retrieve({typeName} document)
-return document.{
-                    mapping.IdMember.Name};
+return document.{mapping.IdMember.Name};
 END
 
-public NpgsqlDbType IdType => NpgsqlDbType.{id_NpgsqlDbType
-                    };
+public NpgsqlDbType IdType => NpgsqlDbType.{id_NpgsqlDbType};
 
 BLOCK:public object Identity(object document)
-return (({typeName})document).{
-                    mapping.IdMember.Name};
+return (({typeName})document).{mapping.IdMember.Name};
 END
 
 

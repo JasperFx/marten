@@ -64,6 +64,11 @@ namespace Marten.Schema.Hierarchies
             return _parent.ToTable(schema);
         }
 
+        public UpsertFunction ToUpsertFunction(IDocumentSchema schema)
+        {
+            throw new NotImplementedException();
+        }
+
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             return _parent.FieldFor(members) ?? _inner.FieldFor(members);

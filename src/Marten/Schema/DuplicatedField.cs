@@ -71,7 +71,8 @@ namespace Marten.Schema
         {
             Arg = "arg_" + ColumnName.ToLower(),
             Column = ColumnName.ToLower(),
-            PostgresType = TypeMappings.GetPgType(Members.Last().GetMemberType())
+            PostgresType = TypeMappings.GetPgType(Members.Last().GetMemberType()),
+            Members = Members
         };
 
         // I say you don't need a ForeignKey 
