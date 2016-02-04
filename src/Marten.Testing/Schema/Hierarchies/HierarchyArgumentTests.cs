@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Marten.Schema.Hierarchies;
 using Shouldly;
 using Xunit;
@@ -15,6 +16,42 @@ namespace Marten.Testing.Schema.Hierarchies
             mapping = new HierarchyMapping(typeof(Squad), new StoreOptions());
 
             arg = new HierarchyArgument(mapping);
+
+            mapping.AddSubClass(typeof(BasketballTeam));
+            mapping.AddSubClass(typeof(BaseballTeam));
+            mapping.AddSubClass(typeof(FootballTeam), "football");
+        }
+
+        [Fact]
+        public void alias_for_hit()
+        {
+            mapping.AliasFor(typeof(BasketballTeam)).ShouldBe("basketball_team");
+            mapping.AliasFor(typeof(FootballTeam)).ShouldBe("football");
+        }
+
+        [Fact]
+        public void alias_for_miss()
+        {
+            Exception<ArgumentOutOfRangeException>.ShouldBeThrownBy(() =>
+            {
+                mapping.AliasFor(GetType());
+            });
+        }
+
+        [Fact]
+        public void type_for_alias_hit()
+        {
+            mapping.TypeFor("football").ShouldBe(typeof (FootballTeam));
+            mapping.TypeFor("baseball_team").ShouldBe(typeof (BaseballTeam));
+        }
+
+        [Fact]
+        public void type_for_alias_miss()
+        {
+            Exception<ArgumentOutOfRangeException>.ShouldBeThrownBy(() =>
+            {
+                mapping.TypeFor("cricket_team");
+            });
         }
 
         [Fact]

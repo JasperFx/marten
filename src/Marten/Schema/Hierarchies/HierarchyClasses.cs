@@ -10,6 +10,8 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Hierarchies
 {
+
+    // TODO --- asser that there are no duplicate aliases or subclass types
     public class HierarchyMapping : DocumentMapping
     {
         public static readonly string DocumentTypeColumn = "mt_doc_type";
@@ -19,6 +21,19 @@ namespace Marten.Schema.Hierarchies
         {
             
         }
+
+        public string AliasFor(Type subclassType)
+        {
+            var type = _subClasses.FirstOrDefault(x => x.DocumentType == subclassType);
+            if (type == null)
+            {
+                throw new ArgumentOutOfRangeException($"Unknown subclass type '{subclassType.FullName}' for Document Hierarchy {DocumentType.FullName}");
+            }
+
+            return type.Alias;
+        }
+
+
 
         public override string SelectFields(string tableAlias)
         {
@@ -92,6 +107,17 @@ END
         public override string ToString()
         {
             return "HierarchyMapping for " + DocumentType.GetFullName();
+        }
+
+        public Type TypeFor(string alias)
+        {
+            var subClassMapping = _subClasses.FirstOrDefault(x => x.Alias.EqualsIgnoreCase(alias));
+            if (subClassMapping == null)
+            {
+                throw new ArgumentOutOfRangeException(nameof(alias),$"No subclass in the hierarchy '{DocumentType.FullName}' matches the alias '{alias}'");
+            }
+
+            return subClassMapping.DocumentType;
         }
     }
 
