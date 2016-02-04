@@ -20,12 +20,12 @@ namespace Marten.Schema
             return Build(schema, new DocumentMapping(documentType));
         }
 
-        public static IDocumentStorage Build(IDocumentSchema schema, DocumentMapping mapping)
+        public static IDocumentStorage Build(IDocumentSchema schema, IDocumentMapping mapping)
         {
             return Build(schema, new[] {mapping}).Single();
         }
 
-        public static IEnumerable<IDocumentStorage> Build(IDocumentSchema schema, DocumentMapping[] mappings)
+        public static IEnumerable<IDocumentStorage> Build(IDocumentSchema schema, IDocumentMapping[] mappings)
         {
             // Generate the actual source code
             var code = GenerateDocumentStorageCode(mappings);
@@ -67,7 +67,7 @@ namespace Marten.Schema
         }
 
 
-        public static string GenerateDocumentStorageCode(DocumentMapping[] mappings)
+        public static string GenerateDocumentStorageCode(IDocumentMapping[] mappings)
         {
             var writer = new SourceWriter();
 
@@ -104,7 +104,7 @@ namespace Marten.Schema
             return writer.Code();
         }
 
-        public static void GenerateDocumentStorage(DocumentMapping mapping, SourceWriter writer)
+        public static void GenerateDocumentStorage(IDocumentMapping mapping, SourceWriter writer)
         {
             var extraUpsertArguments = mapping.DuplicatedFields.Any()
                 ? mapping.DuplicatedFields.Select(x => x.WithParameterCode()).Join("")
@@ -244,7 +244,7 @@ END
 ");
         }
 
-        private static string toUpdateBatchMethod(DocumentMapping mapping, NpgsqlDbType idNpgsqlDbType, string typeName)
+        private static string toUpdateBatchMethod(IDocumentMapping mapping, NpgsqlDbType idNpgsqlDbType, string typeName)
         {
             var extras =
                 mapping.DuplicatedFields.Select(x => x.ToUpdateBatchParam()).Join("");

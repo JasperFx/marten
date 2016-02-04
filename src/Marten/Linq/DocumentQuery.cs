@@ -13,11 +13,11 @@ namespace Marten.Linq
 {
     public class DocumentQuery
     {
-        private readonly DocumentMapping _mapping;
+        private readonly IDocumentMapping _mapping;
         private readonly QueryModel _query;
         private readonly MartenExpressionParser _parser;
 
-        public DocumentQuery(DocumentMapping mapping, QueryModel query, ISerializer serializer)
+        public DocumentQuery(IDocumentMapping mapping, QueryModel query, ISerializer serializer)
         {
             _mapping = mapping;
             _query = query;

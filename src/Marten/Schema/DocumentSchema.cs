@@ -43,7 +43,7 @@ namespace Marten.Schema
         {
         }
 
-        public DocumentMapping MappingFor(Type documentType)
+        public IDocumentMapping MappingFor(Type documentType)
         {
             return StoreOptions.MappingFor(documentType);
         }
@@ -89,7 +89,7 @@ namespace Marten.Schema
             }
         }
 
-        private bool shouldRegenerate(DocumentMapping mapping)
+        private bool shouldRegenerate(IDocumentMapping mapping)
         {
             if (!DocumentTables().Contains(mapping.TableName)) return true;
 

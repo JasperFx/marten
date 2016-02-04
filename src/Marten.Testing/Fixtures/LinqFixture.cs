@@ -120,7 +120,7 @@ namespace Marten.Testing.Fixtures
         [FormatAs("The field {field} is configured to be duplicated")]
         public void FieldIsDuplicated([SelectionList("Fields")] string field)
         {
-            _container.GetInstance<IDocumentSchema>().MappingFor(typeof (Target)).DuplicateField(field);
+            _container.GetInstance<IDocumentSchema>().MappingFor(typeof (Target)).As<DocumentMapping>().DuplicateField(field);
         }
 
         public IGrammar TheDocumentsAre()

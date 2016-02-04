@@ -19,7 +19,7 @@ namespace Marten.Testing.Util
 
         public update_batch_Tests()
         {
-            theMapping = theContainer.GetInstance<IDocumentSchema>().MappingFor(typeof(Target));
+            theMapping = theContainer.GetInstance<IDocumentSchema>().MappingFor(typeof(Target)).As<DocumentMapping>();
             theSession = theContainer.GetInstance<IDocumentStore>().OpenSession();
         }
 

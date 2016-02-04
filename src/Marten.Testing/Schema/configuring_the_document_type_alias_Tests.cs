@@ -1,4 +1,5 @@
-﻿using Marten.Schema;
+﻿using Baseline;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -26,7 +27,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().DocumentAlias("folks");
             });
 
-            store.Schema.MappingFor(typeof(User)).Alias.ShouldBe("folks");
+            store.Schema.MappingFor(typeof(User)).As<DocumentMapping>().Alias.ShouldBe("folks");
         }
 
         [DocumentAlias("johndeere")]

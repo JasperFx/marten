@@ -1,5 +1,7 @@
 ﻿using System.Linq;
+using Baseline;
 using Marten.Generation;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
 using StructureMap;
@@ -33,7 +35,7 @@ namespace Marten.Testing.Schema
             {
                 var store = container.GetInstance<IDocumentStore>();
 
-                store.Schema.MappingFor(typeof (User)).DuplicateField("UserName");
+                store.Schema.MappingFor(typeof (User)).As<DocumentMapping>().DuplicateField("UserName");
 
                 store.Schema.StorageFor(typeof(User));
 

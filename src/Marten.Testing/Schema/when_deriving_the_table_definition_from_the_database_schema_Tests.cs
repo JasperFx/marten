@@ -1,4 +1,5 @@
 using System.Linq;
+using Baseline;
 using Marten.Generation;
 using Marten.Schema;
 using Marten.Testing.Documents;
@@ -21,7 +22,7 @@ namespace Marten.Testing.Schema
             ConnectionSource.CleanBasicDocuments();
             _schema = _container.GetInstance<DocumentSchema>();
 
-            theMapping = _schema.MappingFor(typeof(User));
+            theMapping = _schema.MappingFor(typeof(User)).As<DocumentMapping>();
             theMapping.DuplicateField("UserName");
 
 

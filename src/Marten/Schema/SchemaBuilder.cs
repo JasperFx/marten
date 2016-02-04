@@ -10,7 +10,7 @@ namespace Marten.Schema
 {
     public static class SchemaBuilder
     {
-        public static void WriteSchemaObjects(DocumentMapping mapping, IDocumentSchema schema, StringWriter writer)
+        public static void WriteSchemaObjects(IDocumentMapping mapping, IDocumentSchema schema, StringWriter writer)
         {
             var table = mapping.ToTable(schema);
             table.Write(writer);

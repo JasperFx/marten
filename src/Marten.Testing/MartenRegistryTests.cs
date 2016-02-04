@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Baseline;
 using Fixie;
 using Marten.Schema;
 using Marten.Testing.Documents;
@@ -30,21 +31,21 @@ namespace Marten.Testing
         [Fact]
         public void picks_up_searchable_on_property()
         {
-            theSchema.MappingFor(typeof (Organization))
+            theSchema.MappingFor(typeof (Organization)).As<DocumentMapping>()
                 .FieldFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
         }
 
         [Fact]
         public void picks_up_searchable_on_field()
         {
-            theSchema.MappingFor(typeof(Organization))
+            theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>()
                 .FieldFor(nameof(Organization.OtherName)).ShouldBeOfType<DuplicatedField>();
         }
 
         [Fact]
         public void searchable_field_is_also_indexed()
         {
-            var mapping = theSchema.MappingFor(typeof (Organization));
+            var mapping = theSchema.MappingFor(typeof (Organization)).As<DocumentMapping>();
 
             var index = mapping.IndexesFor("name").Single();
             index.IndexName.ShouldBe("mt_doc_martenregistrytests_organization_idx_name");
@@ -55,7 +56,7 @@ namespace Marten.Testing
         [Fact]
         public void can_customize_the_index_on_a_searchable_field()
         {
-            var mapping = theSchema.MappingFor(typeof(Organization));
+            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
             var index = mapping.IndexesFor("other_name").Single();
             index.IndexName.ShouldBe("mt_special");
@@ -65,7 +66,7 @@ namespace Marten.Testing
         [Fact]
         public void can_set_up_gin_index_on_json_data()
         {
-            var mapping = theSchema.MappingFor(typeof(Organization));
+            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
             var index = mapping.IndexesFor("data").Single();
 

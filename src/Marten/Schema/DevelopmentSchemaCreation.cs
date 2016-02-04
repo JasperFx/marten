@@ -14,7 +14,7 @@ namespace Marten.Schema
             _runner = runner;
         }
 
-        public void CreateSchema(IDocumentSchema schema, DocumentMapping mapping)
+        public void CreateSchema(IDocumentSchema schema, IDocumentMapping mapping)
         {
             var writer= new StringWriter();
             SchemaBuilder.WriteSchemaObjects(mapping, schema, writer);

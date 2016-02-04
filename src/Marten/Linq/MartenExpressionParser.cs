@@ -38,7 +38,7 @@ namespace Marten.Linq
             _serializer = serializer;
         }
 
-        public IWhereFragment ParseWhereFragment(DocumentMapping mapping, Expression expression)
+        public IWhereFragment ParseWhereFragment(IDocumentMapping mapping, Expression expression)
         {
             if (expression is BinaryExpression)
             {
@@ -69,7 +69,7 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        private IWhereFragment GetWhereFragment(DocumentMapping mapping, SubQueryExpression expression)
+        private IWhereFragment GetWhereFragment(IDocumentMapping mapping, SubQueryExpression expression)
         {
             var queryType = expression.QueryModel.MainFromClause.ItemType;
             if (TypeMappings.HasTypeMapping(queryType))
@@ -89,7 +89,7 @@ namespace Marten.Linq
             throw new NotImplementedException();
         }
 
-        private IWhereFragment GetNotWhereFragment(DocumentMapping mapping, Expression expression)
+        private IWhereFragment GetNotWhereFragment(IDocumentMapping mapping, Expression expression)
         {
             if (expression is MemberExpression && expression.Type == typeof (bool))
             {
@@ -112,7 +112,7 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        private IWhereFragment GetMethodCall(DocumentMapping mapping, MethodCallExpression expression)
+        private IWhereFragment GetMethodCall(IDocumentMapping mapping, MethodCallExpression expression)
         {
             // TODO -- generalize this mess
             if (expression.Method.Name == CONTAINS)
@@ -159,7 +159,7 @@ namespace Marten.Linq
             throw new NotImplementedException();
         }
 
-        public IWhereFragment GetWhereFragment(DocumentMapping mapping, BinaryExpression binary)
+        public IWhereFragment GetWhereFragment(IDocumentMapping mapping, BinaryExpression binary)
         {
             if (_operators.ContainsKey(binary.NodeType))
             {
@@ -181,7 +181,7 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        private IWhereFragment buildSimpleWhereClause(DocumentMapping mapping, BinaryExpression binary)
+        private IWhereFragment buildSimpleWhereClause(IDocumentMapping mapping, BinaryExpression binary)
         {
             var op = _operators[binary.NodeType];
 
@@ -229,7 +229,7 @@ namespace Marten.Linq
         }
 
         // TODO -- use the mapping off of DocumentQuery later
-        public string JsonLocator(DocumentMapping mapping, Expression expression)
+        public string JsonLocator(IDocumentMapping mapping, Expression expression)
         {
             var visitor = new FindMembers();
             visitor.Visit(expression);

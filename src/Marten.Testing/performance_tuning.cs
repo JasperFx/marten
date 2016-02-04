@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Baseline;
 using HtmlTags;
 using Jil;
 using Marten.Schema;
@@ -335,7 +336,7 @@ public class ContainmentOperator : MartenRegistry
             // Get Roslyn spun up before measuring anything
             var schema = theContainer.GetInstance<IDocumentSchema>();
 
-            schema.MappingFor(typeof (Target)).DuplicateField("Date");
+            schema.MappingFor(typeof (Target)).As<DocumentMapping>().DuplicateField("Date");
 
             schema.StorageFor(typeof (Target)).ShouldNotBeNull();
 

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Baseline;
 using Marten.Schema;
 using Marten.Schema.Sequences;
 using Marten.Testing.Documents;
@@ -113,7 +114,7 @@ namespace Marten.Testing.Schema
 
                 var schema = container.GetInstance<IDocumentSchema>();
 
-                var mapping = schema.MappingFor(typeof(User));
+                var mapping = schema.MappingFor(typeof(User)).As<DocumentMapping>();
                 mapping.DuplicateField("FirstName");
 
                 var storage = schema.StorageFor(typeof (User));

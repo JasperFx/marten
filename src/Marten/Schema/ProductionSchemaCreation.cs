@@ -5,7 +5,7 @@ namespace Marten.Schema
 {
     public class ProductionSchemaCreation : IDocumentSchemaCreation
     {
-        public void CreateSchema(IDocumentSchema schema, DocumentMapping mapping)
+        public void CreateSchema(IDocumentSchema schema, IDocumentMapping mapping)
         {
             var className = nameof(StoreOptions);
             var propName = nameof(StoreOptions.AutoCreateSchemaObjects);
