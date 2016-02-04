@@ -14,7 +14,7 @@ namespace Marten
     /// </summary>
     public class MartenRegistry
     {
-        private readonly IList<Action<IDocumentSchema>> _alterations = new List<Action<IDocumentSchema>>();
+        private readonly IList<Action<StoreOptions>> _alterations = new List<Action<StoreOptions>>();
 
         /// <summary>
         /// Configure a single document type
@@ -26,12 +26,12 @@ namespace Marten
             return new DocumentMappingExpression<T>(this);
         } 
 
-        private Action<IDocumentSchema> alter
+        private Action<StoreOptions> alter
         {
             set { _alterations.Add(value); }
         }
 
-        internal void Alter(IDocumentSchema schema)
+        internal void Alter(StoreOptions schema)
         {
             _alterations.Each(x => x(schema));
         }
@@ -62,7 +62,7 @@ namespace Marten
             {
                 _parent = parent;
 
-                _parent.alter = schema => schema.MappingFor(typeof (T));
+                _parent.alter = options => options.MappingFor(typeof (T));
             }
 
             /// <summary>
@@ -129,7 +129,10 @@ namespace Marten
             {
                 set
                 {
-                    Action<IDocumentSchema> alteration = schema => { value(schema.MappingFor(typeof (T))); };
+                    Action<StoreOptions> alteration = o =>
+                    {
+                        value(o.MappingFor(typeof (T)));
+                    };
 
                     _parent._alterations.Add(alteration);
                 }

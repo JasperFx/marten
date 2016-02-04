@@ -18,8 +18,6 @@ namespace Marten.Schema
     {
         private readonly IDocumentSchemaCreation _creation;
 
-        private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
-            new ConcurrentDictionary<Type, DocumentMapping>();
 
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
             new ConcurrentDictionary<Type, IDocumentStorage>();
@@ -47,7 +45,7 @@ namespace Marten.Schema
 
         public DocumentMapping MappingFor(Type documentType)
         {
-            return _documentMappings.GetOrAdd(documentType, type => new DocumentMapping(type, StoreOptions));
+            return StoreOptions.MappingFor(documentType);
         }
 
         public void EnsureStorageExists(Type documentType)
@@ -78,7 +76,7 @@ namespace Marten.Schema
 
         private void assertNoDuplicateDocumentAliases()
         {
-            var duplicates = _documentMappings.Values.GroupBy(x => x.Alias).Where(x => x.Count() > 1).ToArray();
+            var duplicates = StoreOptions.AllDocumentMappings.GroupBy(x => x.Alias).Where(x => x.Count() > 1).ToArray();
             if (duplicates.Any())
             {
                 var message = duplicates.Select(group =>
@@ -138,7 +136,7 @@ namespace Marten.Schema
         public void Alter(MartenRegistry registry)
         {
             // TODO -- later, latch on MartenRegistry type? May not really matter
-            registry.Alter(this);
+            registry.Alter(StoreOptions);
         }
 
         public ISequences Sequences { get; }
@@ -153,7 +151,7 @@ namespace Marten.Schema
         {
             var writer = new StringWriter();
 
-            _documentMappings.Values.Each(x => SchemaBuilder.WriteSchemaObjects(x, this, writer));
+            StoreOptions.AllDocumentMappings.Each(x => SchemaBuilder.WriteSchemaObjects(x, this, writer));
 
             writer.WriteLine(SchemaBuilder.GetText("mt_hilo"));
 

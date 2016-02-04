@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Marten.Schema;
 using Marten.Schema.Sequences;
 using Marten.Services;
@@ -15,6 +17,16 @@ namespace Marten
     {
         private ISerializer _serializer;
         private IConnectionFactory _factory;
+
+        private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
+            new ConcurrentDictionary<Type, DocumentMapping>();
+
+        public DocumentMapping MappingFor(Type documentType)
+        {
+            return _documentMappings.GetOrAdd(documentType, type => new DocumentMapping(type, this));
+        }
+
+        public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Values; 
 
         /// <summary>
         /// Upsert syntax options. Defaults to Postgresql <=9.4, but you can opt into
