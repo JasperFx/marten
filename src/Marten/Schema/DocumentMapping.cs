@@ -130,6 +130,11 @@ namespace Marten.Schema
             }
         }
 
+        public virtual IEnumerable<StorageArgument> ToArguments()
+        {
+            return IdStrategy.ToArguments();
+        }
+
         public IIdGeneration IdStrategy { get; set; } = new StringIdGeneration();
 
         public string UpsertName { get; private set; }

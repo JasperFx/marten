@@ -26,5 +26,7 @@ namespace Marten.Schema
         string ToResolveMethod(string typeName);
 
         IWhereFragment FilterDocuments(IWhereFragment query);
+
+        IEnumerable<StorageArgument> ToArguments();
     }
 }

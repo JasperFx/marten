@@ -58,7 +58,7 @@ namespace Marten.Schema
 
                     var mapping = mappings.Single(m => m.DocumentType == docType);
 
-                    var arguments = mapping.IdStrategy.ToArguments().Select(arg => arg.GetValue(schema)).ToArray();
+                    var arguments = mapping.ToArguments().Select(arg => arg.GetValue(schema)).ToArray();
 
                     var ctor = x.GetConstructors().Single();
 
@@ -112,7 +112,7 @@ namespace Marten.Schema
 
             var typeName = mapping.DocumentType.GetTypeName();
 
-            var storageArguments = mapping.IdStrategy.ToArguments().ToArray();
+            var storageArguments = mapping.ToArguments().ToArray();
             var ctorArgs = storageArguments.Select(x => x.ToCtorArgument()).Join(", ");
             var ctorLines = storageArguments.Select(x => x.ToCtorLine()).Join("\n");
             var fields = storageArguments.Select(x => x.ToFieldDeclaration()).Join("\n");

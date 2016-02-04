@@ -99,6 +99,11 @@ END
             return $"if (typeAlias == `{Alias}`) return map.Get<{DocumentType.GetFullName()}>(id, json);";
         }
 
+        public IEnumerable<StorageArgument> ToArguments()
+        {
+            return _parent.ToArguments();
+        }
+
 
         public string Alias { get; set; }
 
