@@ -19,7 +19,7 @@ namespace Marten.Schema
         string SelectFields(string tableAlias);
 
         TableDefinition ToTable(IDocumentSchema schema);
-        UpsertFunction ToUpsertFunction(IDocumentSchema schema);
+        UpsertFunction ToUpsertFunction();
 
         IField FieldFor(IEnumerable<MemberInfo> members);
 

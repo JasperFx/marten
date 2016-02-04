@@ -64,7 +64,7 @@ namespace Marten.Schema.Hierarchies
             return _parent.ToTable(schema);
         }
 
-        public UpsertFunction ToUpsertFunction(IDocumentSchema schema)
+        public UpsertFunction ToUpsertFunction()
         {
             throw new NotImplementedException();
         }

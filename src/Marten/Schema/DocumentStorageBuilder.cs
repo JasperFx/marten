@@ -106,23 +106,11 @@ namespace Marten.Schema
 
         public static void GenerateDocumentStorage(IDocumentMapping mapping, SourceWriter writer)
         {
-            var extraUpsertArguments = mapping.DuplicatedFields.Any()
-                ? mapping.DuplicatedFields.Select(x => x.WithParameterCode()).Join("")
-                : "";
+            var upsertFunction = mapping.ToUpsertFunction();
 
-
-            // TODO -- move more of this into DocumentMapping, DuplicatedField, IField, etc.
             var id_NpgsqlDbType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
-            var duplicatedFieldsInBulkLoading = mapping.DuplicatedFields.Any()
-                ? ", " + mapping.DuplicatedFields.Select(x => x.ColumnName).Join(", ")
-                : string.Empty;
 
-            var duplicatedFieldsInBulkLoadingWriter = "";
-            if (mapping.DuplicatedFields.Any())
-            {
-                duplicatedFieldsInBulkLoadingWriter =
-                    mapping.DuplicatedFields.Select(field => field.ToBulkWriterCode()).Join("\n");
-            }
+
 
             var typeName = mapping.DocumentType.IsNested
                 ? $"{mapping.DocumentType.DeclaringType.Name}.{mapping.DocumentType.Name}"
@@ -186,16 +174,7 @@ END
 
 {toUpdateBatchMethod(mapping, id_NpgsqlDbType, typeName)}
 
-BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{typeName}> documents)
-BLOCK:using (var writer = conn.BeginBinaryImport(`COPY {mapping.TableName}(id, data{duplicatedFieldsInBulkLoading}) FROM STDIN BINARY`))
-BLOCK:foreach (var x in documents)
-writer.StartRow();
-writer.Write(x.Id, NpgsqlDbType.{id_NpgsqlDbType});
-writer.Write(serializer.ToJson(x), NpgsqlDbType.Jsonb);
-{duplicatedFieldsInBulkLoadingWriter}
-END
-END
-END
+{upsertFunction.ToBulkInsertMethod(typeName)}
 
 
 END

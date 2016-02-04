@@ -17,7 +17,7 @@ namespace Marten.Schema
             writer.WriteLine();
             writer.WriteLine();
 
-            mapping.ToUpsertFunction(schema).WriteFunctionSql(schema?.UpsertType ?? PostgresUpsertType.Legacy, writer);
+            mapping.ToUpsertFunction().WriteFunctionSql(schema?.UpsertType ?? PostgresUpsertType.Legacy, writer);
 
             mapping.Indexes.Each(x =>
             {

@@ -209,7 +209,7 @@ namespace Marten.Schema
             return table;
         }
 
-        public UpsertFunction ToUpsertFunction(IDocumentSchema schema)
+        public UpsertFunction ToUpsertFunction()
         {
             var function = new UpsertFunction(this);
             function.Arguments.AddRange(DuplicatedFields.Select(x => x.UpsertArgument));

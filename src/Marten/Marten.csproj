@@ -65,6 +65,7 @@
     <Compile Include="Schema\InvalidDocumentException.cs" />
     <Compile Include="Schema\IResolver.cs" />
     <Compile Include="Schema\MartenSchemaException.cs" />
+    <Compile Include="Schema\UpsertFunction.cs" />
     <Compile Include="Services\BatchCommand.cs" />
     <Compile Include="Services\CommandRunner.cs" />
     <Compile Include="Services\CommandRunnerExtensions.cs" />

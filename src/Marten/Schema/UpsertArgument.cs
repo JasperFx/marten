@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Util;
+using NpgsqlTypes;
 
 namespace Marten.Schema
 {
@@ -42,77 +40,6 @@ namespace Marten.Schema
     */
 
 
-    public class UpsertFunction
-    {
-        public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
-        public readonly IList<ColumnValue> Values = new List<ColumnValue>();
-
-        
-
-        public string FunctionName { get; }
-
-        public UpsertFunction(IDocumentMapping mapping)
-        {
-            FunctionName = mapping.UpsertName;
-            TableName = mapping.TableName;
-
-            PgIdType = TypeMappings.GetPgType(mapping.IdMember.GetMemberType());
-            Arguments.Add(new UpsertArgument { Arg = "docId", PostgresType = PgIdType, Column = "id",  Members = new[] {mapping.IdMember}});
-            Arguments.Add(new UpsertArgument { Arg = "doc", PostgresType = "JSONB", Column = "data"});
-        }
-
-        public string TableName { get; set; }
-
-        public string PgIdType { get; }
-
-        public void WriteFunctionSql(PostgresUpsertType upsertType, StringWriter writer)
-        {
-            var argList = Arguments.Select(x => x.ArgumentDeclaration()).Join(", ");
-
-            var updates = Arguments.Where(x => x.Column != "id")
-                .Select(x => $"\"{x.Column}\" = {x.Arg}").Join(", ");
-
-            var inserts = Arguments.Select(x => x.Column).Join(", ");
-            var valueList = Arguments.Select(x => x.Arg).Join(", ");
-
-            if (upsertType == PostgresUpsertType.Legacy)
-            {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {FunctionName}({argList}) RETURNS VOID AS");
-                writer.WriteLine("$$");
-                writer.WriteLine("BEGIN");
-                writer.WriteLine($"LOCK TABLE {TableName} IN SHARE ROW EXCLUSIVE MODE;");
-                writer.WriteLine($"  WITH upsert AS (UPDATE {TableName} SET {updates} WHERE id=docId RETURNING *) ");
-                writer.WriteLine($"  INSERT INTO {TableName} ({inserts})");
-                writer.WriteLine($"  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);");
-                writer.WriteLine("END;");
-                writer.WriteLine("$$ LANGUAGE plpgsql;");
-            }
-            else
-            {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {FunctionName}({argList}) RETURNS VOID AS");
-                writer.WriteLine("$$");
-                writer.WriteLine("BEGIN");
-                writer.WriteLine($"INSERT INTO {TableName} VALUES ({valueList})");
-                writer.WriteLine($"  ON CONFLICT ON CONSTRAINT pk_{TableName}");
-                writer.WriteLine($"  DO UPDATE SET {updates};");
-                writer.WriteLine("END;");
-                writer.WriteLine("$$ LANGUAGE plpgsql;");
-            }
-
-        }
-
-        public string ToUpdateBatchMethod(string typeName)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string ToBulkInsertMethod(string typeName)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-
     public class ColumnValue
     {
         public ColumnValue(string column, string functionValue)
@@ -127,6 +54,7 @@ namespace Marten.Schema
 
     public class UpsertArgument
     {
+        private MemberInfo[] _members;
         public string Arg { get; set; }
         public string PostgresType { get; set; }
 
@@ -137,7 +65,29 @@ namespace Marten.Schema
             return $"{Arg} {PostgresType}";
         }
 
-        public MemberInfo[] Members { get; set; }
+        public MemberInfo[] Members
+        {
+            get { return _members; }
+            set
+            {
+                _members = value;
+                if (value != null)
+                {
+                    DbType = TypeMappings.ToDbType(value.Last().GetMemberType());
+                }
+            }
+        }
 
+        public NpgsqlDbType DbType { get; set; }
+
+        public string BulkInsertPattern = "writer.Write(x.{0}, NpgsqlDbType.{1});";
+
+        public string ToBulkInsertWriterStatement()
+        {
+            if (Members == null) return BulkInsertPattern;
+
+            var accessor = Members.Select(x => x.Name).Join("?.");
+            return BulkInsertPattern.ToFormat(accessor, DbType);
+        }
     }
 }
