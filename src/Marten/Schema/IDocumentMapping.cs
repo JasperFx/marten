@@ -20,5 +20,7 @@ namespace Marten.Schema
         TableDefinition ToTable(IDocumentSchema schema);
 
         IField FieldFor(IEnumerable<MemberInfo> members);
+
+        string ToResolveMethod(string typeName);
     }
 }

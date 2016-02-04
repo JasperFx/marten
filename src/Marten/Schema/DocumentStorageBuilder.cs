@@ -210,14 +210,7 @@ return (({typeName})document).{
 END
 
 
-BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
-var json = reader.GetString(0);
-var id = reader[1];
-            
-return map.Get<{typeName}>(id, json);
-END
-
-
+{mapping.ToResolveMethod(typeName)}
 
 {toUpdateBatchMethod(mapping, id_NpgsqlDbType, typeName)
                     }

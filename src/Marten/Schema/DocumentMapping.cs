@@ -239,6 +239,18 @@ namespace Marten.Schema
             return _fields.GetOrAdd(key, _ => { return new JsonLocatorField(members.ToArray()); });
         }
 
+        public string ToResolveMethod(string typeName)
+        {
+            return $@"
+BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
+var json = reader.GetString(0);
+var id = reader[1];
+            
+return map.Get<{typeName}>(id, json);
+END
+";
+        }
+
         public IndexDefinition DuplicateField(MemberInfo[] members, string pgType = null)
         {
             var memberName = members.Select(x => x.Name).Join("");
