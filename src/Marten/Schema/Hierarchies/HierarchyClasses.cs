@@ -44,6 +44,15 @@ END
 ";
         }
 
+        public override IEnumerable<StorageArgument> ToArguments()
+        {
+            foreach (var argument in base.ToArguments())
+            {
+                yield return argument;
+            }
+
+            yield return new HierarchyArgument(this);
+        }
 
 
         public override TableDefinition ToTable(IDocumentSchema schema)
@@ -78,6 +87,11 @@ END
 
             var subclass = new SubClassMapping(subclassType, this, alias);
             _subClasses.Add(subclass);
+        }
+
+        public override string ToString()
+        {
+            return "HierarchyMapping for " + DocumentType.GetFullName();
         }
     }
 

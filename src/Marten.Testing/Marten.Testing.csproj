@@ -132,6 +132,7 @@
     <Compile Include="Schema\configuring_searchable_fields_Tests.cs" />
     <Compile Include="Schema\configuring_the_document_type_alias_Tests.cs" />
     <Compile Include="Schema\Hierarchies\generating_code_and_sql_for_hierarchy_smoke_Tests.cs" />
+    <Compile Include="Schema\Hierarchies\HierarchyArgumentTests.cs" />
     <Compile Include="Schema\IndexDefinitionTests.cs" />
     <Compile Include="Schema\Sequences\configuring_hilo_overrides_Tests.cs" />
     <Compile Include="Schema\when_deriving_the_table_definition_from_the_database_schema_Tests.cs" />
