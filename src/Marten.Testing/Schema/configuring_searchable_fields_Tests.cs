@@ -32,7 +32,7 @@ namespace Marten.Testing.Schema
             var registry = new MartenRegistry();
             registry.For<Organization>().Searchable(x => x.Time2, pgType:"timestamp");
 
-            var schema = new DocumentSchema(null, null);
+            var schema = new DocumentSchema(null, null, null);
             schema.Alter(registry);
 
             schema.MappingFor(typeof(Organization)).DuplicatedFields.Single(x => x.MemberName == "Time2")

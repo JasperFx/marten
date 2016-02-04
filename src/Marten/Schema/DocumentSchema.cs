@@ -26,17 +26,19 @@ namespace Marten.Schema
 
         private readonly ICommandRunner _runner;
 
-        public DocumentSchema(ICommandRunner runner, IDocumentSchemaCreation creation)
+        public DocumentSchema(StoreOptions options, ICommandRunner runner, IDocumentSchemaCreation creation)
         {
             _creation = creation;
             _runner = runner;
+
+            StoreOptions = options;
 
             Sequences = new SequenceFactory(this, _runner, _creation);
 
             Events = new EventGraph();
         }
 
-        public StoreOptions StoreOptions { get; set; } = new StoreOptions();
+        public StoreOptions StoreOptions { get; }
 
 
         public void Dispose()
