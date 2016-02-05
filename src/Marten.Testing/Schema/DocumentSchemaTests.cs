@@ -2,7 +2,9 @@
 using System.Diagnostics;
 using System.Linq;
 using Marten.Schema;
+using Marten.Schema.Hierarchies;
 using Marten.Testing.Documents;
+using Marten.Testing.Schema.Hierarchies;
 using Shouldly;
 using StructureMap;
 using Xunit;
@@ -26,10 +28,49 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
-        public void can_create_a_new_storage_for_an_IDocument_type()
+        public void can_create_a_new_storage_for_a_document_type_without_subclasses()
         {
             var storage = _schema.StorageFor(typeof (User));
             storage.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void can_create_storage_for_a_document_type_with_subclasses()
+        {
+            _schema.Alter(r =>
+            {
+                r.For<Squad>().AddSubclass<FootballTeam>().AddSubclass<BaseballTeam>();
+            });
+
+            _schema.StorageFor(typeof(Squad)).ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void can_resolve_mapping_for_subclass_type()
+        {
+            _schema.Alter(r =>
+            {
+                r.For<Squad>().AddSubclass<FootballTeam>().AddSubclass<BaseballTeam>();
+            });
+
+            var mapping = _schema.MappingFor(typeof (BaseballTeam)).ShouldBeOfType<SubClassMapping>();
+
+            mapping.DocumentType.ShouldBe(typeof(BaseballTeam));
+
+            mapping.Parent.DocumentType.ShouldBe(typeof(Squad));
+        }
+
+        [Fact]
+        public void can_resolve_document_storage_for_subclass()
+        {
+            _schema.Alter(r =>
+            {
+                r.For<Squad>().AddSubclass<FootballTeam>().AddSubclass<BaseballTeam>();
+            });
+
+            _schema.StorageFor(typeof (BaseballTeam))
+                .ShouldBeOfType<SubClassDocumentStorage<BaseballTeam, Squad>>();
+
         }
 
 

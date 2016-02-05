@@ -27,7 +27,7 @@ namespace Marten.Linq
 
         public string ToSql(NpgsqlCommand command)
         {
-            return _children.Select(x => x.ToSql(command)).Join(" " + _separator + " ");
+            return _children.Select(x => $"({x.ToSql(command)})").Join(" " + _separator + " ");
         }
     }
 }

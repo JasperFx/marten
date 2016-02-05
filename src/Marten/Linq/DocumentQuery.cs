@@ -135,7 +135,7 @@ namespace Marten.Linq
         private IWhereFragment buildWhereClause()
         {
             var wheres = _query.BodyClauses.OfType<WhereClause>().ToArray();
-            if (wheres.Length == 0) return null;
+            if (wheres.Length == 0) return _mapping.DefaultWhereFragment();
 
             var where = wheres.Length == 1
                 ? _parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)

@@ -18,6 +18,7 @@ namespace Marten.Schema
     {
         private readonly IDocumentSchemaCreation _creation;
 
+        private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings = new ConcurrentDictionary<Type, IDocumentMapping>(); 
 
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
             new ConcurrentDictionary<Type, IDocumentStorage>();
@@ -45,7 +46,12 @@ namespace Marten.Schema
 
         public IDocumentMapping MappingFor(Type documentType)
         {
-            return StoreOptions.MappingFor(documentType);
+            return _mappings.GetOrAdd(documentType, type =>
+            {
+                return StoreOptions.AllDocumentMappings.SelectMany(x => x.SubClasses)
+                    .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping
+                       ?? StoreOptions.MappingFor(type);
+            });
         }
 
         public void EnsureStorageExists(Type documentType)
@@ -62,8 +68,7 @@ namespace Marten.Schema
                 var mapping = MappingFor(documentType);
                 assertNoDuplicateDocumentAliases();
 
-
-                var storage = DocumentStorageBuilder.Build(this, mapping);
+                var storage = mapping.BuildStorage(this);
 
                 if (shouldRegenerate(mapping))
                 {

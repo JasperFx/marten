@@ -177,8 +177,6 @@ namespace Marten.Testing
 
             code.ShouldContain("var typeAlias = reader.GetString(1);");
             code.ShouldContain("return map.Get<User>(id, _hierarchy.TypeFor(typeAlias), json);");
-
-            Debug.WriteLine(code);
         }
     }
 }

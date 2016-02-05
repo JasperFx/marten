@@ -185,6 +185,18 @@ namespace Marten.Schema
             }
         }
 
+        public IWhereFragment DefaultWhereFragment()
+        {
+            return null;
+        }
+
+        public IDocumentStorage BuildStorage(IDocumentSchema schema)
+        {
+            return DocumentStorageBuilder.Build(schema, this);
+        }
+
+        public IEnumerable<SubClassMapping> SubClasses => _subClasses;
+
         public IIdGeneration IdStrategy { get; set; } = new StringIdGeneration();
 
         public string UpsertName { get; private set; }
@@ -373,67 +385,6 @@ END
         public IEnumerable<IndexDefinition> IndexesFor(string column)
         {
             return Indexes.Where(x => x.Columns.Contains(column));
-        }
-    }
-
-    public class SubClassMapping : IDocumentMapping
-    {
-        private readonly DocumentMapping _parent;
-        private readonly DocumentMapping _inner;
-
-        public SubClassMapping(Type documentType, DocumentMapping parent, string alias = null)
-        {
-            DocumentType = documentType;
-            _inner = new DocumentMapping(documentType);
-            _parent = parent;
-            Alias = alias ?? documentType.GetTypeName().Replace(".", "_").SplitCamelCase().Replace(" ", "_").ToLowerInvariant();
-        }
-
-        public IEnumerable<StorageArgument> ToArguments()
-        {
-            return _parent.ToArguments();
-        }
-
-
-        public string Alias { get; set; }
-
-        public string UpsertName => _parent.UpsertName;
-        public Type DocumentType { get; }
-
-        public string TableName => _parent.TableName;
-        public PropertySearching PropertySearching => _parent.PropertySearching;
-        public IIdGeneration IdStrategy => _parent.IdStrategy;
-        public IEnumerable<DuplicatedField> DuplicatedFields => _parent.DuplicatedFields;
-        public MemberInfo IdMember => _parent.IdMember;
-        public IList<IndexDefinition> Indexes => _parent.Indexes;
-        public string SelectFields(string tableAlias)
-        {
-            return _inner.SelectFields(tableAlias);
-        }
-
-        public TableDefinition ToTable(IDocumentSchema schema)
-        {
-            return _parent.ToTable(schema);
-        }
-
-        public UpsertFunction ToUpsertFunction()
-        {
-            throw new NotSupportedException();
-        }
-
-        public IField FieldFor(IEnumerable<MemberInfo> members)
-        {
-            return _parent.FieldFor(members) ?? _inner.FieldFor(members);
-        }
-
-        public string ToResolveMethod(string typeName)
-        {
-            throw new NotSupportedException();
-        }
-
-        public IWhereFragment FilterDocuments(IWhereFragment query)
-        {
-            throw new NotImplementedException();
         }
     }
 }

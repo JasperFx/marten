@@ -28,5 +28,7 @@ namespace Marten.Schema
         IWhereFragment FilterDocuments(IWhereFragment query);
 
         IEnumerable<StorageArgument> ToArguments();
+        IWhereFragment DefaultWhereFragment();
+        IDocumentStorage BuildStorage(IDocumentSchema schema);
     }
 }
