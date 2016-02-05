@@ -2,9 +2,9 @@ namespace Marten.Schema.Hierarchies
 {
     public class HierarchyArgument : StorageArgument
     {
-        public HierarchyMapping Mapping { get; set; }
+        public DocumentMapping Mapping { get; set; }
 
-        public HierarchyArgument(HierarchyMapping mapping) : base("hierarchy", typeof(HierarchyMapping))
+        public HierarchyArgument(DocumentMapping mapping) : base("hierarchy", typeof(DocumentMapping))
         {
             Mapping = mapping;
         }

@@ -8,11 +8,11 @@ namespace Marten.Testing.Schema.Hierarchies
 {
     public class generating_code_and_sql_for_hierarchy_smoke_Tests
     {
-        private readonly HierarchyMapping theHierarchy;
+        private readonly DocumentMapping theHierarchy;
 
         public generating_code_and_sql_for_hierarchy_smoke_Tests()
         {
-            theHierarchy = new HierarchyMapping(typeof(Squad), new StoreOptions());
+            theHierarchy = new DocumentMapping(typeof(Squad), new StoreOptions());
             theHierarchy.AddSubClass(typeof (BasketballTeam));
             theHierarchy.AddSubClass(typeof (BaseballTeam));
             theHierarchy.AddSubClass(typeof (FootballTeam));

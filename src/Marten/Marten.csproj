@@ -60,8 +60,7 @@
     <Compile Include="Schema\DocumentAliasAttribute.cs" />
     <Compile Include="Schema\GinIndexedAttribute.cs" />
     <Compile Include="Schema\Hierarchies\HierarchyArgument.cs" />
-    <Compile Include="Schema\Hierarchies\HierarchyMapping.cs" />
-    <Compile Include="Schema\Hierarchies\SubClassMapping.cs" />
+    <Compile Include="Schema\Hierarchies\SubClassDocumentStorage.cs" />
     <Compile Include="Schema\HiLoSequenceAttribute.cs" />
     <Compile Include="Schema\IDocumentMapping.cs" />
     <Compile Include="Schema\IndexDefinition.cs" />

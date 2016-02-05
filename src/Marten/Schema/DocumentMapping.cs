@@ -7,8 +7,10 @@ using Baseline;
 using Baseline.Reflection;
 using Marten.Generation;
 using Marten.Linq;
+using Marten.Schema.Hierarchies;
 using Marten.Schema.Sequences;
 using Marten.Util;
+using NpgsqlTypes;
 
 namespace Marten.Schema
 {
@@ -19,6 +21,10 @@ namespace Marten.Schema
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
         private PropertySearching _propertySearching = PropertySearching.JSON_Locator_Only;
         private string _alias;
+
+        public static readonly string DocumentTypeColumn = "mt_doc_type";
+        private readonly IList<SubClassMapping> _subClasses = new List<SubClassMapping>();
+
 
         public DocumentMapping(Type documentType) : this(documentType, new StoreOptions())
         {
@@ -60,6 +66,18 @@ namespace Marten.Schema
             });
         }
 
+        public void AddSubClass(Type subclassType, string alias = null)
+        {
+            if (!subclassType.CanBeCastTo(DocumentType))
+            {
+                throw new ArgumentOutOfRangeException(nameof(subclassType),
+                    $"Type '{subclassType.GetFullName()}' cannot be cast to '{DocumentType.GetFullName()}'");
+            }
+
+            var subclass = new SubClassMapping(subclassType, this, alias);
+            _subClasses.Add(subclass);
+        }
+
         public string Alias
         {
             get { return _alias; }
@@ -72,6 +90,30 @@ namespace Marten.Schema
                 UpsertName = UpsertPrefix + _alias;
             }
         }
+
+        public string AliasFor(Type subclassType)
+        {
+            var type = _subClasses.FirstOrDefault(x => x.DocumentType == subclassType);
+            if (type == null)
+            {
+                throw new ArgumentOutOfRangeException($"Unknown subclass type '{subclassType.FullName}' for Document Hierarchy {DocumentType.FullName}");
+            }
+
+            return type.Alias;
+        }
+
+
+        public Type TypeFor(string alias)
+        {
+            var subClassMapping = _subClasses.FirstOrDefault(x => x.Alias.EqualsIgnoreCase(alias));
+            if (subClassMapping == null)
+            {
+                throw new ArgumentOutOfRangeException(nameof(alias), $"No subclass in the hierarchy '{DocumentType.FullName}' matches the alias '{alias}'");
+            }
+
+            return subClassMapping.DocumentType;
+        }
+
 
         public IndexDefinition AddGinIndexToData()
         {
@@ -132,7 +174,15 @@ namespace Marten.Schema
 
         public virtual IEnumerable<StorageArgument> ToArguments()
         {
-            return IdStrategy.ToArguments();
+            foreach (var argument in IdStrategy.ToArguments())
+            {
+                yield return argument;
+            }
+
+            if (_subClasses.Any())
+            {
+                yield return new HierarchyArgument(this);
+            }
         }
 
         public IIdGeneration IdStrategy { get; set; } = new StringIdGeneration();
@@ -147,6 +197,12 @@ namespace Marten.Schema
 
         public virtual string SelectFields(string tableAlias)
         {
+            if (_subClasses.Any())
+            {
+                return $"{tableAlias}.data, {tableAlias}.id, {tableAlias}.{DocumentTypeColumn}";
+            }
+
+
             return $"{tableAlias}.data, {tableAlias}.id";
         }
 
@@ -208,6 +264,11 @@ namespace Marten.Schema
             _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
 
 
+            if (_subClasses.Any())
+            {
+                table.Columns.Add(new TableColumn(DocumentTypeColumn, "varchar"));
+            }
+
             return table;
         }
 
@@ -215,6 +276,20 @@ namespace Marten.Schema
         {
             var function = new UpsertFunction(this);
             function.Arguments.AddRange(DuplicatedFields.Select(x => x.UpsertArgument));
+
+            if (_subClasses.Any())
+            {
+                function.Arguments.Add(new UpsertArgument
+                {
+                    Arg = "docType",
+                    Column = DocumentTypeColumn,
+                    DbType = NpgsqlDbType.Varchar,
+                    PostgresType = "varchar",
+                    BatchUpdatePattern = ".Param(_hierarchy.AliasFor(document.GetType()), NpgsqlDbType.Varchar)",
+                    BulkInsertPattern = "writer.Write(_hierarchy.AliasFor(x.GetType()), NpgsqlDbType.Varchar);"
+                });
+            }
+
 
             return function;
         }
@@ -252,6 +327,19 @@ namespace Marten.Schema
 
         public virtual string ToResolveMethod(string typeName)
         {
+            if (_subClasses.Any())
+            {
+                return $@"
+BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
+var json = reader.GetString(0);
+var id = reader[1];
+var typeAlias = reader.GetString(1);
+
+return map.Get<{typeName}>(id, _hierarchy.TypeFor(typeAlias), json);
+END
+";
+            }
+
             return $@"
 BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
 var json = reader.GetString(0);
@@ -285,6 +373,67 @@ END
         public IEnumerable<IndexDefinition> IndexesFor(string column)
         {
             return Indexes.Where(x => x.Columns.Contains(column));
+        }
+    }
+
+    public class SubClassMapping : IDocumentMapping
+    {
+        private readonly DocumentMapping _parent;
+        private readonly DocumentMapping _inner;
+
+        public SubClassMapping(Type documentType, DocumentMapping parent, string alias = null)
+        {
+            DocumentType = documentType;
+            _inner = new DocumentMapping(documentType);
+            _parent = parent;
+            Alias = alias ?? documentType.GetTypeName().Replace(".", "_").SplitCamelCase().Replace(" ", "_").ToLowerInvariant();
+        }
+
+        public IEnumerable<StorageArgument> ToArguments()
+        {
+            return _parent.ToArguments();
+        }
+
+
+        public string Alias { get; set; }
+
+        public string UpsertName => _parent.UpsertName;
+        public Type DocumentType { get; }
+
+        public string TableName => _parent.TableName;
+        public PropertySearching PropertySearching => _parent.PropertySearching;
+        public IIdGeneration IdStrategy => _parent.IdStrategy;
+        public IEnumerable<DuplicatedField> DuplicatedFields => _parent.DuplicatedFields;
+        public MemberInfo IdMember => _parent.IdMember;
+        public IList<IndexDefinition> Indexes => _parent.Indexes;
+        public string SelectFields(string tableAlias)
+        {
+            return _inner.SelectFields(tableAlias);
+        }
+
+        public TableDefinition ToTable(IDocumentSchema schema)
+        {
+            return _parent.ToTable(schema);
+        }
+
+        public UpsertFunction ToUpsertFunction()
+        {
+            throw new NotSupportedException();
+        }
+
+        public IField FieldFor(IEnumerable<MemberInfo> members)
+        {
+            return _parent.FieldFor(members) ?? _inner.FieldFor(members);
+        }
+
+        public string ToResolveMethod(string typeName)
+        {
+            throw new NotSupportedException();
+        }
+
+        public IWhereFragment FilterDocuments(IWhereFragment query)
+        {
+            throw new NotImplementedException();
         }
     }
 }
