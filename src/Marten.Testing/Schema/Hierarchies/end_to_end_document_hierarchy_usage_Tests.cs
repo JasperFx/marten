@@ -1,6 +1,8 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Microsoft.CodeAnalysis.CSharp;
 using Shouldly;
 using Xunit;
 
@@ -35,6 +37,19 @@ namespace Marten.Testing.Schema.Hierarchies
 
         }
 
+        [Fact]
+        public void persist_and_delete_top_2()
+        {
+            theSession.Store(user1);
+            theSession.SaveChanges();
+
+            theSession.Delete<User>(user1);
+            theSession.SaveChanges();
+
+            theSession.Load<User>(user1.Id).ShouldBeNull();
+
+        }
+
 
         [Fact]
         public void persist_and_load_subclass()
@@ -63,6 +78,19 @@ namespace Marten.Testing.Schema.Hierarchies
             theSession.Load<User>(admin1.Id).ShouldBeNull();
             theSession.Load<AdminUser>(admin1.Id).ShouldBeNull();
         }
+
+
+        [Fact]
+        public void persist_and_delete_subclass_2()
+        {
+            theSession.Store(admin1);
+            theSession.SaveChanges();
+
+            theSession.Delete(admin1.Id);
+
+            theSession.Load<User>(admin1.Id).ShouldBeNull();
+            theSession.Load<AdminUser>(admin1.Id).ShouldBeNull();
+        }
     }
 
     public class query_through_mixed_population_Tests : end_to_end_document_hierarchy_usage_Tests<IdentityMap>
@@ -70,6 +98,41 @@ namespace Marten.Testing.Schema.Hierarchies
         public query_through_mixed_population_Tests()
         {
             loadData();
+        }
+
+        [Fact]
+        public void load_by_id_with_mixed_results_from_identity_map()
+        {
+            theSession.Load<User>().ById(admin1.Id, super1.Id, user1.Id)
+                .ToArray().ShouldHaveTheSameElementsAs(admin1, super1, user1);
+        }
+
+        [Fact]
+        public async Task load_by_id_with_mixed_results_from_identity_map_async()
+        {
+            var users = await theSession.Load<User>().ByIdAsync(admin1.Id, super1.Id, user1.Id);
+            users.OrderBy(x => x.FirstName).ShouldHaveTheSameElementsAs(admin1, super1, user1);
+        }
+
+        [Fact]
+        public void load_by_id_with_mixed_results_fresh()
+        {
+            using (var session = theStore.QuerySession())
+            {
+                session.Load<User>().ById(admin1.Id, super1.Id, user1.Id)
+                    .ToArray().OrderBy(x => x.FirstName).Select(x => x.Id).ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
+            }
+        }
+
+        [Fact]
+        public async Task load_by_id_with_mixed_results_fresh_async()
+        {
+            using (var session = theStore.QuerySession())
+            {
+                var users = await session.Load<User>().ByIdAsync(admin1.Id, super1.Id, user1.Id);
+
+                users.OrderBy(x => x.FirstName).Select(x => x.Id).ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
+            }
         }
 
         [Fact]

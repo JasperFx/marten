@@ -146,9 +146,21 @@ return DeleteCommandForId((({typeName})entity).{mapping.IdMember.Name});
 END
 
 BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
-return new NpgsqlCommand(`select data, id from {mapping.TableName} where id = ANY(:ids)`).With(`ids`, ids);
+return new NpgsqlCommand(`select {mapping.SelectFields("d")} from {mapping.TableName} as d where id = ANY(:ids)`).With(`ids`, ids);
 END
 
+BLOCK:public void Remove(IIdentityMap map, object entity)
+var id = Identity(entity);
+map.Remove<{typeName}>(id);
+END
+
+BLOCK:public void Delete(IIdentityMap map, object id)
+map.Remove<{typeName}>(id);
+END
+
+BLOCK:public void Store(IIdentityMap map, object id, object entity)
+map.Store<{typeName}>(id, ({typeName})entity);
+END
 
 BLOCK:public object Assign({typeName} document)
 {mapping.IdStrategy.AssignmentBodyCode(mapping.IdMember)}

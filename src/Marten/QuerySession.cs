@@ -225,6 +225,7 @@ namespace Marten
             private IEnumerable<TDoc> fetchDocuments<TKey>(TKey[] keys)
             {
                 var storage = _parent._schema.StorageFor(typeof(TDoc));
+                var resolver = storage.As<IResolver<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
                 var list = new List<TDoc>();
@@ -236,7 +237,7 @@ namespace Marten
                     {
                         while (reader.Read())
                         {
-                            var doc = ReadDoc(reader);
+                            var doc = resolver.Resolve(reader, _parent._identityMap);
                             list.Add(doc);
                         }
                     }
@@ -248,6 +249,7 @@ namespace Marten
             private async Task<IEnumerable<TDoc>> fetchDocumentsAsync<TKey>(TKey[] keys, CancellationToken token)
             {
                 var storage = _parent._schema.StorageFor(typeof(TDoc));
+                var resolver = storage.As<IResolver<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
                 var list = new List<TDoc>();
@@ -259,7 +261,7 @@ namespace Marten
                     {
                         while (await reader.ReadAsync(tkn).ConfigureAwait(false))
                         {
-                            var doc = ReadDoc(reader);
+                            var doc = resolver.Resolve(reader, _parent._identityMap);
                             list.Add(doc);
                         }
                     }
@@ -268,13 +270,6 @@ namespace Marten
                 return list;
             }
 
-            private TDoc ReadDoc(DbDataReader reader)
-            {
-                var id = reader[1];
-                var json = reader.GetString(0);
-
-                return _parent._identityMap.Get<TDoc>(id, json);
-            }
         }
 
         public void Dispose()

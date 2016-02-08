@@ -103,6 +103,20 @@ namespace Marten.GeneratedCode
             batch.Sproc("mt_upsert_trade").Param(document.Id, NpgsqlDbType.Integer).JsonBody(json).Param(document.Value, NpgsqlDbType.Double);
         }
 
+        public void Remove(IIdentityMap map, object entity)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Delete(IIdentityMap map, object id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Store(IIdentityMap map, object id, object entity)
+        {
+            throw new NotImplementedException();
+        }
 
 
         public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<Trade> documents)

@@ -40,24 +40,24 @@ namespace Marten
 
             _unitOfWork.Delete(entity);
 
-            // TODO -- replace w/ IDocumentStorage call
-            _identityMap.Remove<T>(_schema.StorageFor(typeof(T)).Identity(entity));
+            var storage = _schema.StorageFor(typeof (T));
+            storage.Remove(_identityMap, entity);
         }
 
         public void Delete<T>(ValueType id)
         {
             _unitOfWork.Delete<T>(id);
 
-            // TODO -- replace w/ IDocumentStorage call
-            _identityMap.Remove<T>(id);
+            var storage = _schema.StorageFor(typeof(T));
+            storage.Delete(_identityMap, id);
         }
 
         public void Delete<T>(string id)
         {
             _unitOfWork.Delete<T>(id);
 
-            // TODO -- replace w/ IDocumentStorage call
-            _identityMap.Remove<T>(id);
+            var storage = _schema.StorageFor(typeof(T));
+            storage.Delete(_identityMap, id);
         }
 
         public void Store<T>(params T[] entities) where T : class
@@ -71,7 +71,7 @@ namespace Marten
             {
                 var id = idAssignment.Assign(entity);
 
-                _identityMap.Store(id, entity);
+                storage.Store(_identityMap, id, entity);
                 _unitOfWork.Store(entity);
             }
         }

@@ -78,5 +78,20 @@ namespace Marten.Schema.Hierarchies
         {
             return _parentIdAssignment.Assign(document);
         }
+
+        public void Remove(IIdentityMap map, object entity)
+        {
+            _parent.Remove(map, entity);
+        }
+
+        public void Delete(IIdentityMap map, object id)
+        {
+            _parent.Delete(map, id);
+        }
+
+        public void Store(IIdentityMap map, object id, object entity)
+        {
+            _parent.Store(map, id, entity);
+        }
     }
 }
