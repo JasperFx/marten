@@ -355,7 +355,7 @@ namespace Marten.Schema
 BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
 var json = reader.GetString(0);
 var id = reader[1];
-var typeAlias = reader.GetString(1);
+var typeAlias = reader.GetString(2);
 
 return map.Get<{typeName}>(id, _hierarchy.TypeFor(typeAlias), json);
 END

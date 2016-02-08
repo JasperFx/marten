@@ -63,8 +63,9 @@ namespace Marten.Schema.Hierarchies
 
         public T Resolve(DbDataReader reader, IIdentityMap map)
         {
-            var id = reader[0];
-            var json = reader.GetString(1);
+            var json = reader.GetString(0);
+            var id = reader[1];
+            
             return map.Get<TBase>(id, typeof(T), json) as T;
         }
 
