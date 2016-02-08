@@ -40,10 +40,22 @@ namespace Marten.Testing.Schema.Hierarchies
         }
 
         [Fact]
+        public void alias_for_base_type()
+        {
+            mapping.AliasFor(typeof(Squad)).ShouldBe(DocumentMapping.BaseAlias);
+        }
+
+        [Fact]
         public void type_for_alias_hit()
         {
             mapping.TypeFor("football").ShouldBe(typeof (FootballTeam));
             mapping.TypeFor("baseball_team").ShouldBe(typeof (BaseballTeam));
+        }
+
+        [Fact]
+        public void type_for_BASE()
+        {
+            mapping.TypeFor("BASE").ShouldBe(typeof(Squad));
         }
 
         [Fact]

@@ -16,8 +16,9 @@ namespace Marten.Schema
 {
     public class DocumentMapping : IDocumentMapping
     {
+        public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
-        private const string UpsertPrefix = "mt_upsert_";
+        public const string UpsertPrefix = "mt_upsert_";
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
         private PropertySearching _propertySearching = PropertySearching.JSON_Locator_Only;
         private string _alias;
@@ -93,6 +94,8 @@ namespace Marten.Schema
 
         public string AliasFor(Type subclassType)
         {
+            if (subclassType == DocumentType) return BaseAlias;
+
             var type = _subClasses.FirstOrDefault(x => x.DocumentType == subclassType);
             if (type == null)
             {
@@ -105,6 +108,8 @@ namespace Marten.Schema
 
         public Type TypeFor(string alias)
         {
+            if (alias == BaseAlias) return DocumentType;
+
             var subClassMapping = _subClasses.FirstOrDefault(x => x.Alias.EqualsIgnoreCase(alias));
             if (subClassMapping == null)
             {
