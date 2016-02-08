@@ -53,7 +53,16 @@ namespace Marten.Services
 
         public void Store<T>(object id, T entity)
         {
-            _objects[typeof(T)].AddOrUpdate(id.GetHashCode(), new TrackedEntity(id, _serializer, typeof(T), entity), (i, e) => e);
+            var dictionary = _objects[typeof(T)];
+            var hashCode = id.GetHashCode();
+
+            if (dictionary.ContainsKey(hashCode) && !ReferenceEquals(entity, dictionary[hashCode].Document))
+            {
+                throw new InvalidOperationException(
+                    $"Document '{typeof(T).FullName}' with same Id already added to the session.");
+            }
+
+            dictionary.AddOrUpdate(hashCode, new TrackedEntity(id, _serializer, typeof(T), entity), (i, e) => e);
         }
 
         public IEnumerable<DocumentChange> DetectChanges()

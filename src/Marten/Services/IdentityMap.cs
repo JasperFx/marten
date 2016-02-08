@@ -57,7 +57,18 @@ namespace Marten.Services
 
         public void Store<T>(object id, T entity)
         {
-            _objects[typeof (T)].AddOrUpdate(id.GetHashCode(), entity, (i, e) => e);
+            var dictionary = _objects[typeof (T)];
+            var hashCode = id.GetHashCode();
+            if (dictionary.ContainsKey(hashCode))
+            {
+                if (!ReferenceEquals(dictionary[hashCode], entity))
+                {
+                    throw new InvalidOperationException(
+                        $"Document '{typeof(T).FullName}' with same Id already added to the session.");
+                }
+            }
+            
+            dictionary.AddOrUpdate(hashCode, entity, (i, e) => e);
         }
 
         public bool Has<T>(object id)

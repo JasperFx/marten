@@ -39,18 +39,24 @@ namespace Marten
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
             _unitOfWork.Delete(entity);
+
+            // TODO -- replace w/ IDocumentStorage call
             _identityMap.Remove<T>(_schema.StorageFor(typeof(T)).Identity(entity));
         }
 
         public void Delete<T>(ValueType id)
         {
             _unitOfWork.Delete<T>(id);
+
+            // TODO -- replace w/ IDocumentStorage call
             _identityMap.Remove<T>(id);
         }
 
         public void Delete<T>(string id)
         {
             _unitOfWork.Delete<T>(id);
+
+            // TODO -- replace w/ IDocumentStorage call
             _identityMap.Remove<T>(id);
         }
 
@@ -65,20 +71,7 @@ namespace Marten
             {
                 var id = idAssignment.Assign(entity);
 
-                if (_identityMap.Has<T>(id))
-                {
-                    var existing = _identityMap.Retrieve<T>(id);
-                    if (!ReferenceEquals(existing, entity))
-                    {
-                        throw new InvalidOperationException(
-                            $"Document '{typeof(T).FullName}' with same Id already added to the session.");
-                    }
-                }
-                else
-                {
-                    _identityMap.Store(id, entity);
-                }
-
+                _identityMap.Store(id, entity);
                 _unitOfWork.Store(entity);
             }
         }

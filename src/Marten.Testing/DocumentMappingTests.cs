@@ -175,7 +175,7 @@ namespace Marten.Testing
 
             var code = mapping.ToResolveMethod("User");
 
-            code.ShouldContain("var typeAlias = reader.GetString(1);");
+            code.ShouldContain("var typeAlias = reader.GetString(2);");
             code.ShouldContain("return map.Get<User>(id, _hierarchy.TypeFor(typeAlias), json);");
         }
 
