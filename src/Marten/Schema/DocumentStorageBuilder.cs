@@ -134,7 +134,7 @@ return UpsertCommand(({typeName})document, json);
 END
 
 BLOCK:public NpgsqlCommand LoaderCommand(object id)
-return new NpgsqlCommand(`select data from {mapping.TableName} where id = :id`).With(`id`, id);
+return new NpgsqlCommand(`select {mapping.SelectFields("d")} from {mapping.TableName} as d where id = :id`).With(`id`, id);
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForId(object id)
@@ -169,6 +169,10 @@ END
 
 BLOCK:public object Retrieve({typeName} document)
 return document.{mapping.IdMember.Name};
+END
+
+BLOCK:public {typeName} Build(DbDataReader reader, ISerializer serializer)
+return serializer.FromJson<{typeName}>(reader.GetString(0));
 END
 
 public NpgsqlDbType IdType => NpgsqlDbType.{id_NpgsqlDbType};

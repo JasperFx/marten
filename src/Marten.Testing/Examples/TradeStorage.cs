@@ -142,6 +142,11 @@ namespace Marten.GeneratedCode
             
             return map.Get<Trade>(id, json);
         }
+
+        public Trade Build(DbDataReader reader, ISerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 

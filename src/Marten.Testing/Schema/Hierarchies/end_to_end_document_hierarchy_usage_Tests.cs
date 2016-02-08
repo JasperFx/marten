@@ -68,6 +68,22 @@ namespace Marten.Testing.Schema.Hierarchies
         }
 
         [Fact]
+        public async Task persist_and_load_subclass_async()
+        {
+            theSession.Store(admin1);
+            theSession.SaveChanges();
+
+            (await theSession.LoadAsync<User>(admin1.Id)).ShouldBeTheSameAs(admin1);
+            (await theSession.LoadAsync<AdminUser>(admin1.Id)).ShouldBeTheSameAs(admin1);
+
+            using (var session = theStore.QuerySession())
+            {
+                (await session.LoadAsync<AdminUser>(admin1.Id)).ShouldNotBeTheSameAs(admin1).ShouldNotBeNull();
+                (await session.LoadAsync<User>(admin1.Id)).ShouldNotBeTheSameAs(admin1).ShouldNotBeNull();
+            }
+        }
+
+        [Fact]
         public void persist_and_delete_subclass()
         {
             theSession.Store(admin1);

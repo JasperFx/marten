@@ -81,6 +81,50 @@ namespace Marten
 
             return cmd;
         }
+
+        private IDocumentStorage storage<T>()
+        {
+            return _schema.StorageFor(typeof (T));
+        }
+
+        public T LoadDocument<T>(object id) where T : class
+        {
+            var storage = storage<T>();
+            var resolver = storage.As<IResolver<T>>();
+
+            var cmd = storage.LoaderCommand(id);
+            return _runner.Execute(conn =>
+            {
+                cmd.Connection = conn;
+                using (var reader = cmd.ExecuteReader())
+                {
+                    var found = reader.Read();
+                    return found ? resolver.Build(reader, _serializer) : null;
+                }
+            });
+
+
+
+        }
+
+        public Task<T> LoadDocumentAsync<T>(object id, CancellationToken token) where T : class
+        {
+            var storage = storage<T>();
+            var resolver = storage.As<IResolver<T>>();
+
+            var cmd = storage.LoaderCommand(id);
+
+            return _runner.ExecuteAsync(async (conn, executeAsyncToken) =>
+            {
+                cmd.Connection = conn;
+                var reader = await cmd.ExecuteReaderAsync(executeAsyncToken).ConfigureAwait(false);
+
+                var found = reader.Read();
+                return found ? resolver.Build(reader, _serializer) : null;
+            }, token);
+        }
+
+
         
         public T Load<T>(string id) where T : class
         {

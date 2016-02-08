@@ -69,6 +69,20 @@ namespace Marten.Schema.Hierarchies
             return map.Get<TBase>(id, typeof(T), json) as T;
         }
 
+        public T Build(DbDataReader reader, ISerializer serializer)
+        {
+            // TODO -- watch this, will need to validate that it's the right type first
+            return serializer.FromJson<T>(reader.GetString(0));
+        }
+
+        public T Resolve(DbDataReader reader, ISerializer serializer)
+        {
+            var json = reader.GetString(0);
+
+            // TODO -- what if it's not the right type?
+            return serializer.FromJson<T>(json);
+        }
+
         public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
         {
             _parentBulkLoader.Load(serializer, conn, documents);
