@@ -8,7 +8,6 @@ namespace Marten.Services
     {
         T Get<T>(object id, Func<string> json) where T : class;
 
-
         Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<string>> json, CancellationToken token = default(CancellationToken)) where T : class;
 
 

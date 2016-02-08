@@ -115,6 +115,33 @@ namespace Marten.Testing.Schema.Hierarchies
         }
 
         [Fact]
+        public void load_by_id_keys_from_base_class_resolved_from_identity_map()
+        {
+            theSession.Load<AdminUser>().ById(admin1.Id, admin2.Id)
+                .ShouldHaveTheSameElementsAs(admin1, admin2);
+        }
+
+        [Fact]
+        public async Task load_by_id_keys_from_base_class_resolved_from_identity_map_async()
+        {
+            var users = await theSession.Load<AdminUser>().ByIdAsync(admin1.Id, admin2.Id);
+            users.ShouldHaveTheSameElementsAs(admin1, admin2);
+        }
+
+        [Fact]
+        public void load_by_id_keys_from_base_class_clean()
+        {
+            using (var session = theStore.QuerySession())
+            {
+                session.Load<AdminUser>().ById(admin1.Id, admin2.Id)
+                    .Select(x => x.Id)
+                    .ShouldHaveTheSameElementsAs(admin1.Id, admin2.Id);
+            }
+
+
+        }
+
+        [Fact]
         public void load_by_id_with_mixed_results_fresh()
         {
             using (var session = theStore.QuerySession())
