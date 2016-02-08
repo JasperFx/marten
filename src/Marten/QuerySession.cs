@@ -71,7 +71,7 @@ namespace Marten
             var cmd = new NpgsqlCommand();
             var mapping = _schema.MappingFor(typeof(T));
 
-            if (!sql.Contains("select"))
+            if (!sql.Contains("select", StringComparison.OrdinalIgnoreCase))
             {
                 var tableName = mapping.TableName;
                 sql = "select data from {0} {1}".ToFormat(tableName, sql);
