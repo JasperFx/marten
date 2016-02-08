@@ -178,5 +178,44 @@ namespace Marten.Testing
             code.ShouldContain("var typeAlias = reader.GetString(1);");
             code.ShouldContain("return map.Get<User>(id, _hierarchy.TypeFor(typeAlias), json);");
         }
+
+        [Fact]
+        public void is_hierarchy__is_false_for_concrete_type_with_no_subclasses()
+        {
+            DocumentMapping.For<User>().IsHierarchy().ShouldBeFalse();
+        }
+
+        [Fact]
+        public void concrete_type_with_subclasses_is_hierarchy()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.AddSubClass(typeof(SuperUser));
+
+            mapping.IsHierarchy().ShouldBeTrue();
+        }
+
+        [Fact]
+        public void is_hierarchy_always_true_for_abstract_type()
+        {
+            DocumentMapping.For<AbstractDoc>()
+                .IsHierarchy().ShouldBeTrue();
+        }
+
+        [Fact]
+        public void is_hierarchy_always_true_for_interface()
+        {
+            DocumentMapping.For<IDoc>().IsHierarchy()
+                .ShouldBeTrue();
+        }
+
+        public abstract class AbstractDoc
+        {
+            public int id;
+        }
+
+        public interface IDoc
+        {
+            string id { get; set; }
+        }
     }
 }

@@ -24,4 +24,14 @@ namespace Marten.Testing.Documents
         
         public int Age { get; set; }
     }
+
+    public class SuperUser : User
+    {
+        public string Role { get; set; }
+    }
+
+    public class AdminUser : User
+    {
+        public string Region { get; set; }
+    }
 }

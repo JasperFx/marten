@@ -179,7 +179,7 @@ namespace Marten.Schema
                 yield return argument;
             }
 
-            if (_subClasses.Any())
+            if (IsHierarchy())
             {
                 yield return new HierarchyArgument(this);
             }
@@ -188,6 +188,11 @@ namespace Marten.Schema
         public IWhereFragment DefaultWhereFragment()
         {
             return null;
+        }
+
+        public bool IsHierarchy()
+        {
+            return _subClasses.Any() || DocumentType.IsAbstract || DocumentType.IsInterface;
         }
 
         public IDocumentStorage BuildStorage(IDocumentSchema schema)
@@ -209,7 +214,7 @@ namespace Marten.Schema
 
         public virtual string SelectFields(string tableAlias)
         {
-            if (_subClasses.Any())
+            if (IsHierarchy())
             {
                 return $"{tableAlias}.data, {tableAlias}.id, {tableAlias}.{DocumentTypeColumn}";
             }
@@ -276,7 +281,7 @@ namespace Marten.Schema
             _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
 
 
-            if (_subClasses.Any())
+            if (IsHierarchy())
             {
                 table.Columns.Add(new TableColumn(DocumentTypeColumn, "varchar"));
             }
@@ -289,7 +294,7 @@ namespace Marten.Schema
             var function = new UpsertFunction(this);
             function.Arguments.AddRange(DuplicatedFields.Select(x => x.UpsertArgument));
 
-            if (_subClasses.Any())
+            if (IsHierarchy())
             {
                 function.Arguments.Add(new UpsertArgument
                 {
@@ -339,7 +344,7 @@ namespace Marten.Schema
 
         public virtual string ToResolveMethod(string typeName)
         {
-            if (_subClasses.Any())
+            if (IsHierarchy())
             {
                 return $@"
 BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
