@@ -87,7 +87,7 @@ namespace Marten
             return _schema.StorageFor(typeof (T));
         }
 
-        public T LoadDocument<T>(object id) where T : class
+        public FetchResult<T> LoadDocument<T>(object id) where T : class
         {
             var storage = storage<T>();
             var resolver = storage.As<IResolver<T>>();
@@ -99,7 +99,7 @@ namespace Marten
                 using (var reader = cmd.ExecuteReader())
                 {
                     var found = reader.Read();
-                    return found ? resolver.Build(reader, _serializer) : null;
+                    return found ? new FetchResult<T>(resolver.Build(reader, _serializer), reader.GetString(0)) : null;
                 }
             });
 
@@ -107,7 +107,7 @@ namespace Marten
 
         }
 
-        public Task<T> LoadDocumentAsync<T>(object id, CancellationToken token) where T : class
+        public Task<FetchResult<T>> LoadDocumentAsync<T>(object id, CancellationToken token) where T : class
         {
             var storage = storage<T>();
             var resolver = storage.As<IResolver<T>>();
@@ -120,7 +120,7 @@ namespace Marten
                 var reader = await cmd.ExecuteReaderAsync(executeAsyncToken).ConfigureAwait(false);
 
                 var found = reader.Read();
-                return found ? resolver.Build(reader, _serializer) : null;
+                return found ? new FetchResult<T>(resolver.Build(reader, _serializer), reader.GetString(0)) : null;
             }, token);
         }
 
@@ -148,18 +148,12 @@ namespace Marten
 
         private T load<T>(object id) where T : class
         {
-            return _identityMap.Get<T>(id, () =>
-            {
-                return findJsonById<T>(id);
-            });
+            return _identityMap.Get<T>(id, () => LoadDocument<T>(id));
         }
 
         private Task<T> loadAsync<T>(object id, CancellationToken token) where T : class
         {
-            return _identityMap.GetAsync<T>(id, getAsyncToken =>
-            {
-                return findJsonByIdAsync<T>(id, getAsyncToken);
-            }, token);
+            return _identityMap.GetAsync(id, t => LoadDocumentAsync<T>(id, t), token);
         }
 
         public ILoadByKeys<T> Load<T>() where T : class

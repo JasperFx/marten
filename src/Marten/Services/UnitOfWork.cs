@@ -38,7 +38,7 @@ namespace Marten.Services
             list.Add(id);
         }
 
-        public void Delete<T>(T entity)
+        public void DeleteEntity<T>(T entity)
         {
             var id = _schema.StorageFor(typeof(T)).Identity(entity);
             delete<T>(id);

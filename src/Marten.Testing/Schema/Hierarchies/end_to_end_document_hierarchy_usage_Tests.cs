@@ -102,7 +102,7 @@ namespace Marten.Testing.Schema.Hierarchies
             theSession.Store(admin1);
             theSession.SaveChanges();
 
-            theSession.Delete(admin1.Id);
+            theSession.Delete<AdminUser>(admin1.Id);
 
             theSession.Load<User>(admin1.Id).ShouldBeNull();
             theSession.Load<AdminUser>(admin1.Id).ShouldBeNull();

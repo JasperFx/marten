@@ -21,18 +21,34 @@ namespace Marten.Services
             _serializer = serializer;
         }
 
-        public T Get<T>(object id, Func<string> json) where T : class
+        public T Get<T>(object id, Func<FetchResult<T>> result) where T : class
         {
             return _objects[typeof(T)].GetOrAdd(id.GetHashCode(), _ =>
             {
-                return new TrackedEntity(id, _serializer, typeof (T), json());
+                var fetchResult = result();
+
+                return new TrackedEntity(id, typeof(T), fetchResult?.Document, fetchResult?.Json, _serializer);
             }).Document as T;
         }
 
-        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<string>> json, CancellationToken token) where T : class
+        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class
         {
-            var jsonString = await json(token).ConfigureAwait(false);
-            return Get<T>(id, jsonString);
+            
+
+            var dict = _objects[typeof (T)];
+            var hashCode = id.GetHashCode();
+
+            if (dict.ContainsKey(hashCode))
+            {
+                return dict[hashCode].Document.As<T>();
+            }
+
+            var fetchResult = await result(token).ConfigureAwait(false);
+            if (fetchResult == null) return null;
+
+            dict[hashCode] = new TrackedEntity(id, typeof(T), fetchResult.Document, fetchResult.Json, _serializer);
+
+            return fetchResult?.Document;
         }
 
         public T Get<T>(object id, string json) where T : class

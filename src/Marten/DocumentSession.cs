@@ -38,7 +38,7 @@ namespace Marten
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            _unitOfWork.Delete(entity);
+            _unitOfWork.DeleteEntity(entity);
 
             var storage = _schema.StorageFor(typeof (T));
             storage.Remove(_identityMap, entity);

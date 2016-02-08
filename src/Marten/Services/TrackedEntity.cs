@@ -27,6 +27,16 @@ namespace Marten.Services
             _json = _serializer.ToJson(document);
         }
 
+        public TrackedEntity(object id, Type documentType, object document, string json, ISerializer serializer)
+        {
+            Id = id;
+            DocumentType = documentType;
+            Document = document;
+            _json = json;
+            _serializer = serializer;
+        }
+
+
         public object Id { get; }
         public Type DocumentType { get; }
 

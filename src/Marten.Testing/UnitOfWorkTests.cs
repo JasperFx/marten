@@ -65,10 +65,10 @@ namespace Marten.Testing
 
 
             var uow2 = theContainer.GetInstance<UnitOfWork>();
-            uow2.Delete(stringDoc2);
-            uow2.Delete(user2);
-            uow2.Delete(int2);
-            uow2.Delete(long2);
+            uow2.DeleteEntity(stringDoc2);
+            uow2.DeleteEntity(user2);
+            uow2.DeleteEntity(int2);
+            uow2.DeleteEntity(long2);
             var batch2 = theContainer.GetInstance<UpdateBatch>();
             uow2.ApplyChanges(batch2);
 

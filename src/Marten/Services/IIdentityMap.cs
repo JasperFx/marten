@@ -4,11 +4,24 @@ using System.Threading.Tasks;
 
 namespace Marten.Services
 {
+    public class FetchResult<T>
+    {
+        public FetchResult(T document, string json)
+        {
+            Document = document;
+            Json = json;
+        }
+
+        public T Document { get; }
+
+        public string Json { get; }
+    }
+
     public interface IIdentityMap
     {
-        T Get<T>(object id, Func<string> json) where T : class;
+        T Get<T>(object id, Func<FetchResult<T>> result) where T : class;
 
-        Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<string>> json, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class;
 
 
         T Get<T>(object id, string json) where T : class;

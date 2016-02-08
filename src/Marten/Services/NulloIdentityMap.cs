@@ -14,16 +14,15 @@ namespace Marten.Services
             _serializer = serializer;
         }
 
-        public T Get<T>(object id, Func<string> json) where T : class
+        public T Get<T>(object id, Func<FetchResult<T>> result) where T : class
         {
-            var text = json();
-            return Get<T>(id, text);
+            return result()?.Document;
         }
 
-        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<string>> json, CancellationToken token) where T : class
+        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class
         {
-            var text = await json(token).ConfigureAwait(false);
-            return Get<T>(id, text);
+            var fetchResult = await result(token).ConfigureAwait(false);
+            return fetchResult?.Document;
         }
 
         public T Get<T>(object id, string json) where T : class
