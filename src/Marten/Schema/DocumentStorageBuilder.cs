@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Codegen;
 using Marten.Util;
@@ -84,7 +86,9 @@ namespace Marten.Schema
                 "Remotion.Linq",
                 typeof (NpgsqlDbType).Namespace,
                 typeof (IEnumerable<>).Namespace,
-                typeof(DbDataReader).Namespace
+                typeof(DbDataReader).Namespace,
+                typeof(CancellationToken).Namespace,
+                typeof(Task).Namespace
             };
             namespaces.AddRange(mappings.Select(x => x.DocumentType.Namespace));
 
@@ -181,6 +185,13 @@ BLOCK:public object Identity(object document)
 return (({typeName})document).{mapping.IdMember.Name};
 END
 
+BLOCK:public {typeName} Resolve(IIdentityMap map, ILoader loader, object id)
+return map.Get(id, () => loader.LoadDocument<{typeName}>(id)) as {typeName};
+END
+
+BLOCK:public Task<{typeName}> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
+return map.GetAsync(id, (tk => loader.LoadDocumentAsync<{typeName}>(id, tk)), token).ContinueWith(x => x.Result as {typeName}, token);
+END
 
 {mapping.ToResolveMethod(typeName)}
 

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
 using Npgsql;
@@ -106,6 +108,18 @@ namespace Marten.Schema.Hierarchies
         public void Store(IIdentityMap map, object id, object entity)
         {
             _parent.Store(map, id, entity);
+        }
+
+        public T Resolve(IIdentityMap map, ILoader loader, object id)
+        {
+            // TODO -- watch it here if it's the wrong type
+            return map.Get(id, () => loader.LoadDocument<TBase>(id)) as T;
+        }
+
+        public Task<T> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
+        {
+            return map.GetAsync(id, (tk => loader.LoadDocumentAsync<TBase>(id, tk)), token)
+                .ContinueWith(x => x.Result as T, token);
         }
     }
 }

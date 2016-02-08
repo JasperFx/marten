@@ -14,7 +14,13 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
-    public class QuerySession : IQuerySession
+    public interface ILoader
+    {
+        FetchResult<T> LoadDocument<T>(object id) where T : class;
+        Task<FetchResult<T>> LoadDocumentAsync<T>(object id, CancellationToken token) where T : class;
+    }
+
+    public class QuerySession : IQuerySession, ILoader
     {
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
@@ -148,12 +154,12 @@ namespace Marten
 
         private T load<T>(object id) where T : class
         {
-            return _identityMap.Get<T>(id, () => LoadDocument<T>(id));
+            return storage<T>().As<IResolver<T>>().Resolve(_identityMap, this, id);
         }
 
         private Task<T> loadAsync<T>(object id, CancellationToken token) where T : class
         {
-            return _identityMap.GetAsync(id, t => LoadDocumentAsync<T>(id, t), token);
+            return storage<T>().As<IResolver<T>>().ResolveAsync(_identityMap, this, token, id);
         }
 
         public ILoadByKeys<T> Load<T>() where T : class

@@ -11,6 +11,8 @@ using Remotion.Linq;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Marten.GeneratedCode
 {
@@ -144,6 +146,16 @@ namespace Marten.GeneratedCode
         }
 
         public Trade Build(DbDataReader reader, ISerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Trade Resolve(IIdentityMap map, ILoader loader, object id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Trade> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
         {
             throw new NotImplementedException();
         }
