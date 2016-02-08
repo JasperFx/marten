@@ -158,7 +158,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        void Store<T>(T entity) where T : class;
+        void Store<T>(params T[] entities) where T : class;
     }
 
     public interface ILoadByKeys<TDoc>

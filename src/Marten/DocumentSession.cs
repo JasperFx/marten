@@ -54,29 +54,33 @@ namespace Marten
             _identityMap.Remove<T>(id);
         }
 
-        public void Store<T>(T entity) where T : class
+        public void Store<T>(params T[] entities) where T : class
         {
-            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
 
             var storage = _schema.StorageFor(typeof(T));
-            var id =storage
-                .As<IdAssignment<T>>().Assign(entity);
+            var idAssignment = storage.As<IdAssignment<T>>();
 
-            if (_identityMap.Has<T>(id))
+            foreach (var entity in entities)
             {
-                var existing = _identityMap.Retrieve<T>(id);
-                if (!ReferenceEquals(existing, entity))
+                var id = idAssignment.Assign(entity);
+
+                if (_identityMap.Has<T>(id))
                 {
-                    throw new InvalidOperationException(
-                        $"Document '{typeof (T).FullName}' with same Id already added to the session.");
+                    var existing = _identityMap.Retrieve<T>(id);
+                    if (!ReferenceEquals(existing, entity))
+                    {
+                        throw new InvalidOperationException(
+                            $"Document '{typeof(T).FullName}' with same Id already added to the session.");
+                    }
                 }
-            }
-            else
-            {
-                _identityMap.Store(id, entity);
-            }
+                else
+                {
+                    _identityMap.Store(id, entity);
+                }
 
-            _unitOfWork.Store(entity);
+                _unitOfWork.Store(entity);
+            }
         }
 
         public void SaveChanges()
