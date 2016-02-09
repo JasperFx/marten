@@ -11,7 +11,7 @@ namespace Marten.Testing.Linq
         [Fact]
         public void query()
         {
-            theSession.Store(new Target{Number = 1, DateOffset = DateTimeOffset.Now.AddMinutes(5)});
+            theSession.Store(new Target{Number = 1, DateOffset = DateTimeOffset.Now.AddMinutes(30)});
             theSession.Store(new Target{Number = 2, DateOffset = DateTimeOffset.Now.AddDays(1)});
             theSession.Store(new Target{Number = 3, DateOffset = DateTimeOffset.Now.AddHours(1)});
             theSession.Store(new Target{Number = 4, DateOffset = DateTimeOffset.Now.AddHours(-2)});
