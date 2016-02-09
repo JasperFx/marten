@@ -36,6 +36,38 @@ namespace Marten.Testing.Services.BatchedQuerying
         }
 
         [Fact]
+        public async Task can_find_the_first_value()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var firstUser = batch.First<User>(x => x.OrderBy(_ => _.FirstName));
+            var firstAdmin = batch.First<SuperUser>(x => x.OrderBy(_ => _.FirstName));
+
+            await batch.Execute();
+
+            (await firstUser).UserName.ShouldBe("A2");
+            (await firstAdmin).UserName.ShouldBe("A3");
+        }
+
+        [Fact]
+        public async Task can_find_the_first_or_default_value()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var firstUser = batch.FirstOrDefault<User>(x => x.OrderBy(_ => _.FirstName));
+            var firstAdmin = batch.FirstOrDefault<SuperUser>(x => x.OrderBy(_ => _.FirstName));
+            var noneUser = batch.FirstOrDefault<User>(x => x.Where(_ => _.FirstName == "not me"));
+
+            await batch.Execute();
+
+            (await firstUser).UserName.ShouldBe("A2");
+            (await firstAdmin).UserName.ShouldBe("A3");
+            (await noneUser).ShouldBeNull();
+        }
+
+
+
+        [Fact]
         public async Task can_query_documents()
         {
             var batch = theSession.CreateBatchQuery();

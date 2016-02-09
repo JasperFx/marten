@@ -27,5 +27,12 @@ namespace Marten.Services.BatchQuerying
         Task<IList<T>> Query<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class;
 
         Task<IList<T>> QueryAll<T>() where T : class;
+
+        Task<T> First<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class;
+        Task<T> FirstOrDefault<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class;
+
+        Task<T> Single<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class;
+        Task<T> SingleOrDefault<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class;
+
     }
 }

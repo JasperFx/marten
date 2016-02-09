@@ -78,7 +78,6 @@
     <Compile Include="Services\BatchQuerying\IBatchedQuery.cs" />
     <Compile Include="Services\BatchQuerying\IBatchLoadByKeys.cs" />
     <Compile Include="Services\BatchQuerying\IDataReaderHandler.cs" />
-    <Compile Include="Services\BatchQuerying\IQueryForExpression.cs" />
     <Compile Include="Services\BatchQuerying\SingleResultReader.cs" />
     <Compile Include="Services\CommandRunner.cs" />
     <Compile Include="Services\CommandRunnerExtensions.cs" />

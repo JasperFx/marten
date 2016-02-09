@@ -179,6 +179,54 @@ namespace Marten.Services.BatchQuerying
             return Query<T>(q => q);
         }
 
+        public Task<T> First<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class
+        {
+            var documentQuery = toDocumentQuery<T>(q => query(q).Take(1));
+            var reader = new QueryHandler<T>(_schema.StorageFor(typeof(T)), _identityMap);
+
+            reader.Configure(_command, documentQuery);
+
+            addHandler(reader);
+
+            return reader.ReturnValue.ContinueWith(r => r.Result.First());
+        }
+
+        public Task<T> FirstOrDefault<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class
+        {
+            var documentQuery = toDocumentQuery<T>(q => query(q).Take(1));
+            var reader = new QueryHandler<T>(_schema.StorageFor(typeof(T)), _identityMap);
+
+            reader.Configure(_command, documentQuery);
+
+            addHandler(reader);
+
+            return reader.ReturnValue.ContinueWith(r => r.Result.FirstOrDefault());
+        }
+
+        public Task<T> Single<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class
+        {
+            var documentQuery = toDocumentQuery<T>(q => query(q).Take(2));
+            var reader = new QueryHandler<T>(_schema.StorageFor(typeof(T)), _identityMap);
+
+            reader.Configure(_command, documentQuery);
+
+            addHandler(reader);
+
+            return reader.ReturnValue.ContinueWith(r => r.Result.Single());
+        }
+
+        public Task<T> SingleOrDefault<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class
+        {
+            var documentQuery = toDocumentQuery<T>(q => query(q).Take(2));
+            var reader = new QueryHandler<T>(_schema.StorageFor(typeof(T)), _identityMap);
+
+            reader.Configure(_command, documentQuery);
+
+            addHandler(reader);
+
+            return reader.ReturnValue.ContinueWith(r => r.Result.SingleOrDefault());
+        }
+
         public async Task Execute(CancellationToken token = default(CancellationToken))
         {
             await _runner.ExecuteAsync(async (conn, tk) =>
