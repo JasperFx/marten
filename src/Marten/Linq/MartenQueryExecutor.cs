@@ -56,7 +56,8 @@ namespace Marten.Linq
 
             if (queryModel.ResultOperators.OfType<AnyResultOperator>().Any())
             {
-                var anyCommand = documentQuery.ToAnyCommand();
+                var anyCommand = new NpgsqlCommand();
+                documentQuery.ConfigureForAny(anyCommand);
 
                 return _runner.Execute(conn =>
                 {
@@ -67,7 +68,8 @@ namespace Marten.Linq
 
             if (queryModel.ResultOperators.OfType<CountResultOperator>().Any())
             {
-                var countCommand = documentQuery.ToCountCommand();
+                var countCommand = new NpgsqlCommand();
+                documentQuery.ConfigureForCount(countCommand);
 
                 return _runner.Execute(conn =>
                 {
@@ -118,7 +120,10 @@ namespace Marten.Linq
 
             _schema.EnsureStorageExists(mapping.DocumentType);
 
-            return query.ToCommand();
+            var command = new NpgsqlCommand();
+            query.ConfigureCommand(command);
+
+            return command;
         }
 
         public NpgsqlCommand BuildCommand<T>(IQueryable<T> queryable)
@@ -180,7 +185,8 @@ namespace Marten.Linq
 
             if (scalarResultOperator is AnyResultOperator)
             {
-                var anyCommand = documentQuery.ToAnyCommand();
+                var anyCommand = new NpgsqlCommand();
+                documentQuery.ConfigureForAny(anyCommand);
 
                 return _runner.ExecuteAsync(async (conn, tkn) =>
                 {
@@ -192,7 +198,8 @@ namespace Marten.Linq
 
             if (scalarResultOperator is CountResultOperator)
             {
-                var countCommand = documentQuery.ToCountCommand();
+                var countCommand = new NpgsqlCommand();
+                documentQuery.ConfigureForCount(countCommand);
 
                 return _runner.ExecuteAsync(async (conn, tkn) =>
                 {
@@ -204,7 +211,8 @@ namespace Marten.Linq
 
             if (scalarResultOperator is LongCountResultOperator)
             {
-                var countCommand = documentQuery.ToCountCommand();
+                var countCommand = new NpgsqlCommand();
+                documentQuery.ConfigureForCount(countCommand);
 
                 return _runner.ExecuteAsync(async (conn, tkn) =>
                 {

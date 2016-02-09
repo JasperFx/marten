@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -24,48 +24,40 @@ namespace Marten.Linq
             _parser = new MartenExpressionParser(this, serializer);
         }
 
-        public NpgsqlCommand ToAnyCommand()
+        public void ConfigureForAny(NpgsqlCommand command)
         {
             var sql = "select (count(*) > 0) as result from " + _mapping.TableName + " as d";
 
-            var command = new NpgsqlCommand();
-
             var where = buildWhereClause();
 
             sql = appendLateralJoin(sql);
 
             if (@where != null) sql += " where " + @where.ToSql(command);
 
-            command.CommandText = sql;
-
-            return command;
+            command.AppendQuery(sql);
         }
 
-        public NpgsqlCommand ToCountCommand()
+        public void ConfigureForCount(NpgsqlCommand command)
         {
             var sql = "select count(*) as number from " + _mapping.TableName + " as d";
 
-            var command = new NpgsqlCommand();
             var where = buildWhereClause();
 
             sql = appendLateralJoin(sql);
             if (@where != null) sql += " where " + @where.ToSql(command);
 
+            command.AppendQuery(sql);
 
-            command.CommandText = sql;
-
-            return command;
         }
 
 
-        public NpgsqlCommand ToCommand()
+        public void ConfigureCommand(NpgsqlCommand command)
         {
             if (_query.ResultOperators.OfType<LastResultOperator>().Any())
             {
                 throw new InvalidOperationException("Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
             }
 
-            var command = new NpgsqlCommand();
             var select = _mapping.SelectFields("d");
             var sql = $"select {select} from {_mapping.TableName} as d";
 
@@ -80,9 +72,7 @@ namespace Marten.Linq
             sql = appendLimit(sql);
             sql = appendOffset(sql);
 
-            command.CommandText = sql;
-
-            return command;
+            command.AppendQuery(sql);
         }
 
         private string appendOffset(string sql)
