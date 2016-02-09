@@ -124,28 +124,28 @@ namespace Marten.Testing.Schema.Hierarchies
         [Fact]
         public void load_by_id_with_mixed_results_from_identity_map()
         {
-            theSession.Load<User>().ById(admin1.Id, super1.Id, user1.Id)
+            theSession.LoadMany<User>().ById(admin1.Id, super1.Id, user1.Id)
                 .ToArray().ShouldHaveTheSameElementsAs(admin1, super1, user1);
         }
 
         [Fact]
         public async Task load_by_id_with_mixed_results_from_identity_map_async()
         {
-            var users = await theSession.Load<User>().ByIdAsync(admin1.Id, super1.Id, user1.Id);
+            var users = await theSession.LoadMany<User>().ByIdAsync(admin1.Id, super1.Id, user1.Id);
             users.OrderBy(x => x.FirstName).ShouldHaveTheSameElementsAs(admin1, super1, user1);
         }
 
         [Fact]
         public void load_by_id_keys_from_base_class_resolved_from_identity_map()
         {
-            theSession.Load<AdminUser>().ById(admin1.Id, admin2.Id)
+            theSession.LoadMany<AdminUser>().ById(admin1.Id, admin2.Id)
                 .ShouldHaveTheSameElementsAs(admin1, admin2);
         }
 
         [Fact]
         public async Task load_by_id_keys_from_base_class_resolved_from_identity_map_async()
         {
-            var users = await theSession.Load<AdminUser>().ByIdAsync(admin1.Id, admin2.Id);
+            var users = await theSession.LoadMany<AdminUser>().ByIdAsync(admin1.Id, admin2.Id);
             users.ShouldHaveTheSameElementsAs(admin1, admin2);
         }
 
@@ -154,7 +154,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             using (var session = theStore.QuerySession())
             {
-                session.Load<AdminUser>().ById(admin1.Id, admin2.Id)
+                session.LoadMany<AdminUser>().ById(admin1.Id, admin2.Id)
                     .Select(x => x.Id)
                     .ShouldHaveTheSameElementsAs(admin1.Id, admin2.Id);
             }
@@ -167,7 +167,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             using (var session = theStore.QuerySession())
             {
-                session.Load<User>().ById(admin1.Id, super1.Id, user1.Id)
+                session.LoadMany<User>().ById(admin1.Id, super1.Id, user1.Id)
                     .ToArray().OrderBy(x => x.FirstName).Select(x => x.Id).ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
             }
         }
@@ -177,7 +177,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             using (var session = theStore.QuerySession())
             {
-                var users = await session.Load<User>().ByIdAsync(admin1.Id, super1.Id, user1.Id);
+                var users = await session.LoadMany<User>().ByIdAsync(admin1.Id, super1.Id, user1.Id);
 
                 users.OrderBy(x => x.FirstName).Select(x => x.Id).ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
             }

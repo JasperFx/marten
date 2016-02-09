@@ -81,7 +81,7 @@ namespace Marten.Testing
 
             using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
-                session.Load<IntDoc>().ById(4, 5, 6).Count().ShouldBe(3);
+                session.LoadMany<IntDoc>().ById(4, 5, 6).Count().ShouldBe(3);
             }
         }
     }

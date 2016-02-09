@@ -162,7 +162,7 @@ namespace Marten
             return storage<T>().As<IResolver<T>>().ResolveAsync(_identityMap, this, token, id);
         }
 
-        public ILoadByKeys<T> Load<T>() where T : class
+        public ILoadByKeys<T> LoadMany<T>() where T : class
         {
             return new LoadByKeys<T>(this);
         }

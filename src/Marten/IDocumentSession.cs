@@ -47,7 +47,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        ILoadByKeys<T> Load<T>() where T : class;
+        ILoadByKeys<T> LoadMany<T>() where T : class;
 
         /// <summary>
         /// Load or find only the document json by string id for a document of type T

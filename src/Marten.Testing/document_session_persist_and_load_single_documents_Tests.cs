@@ -107,7 +107,7 @@ namespace Marten.Testing
 
             using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
             {
-                var users = session.Load<User>().ById(user2.Id, user3.Id, user4.Id);
+                var users = session.LoadMany<User>().ById(user2.Id, user3.Id, user4.Id);
                 users.Count().ShouldBe(3);
             }
         }
@@ -136,7 +136,7 @@ namespace Marten.Testing
             // SAMPLE: load_by_id_array_async
             using (var session = store.OpenSession())
             {
-                var users = await session.Load<User>().ByIdAsync(user2.Id, user3.Id, user4.Id);
+                var users = await session.LoadMany<User>().ByIdAsync(user2.Id, user3.Id, user4.Id);
                 users.Count().ShouldBe(3);
             }
             // ENDSAMPLE

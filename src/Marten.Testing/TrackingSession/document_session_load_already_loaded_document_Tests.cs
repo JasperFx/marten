@@ -37,7 +37,7 @@ namespace Marten.Testing.TrackingSession
             using (var session = CreateSession())
             {
                 var first = session.Load<User>(user.Id);
-                var second = session.Load<User>()
+                var second = session.LoadMany<User>()
                     .ById(user.Id)
                     .SingleOrDefault();
 
