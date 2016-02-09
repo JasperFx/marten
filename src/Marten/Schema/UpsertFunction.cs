@@ -105,7 +105,7 @@ END
 
         public string ToBulkInsertMethod(string typeName)
         {
-            var columns = Arguments.Select(x => $"\"{x.Column}\"").Join(", ");
+            var columns = Arguments.Select(x => $"\\\"{x.Column}\\\"").Join(", ");
 
             var writerStatements = Arguments
                 .Select(x => x.ToBulkInsertWriterStatement())
