@@ -26,16 +26,12 @@ namespace Marten.Testing.Services.BatchedQuerying
             // load several by some id
             var usersTask = batch.LoadMany<User>().ById(Guid.NewGuid(), Guid.Empty, Guid.NewGuid());
 
-            // load a query
-            var userByName = batch.Query<User>().For(_ => _.Where(x => x.FirstName == "Jeremy").ToList());
-
             // Send the batch all at once in a single network request to the DB
             await batch.Execute();
 
             // work with the results
             Debug.WriteLine(userTask.Result);
             Debug.WriteLine(usersTask.Result.Count());
-            Debug.WriteLine(userByName.Result.Count);
         }
     }
 }

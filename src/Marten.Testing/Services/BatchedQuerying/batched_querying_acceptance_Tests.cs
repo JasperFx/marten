@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
@@ -14,11 +15,30 @@ namespace Marten.Testing.Services.BatchedQuerying
         private readonly Target target1 = Target.Random();
         private readonly Target target2 = Target.Random();
         private readonly Target target3 = Target.Random();
+        protected User user1 = new User { UserName = "A1", FirstName = "Justin", LastName = "Houston" };
+        protected User user2 = new User { UserName = "B1", FirstName = "Tamba", LastName = "Hali" };
+        protected AdminUser admin1 = new AdminUser { UserName = "A2", FirstName = "Derrick", LastName = "Johnson", Region = "Midwest" };
+        protected AdminUser admin2 = new AdminUser { UserName = "B2", FirstName = "Eric", LastName = "Berry", Region = "West Coast" };
+        protected SuperUser super1 = new SuperUser { UserName = "A3", FirstName = "Dontari", LastName = "Poe", Role = "Expert" };
+        protected SuperUser super2 = new SuperUser { UserName = "B3", FirstName = "Sean", LastName = "Smith", Role = "Master" };
 
         public batched_querying_acceptance_Tests()
         {
+            theStore.Schema.Alter(_ =>
+            {
+                _.For<User>().AddSubclass(typeof (AdminUser)).AddSubclass(typeof (SuperUser));
+            });
+
             theSession.Store(target1, target2, target3);
+            theSession.Store(user1, user2, admin1, admin2, super1, super2);
+
             theSession.SaveChanges();
+        }
+
+        [Fact]
+        public async Task can_query_by_document_type()
+        {
+
         }
 
         [Fact]

@@ -33,7 +33,21 @@ namespace Marten.Util
             }
 
             return list;
-        } 
+        }
+
+        public static NpgsqlCommand AppendQuery(this NpgsqlCommand command, string sql)
+        {
+            if (command.CommandText.IsEmpty())
+            {
+                command.CommandText = sql;
+            }
+            else
+            {
+                command.CommandText += ";" + sql;
+            }
+
+            return command;
+        }
 
         public static NpgsqlParameter AddParameter(this NpgsqlCommand command, object value)
         {

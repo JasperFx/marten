@@ -15,14 +15,16 @@ namespace Marten.Services.BatchQuerying
         private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
         private readonly IIdentityMap _identityMap;
+        private readonly IQuerySession _parent;
         private readonly NpgsqlCommand _command = new NpgsqlCommand();
         private readonly IList<IDataReaderHandler> _handlers = new List<IDataReaderHandler>(); 
 
-        public BatchedQuery(ICommandRunner runner, IDocumentSchema schema, IIdentityMap identityMap)
+        public BatchedQuery(ICommandRunner runner, IDocumentSchema schema, IIdentityMap identityMap, IQuerySession parent)
         {
             _runner = runner;
             _schema = schema;
             _identityMap = identityMap;
+            _parent = parent;
         }
 
         public Task<T> Load<T>(string id) where T : class
@@ -46,24 +48,13 @@ namespace Marten.Services.BatchQuerying
 
             var mapping = _schema.MappingFor(typeof (T));
             var parameter = _command.AddParameter(id);
-            appendSql($"select {mapping.SelectFields("d")} from {mapping.TableName} as d where id = :{parameter.ParameterName}");
+
+            _command.AppendQuery($"select {mapping.SelectFields("d")} from {mapping.TableName} as d where id = :{parameter.ParameterName}");
 
             var handler = new SingleResultReader<T>(source, _schema.StorageFor(typeof(T)), _identityMap);
             _handlers.Add(handler);
 
             return source.Task;
-        }
-
-        private void appendSql(string sql)
-        {
-            if (_command.CommandText.IsEmpty())
-            {
-                _command.CommandText = sql;
-            }
-            else
-            {
-                _command.CommandText += ";" + sql;
-            }
         }
 
 
@@ -87,7 +78,7 @@ namespace Marten.Services.BatchQuerying
 
                 var mapping = _parent._schema.MappingFor(typeof(TDoc));
                 var parameter = _parent._command.AddParameter(keys);
-                _parent.appendSql($"select {mapping.SelectFields("d")} from {mapping.TableName} as d where d.id = ANY(:{parameter.ParameterName})");
+                _parent._command.AppendQuery($"select {mapping.SelectFields("d")} from {mapping.TableName} as d where d.id = ANY(:{parameter.ParameterName})");
 
                 var handler = new MultipleResultsReader<TDoc>(source, _parent._schema.StorageFor(typeof(TDoc)), _parent._identityMap);
                 _parent._handlers.Add(handler);
@@ -113,7 +104,7 @@ namespace Marten.Services.BatchQuerying
 
         public IQueryForExpression<T> Query<T>() where T : class
         {
-            throw new NotImplementedException();
+            return new QueryForExpression<T>();
         }
 
         public async Task Execute(CancellationToken token = default(CancellationToken))
