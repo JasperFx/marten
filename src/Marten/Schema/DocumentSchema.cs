@@ -70,10 +70,7 @@ namespace Marten.Schema
 
                 var storage = mapping.BuildStorage(this);
 
-                if (shouldRegenerate(mapping))
-                {
-                    _creation.CreateSchema(this, mapping);
-                }
+                _creation.CreateSchema(this, mapping, () => shouldRegenerate(mapping));
 
                 return storage;
             });

@@ -8,15 +8,30 @@ namespace Marten.Schema
     public class DevelopmentSchemaCreation : IDocumentSchemaCreation
     {
         private readonly ICommandRunner _runner;
+        private readonly object _lock = new object();
 
         public DevelopmentSchemaCreation(ICommandRunner runner)
         {
             _runner = runner;
         }
 
-        public void CreateSchema(IDocumentSchema schema, IDocumentMapping mapping)
+        public void CreateSchema(IDocumentSchema schema, IDocumentMapping mapping, Func<bool> shouldRegenerate)
         {
-            var writer= new StringWriter();
+            if (shouldRegenerate())
+            {
+                lock (_lock)
+                {
+                    if (shouldRegenerate())
+                    {
+                        writeSchemaObjects(schema, mapping);
+                    }
+                }
+            }
+        }
+
+        private void writeSchemaObjects(IDocumentSchema schema, IDocumentMapping mapping)
+        {
+            var writer = new StringWriter();
             SchemaBuilder.WriteSchemaObjects(mapping, schema, writer);
 
             var sql = writer.ToString();
