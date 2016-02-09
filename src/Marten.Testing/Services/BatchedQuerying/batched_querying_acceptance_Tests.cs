@@ -65,6 +65,24 @@ namespace Marten.Testing.Services.BatchedQuerying
             (await noneUser).ShouldBeNull();
         }
 
+        [Fact]
+        public async Task single_and_single_or_default()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var tamba = batch.Single<User>(x => x.Where(_ => _.FirstName == "Tamba"));
+            var justin = batch.SingleOrDefault<User>(x => x.Where(_ => _.FirstName == "Justin"));
+            var noneUser = batch.SingleOrDefault<User>(x => x.Where(_ => _.FirstName == "not me"));
+
+            await batch.Execute();
+
+            (await tamba).FirstName.ShouldBe("Tamba");
+            (await justin).FirstName.ShouldBe("Justin");
+            (await noneUser).ShouldBeNull();
+
+        }
+
+
 
 
         [Fact]
