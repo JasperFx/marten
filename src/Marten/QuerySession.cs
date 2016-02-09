@@ -8,6 +8,7 @@ using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.BatchQuerying;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Parsing.Structure;
@@ -64,6 +65,11 @@ namespace Marten
                     .Select(json => _serializer.FromJson<T>(json))
                     .ToArray();
             }
+        }
+
+        public IBatchedQuery CreateBatchQuery()
+        {
+            throw new NotImplementedException();
         }
 
         private NpgsqlCommand BuildCommand<T>(string sql, params object[] parameters)

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Services.BatchQuerying;
 
 namespace Marten
 {
@@ -113,6 +114,11 @@ namespace Marten
         /// <returns></returns>
         Task<IEnumerable<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters);
 
+        /// <summary>
+        /// Define a batch of deferred queries and load operations to be conducted in one asynchronous request to the 
+        /// database for potentially performance
+        /// </summary>
+        /// <returns></returns>
         IBatchedQuery CreateBatchQuery();
     }
 
