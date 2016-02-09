@@ -6,7 +6,7 @@ using Marten.Services;
 using Marten.Testing.Documents;
 using Xunit;
 
-namespace Marten.Testing.Services
+namespace Marten.Testing.Services.BatchedQuerying
 {
     public class BatchedSamples : DocumentSessionFixture<NulloIdentityMap>
     {

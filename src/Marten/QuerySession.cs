@@ -69,7 +69,7 @@ namespace Marten
 
         public IBatchedQuery CreateBatchQuery()
         {
-            throw new NotImplementedException();
+            return new BatchedQuery(_runner, _schema, _identityMap);
         }
 
         private NpgsqlCommand BuildCommand<T>(string sql, params object[] parameters)
