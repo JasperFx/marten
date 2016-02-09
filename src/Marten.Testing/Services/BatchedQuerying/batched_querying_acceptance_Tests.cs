@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
@@ -48,6 +51,68 @@ namespace Marten.Testing.Services.BatchedQuerying
 
             (await task1).ShouldBeSameAs(await task21);
             (await task3).ShouldBeSameAs(await task23);
+        }
+
+        [Fact]
+        public async Task can_find_multiple_docs_by_id()
+        {
+            var batch1 = theSession.CreateBatchQuery();
+            var task = batch1.LoadMany<Target>().ById(target1.Id, target3.Id);
+
+            await batch1.Execute();
+
+            var list = await task;
+
+            list.Count().ShouldBe(2);
+            list.Any(x => x.Id == target1.Id).ShouldBeTrue();
+            list.Any(x => x.Id == target3.Id).ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task can_find_multiple_docs_by_id_with_identity_map()
+        {
+            var batch1 = theSession.CreateBatchQuery();
+            var task1 = batch1.LoadMany<Target>().ById(target1.Id, target3.Id);
+
+            await batch1.Execute();
+
+            var batch2 = theSession.CreateBatchQuery();
+            var task2 = batch2.LoadMany<Target>().ById(target1.Id, target3.Id);
+
+            await batch2.Execute();
+
+            (await task1).ShouldHaveTheSameElementsAs(await task2);
+        }
+
+        [Fact]
+        public async Task can_find_multiple_docs_by_id_2()
+        {
+            var batch1 = theSession.CreateBatchQuery();
+            var task = batch1.LoadMany<Target>().ByIdList(new List<Guid> { target1.Id, target3.Id });
+
+            await batch1.Execute();
+
+            var list = await task;
+
+            list.Count().ShouldBe(2);
+            list.Any(x => x.Id == target1.Id).ShouldBeTrue();
+            list.Any(x => x.Id == target3.Id).ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task can_find_multiple_docs_by_id_with_identity_map_2()
+        {
+            var batch1 = theSession.CreateBatchQuery();
+            var task1 = batch1.LoadMany<Target>().ByIdList(new List<Guid> { target1.Id, target3.Id });
+
+            await batch1.Execute();
+
+            var batch2 = theSession.CreateBatchQuery();
+            var task2 = batch2.LoadMany<Target>().ByIdList(new List<Guid> { target1.Id, target3.Id });
+
+            await batch2.Execute();
+
+            (await task1).ShouldHaveTheSameElementsAs(await task2);
         }
     }
 }

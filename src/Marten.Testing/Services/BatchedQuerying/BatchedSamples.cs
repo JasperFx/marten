@@ -24,7 +24,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var userTask = batch.Load<User>(Guid.NewGuid());
 
             // load several by some id
-            var usersTask = batch.Load<User>().ById(Guid.NewGuid(), Guid.Empty, Guid.NewGuid());
+            var usersTask = batch.LoadMany<User>().ById(Guid.NewGuid(), Guid.Empty, Guid.NewGuid());
 
             // load a query
             var userByName = batch.Query<User>().For(_ => _.Where(x => x.FirstName == "Jeremy").ToList());
