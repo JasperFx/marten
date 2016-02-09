@@ -133,6 +133,7 @@
     <Compile Include="QuerySessionTests.cs" />
     <Compile Include="Schema\configuring_searchable_fields_Tests.cs" />
     <Compile Include="Schema\configuring_the_document_type_alias_Tests.cs" />
+    <Compile Include="Schema\do_not_overwrite_tables_with_searchable_fields_Tests.cs" />
     <Compile Include="Schema\Hierarchies\end_to_end_document_hierarchy_usage_Tests.cs" />
     <Compile Include="Schema\Hierarchies\generating_code_and_sql_for_hierarchy_smoke_Tests.cs" />
     <Compile Include="Schema\Hierarchies\HierarchyArgumentTests.cs" />

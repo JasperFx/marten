@@ -90,6 +90,8 @@ namespace Marten.Testing.Fixtures
         public string String { get; set; }
         public string AnotherString { get; set; }
 
+        public Guid OtherGuid { get; set; }
+
         public Target Inner { get; set; }
 
         public Colors Color { get; set; }

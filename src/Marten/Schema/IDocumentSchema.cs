@@ -44,5 +44,6 @@ namespace Marten.Schema
         string ToDDL();
 
         TableDefinition TableSchema(string tableName);
+        TableDefinition TableSchema(Type documentType);
     }
 }

@@ -175,6 +175,11 @@ namespace Marten.Schema
             return new TableDefinition(tableName, pkName, columns);
         }
 
+        public TableDefinition TableSchema(Type documentType)
+        {
+            return TableSchema(MappingFor(documentType).TableName);
+        }
+
         private string[] primaryKeysFor(string tableName)
         {
             var sql = @"

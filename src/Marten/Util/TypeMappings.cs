@@ -15,7 +15,7 @@ namespace Marten.Util
             {typeof (long), "bigint"},
             {typeof (Guid), "uuid"},
             {typeof (string), "varchar"},
-            {typeof (Boolean), "Boolean"},
+            {typeof (Boolean), "boolean"},
             {typeof (double), "double precision"},
             {typeof (decimal), "decimal"},
             {typeof (DateTime), "date"},
@@ -41,7 +41,16 @@ namespace Marten.Util
                 case "character varying":
                 case "varchar":
                     return "varchar";
+
+                case "boolean":
+                case "Boolean":
+                    return "boolean";
+
+                case "decimal":
+                case "numeric":
+                    return "decimal";
             }
+
 
             return type;
         }
