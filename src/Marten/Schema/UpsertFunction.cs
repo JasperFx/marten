@@ -13,7 +13,7 @@ namespace Marten.Schema
         public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
         public readonly IList<ColumnValue> Values = new List<ColumnValue>();
 
-        
+
 
         public string FunctionName { get; }
 
@@ -57,7 +57,7 @@ namespace Marten.Schema
             var updates = Arguments.Where(x => x.Column != "id")
                 .Select(x => $"\"{x.Column}\" = {x.Arg}").Join(", ");
 
-            var inserts = Arguments.Select(x => x.Column).Join(", ");
+            var inserts = Arguments.Select(x => $"\"{x.Column}\"").Join(", ");
             var valueList = Arguments.Select(x => x.Arg).Join(", ");
 
             if (upsertType == PostgresUpsertType.Legacy)
@@ -105,12 +105,12 @@ END
 
         public string ToBulkInsertMethod(string typeName)
         {
-            var columns = Arguments.Select(x => x.Column).Join(", ");
+            var columns = Arguments.Select(x => $"\\\"{x.Column}\\\"").Join(", ");
 
             var writerStatements = Arguments
                 .Select(x => x.ToBulkInsertWriterStatement())
                 .Join("\n");
-            
+
 
             return $@"
 BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{typeName}> documents)
