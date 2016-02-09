@@ -36,6 +36,29 @@ namespace Marten.Testing.Services.BatchedQuerying
         }
 
         [Fact]
+        public async Task can_query_documents()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var anyUsers = batch.QueryAll<User>();
+            var anyAdmins = batch.QueryAll<AdminUser>();
+            var anyIntDocs = batch.QueryAll<IntDoc>();
+            var aUsers = batch.Query<User>(x => x.Where(_ => _.UserName.StartsWith("A")));
+            var cUsers = batch.Query<User>(x => x.Where(_ => _.UserName.StartsWith("C")));
+
+            await batch.Execute();
+
+            (await anyUsers).OrderBy(x => x.FirstName).Select(x => x.Id)
+                .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, admin2.Id, user1.Id, super2.Id, user2.Id);
+
+
+            (await anyAdmins).OrderBy(x => x.FirstName).Select(x => x.Id).ShouldHaveTheSameElementsAs(admin1.Id, admin2.Id);
+            (await anyIntDocs).Any().ShouldBeFalse();
+            (await aUsers).OrderBy(x => x.FirstName).Select(x => x.Id).ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
+            (await cUsers).Any().ShouldBeFalse();
+        }
+
+        [Fact]
         public async Task can_query_for_any()
         {
             var batch = theSession.CreateBatchQuery();

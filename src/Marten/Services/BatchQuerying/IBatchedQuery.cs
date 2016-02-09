@@ -23,5 +23,9 @@ namespace Marten.Services.BatchQuerying
 
         Task<long> Count<TDoc>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query);
         Task<long> Count<TDoc>();
+
+        Task<IList<T>> Query<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class;
+
+        Task<IList<T>> QueryAll<T>() where T : class;
     }
 }

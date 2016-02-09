@@ -70,8 +70,9 @@
     <Compile Include="Schema\SubClassMapping.cs" />
     <Compile Include="Schema\UpsertFunction.cs" />
     <Compile Include="Services\BatchCommand.cs" />
-    <Compile Include="Services\BatchQuerying\BatchedHandlers.cs" />
+    <Compile Include="Services\BatchQuerying\AnyHandler.cs" />
     <Compile Include="Services\BatchQuerying\BatchedQuery.cs" />
+    <Compile Include="Services\BatchQuerying\CountHandler.cs" />
     <Compile Include="Services\BatchQuerying\MultipleResultsReader.cs" />
     <Compile Include="Services\BatchQuerying\DataReaderAdvancer.cs" />
     <Compile Include="Services\BatchQuerying\IBatchedQuery.cs" />

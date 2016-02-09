@@ -91,19 +91,17 @@ namespace Marten.Services.BatchQuerying
 
             private Task<IList<TDoc>> load<TKey>(TKey[] keys)
             {
-                var source = new TaskCompletionSource<IList<TDoc>>();
-
                 var mapping = _parent._schema.MappingFor(typeof (TDoc));
                 var parameter = _parent._command.AddParameter(keys);
                 _parent._command.AppendQuery(
                     $"select {mapping.SelectFields("d")} from {mapping.TableName} as d where d.id = ANY(:{parameter.ParameterName})");
 
-                var handler = new MultipleResultsReader<TDoc>(source, _parent._schema.StorageFor(typeof (TDoc)),
+                var handler = new MultipleResultsReader<TDoc>(_parent._schema.StorageFor(typeof (TDoc)),
                     _parent._identityMap);
 
                 _parent.addHandler(handler);
 
-                return source.Task;
+                return handler.ReturnValue;
             }
 
             public Task<IList<TDoc>> ById<TKey>(params TKey[] keys)
@@ -162,6 +160,23 @@ namespace Marten.Services.BatchQuerying
         public Task<long> Count<TDoc>()
         {
             return Count<TDoc>(q => q);
+        }
+
+        public Task<IList<T>> Query<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class
+        {
+            var documentQuery = toDocumentQuery(query);
+            var reader = new QueryHandler<T>(_schema.StorageFor(typeof(T)), _identityMap);
+
+            reader.Configure(_command, documentQuery);
+
+            addHandler(reader);
+
+            return reader.ReturnValue;
+        }
+
+        public Task<IList<T>> QueryAll<T>() where T : class
+    {
+            return Query<T>(q => q);
         }
 
         public async Task Execute(CancellationToken token = default(CancellationToken))
