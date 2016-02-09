@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,11 +16,12 @@ namespace Marten.Services.BatchQuerying
 
         Task<IEnumerable<T>> Query<T>(string sql, params object[] parameters) where T : class;
 
-
-        IQueryForExpression<T> Query<T>() where T : class;
-
-
         Task Execute(CancellationToken token = default(CancellationToken));
 
+        Task<bool> Any<TDoc>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query);
+        Task<bool> Any<TDoc>();
+
+        Task<long> Count<TDoc>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query);
+        Task<long> Count<TDoc>();
     }
 }

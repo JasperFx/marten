@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Remotion.Linq;
 
 namespace Marten.Linq
@@ -22,5 +23,6 @@ namespace Marten.Linq
             var queryProvider = (IMartenQueryProvider)Provider;
             return queryProvider.ExecuteCollectionAsync<T>(Expression, token);
         }
+
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Util;
 using Npgsql;
@@ -12,19 +12,23 @@ namespace Marten.Services.BatchQuerying
 {
     public class BatchedQuery : IBatchedQuery
     {
+        private static readonly MartenQueryParser _parser = new MartenQueryParser();
         private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
         private readonly IIdentityMap _identityMap;
         private readonly IQuerySession _parent;
+        private readonly ISerializer _serializer;
         private readonly NpgsqlCommand _command = new NpgsqlCommand();
-        private readonly IList<IDataReaderHandler> _handlers = new List<IDataReaderHandler>(); 
+        private readonly IList<IDataReaderHandler> _handlers = new List<IDataReaderHandler>();
 
-        public BatchedQuery(ICommandRunner runner, IDocumentSchema schema, IIdentityMap identityMap, IQuerySession parent)
+        public BatchedQuery(ICommandRunner runner, IDocumentSchema schema, IIdentityMap identityMap,
+            IQuerySession parent, ISerializer serializer)
         {
             _runner = runner;
             _schema = schema;
             _identityMap = identityMap;
             _parent = parent;
+            _serializer = serializer;
         }
 
         public Task<T> Load<T>(string id) where T : class
@@ -35,6 +39,18 @@ namespace Marten.Services.BatchQuerying
         public Task<T> Load<T>(ValueType id) where T : class
         {
             return load<T>(id);
+        }
+
+        private void addHandler(IDataReaderHandler handler)
+        {
+            if (_handlers.Any())
+            {
+                _handlers.Add(new DataReaderAdvancer(handler));
+            }
+            else
+            {
+                _handlers.Add(handler);
+            }
         }
 
         private Task<T> load<T>(object id) where T : class
@@ -49,10 +65,11 @@ namespace Marten.Services.BatchQuerying
             var mapping = _schema.MappingFor(typeof (T));
             var parameter = _command.AddParameter(id);
 
-            _command.AppendQuery($"select {mapping.SelectFields("d")} from {mapping.TableName} as d where id = :{parameter.ParameterName}");
+            _command.AppendQuery(
+                $"select {mapping.SelectFields("d")} from {mapping.TableName} as d where id = :{parameter.ParameterName}");
 
-            var handler = new SingleResultReader<T>(source, _schema.StorageFor(typeof(T)), _identityMap);
-            _handlers.Add(handler);
+            var handler = new SingleResultReader<T>(source, _schema.StorageFor(typeof (T)), _identityMap);
+            addHandler(handler);
 
             return source.Task;
         }
@@ -76,12 +93,15 @@ namespace Marten.Services.BatchQuerying
             {
                 var source = new TaskCompletionSource<IList<TDoc>>();
 
-                var mapping = _parent._schema.MappingFor(typeof(TDoc));
+                var mapping = _parent._schema.MappingFor(typeof (TDoc));
                 var parameter = _parent._command.AddParameter(keys);
-                _parent._command.AppendQuery($"select {mapping.SelectFields("d")} from {mapping.TableName} as d where d.id = ANY(:{parameter.ParameterName})");
+                _parent._command.AppendQuery(
+                    $"select {mapping.SelectFields("d")} from {mapping.TableName} as d where d.id = ANY(:{parameter.ParameterName})");
 
-                var handler = new MultipleResultsReader<TDoc>(source, _parent._schema.StorageFor(typeof(TDoc)), _parent._identityMap);
-                _parent._handlers.Add(handler);
+                var handler = new MultipleResultsReader<TDoc>(source, _parent._schema.StorageFor(typeof (TDoc)),
+                    _parent._identityMap);
+
+                _parent.addHandler(handler);
 
                 return source.Task;
             }
@@ -102,9 +122,46 @@ namespace Marten.Services.BatchQuerying
             throw new NotImplementedException();
         }
 
-        public IQueryForExpression<T> Query<T>() where T : class
+        private DocumentQuery toDocumentQuery<TDoc>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query)
         {
-            return new QueryForExpression<T>();
+            var queryable = _parent.Query<TDoc>();
+            var expression = query(queryable).Expression;
+
+            var model = _parser.GetParsedQuery(expression);
+
+            _schema.EnsureStorageExists(typeof(TDoc));
+
+            return new DocumentQuery(_schema.MappingFor(typeof(TDoc)), model, _serializer);
+        }
+
+        private Task<TReturn> addHandler<TDoc, THandler, TReturn>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query) where THandler : IDataReaderHandler<TReturn>, new()
+        {
+            var model = toDocumentQuery(query);
+            var handler = new THandler();
+            handler.Configure(_command, model);
+            addHandler(handler);
+
+            return handler.ReturnValue;
+        }
+
+        public Task<bool> Any<TDoc>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query)
+        {
+            return addHandler<TDoc, AnyHandler, bool>(query);
+        }
+
+        public Task<bool> Any<TDoc>()
+        {
+            return Any<TDoc>(q => q);
+        }
+
+        public Task<long> Count<TDoc>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query)
+        {
+            return addHandler<TDoc, CountHandler, long>(query);
+        }
+
+        public Task<long> Count<TDoc>()
+        {
+            return Count<TDoc>(q => q);
         }
 
         public async Task Execute(CancellationToken token = default(CancellationToken))

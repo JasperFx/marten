@@ -36,9 +36,43 @@ namespace Marten.Testing.Services.BatchedQuerying
         }
 
         [Fact]
-        public async Task can_query_by_document_type()
+        public async Task can_query_for_any()
         {
+            var batch = theSession.CreateBatchQuery();
 
+            var anyUsers = batch.Any<User>();
+            var anyAdmins = batch.Any<AdminUser>();
+            var anyIntDocs = batch.Any<IntDoc>();
+            var aUsers = batch.Any<User>(x => x.Where(_ => _.UserName.StartsWith("A")));
+            var cUsers = batch.Any<User>(x => x.Where(_ => _.UserName.StartsWith("C")));
+
+            await batch.Execute();
+
+            (await anyUsers).ShouldBeTrue();
+            (await anyAdmins).ShouldBeTrue();
+            (await anyIntDocs).ShouldBeFalse();
+            (await aUsers).ShouldBeTrue();
+            (await cUsers).ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task can_query_for_count()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var anyUsers = batch.Count<User>();
+            var anyAdmins = batch.Count<AdminUser>();
+            var anyIntDocs = batch.Count<IntDoc>();
+            var aUsers = batch.Count<User>(x => x.Where(_ => _.UserName.StartsWith("A")));
+            var cUsers = batch.Count<User>(x => x.Where(_ => _.UserName.StartsWith("C")));
+
+            await batch.Execute();
+
+            (await anyUsers).ShouldBe(6);
+            (await anyAdmins).ShouldBe(2);
+            (await anyIntDocs).ShouldBe(0);
+            (await aUsers).ShouldBe(3);
+            (await cUsers).ShouldBe(0);
         }
 
         [Fact]
