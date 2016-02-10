@@ -38,7 +38,7 @@ namespace Marten.Services.BatchQuerying
         /// <param name="sql"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        Task<IEnumerable<T>> Query<T>(string sql, params object[] parameters) where T : class;
+        Task<IList<T>> Query<T>(string sql, params object[] parameters) where T : class;
 
         /// <summary>
         /// Execute this batched query

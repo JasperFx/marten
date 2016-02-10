@@ -16,13 +16,13 @@ namespace Marten.Services.BatchQuerying
         private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
         private readonly IIdentityMap _identityMap;
-        private readonly IQuerySession _parent;
+        private readonly QuerySession _parent;
         private readonly ISerializer _serializer;
         private readonly NpgsqlCommand _command = new NpgsqlCommand();
         private readonly IList<IDataReaderHandler> _handlers = new List<IDataReaderHandler>();
 
         public BatchedQuery(ICommandRunner runner, IDocumentSchema schema, IIdentityMap identityMap,
-            IQuerySession parent, ISerializer serializer)
+            QuerySession parent, ISerializer serializer)
         {
             _runner = runner;
             _schema = schema;
@@ -115,9 +115,14 @@ namespace Marten.Services.BatchQuerying
             }
         }
 
-        public Task<IEnumerable<T>> Query<T>(string sql, params object[] parameters) where T : class
+        public Task<IList<T>> Query<T>(string sql, params object[] parameters) where T : class
         {
-            throw new NotImplementedException();
+            _parent.ConfigureCommand<T>(_command, sql, parameters);
+
+            var handler = new QueryResultsReader<T>(_serializer);
+            addHandler(handler);
+
+            return handler.ReturnValue;
         }
 
         private DocumentQuery toDocumentQuery<TDoc>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query)

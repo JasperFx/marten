@@ -26,13 +26,29 @@ namespace Marten.Testing.Services.BatchedQuerying
         {
             theStore.Schema.Alter(_ =>
             {
-                _.For<User>().AddSubclass(typeof (AdminUser)).AddSubclass(typeof (SuperUser));
+                _.For<User>().AddSubclass(typeof (AdminUser)).AddSubclass(typeof (SuperUser))
+                .Searchable(x => x.FirstName).Searchable(x => x.LastName);
             });
 
             theSession.Store(target1, target2, target3);
             theSession.Store(user1, user2, admin1, admin2, super1, super2);
 
             theSession.SaveChanges();
+        }
+
+        [Fact]
+        public async Task can_query_with_user_supplied_sql()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var justin = batch.Query<User>("where first_name = ?", "Justin");
+            var tamba = batch.Query<User>("where first_name = ? and last_name = ?", "Tamba", "Hali");
+
+            await batch.Execute();
+
+            (await justin).Single().Id.ShouldBe(user1.Id);
+            (await tamba).Single().Id.ShouldBe(user2.Id);
+
         }
 
         [Fact]

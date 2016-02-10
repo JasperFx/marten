@@ -72,10 +72,18 @@ namespace Marten
             return new BatchedQuery(_runner, _schema, _identityMap, this, _serializer);
         }
 
-        private NpgsqlCommand BuildCommand<T>(string sql, params object[] parameters)
+        public NpgsqlCommand BuildCommand<T>(string sql, params object[] parameters)
         {
             var cmd = new NpgsqlCommand();
-            var mapping = _schema.MappingFor(typeof(T));
+
+            ConfigureCommand<T>(cmd, sql, parameters);
+
+            return cmd;
+        }
+
+        public void ConfigureCommand<T>(NpgsqlCommand cmd, string sql, object[] parameters)
+        {
+            var mapping = _schema.MappingFor(typeof (T));
 
             if (!sql.Contains("select", StringComparison.OrdinalIgnoreCase))
             {
@@ -89,9 +97,7 @@ namespace Marten
                 sql = sql.UseParameter(param);
             });
 
-            cmd.CommandText = sql;
-
-            return cmd;
+            cmd.AppendQuery(sql);
         }
 
         private IDocumentStorage storage<T>()

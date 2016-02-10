@@ -9,6 +9,32 @@ using Npgsql;
 
 namespace Marten.Services.BatchQuerying
 {
+    public class QueryResultsReader<T> : IDataReaderHandler
+    {
+        private readonly ISerializer _serializer;
+        private readonly TaskCompletionSource<IList<T>> _source = new TaskCompletionSource<IList<T>>(); 
+
+        public QueryResultsReader(ISerializer serializer)
+        {
+            _serializer = serializer;
+        }
+
+        public Task<IList<T>> ReturnValue => _source.Task;
+
+        public async Task Handle(DbDataReader reader, CancellationToken token)
+        {
+            var list = new List<T>();
+
+            while (await reader.ReadAsync(token))
+            {
+                var doc = _serializer.FromJson<T>(reader.GetString(0));
+                list.Add(doc);
+            }
+
+            _source.SetResult(list);
+        }
+    }
+
     public class MultipleResultsReader<T> : IDataReaderHandler where T : class
     {
         private readonly TaskCompletionSource<IList<T>> _taskSource = new TaskCompletionSource<IList<T>>();
