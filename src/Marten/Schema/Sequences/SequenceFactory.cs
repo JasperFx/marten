@@ -7,13 +7,13 @@ namespace Marten.Schema.Sequences
     public class SequenceFactory : ISequences
     {
         private readonly IDocumentSchemaCreation _creation;
-        private readonly ICommandRunner _runner;
         private readonly IDocumentSchema _schema;
+        private readonly IConnectionFactory _factory;
 
-        public SequenceFactory(IDocumentSchema schema, ICommandRunner runner, IDocumentSchemaCreation creation)
+        public SequenceFactory(IDocumentSchema schema, IConnectionFactory factory, IDocumentSchemaCreation creation)
         {
             _schema = schema;
-            _runner = runner;
+            _factory = factory;
             _creation = creation;
         }
 
@@ -27,7 +27,7 @@ namespace Marten.Schema.Sequences
                 _creation.RunScript("mt_hilo");
             }
 
-            return new HiloSequence(_runner, documentType.Name, settings);
+            return new HiloSequence(_factory, documentType.Name, settings);
         }
     }
 }

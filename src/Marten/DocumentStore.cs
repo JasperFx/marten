@@ -70,13 +70,13 @@ namespace Marten
                 ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_connectionFactory)
                 : new ProductionSchemaCreation();
 
-            Schema = new DocumentSchema(_options, _runner, creation);
+            Schema = new DocumentSchema(_options, _connectionFactory, creation);
 
             Schema.Alter(options.Schema);
 
             _serializer = options.Serializer();
 
-            var cleaner = new DocumentCleaner(_runner, Schema);
+            var cleaner = new DocumentCleaner(_connectionFactory, Schema);
             Advanced = new AdvancedOptions(cleaner, options);
 
             Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser, new NulloIdentityMap(_serializer)));
@@ -87,11 +87,11 @@ namespace Marten
 
         private readonly Func<ICommandRunner> _runnerForSession;
         private readonly StoreOptions _options;
-        private IConnectionFactory _connectionFactory;
+        private readonly IConnectionFactory _connectionFactory;
 
         public void Dispose()
         {
-            
+            _runner.Dispose();
         }
 
         public IDocumentSchema Schema { get; }

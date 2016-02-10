@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
@@ -10,29 +9,29 @@ using Baseline;
 using Marten.Events;
 using Marten.Generation;
 using Marten.Schema.Sequences;
-using Marten.Services;
 
 namespace Marten.Schema
 {
     public class DocumentSchema : IDocumentSchema, IDisposable
     {
+        private readonly IConnectionFactory _factory;
         private readonly IDocumentSchemaCreation _creation;
 
-        private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings = new ConcurrentDictionary<Type, IDocumentMapping>(); 
+        private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
+            new ConcurrentDictionary<Type, IDocumentMapping>();
 
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
             new ConcurrentDictionary<Type, IDocumentStorage>();
 
-        private readonly ICommandRunner _runner;
 
-        public DocumentSchema(StoreOptions options, ICommandRunner runner, IDocumentSchemaCreation creation)
+        public DocumentSchema(StoreOptions options, IConnectionFactory factory, IDocumentSchemaCreation creation)
         {
+            _factory = factory;
             _creation = creation;
-            _runner = runner;
 
             StoreOptions = options;
 
-            Sequences = new SequenceFactory(this, _runner, _creation);
+            Sequences = new SequenceFactory(this, _factory, _creation);
 
             Events = new EventGraph();
         }
@@ -63,8 +62,6 @@ namespace Marten.Schema
         {
             return _documentTypes.GetOrAdd(documentType, type =>
             {
-
-
                 var mapping = MappingFor(documentType);
                 assertNoDuplicateDocumentAliases();
 
@@ -109,7 +106,7 @@ namespace Marten.Schema
             var sql =
                 "select table_name from information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema') ";
 
-            return _runner.GetStringList(sql);
+            return _factory.GetStringList(sql);
         }
 
         public string[] DocumentTables()
@@ -188,47 +185,29 @@ WHERE i.indrelid = ?::regclass
 AND i.indisprimary; 
 ";
 
-            return _runner.GetStringList(sql, tableName).ToArray();
+            return _factory.GetStringList(sql, tableName).ToArray();
         }
 
         private IEnumerable<TableColumn> findTableColumns(string tableName)
         {
             Func<DbDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));
 
-            var sql = "select column_name, data_type from information_schema.columns where table_name = ? order by ordinal_position";
-            return
-                _runner.Fetch(
-                    sql,
-                    transform, tableName);
+            var sql =
+                "select column_name, data_type from information_schema.columns where table_name = ? order by ordinal_position";
+            return _factory.Fetch(sql, transform, tableName);
         }
 
 
         private IEnumerable<string> findFunctionNames()
         {
-            return _runner.Execute(command =>
-            {
-                var sql = @"
+            var sql = @"
 SELECT routine_name
 FROM information_schema.routines
 WHERE specific_schema NOT IN ('pg_catalog', 'information_schema')
 AND type_udt_name != 'trigger';
 ";
 
-                command.CommandText = sql;
-
-                var list = new List<string>();
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        list.Add(reader.GetString(0));
-                    }
-
-                    reader.Close();
-                }
-
-                return list;
-            });
+            return _factory.GetStringList(sql);
         }
     }
 
@@ -239,7 +218,8 @@ AND type_udt_name != 'trigger';
         {
         }
 
-        protected AmbiguousDocumentTypeAliasesException(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected AmbiguousDocumentTypeAliasesException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
         }
     }

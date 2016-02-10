@@ -13,9 +13,9 @@ namespace Marten.Testing.Schema.Sequences
     public class HiloSequenceTests
     {
         private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
-        private ICommandRunner _runner;
 
         private readonly HiloSequence theSequence;
+        private IConnectionFactory _connectionFactory;
 
         public HiloSequenceTests()
         {
@@ -23,10 +23,11 @@ namespace Marten.Testing.Schema.Sequences
 
             var sql = SchemaBuilder.GetText("mt_hilo");
 
-            _runner = _container.GetInstance<ICommandRunner>();
-            _runner.Execute(sql);
+            _connectionFactory = _container.GetInstance<IConnectionFactory>();
+            _connectionFactory.RunSql(sql);
 
-            theSequence = new HiloSequence(_runner, "foo", new HiloSettings());
+            
+            theSequence = new HiloSequence(_connectionFactory, "foo", new HiloSettings());
         }
 
         [Fact]

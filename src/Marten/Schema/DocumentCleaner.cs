@@ -29,13 +29,13 @@ WHERE  proname = '{0}'
 AND    pg_function_is_visible(oid)  
                                   
 ";
-        private readonly ICommandRunner _runner;
+        private readonly IConnectionFactory _factory;
         private readonly IDocumentSchema _schema;
 
-        public DocumentCleaner(ICommandRunner runner, IDocumentSchema schema)
+        public DocumentCleaner(IConnectionFactory factory, IDocumentSchema schema)
         {
+            _factory = factory;
             _schema = schema;
-            _runner = runner;
         }
 
         public void DeleteAllDocuments()
@@ -76,34 +76,19 @@ AND    pg_function_is_visible(oid)
         private void truncateTable(string tableName)
         {
             var sql = "truncate {0} cascade".ToFormat(tableName);
-
-            _runner.Execute(sql);
+            _factory.RunSql(sql);
         }
 
         private void dropFunctions(string dropTargets)
         {
-            var drops = new List<string>();
-            var cmd = new NpgsqlCommand().WithText(dropTargets);
+            var drops = _factory.GetStringList(dropTargets);
 
-            _runner.Execute(cmd, c =>
-            {
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        drops.Add(reader.GetString(0));
-                    }
-
-                    reader.Close();
-                }
-            });
-
-            drops.Each(drop => { _runner.Execute(drop); });
+            drops.Each(drop => _factory.RunSql(drop));
         }
 
         private void dropTable(string tableName)
         {
-            _runner.Execute("DROP TABLE IF EXISTS {0} CASCADE;".ToFormat(tableName));
+            _factory.RunSql($"DROP TABLE IF EXISTS {tableName} CASCADE;");
         }
     }
 }

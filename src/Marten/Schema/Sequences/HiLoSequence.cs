@@ -8,13 +8,13 @@ namespace Marten.Schema.Sequences
 {
     public class HiloSequence : ISequence
     {
+        private readonly IConnectionFactory _factory;
         private readonly string _entityName;
         private readonly object _lock = new object();
-        private readonly ICommandRunner _runner;
 
-        public HiloSequence(ICommandRunner runner, string entityName, HiloSettings settings)
+        public HiloSequence(IConnectionFactory factory, string entityName, HiloSettings settings)
         {
-            _runner = runner;
+            _factory = factory;
             _entityName = entityName;
 
             CurrentHi = -1;
@@ -51,17 +51,27 @@ namespace Marten.Schema.Sequences
 
         public void AdvanceToNextHi()
         {
-            _runner.InTransaction(IsolationLevel.Serializable, () =>
+            using (var conn = _factory.Create())
             {
-                _runner.Execute(cmd =>
+                conn.Open();
+
+                try
                 {
-                    var raw = cmd.CallsSproc("mt_get_next_hi")
+                    var tx = conn.BeginTransaction(IsolationLevel.Serializable);
+                    var raw = conn.CreateCommand().CallsSproc("mt_get_next_hi")
                         .With("entity", _entityName)
                         .Returns("next", NpgsqlDbType.Bigint).ExecuteScalar();
 
+                    tx.Commit();
+
                     CurrentHi = Convert.ToInt64(raw);
-                });
-            });
+                }
+                finally
+                {
+                    conn.Close();
+                    conn.Dispose();
+                }
+            }
 
             CurrentLo = 1;
         }

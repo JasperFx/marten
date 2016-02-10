@@ -121,20 +121,7 @@ namespace Marten.Services
             return list;
         }
 
-        public static IEnumerable<T> Fetch<T>(this ICommandRunner runner, string sql, Func<DbDataReader, T> transform, params object[] parameters)
-        {
-            return runner.Execute(conn =>
-            {
-                try
-                {
-                    return conn.Fetch(sql, transform, parameters);
-                }
-                catch (Exception e)
-                {
-                    throw new Exception($"Error trying to fetch w/ sql '{sql}'", e);
-                }
-            });
-        }
+
 
         public static T QueryScalar<T>(this ICommandRunner runner, string sql)
         {
