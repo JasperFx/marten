@@ -271,6 +271,11 @@ namespace Marten.Schema
             });
         }
 
+        public IField FieldFor(MemberInfo member, int moduloValue)
+        {
+            return new ModuloLateralJoinField(member,moduloValue);
+        }
+
         public IField FieldFor(string memberName)
         {
             return _fields[memberName];
@@ -336,7 +341,7 @@ namespace Marten.Schema
             return duplicate;
         }
 
-        public IField FieldFor(IEnumerable<MemberInfo> members)
+        public IField FieldFor(IList<MemberInfo> members)
         {
             if (members.Count() == 1)
             {
@@ -375,6 +380,20 @@ END
         public IWhereFragment FilterDocuments(IWhereFragment query)
         {
             return query;
+        }
+
+        public IField FieldFor(IList<MemberInfo> members, int moduloValue)
+        {
+            if (members.Count() == 1)
+            {
+                return FieldFor(members.Single(), moduloValue);
+            }
+
+            var key = members.Select(x => x.Name).Join("");
+            return _fields.GetOrAdd(key, _ =>
+            {
+                return new JsonLocatorField(members.ToArray());
+            });
         }
 
         public IndexDefinition DuplicateField(MemberInfo[] members, string pgType = null)

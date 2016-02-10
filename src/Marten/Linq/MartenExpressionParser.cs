@@ -9,7 +9,6 @@ using Marten.Schema;
 using Marten.Util;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
-using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
 {
@@ -236,23 +235,11 @@ namespace Marten.Linq
 
             //return new JsonLocatorField(visitor.Members.ToArray()).SqlLocator;
 
-            var field = mapping.FieldFor(visitor.Members);
+            var field = visitor.GetField(mapping);
 
             _query.RegisterField(field);
 
             return field.SqlLocator;
-        }
-    }
-
-    public class FindMembers : RelinqExpressionVisitor
-    {
-        public readonly IList<MemberInfo> Members = new List<MemberInfo>();
-
-        protected override Expression VisitMember(MemberExpression node)
-        {
-            Members.Insert(0, node.Member);
-
-            return base.VisitMember(node);
         }
     }
 
