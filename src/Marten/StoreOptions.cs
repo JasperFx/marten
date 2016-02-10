@@ -80,12 +80,6 @@ namespace Marten
         {
             _serializer = new T();
         }
-        
-        /// <summary>
-        /// Configure the request counting threshold for development time assertions on too many database requests
-        /// per active session. USE THIS SETTING WITH CAUTION!
-        /// </summary>
-        public RequestCounterThreshold RequestCounterThreshold { get; set; } = RequestCounterThreshold.Empty;
 
         /// <summary>
         /// Modify the document and event store database mappings for indexes and searching options

@@ -80,15 +80,8 @@ namespace Marten
 
             Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser, new NulloIdentityMap(_serializer)));
 
+            _runnerForSession = () => _runner;
 
-            if (options.RequestCounterThreshold.HasThreshold)
-            {
-                _runnerForSession = () => new RequestCounter(_runner, options.RequestCounterThreshold);
-            }
-            else
-            {
-                _runnerForSession = () => _runner;
-            }
         }
 
         private readonly Func<ICommandRunner> _runnerForSession;
