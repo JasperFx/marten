@@ -237,11 +237,11 @@ namespace Marten.Services.BatchQuerying
             await _runner.ExecuteAsync(async (conn, tk) =>
             {
                 _command.Connection = conn;
-                var reader = await _command.ExecuteReaderAsync(tk);
+                var reader = await _command.ExecuteReaderAsync(tk).ConfigureAwait(false);
 
                 foreach (var handler in _handlers)
                 {
-                    await handler.Handle(reader, tk);
+                    await handler.Handle(reader, tk).ConfigureAwait(false);
                 }
 
                 return 0;

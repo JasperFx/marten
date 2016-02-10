@@ -16,7 +16,7 @@ namespace Marten.Services.BatchQuerying
 
         public async Task Handle(DbDataReader reader, CancellationToken token)
         {
-            var hasNext = await reader.NextResultAsync(token);
+            var hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
 
             if (!hasNext)
             {

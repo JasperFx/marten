@@ -21,7 +21,7 @@ namespace Marten.Services.BatchQuerying
 
         public async Task Handle(DbDataReader reader, CancellationToken token)
         {
-            var hasRecord = await reader.ReadAsync(token);
+            var hasRecord = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!hasRecord)
             {
                 _taskSource.SetResult(null);

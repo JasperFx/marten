@@ -25,7 +25,7 @@ namespace Marten.Services.BatchQuerying
         {
             var list = new List<T>();
 
-            while (await reader.ReadAsync(token))
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 var doc = _serializer.FromJson<T>(reader.GetString(0));
                 list.Add(doc);
@@ -54,7 +54,7 @@ namespace Marten.Services.BatchQuerying
             var list = new List<T>();
             var resolver = _storage.As<IResolver<T>>();
 
-            while (await reader.ReadAsync(token))
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 var doc = resolver.Resolve(reader, _map);
                 list.Add(doc);

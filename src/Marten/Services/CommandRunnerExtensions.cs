@@ -25,18 +25,6 @@ namespace Marten.Services
             });
         }
 
-        public static Task<int> ExecuteAsync(this ICommandRunner runner, string sql, CancellationToken token)
-        {
-            return runner.ExecuteAsync(async (conn, tkn) =>
-            {
-                using (var command = conn.CreateCommand())
-                {
-                    command.CommandText = sql;
-                    return await command.ExecuteNonQueryAsync(tkn).ConfigureAwait(false);
-                }
-            }, token);
-        }
-
 
         public static IEnumerable<T> Resolve<T>(this ICommandRunner runner, NpgsqlCommand cmd, IResolver<T> resolver, IIdentityMap map)
         {

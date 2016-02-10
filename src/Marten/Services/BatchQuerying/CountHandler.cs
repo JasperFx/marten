@@ -19,7 +19,7 @@ namespace Marten.Services.BatchQuerying
 
         public async Task Handle(DbDataReader reader, CancellationToken token)
         {
-            await reader.ReadAsync(token);
+            await reader.ReadAsync(token).ConfigureAwait(false);
 
             _source.SetResult(reader.GetInt64(0));
         }
