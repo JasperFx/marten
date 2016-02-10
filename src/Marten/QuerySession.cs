@@ -321,7 +321,7 @@ namespace Marten
 
         public void Dispose()
         {
-            
+            _runner.SafeDispose();
         }
     }
 }

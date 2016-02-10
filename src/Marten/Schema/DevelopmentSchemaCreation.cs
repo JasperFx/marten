@@ -2,17 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Marten.Services;
+using Marten.Util;
 
 namespace Marten.Schema
 {
     public class DevelopmentSchemaCreation : IDocumentSchemaCreation
     {
-        private readonly ICommandRunner _runner;
+        private readonly IConnectionFactory _factory;
         private readonly object _lock = new object();
 
-        public DevelopmentSchemaCreation(ICommandRunner runner)
+        public DevelopmentSchemaCreation(IConnectionFactory factory)
         {
-            _runner = runner;
+            _factory = factory;
         }
 
         public void CreateSchema(IDocumentSchema schema, IDocumentMapping mapping, Func<bool> shouldRegenerate)
@@ -33,16 +34,18 @@ namespace Marten.Schema
         {
             var writer = new StringWriter();
             SchemaBuilder.WriteSchemaObjects(mapping, schema, writer);
-
             var sql = writer.ToString();
+
             try
             {
-                _runner.Execute(sql);
+                _factory.RunSql(sql);
             }
             catch (Exception e)
             {
                 throw new MartenSchemaException(mapping.DocumentType, sql, e);
             }
+
+
         }
 
 
@@ -52,7 +55,7 @@ namespace Marten.Schema
 
             try
             {
-                _runner.Execute(sql);
+                _factory.RunSql(sql);
             }
             catch (Exception e)
             {

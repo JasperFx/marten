@@ -63,10 +63,11 @@ namespace Marten
         public DocumentStore(StoreOptions options)
         {
             _options = options;
-            _runner = new CommandRunner(options.ConnectionFactory());
+            _connectionFactory = options.ConnectionFactory();
+            _runner = new CommandRunner(_connectionFactory);
 
             var creation = options.AutoCreateSchemaObjects
-                ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_runner)
+                ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_connectionFactory)
                 : new ProductionSchemaCreation();
 
             Schema = new DocumentSchema(_options, _runner, creation);
@@ -86,6 +87,7 @@ namespace Marten
 
         private readonly Func<ICommandRunner> _runnerForSession;
         private readonly StoreOptions _options;
+        private IConnectionFactory _connectionFactory;
 
         public void Dispose()
         {
@@ -100,30 +102,42 @@ namespace Marten
         {
             var storage = Schema.StorageFor(typeof(T)).As<IBulkLoader<T>>();
 
-            _runner.InTransaction(() =>
+            using (var conn = _connectionFactory.Create())
             {
-                if (documents.Length <= batchSize)
-                {
-                    //storage.Load(_serializer, _runner, documents);
-                    throw new Exception("Need to have the bulk loader just build a command");
-                }
-                else
-                {
-                    var total = 0;
-                    var page = 0;
+                conn.Open();
+                var tx = conn.BeginTransaction();
 
-                    while (total < documents.Length)
+                try
+                {
+                    if (documents.Length <= batchSize)
                     {
-                        var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
-                        
-                        throw new Exception("Need to have the bulk loader just build a command");
-                        //storage.Load(_serializer, _runner, batch);
-
-                        page++;
-                        total += batch.Length;
+                        storage.Load(_serializer, conn, documents);
                     }
+                    else
+                    {
+                        var total = 0;
+                        var page = 0;
+
+                        while (total < documents.Length)
+                        {
+                            var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
+
+                            storage.Load(_serializer, conn, batch);
+
+                            page++;
+                            total += batch.Length;
+                        }
+                    }
+
+                    tx.Commit();
                 }
-            });
+                catch (Exception)
+                {
+                    tx.Rollback();
+                    throw;
+                }
+            }
+
         }
 
         public IDiagnostics Diagnostics { get; }

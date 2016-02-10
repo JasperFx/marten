@@ -171,10 +171,11 @@ namespace Marten.Services
                 }
             }
         }
-        
 
 
-
-
+        public void Dispose()
+        {
+            
+        }
     }
 }

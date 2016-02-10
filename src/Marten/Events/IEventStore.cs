@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Marten.Events
 {
-    public interface IEventStore
+    public interface IEventStore : IDisposable
     {
         void Append<T>(Guid stream, T @event) where T : IEvent;
 

@@ -262,5 +262,10 @@ namespace Marten.Events
         {
             throw new NotImplementedException();
         }
+
+        public void Dispose()
+        {
+            _runner.SafeDispose();
+        }
     }
 }
