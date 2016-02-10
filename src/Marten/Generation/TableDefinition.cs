@@ -65,7 +65,7 @@ namespace Marten.Generation
 
         protected bool Equals(TableDefinition other)
         {
-            return Columns.SequenceEqual(other.Columns) && Equals(PrimaryKey, other.PrimaryKey) && string.Equals(Name, other.Name);
+            return Columns.OrderBy(x => x.Name).SequenceEqual(other.Columns.OrderBy(x => x.Name)) && Equals(PrimaryKey, other.PrimaryKey) && string.Equals(Name, other.Name);
         }
 
         public override bool Equals(object obj)
