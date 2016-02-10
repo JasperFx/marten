@@ -100,11 +100,12 @@ namespace Marten
         {
             var storage = Schema.StorageFor(typeof(T)).As<IBulkLoader<T>>();
 
-            _runner.ExecuteInTransaction((conn, tx) =>
+            _runner.InTransaction(() =>
             {
                 if (documents.Length <= batchSize)
                 {
-                    storage.Load(_serializer, conn, documents);
+                    //storage.Load(_serializer, _runner, documents);
+                    throw new Exception("Need to have the bulk loader just build a command");
                 }
                 else
                 {
@@ -114,7 +115,9 @@ namespace Marten
                     while (total < documents.Length)
                     {
                         var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
-                        storage.Load(_serializer, conn, batch);
+                        
+                        throw new Exception("Need to have the bulk loader just build a command");
+                        //storage.Load(_serializer, _runner, batch);
 
                         page++;
                         total += batch.Length;

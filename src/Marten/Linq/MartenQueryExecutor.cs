@@ -59,11 +59,7 @@ namespace Marten.Linq
                 var anyCommand = new NpgsqlCommand();
                 documentQuery.ConfigureForAny(anyCommand);
 
-                return _runner.Execute(conn =>
-                {
-                    anyCommand.Connection = conn;
-                    return (T) anyCommand.ExecuteScalar();
-                });
+                return _runner.Execute(anyCommand, c => (T)c.ExecuteScalar());
             }
 
             if (queryModel.ResultOperators.OfType<CountResultOperator>().Any())
@@ -71,10 +67,9 @@ namespace Marten.Linq
                 var countCommand = new NpgsqlCommand();
                 documentQuery.ConfigureForCount(countCommand);
 
-                return _runner.Execute(conn =>
+                return _runner.Execute(countCommand, c =>
                 {
-                    countCommand.Connection = conn;
-                    var returnValue = countCommand.ExecuteScalar();
+                    var returnValue = c.ExecuteScalar();
                     return Convert.ToInt32(returnValue).As<T>();
                 });
             }
@@ -188,10 +183,9 @@ namespace Marten.Linq
                 var anyCommand = new NpgsqlCommand();
                 documentQuery.ConfigureForAny(anyCommand);
 
-                return _runner.ExecuteAsync(async (conn, tkn) =>
+                return _runner.ExecuteAsync(anyCommand, async(c, tkn) =>
                 {
-                    anyCommand.Connection = conn;
-                    var result = await anyCommand.ExecuteScalarAsync(tkn).ConfigureAwait(false);
+                    var result = await c.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                     return (T)result;
                 }, token);
             }
@@ -201,10 +195,9 @@ namespace Marten.Linq
                 var countCommand = new NpgsqlCommand();
                 documentQuery.ConfigureForCount(countCommand);
 
-                return _runner.ExecuteAsync(async (conn, tkn) =>
+                return _runner.ExecuteAsync(countCommand, async(c, tkn) =>
                 {
-                    countCommand.Connection = conn;
-                    var returnValue = await countCommand.ExecuteScalarAsync(tkn).ConfigureAwait(false);
+                    var returnValue = await c.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                     return Convert.ToInt32(returnValue).As<T>();
                 }, token);
             }
@@ -214,10 +207,9 @@ namespace Marten.Linq
                 var countCommand = new NpgsqlCommand();
                 documentQuery.ConfigureForCount(countCommand);
 
-                return _runner.ExecuteAsync(async (conn, tkn) =>
+                return _runner.ExecuteAsync(countCommand, async(c, tkn) =>
                 {
-                    countCommand.Connection = conn;
-                    var returnValue = await countCommand.ExecuteScalarAsync(tkn).ConfigureAwait(false);
+                    var returnValue = await c.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                     return Convert.ToInt64(returnValue).As<T>();
                 }, token);
             }

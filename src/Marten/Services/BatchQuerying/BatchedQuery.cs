@@ -234,9 +234,8 @@ namespace Marten.Services.BatchQuerying
 
         public async Task Execute(CancellationToken token = default(CancellationToken))
         {
-            await _runner.ExecuteAsync(async (conn, tk) =>
+            await _runner.ExecuteAsync(_command, async (cmd, tk) =>
             {
-                _command.Connection = conn;
                 var reader = await _command.ExecuteReaderAsync(tk).ConfigureAwait(false);
 
                 foreach (var handler in _handlers)

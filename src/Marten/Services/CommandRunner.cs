@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
@@ -15,7 +15,95 @@ namespace Marten.Services
             _factory = factory;
         }
 
-        public void Execute(Action<NpgsqlConnection> action)
+        public void Execute(NpgsqlCommand cmd, Action<NpgsqlCommand> action = null)
+        {
+            if (action == null)
+            {
+                action = c => c.ExecuteNonQuery();
+            }
+
+            execute(conn =>
+            {
+                cmd.Connection = conn;
+                action(cmd);
+            });
+        }
+
+        public void Execute(Action<NpgsqlCommand> action)
+        {
+            execute(conn =>
+            {
+                var cmd = conn.CreateCommand();
+                action(cmd);
+            });
+        }
+
+        public T Execute<T>(Func<NpgsqlCommand, T> func)
+        {
+            return execute(conn =>
+            {
+                var cmd = conn.CreateCommand();
+                return func(cmd);
+            });
+        }
+
+        public T Execute<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, T> func)
+        {
+            return execute(conn =>
+            {
+                cmd.Connection = conn;
+                return func(cmd);
+            });
+        }
+
+        public Task ExecuteAsync(Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
+        {
+            return executeAsync(async (conn, tkn) =>
+            {
+                var cmd = conn.CreateCommand();
+                await action(cmd, tkn);
+            }, token);
+        }
+
+        public Task ExecuteAsync(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
+        {
+            return executeAsync(async (conn, tkn) =>
+            {
+                cmd.Connection = conn;
+                await action(cmd, tkn);
+            }, token);
+        }
+
+        public Task<T> ExecuteAsync<T>(Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
+        {
+            return executeAsync(async (conn, tkn) =>
+            {
+                var cmd = conn.CreateCommand();
+                return await func(cmd, tkn);
+            }, token);
+        }
+
+        public Task<T> ExecuteAsync<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
+        {
+            return executeAsync(async (conn, tkn) =>
+            {
+                cmd.Connection = conn;
+                return await func(cmd, tkn);
+            }, token);
+        }
+
+        public void InTransaction(Action action)
+        {
+            action();
+        }
+
+        public void InTransaction(IsolationLevel level, Action action)
+        {
+            action();
+        }
+
+        
+        public void execute(Action<NpgsqlConnection> action)
         {
             using (var conn = _factory.Create())
             {
@@ -32,7 +120,7 @@ namespace Marten.Services
             }
         }
 
-        public async Task ExecuteAsync(Func<NpgsqlConnection, CancellationToken, Task> action, CancellationToken token)
+        public async Task executeAsync(Func<NpgsqlConnection, CancellationToken, Task> action, CancellationToken token)
         {
             using (var conn = _factory.Create())
             {
@@ -50,7 +138,7 @@ namespace Marten.Services
         }
 
 
-        public T Execute<T>(Func<NpgsqlConnection, T> func)
+        public T execute<T>(Func<NpgsqlConnection, T> func)
         {
             using (var conn = _factory.Create())
             {
@@ -67,7 +155,7 @@ namespace Marten.Services
             }
         }
 
-        public async Task<T> ExecuteAsync<T>(Func<NpgsqlConnection, CancellationToken, Task<T>> func, CancellationToken token)
+        public async Task<T> executeAsync<T>(Func<NpgsqlConnection, CancellationToken, Task<T>> func, CancellationToken token)
         {
             using (var conn = _factory.Create())
             {
@@ -83,7 +171,7 @@ namespace Marten.Services
                 }
             }
         }
-
+        
 
 
 

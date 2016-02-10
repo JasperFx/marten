@@ -111,9 +111,8 @@ namespace Marten
             var resolver = storage.As<IResolver<T>>();
 
             var cmd = storage.LoaderCommand(id);
-            return _runner.Execute(conn =>
+            return _runner.Execute(cmd, c =>
             {
-                cmd.Connection = conn;
                 using (var reader = cmd.ExecuteReader())
                 {
                     var found = reader.Read();
@@ -132,9 +131,8 @@ namespace Marten
 
             var cmd = storage.LoaderCommand(id);
 
-            return _runner.ExecuteAsync(async (conn, executeAsyncToken) =>
+            return _runner.ExecuteAsync(cmd, async (c, executeAsyncToken) =>
             {
-                cmd.Connection = conn;
                 var reader = await cmd.ExecuteReaderAsync(executeAsyncToken).ConfigureAwait(false);
 
                 var found = reader.Read();
@@ -203,22 +201,17 @@ namespace Marten
         {
             var storage = _schema.StorageFor(typeof(T));
 
-            return _runner.Execute(conn =>
-            {
-                var loader = storage.LoaderCommand(id);
-                loader.Connection = conn;
-                return loader.ExecuteScalar() as string; // Maybe do this as a stream later for big docs?
-            });
+            var loader = storage.LoaderCommand(id);
+            return _runner.Execute(loader, c => loader.ExecuteScalar() as string);
         }
 
         private Task<string> findJsonByIdAsync<T>(object id, CancellationToken token)
         {
             var storage = _schema.StorageFor(typeof(T));
 
-            return _runner.ExecuteAsync(async (conn, executeAsyncToken) =>
+            var loader = storage.LoaderCommand(id);
+            return _runner.ExecuteAsync(loader, async (conn, executeAsyncToken) =>
             {
-                var loader = storage.LoaderCommand(id);
-                loader.Connection = conn;
                 var result = await loader.ExecuteScalarAsync(executeAsyncToken).ConfigureAwait(false);
                 return result as string; // Maybe do this as a stream later for big docs?
             }, token);
@@ -286,9 +279,8 @@ namespace Marten
 
                 var list = new List<TDoc>();
 
-                _parent._runner.Execute(conn =>
+                _parent._runner.Execute(cmd, c =>
                 {
-                    cmd.Connection = conn;
                     using (var reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
@@ -310,9 +302,8 @@ namespace Marten
 
                 var list = new List<TDoc>();
 
-                await _parent._runner.ExecuteAsync(async (conn, tkn) =>
+                await _parent._runner.ExecuteAsync(cmd, async (conn, tkn) =>
                 {
-                    cmd.Connection = conn;
                     using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                     {
                         while (await reader.ReadAsync(tkn).ConfigureAwait(false))

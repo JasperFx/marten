@@ -51,18 +51,16 @@ namespace Marten.Schema.Sequences
 
         public void AdvanceToNextHi()
         {
-            _runner.Execute(conn =>
+            _runner.InTransaction(IsolationLevel.Serializable, () =>
             {
-                using (var tx = conn.BeginTransaction(IsolationLevel.Serializable))
+                _runner.Execute(cmd =>
                 {
-                    var raw = conn.CreateSprocCommand("mt_get_next_hi")
+                    var raw = cmd.CallsSproc("mt_get_next_hi")
                         .With("entity", _entityName)
                         .Returns("next", NpgsqlDbType.Bigint).ExecuteScalar();
 
                     CurrentHi = Convert.ToInt64(raw);
-
-                    tx.Commit();
-                }
+                });
             });
 
             CurrentLo = 1;

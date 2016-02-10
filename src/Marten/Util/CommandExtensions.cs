@@ -10,10 +10,9 @@ namespace Marten.Util
 {
     public static class CommandExtensions
     {
-        public static IEnumerable<T> Fetch<T>(this NpgsqlConnection conn, string sql, Func<DbDataReader, T> transform, params object[] parameters)
+        public static IEnumerable<T> Fetch<T>(this NpgsqlCommand cmd, string sql, Func<DbDataReader, T> transform, params object[] parameters)
         {
-            var cmd = conn.CreateCommand(sql);
-            cmd.CommandType = CommandType.Text;
+            cmd.WithText(sql);
             parameters.Each(x =>
             {
                 var param = cmd.AddParameter(x);
@@ -106,9 +105,8 @@ namespace Marten.Util
             return command;
         }
 
-        public static NpgsqlCommand CreateSprocCommand(this NpgsqlConnection conn, string command)
+        public static NpgsqlCommand CallsSproc(this NpgsqlCommand cmd, string command)
         {
-            var cmd = conn.CreateCommand();
             cmd.CommandText = command;
             cmd.CommandType = CommandType.StoredProcedure;
 
@@ -120,6 +118,12 @@ namespace Marten.Util
             var parameter = command.AddParameter(name);
             parameter.NpgsqlDbType = type;
             parameter.Direction = ParameterDirection.ReturnValue;
+            return command;
+        }
+
+        public static NpgsqlCommand WithText(this NpgsqlCommand command, string sql)
+        {
+            command.CommandText = sql;
             return command;
         }
 

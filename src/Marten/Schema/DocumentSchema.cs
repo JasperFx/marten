@@ -205,7 +205,7 @@ AND i.indisprimary;
 
         private IEnumerable<string> findFunctionNames()
         {
-            return _runner.Execute(conn =>
+            return _runner.Execute(command =>
             {
                 var sql = @"
 SELECT routine_name
@@ -214,7 +214,6 @@ WHERE specific_schema NOT IN ('pg_catalog', 'information_schema')
 AND type_udt_name != 'trigger';
 ";
 
-                var command = conn.CreateCommand();
                 command.CommandText = sql;
 
                 var list = new List<string>();

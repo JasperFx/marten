@@ -32,18 +32,19 @@ namespace Marten.Events
         {
             var eventMapping = _schema.Events.EventMappingFor<T>();
 
-            _runner.Execute(conn => appendEvent(conn, eventMapping, stream, @event));
+            _runner.Execute(cmd => appendEvent(cmd, eventMapping, stream, @event));
         }
 
         public void AppendEvents(Guid stream, params IEvent[] events)
         {
-            _runner.ExecuteInTransaction((conn, tx) =>
+            // TODO -- see if you can batch up the events into a single command
+            _runner.InTransaction(() =>
             {
                 events.Each(@event =>
                 {
                     var mapping = _schema.Events.EventMappingFor(@event.GetType());
 
-                    appendEvent(conn, mapping, stream, @event);
+                    _runner.Execute(cmd => appendEvent(cmd, mapping, stream, @event));
                 });
             });
         }
@@ -63,10 +64,10 @@ namespace Marten.Events
 
         public IEnumerable<IEvent> FetchStream<T>(Guid streamId) where T : IAggregate
         {
-            return _runner.Execute(conn =>
+            return _runner.Execute(cmd =>
             {
-                using (var reader = conn
-                    .CreateCommand("select type, data from mt_events where stream_id = :id order by version")
+                using (var reader = cmd
+                    .WithText("select type, data from mt_events where stream_id = :id order by version")
                     .With("id", streamId).ExecuteReader())
                 {
                     return fetchStream(reader).ToArray();
@@ -89,11 +90,11 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
-        private void appendEvent(NpgsqlConnection conn, EventMapping eventMapping, Guid stream, IEvent @event)
+        private void appendEvent(NpgsqlCommand conn, EventMapping eventMapping, Guid stream, IEvent @event)
         {
             if (@event.Id == Guid.Empty) @event.Id = Guid.NewGuid();
 
-            conn.CreateSprocCommand("mt_append_event")
+            conn.CallsSproc("mt_append_event")
                 .With("stream", stream)
                 .With("stream_type", eventMapping.Stream.StreamTypeName)
                 .With("event_id", @event.Id)
@@ -126,9 +127,9 @@ namespace Marten.Events
                 var body = _files.ReadStringFromFile(file);
                 var name = Path.GetFileNameWithoutExtension(file);
 
-                _runner.Execute(conn =>
+                _runner.Execute(cmd =>
                 {
-                    conn.CreateSprocCommand("mt_load_projection_body")
+                    cmd.CallsSproc("mt_load_projection_body")
                         .With("proj_name", name)
                         .With("body", body)
                         .ExecuteNonQuery();
@@ -149,9 +150,9 @@ namespace Marten.Events
 
         public IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase()
         {
-            _runner.Execute(conn =>
+            _runner.Execute(cmd =>
             {
-                conn.CreateSprocCommand("mt_initialize_projections").ExecuteNonQuery();
+                cmd.CallsSproc("mt_initialize_projections").ExecuteNonQuery();
             });
 
             return ProjectionUsages();
@@ -159,7 +160,7 @@ namespace Marten.Events
 
         public IEnumerable<ProjectionUsage> ProjectionUsages()
         {
-            var json = _runner.Execute(conn => conn.CreateSprocCommand("mt_get_projection_usage").ExecuteScalar().As<string>());
+            var json = _runner.Execute(cmd => cmd.CallsSproc("mt_get_projection_usage").ExecuteScalar().As<string>());
 
             return _serializer.FromJson<ProjectionUsage[]>(json);
         }
@@ -172,9 +173,9 @@ namespace Marten.Events
             _creation.RunScript("mt_apply_aggregation");
 
             var js = SchemaBuilder.GetJavascript("mt_transforms");
-            _runner.Execute(conn =>
+            _runner.Execute(cmd =>
             {
-                conn.CreateCommand("insert into mt_modules (name, definition) values (:name, :definition)")
+                cmd.WithText("insert into mt_modules (name, definition) values (:name, :definition)")
                     .With("name", "mt_transforms")
                     .With("definition", js)
                     .ExecuteNonQuery();
@@ -193,9 +194,9 @@ namespace Marten.Events
 
             var eventJson = _serializer.ToJson(@event);
 
-            var json = _runner.Execute(conn =>
+            var json = _runner.Execute(cmd =>
             {
-                return conn.CreateSprocCommand("mt_apply_transform")
+                return cmd.CallsSproc("mt_apply_transform")
                     .With("stream_id", stream)
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)
@@ -213,9 +214,9 @@ namespace Marten.Events
 
             var eventType = _schema.Events.EventMappingFor(@event.GetType()).EventTypeName;
 
-            var json = _runner.Execute(conn =>
+            var json = _runner.Execute(cmd =>
             {
-                return conn.CreateSprocCommand("mt_start_aggregation")
+                return cmd.CallsSproc("mt_start_aggregation")
                     .With("stream_id", aggregateId)
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)
@@ -239,9 +240,9 @@ namespace Marten.Events
 
             var eventType = _schema.Events.EventMappingFor(@event.GetType()).EventTypeName;
 
-            var json = _runner.Execute(conn =>
+            var json = _runner.Execute(cmd =>
             {
-                return conn.CreateSprocCommand("mt_apply_aggregation")
+                return cmd.CallsSproc("mt_apply_aggregation")
                     .With("stream_id", aggregateId)
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)

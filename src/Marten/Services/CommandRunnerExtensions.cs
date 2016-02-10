@@ -15,22 +15,14 @@ namespace Marten.Services
     {
         public static int Execute(this ICommandRunner runner, string sql)
         {
-            return runner.Execute(conn =>
-            {
-                using (var command = conn.CreateCommand())
-                {
-                    command.CommandText = sql;
-                    return command.ExecuteNonQuery();
-                }
-            });
+            return runner.Execute(cmd => cmd.WithText(sql).ExecuteNonQuery());
         }
 
 
         public static IEnumerable<T> Resolve<T>(this ICommandRunner runner, NpgsqlCommand cmd, IResolver<T> resolver, IIdentityMap map)
         {
-            return runner.Execute(conn =>
+            return runner.Execute(cmd, c =>
             {
-                cmd.Connection = conn;
                 var list = new List<T>();
 
                 using (var reader = cmd.ExecuteReader())
@@ -47,10 +39,8 @@ namespace Marten.Services
 
         public static async Task<IEnumerable<T>> ResolveAsync<T>(this ICommandRunner runner, NpgsqlCommand cmd, IResolver<T> resolver, IIdentityMap map, CancellationToken token)
         {
-            return await runner.ExecuteAsync(async (conn, tkn) =>
+            return await runner.ExecuteAsync(cmd, async (c, tkn) =>
             {
-                cmd.Connection = conn;
-
                 var list = new List<T>();
                 using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                 {
@@ -66,13 +56,10 @@ namespace Marten.Services
             }, token).ConfigureAwait(false);
         }
 
-        [Obsolete("this needs to go away when we get to the identity map on query functionality")]
         public static IEnumerable<string> QueryJson(this ICommandRunner runner, NpgsqlCommand cmd)
         {
-            return runner.Execute(conn =>
+            return runner.Execute(cmd, c =>
             {
-                cmd.Connection = conn;
-
                 var list = new List<string>();
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -88,13 +75,10 @@ namespace Marten.Services
             });
         }
 
-        [Obsolete("this needs to go away when we get to the identity map on query functionality")]
         public static async Task<IEnumerable<string>> QueryJsonAsync(this ICommandRunner runner, NpgsqlCommand cmd, CancellationToken token)
         {
-            return await runner.ExecuteAsync(async (conn, tkn) =>
+            return await runner.ExecuteAsync(cmd, async (c, tkn) =>
             {
-                cmd.Connection = conn;
-
                 var list = new List<string>();
                 using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                 {
@@ -110,55 +94,13 @@ namespace Marten.Services
             }, token).ConfigureAwait(false);
         }
 
-        public static void ExecuteInTransaction(this ICommandRunner runner, Action<NpgsqlConnection, NpgsqlTransaction> action)
-        {
-            runner.Execute(conn =>
-            {
-                using (var tx = conn.BeginTransaction())
-                {
-                    try
-                    {
-                        action(conn, tx);
-
-                        tx.Commit();
-                    }
-                    catch (Exception)
-                    {
-                        tx.Rollback();
-                        throw;
-                    }
-                }
-            });
-        }
-
-        public static Task ExecuteInTransactionAsync(this ICommandRunner runner, Func<NpgsqlConnection, NpgsqlTransaction, CancellationToken, Task> action, CancellationToken token)
-        {
-            return runner.ExecuteAsync(async (conn, tkn) =>
-            {
-                using (var tx = conn.BeginTransaction())
-                {
-                    try
-                    {
-                        await action(conn, tx, tkn).ConfigureAwait(false);
-
-                        tx.Commit();
-                    }
-                    catch (Exception)
-                    {
-                        tx.Rollback();
-                        throw;
-                    }
-                }
-            }, token);
-        }
-
         public static IList<string> GetStringList(this ICommandRunner runner, string sql, params object[] parameters)
         {
             var list = new List<string>();
 
-            runner.Execute(conn =>
+            runner.Execute(cmd =>
             {
-                var cmd = conn.CreateCommand(sql);
+                cmd.WithText(sql);
                 parameters.Each(x =>
                 {
                     var param = cmd.AddParameter(x);
@@ -196,26 +138,15 @@ namespace Marten.Services
 
         public static T QueryScalar<T>(this ICommandRunner runner, string sql)
         {
-            return runner.Execute(conn =>
-            {
-                using (var command = conn.CreateCommand())
-                {
-                    command.CommandText = sql;
-                    return (T)command.ExecuteScalar();
-                }
-            });
+            return runner.Execute(cmd => cmd.WithText(sql).ExecuteScalar().As<T>());
         }
 
         public static Task<T> QueryScalarAsync<T>(this ICommandRunner runner, string sql, CancellationToken token)
         {
-            return runner.ExecuteAsync(async (conn, tkn) =>
+            return runner.ExecuteAsync(async (cmd, tkn) =>
             {
-                using (var command = conn.CreateCommand())
-                {
-                    command.CommandText = sql;
-                    var result = await command.ExecuteScalarAsync(tkn).ConfigureAwait(false);
-                    return (T)result;
-                }
+                var result = await cmd.WithText(sql).ExecuteScalarAsync(tkn).ConfigureAwait(false);
+                return (T)result;
             }, token);
         }
     }

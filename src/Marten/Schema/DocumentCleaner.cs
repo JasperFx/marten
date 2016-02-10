@@ -4,6 +4,7 @@ using System.Linq;
 using Baseline;
 using Marten.Services;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Schema
 {
@@ -82,10 +83,10 @@ AND    pg_function_is_visible(oid)
         private void dropFunctions(string dropTargets)
         {
             var drops = new List<string>();
-            _runner.Execute(conn =>
-            {
-                var cmd = conn.CreateCommand(dropTargets);
+            var cmd = new NpgsqlCommand().WithText(dropTargets);
 
+            _runner.Execute(cmd, c =>
+            {
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())

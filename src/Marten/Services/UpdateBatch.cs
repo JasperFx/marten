@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Microsoft.CodeAnalysis.Emit;
 using NpgsqlTypes;
 
 namespace Marten.Services
@@ -40,32 +41,23 @@ namespace Marten.Services
 
         public void Execute()
         {
-            _runner.ExecuteInTransaction((conn, tx) =>
+            // TODO -- come back to this for transactional boundaries
+            foreach (var batch in _commands.ToArray())
             {
-                foreach (var batch in _commands.ToArray())
-                {
-                    var cmd = batch.BuildCommand();
-                    cmd.Connection = conn;
-                    cmd.Transaction = tx;
-
-                    cmd.ExecuteNonQuery();
-                }
-            });
+                _runner.Execute(batch.BuildCommand(), c => c.ExecuteNonQuery());
+            }
         }
 
-        public Task ExecuteAsync(CancellationToken token)
+        public async Task ExecuteAsync(CancellationToken token)
         {
-            return _runner.ExecuteInTransactionAsync(async (conn, tx, tkn) =>
+            // TODO -- come back to this for transactional boundaries
+            foreach (var batch in _commands.ToArray())
             {
-                foreach (var batch in _commands.ToArray())
+                await _runner.ExecuteAsync(batch.BuildCommand(), async (c, tkn) =>
                 {
-                    var cmd = batch.BuildCommand();
-                    cmd.Connection = conn;
-                    cmd.Transaction = tx;
-
-                    await cmd.ExecuteNonQueryAsync(tkn).ConfigureAwait(false);
-                }                
-            }, token);
+                    await c.ExecuteNonQueryAsync(tkn).ConfigureAwait(false);
+                }, token);
+            }
         }
 
         public void Delete(string tableName, object id, NpgsqlDbType dbType)
