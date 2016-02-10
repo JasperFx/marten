@@ -64,7 +64,7 @@ namespace Marten
         {
             _options = options;
             _connectionFactory = options.ConnectionFactory();
-            _runner = new CommandRunner(_connectionFactory);
+            _runner = new CommandRunner(_connectionFactory, CommandRunnerMode.ReadOnly);
 
             var creation = options.AutoCreateSchemaObjects
                 ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_connectionFactory)

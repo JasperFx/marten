@@ -22,8 +22,6 @@ namespace Marten.Services
         Task<T> ExecuteAsync<T>(Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = default(CancellationToken));
         Task<T> ExecuteAsync<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = default(CancellationToken));
 
-        void InTransaction(Action action);
-        void InTransaction(IsolationLevel level, Action action);
 
     }
 }

@@ -19,6 +19,8 @@ namespace Marten.Testing
                 _.UpsertType = UpsertType;
             });
 
+
+
             For<IDocumentStore>().Use(store);
             For<IIdentityMap>().Use<NulloIdentityMap>();
 
@@ -26,7 +28,7 @@ namespace Marten.Testing
             For<IConnectionFactory>().Use<ConnectionSource>();
 
             For<IDocumentSession>().Use<DocumentSession>();
-            For<ICommandRunner>().Use<CommandRunner>();
+            For<ICommandRunner>().Use<CommandRunner>().SelectConstructor(() => new CommandRunner(null));
             For<IDocumentCleaner>().Use<DocumentCleaner>();
             For<ISerializer>().Use<JsonNetSerializer>();
 

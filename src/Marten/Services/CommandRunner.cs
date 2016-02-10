@@ -2,18 +2,33 @@
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Npgsql;
 
 namespace Marten.Services
 {
+    public enum CommandRunnerMode
+    {
+        Transactional,
+        ReadOnly
+    }
+
     public class CommandRunner : ICommandRunner
     {
         private readonly IConnectionFactory _factory;
+        private readonly Lazy<NpgsqlConnection> _connection;
 
-        public CommandRunner(IConnectionFactory factory)
+        public CommandRunner(IConnectionFactory factory) : this (factory, CommandRunnerMode.ReadOnly)
+        {
+        }
+
+        public CommandRunner(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
         {
             _factory = factory;
+            _connection = new Lazy<NpgsqlConnection>(() => _factory.Create());
         }
+
+        public NpgsqlConnection Connection => _connection.Value;
 
         public void Execute(NpgsqlCommand cmd, Action<NpgsqlCommand> action = null)
         {
@@ -92,16 +107,6 @@ namespace Marten.Services
             }, token);
         }
 
-        public void InTransaction(Action action)
-        {
-            action();
-        }
-
-        public void InTransaction(IsolationLevel level, Action action)
-        {
-            action();
-        }
-
         
         public void execute(Action<NpgsqlConnection> action)
         {
@@ -175,7 +180,10 @@ namespace Marten.Services
 
         public void Dispose()
         {
-            
+            if (_connection.IsValueCreated)
+            {
+                _connection.Value.SafeDispose();
+            }
         }
     }
 }

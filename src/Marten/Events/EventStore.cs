@@ -38,14 +38,12 @@ namespace Marten.Events
         public void AppendEvents(Guid stream, params IEvent[] events)
         {
             // TODO -- see if you can batch up the events into a single command
-            _runner.InTransaction(() =>
+            // TODO -- TRANSACTIONAL INTEGRITY!
+            events.Each(@event =>
             {
-                events.Each(@event =>
-                {
-                    var mapping = _schema.Events.EventMappingFor(@event.GetType());
+                var mapping = _schema.Events.EventMappingFor(@event.GetType());
 
-                    _runner.Execute(cmd => appendEvent(cmd, mapping, stream, @event));
-                });
+                _runner.Execute(cmd => appendEvent(cmd, mapping, stream, @event));
             });
         }
 
