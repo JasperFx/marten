@@ -91,7 +91,47 @@
 			      	<div id="main-pane">
 			      		<!--Title:Batched Queries-->
 <!--Url:batched_queries-->
-<p>This is a theoretical feature for sometime in the future. The goal here is to be able to batch up queries to the Postgresql database for some performance optimization by reducing the number of network round trips. Follow the <a href="https://github.com/JasperFx/Marten/issues/26">GitHub issue for this</a> to track the progress.</p>
+<p>For the sake of performance, if you have a case where you may need to fetch several sets of document data from Marten
+at one time, you can opt to batch those queries into a single request to the underlying database to reduce network round trips.</p>
+<p>The mechanism for doing this is the <code>IBatchedQuery</code> object that you can create with the <code>IQuerySession.CreateBatchQuery()</code> method.
+The batched queries in Marten work by allowing a user to define the queries they want to run through the batch and getting back
+a .Net <code>Task</code> that can be used to retrieve the actual results later after the batch is finished. When the batch is executed,
+Marten combines all the queries into a single command sent to the underlying Postgresql database, then reads through all
+the data returned and sets the results of the <code>Task</code> objects handed out earlier.</p>
+<p>This functionality is demonstrated below:</p>
+<pre><code class="language-csharp">
+// Start a new IBatchQuery from an active session
+var batch = theSession.CreateBatchQuery();
+
+// Fetch a single document by its Id
+var user1 = batch.Load&lt;User&gt;(&quot;username&quot;);
+
+// Fetch multiple documents by their id&#39;s
+var admins = batch.LoadMany&lt;User&gt;().ById(&quot;user2&quot;, &quot;user3&quot;);
+
+// User-supplied sql
+var toms = batch.Query&lt;User&gt;(&quot;where first_name == ?&quot;, &quot;Tom&quot;);
+
+// Query with Linq
+var jills = batch.Query&lt;User&gt;(_ =&gt; _.Where(x =&gt; x.FirstName == &quot;Jill&quot;));
+
+// Any() queries
+var anyBills = batch.Any&lt;User&gt;(_ =&gt; _.Where(x =&gt; x.FirstName == &quot;Bill&quot;));
+
+// Count() queries
+var countJims = batch.Any&lt;User&gt;(_ =&gt; _.Where(x =&gt; x.FirstName == &quot;Jim&quot;));
+
+// The Batch querying supports First/FirstOrDefault/Single/SingleOrDefault() selectors:
+var firstInternal = batch.First&lt;User&gt;(_ =&gt; _.Where(x =&gt; x.Internal).OrderBy(x =&gt; x.LastName));
+
+// Kick off the batch query
+await batch.Execute();
+
+// All of the query mechanisms of the BatchQuery return
+// Task&#39;s that are completed by the Execute() method above
+var internalUser = await firstInternal;
+Debug.WriteLine($&quot;The first internal user is {internalUser.FirstName} {internalUser.LastName}&quot;);
+</code></pre>
 
 
 			      	</div>

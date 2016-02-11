@@ -141,8 +141,47 @@ Marten using the <code>IQuerySession.Query&lt;T&gt;()</code> or <code>IDocumentS
         }
 </code></pre>
 <h2>Searching within Child Collections</h2>
-<p><a href="https://github.com/JasperFx/Marten/issues/34">This is still outstanding</a>. The current thinking is to use the Postgresql containment operator for doing
-<code>Any(x =&gt; ...)</code> type queries within child collections.</p>
+<p>As of v0.7, Marten supports simple <code>Any()</code> queries within child collections, but only for checking
+equality of members of the child collection elements (this feature uses the <a href="http://www.postgresql.org/docs/9.5/static/datatype-json.html">Postgresql JSONB containment operator</a> to compose the underlying SQL).</p>
+<p>Marten will also allow you to use the <code>Contains</code> method to search within arrays or lists of simple elements like strings.</p>
+<p>The following code sample demonstrates the supported Linq patterns for collection searching:</p>
+<pre><code class="language-csharp">
+        public class ClassWithChildCollections
+        {
+            public Guid Id;
+
+            public IList&lt;User&gt; Users = new List&lt;User&gt;();
+            public Company[] Companies = new Company[0];
+
+            public string[] Names;
+            public IList&lt;string&gt; NameList;
+            public List&lt;string&gt; NameList2;
+        }
+
+        public void searching(IDocumentStore store)
+        {
+            using (var session = store.QuerySession())
+            {
+                session.Query&lt;ClassWithChildCollections&gt;()
+                    // Query collections of deep objects
+                    .Where(x =&gt; x.Companies.Any(_ =&gt; _.Name == &quot;Jeremy&quot;))
+
+                    // Query for Contains() on array of simple types
+                    .Where(x =&gt; x.Names.Contains(&quot;Corey&quot;))
+
+                    // Query for Contains() on List&lt;T&gt; of simple types
+                    .Where(x =&gt; x.NameList.Contains(&quot;Phillip&quot;))
+
+                    // Query for Contains() on IList&lt;T&gt; of simple types
+                    .Where(x =&gt; x.NameList2.Contains(&quot;Jens&quot;))
+
+                    // Query for Any(element == value) on simple types
+                    .Where(x =&gt; x.Names.Any(_ =&gt; _ == &quot;Phillip&quot;));
+
+
+            }
+        } 
+</code></pre>
 <h2>Searching for NULL Values</h2>
 <p>Regardless of your feelings about <em>NULL</em>, they do exist in databases and Marten allows you to search for documents that have (or don't have) null values:</p>
 <pre><code class="language-csharp">

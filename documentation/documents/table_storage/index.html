@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Request Counting and Throttling</title>
+		<title>Marten - Table Storage</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/projections" title="Document Projections">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/table_storage" title="Table Storage">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/request-throttling" title="Request Counting and Throttling">Previous</a></li>
+		      	<li><a href="/marten/documentation/events" title="Marten as Event Store">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Request Counting and Throttling</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Table Storage</li></ol>
 		  	</nav>
 		  </div>
 
@@ -76,22 +76,39 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/table_storage">Table Storage</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/projections">Document Projections</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events">Marten as Event Store</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/request-throttling">Request Counting and Throttling</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Request Counting and Throttling <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/request-throttling.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Table Storage <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/table_storage.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title: Request Counting and Throttling-->
-<p>This feature was temporarily removed in the v0.7 release, but will be replaced by a new, more general purpose
-logging mechanism to be introduced as part of the GitHub issue &quot;<a href="https://github.com/JasperFx/marten/issues/148">General purpose logging mechanism for Marten</a>.&quot;</p>
+			      		<!--title:Table Storage-->
+<p>Marten will create a new database table and <em>upsert</em> function for each document type. By default, the table name is
+<code>mt_doc_[alias]</code> and the function is <code>mt_upsert_[alias]</code>, where &quot;alias&quot; is the document type name in all lower case letters, or &quot;parent type name + inner type name&quot; for nested types.</p>
+<p>In the not unlikely case that you need to disambiguate table storage for two or more documents with the same type name, you can override the type alias either programmatically with <code>MartenRegistry</code>:</p>
+<pre><code class="language-csharp">
+            var store = DocumentStore.For(_ =&gt;
+            {
+                _.Connection(&quot;something&quot;);
+
+                _.Schema.For&lt;User&gt;().DocumentAlias(&quot;folks&quot;);
+            });
+</code></pre>
+<p>or by decorating the actual document class with an attribute:</p>
+<pre><code class="language-csharp">
+        [DocumentAlias(&quot;johndeere&quot;)]
+        public class Tractor
+        {
+            public string id;
+        }
+</code></pre>
 
 
 			      	</div>
@@ -100,12 +117,12 @@ logging mechanism to be introduced as part of the GitHub issue &quot;<a href="ht
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/projections">Document Projections</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/request-throttling">Request Counting and Throttling</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/table_storage">Table Storage</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/events">Marten as Event Store</a>
 
 				        </span>
 			      	</nav>

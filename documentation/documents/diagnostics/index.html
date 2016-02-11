@@ -138,11 +138,14 @@ using NpgsqlTypes;
 using Remotion.Linq;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Marten.GeneratedCode
 {
 
-    public class TradeStorage : IDocumentStorage, IBulkLoader&lt;Trade&gt;, IdAssignment&lt;Trade&gt;
+    public class TradeStorage : IDocumentStorage, IBulkLoader&lt;Trade&gt;, IdAssignment&lt;Trade&gt;, IResolver&lt;Trade&gt;
     {
 
         private readonly Marten.Schema.Sequences.ISequence _sequence;
@@ -230,6 +233,20 @@ namespace Marten.GeneratedCode
             batch.Sproc(&quot;mt_upsert_trade&quot;).Param(document.Id, NpgsqlDbType.Integer).JsonBody(json).Param(document.Value, NpgsqlDbType.Double);
         }
 
+        public void Remove(IIdentityMap map, object entity)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Delete(IIdentityMap map, object id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Store(IIdentityMap map, object id, object entity)
+        {
+            throw new NotImplementedException();
+        }
 
 
         public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable&lt;Trade&gt; documents)
@@ -248,7 +265,28 @@ namespace Marten.GeneratedCode
 
         }
 
+        public Trade Resolve(DbDataReader reader, IIdentityMap map)
+        {
+            var json = reader.GetString(0);
+            var id = reader[1];
+            
+            return map.Get&lt;Trade&gt;(id, json);
+        }
 
+        public Trade Build(DbDataReader reader, ISerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Trade Resolve(IIdentityMap map, ILoader loader, object id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task&lt;Trade&gt; ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 

@@ -91,7 +91,47 @@
 			      	<div id="main-pane">
 			      		<!--Title:Document Hierarchies-->
 <!--Url:hierarchies-->
-<p>This is a only <a href="https://github.com/JasperFx/Marten/issues/44">a GitHub issue</a> for now. The general idea is to store a hierarchy of subclassed documents in one place for easy querying.</p>
+<p>Marten now allows you to specify that hierarchies of document types should be stored in one table and allow you
+to query for either the base class or any of the subclasses.</p>
+<p>To make that concrete, let's say you have a document type named <code>User</code> that has a pair of specialized subclasses
+called <code>SuperUser</code> and <code>AdminUser</code>. To use the document hierarchy storage, we need to tell Marten that
+<code>SuperUser</code> and <code>AdminUser</code> should just be stored as subclasses of <code>User</code> like this:</p>
+<pre><code class="language-csharp">
+            var store = DocumentStore.For(_ =&gt;
+            {
+                _.Connection(&quot;connection to your database&quot;);
+
+                _.Schema.For&lt;User&gt;()
+                    // generic version
+                    .AddSubclass&lt;AdminUser&gt;()
+
+                    // By document type object
+                    .AddSubclass(typeof (SuperUser));
+            });
+
+            using (var session = store.QuerySession())
+            {
+                // query for all types of User and User itself
+                session.Query&lt;User&gt;().ToList();
+
+                // query for only SuperUser
+                session.Query&lt;SuperUser&gt;().ToList();
+            }
+</code></pre>
+<p>With the configuration above, you can now query by <code>User</code> and get <code>AdminUser</code> and <code>SuperUser</code> documents as part of the results,
+or query directly for any of the subclasses to limit the query.</p>
+<p>The best description of what is possible with hierarchical storage is to read the <a href="https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs">acceptance tests for this feature</a>.</p>
+<p>There's a couple things to be aware of with type hierarchies:</p>
+<ul>
+<li>A document type that is either abstract or an interface is automatically assumed to be a hierarchy</li>
+<li>If you want to use a concrete type as the base class for a hierarchy, you will need to explicitly configure
+that by adding the subclasses as shown above</li>
+<li>At this point, you can only specify &quot;Searchable&quot; fields on the top, base type</li>
+<li>The subclass document types must be convertable to the top level type. As of right now, Marten does not support &quot;structural typing&quot;,
+but may in the future</li>
+<li>Internally, the subclass type documents are also stored as the parent type in the Identity Map mechanics. Many, many hours of
+banging my head on my desk were required to add this feature.</li>
+</ul>
 
 
 			      	</div>

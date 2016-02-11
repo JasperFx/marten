@@ -110,9 +110,6 @@ your own subclass of <code>MartenRegistry</code> and place declarations in the c
     {
         public MyMartenRegistry()
         {
-            // Opt into the Postgres 9.5 upsert style
-            UpsertType = PostgresUpsertType.Standard;
-            
             // I&#39;m going to search for user by UserName
             // pretty frequently, so I want that to be 
             // a duplicated, searchable field
@@ -213,7 +210,7 @@ the JSON field in the database:</p>
 but we have since backed off to making the older Postgresql upsert style the default with an &quot;opt-in&quot; choice
 to use the 9.5 syntax:</p>
 <pre><code class="language-csharp">
-    public class SettingUpsertStyle : MartenRegistry
+    public class SettingUpsertStyle : StoreOptions
     {
         public SettingUpsertStyle()
         {

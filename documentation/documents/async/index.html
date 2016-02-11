@@ -116,7 +116,7 @@ Marten follows the common .Net idiom of suffixing methods with &quot;Async&quot;
 <pre><code class="language-csharp">
             using (var session = store.OpenSession())
             {
-                var users = await session.Load&lt;User&gt;().ByIdAsync(user2.Id, user3.Id, user4.Id);
+                var users = await session.LoadMany&lt;User&gt;().ByIdAsync(user2.Id, user3.Id, user4.Id);
                 users.Count().ShouldBe(3);
             }
 </code></pre>

@@ -174,7 +174,7 @@ use an IoC container specifically to manage dependencies and the lifecyle of Mar
 
             For&lt;IDocumentSession&gt;()
                 .LifecycleIs&lt;ContainerLifecycle&gt;() // not really necessary in some frameworks
-                .Use(c =&gt; c.GetInstance&lt;IDocumentStore&gt;().LightweightSession());
+                .Use(&quot;Lightweight Session&quot;, c =&gt; c.GetInstance&lt;IDocumentStore&gt;().LightweightSession());
         }
     }
 </code></pre>

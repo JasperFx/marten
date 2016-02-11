@@ -111,12 +111,12 @@ again supports Guid's, integers, long integers, and strings.</p>
 
 
             // Load multiple documents by a group of id&#39;s
-            var users = session.Load&lt;User&gt;().ById(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+            var users = session.LoadMany&lt;User&gt;().ById(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
             var ids = new Guid[] {Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()};
 
             // If you already have an enumerable of id values
-            var users2 = session.Load&lt;User&gt;().ById(ids);
+            var users2 = session.LoadMany&lt;User&gt;().ById(ids);
         } 
 </code></pre>
 
