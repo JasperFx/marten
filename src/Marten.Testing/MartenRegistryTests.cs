@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using Baseline;
-using Fixie;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;

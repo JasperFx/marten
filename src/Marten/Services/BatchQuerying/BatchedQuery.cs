@@ -13,7 +13,7 @@ namespace Marten.Services.BatchQuerying
     public class BatchedQuery : IBatchedQuery
     {
         private static readonly MartenQueryParser _parser = new MartenQueryParser();
-        private readonly ICommandRunner _runner;
+        private readonly IManagedConnection _runner;
         private readonly IDocumentSchema _schema;
         private readonly IIdentityMap _identityMap;
         private readonly QuerySession _parent;
@@ -21,7 +21,7 @@ namespace Marten.Services.BatchQuerying
         private readonly NpgsqlCommand _command = new NpgsqlCommand();
         private readonly IList<IDataReaderHandler> _handlers = new List<IDataReaderHandler>();
 
-        public BatchedQuery(ICommandRunner runner, IDocumentSchema schema, IIdentityMap identityMap,
+        public BatchedQuery(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap,
             QuerySession parent, ISerializer serializer)
         {
             _runner = runner;
@@ -236,11 +236,12 @@ namespace Marten.Services.BatchQuerying
         {
             await _runner.ExecuteAsync(_command, async (cmd, tk) =>
             {
-                var reader = await _command.ExecuteReaderAsync(tk).ConfigureAwait(false);
-
-                foreach (var handler in _handlers)
+                using (var reader = await _command.ExecuteReaderAsync(tk).ConfigureAwait(false))
                 {
-                    await handler.Handle(reader, tk).ConfigureAwait(false);
+                    foreach (var handler in _handlers)
+                    {
+                        await handler.Handle(reader, tk).ConfigureAwait(false);
+                    }
                 }
 
                 return 0;

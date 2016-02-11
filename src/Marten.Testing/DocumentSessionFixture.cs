@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using Marten.Services;
 using StructureMap;
 
 namespace Marten.Testing
 {
 
-    public abstract class IntegratedFixture
+    public abstract class IntegratedFixture : IDisposable
     {
         protected readonly IContainer theContainer = Container.For<DevelopmentModeRegistry>();
         protected readonly IDocumentStore theStore;
@@ -15,6 +16,12 @@ namespace Marten.Testing
             ConnectionSource.CleanBasicDocuments();
 
             theStore = theContainer.GetInstance<IDocumentStore>();
+        }
+
+        public virtual void Dispose()
+        {
+            Debug.WriteLine("DISPOSING!");
+            theStore.Dispose();
         }
     }
 
@@ -44,9 +51,12 @@ namespace Marten.Testing
             return theStore.DirtyTrackedSession();
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
+            Debug.WriteLine("I AM BEING DISPOSED!");
             theSession.Dispose();
+            theStore.Dispose();
+            theContainer.Dispose();
         }
     }
 }

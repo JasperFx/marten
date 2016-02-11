@@ -2,7 +2,6 @@ NUGET
   remote: https://nuget.org/api/v2
   specs:
     Baseline (0.5.0.7)
-    Fixie (1.0.0.33)
     HtmlTags (3.0.0.186)
     ILRepack (2.0.8)
     Jil (2.12.1)
@@ -182,3 +181,4 @@ NUGET
       xunit.abstractions (2.0.0)
     xunit.extensibility.execution (2.1.0) - framework: dnx451, dnxcore50, monoandroid, monotouch, xamarinios, winv4.5, wpv8.0, portable-net45+win80+wp80+wpa81, >= net45
       xunit.extensibility.core (2.1.0)
+    xunit.runner.console (2.1.0)

@@ -23,7 +23,7 @@ namespace Marten.Testing.Events
 
             _container.GetInstance<IDocumentCleaner>().CompletelyRemoveAll();
 
-            _container.GetInstance<ICommandRunner>().Execute(SchemaBuilder.GetText("mt_stream"));
+            _container.GetInstance<IManagedConnection>().Execute(SchemaBuilder.GetText("mt_stream"));
 
             var events = _container.GetInstance<Marten.Events.EventStore>();
 

@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Microsoft.CodeAnalysis.Emit;
 using NpgsqlTypes;
 
 namespace Marten.Services
@@ -11,18 +10,17 @@ namespace Marten.Services
     {
         private readonly StoreOptions _options;
         private readonly ISerializer _serializer;
-        private readonly ICommandRunner _runner;
         private readonly Stack<BatchCommand> _commands = new Stack<BatchCommand>(); 
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         
 
-        public UpdateBatch(StoreOptions options, ISerializer serializer, ICommandRunner runner)
+        public UpdateBatch(StoreOptions options, ISerializer serializer, IManagedConnection connection)
         {
             _options = options;
             _serializer = serializer;
-            _runner = runner;
 
             _commands.Push(new BatchCommand(serializer));
+            Connection = connection;
         }
 
         public BatchCommand Current()
@@ -41,19 +39,17 @@ namespace Marten.Services
 
         public void Execute()
         {
-            // TODO -- come back to this for transactional boundaries
             foreach (var batch in _commands.ToArray())
             {
-                _runner.Execute(batch.BuildCommand(), c => c.ExecuteNonQuery());
+                Connection.Execute(batch.BuildCommand(), c => c.ExecuteNonQuery());
             }
         }
 
         public async Task ExecuteAsync(CancellationToken token)
         {
-            // TODO -- come back to this for transactional boundaries
             foreach (var batch in _commands.ToArray())
             {
-                await _runner.ExecuteAsync(batch.BuildCommand(), async (c, tkn) =>
+                await Connection.ExecuteAsync(batch.BuildCommand(), async (c, tkn) =>
                 {
                     await c.ExecuteNonQueryAsync(tkn).ConfigureAwait(false);
                 }, token);
@@ -66,8 +62,7 @@ namespace Marten.Services
         }
 
 
-
-
+        public IManagedConnection Connection { get; }
     }
 
 

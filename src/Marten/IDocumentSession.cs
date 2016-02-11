@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
+using Npgsql;
 
 namespace Marten
 {
@@ -120,6 +121,11 @@ namespace Marten
         /// </summary>
         /// <returns></returns>
         IBatchedQuery CreateBatchQuery();
+
+        /// <summary>
+        /// The currently open Npgsql connection for this session. Use with caution.
+        /// </summary>
+        NpgsqlConnection Connection { get; }
     }
 
     /// <summary>

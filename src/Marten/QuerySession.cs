@@ -25,22 +25,22 @@ namespace Marten
     {
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
-        private readonly ICommandRunner _runner;
+        private readonly IManagedConnection _connection;
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
 
-        public QuerySession(IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IIdentityMap identityMap)
+        public QuerySession(IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
         {
             _schema = schema;
             _serializer = serializer;
-            _runner = runner;
+            _connection = connection;
             _parser = parser;
             _identityMap = identityMap;
         }
 
         public IQueryable<T> Query<T>()
         {
-            var executor = new MartenQueryExecutor(_runner, _schema, _serializer, _parser, _identityMap);
+            var executor = new MartenQueryExecutor(_connection, _schema, _serializer, _parser, _identityMap);
 
             var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, executor);
             return new MartenQueryable<T>(queryProvider);
@@ -50,7 +50,7 @@ namespace Marten
         {
             using (var cmd = BuildCommand<T>(sql, parameters))
             {
-                return _runner.QueryJson(cmd)
+                return _connection.QueryJson(cmd)
                     .Select(json => _serializer.FromJson<T>(json))
                     .ToArray();
             }
@@ -60,7 +60,7 @@ namespace Marten
         {
             using (var cmd = BuildCommand<T>(sql, parameters))
             {
-                var result = await _runner.QueryJsonAsync(cmd, token).ConfigureAwait(false);
+                var result = await _connection.QueryJsonAsync(cmd, token).ConfigureAwait(false);
                 return result
                     .Select(json => _serializer.FromJson<T>(json))
                     .ToArray();
@@ -69,7 +69,7 @@ namespace Marten
 
         public IBatchedQuery CreateBatchQuery()
         {
-            return new BatchedQuery(_runner, _schema, _identityMap, this, _serializer);
+            return new BatchedQuery(_connection, _schema, _identityMap, this, _serializer);
         }
 
         public NpgsqlCommand BuildCommand<T>(string sql, params object[] parameters)
@@ -111,7 +111,7 @@ namespace Marten
             var resolver = storage.As<IResolver<T>>();
 
             var cmd = storage.LoaderCommand(id);
-            return _runner.Execute(cmd, c =>
+            return _connection.Execute(cmd, c =>
             {
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -131,12 +131,14 @@ namespace Marten
 
             var cmd = storage.LoaderCommand(id);
 
-            return _runner.ExecuteAsync(cmd, async (c, executeAsyncToken) =>
+            return _connection.ExecuteAsync(cmd, async (c, executeAsyncToken) =>
             {
-                var reader = await cmd.ExecuteReaderAsync(executeAsyncToken).ConfigureAwait(false);
+                using (var reader = await cmd.ExecuteReaderAsync(executeAsyncToken).ConfigureAwait(false))
+                {
+                    var found = reader.Read();
+                    return found ? new FetchResult<T>(resolver.Build(reader, _serializer), reader.GetString(0)) : null;
+                }
 
-                var found = reader.Read();
-                return found ? new FetchResult<T>(resolver.Build(reader, _serializer), reader.GetString(0)) : null;
             }, token);
         }
 
@@ -202,7 +204,7 @@ namespace Marten
             var storage = _schema.StorageFor(typeof(T));
 
             var loader = storage.LoaderCommand(id);
-            return _runner.Execute(loader, c => loader.ExecuteScalar() as string);
+            return _connection.Execute(loader, c => loader.ExecuteScalar() as string);
         }
 
         private Task<string> findJsonByIdAsync<T>(object id, CancellationToken token)
@@ -210,7 +212,7 @@ namespace Marten
             var storage = _schema.StorageFor(typeof(T));
 
             var loader = storage.LoaderCommand(id);
-            return _runner.ExecuteAsync(loader, async (conn, executeAsyncToken) =>
+            return _connection.ExecuteAsync(loader, async (conn, executeAsyncToken) =>
             {
                 var result = await loader.ExecuteScalarAsync(executeAsyncToken).ConfigureAwait(false);
                 return result as string; // Maybe do this as a stream later for big docs?
@@ -279,7 +281,7 @@ namespace Marten
 
                 var list = new List<TDoc>();
 
-                _parent._runner.Execute(cmd, c =>
+                _parent._connection.Execute(cmd, c =>
                 {
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -302,7 +304,7 @@ namespace Marten
 
                 var list = new List<TDoc>();
 
-                await _parent._runner.ExecuteAsync(cmd, async (conn, tkn) =>
+                await _parent._connection.ExecuteAsync(cmd, async (conn, tkn) =>
                 {
                     using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                     {
@@ -319,9 +321,11 @@ namespace Marten
 
         }
 
+        public NpgsqlConnection Connection => _connection.Connection;
+
         public void Dispose()
         {
-            _runner.SafeDispose();
+            _connection.Dispose();
         }
     }
 }

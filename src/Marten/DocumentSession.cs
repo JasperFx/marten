@@ -11,18 +11,18 @@ namespace Marten
     public class DocumentSession : QuerySession, IDocumentSession
     {
         private readonly IIdentityMap _identityMap;
-        private readonly ICommandRunner _runner;
+        private readonly IManagedConnection _connection;
         private readonly ISerializer _serializer;
         private readonly StoreOptions _options;
         private readonly IDocumentSchema _schema;
         private readonly UnitOfWork _unitOfWork;
 
-        public DocumentSession(StoreOptions options, IDocumentSchema schema, ISerializer serializer, ICommandRunner runner, IQueryParser parser, IIdentityMap identityMap) : base(schema, serializer, runner, parser, identityMap)
+        public DocumentSession(StoreOptions options, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap) : base(schema, serializer, connection, parser, identityMap)
         {
             _options = options;
             _schema = schema;
             _serializer = serializer;
-            _runner = runner;
+            _connection = connection;
 
             _identityMap = identityMap;
             _unitOfWork = new UnitOfWork(_schema);
@@ -78,14 +78,16 @@ namespace Marten
 
         public void SaveChanges()
         {
-            var batch = new UpdateBatch(_options, _serializer, _runner);
+            var batch = new UpdateBatch(_options, _serializer, _connection);
             _unitOfWork.ApplyChanges(batch);
+
+            _connection.Commit();
         }
 
         public Task SaveChangesAsync(CancellationToken token)
         {
-            var batch = new UpdateBatch(_options, _serializer, _runner);
-            return _unitOfWork.ApplyChangesAsync(batch, token);
+            var batch = new UpdateBatch(_options, _serializer, _connection);
+            return _unitOfWork.ApplyChangesAsync(batch, token).ContinueWith(t => _connection.Commit(), token);
         }
     }
 }

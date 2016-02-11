@@ -18,12 +18,12 @@ namespace Marten.Linq
     {
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
-        private readonly ICommandRunner _runner;
+        private readonly IManagedConnection _runner;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
         private readonly IList<Type> _scalarResultOperators;
 
-        public MartenQueryExecutor(ICommandRunner runner, IDocumentSchema schema, ISerializer serializer, IQueryParser parser, IIdentityMap identityMap)
+        public MartenQueryExecutor(IManagedConnection runner, IDocumentSchema schema, ISerializer serializer, IQueryParser parser, IIdentityMap identityMap)
         {
             _schema = schema;
             _serializer = serializer;

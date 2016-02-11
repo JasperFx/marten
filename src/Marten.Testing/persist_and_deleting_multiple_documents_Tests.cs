@@ -27,7 +27,7 @@ namespace Marten.Testing
             theSession.Store(company3);
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
+            using (var session = theStore.OpenSession())
             {
                 var user = session.Load<User>(user1.Id);
                 user.FirstName = "Max";
@@ -39,7 +39,7 @@ namespace Marten.Testing
                 session.SaveChanges();
             }
 
-            using (var session = theContainer.GetInstance<IDocumentStore>().QuerySession())
+            using (var session = theStore.QuerySession())
             {
                 session.Load<User>(user1.Id).FirstName.ShouldBe("Max");
                 session.Load<Company>(company1.Id).Name.ShouldBe("Widgets, inc.");

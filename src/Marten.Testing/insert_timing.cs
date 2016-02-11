@@ -64,7 +64,7 @@ namespace Marten.Testing
         }
 
 
-        [Fact]
+        //[Fact]
         public void run_all_inserts()
         {
             var data = Target.GenerateRandomData(500).ToArray();
@@ -205,13 +205,13 @@ namespace Marten.Testing
         public double Insert(IContainer container, Target[] data)
         {
             var schema = container.GetInstance<IDocumentSchema>();
-            var runner = container.GetInstance<ICommandRunner>();
+            var runner = container.GetInstance<IManagedConnection>();
             var storage = schema.StorageFor(typeof (Target));
             var serializer = container.GetInstance<ISerializer>();
 
             return Timings.Time(() =>
             {
-//                runner.ExecuteInTransaction((conn, tx) =>
+//                connection.ExecuteInTransaction((conn, tx) =>
 //                {
 //                    data.Each(t =>
 //                    {

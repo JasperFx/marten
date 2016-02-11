@@ -28,7 +28,7 @@ namespace Marten.Testing
             For<IConnectionFactory>().Use<ConnectionSource>();
 
             For<IDocumentSession>().Use<DocumentSession>();
-            For<ICommandRunner>().Use<CommandRunner>().SelectConstructor(() => new CommandRunner(null));
+            For<IManagedConnection>().Use<ManagedConnection>().SelectConstructor(() => new ManagedConnection(null));
             For<IDocumentCleaner>().Use<DocumentCleaner>();
             For<ISerializer>().Use<JsonNetSerializer>();
 
@@ -64,7 +64,7 @@ namespace Marten.Testing
 
             For<IDocumentSession>()
                 .LifecycleIs<ContainerLifecycle>() // not really necessary in some frameworks
-                .Use(c => c.GetInstance<IDocumentStore>().LightweightSession());
+                .Use("Lightweight Session", c => c.GetInstance<IDocumentStore>().LightweightSession());
         }
     }
     // ENDSAMPLE

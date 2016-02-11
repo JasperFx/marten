@@ -16,7 +16,7 @@ namespace Marten.Testing.Events
             var container = Container.For<DevelopmentModeRegistry>();
             container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
-            var runner = container.GetInstance<ICommandRunner>();
+            var runner = container.GetInstance<IManagedConnection>();
             var sql = SchemaBuilder.GetText("mt_stream");
 
             runner.Execute(sql);

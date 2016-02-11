@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Linq;
 using Baseline;
 using Marten.Linq;
@@ -13,7 +14,7 @@ namespace Marten
     /// </summary>
     public class DocumentStore : IDocumentStore
     {
-        private readonly ICommandRunner _runner;
+        private readonly IManagedConnection _runner;
         private readonly ISerializer _serializer;
         private readonly IQueryParser _parser = new MartenQueryParser();
 
@@ -64,7 +65,7 @@ namespace Marten
         {
             _options = options;
             _connectionFactory = options.ConnectionFactory();
-            _runner = new CommandRunner(_connectionFactory, CommandRunnerMode.ReadOnly);
+            _runner = new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly);
 
             var creation = options.AutoCreateSchemaObjects
                 ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_connectionFactory)
@@ -80,12 +81,8 @@ namespace Marten
             Advanced = new AdvancedOptions(cleaner, options);
 
             Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser, new NulloIdentityMap(_serializer)));
-
-            _runnerForSession = () => _runner;
-
         }
 
-        private readonly Func<ICommandRunner> _runnerForSession;
         private readonly StoreOptions _options;
         private readonly IConnectionFactory _connectionFactory;
 
@@ -142,10 +139,10 @@ namespace Marten
 
         public IDiagnostics Diagnostics { get; }
 
-        public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly)
+        public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly, IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
         {
             var map = createMap(tracking);
-            return new DocumentSession(_options, Schema, _serializer, _runnerForSession(), _parser, map);
+            return new DocumentSession(_options, Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel), _parser, map);
         }
 
         private IIdentityMap createMap(DocumentTracking tracking)
@@ -166,21 +163,21 @@ namespace Marten
             }
         }
 
-        public IDocumentSession DirtyTrackedSession()
+        public IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
         {
-            return OpenSession(DocumentTracking.DirtyTracking);
+            return OpenSession(DocumentTracking.DirtyTracking, isolationLevel);
         }
 
-        public IDocumentSession LightweightSession()
+        public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
         {
-            return OpenSession(DocumentTracking.None);
+            return OpenSession(DocumentTracking.None, isolationLevel);
         }
 
         public IQuerySession QuerySession()
         {
             var parser = new MartenQueryParser();
             
-            return new QuerySession(Schema, _serializer, _runnerForSession(), parser, new NulloIdentityMap(_serializer));
+            return new QuerySession(Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser, new NulloIdentityMap(_serializer));
         }
 
 

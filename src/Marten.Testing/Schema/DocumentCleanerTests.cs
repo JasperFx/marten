@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Marten.Generation;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Shouldly;
@@ -9,28 +10,32 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentCleanerTests
+    public class DocumentCleanerTests : DocumentSessionFixture<NulloIdentityMap>
     {
+        private readonly DocumentCleaner theCleaner;
+
+        public DocumentCleanerTests()
+        {
+            theCleaner = theContainer.GetInstance<DocumentCleaner>();
+        }
+
         [Fact]
         public void clean_table()
         {
-            using (var container = Container.For<DevelopmentModeRegistry>())
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new Target { Number = 3 });
+            theSession.Store(new Target { Number = 4 });
+            theSession.Store(new Target { Number = 5 });
+            theSession.Store(new Target { Number = 6 });
+
+            theSession.SaveChanges();
+            theSession.Dispose();
+
+            theCleaner.DeleteDocumentsFor(typeof(Target));
+
+            using (var session = theStore.QuerySession())
             {
-                var session = container.GetInstance<IDocumentStore>().OpenSession();
-
-                session.Store(new Target{Number = 1});
-                session.Store(new Target{Number = 2});
-                session.Store(new Target{Number = 3});
-                session.Store(new Target{Number = 4});
-                session.Store(new Target{Number = 5});
-                session.Store(new Target{Number = 6});
-
-                session.SaveChanges();
-
-                var cleaner = container.GetInstance<DocumentCleaner>();
-
-                cleaner.DeleteDocumentsFor(typeof(Target));
-
                 session.Query<Target>().Count().ShouldBe(0);
             }
         }
@@ -38,133 +43,109 @@ namespace Marten.Testing.Schema
         [Fact]
         public void delete_all_documents()
         {
-            using (var container = Container.For<DevelopmentModeRegistry>())
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new User());
+            theSession.Store(new Company());
+            theSession.Store(new Issue());
+
+            theSession.SaveChanges();
+            theSession.Dispose();
+
+            theCleaner.DeleteAllDocuments();
+
+            using (var session = theStore.QuerySession())
             {
-                var session = container.GetInstance<IDocumentStore>().OpenSession();
-
-                session.Store(new Target { Number = 1 });
-                session.Store(new Target { Number = 2 });
-                session.Store(new User());
-                session.Store(new Company());
-                session.Store(new Issue());
-
-                session.SaveChanges();
-
-                var cleaner = container.GetInstance<DocumentCleaner>();
-
-                cleaner.DeleteAllDocuments();
-
                 session.Query<Target>().Count().ShouldBe(0);
                 session.Query<User>().Count().ShouldBe(0);
                 session.Query<Issue>().Count().ShouldBe(0);
                 session.Query<Company>().Count().ShouldBe(0);
             }
+
         }
 
         [Fact]
         public void completely_remove_document_type()
         {
-            using (var container = Container.For<DevelopmentModeRegistry>())
-            {
-                var store = container.GetInstance<IDocumentStore>();
-                var session = store.OpenSession();
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
 
-                session.Store(new Target { Number = 1 });
-                session.Store(new Target { Number = 2 });
+            theSession.SaveChanges();
+            theSession.Dispose();
 
-                session.SaveChanges();
+            var tableName = theStore.Schema.MappingFor(typeof(Target)).TableName;
 
-                var tableName = store.Schema.MappingFor(typeof (Target)).TableName;
+            var schema = theContainer.GetInstance<DocumentSchema>();
+            schema.DocumentTables().Contains(tableName)
+                .ShouldBeTrue();
 
-                var schema = container.GetInstance<Marten.Schema.DocumentSchema>();
-                schema.DocumentTables().Contains(tableName)
-                    .ShouldBeTrue();
+            theCleaner.CompletelyRemove(typeof(Target));
 
-                var cleaner = container.GetInstance<DocumentCleaner>();
+            schema.DocumentTables().Contains(tableName)
+                .ShouldBeFalse();
 
-                cleaner.CompletelyRemove(typeof(Target));
-
-                schema.DocumentTables().Contains(tableName)
-                    .ShouldBeFalse();
-
-            }
         }
 
         [Fact]
         public void completely_remove_document_removes_the_upsert_command_too()
         {
-            using (var container = Container.For<DevelopmentModeRegistry>())
-            {
-                var store = container.GetInstance<IDocumentStore>();
-                var session = store.OpenSession();
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
 
-                session.Store(new Target { Number = 1 });
-                session.Store(new Target { Number = 2 });
+            theSession.SaveChanges();
 
-                session.SaveChanges();
+            var schema = theContainer.GetInstance<DocumentSchema>();
 
-                var schema = container.GetInstance<DocumentSchema>();
+            var upsertName = schema.MappingFor(typeof(Target)).UpsertName;
 
-                var upsertName = schema.MappingFor(typeof (Target)).UpsertName;
+            schema.SchemaFunctionNames().Contains(upsertName)
+                .ShouldBeTrue();
 
-                schema.SchemaFunctionNames().Contains(upsertName)
-                    .ShouldBeTrue();
+            theCleaner.CompletelyRemove(typeof(Target));
 
-                var cleaner = container.GetInstance<DocumentCleaner>();
-
-                cleaner.CompletelyRemove(typeof(Target));
-
-                schema.SchemaFunctionNames().Contains(upsertName)
-                    .ShouldBeFalse();
-
-            }
+            schema.SchemaFunctionNames().Contains(upsertName)
+                .ShouldBeFalse();
         }
 
         [Fact]
         public void completely_remove_everything()
         {
-            using (var container = Container.For<DevelopmentModeRegistry>())
-            {
-                var session = container.GetInstance<IDocumentStore>().OpenSession();
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new User());
+            theSession.Store(new Company());
+            theSession.Store(new Issue());
 
-                session.Store(new Target { Number = 1 });
-                session.Store(new Target { Number = 2 });
-                session.Store(new User());
-                session.Store(new Company());
-                session.Store(new Issue());
+            theSession.SaveChanges();
+            theSession.Dispose();
 
-                session.SaveChanges();
+            theCleaner.CompletelyRemoveAll();
 
-                var cleaner = container.GetInstance<DocumentCleaner>();
+            var schema = theContainer.GetInstance<DocumentSchema>();
 
-                cleaner.CompletelyRemoveAll();
-
-                var runner = container.GetInstance<DocumentSchema>();
-
-                runner.DocumentTables().Any().ShouldBeFalse();
-                runner.SchemaFunctionNames().Any().ShouldBeFalse();
-            }
+            schema.DocumentTables().Any().ShouldBeFalse();
+            schema.SchemaFunctionNames().Any().ShouldBeFalse();
         }
 
         [Fact]
         public void delete_except_types()
         {
-            using (var container = Container.For<DevelopmentModeRegistry>())
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new User());
+            theSession.Store(new Company());
+            theSession.Store(new Issue());
+
+            theSession.SaveChanges();
+            theSession.Dispose();
+
+
+
+            theCleaner.DeleteDocumentsExcept(typeof(Target), typeof(User));
+
+
+            using (var session = theStore.OpenSession())
             {
-                var session = container.GetInstance<IDocumentStore>().OpenSession();
-
-                session.Store(new Target { Number = 1 });
-                session.Store(new Target { Number = 2 });
-                session.Store(new User());
-                session.Store(new Company());
-                session.Store(new Issue());
-
-                session.SaveChanges();
-
-                var cleaner = container.GetInstance<DocumentCleaner>();
-
-                cleaner.DeleteDocumentsExcept(typeof(Target), typeof(User));
-
                 // Not cleaned off
                 session.Query<Target>().Count().ShouldBe(2);
                 session.Query<User>().Count().ShouldBe(1);

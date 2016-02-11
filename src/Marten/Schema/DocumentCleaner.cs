@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Services;
-using Marten.Util;
-using Npgsql;
 
 namespace Marten.Schema
 {
@@ -40,55 +37,64 @@ AND    pg_function_is_visible(oid)
 
         public void DeleteAllDocuments()
         {
-            _schema.DocumentTables().Each(truncateTable);
+            using (var conn = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
+            {
+                _schema.DocumentTables().Each(tableName =>
+                {
+                    var sql = "truncate {0} cascade".ToFormat(tableName);
+                    conn.Execute(sql);
+                });
+            }
         }
 
         public void DeleteDocumentsFor(Type documentType)
         {
             var tableName = _schema.MappingFor(documentType).TableName;
-            truncateTable(tableName);
+            var sql = "truncate {0} cascade".ToFormat(tableName);
+            _factory.RunSql(sql);
         }
 
         public void DeleteDocumentsExcept(params Type[] documentTypes)
         {
             var exemptedTables = documentTypes.Select(x => _schema.MappingFor(x).TableName).ToArray();
-            _schema.DocumentTables().Where(x => !exemptedTables.Contains(x)).Each(truncateTable);
+            using (var conn = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
+            {
+                _schema.DocumentTables().Where(x => !exemptedTables.Contains(x)).Each(tableName =>
+                {
+                    var sql = "truncate {0} cascade".ToFormat(tableName);
+                    conn.Execute(sql);
+                });
+            }
         }
 
         public void CompletelyRemove(Type documentType)
         {
             var mapping = _schema.MappingFor(documentType);
 
-            dropTable(mapping.TableName);
 
-            var dropTargets = _dropFunctionSql.ToFormat(mapping.UpsertName);
-            dropFunctions(dropTargets);
+            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
+            {
+                connection.Execute($"DROP TABLE IF EXISTS {mapping.TableName} CASCADE;");
+
+                var dropTargets = _dropFunctionSql.ToFormat(mapping.UpsertName);
+
+                var drops = connection.GetStringList(dropTargets);
+                drops.Each(drop => connection.Execute(drop));
+            }
         }
 
 
         public void CompletelyRemoveAll()
         {
-            _schema.SchemaTableNames().Each(dropTable);
+            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
+            {
+                _schema.SchemaTableNames()
+                    .Each(tableName => { connection.Execute($"DROP TABLE IF EXISTS {tableName} CASCADE;"); });
 
-            dropFunctions(_dropAllFunctionSql);
-        }
 
-        private void truncateTable(string tableName)
-        {
-            var sql = "truncate {0} cascade".ToFormat(tableName);
-            _factory.RunSql(sql);
-        }
-
-        private void dropFunctions(string dropTargets)
-        {
-            var drops = _factory.GetStringList(dropTargets);
-
-            drops.Each(drop => _factory.RunSql(drop));
-        }
-
-        private void dropTable(string tableName)
-        {
-            _factory.RunSql($"DROP TABLE IF EXISTS {tableName} CASCADE;");
+                var drops = connection.GetStringList(_dropAllFunctionSql);
+                drops.Each(drop => connection.Execute(drop));
+            }
         }
     }
 }

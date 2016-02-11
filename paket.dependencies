@@ -1,6 +1,5 @@
 source https://nuget.org/api/v2
 nuget Baseline
-nuget Fixie
 nuget HtmlTags
 nuget ilrepack
 nuget Jil
@@ -13,3 +12,4 @@ nuget Storyteller 3.0.0.300-alpha
 nuget structuremap
 nuget Microsoft.CodeAnalysis.CSharp prerelease
 nuget xunit
+nuget xunit.runner.console

@@ -13,13 +13,13 @@ namespace Marten.Services
 {
     public static class CommandRunnerExtensions
     {
-        public static int Execute(this ICommandRunner runner, string sql)
+        public static int Execute(this IManagedConnection runner, string sql)
         {
             return runner.Execute(cmd => cmd.WithText(sql).ExecuteNonQuery());
         }
 
 
-        public static IEnumerable<T> Resolve<T>(this ICommandRunner runner, NpgsqlCommand cmd, IResolver<T> resolver, IIdentityMap map)
+        public static IEnumerable<T> Resolve<T>(this IManagedConnection runner, NpgsqlCommand cmd, IResolver<T> resolver, IIdentityMap map)
         {
             return runner.Execute(cmd, c =>
             {
@@ -37,7 +37,7 @@ namespace Marten.Services
             });
         }
 
-        public static async Task<IEnumerable<T>> ResolveAsync<T>(this ICommandRunner runner, NpgsqlCommand cmd, IResolver<T> resolver, IIdentityMap map, CancellationToken token)
+        public static async Task<IEnumerable<T>> ResolveAsync<T>(this IManagedConnection runner, NpgsqlCommand cmd, IResolver<T> resolver, IIdentityMap map, CancellationToken token)
         {
             return await runner.ExecuteAsync(cmd, async (c, tkn) =>
             {
@@ -56,7 +56,7 @@ namespace Marten.Services
             }, token).ConfigureAwait(false);
         }
 
-        public static IEnumerable<string> QueryJson(this ICommandRunner runner, NpgsqlCommand cmd)
+        public static IEnumerable<string> QueryJson(this IManagedConnection runner, NpgsqlCommand cmd)
         {
             return runner.Execute(cmd, c =>
             {
@@ -75,7 +75,7 @@ namespace Marten.Services
             });
         }
 
-        public static async Task<IEnumerable<string>> QueryJsonAsync(this ICommandRunner runner, NpgsqlCommand cmd, CancellationToken token)
+        public static async Task<IEnumerable<string>> QueryJsonAsync(this IManagedConnection runner, NpgsqlCommand cmd, CancellationToken token)
         {
             return await runner.ExecuteAsync(cmd, async (c, tkn) =>
             {
@@ -94,7 +94,7 @@ namespace Marten.Services
             }, token).ConfigureAwait(false);
         }
 
-        public static IList<string> GetStringList(this ICommandRunner runner, string sql, params object[] parameters)
+        public static IList<string> GetStringList(this IManagedConnection runner, string sql, params object[] parameters)
         {
             var list = new List<string>();
 
@@ -123,12 +123,12 @@ namespace Marten.Services
 
 
 
-        public static T QueryScalar<T>(this ICommandRunner runner, string sql)
+        public static T QueryScalar<T>(this IManagedConnection runner, string sql)
         {
             return runner.Execute(cmd => cmd.WithText(sql).ExecuteScalar().As<T>());
         }
 
-        public static Task<T> QueryScalarAsync<T>(this ICommandRunner runner, string sql, CancellationToken token)
+        public static Task<T> QueryScalarAsync<T>(this IManagedConnection runner, string sql, CancellationToken token)
         {
             return runner.ExecuteAsync(async (cmd, tkn) =>
             {

@@ -17,11 +17,17 @@ namespace Marten.Testing
             theSession = theContainer.GetInstance<IDocumentStore>().OpenSession();
         }
 
+        public override void Dispose()
+        {
+            base.Dispose();
+            theSession.Dispose();
+        }
+
         [Fact]
         public void update_mixed_document_types()
         {
-            var user1 = new User ();
-            var user2 = new User ();
+            var user1 = new User();
+            var user2 = new User();
             var issue1 = new Issue();
             var issue2 = new Issue();
             var company1 = new Company();
@@ -36,11 +42,16 @@ namespace Marten.Testing
 
             uow.ApplyChanges(batch);
 
-            var theSession = theContainer.GetInstance<IDocumentStore>().OpenSession();
+            batch.Connection.Dispose();
 
-            theSession.Query<User>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(user1.Id, user2.Id);
-            theSession.Query<Issue>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(issue1.Id, issue2.Id);
-            theSession.Query<Company>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(company1.Id, company2.Id);
+            using (var session2 = theContainer.GetInstance<IDocumentStore>().OpenSession())
+            {
+                session2.Query<User>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(user1.Id, user2.Id);
+                session2.Query<Issue>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(issue1.Id, issue2.Id);
+                session2.Query<Company>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(company1.Id, company2.Id);
+            }
+
+
         }
 
         [Fact]
@@ -63,6 +74,8 @@ namespace Marten.Testing
             var batch1 = theContainer.GetInstance<UpdateBatch>();
             uow1.ApplyChanges(batch1);
 
+            batch1.Connection.Dispose();
+
 
             var uow2 = theContainer.GetInstance<UnitOfWork>();
             uow2.DeleteEntity(stringDoc2);
@@ -71,6 +84,8 @@ namespace Marten.Testing
             uow2.DeleteEntity(long2);
             var batch2 = theContainer.GetInstance<UpdateBatch>();
             uow2.ApplyChanges(batch2);
+
+            batch2.Connection.Dispose();
 
             theSession.Query<StringDoc>().Single().Id.ShouldBe(stringDoc1.Id);
             theSession.Query<User>().Single().Id.ShouldBe(user1.Id);
@@ -94,6 +109,7 @@ namespace Marten.Testing
             var long2 = new LongDoc { Id = 4 };
 
             var uow1 = theContainer.GetInstance<UnitOfWork>();
+
             uow1.Store(user1, user2);
             uow1.Store(stringDoc1, stringDoc2);
             uow1.Store(int1, int2);
@@ -101,6 +117,7 @@ namespace Marten.Testing
             var batch1 = theContainer.GetInstance<UpdateBatch>();
             uow1.ApplyChanges(batch1);
 
+            batch1.Connection.Dispose();
 
             var uow2 = theContainer.GetInstance<UnitOfWork>();
             uow2.Delete<StringDoc>(stringDoc2.Id);
@@ -109,6 +126,8 @@ namespace Marten.Testing
             uow2.Delete<LongDoc>(long2.Id);
             var batch2 = theContainer.GetInstance<UpdateBatch>();
             uow2.ApplyChanges(batch2);
+
+            batch2.Connection.Dispose();
 
             theSession.Query<StringDoc>().Single().Id.ShouldBe(stringDoc1.Id);
             theSession.Query<User>().Single().Id.ShouldBe(user1.Id);

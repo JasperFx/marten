@@ -79,7 +79,7 @@
     <Compile Include="Services\BatchQuerying\IBatchLoadByKeys.cs" />
     <Compile Include="Services\BatchQuerying\IDataReaderHandler.cs" />
     <Compile Include="Services\BatchQuerying\SingleResultReader.cs" />
-    <Compile Include="Services\CommandRunner.cs" />
+    <Compile Include="Services\ManagedConnection.cs" />
     <Compile Include="Services\CommandRunnerExtensions.cs" />
     <Compile Include="Services\Diagnostics.cs" />
     <Compile Include="Events\EventStore.cs" />
@@ -97,7 +97,7 @@
     <Compile Include="Generation\TableDefinition.cs" />
     <Compile Include="Services\DirtyTrackingIdentityMap.cs" />
     <Compile Include="Services\DocumentChange.cs" />
-    <Compile Include="Services\ICommandRunner.cs" />
+    <Compile Include="Services\IManagedConnection.cs" />
     <Compile Include="IConnectionFactory.cs" />
     <Compile Include="IDocumentSession.cs" />
     <Compile Include="IDocumentStore.cs" />

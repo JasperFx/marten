@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class event_administration_Tests
+    public class event_administration_Tests : IDisposable
     {
         private readonly IContainer theContainer;
 
@@ -18,9 +18,18 @@ namespace Marten.Testing.Events
         {
             theContainer = Container.For<DevelopmentModeRegistry>();
 
-            var events = theContainer.GetInstance<EventStore>();
+            using (var events = theContainer.GetInstance<EventStore>())
+            {
+                events.RebuildEventStoreSchema();
+            }
 
-            events.RebuildEventStoreSchema();
+                
+        }
+
+        public void Dispose()
+        {
+            
+            theContainer.Dispose();
         }
 
         [Fact]
@@ -75,7 +84,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void loads_the_mt_transform_module()
         {
-            var runner = theContainer.GetInstance<ICommandRunner>();
+            var runner = theContainer.GetInstance<IConnectionFactory>();
 
             var loadedModules = runner.GetStringList("select name from mt_modules");
             loadedModules.ShouldContain("mt_transforms");
@@ -107,15 +116,18 @@ namespace Marten.Testing.Events
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
 
-            var events = theContainer.GetInstance<EventStore>();
+            using (var events = theContainer.GetInstance<EventStore>())
+            {
+                events.RebuildEventStoreSchema();
 
-            events.RebuildEventStoreSchema();
+                events.Administration.LoadProjections(directory);
+            }
 
-            events.Administration.LoadProjections(directory);
 
+            
 
-            var runner = theContainer.GetInstance<ICommandRunner>();
-            var list = runner.GetStringList("select name from mt_projections order by name");
+            var factory = theContainer.GetInstance<IConnectionFactory>();
+            var list = factory.GetStringList("select name from mt_projections order by name");
 
 
             list.ShouldContain("fake_aggregate");
@@ -130,19 +142,22 @@ namespace Marten.Testing.Events
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
 
-            var events = theContainer.GetInstance<EventStore>();
+            using (var events = theContainer.GetInstance<EventStore>())
+            {
+                events.RebuildEventStoreSchema();
 
-            events.RebuildEventStoreSchema();
+                events.Administration.LoadProjections(directory);
+                var usages = events.Administration.InitializeEventStoreInDatabase();
 
-            events.Administration.LoadProjections(directory);
-            var usages = events.Administration.InitializeEventStoreInDatabase();
+                usages.Where(x => x.name == "location")
+                    .Select(x => x.event_name)
+                    .ShouldHaveTheSameElementsAs("members_joined", "members_departed");
+                usages.Where(x => x.name == "fake_aggregate")
+                    .Select(x => x.event_name)
+                    .ShouldHaveTheSameElementsAs("event_a", "event_b", "event_c", "event_d");
+            }
 
-            usages.Where(x => x.name == "location")
-                .Select(x => x.event_name)
-                .ShouldHaveTheSameElementsAs("members_joined", "members_departed");
-            usages.Where(x => x.name == "fake_aggregate")
-                .Select(x => x.event_name)
-                .ShouldHaveTheSameElementsAs("event_a", "event_b", "event_c", "event_d");
+
 
             /*
 
@@ -160,8 +175,11 @@ Projection party (snapshot) for Event quest_started executed inline
         [Fact]
         public void initialize_can_run_without_blowing_up()
         {
-            var events = theContainer.GetInstance<EventStore>();
-            events.Administration.InitializeEventStoreInDatabase();
+            using (var events = theContainer.GetInstance<EventStore>())
+            {
+                events.Administration.InitializeEventStoreInDatabase();
+            }
+                
         }
     }
 }

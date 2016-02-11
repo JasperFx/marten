@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using Marten.Schema;
 
 namespace Marten
@@ -35,21 +36,21 @@ namespace Marten
         /// </summary>
         /// <param name="tracking"></param>
         /// <returns></returns>
-        IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly);
+        IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly, IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted);
 
         /// <summary>
         /// Convenience method to create a new "lightweight" IDocumentSession with no IdentityMap
         /// or automatic dirty checking
         /// </summary>
         /// <returns></returns>
-        IDocumentSession LightweightSession();
+        IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted);
 
         /// <summary>
-        /// Convenience method to craete an IDocumentSession with both IdentityMap and automatic
+        /// Convenience method to create an IDocumentSession with both IdentityMap and automatic
         /// dirty checking
         /// </summary>
         /// <returns></returns>
-        IDocumentSession DirtyTrackedSession();
+        IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted);
 
         /// <summary>
         /// Opens a read-only IQuerySession to the current document store for efficient

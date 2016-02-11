@@ -23,21 +23,29 @@ namespace Marten.Testing.Util
             theSession = theContainer.GetInstance<IDocumentStore>().OpenSession();
         }
 
+        public override void Dispose()
+        {
+            base.Dispose();
+            theSession.Dispose();
+        }
+
         [Fact]
         public void can_make_updates_with_more_than_one_batch()
         {
             var targets = Target.GenerateRandomData(100);
-            var container = Container.For<DevelopmentModeRegistry>();
-            using (var store = container.GetInstance<IDocumentStore>())
+            using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                store.Advanced.Options.UpdateBatchSize = 10;
-
-                using (var session = store.LightweightSession())
+                using (var store = container.GetInstance<IDocumentStore>())
                 {
-                    targets.Each(x => session.Store(x));
-                    session.SaveChanges();
+                    store.Advanced.Options.UpdateBatchSize = 10;
 
-                    session.Query<Target>().Count().ShouldBe(100);
+                    using (var session = store.LightweightSession())
+                    {
+                        targets.Each(x => session.Store(x));
+                        session.SaveChanges();
+
+                        session.Query<Target>().Count().ShouldBe(100);
+                    }
                 }
             }
         }
@@ -47,20 +55,23 @@ namespace Marten.Testing.Util
         public async Task can_make_updates_with_more_than_one_batch_async()
         {
             var targets = Target.GenerateRandomData(100);
-            var container = Container.For<DevelopmentModeRegistry>();
-            using (var store = container.GetInstance<IDocumentStore>())
+            using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                store.Advanced.Options.UpdateBatchSize = 10;
-
-                using (var session = store.LightweightSession())
+                using (var store = container.GetInstance<IDocumentStore>())
                 {
-                    targets.Each(x => session.Store(x));
-                    await session.SaveChangesAsync();
+                    store.Advanced.Options.UpdateBatchSize = 10;
 
-                    var t = await session.Query<Target>().CountAsync();
-                    t.ShouldBe(100);
+                    using (var session = store.LightweightSession())
+                    {
+                        targets.Each(x => session.Store(x));
+                        await session.SaveChangesAsync();
+
+                        var t = await session.Query<Target>().CountAsync();
+                        t.ShouldBe(100);
+                    }
                 }
             }
+
         }
 
         [Fact]
@@ -85,6 +96,7 @@ namespace Marten.Testing.Util
             batch.Delete(theMapping.TableName, initialTarget.Id, NpgsqlDbType.Uuid);
 
             batch.Execute();
+            batch.Connection.Dispose();
 
             var targets = theSession.Query<Target>().ToArray();
             targets.Count().ShouldBe(3);
@@ -121,6 +133,7 @@ namespace Marten.Testing.Util
             batch.Delete(theMapping.TableName, initialTarget.Id, NpgsqlDbType.Uuid);
 
             batch.Execute();
+            batch.Connection.Dispose();
 
             var targets = theSession.Query<Target>().ToArray();
             targets.Count().ShouldBe(3);

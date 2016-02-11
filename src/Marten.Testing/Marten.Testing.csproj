@@ -55,7 +55,6 @@
     <Compile Include="document_session_storing_from_another_assembly_Tests.cs" />
     <Compile Include="codegen_spike.cs" />
     <Compile Include="ConnectionSource.cs" />
-    <Compile Include="CustomConventions.cs" />
     <Compile Include="DevelopmentModeRegistry.cs" />
     <Compile Include="DocumentSessionFixture.cs" />
     <Compile Include="Documents\Company.cs" />
@@ -144,7 +143,6 @@
     <Compile Include="Schema\will_build_a_new_database_table_if_definition_changes_Tests.cs" />
     <Compile Include="Schema\will_name_nested_class_documents_appropriately.cs" />
     <Compile Include="searchable_properties_Tests.cs" />
-    <Compile Include="Services\BatchedQuerying\BatchedSamples.cs" />
     <Compile Include="Services\BatchedQuerying\batched_querying_acceptance_Tests.cs" />
     <Compile Include="Services\DirtyTrackingIdentityMapTests.cs" />
     <Compile Include="Services\IdentityMapTests.cs" />
@@ -222,17 +220,6 @@
       <ItemGroup>
         <Reference Include="Baseline">
           <HintPath>..\..\packages\Baseline\lib\net45\Baseline.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
-      <ItemGroup>
-        <Reference Include="Fixie">
-          <HintPath>..\..\packages\Fixie\lib\net45\Fixie.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
