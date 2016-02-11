@@ -203,9 +203,21 @@ namespace Marten.Linq
 
                 return new WhereFragment(sql);
             }
+            if (binary.Left.NodeType == ExpressionType.Modulo)
+            {
+                var moduloByValue = GetModuloByValue(binary);
+                return new WhereFragment("{0} % {1} {2} ?".ToFormat(jsonLocator, moduloByValue, op), value);
+            }
 
 
             return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
+        }
+
+        private static object GetModuloByValue(BinaryExpression binary)
+        {
+            var moduloExpression = binary.Left as BinaryExpression;
+            var moduloValueExpression = moduloExpression?.Right as ConstantExpression;
+            return moduloValueExpression != null ? Value(moduloValueExpression) : 1;
         }
 
         public static object Value(Expression expression)
