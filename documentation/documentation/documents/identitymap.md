@@ -11,6 +11,4 @@ Marten's `IDocumentSession` implements the "Identity Map" pattern that seeks to 
 
 Do note that using the identity map functionality can be wasteful if you aren't able to take advantage of the identity map caching in a session. In those cases, you may want to either use the `IDocumentStore.LightweightSession()` which forgos the identity map functionality, or use the read only `IQuerySession` alternative. RavenDb users will note that Marten does not (yet) support any notion of `Evict()` to manually remove documents from identity map tracking to avoid memory usage problems. Our hope is that the existence of the lightweight session and the read only interface will alleviate the memory explosion problems that you can run into with naive usage of identity maps or the dirty checking when fetching a large number of documents. 
 
-
-**As of right now, Marten is only applying the Identity Map functionality to documents loaded by Id and misses documents fetched from `Query<T>` methods.
-This [will be addressed soon](https://github.com/JasperFx/Marten/issues/88).**
+As of Marten v0.7, the Identity Map functionality is applied to all documents loaded by Id or Linq queries with `IQuerySession/IDocumentSession.Query<T>()`. **Documents loaded by user-supplied SQL in the `IQuerySession.Query<T>(sql)` mechanism bypass the Identity Map functionality.**

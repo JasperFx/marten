@@ -20,20 +20,24 @@ namespace Marten.Testing.Schema
         [Fact]
         public void document_alias_can_be_overridden_with_the_marten_registry()
         {
+            // SAMPLE: marten-registry-to-override-document-alias
             var store = DocumentStore.For(_ =>
             {
                 _.Connection("something");
 
                 _.Schema.For<User>().DocumentAlias("folks");
             });
+            // ENDSAMPLE
 
             store.Schema.MappingFor(typeof(User)).As<DocumentMapping>().Alias.ShouldBe("folks");
         }
 
+        // SAMPLE: using-document-alias-attribute
         [DocumentAlias("johndeere")]
         public class Tractor
         {
             public string id;
         }
+        // ENDSAMPLE
     }
 }

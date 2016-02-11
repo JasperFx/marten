@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
@@ -34,6 +35,32 @@ namespace Marten.Testing.Services.BatchedQuerying
             theSession.Store(user1, user2, admin1, admin2, super1, super2);
 
             theSession.SaveChanges();
+        }
+
+        public void sample_config()
+        {
+            // SAMPLE: configure-hierarchy-of-types
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection("connection to your database");
+
+                _.Schema.For<User>()
+                    // generic version
+                    .AddSubclass<AdminUser>()
+
+                    // By document type object
+                    .AddSubclass(typeof (SuperUser));
+            });
+
+            using (var session = store.QuerySession())
+            {
+                // query for all types of User and User itself
+                session.Query<User>().ToList();
+
+                // query for only SuperUser
+                session.Query<SuperUser>().ToList();
+            }
+            // ENDSAMPLE
         }
 
         [Fact]
@@ -256,6 +283,44 @@ namespace Marten.Testing.Services.BatchedQuerying
             await batch2.Execute();
 
             (await task1).ShouldHaveTheSameElementsAs(await task2);
+        }
+
+
+        public async Task batch_samples()
+        {
+            // SAMPLE: using-batch-query
+// Start a new IBatchQuery from an active session
+var batch = theSession.CreateBatchQuery();
+
+// Fetch a single document by its Id
+var user1 = batch.Load<User>("username");
+
+// Fetch multiple documents by their id's
+var admins = batch.LoadMany<User>().ById("user2", "user3");
+
+// User-supplied sql
+var toms = batch.Query<User>("where first_name == ?", "Tom");
+
+// Query with Linq
+var jills = batch.Query<User>(_ => _.Where(x => x.FirstName == "Jill"));
+
+// Any() queries
+var anyBills = batch.Any<User>(_ => _.Where(x => x.FirstName == "Bill"));
+
+// Count() queries
+var countJims = batch.Any<User>(_ => _.Where(x => x.FirstName == "Jim"));
+
+// The Batch querying supports First/FirstOrDefault/Single/SingleOrDefault() selectors:
+var firstInternal = batch.First<User>(_ => _.Where(x => x.Internal).OrderBy(x => x.LastName));
+
+// Kick off the batch query
+await batch.Execute();
+
+// All of the query mechanisms of the BatchQuery return
+// Task's that are completed by the Execute() method above
+var internalUser = await firstInternal;
+Debug.WriteLine($"The first internal user is {internalUser.FirstName} {internalUser.LastName}");
+            // ENDSAMPLE
         }
     }
 }

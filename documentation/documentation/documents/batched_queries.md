@@ -1,4 +1,15 @@
 <!--Title:Batched Queries-->
 <!--Url:batched_queries-->
 
-This is a theoretical feature for sometime in the future. The goal here is to be able to batch up queries to the Postgresql database for some performance optimization by reducing the number of network round trips. Follow the [GitHub issue for this](https://github.com/JasperFx/Marten/issues/26) to track the progress.
+For the sake of performance, if you have a case where you may need to fetch several sets of document data from Marten
+at one time, you can opt to batch those queries into a single request to the underlying database to reduce network round trips.
+
+The mechanism for doing this is the `IBatchedQuery` object that you can create with the `IQuerySession.CreateBatchQuery()` method.
+The batched queries in Marten work by allowing a user to define the queries they want to run through the batch and getting back
+a .Net `Task` that can be used to retrieve the actual results later after the batch is finished. When the batch is executed,
+Marten combines all the queries into a single command sent to the underlying Postgresql database, then reads through all
+the data returned and sets the results of the `Task` objects handed out earlier.
+
+This functionality is demonstrated below:
+
+<[sample:using-batch-query]>

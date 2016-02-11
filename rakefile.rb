@@ -1,6 +1,6 @@
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '0.6.6'
+BUILD_VERSION = '0.7.0'
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
@@ -119,9 +119,9 @@ task :open_st => [:compile] do
 	sh "packages/Storyteller/tools/st.exe open src/Marten.Testing"
 end
 
-"Launches the documentation project in editable mode"
+desc "Launches the documentation project in editable mode"
 task :docs do
-	sh "paket.exe install"
+	sh "paket.exe restore"
 	sh "packages/Storyteller/tools/st.exe doc-run -v #{BUILD_VERSION}"
 end
 

@@ -84,6 +84,8 @@
     <Compile Include="Examples\LinqExamples.cs" />
     <Compile Include="Examples\Load_by_Id.cs" />
     <Compile Include="Examples\MartenRegistryExamples.cs" />
+    <Compile Include="Examples\SagaStorageExample.cs" />
+    <Compile Include="Examples\Searching_Within_Child_Collections.cs" />
     <Compile Include="Examples\TradeStorage.cs" />
     <Compile Include="Examples\UnitOfWorkMechanics.cs" />
     <Compile Include="Fixtures\LinqFixture.cs" />

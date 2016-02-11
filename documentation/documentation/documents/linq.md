@@ -25,8 +25,14 @@ Right now, Marten supports both _and_ and _or_ queries with Linq:
 
 ## Searching within Child Collections
 
-[This is still outstanding](https://github.com/JasperFx/Marten/issues/34). The current thinking is to use the Postgresql containment operator for doing
-`Any(x => ...)` type queries within child collections.
+As of v0.7, Marten supports simple `Any()` queries within child collections, but only for checking
+equality of members of the child collection elements (this feature uses the [Postgresql JSONB containment operator](http://www.postgresql.org/docs/9.5/static/datatype-json.html) to compose the underlying SQL).
+
+Marten will also allow you to use the `Contains` method to search within arrays or lists of simple elements like strings.
+
+The following code sample demonstrates the supported Linq patterns for collection searching:
+
+<[sample:searching_within_child_collections]>
 
 ## Searching for NULL Values
 
