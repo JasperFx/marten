@@ -49,6 +49,7 @@
     <Compile Include="DocumentStore.cs" />
     <Compile Include="DocumentTracking.cs" />
     <Compile Include="IDiagnostics.cs" />
+    <Compile Include="IMartenLogger.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="Linq\CollectionAnyContainmentWhereFragment.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />
