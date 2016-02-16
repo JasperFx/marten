@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 using Baseline;
 using Marten.Schema;
 using Marten.Util;
+using Microsoft.CodeAnalysis.CSharp;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing;
@@ -181,11 +182,23 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
+        private bool IsValueExpression(Expression expression)
+        {
+            Type[] valueExpressionTypes = {
+                typeof (ConstantExpression), typeof (PartialEvaluationExceptionExpression)
+            };
+            return valueExpressionTypes.Any(t => t.IsInstanceOfType(expression));
+        }
+
         private IWhereFragment buildSimpleWhereClause(IDocumentMapping mapping, BinaryExpression binary)
         {
+            var isValueExpressionOnRight = IsValueExpression(binary.Right);
+            var jsonLocatorExpression = isValueExpressionOnRight ? binary.Left : binary.Right;
+            var valuExpression = isValueExpressionOnRight ? binary.Right : binary.Left;
+
             var op = _operators[binary.NodeType];
 
-            var value = Value(binary.Right);
+            var value = Value(valuExpression);
 
             if (mapping.PropertySearching == PropertySearching.ContainmentOperator &&
                 binary.NodeType == ExpressionType.Equal && value != null)
@@ -193,7 +206,7 @@ namespace Marten.Linq
                 return new ContainmentWhereFragment(_serializer, binary);
             }
 
-            var jsonLocator = JsonLocator(mapping, binary.Left);
+            var jsonLocator = JsonLocator(mapping, jsonLocatorExpression);
 
             if (value == null)
             {
@@ -203,7 +216,7 @@ namespace Marten.Linq
 
                 return new WhereFragment(sql);
             }
-            if (binary.Left.NodeType == ExpressionType.Modulo)
+            if (jsonLocatorExpression.NodeType == ExpressionType.Modulo)
             {
                 var moduloByValue = GetModuloByValue(binary);
                 return new WhereFragment("{0} % {1} {2} ?".ToFormat(jsonLocator, moduloByValue, op), value);
