@@ -13,9 +13,8 @@ namespace Marten.Testing
 
         protected IntegratedFixture()
         {
-            ConnectionSource.CleanBasicDocuments();
-
             theStore = theContainer.GetInstance<IDocumentStore>();
+            theStore.Advanced.Clean.CompletelyRemoveAll();
         }
 
         public virtual void Dispose()
@@ -32,7 +31,6 @@ namespace Marten.Testing
 
         protected DocumentSessionFixture()
         {
-            ConnectionSource.CleanBasicDocuments();
             theSession = CreateSession();            
         }
 
