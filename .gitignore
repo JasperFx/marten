@@ -204,3 +204,5 @@ src/CommonAssemblyInfo.cs
 paket.lock
 
 *.DotSettings
+
+results
