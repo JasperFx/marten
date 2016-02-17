@@ -10,11 +10,25 @@ using Marten.Schema;
 
 namespace Marten.Services
 {
+    public class PendingDeletion
+    {
+        public Type DocumentType { get; }
+        public object Id { get; }
+        public object Document { get; }
+
+        public PendingDeletion(Type documentType, object id, object document = null)
+        {
+            DocumentType = documentType;
+            Id = id;
+            Document = document;
+        }
+    }
+
     public class UnitOfWork
     {
         private readonly IDocumentSchema _schema;
         private readonly ConcurrentDictionary<Type, IEnumerable> _updates = new ConcurrentDictionary<Type, IEnumerable>();
-        private readonly ConcurrentDictionary<Type, IList<object>> _deletes = new ConcurrentDictionary<Type, IList<object>>(); 
+        private readonly ConcurrentDictionary<Type, IList<PendingDeletion>> _deletes = new ConcurrentDictionary<Type, IList<PendingDeletion>>(); 
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>(); 
 
         public UnitOfWork(IDocumentSchema schema)
@@ -34,14 +48,15 @@ namespace Marten.Services
 
         private void delete<T>(object id)
         {
-            var list = _deletes.GetOrAdd(typeof (T), _ => new List<object>());
-            list.Add(id);
+            var list = _deletes.GetOrAdd(typeof (T), _ => new List<PendingDeletion>());
+            list.Add(new PendingDeletion(typeof(T), id));
         }
 
         public void DeleteEntity<T>(T entity)
         {
             var id = _schema.StorageFor(typeof(T)).Identity(entity);
-            delete<T>(id);
+            var list = _deletes.GetOrAdd(typeof(T), _ => new List<PendingDeletion>());
+            list.Add(new PendingDeletion(typeof(T), id, entity));
         }
 
         public void Delete<T>(ValueType id)
@@ -94,7 +109,7 @@ namespace Marten.Services
                 var storage = _schema.StorageFor(type);
                 var mapping = _schema.MappingFor(type);
 
-                _deletes[type].Each(id => batch.Delete(mapping.TableName, id, storage.IdType));
+                _deletes[type].Each(id => batch.Delete(mapping.TableName, id.Id, storage.IdType));
             });
 
             var changes = _trackers.SelectMany(x => x.DetectChanges()).ToArray();
