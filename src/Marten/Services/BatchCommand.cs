@@ -73,7 +73,7 @@ namespace Marten.Services
         {
             private readonly BatchCommand _parent;
             private readonly string _sprocName;
-            private readonly IList<string> _paramNames = new List<string>();
+            private readonly IList<ParameterArg> _parameters = new List<ParameterArg>();
 
 
             public SprocCall(BatchCommand parent, string sprocName)
@@ -84,38 +84,55 @@ namespace Marten.Services
 
             public void WriteToSql(StringBuilder builder)
             {
-                var parameters = _paramNames.Select(x => ":" + x).Join(", ");
+                var parameters = _parameters.Select(x => x.Declaration()).Join(", ");
                 builder.AppendFormat("select {0}({1})", _sprocName, parameters);
             }
 
-            public SprocCall Param(Guid value)
+            public SprocCall Param(string argName, Guid value)
             {
-                return Param(value, NpgsqlDbType.Uuid);
+                return Param(argName, value, NpgsqlDbType.Uuid);
             }
 
-            public SprocCall Param(string value)
+            public SprocCall Param(string argName, string value)
             {
-                return Param(value, NpgsqlDbType.Varchar);
+                return Param(argName, value, NpgsqlDbType.Varchar);
             }
 
-            public SprocCall JsonEntity(object value)
+            public SprocCall JsonEntity(string argName, object value)
             {
                 var json = _parent._serializer.ToJson(value);
-                return Param(json, NpgsqlDbType.Jsonb);
+                return Param(argName, json, NpgsqlDbType.Jsonb);
             }
 
-            public SprocCall JsonBody(string json)
+            public SprocCall JsonBody(string argName, string json)
             {
-                return Param(json, NpgsqlDbType.Jsonb);
+                return Param(argName, json, NpgsqlDbType.Jsonb);
             }
 
-            public SprocCall Param(object value, NpgsqlDbType dbType)
+            public SprocCall Param(string argName, object value, NpgsqlDbType dbType)
             {
                 var param = _parent.addParameter(value, dbType);
 
-                _paramNames.Add(param.ParameterName);
+                _parameters.Add(new ParameterArg(argName, param));
 
                 return this;
+            }
+
+            public struct ParameterArg
+            {
+                public string ArgName;
+                public string ParameterName;
+
+                public ParameterArg(string argName, NpgsqlParameter parameter)
+                {
+                    ArgName = argName;
+                    ParameterName = parameter.ParameterName;
+                }
+
+                public string Declaration()
+                {
+                    return $"{ArgName} := :{ParameterName}";
+                }
             }
 
         }

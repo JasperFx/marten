@@ -52,13 +52,15 @@ namespace Marten.Schema
 
         public void WriteFunctionSql(PostgresUpsertType upsertType, StringWriter writer)
         {
-            var argList = Arguments.Select(x => x.ArgumentDeclaration()).Join(", ");
+            var ordered = OrderedArguments();
 
-            var updates = Arguments.Where(x => x.Column != "id")
+            var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");
+
+            var updates = ordered.Where(x => x.Column != "id")
                 .Select(x => $"\"{x.Column}\" = {x.Arg}").Join(", ");
 
-            var inserts = Arguments.Select(x => $"\"{x.Column}\"").Join(", ");
-            var valueList = Arguments.Select(x => x.Arg).Join(", ");
+            var inserts = ordered.Select(x => $"\"{x.Column}\"").Join(", ");
+            var valueList = ordered.Select(x => x.Arg).Join(", ");
 
             if (upsertType == PostgresUpsertType.Legacy)
             {
@@ -86,28 +88,33 @@ namespace Marten.Schema
 
         }
 
+        public UpsertArgument[] OrderedArguments()
+        {
+            return Arguments.OrderBy(x => x.Arg).ToArray();
+        }
+
         public string ToUpdateBatchMethod(string typeName)
         {
-            var parameters = Arguments.Select(x => x.ToUpdateBatchParameter()).Join("");
+            var parameters = OrderedArguments().Select(x => x.ToUpdateBatchParameter()).Join("");
 
             return $@"
 BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity)
 var document = ({typeName})entity;
-batch.Sproc(`{FunctionName}`){parameters.Replace("*", ".JsonEntity(document)")};
+batch.Sproc(`{FunctionName}`){parameters.Replace("*", ".JsonEntity(`doc`, document)")};
 END
 
 BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity, string json)
 var document = ({typeName})entity;
-batch.Sproc(`{FunctionName}`){parameters.Replace("*", ".JsonBody(json)")};
+batch.Sproc(`{FunctionName}`){parameters.Replace("*", ".JsonBody(`doc`, json)")};
 END
 ";
         }
 
         public string ToBulkInsertMethod(string typeName)
         {
-            var columns = Arguments.Select(x => $"\\\"{x.Column}\\\"").Join(", ");
+            var columns = OrderedArguments().Select(x => $"\\\"{x.Column}\\\"").Join(", ");
 
-            var writerStatements = Arguments
+            var writerStatements = OrderedArguments()
                 .Select(x => x.ToBulkInsertWriterStatement())
                 .Join("\n");
 

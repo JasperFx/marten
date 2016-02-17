@@ -90,9 +90,11 @@ namespace Marten.Testing.Util
 
             var upsertName = theMapping.UpsertName;
 
-            batch.Sproc(upsertName).Param(target1.Id).JsonEntity(target1);
-            batch.Sproc(upsertName).Param(target2.Id).JsonEntity(target2);
-            batch.Sproc(upsertName).Param(target3.Id).JsonEntity(target3);
+
+
+            batch.Sproc(upsertName).Param("docId", target1.Id).JsonEntity("doc", target1);
+            batch.Sproc(upsertName).Param("docId", target2.Id).JsonEntity("doc", target2);
+            batch.Sproc(upsertName).Param("docId", target3.Id).JsonEntity("doc", target3);
             batch.Delete(theMapping.TableName, initialTarget.Id, NpgsqlDbType.Uuid);
 
             batch.Execute();
@@ -127,9 +129,9 @@ namespace Marten.Testing.Util
 
             var serializer = theContainer.GetInstance<ISerializer>();
 
-            batch.Sproc(upsertName).Param(target1.Id).JsonBody(serializer.ToJson(target1));
-            batch.Sproc(upsertName).Param(target2.Id).JsonBody(serializer.ToJson(target2));
-            batch.Sproc(upsertName).Param(target3.Id).JsonBody(serializer.ToJson(target3));
+            batch.Sproc(upsertName).Param("docId", target1.Id).JsonBody("doc", serializer.ToJson(target1));
+            batch.Sproc(upsertName).Param("docId", target2.Id).JsonBody("doc", serializer.ToJson(target2));
+            batch.Sproc(upsertName).Param("docId", target3.Id).JsonBody("doc", serializer.ToJson(target3));
             batch.Delete(theMapping.TableName, initialTarget.Id, NpgsqlDbType.Uuid);
 
             batch.Execute();

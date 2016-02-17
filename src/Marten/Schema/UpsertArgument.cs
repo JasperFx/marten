@@ -44,7 +44,7 @@ namespace Marten.Schema
             return BulkInsertPattern.ToFormat(accessor, DbType);
         }
 
-        public string BatchUpdatePattern = ".Param(document.{0}, NpgsqlDbType.{1})";
+        public string BatchUpdatePattern = ".Param(\"{2}\", document.{0}, NpgsqlDbType.{1})";
 
         public string ToUpdateBatchParameter()
         {
@@ -52,7 +52,7 @@ namespace Marten.Schema
 
             var accessor = Members.Select(x => x.Name).Join("?.");
 
-            return BatchUpdatePattern.ToFormat(accessor, DbType);
+            return BatchUpdatePattern.ToFormat(accessor, DbType, Arg);
         }
     }
 }

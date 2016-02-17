@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using Marten.Schema;
 using Marten.Testing.Documents;
@@ -14,12 +15,16 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_not_blow_up_building_one()
         {
-            var storage = DocumentStorageBuilder.Build(null, new DocumentMapping(typeof (User)));
+            var mapping = new DocumentMapping(typeof(User));
+
+            var storage = DocumentStorageBuilder.Build(null, mapping);
 
             storage.ShouldNotBeNull();
 
 
             storage.IdType.ShouldBe(NpgsqlDbType.Uuid);
+
+            
         }
 
         [Fact]

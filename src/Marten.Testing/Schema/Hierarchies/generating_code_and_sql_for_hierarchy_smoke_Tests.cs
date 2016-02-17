@@ -28,7 +28,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_squad(docId varchar, doc JSONB, docType varchar) RETURNS VOID AS");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS VOID AS");
             sql.ShouldContain("DO UPDATE SET \"data\" = doc, \"mt_doc_type\" = docType;");
         }
 
@@ -41,7 +41,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_squad(docId varchar, doc JSONB, docType varchar) RETURNS VOID AS");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS VOID AS");
             sql.ShouldContain("WITH upsert AS (UPDATE mt_doc_squad SET \"data\" = doc, \"mt_doc_type\" = docType WHERE id=docId RETURNING *)");
         }
 
