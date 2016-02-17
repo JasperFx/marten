@@ -83,9 +83,9 @@ namespace Marten.Testing.Services.BatchedQuerying
         {
             var batch = theSession.CreateBatchQuery();
 
-            var firstUser = batch.First<User>(x => x.OrderBy(_ => _.FirstName));
-            var firstAdmin = batch.First<SuperUser>(x => x.OrderBy(_ => _.FirstName));
-
+            var firstUser = batch.Query<User>().OrderBy(_ => _.FirstName).First();
+            var firstAdmin = batch.Query<SuperUser>().OrderBy(_ => _.FirstName).First();
+                
             await batch.Execute();
 
             (await firstUser).UserName.ShouldBe("A2");
@@ -97,9 +97,9 @@ namespace Marten.Testing.Services.BatchedQuerying
         {
             var batch = theSession.CreateBatchQuery();
 
-            var firstUser = batch.FirstOrDefault<User>(x => x.OrderBy(_ => _.FirstName));
-            var firstAdmin = batch.FirstOrDefault<SuperUser>(x => x.OrderBy(_ => _.FirstName));
-            var noneUser = batch.FirstOrDefault<User>(x => x.Where(_ => _.FirstName == "not me"));
+            var firstUser = batch.Query<User>().OrderBy(_ => _.FirstName).FirstOrDefault();
+            var firstAdmin = batch.Query<SuperUser>().OrderBy(_ => _.FirstName).FirstOrDefault();
+            var noneUser = batch.Query<User>().FirstOrDefault(_ => _.FirstName == "not me");
 
             await batch.Execute();
 
@@ -113,9 +113,10 @@ namespace Marten.Testing.Services.BatchedQuerying
         {
             var batch = theSession.CreateBatchQuery();
 
-            var tamba = batch.Single<User>(x => x.Where(_ => _.FirstName == "Tamba"));
-            var justin = batch.SingleOrDefault<User>(x => x.Where(_ => _.FirstName == "Justin"));
-            var noneUser = batch.SingleOrDefault<User>(x => x.Where(_ => _.FirstName == "not me"));
+            var tamba = batch.Query<User>().Where(_ => _.FirstName == "Tamba").Single();
+            var justin = batch.Query<User>().Where(_ => _.FirstName == "Justin").SingleOrDefault();
+
+            var noneUser = batch.Query<User>().SingleOrDefault(_ => _.FirstName == "not me");
 
             await batch.Execute();
 
@@ -133,11 +134,11 @@ namespace Marten.Testing.Services.BatchedQuerying
         {
             var batch = theSession.CreateBatchQuery();
 
-            var anyUsers = batch.QueryAll<User>();
-            var anyAdmins = batch.QueryAll<AdminUser>();
-            var anyIntDocs = batch.QueryAll<IntDoc>();
-            var aUsers = batch.Query<User>(x => x.Where(_ => _.UserName.StartsWith("A")));
-            var cUsers = batch.Query<User>(x => x.Where(_ => _.UserName.StartsWith("C")));
+            var anyUsers = batch.Query<User>().ToList();
+            var anyAdmins = batch.Query<AdminUser>().ToList();
+            var anyIntDocs = batch.Query<IntDoc>().ToList();
+            var aUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("A")).ToList();
+            var cUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("C")).ToList();
 
             await batch.Execute();
 
@@ -156,11 +157,11 @@ namespace Marten.Testing.Services.BatchedQuerying
         {
             var batch = theSession.CreateBatchQuery();
 
-            var anyUsers = batch.Any<User>();
-            var anyAdmins = batch.Any<AdminUser>();
-            var anyIntDocs = batch.Any<IntDoc>();
-            var aUsers = batch.Any<User>(x => x.Where(_ => _.UserName.StartsWith("A")));
-            var cUsers = batch.Any<User>(x => x.Where(_ => _.UserName.StartsWith("C")));
+            var anyUsers = batch.Query<User>().Any();
+            var anyAdmins = batch.Query<AdminUser>().Any();
+            var anyIntDocs = batch.Query<IntDoc>().Any();
+            var aUsers = batch.Query<User>().Any(_ => _.UserName.StartsWith("A"));
+            var cUsers = batch.Query<User>().Any(_ => _.UserName.StartsWith("C"));
 
             await batch.Execute();
 
@@ -176,11 +177,11 @@ namespace Marten.Testing.Services.BatchedQuerying
         {
             var batch = theSession.CreateBatchQuery();
 
-            var anyUsers = batch.Count<User>();
-            var anyAdmins = batch.Count<AdminUser>();
-            var anyIntDocs = batch.Count<IntDoc>();
-            var aUsers = batch.Count<User>(x => x.Where(_ => _.UserName.StartsWith("A")));
-            var cUsers = batch.Count<User>(x => x.Where(_ => _.UserName.StartsWith("C")));
+            var anyUsers = batch.Query<User>().Count();
+            var anyAdmins = batch.Query<AdminUser>().Count();
+            var anyIntDocs = batch.Query<IntDoc>().Count();
+            var aUsers = batch.Query<User>().Count(_ => _.UserName.StartsWith("A"));
+            var cUsers = batch.Query<User>().Count(_ => _.UserName.StartsWith("C"));
 
             await batch.Execute();
 
@@ -302,16 +303,16 @@ var admins = batch.LoadMany<User>().ById("user2", "user3");
 var toms = batch.Query<User>("where first_name == ?", "Tom");
 
 // Query with Linq
-var jills = batch.Query<User>(_ => _.Where(x => x.FirstName == "Jill"));
+var jills = batch.Query<User>().Where(x => x.FirstName == "Jill").ToList();
 
 // Any() queries
-var anyBills = batch.Any<User>(_ => _.Where(x => x.FirstName == "Bill"));
+var anyBills = batch.Query<User>().Any(x => x.FirstName == "Bill");
 
 // Count() queries
-var countJims = batch.Any<User>(_ => _.Where(x => x.FirstName == "Jim"));
+var countJims = batch.Query<User>().Count(x => x.FirstName == "Jim");
 
 // The Batch querying supports First/FirstOrDefault/Single/SingleOrDefault() selectors:
-var firstInternal = batch.First<User>(_ => _.Where(x => x.Internal).OrderBy(x => x.LastName));
+var firstInternal = batch.Query<User>().OrderBy(x => x.LastName).First(x => x.Internal);
 
 // Kick off the batch query
 await batch.Execute();

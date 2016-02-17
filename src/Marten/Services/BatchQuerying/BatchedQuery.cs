@@ -41,7 +41,7 @@ namespace Marten.Services.BatchQuerying
             return load<T>(id);
         }
 
-        private void addHandler(IDataReaderHandler handler)
+        public void AddHandler(IDataReaderHandler handler)
         {
             if (_handlers.Any())
             {
@@ -69,7 +69,7 @@ namespace Marten.Services.BatchQuerying
                 $"select {mapping.SelectFields("d")} from {mapping.TableName} as d where id = :{parameter.ParameterName}");
 
             var handler = new SingleResultReader<T>(source, _schema.StorageFor(typeof (T)), _identityMap);
-            addHandler(handler);
+            AddHandler(handler);
 
             return source.Task;
         }
@@ -99,7 +99,7 @@ namespace Marten.Services.BatchQuerying
                 var handler = new MultipleResultsReader<TDoc>(_parent._schema.StorageFor(typeof (TDoc)),
                     _parent._identityMap);
 
-                _parent.addHandler(handler);
+                _parent.AddHandler(handler);
 
                 return handler.ReturnValue;
             }
@@ -120,7 +120,7 @@ namespace Marten.Services.BatchQuerying
             _parent.ConfigureCommand<T>(_command, sql, parameters);
 
             var handler = new QueryResultsReader<T>(_serializer);
-            addHandler(handler);
+            AddHandler(handler);
 
             return handler.ReturnValue;
         }
@@ -137,19 +137,19 @@ namespace Marten.Services.BatchQuerying
             return new DocumentQuery(_schema.MappingFor(typeof(TDoc)), model, _serializer);
         }
 
-        private Task<TReturn> addHandler<TDoc, THandler, TReturn>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query) where THandler : IDataReaderHandler<TReturn>, new()
+        public Task<TReturn> AddHandler<TDoc, THandler, TReturn>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query) where THandler : IDataReaderHandler<TReturn>, new()
         {
             var model = toDocumentQuery(query);
             var handler = new THandler();
             handler.Configure(_command, model);
-            addHandler(handler);
+            AddHandler(handler);
 
             return handler.ReturnValue;
         }
 
         public Task<bool> Any<TDoc>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query)
         {
-            return addHandler<TDoc, AnyHandler, bool>(query);
+            return AddHandler<TDoc, AnyHandler, bool>(query);
         }
 
         public Task<bool> Any<TDoc>()
@@ -159,7 +159,7 @@ namespace Marten.Services.BatchQuerying
 
         public Task<long> Count<TDoc>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query)
         {
-            return addHandler<TDoc, CountHandler, long>(query);
+            return AddHandler<TDoc, CountHandler, long>(query);
         }
 
         public Task<long> Count<TDoc>()
@@ -167,22 +167,23 @@ namespace Marten.Services.BatchQuerying
             return Count<TDoc>(q => q);
         }
 
-        public Task<IList<T>> Query<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class
+        internal Task<IList<T>> Query<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class
         {
             var documentQuery = toDocumentQuery(query);
             var reader = new QueryHandler<T>(_schema.StorageFor(typeof(T)), _identityMap);
 
             reader.Configure(_command, documentQuery);
 
-            addHandler(reader);
+            AddHandler(reader);
 
             return reader.ReturnValue;
         }
 
-        public Task<IList<T>> QueryAll<T>() where T : class
-    {
-            return Query<T>(q => q);
+        public IBatchedQueryable<T> Query<T>() where T : class
+        {
+            return new BatchedQueryable<T>(this, _parent.Query<T>());
         }
+
 
         public Task<T> First<T>(Func<IQueryable<T>, IQueryable<T>> query) where T : class
         {
@@ -191,7 +192,7 @@ namespace Marten.Services.BatchQuerying
 
             reader.Configure(_command, documentQuery);
 
-            addHandler(reader);
+            AddHandler(reader);
 
             return reader.ReturnValue.ContinueWith(r => r.Result.First());
         }
@@ -203,7 +204,7 @@ namespace Marten.Services.BatchQuerying
 
             reader.Configure(_command, documentQuery);
 
-            addHandler(reader);
+            AddHandler(reader);
 
             return reader.ReturnValue.ContinueWith(r => r.Result.FirstOrDefault());
         }
@@ -215,7 +216,7 @@ namespace Marten.Services.BatchQuerying
 
             reader.Configure(_command, documentQuery);
 
-            addHandler(reader);
+            AddHandler(reader);
 
             return reader.ReturnValue.ContinueWith(r => r.Result.Single());
         }
@@ -227,7 +228,7 @@ namespace Marten.Services.BatchQuerying
 
             reader.Configure(_command, documentQuery);
 
-            addHandler(reader);
+            AddHandler(reader);
 
             return reader.ReturnValue.ContinueWith(r => r.Result.SingleOrDefault());
         }
