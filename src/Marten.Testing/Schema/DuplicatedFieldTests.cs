@@ -47,11 +47,6 @@ namespace Marten.Testing.Schema
             theField.SqlLocator.ShouldBe("d.x_first_name");
         }
 
-        [Fact]
-        public void lateral_join_is_always_null()
-        {
-            theField.LateralJoinDeclaration.ShouldBeNull();
-        }
         
 
     }

@@ -108,7 +108,6 @@ namespace Marten.Schema
         }
 
         public string SqlLocator { get; private set; }
-        public string LateralJoinDeclaration { get; } = null;
 
         public string ToUpdateBatchParam()
         {

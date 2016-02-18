@@ -156,7 +156,7 @@ namespace Marten.Testing.Schema
         public void find_field_for_immediate_property_that_is_not_duplicated()
         {
             var mapping = DocumentMapping.For<UpperCaseProperty>();
-            var field = mapping.FieldFor("Id").ShouldBeOfType<LateralJoinField>();
+            var field = mapping.FieldFor("Id");
             field.Members.Single().ShouldBeAssignableTo<PropertyInfo>()
                 .Name.ShouldBe("Id");
         }
@@ -165,7 +165,7 @@ namespace Marten.Testing.Schema
         public void find_field_for_immediate_field_that_is_not_duplicated()
         {
             var mapping = DocumentMapping.For<UpperCaseField>();
-            var field = mapping.FieldFor("Id").ShouldBeOfType<LateralJoinField>();
+            var field = mapping.FieldFor("Id");
             field.Members.Single().ShouldBeAssignableTo<FieldInfo>()
                 .Name.ShouldBe("Id");
         }
@@ -200,24 +200,6 @@ namespace Marten.Testing.Schema
             mapping.FieldFor("FirstName").ShouldBeOfType<DuplicatedField>();
         }
 
-        [Fact]
-        public void switch_back_to_lateral_join_searching_changes_the_non_duplicated_fields()
-        {
-            var mapping = DocumentMapping.For<User>();
-
-            mapping.DuplicateField("FirstName");
-
-            mapping.PropertySearching = PropertySearching.JSON_Locator_Only;
-
-            // put it back the way it was
-            mapping.PropertySearching = PropertySearching.JSONB_To_Record;
-
-            mapping.FieldFor("LastName").ShouldBeOfType<LateralJoinField>();
-
-            // leave duplicates alone
-
-            mapping.FieldFor("FirstName").ShouldBeOfType<DuplicatedField>();
-        }
 
         [Fact]
         public void picks_up_searchable_attribute_on_fields()

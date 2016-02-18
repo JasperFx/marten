@@ -316,7 +316,7 @@ public class ContainmentOperator : MartenRegistry
         {
             public JsonBToRecord()
             {
-                For<Target>().GinIndexJsonData().PropertySearching(PropertySearching.JSONB_To_Record);
+                For<Target>().GinIndexJsonData();
             }
         }
     }

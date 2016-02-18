@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Data;
 using System.Diagnostics;
+using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Testing.Fixtures;
 using Marten.Testing.Github;
 using Octokit;
+using Shouldly;
 using StructureMap;
 using Xunit;
 
@@ -37,6 +39,9 @@ namespace Marten.Testing
                     session.Store(new Target {Number = 4});
 
                     session.SaveChanges();
+
+
+                    session.Query<Target>().Where(x => x.String == null).ToList().Each(x => Debug.WriteLine(x));
 
                     //session.Query<Target>("select data from mt_doc_target, jsonb_array_elements(data -> 'NumberArray') numbers where numbers @> ARRAY[3]").Each(x => Debug.WriteLine(x.Number));
 

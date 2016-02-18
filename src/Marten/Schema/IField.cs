@@ -8,6 +8,5 @@ namespace Marten.Schema
         string MemberName { get; }
 
         string SqlLocator { get; }
-        string LateralJoinDeclaration { get; }
     }
 }

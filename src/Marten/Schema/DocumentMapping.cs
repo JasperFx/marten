@@ -52,17 +52,11 @@ namespace Marten.Schema
 
             documentType.GetProperties().Where(x => TypeMappings.HasTypeMapping(x.PropertyType)).Each(prop =>
             {
-                var field = new LateralJoinField(prop);
-                _fields[field.MemberName] = field;
-
                 prop.ForAttribute<MartenAttribute>(att => att.Modify(this, prop));
             });
 
             documentType.GetFields().Where(x => TypeMappings.HasTypeMapping(x.FieldType)).Each(fieldInfo =>
             {
-                var field = new LateralJoinField(fieldInfo);
-                _fields.AddOrUpdate(field.MemberName, field, (key, f) => f);
-
                 fieldInfo.ForAttribute<MartenAttribute>(att => att.Modify(this, fieldInfo));
             });
         }
@@ -234,17 +228,6 @@ namespace Marten.Schema
             set
             {
                 _propertySearching = value;
-
-                if (_propertySearching == PropertySearching.JSONB_To_Record)
-                {
-                    var fields = _fields.Values.Where(x => x.Members.Length == 1).OfType<JsonLocatorField>().ToArray();
-                    fields.Each(x => { _fields[x.MemberName] = new LateralJoinField(x.Members.Last()); });
-                }
-                else
-                {
-                    var fields = _fields.Values.Where(x => x.Members.Length == 1).OfType<LateralJoinField>().ToArray();
-                    fields.Each(x => { _fields[x.MemberName] = new JsonLocatorField(x.Members.Last()); });
-                }
             }
         }
 
@@ -263,17 +246,20 @@ namespace Marten.Schema
 
         public IField FieldFor(MemberInfo member)
         {
-            return _fields.GetOrAdd(member.Name, name =>
-            {
-                return PropertySearching == PropertySearching.JSONB_To_Record
-                    ? (IField) new LateralJoinField(member)
-                    : new JsonLocatorField(member);
-            });
+            return _fields.GetOrAdd(member.Name, name => new JsonLocatorField(member));
         }
 
         public IField FieldFor(string memberName)
         {
-            return _fields[memberName];
+            return _fields.GetOrAdd(memberName, name =>
+            {
+                var member = DocumentType.GetProperties().FirstOrDefault(x => x.Name == name).As<MemberInfo>() ??
+                             DocumentType.GetFields().FirstOrDefault(x => x.Name == name);
+
+                if (member == null) return null;
+
+                return new JsonLocatorField(member);
+            });
         }
 
         public virtual TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you

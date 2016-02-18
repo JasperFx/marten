@@ -211,8 +211,8 @@ namespace Marten.Linq
             if (value == null)
             {
                 var sql = binary.NodeType == ExpressionType.NotEqual
-                    ? $"{jsonLocator} is not null"
-                    : $"{jsonLocator} is null";
+                    ? $"({jsonLocator}) is not null"
+                    : $"({jsonLocator}) is null";
 
                 return new WhereFragment(sql);
             }
@@ -259,11 +259,8 @@ namespace Marten.Linq
             var visitor = new FindMembers();
             visitor.Visit(expression);
 
-            //return new JsonLocatorField(visitor.Members.ToArray()).SqlLocator;
 
             var field = mapping.FieldFor(visitor.Members);
-
-            _query.RegisterField(field);
 
             return field.SqlLocator;
         }

@@ -140,7 +140,6 @@
     <Compile Include="Schema\DocumentCleaner.cs" />
     <Compile Include="Schema\IField.cs" />
     <Compile Include="Schema\JsonLocatorField.cs" />
-    <Compile Include="Schema\LateralJoinField.cs" />
     <Compile Include="Schema\MartenAttribute.cs" />
     <Compile Include="Schema\ProductionSchemaCreation.cs" />
     <Compile Include="Schema\PropertySearching.cs" />

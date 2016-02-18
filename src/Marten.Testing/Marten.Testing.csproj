@@ -53,7 +53,6 @@
     <Compile Include="bulk_loading_Tests.cs" />
     <Compile Include="DocumentMappingTests.cs" />
     <Compile Include="document_session_storing_from_another_assembly_Tests.cs" />
-    <Compile Include="codegen_spike.cs" />
     <Compile Include="ConnectionSource.cs" />
     <Compile Include="DevelopmentModeRegistry.cs" />
     <Compile Include="DocumentSessionFixture.cs" />
@@ -171,7 +170,6 @@
     <Compile Include="Schema\DuplicatedFieldTests.cs" />
     <Compile Include="Schema\duplicate_deep_accessor_and_query_Tests.cs" />
     <Compile Include="Schema\JsonLocatorFieldTests.cs" />
-    <Compile Include="Schema\LateralJoinFieldTests.cs" />
     <Compile Include="Schema\ProductionModeSchemeCreationTests.cs" />
     <Compile Include="Schema\SchemaBuilderTests.cs" />
     <Compile Include="Schema\Sequences\HiLoIdGenerationTests.cs" />

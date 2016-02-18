@@ -59,6 +59,5 @@ namespace Marten.Schema
         }
 
         public string SqlLocator { get; }
-        public string LateralJoinDeclaration { get; } = null;
     }
 }

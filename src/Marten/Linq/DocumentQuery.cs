@@ -30,8 +30,6 @@ namespace Marten.Linq
 
             var where = buildWhereClause();
 
-            sql = appendLateralJoin(sql);
-
             if (@where != null) sql += " where " + @where.ToSql(command);
 
             command.AppendQuery(sql);
@@ -43,7 +41,6 @@ namespace Marten.Linq
 
             var where = buildWhereClause();
 
-            sql = appendLateralJoin(sql);
             if (@where != null) sql += " where " + @where.ToSql(command);
 
             command.AppendQuery(sql);
@@ -64,7 +61,6 @@ namespace Marten.Linq
             var where = buildWhereClause();
             var orderBy = toOrderClause();
 
-            sql = appendLateralJoin(sql);
             if (@where != null) sql += " where " + @where.ToSql(command);
 
             if (orderBy.IsNotEmpty()) sql += orderBy;
@@ -134,28 +130,5 @@ namespace Marten.Linq
             return _mapping.FilterDocuments(where);
         }
 
-        private string appendLateralJoin(string sql)
-        {
-            var lateralFields =
-                _fields.Where(x => x.LateralJoinDeclaration.IsNotEmpty())
-                    .Select(x => x.LateralJoinDeclaration)
-                    .Distinct()
-                    .ToArray();
-
-            if (lateralFields.Any())
-            {
-                var laterals = lateralFields.Join(", ");
-                sql += $", LATERAL jsonb_to_record(d.data) as l({laterals})";
-            }
-            return sql;
-        }
-
-
-        private readonly IList<IField> _fields = new List<IField>(); 
-
-        public void RegisterField(IField field)
-        {
-            _fields.Add(field);
-        }
     }
 }

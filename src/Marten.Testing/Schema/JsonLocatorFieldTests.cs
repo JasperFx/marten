@@ -47,13 +47,6 @@ namespace Marten.Testing.Schema
             theEnumField.SqlLocator.ShouldBe("CAST(d.data ->> 'Color' as integer)");
         }
 
-        [Fact]
-        public void the_lateral_join_declaration_is_null()
-        {
-            theStringField.LateralJoinDeclaration.ShouldBeNull();
-            theNumberField.LateralJoinDeclaration.ShouldBeNull();
-            theEnumField.LateralJoinDeclaration.ShouldBeNull();
-        }
 
         [Fact]
         public void two_deep_members_json_locator()
