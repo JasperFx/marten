@@ -150,7 +150,7 @@ namespace Marten.Schema
         {
             var writer = new StringWriter();
 
-            StoreOptions.AllDocumentMappings.Each(x => SchemaBuilder.WriteSchemaObjects(x, this, writer));
+            StoreOptions.AllDocumentMappings.Each(x => x.WriteSchemaObjects(this, writer));
 
             writer.WriteLine(SchemaBuilder.GetText("mt_hilo"));
 

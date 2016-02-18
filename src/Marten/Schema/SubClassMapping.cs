@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using Baseline;
 using Marten.Generation;
@@ -84,6 +85,11 @@ namespace Marten.Schema
             var parentStorage = _parent.BuildStorage(schema);
             return typeof (SubClassDocumentStorage<,>).CloseAndBuildAs<IDocumentStorage>(parentStorage, DocumentType,
                 _parent.DocumentType);
+        }
+
+        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
+        {
+            _parent.WriteSchemaObjects(schema, writer);
         }
     }
 

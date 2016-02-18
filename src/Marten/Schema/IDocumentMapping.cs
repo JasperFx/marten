@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using Marten.Generation;
 using Marten.Linq;
@@ -13,7 +14,6 @@ namespace Marten.Schema
         string TableName { get; }
         PropertySearching PropertySearching { get; }
         IIdGeneration IdStrategy { get; }
-        IEnumerable<DuplicatedField> DuplicatedFields { get; }
         MemberInfo IdMember { get; }
         IList<IndexDefinition> Indexes { get; }
         string SelectFields(string tableAlias);
@@ -30,5 +30,7 @@ namespace Marten.Schema
         IEnumerable<StorageArgument> ToArguments();
         IWhereFragment DefaultWhereFragment();
         IDocumentStorage BuildStorage(IDocumentSchema schema);
+
+        void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer);
     }
 }

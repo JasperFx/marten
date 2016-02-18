@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Baseline;
 using Marten.Schema;
 using Shouldly;
 using Xunit;
@@ -35,7 +36,7 @@ namespace Marten.Testing.Schema
             var schema = new DocumentSchema(new StoreOptions(), null, null);
             schema.Alter(registry);
 
-            schema.MappingFor(typeof(Organization)).DuplicatedFields.Single(x => x.MemberName == "Time2")
+            schema.MappingFor(typeof(Organization)).As<DocumentMapping>().DuplicatedFields.Single(x => x.MemberName == "Time2")
                 .PgType.ShouldBe("timestamp");
         }
 

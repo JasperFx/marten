@@ -33,7 +33,9 @@ namespace Marten.Schema
         private void writeSchemaObjects(IDocumentSchema schema, IDocumentMapping mapping)
         {
             var writer = new StringWriter();
-            SchemaBuilder.WriteSchemaObjects(mapping, schema, writer);
+
+            mapping.WriteSchemaObjects(schema, writer);
+
             var sql = writer.ToString();
 
             try

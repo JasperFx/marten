@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Baseline;
@@ -197,6 +198,25 @@ namespace Marten.Schema
         public IDocumentStorage BuildStorage(IDocumentSchema schema)
         {
             return DocumentStorageBuilder.Build(schema, this);
+        }
+
+        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
+        {
+            var table = ToTable(schema);
+            table.Write(writer);
+            writer.WriteLine();
+            writer.WriteLine();
+
+            ToUpsertFunction().WriteFunctionSql(schema?.UpsertType ?? PostgresUpsertType.Legacy, writer);
+
+            Indexes.Each(x =>
+            {
+                writer.WriteLine();
+                writer.WriteLine(x.ToDDL());
+            });
+
+            writer.WriteLine();
+            writer.WriteLine();
         }
 
         public IEnumerable<SubClassMapping> SubClasses => _subClasses;
