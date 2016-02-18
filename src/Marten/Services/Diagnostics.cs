@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Linq;
+using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 
@@ -29,7 +30,13 @@ namespace Marten.Services
 
         public string DocumentStorageCodeFor<T>()
         {
-            return DocumentStorageBuilder.GenerateDocumentStorageCode(new[] { _schema.MappingFor(typeof(T)) });
+            var documentMapping = _schema.MappingFor(typeof(T));
+            if (documentMapping is DocumentMapping)
+            {
+                return DocumentStorageBuilder.GenerateDocumentStorageCode(new[] { documentMapping.As<DocumentMapping>() });
+            }
+
+            return $"Docuemnt Storage for {typeof (T).FullName} is not generated";
         }
     }
 }

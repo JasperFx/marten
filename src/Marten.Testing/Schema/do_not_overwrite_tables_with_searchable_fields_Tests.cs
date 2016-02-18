@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Linq.Expressions;
+using Baseline;
+using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Fixtures;
 using Xunit;
@@ -16,7 +18,7 @@ namespace Marten.Testing.Schema
 
             var existing = theStore.Schema.TableSchema(typeof (Target));
 
-            var configured = theStore.Schema.MappingFor(typeof (Target)).ToTable(theStore.Schema);
+            var configured = theStore.Schema.MappingFor(typeof (Target)).As<DocumentMapping>().ToTable(theStore.Schema);
 
             if (!existing.Equals(configured))
             {

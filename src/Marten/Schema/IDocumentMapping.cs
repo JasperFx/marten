@@ -15,21 +15,15 @@ namespace Marten.Schema
         PropertySearching PropertySearching { get; }
         IIdGeneration IdStrategy { get; }
         MemberInfo IdMember { get; }
-        IList<IndexDefinition> Indexes { get; }
         string SelectFields(string tableAlias);
-
-        TableDefinition ToTable(IDocumentSchema schema);
-        UpsertFunction ToUpsertFunction();
 
         bool ShouldRegenerate(IDocumentSchema schema);
 
         IField FieldFor(IEnumerable<MemberInfo> members);
 
-        string ToResolveMethod(string typeName);
-
         IWhereFragment FilterDocuments(IWhereFragment query);
 
-        IEnumerable<StorageArgument> ToArguments();
+
         IWhereFragment DefaultWhereFragment();
         IDocumentStorage BuildStorage(IDocumentSchema schema);
 

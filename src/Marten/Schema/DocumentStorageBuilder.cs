@@ -22,12 +22,12 @@ namespace Marten.Schema
             return Build(schema, new DocumentMapping(documentType));
         }
 
-        public static IDocumentStorage Build(IDocumentSchema schema, IDocumentMapping mapping)
+        public static IDocumentStorage Build(IDocumentSchema schema, DocumentMapping mapping)
         {
             return Build(schema, new[] {mapping}).Single();
         }
 
-        public static IEnumerable<IDocumentStorage> Build(IDocumentSchema schema, IDocumentMapping[] mappings)
+        public static IEnumerable<IDocumentStorage> Build(IDocumentSchema schema, DocumentMapping[] mappings)
         {
             // Generate the actual source code
             var code = GenerateDocumentStorageCode(mappings);
@@ -69,7 +69,7 @@ namespace Marten.Schema
         }
 
 
-        public static string GenerateDocumentStorageCode(IDocumentMapping[] mappings)
+        public static string GenerateDocumentStorageCode(DocumentMapping[] mappings)
         {
             var writer = new SourceWriter();
 
@@ -108,7 +108,7 @@ namespace Marten.Schema
             return writer.Code();
         }
 
-        public static void GenerateDocumentStorage(IDocumentMapping mapping, SourceWriter writer)
+        public static void GenerateDocumentStorage(DocumentMapping mapping, SourceWriter writer)
         {
             var upsertFunction = mapping.ToUpsertFunction();
 

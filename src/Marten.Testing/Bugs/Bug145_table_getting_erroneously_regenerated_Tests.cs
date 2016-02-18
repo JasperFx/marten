@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using Baseline;
+using Marten.Schema;
 using Marten.Services;
 using Xunit;
 
@@ -22,7 +24,7 @@ namespace Marten.Testing.Bugs
         {
             var existing = theStore.Schema.TableSchema(typeof(Login));
 
-            var configured = theStore.Schema.MappingFor(typeof(Login)).ToTable(theStore.Schema);
+            var configured = theStore.Schema.MappingFor(typeof(Login)).As<DocumentMapping>().ToTable(theStore.Schema);
 
             if (!existing.Equals(configured))
             {

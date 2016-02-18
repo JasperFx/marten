@@ -24,12 +24,6 @@ namespace Marten.Schema
             Alias = alias ?? documentType.GetTypeName().Replace(".", "_").SplitCamelCase().Replace(" ", "_").ToLowerInvariant();
         }
 
-        public IEnumerable<StorageArgument> ToArguments()
-        {
-            return _parent.ToArguments();
-        }
-
-
 
         public DocumentMapping Parent => _parent;
 
@@ -44,20 +38,9 @@ namespace Marten.Schema
         public IIdGeneration IdStrategy => _parent.IdStrategy;
         public IEnumerable<DuplicatedField> DuplicatedFields => _parent.DuplicatedFields;
         public MemberInfo IdMember => _parent.IdMember;
-        public IList<IndexDefinition> Indexes => _parent.Indexes;
         public string SelectFields(string tableAlias)
         {
             return _inner.SelectFields(tableAlias);
-        }
-
-        public TableDefinition ToTable(IDocumentSchema schema)
-        {
-            return _parent.ToTable(schema);
-        }
-
-        public UpsertFunction ToUpsertFunction()
-        {
-            return _parent.ToUpsertFunction();
         }
 
         public bool ShouldRegenerate(IDocumentSchema schema)
@@ -68,11 +51,6 @@ namespace Marten.Schema
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             return _parent.FieldFor(members) ?? _inner.FieldFor(members);
-        }
-
-        public string ToResolveMethod(string typeName)
-        {
-            throw new NotSupportedException();
         }
 
         public IWhereFragment FilterDocuments(IWhereFragment query)
