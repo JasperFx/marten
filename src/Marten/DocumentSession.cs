@@ -80,16 +80,34 @@ namespace Marten
 
         public void SaveChanges()
         {
+            _options.Listeners.Each(x => x.BeforeSaveChanges(this));
+
             var batch = new UpdateBatch(_options, _serializer, _connection);
             _unitOfWork.ApplyChanges(batch);
 
+
             _connection.Commit();
+
+            _options.Listeners.Each(x => x.AfterCommit(this));
         }
 
-        public Task SaveChangesAsync(CancellationToken token)
+        public async Task SaveChangesAsync(CancellationToken token)
         {
+            foreach (var listener in _options.Listeners)
+            {
+                await listener.BeforeSaveChangesAsync(this);
+            }
+
+
             var batch = new UpdateBatch(_options, _serializer, _connection);
-            return _unitOfWork.ApplyChangesAsync(batch, token).ContinueWith(t => _connection.Commit(), token);
+            await _unitOfWork.ApplyChangesAsync(batch, token);
+
+            _connection.Commit();
+
+            foreach (var listener in _options.Listeners)
+            {
+                await listener.AfterCommitAsync(this);
+            }
         }
     }
 }

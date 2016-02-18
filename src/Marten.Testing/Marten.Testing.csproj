@@ -184,6 +184,7 @@
     <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="UnitOfWorkTests.cs" />
     <Compile Include="UnitOfWork_PendingChanges_Functionality_Tests.cs" />
+    <Compile Include="Using_DocumentSessionListener_Tests.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />
     <Compile Include="Util\update_batch_Tests.cs" />
   </ItemGroup>

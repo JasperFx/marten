@@ -26,6 +26,11 @@ namespace Marten
             return _documentMappings.GetOrAdd(documentType, type => new DocumentMapping(type, this));
         }
 
+        /// <summary>
+        /// Add, remove, or reorder global session listeners
+        /// </summary>
+        public readonly IList<IDocumentSessionListener> Listeners = new List<IDocumentSessionListener>(); 
+
         public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Values; 
 
         /// <summary>
