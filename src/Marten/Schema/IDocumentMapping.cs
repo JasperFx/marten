@@ -21,6 +21,8 @@ namespace Marten.Schema
         TableDefinition ToTable(IDocumentSchema schema);
         UpsertFunction ToUpsertFunction();
 
+        bool ShouldRegenerate(IDocumentSchema schema);
+
         IField FieldFor(IEnumerable<MemberInfo> members);
 
         string ToResolveMethod(string typeName);

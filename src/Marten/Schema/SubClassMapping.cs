@@ -60,6 +60,11 @@ namespace Marten.Schema
             return _parent.ToUpsertFunction();
         }
 
+        public bool ShouldRegenerate(IDocumentSchema schema)
+        {
+            return _parent.ShouldRegenerate(schema);
+        }
+
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             return _parent.FieldFor(members) ?? _inner.FieldFor(members);

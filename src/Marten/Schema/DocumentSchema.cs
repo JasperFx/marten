@@ -67,7 +67,7 @@ namespace Marten.Schema
 
                 var storage = mapping.BuildStorage(this);
 
-                _creation.CreateSchema(this, mapping, () => shouldRegenerate(mapping));
+                _creation.CreateSchema(this, mapping, () => mapping.ShouldRegenerate(this));
 
                 return storage;
             });
@@ -86,16 +86,6 @@ namespace Marten.Schema
 
                 throw new AmbiguousDocumentTypeAliasesException(message);
             }
-        }
-
-        private bool shouldRegenerate(IDocumentMapping mapping)
-        {
-            if (!DocumentTables().Contains(mapping.TableName)) return true;
-
-            var existing = TableSchema(mapping.TableName);
-            var expected = mapping.ToTable(this);
-
-            return !expected.Equals(existing);
         }
 
         public EventGraph Events { get; }
