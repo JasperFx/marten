@@ -82,6 +82,7 @@
     <Compile Include="Services\BatchQuerying\IBatchLoadByKeys.cs" />
     <Compile Include="Services\BatchQuerying\IDataReaderHandler.cs" />
     <Compile Include="Services\BatchQuerying\SingleResultReader.cs" />
+    <Compile Include="Services\IUnitOfWork.cs" />
     <Compile Include="Services\ManagedConnection.cs" />
     <Compile Include="Services\CommandRunnerExtensions.cs" />
     <Compile Include="Services\Diagnostics.cs" />
@@ -154,6 +155,7 @@
     <Compile Include="Schema\StorageArgument.cs" />
     <Compile Include="Schema\UpsertArgument.cs" />
     <Compile Include="Services\NulloIdentityMap.cs" />
+    <Compile Include="Services\PendingDeletion.cs" />
     <Compile Include="Services\TrackedEntity.cs" />
     <Compile Include="StoreOptions.cs" />
     <Compile Include="Util\QueryableExtensions.cs" />

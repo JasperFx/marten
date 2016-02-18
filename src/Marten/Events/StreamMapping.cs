@@ -16,7 +16,7 @@ namespace Marten.Events
                     $"Only types implementing {typeof (IAggregate)} can be accepted");
 
 
-            _events.OnMissing = type => { return new EventMapping(this, type); };
+            _events.OnMissing = type => new EventMapping(this, type);
 
             StreamTypeName = aggregateType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
         }
