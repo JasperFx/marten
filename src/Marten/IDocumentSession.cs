@@ -174,6 +174,12 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
         void Store<T>(params T[] entities) where T : class;
+
+
+        /// <summary>
+        /// List of all the pending changes to this IDocumentSession
+        /// </summary>
+        IUnitOfWork PendingChanges { get; }
     }
 
     public interface ILoadByKeys<TDoc>

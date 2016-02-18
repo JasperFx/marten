@@ -24,7 +24,16 @@ namespace Marten.Services
         }
     }
 
-    public class UnitOfWork
+    public interface IUnitOfWork
+    {
+        IEnumerable<PendingDeletion> Deletions();
+        IEnumerable<PendingDeletion> DeletionsFor<T>();
+        IEnumerable<PendingDeletion> DeletionsFor(Type documentType);
+        IEnumerable<object> Updates();
+        IEnumerable<T> UpdatesFor<T>();
+    }
+
+    public class UnitOfWork : IUnitOfWork
     {
         private readonly IDocumentSchema _schema;
         private readonly ConcurrentDictionary<Type, IEnumerable> _updates = new ConcurrentDictionary<Type, IEnumerable>();
@@ -76,6 +85,43 @@ namespace Marten.Services
             list.AddRange(entities);
         }
 
+        public IEnumerable<PendingDeletion> Deletions()
+        {
+            return _deletes.Values.SelectMany(x => x);
+        }
+
+        public IEnumerable<PendingDeletion> DeletionsFor<T>()
+        {
+            return Deletions().Where(x => x.DocumentType == typeof(T));
+        }
+
+        public IEnumerable<PendingDeletion> DeletionsFor(Type documentType)
+        {
+            return Deletions().Where(x => x.DocumentType == documentType);
+        } 
+
+        public IEnumerable<object> Updates()
+        {
+            return _updates.Values.SelectMany(x => x.OfType<object>()).Union(detectTrackerChanges().Select(x => x.Document));
+        }
+
+        public IEnumerable<T> UpdatesFor<T>()
+        {
+            var tracked =
+                detectTrackerChanges()
+                    .Where(x => x.DocumentType == typeof (T))
+                    .Select(x => x.Document)
+                    .OfType<T>()
+                    .ToArray();
+
+            if (_updates.ContainsKey(typeof (T)))
+            {
+                return _updates[typeof (T)].As<IList<T>>().Union(tracked).ToArray();
+            }
+
+            return tracked;
+        }
+
 
         public void ApplyChanges(UpdateBatch batch)
         {
@@ -112,7 +158,7 @@ namespace Marten.Services
                 _deletes[type].Each(id => batch.Delete(mapping.TableName, id.Id, storage.IdType));
             });
 
-            var changes = _trackers.SelectMany(x => x.DetectChanges()).ToArray();
+            var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
             {
                 var storage = _schema.StorageFor(group.Key);
@@ -124,6 +170,11 @@ namespace Marten.Services
             });
 
             return changes;
+        }
+
+        private DocumentChange[] detectTrackerChanges()
+        {
+            return _trackers.SelectMany(x => x.DetectChanges()).ToArray();
         }
 
         private void ClearChanges(DocumentChange[] changes)

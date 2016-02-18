@@ -76,6 +76,8 @@ namespace Marten
             }
         }
 
+        public IUnitOfWork PendingChanges => _unitOfWork;
+
         public void SaveChanges()
         {
             var batch = new UpdateBatch(_options, _serializer, _connection);
