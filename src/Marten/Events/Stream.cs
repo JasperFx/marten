@@ -1,28 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using Marten.Linq;
-using Marten.Schema;
-using Marten.Services;
-using Npgsql;
-using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public class Stream
+    public class Stream<T> where T : IAggregate
     {
-        public Stream(Guid id, Type aggregateType)
+        public Stream(Guid id)
         {
             Id = id;
-            AggregateType = aggregateType;
         }
 
         public Guid Id { get; }
-        public Type AggregateType { get; } 
+        public Type AggregateType { get; } = typeof (T);
 
         public readonly IList<IEvent> Events = new List<IEvent>();
     }
-
-
 }

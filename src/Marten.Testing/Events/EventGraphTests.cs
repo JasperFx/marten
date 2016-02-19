@@ -12,7 +12,7 @@ namespace Marten.Testing.Events
         public void find_stream_mapping_initially()
         {
             theGraph.StreamMappingFor<Issue>()
-                .DocumentType.ShouldBe(typeof(Issue));
+                .AggregateType.ShouldBe(typeof(Issue));
         }
 
         [Fact]
@@ -32,9 +32,9 @@ namespace Marten.Testing.Events
 
             theGraph.EventMappingFor<IssueAssigned>().ShouldBeTheSameAs(theGraph.EventMappingFor<IssueAssigned>());
 
-            theGraph.EventMappingFor<IssueAssigned>().Stream.DocumentType.ShouldBe(typeof(Issue));
+            theGraph.EventMappingFor<IssueAssigned>().Stream.AggregateType.ShouldBe(typeof(Issue));
 
-            theGraph.EventMappingFor<MembersJoined>().Stream.DocumentType.ShouldBe(typeof(Quest));
+            theGraph.EventMappingFor<MembersJoined>().Stream.AggregateType.ShouldBe(typeof(Quest));
         }
 
 
