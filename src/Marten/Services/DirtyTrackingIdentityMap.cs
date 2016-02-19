@@ -33,9 +33,9 @@ namespace Marten.Services
 
         public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class
         {
-            
 
-            var dict = _objects[typeof (T)];
+
+            var dict = _objects[typeof(T)];
             var hashCode = id.GetHashCode();
 
             if (dict.ContainsKey(hashCode))
@@ -71,11 +71,14 @@ namespace Marten.Services
         {
             var dictionary = _objects[typeof(T)];
             var hashCode = id.GetHashCode();
-
-            if (dictionary.ContainsKey(hashCode) && !ReferenceEquals(entity, dictionary[hashCode].Document))
+            if (dictionary.ContainsKey(hashCode))
             {
-                throw new InvalidOperationException(
-                    $"Document '{typeof(T).FullName}' with same Id already added to the session.");
+                var tracked = dictionary[hashCode];
+                if (tracked.Document != null && !ReferenceEquals(entity, dictionary[hashCode].Document))
+                {
+                    throw new InvalidOperationException(
+                      $"Document '{typeof(T).FullName}' with same Id already added to the session.");
+                }
             }
 
             dictionary.AddOrUpdate(hashCode, new TrackedEntity(id, _serializer, typeof(T), entity), (i, e) => e);
@@ -89,7 +92,7 @@ namespace Marten.Services
         public bool Has<T>(object id)
         {
             var hash = id.GetHashCode();
-            var dict = _objects[typeof (T)];
+            var dict = _objects[typeof(T)];
             return dict.ContainsKey(hash) && dict[hash].Document != null;
         }
 

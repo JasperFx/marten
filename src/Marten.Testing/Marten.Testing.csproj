@@ -157,6 +157,7 @@
     <Compile Include="Session\document_session_update_existing_document_without_dirty_checking_Tests.cs" />
     <Compile Include="store_and_bulk_insert_by_mixed_bag_of_document_types_Tests.cs" />
     <Compile Include="TrackingSession\document_session_load_already_loaded_document_Tests.cs" />
+    <Compile Include="TrackingSession\document_session_load_not_found_then_stored_Tests.cs" />
     <Compile Include="TrackingSession\document_session_load_not_yet_persisted_document_Tests.cs" />
     <Compile Include="persist_and_deleting_multiple_documents_Tests.cs" />
     <Compile Include="persist_and_load_documents_with_int_ids_Tests.cs" />

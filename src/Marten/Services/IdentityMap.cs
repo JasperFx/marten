@@ -67,7 +67,7 @@ namespace Marten.Services
         {
             var dictionary = _objects[typeof (T)];
             var hashCode = id.GetHashCode();
-            if (dictionary.ContainsKey(hashCode))
+            if (dictionary.ContainsKey(hashCode) && dictionary[hashCode] != null)
             {
                 if (!ReferenceEquals(dictionary[hashCode], entity))
                 {
