@@ -53,19 +53,30 @@ namespace Marten.Schema
             return assembly
                 .GetExportedTypes()
                 .Where(x => x.IsConcreteTypeOf<IDocumentStorage>())
-                .Select(x =>
-                {
-                    var docType =
-                        x.FindInterfaceThatCloses(typeof (IdAssignment<>)).GetGenericArguments().Single();
+                .Select(x => BuildStorageObject(schema, mappings, x));
+        }
 
-                    var mapping = mappings.Single(m => m.DocumentType == docType);
+        public static Type DocumentTypeForStorage(this Type storageType)
+        {
+            return storageType.FindInterfaceThatCloses(typeof(IdAssignment<>)).GetGenericArguments().Single();
+        }
 
-                    var arguments = mapping.ToArguments().Select(arg => arg.GetValue(schema)).ToArray();
+        public static IDocumentStorage BuildStorageObject(IDocumentSchema schema, DocumentMapping[] mappings, Type storageType)
+        {
+            var docType = storageType.DocumentTypeForStorage();
 
-                    var ctor = x.GetConstructors().Single();
+            var mapping = mappings.Single(m => m.DocumentType == docType);
 
-                    return ctor.Invoke(arguments).As<IDocumentStorage>();
-                });
+            return BuildStorageObject(schema, storageType, mapping);
+        }
+
+        public static IDocumentStorage BuildStorageObject(IDocumentSchema schema, Type storageType, DocumentMapping mapping)
+        {
+            var arguments = mapping.ToArguments().Select(arg => arg.GetValue(schema)).ToArray();
+
+            var ctor = storageType.GetConstructors().Single();
+
+            return ctor.Invoke(arguments).As<IDocumentStorage>();
         }
 
 

@@ -65,7 +65,12 @@ namespace Marten.Schema
                 var mapping = MappingFor(documentType);
                 assertNoDuplicateDocumentAliases();
 
-                var storage = mapping.BuildStorage(this);
+                IDocumentStorage storage = null;
+
+                var prebuiltType = StoreOptions.PreBuiltStorage
+                    .FirstOrDefault(x => x.DocumentTypeForStorage() == documentType);
+
+                storage = prebuiltType != null ? DocumentStorageBuilder.BuildStorageObject(this, prebuiltType, mapping.As<DocumentMapping>()) : mapping.BuildStorage(this);
 
                 _creation.CreateSchema(this, mapping, () => mapping.ShouldRegenerate(this));
 

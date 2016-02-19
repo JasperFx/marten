@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.Sequences;
@@ -18,6 +20,8 @@ namespace Marten
     {
         private ISerializer _serializer;
         private IConnectionFactory _factory;
+
+        internal readonly IList<Type> PreBuiltStorage = new List<Type>(); 
 
         private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
             new ConcurrentDictionary<Type, DocumentMapping>();
@@ -147,6 +151,17 @@ namespace Marten
             if (_factory == null) throw new InvalidOperationException("No database connection source is configured");
 
             return _factory;
+        }
+
+        /// <summary>
+        /// Load pre-compiled document storage types from the assembly. You can
+        /// use this mechanism to speed up your application startup time by
+        /// avoiding the Roslyn just-in-time compilation
+        /// </summary>
+        /// <param name="assembly"></param>
+        public void LoadPrecompiledStorageFrom(Assembly assembly)
+        {
+            PreBuiltStorage.AddRange(assembly.GetExportedTypes().Where(x => x.IsConcreteTypeOf<IDocumentStorage>()));
         }
     }
 }
