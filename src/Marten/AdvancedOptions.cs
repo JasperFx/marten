@@ -1,3 +1,5 @@
+using System.Linq;
+using Baseline;
 using Marten.Schema;
 
 namespace Marten
@@ -19,5 +21,12 @@ namespace Marten
         /// Used to remove document data and tables from the current Postgresql database
         /// </summary>
         public IDocumentCleaner Clean { get; }
+
+
+        public void WriteStorageCode(string file)
+        {
+            var code = DocumentStorageBuilder.GenerateDocumentStorageCode(Options.AllDocumentMappings.ToArray());
+            new FileSystem().WriteStringToFile(file, code);
+        }
     }
 }

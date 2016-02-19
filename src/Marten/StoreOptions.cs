@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Baseline;
 using Marten.Schema;
 using Marten.Schema.Sequences;
 using Marten.Services;
@@ -108,6 +109,33 @@ namespace Marten
         /// Sets the batch size for updating or deleting documents in IDocumentSession.SaveChanges() / IUnitOfWork.ApplyChanges()
         /// </summary>
         public int UpdateBatchSize { get; set; } = 500;
+
+        /// <summary>
+        /// Force Marten to create document mappings for type T
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public void RegisterDocumentType<T>()
+        {
+            RegisterDocumentType(typeof (T));
+        }
+
+        /// <summary>
+        /// Force Marten to create a document mapping for the document type
+        /// </summary>
+        /// <param name="documentType"></param>
+        public void RegisterDocumentType(Type documentType)
+        {
+            if (MappingFor(documentType) == null) throw new Exception("Unable to create document mapping for " + documentType);
+        }
+
+        /// <summary>
+        /// Force Marten to create document mappings for all the given document types
+        /// </summary>
+        /// <param name="documentTypes"></param>
+        public void RegisterDocumentTypes(IEnumerable<Type> documentTypes)
+        {
+            documentTypes.Each(RegisterDocumentType);
+        }
 
         internal ISerializer Serializer()
         {

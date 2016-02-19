@@ -51,6 +51,7 @@
     <Compile Include="Bugs\Bug_130_enable_case_insensitive_custom_sql_queries_Tests.cs" />
     <Compile Include="Bugs\Bug_127_do_not_recreate_a_table_with_duplicated_string_field_Tests.cs" />
     <Compile Include="bulk_loading_Tests.cs" />
+    <Compile Include="Codegen\dumping_the_complete_source_code_Tests.cs" />
     <Compile Include="DocumentMappingTests.cs" />
     <Compile Include="document_session_storing_from_another_assembly_Tests.cs" />
     <Compile Include="ConnectionSource.cs" />
@@ -155,6 +156,7 @@
     <Compile Include="Session\document_session_find_json_Tests.cs" />
     <Compile Include="Session\document_session_load_not_yet_persisted_document_Tests.cs" />
     <Compile Include="Session\document_session_update_existing_document_without_dirty_checking_Tests.cs" />
+    <Compile Include="StoreOptionsTests.cs" />
     <Compile Include="store_and_bulk_insert_by_mixed_bag_of_document_types_Tests.cs" />
     <Compile Include="TrackingSession\document_session_load_already_loaded_document_Tests.cs" />
     <Compile Include="TrackingSession\document_session_load_not_found_then_stored_Tests.cs" />
@@ -216,9 +218,6 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Codegen\" />
   </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
