@@ -48,6 +48,7 @@
     <Compile Include="ConnectionFactory.cs" />
     <Compile Include="DocumentStore.cs" />
     <Compile Include="DocumentTracking.cs" />
+    <Compile Include="Events\Stream.cs" />
     <Compile Include="IDiagnostics.cs" />
     <Compile Include="IDocumentSessionListener.cs" />
     <Compile Include="IMartenLogger.cs" />
