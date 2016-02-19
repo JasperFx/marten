@@ -226,6 +226,17 @@ namespace Marten.Testing.Schema.Hierarchies
             theSession.Query<AdminUser>().Where(x => x.FirstName == "Eric").Single()
                 .Id.ShouldBe(admin2.Id);
         }
+
+        [Fact]
+        public void clean_by_subclass_only_deletes_the_one_subclass()
+        {
+            theStore.Advanced.Clean.DeleteDocumentsFor(typeof(AdminUser));
+
+            theSession.Query<User>().Any().ShouldBeTrue();
+            theSession.Query<SuperUser>().Any().ShouldBeTrue();
+
+            theSession.Query<AdminUser>().Any().ShouldBeFalse();
+        }
     }
 
 public abstract class end_to_end_document_hierarchy_usage_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap

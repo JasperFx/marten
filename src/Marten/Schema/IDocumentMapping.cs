@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Marten.Generation;
 using Marten.Linq;
 using Marten.Services;
 

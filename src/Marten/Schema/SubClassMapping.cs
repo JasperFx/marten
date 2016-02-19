@@ -78,12 +78,12 @@ namespace Marten.Schema
 
         public void RemoveSchemaObjects(IManagedConnection connection)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException($"Invalid to remove schema objects for {DocumentType}, Use the parent {_parent.DocumentType} instead");
         }
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
-            throw new NotImplementedException();
+            factory.RunSql($"delete from {_parent.TableName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
         }
     }
 
