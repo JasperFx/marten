@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -60,23 +62,40 @@ namespace Marten
             storage.Delete(_identityMap, id);
         }
 
-        public void Store<T>(params T[] entities) where T : class
+        public void Store<T>(params T[] entities) 
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
 
-            var storage = _schema.StorageFor(typeof(T));
-            var idAssignment = storage.As<IdAssignment<T>>();
-
-            foreach (var entity in entities)
+            if (typeof (T) == typeof (object))
             {
-                var id = idAssignment.Assign(entity);
-
-                storage.Store(_identityMap, id, entity);
-                _unitOfWork.Store(entity);
+                StoreObjects(entities.OfType<object>());
             }
+            else
+            {
+                var storage = _schema.StorageFor(typeof(T));
+                var idAssignment = storage.As<IdAssignment<T>>();
+
+                foreach (var entity in entities)
+                {
+                    var id = idAssignment.Assign(entity);
+
+                    storage.Store(_identityMap, id, entity);
+                    _unitOfWork.Store(entity);
+                }
+            }
+
+
         }
 
         public IUnitOfWork PendingChanges => _unitOfWork;
+        public void StoreObjects(IEnumerable<object> documents)
+        {
+            documents.Where(x => x != null).GroupBy(x => x.GetType()).Each(group =>
+            {
+                var handler = typeof (Handler<>).CloseAndBuildAs<IHandler>(group.Key);
+                handler.Store(this, group);
+            });
+        }
 
         public void SaveChanges()
         {
@@ -107,6 +126,19 @@ namespace Marten
             foreach (var listener in _options.Listeners)
             {
                 await listener.AfterCommitAsync(this);
+            }
+        }
+
+        internal interface IHandler
+        {
+            void Store(IDocumentSession session, IEnumerable<object> objects);
+        }
+
+        internal class Handler<T> : IHandler
+        {
+            public void Store(IDocumentSession session, IEnumerable<object> objects)
+            {
+                session.Store(objects.OfType<T>().ToArray());
             }
         }
     }

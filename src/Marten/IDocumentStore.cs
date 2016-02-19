@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using Marten.Schema;
 
@@ -58,5 +59,11 @@ namespace Marten
         /// </summary>
         /// <returns></returns>
         IQuerySession QuerySession();
+
+        /// <summary>
+        /// Bulk insert a potentially mixed enumerable of document types
+        /// </summary>
+        /// <param name="documents"></param>
+        void BulkInsertDocuments(IEnumerable<object> documents, int batchSize = 1000);
     }
 }

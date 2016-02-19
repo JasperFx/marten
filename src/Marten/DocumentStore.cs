@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Npgsql;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
@@ -97,7 +99,38 @@ namespace Marten
 
         public void BulkInsert<T>(T[] documents, int batchSize = 1000)
         {
-            var storage = Schema.StorageFor(typeof(T)).As<IBulkLoader<T>>();
+            if (typeof (T) == typeof (object))
+            {
+                BulkInsertDocuments(documents.OfType<object>());
+            }
+            else
+            {
+                using (var conn = _connectionFactory.Create())
+                {
+                    conn.Open();
+                    var tx = conn.BeginTransaction();
+
+                    try
+                    {
+                        bulkInsertDocuments(documents, batchSize, conn);
+
+                        tx.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        tx.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        public void BulkInsertDocuments(IEnumerable<object> documents, int batchSize = 1000)
+        {
+            var groups = documents.Where(x => x != null).GroupBy(x => x.GetType()).Select(group =>
+            {
+                return typeof (BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key);
+            }).ToArray();
 
             using (var conn = _connectionFactory.Create())
             {
@@ -106,25 +139,7 @@ namespace Marten
 
                 try
                 {
-                    if (documents.Length <= batchSize)
-                    {
-                        storage.Load(_serializer, conn, documents);
-                    }
-                    else
-                    {
-                        var total = 0;
-                        var page = 0;
-
-                        while (total < documents.Length)
-                        {
-                            var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
-
-                            storage.Load(_serializer, conn, batch);
-
-                            page++;
-                            total += batch.Length;
-                        }
-                    }
+                    groups.Each(x => x.BulkInsert(batchSize, conn, this));
 
                     tx.Commit();
                 }
@@ -134,7 +149,51 @@ namespace Marten
                     throw;
                 }
             }
+        }
 
+        internal interface IBulkInserter
+        {
+            void BulkInsert(int batchSize, NpgsqlConnection connection, DocumentStore parent);
+        }
+
+        internal class BulkInserter<T> : IBulkInserter
+        {
+            private readonly T[] _documents;
+
+            public BulkInserter(IEnumerable<object> documents)
+            {
+                _documents = documents.OfType<T>().ToArray();
+            }
+
+            public void BulkInsert(int batchSize, NpgsqlConnection connection, DocumentStore parent)
+            {
+                parent.bulkInsertDocuments<T>(_documents, batchSize, connection);
+            }
+        }
+
+        private void bulkInsertDocuments<T>(T[] documents, int batchSize, NpgsqlConnection conn)
+        {
+            var storage = Schema.StorageFor(typeof (T)).As<IBulkLoader<T>>();
+
+            if (documents.Length <= batchSize)
+            {
+                storage.Load(_serializer, conn, documents);
+            }
+            else
+            {
+                var total = 0;
+                var page = 0;
+
+                while (total < documents.Length)
+                {
+                    var batch = documents.Skip(page*batchSize).Take(batchSize).ToArray();
+
+                    storage.Load(_serializer, conn, batch);
+
+                    page++;
+                    total += batch.Length;
+                }
+            }
         }
 
         public IDiagnostics Diagnostics { get; }

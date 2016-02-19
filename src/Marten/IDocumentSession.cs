@@ -173,13 +173,19 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        void Store<T>(params T[] entities) where T : class;
+        void Store<T>(params T[] entities);
 
 
         /// <summary>
         /// List of all the pending changes to this IDocumentSession
         /// </summary>
         IUnitOfWork PendingChanges { get; }
+
+        /// <summary>
+        /// Store an enumerable of potentially mixed documents
+        /// </summary>
+        /// <param name="documents"></param>
+        void StoreObjects(IEnumerable<object> documents);
     }
 
     public interface ILoadByKeys<TDoc>
