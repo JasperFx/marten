@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using Baseline;
 using Marten.Schema;
 using Marten.Schema.Hierarchies;
 using Marten.Testing.Documents;
@@ -121,9 +122,9 @@ namespace Marten.Testing.Schema
             tables.ShouldContain(schema.MappingFor(typeof(Company)).TableName);
 
             var functions = schema.SchemaFunctionNames();
-            functions.ShouldContain(schema.MappingFor(typeof(User)).UpsertName);
-            functions.ShouldContain(schema.MappingFor(typeof(Issue)).UpsertName);
-            functions.ShouldContain(schema.MappingFor(typeof(Company)).UpsertName);
+            functions.ShouldContain(schema.MappingFor(typeof(User)).As<DocumentMapping>().UpsertName);
+            functions.ShouldContain(schema.MappingFor(typeof(Issue)).As<DocumentMapping>().UpsertName);
+            functions.ShouldContain(schema.MappingFor(typeof(Company)).As<DocumentMapping>().UpsertName);
 
         }
 

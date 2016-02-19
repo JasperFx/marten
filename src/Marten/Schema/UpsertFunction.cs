@@ -17,7 +17,7 @@ namespace Marten.Schema
 
         public string FunctionName { get; }
 
-        public UpsertFunction(IDocumentMapping mapping)
+        public UpsertFunction(DocumentMapping mapping)
         {
             FunctionName = mapping.UpsertName;
             TableName = mapping.TableName;

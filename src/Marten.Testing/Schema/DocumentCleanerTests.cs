@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Baseline;
 using Marten.Generation;
 using Marten.Schema;
 using Marten.Services;
@@ -96,7 +97,7 @@ namespace Marten.Testing.Schema
 
             var schema = theContainer.GetInstance<DocumentSchema>();
 
-            var upsertName = schema.MappingFor(typeof(Target)).UpsertName;
+            var upsertName = schema.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertName;
 
             schema.SchemaFunctionNames().Contains(upsertName)
                 .ShouldBeTrue();

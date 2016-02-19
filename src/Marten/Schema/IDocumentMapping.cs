@@ -10,7 +10,6 @@ namespace Marten.Schema
 {
     public interface IDocumentMapping
     {
-        string UpsertName { get; }
         Type DocumentType { get; }
         string TableName { get; }
         PropertySearching PropertySearching { get; }
