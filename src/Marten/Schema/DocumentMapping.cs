@@ -10,6 +10,7 @@ using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema.Hierarchies;
 using Marten.Schema.Sequences;
+using Marten.Services;
 using Marten.Util;
 using NpgsqlTypes;
 
@@ -217,6 +218,22 @@ namespace Marten.Schema
 
             writer.WriteLine();
             writer.WriteLine();
+        }
+
+        public void RemoveSchemaObjects(IManagedConnection connection)
+        {
+            connection.Execute($"DROP TABLE IF EXISTS {TableName} CASCADE;");
+
+            var dropTargets = DocumentCleaner.DropFunctionSql.ToFormat(UpsertName);
+
+            var drops = connection.GetStringList(dropTargets);
+            drops.Each(drop => connection.Execute(drop));
+        }
+
+        public void DeleteAllDocuments(IConnectionFactory factory)
+        {
+            var sql = "truncate {0} cascade".ToFormat(TableName);
+            factory.RunSql(sql);
         }
 
         public IEnumerable<SubClassMapping> SubClasses => _subClasses;

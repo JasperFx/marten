@@ -45,5 +45,6 @@ namespace Marten.Schema
 
         TableDefinition TableSchema(string tableName);
         TableDefinition TableSchema(Type documentType);
+        IEnumerable<IDocumentMapping> AllDocumentMaps();
     }
 }

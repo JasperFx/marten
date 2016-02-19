@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using Marten.Generation;
 using Marten.Linq;
+using Marten.Services;
 
 namespace Marten.Schema
 {
@@ -28,5 +29,8 @@ namespace Marten.Schema
         IDocumentStorage BuildStorage(IDocumentSchema schema);
 
         void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer);
+
+        void RemoveSchemaObjects(IManagedConnection connection);
+        void DeleteAllDocuments(IConnectionFactory factory);
     }
 }

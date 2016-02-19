@@ -164,6 +164,11 @@ namespace Marten.Schema
             return TableSchema(MappingFor(documentType).TableName);
         }
 
+        public IEnumerable<IDocumentMapping> AllDocumentMaps()
+        {
+            return StoreOptions.AllDocumentMappings;
+        }
+
         private string[] primaryKeysFor(string tableName)
         {
             var sql = @"

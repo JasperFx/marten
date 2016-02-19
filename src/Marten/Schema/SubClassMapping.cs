@@ -6,6 +6,7 @@ using Baseline;
 using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema.Hierarchies;
+using Marten.Services;
 using Marten.Util;
 using Npgsql;
 
@@ -73,6 +74,16 @@ namespace Marten.Schema
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             _parent.WriteSchemaObjects(schema, writer);
+        }
+
+        public void RemoveSchemaObjects(IManagedConnection connection)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DeleteAllDocuments(IConnectionFactory factory)
+        {
+            throw new NotImplementedException();
         }
     }
 
