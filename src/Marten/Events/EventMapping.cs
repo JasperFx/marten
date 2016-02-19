@@ -20,7 +20,7 @@ namespace Marten.Events
             return eventType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
         }
 
-        public EventMapping(StreamMapping parent, Type eventType)
+        public EventMapping(AggregateConfiguration parent, Type eventType)
         {
             DocumentType = eventType;
 
@@ -33,11 +33,13 @@ namespace Marten.Events
             EventTypeName = Alias = ToEventTypeName(eventType);
 
             IdMember = eventType.GetProperty(nameof(IEvent.Id));
+
+            _inner = new DocumentMapping(eventType);
         }
 
         public string EventTypeName { get; set; }
 
-        public StreamMapping Stream { get; }
+        public AggregateConfiguration Stream { get; }
         public string Alias { get; }
         public Type DocumentType { get; }
         public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
@@ -103,12 +105,14 @@ namespace Marten.Events
 
         public bool ShouldRegenerate(IDocumentSchema schema)
         {
-            return Stream.ShouldRegenerate(schema);
+            throw new NotImplementedException("Need to do this!");
         }
+
+        private readonly DocumentMapping _inner;
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
-            return Stream.FieldFor(members);
+            return _inner.FieldFor(members);
         }
 
         public IWhereFragment FilterDocuments(IWhereFragment query)
@@ -128,7 +132,7 @@ namespace Marten.Events
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
-            Stream.WriteSchemaObjects(schema, writer);
+            throw new NotImplementedException();
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)

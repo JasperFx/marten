@@ -9,7 +9,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void event_name_for_event_type()
         {
-            var mapping = new EventMapping(new StreamMapping(typeof(Quest)), typeof(MembersJoined));
+            var mapping = new EventMapping(new AggregateConfiguration(typeof(Quest)), typeof(MembersJoined));
 
             mapping.EventTypeName.ShouldBe("members_joined");
         }

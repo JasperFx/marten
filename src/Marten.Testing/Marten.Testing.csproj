@@ -72,7 +72,7 @@
     <Compile Include="Events\FakeAggregate.cs" />
     <Compile Include="Events\plv8_transformation_functions_Tests.cs" />
     <Compile Include="Events\QuestTypes.cs" />
-    <Compile Include="Events\StreamMappingTests.cs" />
+    <Compile Include="Events\AggregateDefinitionTests.cs" />
     <Compile Include="Events\using_the_schema_objects_Tests.cs" />
     <Compile Include="Examples\ConfiguringDocumentStore.cs" />
     <Compile Include="Examples\Deletes.cs" />

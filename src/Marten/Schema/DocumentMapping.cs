@@ -377,7 +377,7 @@ namespace Marten.Schema
             }
 
             var key = members.Select(x => x.Name).Join("");
-            return _fields.GetOrAdd(key, _ => { return new JsonLocatorField(members.ToArray()); });
+            return _fields.GetOrAdd(key, _ => new JsonLocatorField(members.ToArray()));
         }
 
         public virtual string ToResolveMethod(string typeName)
