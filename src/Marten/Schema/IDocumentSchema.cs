@@ -36,6 +36,14 @@ namespace Marten.Schema
         /// <param name="filename"></param>
         void WriteDDL(string filename);
 
+
+        /// <summary>
+        /// Write all the SQL scripts to build the database schema, but
+        /// split by document type
+        /// </summary>
+        /// <param name="directory"></param>
+        void WriteDDLByType(string directory);
+
         /// <summary>
         /// Creates all the SQL script that would build all the database
         /// schema objects for the configured schema

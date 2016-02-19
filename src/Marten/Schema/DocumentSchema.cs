@@ -31,6 +31,8 @@ namespace Marten.Schema
 
             StoreOptions = options;
 
+            options.AllDocumentMappings.Each(x => _mappings[x.DocumentType] = x);
+
             Sequences = new SequenceFactory(this, _factory, _creation);
 
             Events = new EventGraph();
@@ -139,6 +141,24 @@ namespace Marten.Schema
         {
             var sql = ToDDL();
             new FileSystem().WriteStringToFile(filename, sql);
+        }
+
+        public void WriteDDLByType(string directory)
+        {
+            var system = new FileSystem();
+
+            system.DeleteDirectory(directory);
+            system.CreateDirectory(directory);
+
+            _mappings.Values.Where(x => !(x is SubClassMapping)).Each(mapping =>
+            {
+                var writer = new StringWriter();
+                mapping.WriteSchemaObjects(this, writer);
+
+                var filename = directory.AppendPath(mapping.Alias + ".sql");
+                system.WriteStringToFile(filename, writer.ToString());
+            });
+
         }
 
         public string ToDDL()

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
@@ -167,6 +168,40 @@ namespace Marten.Testing.Schema
                     schema.StorageFor(typeof (User));
                 });
             }
+
+
+        }
+
+        [Fact]
+        public void can_write_ddl_by_type_smoke_test()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.RegisterDocumentType<User>();
+                _.RegisterDocumentType<Company>();
+                _.RegisterDocumentType<Issue>();
+
+                _.Connection(ConnectionSource.ConnectionString);
+            }))
+            {
+                store.Schema.WriteDDLByType("allsql");
+            }
+
+            var fileSystem = new FileSystem();
+            var files = fileSystem.FindFiles("allsql", FileSet.Shallow("*.sql")).ToArray();
+
+            files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x)
+                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "user.sql");
+
+            files.Each(file =>
+            {
+                var contents = fileSystem.ReadStringFromFile(file);
+
+                contents.ShouldContain("CREATE TABLE");
+                contents.ShouldContain("CREATE OR REPLACE FUNCTION");
+            });
+
+
 
 
         }

@@ -9,6 +9,7 @@ namespace Marten.Schema
 {
     public interface IDocumentMapping
     {
+        string Alias { get; }
         Type DocumentType { get; }
         string TableName { get; }
         PropertySearching PropertySearching { get; }
