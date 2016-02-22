@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+        <meta charset="utf-8">
+        <meta name="generator" content="Bootply" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<title>Marten - Querying Documents with Linq</title>
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+        
+
+        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+
+        <!-- CSS code from Bootply.com editor -->
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    </head>
+    
+    <!-- HTML code from Bootply.com editor -->
+    
+    <body  >
+
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+        
+        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <a href="/marten" class="navbar-brand">Marten</a>
+		    </div>
+		    <nav class="collapse navbar-collapse" role="navigation">
+		      <ul class="nav navbar-nav pull-right">
+            <li>
+              <a href="/marten/getting_started">Getting Started</a>
+            </li>
+		        <li>
+		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+		        </li>
+		      	<li><a href="/marten/documentation/documents/json" title="Json Serialization">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/sql" title="Querying Documents with Postgresql SQL">Next</a></li>
+		      </ul>
+      <div class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input id="search" type="search" class="form-control" placeholder="Search">
+        </div>
+      </div>
+
+		    </nav>
+
+		  </div>
+		</nav>
+
+		  <div class="container">
+		  	<nav class="navbar-inverse">
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Querying Documents with Linq</li></ol>
+		  	</nav>
+		  </div>
+
+		<!--main-->
+		<div class="container">
+			<div class="row">
+		      <!--left-->
+		      
+		      <div class="col-md-3" id="leftCol">
+		      	<h3>Marten 0.6.0</h3>
+		      	<br />
+
+				<ul class="nav nav-stacked affix" id="sidebar">
+
+		        </ul>
+
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/sql">Querying Documents with Postgresql SQL</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/json">Json Serialization</a></p>
+
+		        </ul>
+		      </div><!--/left-->
+		      
+		      <!--right-->
+		      <div class="col-md-9">
+			      	<h1>Querying Documents with Linq <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/linq.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      
+			      	<hr />
+
+			      	<div id="main-pane">
+			      		<!--Title:Querying Documents with Linq-->
+<!--Url:linq-->
+<p>Marten uses the <a href="https://github.com/re-motion/Relinq">Relinq library</a> to support a subset of the normal Linq operators. Linq queries are done with
+Marten using the <code>IQuerySession.Query&lt;T&gt;()</code> or <code>IDocumentSession.Query&lt;T&gt;()</code> method to return an <a href="https://msdn.microsoft.com/en-us/library/system.linq.iqueryable(v=vs.100).aspx">IQueryable</a> for the document type <code>T</code>.</p>
+<pre><code class="language-csharp">
+        /// &lt;summary&gt;
+        /// Use Linq operators to query the documents
+        /// stored in Postgresql
+        /// &lt;/summary&gt;
+        /// &lt;typeparam name=&quot;T&quot;&gt;&lt;/typeparam&gt;
+        /// &lt;returns&gt;&lt;/returns&gt;
+        IQueryable&lt;T&gt; Query&lt;T&gt;();
+</code></pre>
+<p>To query for all documents of a type - not that you would do this very often outside of testing - use the <code>Query&lt;T&gt;()</code> method like this:</p>
+<pre><code class="language-csharp">
+        public void get_all_documents_of_a_type(IDocumentSession session)
+        {
+            // Calling ToArray() just forces the query to be executed
+            var targets = session.Query&lt;Target&gt;().ToArray();
+        }
+</code></pre>
+<h2>Basic Operators</h2>
+<p>Since you usually don't want to pull down the entire database at one time, Marten supports these basic operators in Linq searches:</p>
+<pre><code class="language-csharp">
+        public void basic_operators(IDocumentSession session)
+        {
+            // Field equals a value
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5);
+
+            // Field does not equal a value
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number != 5);
+
+            // Field compared to values
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number &gt; 5);
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number &gt;= 5);
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number &lt; 5);
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number &lt;= 5);
+        }
+</code></pre>
+<h2>And and Or Queries</h2>
+<p>Right now, Marten supports both <em>and</em> and <em>or</em> queries with Linq:</p>
+<pre><code class="language-csharp">
+        public void and_or(IDocumentSession session)
+        {
+            // AND queries
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number &gt; 0 &amp;&amp; x.Number &lt;= 5);
+
+            // OR queries
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5 || x.Date == DateTime.Today);
+        }
+</code></pre>
+<h2>Searching within Child Collections</h2>
+<p>As of v0.7, Marten supports simple <code>Any()</code> queries within child collections, but only for checking
+equality of members of the child collection elements (this feature uses the <a href="http://www.postgresql.org/docs/9.5/static/datatype-json.html">Postgresql JSONB containment operator</a> to compose the underlying SQL).</p>
+<p>Marten will also allow you to use the <code>Contains</code> method to search within arrays or lists of simple elements like strings.</p>
+<p>The following code sample demonstrates the supported Linq patterns for collection searching:</p>
+<pre><code class="language-csharp">
+        public class ClassWithChildCollections
+        {
+            public Guid Id;
+
+            public IList&lt;User&gt; Users = new List&lt;User&gt;();
+            public Company[] Companies = new Company[0];
+
+            public string[] Names;
+            public IList&lt;string&gt; NameList;
+            public List&lt;string&gt; NameList2;
+        }
+
+        public void searching(IDocumentStore store)
+        {
+            using (var session = store.QuerySession())
+            {
+                session.Query&lt;ClassWithChildCollections&gt;()
+                    // Query collections of deep objects
+                    .Where(x =&gt; x.Companies.Any(_ =&gt; _.Name == &quot;Jeremy&quot;))
+
+                    // Query for Contains() on array of simple types
+                    .Where(x =&gt; x.Names.Contains(&quot;Corey&quot;))
+
+                    // Query for Contains() on List&lt;T&gt; of simple types
+                    .Where(x =&gt; x.NameList.Contains(&quot;Phillip&quot;))
+
+                    // Query for Contains() on IList&lt;T&gt; of simple types
+                    .Where(x =&gt; x.NameList2.Contains(&quot;Jens&quot;))
+
+                    // Query for Any(element == value) on simple types
+                    .Where(x =&gt; x.Names.Any(_ =&gt; _ == &quot;Phillip&quot;));
+
+
+            }
+        } 
+</code></pre>
+<h2>Searching for NULL Values</h2>
+<p>Regardless of your feelings about <em>NULL</em>, they do exist in databases and Marten allows you to search for documents that have (or don't have) null values:</p>
+<pre><code class="language-csharp">
+        public void query_by_nullable_type_nulls(IDocumentSession session)
+        {
+            // You can use Nullable&lt;T&gt;.HasValue in Linq queries
+            session.Query&lt;Target&gt;().Where(x =&gt; !x.NullableNumber.HasValue).ToArray();
+            session.Query&lt;Target&gt;().Where(x =&gt; x.NullableNumber.HasValue).ToArray();
+
+            // You can always search by field is NULL
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Inner == null);
+        }
+</code></pre>
+<h2>Deep Queries</h2>
+<p>Marten's Linq support will allow you to make &quot;deep&quot; searches on properties of properties (or fields):</p>
+<pre><code class="language-csharp">
+        public void deep_queries(IDocumentSession session)
+        {
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Inner.Number == 3);
+        }
+</code></pre>
+<h2>Searching on String Fields</h2>
+<p>Marten supports a subset of the common substring searches:</p>
+<pre><code class="language-csharp">
+        public void string_fields(IDocumentSession session)
+        {
+            session.Query&lt;Target&gt;().Where(x =&gt; x.String.StartsWith(&quot;A&quot;));
+            session.Query&lt;Target&gt;().Where(x =&gt; x.String.EndsWith(&quot;Suffix&quot;));
+
+            session.Query&lt;Target&gt;().Where(x =&gt; x.String.Contains(&quot;something&quot;));
+        }
+</code></pre>
+<p>Marten does not yet support case insensitive substring searches. We'd love pull requests!</p>
+<h2>Count()</h2>
+<p>Marten supports the <code>IQueryable.Count()</code> method:</p>
+<pre><code class="language-csharp">
+        public void count_with_a_where_clause()
+        {
+            // theSession is an IDocumentSession in this test
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new Target { Number = 3 });
+            theSession.Store(new Target { Number = 4 });
+            theSession.Store(new Target { Number = 5 });
+            theSession.Store(new Target { Number = 6 });
+            theSession.SaveChanges();
+
+            theSession.Query&lt;Target&gt;().Count(x =&gt; x.Number &gt; 3).ShouldBe(3);
+        }
+</code></pre>
+<h2>Ordering Results</h2>
+<p>Marten contains support for expressing ordering in both ascending and descending order in Linq queries:</p>
+<pre><code class="language-csharp">
+        public void order_by(IDocumentSession session)
+        {
+            // Sort in ascending order
+            session.Query&lt;Target&gt;().OrderBy(x =&gt; x.Date);
+
+            // Sort in descending order
+            session.Query&lt;Target&gt;().OrderByDescending(x =&gt; x.Date);
+
+            // You can use multiple order by&#39;s
+            session.Query&lt;Target&gt;().OrderBy(x =&gt; x.Date).ThenBy(x =&gt; x.Number);
+        }
+</code></pre>
+<h2>Take() and Skip() for Paging</h2>
+<p>For simple paging, Marten supports the <code>IQueryable.Take()</code> and <code>IQueryable.Skip()</code> methods:</p>
+<pre><code class="language-csharp">
+        public void using_take_and_skip(IDocumentSession session)
+        {
+            // gets records 11-20 from the database
+            session.Query&lt;Target&gt;().Skip(10).Take(10).OrderBy(x =&gt; x.Number).ToArray();
+        }
+</code></pre>
+<h2>Searching for a Single Document</h2>
+<p>Marten supports the <code>IQueryable</code> methods for returning only a single document at a time:</p>
+<pre><code class="language-csharp">
+        public void select_a_single_value(IDocumentSession session)
+        {
+            // Single()/SingleOrDefault() will throw exceptions if more than 
+            // one result is returned from the database
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).Single();
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).SingleOrDefault();
+
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).First();
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).FirstOrDefault();
+
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).Last();
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).LastOrDefault();
+
+            // Using the query inside of Single/Last/First is supported as well
+            session.Query&lt;Target&gt;().Single(x =&gt; x.Number == 5);
+        }
+</code></pre>
+<h2>Querying withing Value Arrays</h2>
+<p>As of now, Marten allows you to do &quot;contains&quot; searches within arrays of primitive values like string or numbers:</p>
+<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;query_against_string_array&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
+<h2>Searching with Boolean Flags</h2>
+<p>Linq queries against boolean properties can use shorthand mechanisms in <code>Where()</code> clauses like so:</p>
+<pre><code class="language-csharp">
+        public void query_by_booleans(IDocumentSession session)
+        {
+            // Flag is a boolean property.
+
+            // Where Flag is true
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Flag).ToArray();
+            // or
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Flag == true).ToArray();
+
+            // Where Flag is false
+            session.Query&lt;Target&gt;().Where(x =&gt; !x.Flag).ToArray();
+            // or
+            session.Query&lt;Target&gt;().Where(x =&gt; x.Flag == false).ToArray();
+        }
+</code></pre>
+<h2>Querying within Child Collections</h2>
+<p>As of Marten v0.6, you can use rudimentary <code>Any()</code> searches on child collections, <strong>but Marten can only
+query for equality of fields or properties within the Any() subquery.</strong></p>
+<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;any-query-through-child-collections&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
+<p>You can search on equality of multiple fields or properties within the child collection
+using the <code>&amp;&amp;</code> operator:</p>
+<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;any-query-through-child-collection-with-and&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
+<h2>Supported Types</h2>
+<p>At this point, Marten's Linq support has been tested against these .Net types:</p>
+<ol>
+<li>String</li>
+<li>Int32 &amp; Int64 (int and long)</li>
+<li>Decimal (float)</li>
+<li>DateTime and DateTimeOffset</li>
+<li>Enum values</li>
+<li>Nullable<T> of all of the above types</li>
+<li>Booleans</li>
+</ol>
+
+
+			      	</div>
+
+			      	<hr />
+
+			      	<nav>
+				        <span>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/json">Json Serialization</a>
+
+				        </span>
+				        <span class="pull-right">
+
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/sql">Querying Documents with Postgresql SQL</a>
+
+				        </span>
+			      	</nav>
+
+		      </div><!--/right-->
+		  	</div><!--/row-->
+		</div><!--/container-->
+
+
+    </body>
+
+
+    <foot>
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+    </foot>
+</html>
+
