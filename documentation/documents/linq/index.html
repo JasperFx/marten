@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.6.0</h3>
+		      	<h3>Marten 0.7.1</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -278,7 +278,24 @@ equality of members of the child collection elements (this feature uses the <a h
 </code></pre>
 <h2>Querying withing Value Arrays</h2>
 <p>As of now, Marten allows you to do &quot;contains&quot; searches within arrays of primitive values like string or numbers:</p>
-<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;query_against_string_array&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
+<pre><code class="language-csharp">
+        public void query_against_string_array()
+        {
+            var doc1 = new DocWithArrays { Strings = new string[] {&quot;a&quot;, &quot;b&quot;, &quot;c&quot;} };
+            var doc2 = new DocWithArrays { Strings = new string[] {&quot;c&quot;, &quot;d&quot;, &quot;e&quot;} };
+            var doc3 = new DocWithArrays { Strings = new string[] {&quot;d&quot;, &quot;e&quot;, &quot;f&quot;} };
+
+
+            theSession.Store(doc1);
+            theSession.Store(doc2);
+            theSession.Store(doc3);
+
+            theSession.SaveChanges();
+
+            theSession.Query&lt;DocWithArrays&gt;().Where(x =&gt; x.Strings.Contains(&quot;c&quot;)).ToArray()
+                .Select(x =&gt; x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
+        }
+</code></pre>
 <h2>Searching with Boolean Flags</h2>
 <p>Linq queries against boolean properties can use shorthand mechanisms in <code>Where()</code> clauses like so:</p>
 <pre><code class="language-csharp">
@@ -300,10 +317,19 @@ equality of members of the child collection elements (this feature uses the <a h
 <h2>Querying within Child Collections</h2>
 <p>As of Marten v0.6, you can use rudimentary <code>Any()</code> searches on child collections, <strong>but Marten can only
 query for equality of fields or properties within the Any() subquery.</strong></p>
-<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;any-query-through-child-collections&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
+<pre><code class="language-csharp">
+            var results = theSession.Query&lt;Target&gt;()
+                .Where(x =&gt; x.Children.Any(_ =&gt; _.Number == 6))
+                .ToArray();
+</code></pre>
 <p>You can search on equality of multiple fields or properties within the child collection
 using the <code>&amp;&amp;</code> operator:</p>
-<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;any-query-through-child-collection-with-and&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
+<pre><code class="language-csharp">
+            var results = theSession
+                .Query&lt;Target&gt;()
+                .Where(x =&gt; x.Children.Any(_ =&gt; _.Number == 6 &amp;&amp; _.Double == -1))
+                .ToArray();
+</code></pre>
 <h2>Supported Types</h2>
 <p>At this point, Marten's Linq support has been tested against these .Net types:</p>
 <ol>
