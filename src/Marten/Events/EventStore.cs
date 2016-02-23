@@ -12,7 +12,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public class EventStore : IEventStore, IEventStoreAdmin, ITransforms
+    public class EventStore
     {
         private readonly IManagedConnection _connection;
         private readonly IDocumentSchema _schema;
@@ -93,7 +93,8 @@ namespace Marten.Events
         private void appendEvent(NpgsqlCommand conn, EventMapping eventMapping, Guid stream, IEvent @event)
         {
             if (@event.Id == Guid.Empty) @event.Id = Guid.NewGuid();
-
+            throw new NotImplementedException("Need to redo a little bit here");
+            /*
             conn.CallsSproc("mt_append_event")
                 .With("stream", stream)
                 .With("stream_type", eventMapping.Stream.StreamTypeName)
@@ -101,6 +102,7 @@ namespace Marten.Events
                 .With("event_type", eventMapping.EventTypeName)
                 .With("body", _serializer.ToJson(@event), NpgsqlDbType.Jsonb)
                 .ExecuteNonQuery();
+                */
         }
 
         private IEnumerable<IEvent> fetchStream(IDataReader reader)
@@ -116,9 +118,9 @@ namespace Marten.Events
             }
         }
 
-        public IEventStoreAdmin Administration => this;
+        //public IEventStoreAdmin Administration => this;
 
-        public ITransforms Transforms => this;
+        //public ITransforms Transforms => this;
 
         public void LoadProjections(string directory)
         {

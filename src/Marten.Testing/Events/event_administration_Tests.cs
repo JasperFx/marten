@@ -10,27 +10,9 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class event_administration_Tests : IDisposable
+    public class event_administration_Tests : IntegratedFixture
     {
-        private readonly IContainer theContainer;
 
-        public event_administration_Tests()
-        {
-            theContainer = Container.For<DevelopmentModeRegistry>();
-
-            using (var events = theContainer.GetInstance<EventStore>())
-            {
-                events.RebuildEventStoreSchema();
-            }
-
-                
-        }
-
-        public void Dispose()
-        {
-            
-            theContainer.Dispose();
-        }
 
         [Fact]
         public void has_the_event_tables()
@@ -116,12 +98,16 @@ namespace Marten.Testing.Events
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
 
+            throw new NotImplementedException("Need to redo");
+
+            /*
             using (var events = theContainer.GetInstance<EventStore>())
             {
                 events.RebuildEventStoreSchema();
 
                 events.Administration.LoadProjections(directory);
             }
+            */
 
 
             
@@ -141,7 +127,9 @@ namespace Marten.Testing.Events
             var directory =
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
+            throw new NotImplementedException("Need to redo this");
 
+            /*
             using (var events = theContainer.GetInstance<EventStore>())
             {
                 events.RebuildEventStoreSchema();
@@ -156,6 +144,7 @@ namespace Marten.Testing.Events
                     .Select(x => x.event_name)
                     .ShouldHaveTheSameElementsAs("event_a", "event_b", "event_c", "event_d");
             }
+            */
 
 
 
@@ -175,10 +164,13 @@ Projection party (snapshot) for Event quest_started executed inline
         [Fact]
         public void initialize_can_run_without_blowing_up()
         {
+            throw new NotImplementedException("Need to redo this");
+            /*
             using (var events = theContainer.GetInstance<EventStore>())
             {
                 events.Administration.InitializeEventStoreInDatabase();
             }
+            */
                 
         }
     }

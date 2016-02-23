@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.Sequences;
 using Marten.Services;
@@ -140,6 +141,11 @@ namespace Marten
         {
             documentTypes.Each(RegisterDocumentType);
         }
+
+        /// <summary>
+        /// Configuration of event streams and projections
+        /// </summary>
+        public EventGraph Events { get; } = new EventGraph();
 
         internal ISerializer Serializer()
         {

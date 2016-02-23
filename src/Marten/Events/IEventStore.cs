@@ -21,9 +21,9 @@ namespace Marten.Events
 
         void ReplaceEvent<T>(T @event);
 
-        IEventStoreAdmin Administration { get; }
+        //IEventStoreAdmin Administration { get; }
 
-        ITransforms Transforms { get; }
+        //ITransforms Transforms { get; }
     }
 
     public interface ITransforms

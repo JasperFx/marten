@@ -11,19 +11,11 @@ namespace Marten.Events
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
 
         private readonly Cache<Type, IAggregateStorage> _aggregates =
-            new Cache<Type, IAggregateStorage>(type =>
-            {
-                return typeof (AggregateStorage<>).CloseAndBuildAs<IAggregateStorage>(type);
-            });
+            new Cache<Type, IAggregateStorage>(type => typeof (AggregateStorage<>).CloseAndBuildAs<IAggregateStorage>(type));
 
         public EventGraph()
         {
-            _events.OnMissing = eventType =>
-            {
-                var stream = _aggregates.FirstOrDefault(x => x.HasEventType(eventType));
-
-                return stream?.EventMappingFor(eventType);
-            };
+            _events.OnMissing = eventType => new EventMapping(eventType);
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
         }

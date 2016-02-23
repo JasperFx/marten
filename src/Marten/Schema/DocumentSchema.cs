@@ -49,6 +49,11 @@ namespace Marten.Schema
         {
             return _mappings.GetOrAdd(documentType, type =>
             {
+                if (documentType.CanBeCastTo<IEvent>())
+                {
+                    return StoreOptions.Events.EventMappingFor(type);
+                }
+
                 return StoreOptions.AllDocumentMappings.SelectMany(x => x.SubClasses)
                     .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping
                        ?? StoreOptions.MappingFor(type);
@@ -64,7 +69,17 @@ namespace Marten.Schema
         {
             return _documentTypes.GetOrAdd(documentType, type =>
             {
+                if (type.Closes(typeof (Stream<>)))
+                {
+                    var aggregateType = type.GetGenericArguments().Single();
+                    return Events.StreamMappingFor(aggregateType);
+                }
+
+
                 var mapping = MappingFor(documentType);
+                if (mapping is IDocumentStorage) return mapping.As<IDocumentStorage>();
+
+
                 assertNoDuplicateDocumentAliases();
 
                 IDocumentStorage storage = null;

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.Hierarchies;
 using Marten.Testing.Documents;
@@ -200,10 +201,40 @@ namespace Marten.Testing.Schema
                 contents.ShouldContain("CREATE TABLE");
                 contents.ShouldContain("CREATE OR REPLACE FUNCTION");
             });
-
-
-
-
         }
+
+        [Fact]
+        public void resolve_a_document_mapping_for_an_event_type()
+        {
+            var schema = new DocumentSchema(new StoreOptions(), null, null);
+            schema.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping>()
+                .DocumentType.ShouldBe(typeof(RaceStarted));
+        }
+
+        [Fact]
+        public void resolve_storage_for_event_type()
+        {
+            var schema = new DocumentSchema(new StoreOptions(), null, null);
+            schema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping>()
+                .DocumentType.ShouldBe(typeof(RaceStarted));
+        }
+
+        [Fact]
+        public void resolve_storage_for_stream_type()
+        {
+            var schema = new DocumentSchema(new StoreOptions(), null, null);
+            schema.StorageFor(typeof (Stream<Race>)).ShouldBeOfType<AggregateStorage<Race>>();
+        }
+    }
+
+    public class Race : IAggregate
+    {
+        public Guid Id { get; set; }
+    }
+
+    public class RaceStarted : IEvent
+    {
+        public Guid Id { get; set; }
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 }

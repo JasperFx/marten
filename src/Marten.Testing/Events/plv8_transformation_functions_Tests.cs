@@ -29,10 +29,13 @@ namespace Marten.Testing.Events
 
 
             theEvents = theContainer.GetInstance<Marten.Events.IEventStore>();
+
+            throw new NotImplementedException("Need to redo");
+            /*
             theEvents.Administration.RebuildEventStoreSchema();
             theEvents.Administration.LoadProjections(directory);
             theEvents.Administration.InitializeEventStoreInDatabase();
-
+            */
         }
 
         [Fact]
@@ -46,6 +49,9 @@ namespace Marten.Testing.Events
                 Id = Guid.NewGuid()
             };
 
+            throw new NotImplementedException("Need to redo");
+
+            /*
             var stream = Guid.NewGuid();
             var json = theEvents.Transforms.Transform("location", stream, joined);
             var expectation = "{'Day':3,'Location':'Baerlon','Id':'EVENT','Quest':'STREAM'}"
@@ -54,14 +60,18 @@ namespace Marten.Testing.Events
                 .Replace('\'', '"');
 
             json.ShouldBe(expectation);
+            */
         }
 
         [Fact]
         public void start_an_aggregate()
         {
+            throw new NotImplementedException("Need to redo");
+            /*
             var aggregate = theEvents.Transforms.StartSnapshot<FakeAggregate>(new EventA {Name = "Alex Smith"});
 
             aggregate.ANames.Single().ShouldBe("Alex Smith");
+            */
         }
 
         [Fact]
@@ -74,10 +84,16 @@ namespace Marten.Testing.Events
 
             };
 
+            throw new NotImplementedException("Need to redo");
+
+            /*
+
             var snapshotted = theEvents.Transforms.ApplySnapshot(aggregate, new EventA {Name = "Eric Fisher"});
 
             snapshotted.Id.ShouldBe(aggregate.Id);
             snapshotted.ANames.ShouldHaveTheSameElementsAs("Jamaal Charles", "Tamba Hali", "Eric Fisher");
+
+    */
         }
     }
 }

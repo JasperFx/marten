@@ -20,7 +20,7 @@ namespace Marten.Events
             return eventType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
         }
 
-        public EventMapping(IAggregateStorage parent, Type eventType)
+        public EventMapping(Type eventType)
         {
             DocumentType = eventType;
 
@@ -28,7 +28,6 @@ namespace Marten.Events
                 throw new ArgumentOutOfRangeException(nameof(eventType),
                     $"Only types implementing {typeof (IEvent)} can be accepted");
 
-            Stream = parent;
 
             EventTypeName = Alias = ToEventTypeName(eventType);
 
@@ -39,7 +38,6 @@ namespace Marten.Events
 
         public string EventTypeName { get; set; }
 
-        public IAggregateStorage Stream { get; }
         public string Alias { get; }
         public Type DocumentType { get; }
         public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
@@ -137,7 +135,7 @@ namespace Marten.Events
 
         public void RemoveSchemaObjects(IManagedConnection connection)
         {
-            throw new NotSupportedException($"Invalid to remove schema objects for {DocumentType}, Use the parent {Stream.AggregateType} instead");
+            throw new NotSupportedException($"Invalid to remove schema objects for {DocumentType}");
         }
 
         public void DeleteAllDocuments(IConnectionFactory factory)

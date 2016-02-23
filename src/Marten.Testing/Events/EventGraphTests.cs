@@ -32,9 +32,6 @@ namespace Marten.Testing.Events
 
             theGraph.EventMappingFor<IssueAssigned>().ShouldBeTheSameAs(theGraph.EventMappingFor<IssueAssigned>());
 
-            theGraph.EventMappingFor<IssueAssigned>().Stream.AggregateType.ShouldBe(typeof(Issue));
-
-            theGraph.EventMappingFor<MembersJoined>().Stream.AggregateType.ShouldBe(typeof(Quest));
         }
 
 

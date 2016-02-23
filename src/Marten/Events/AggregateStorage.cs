@@ -8,7 +8,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public interface IAggregateStorage
+    public interface IAggregateStorage : IDocumentStorage
     {
         Type AggregateType { get; }
         string StreamTypeName { get; set; }
@@ -18,7 +18,7 @@ namespace Marten.Events
         IEnumerable<EventMapping> AllEvents();
     }
 
-    public class AggregateStorage<T> : IAggregateStorage, IDocumentStorage where T : IAggregate 
+    public class AggregateStorage<T> : IAggregateStorage where T : IAggregate 
     {
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
 
@@ -26,7 +26,7 @@ namespace Marten.Events
         {
             AggregateType = typeof(T);
 
-            _events.OnMissing = type => new EventMapping(this, type);
+            _events.OnMissing = type => new EventMapping(type);
 
             StreamTypeName = AggregateType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
         }
