@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
@@ -83,6 +84,8 @@ namespace Marten
             Advanced = new AdvancedOptions(cleaner, options);
 
             Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser, new NulloIdentityMap(_serializer)));
+
+            EventStore = new EventStoreAdmin(_connectionFactory, _options, creation, _serializer);
         }
 
         private readonly StoreOptions _options;
@@ -150,6 +153,8 @@ namespace Marten
                 }
             }
         }
+
+        public IEventStoreAdmin EventStore { get; }
 
         internal interface IBulkInserter
         {

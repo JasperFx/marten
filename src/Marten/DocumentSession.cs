@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Services;
 using Remotion.Linq.Parsing.Structure;
@@ -33,6 +34,8 @@ namespace Marten
             {
                 _unitOfWork.AddTracker(_identityMap.As<IDocumentTracker>());
             }
+
+            Events = new EventStore(this, _identityMap, schema);
 
         }
 
@@ -97,6 +100,8 @@ namespace Marten
             });
         }
 
+        public IEventStore Events { get; }
+
         public void SaveChanges()
         {
             _options.Listeners.Each(x => x.BeforeSaveChanges(this));
@@ -140,6 +145,60 @@ namespace Marten
             {
                 session.Store(objects.OfType<T>().ToArray());
             }
+        }
+    }
+
+    public class EventStore : IEventStore
+    {
+        private readonly IDocumentSession _session;
+        private readonly IIdentityMap _identityMap;
+        private readonly IDocumentSchema _schema;
+
+        public EventStore(IDocumentSession session, IIdentityMap identityMap, IDocumentSchema schema)
+        {
+            _session = session;
+            _identityMap = identityMap;
+            _schema = schema;
+        }
+
+        public void Append<T>(Guid stream, T @event) where T : IEvent
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AppendEvents(Guid stream, params IEvent[] events)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Guid StartStream<T>(params IEvent[] events) where T : IAggregate
+        {
+            throw new NotImplementedException();
+        }
+
+        public T FetchSnapshot<T>(Guid streamId) where T : IAggregate
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<IEvent> FetchStream<T>(Guid streamId) where T : IAggregate
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DeleteEvent<T>(Guid id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DeleteEvent<T>(T @event) where T : IEvent
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ReplaceEvent<T>(T @event)
+        {
+            throw new NotImplementedException();
         }
     }
 }

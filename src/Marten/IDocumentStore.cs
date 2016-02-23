@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using Marten.Events;
 using Marten.Schema;
 
 namespace Marten
@@ -65,5 +66,11 @@ namespace Marten
         /// </summary>
         /// <param name="documents"></param>
         void BulkInsertDocuments(IEnumerable<object> documents, int batchSize = 1000);
+
+
+        /// <summary>
+        /// Administration functionality for managing the event store
+        /// </summary>
+        IEventStoreAdmin EventStore { get; }
     }
 }

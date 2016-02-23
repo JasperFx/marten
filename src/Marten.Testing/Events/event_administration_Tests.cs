@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Linq;
 using Baseline;
-using Marten.Events;
 using Marten.Schema;
-using Marten.Services;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
     public class event_administration_Tests : IntegratedFixture
     {
-
+        public event_administration_Tests()
+        {
+            theStore.EventStore.RebuildEventStoreSchema();
+        }
 
         [Fact]
         public void has_the_event_tables()
@@ -97,20 +97,7 @@ namespace Marten.Testing.Events
             var directory =
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
-
-            throw new NotImplementedException("Need to redo");
-
-            /*
-            using (var events = theContainer.GetInstance<EventStore>())
-            {
-                events.RebuildEventStoreSchema();
-
-                events.Administration.LoadProjections(directory);
-            }
-            */
-
-
-            
+            theStore.EventStore.LoadProjections(directory);
 
             var factory = theContainer.GetInstance<IConnectionFactory>();
             var list = factory.GetStringList("select name from mt_projections order by name");
@@ -127,25 +114,16 @@ namespace Marten.Testing.Events
             var directory =
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
-            throw new NotImplementedException("Need to redo this");
 
-            /*
-            using (var events = theContainer.GetInstance<EventStore>())
-            {
-                events.RebuildEventStoreSchema();
+            theStore.EventStore.LoadProjections(directory);
+            var usages = theStore.EventStore.InitializeEventStoreInDatabase();
 
-                events.Administration.LoadProjections(directory);
-                var usages = events.Administration.InitializeEventStoreInDatabase();
-
-                usages.Where(x => x.name == "location")
-                    .Select(x => x.event_name)
-                    .ShouldHaveTheSameElementsAs("members_joined", "members_departed");
-                usages.Where(x => x.name == "fake_aggregate")
-                    .Select(x => x.event_name)
-                    .ShouldHaveTheSameElementsAs("event_a", "event_b", "event_c", "event_d");
-            }
-            */
-
+            usages.Where(x => x.name == "location")
+                .Select(x => x.event_name)
+                .ShouldHaveTheSameElementsAs("members_joined", "members_departed");
+            usages.Where(x => x.name == "fake_aggregate")
+                .Select(x => x.event_name)
+                .ShouldHaveTheSameElementsAs("event_a", "event_b", "event_c", "event_d");
 
 
             /*
@@ -164,14 +142,7 @@ Projection party (snapshot) for Event quest_started executed inline
         [Fact]
         public void initialize_can_run_without_blowing_up()
         {
-            throw new NotImplementedException("Need to redo this");
-            /*
-            using (var events = theContainer.GetInstance<EventStore>())
-            {
-                events.Administration.InitializeEventStoreInDatabase();
-            }
-            */
-                
+            theStore.EventStore.InitializeEventStoreInDatabase();
         }
     }
 }

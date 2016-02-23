@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Npgsql;
@@ -186,6 +187,12 @@ namespace Marten
         /// </summary>
         /// <param name="documents"></param>
         void StoreObjects(IEnumerable<object> documents);
+
+
+        /// <summary>
+        /// Access to the event store functionality
+        /// </summary>
+        IEventStore Events { get; }
     }
 
     public interface ILoadByKeys<TDoc>
