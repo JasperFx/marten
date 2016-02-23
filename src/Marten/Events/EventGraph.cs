@@ -42,12 +42,22 @@ namespace Marten.Events
 
         public IEnumerable<EventMapping> AllEvents()
         {
-            return _aggregates.SelectMany(x => x.AllEvents());
+            return _events;
         }
 
         public EventMapping EventMappingFor(string eventType)
         {
             return _byEventName[eventType];
+        }
+
+        public void AddEvent(Type eventType)
+        {
+            if (!eventType.IsConcreteTypeOf<IEvent>())
+            {
+                throw new ArgumentOutOfRangeException(nameof(eventType), "Event types must be concrete types implementing the IEvent interface");    
+            }
+
+            _events.FillDefault(eventType);
         }
     }
 }

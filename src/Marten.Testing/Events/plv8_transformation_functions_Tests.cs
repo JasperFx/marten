@@ -1,23 +1,16 @@
 ﻿using System;
 using System.Linq;
 using Baseline;
-using Marten.Events;
 using Marten.Schema;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class plv8_transformation_functions_Tests
+    public class plv8_transformation_functions_Tests : IntegratedFixture
     {
-        private readonly IEventStore theEvents;
-        private IContainer theContainer;
-
         public plv8_transformation_functions_Tests()
         {
-            theContainer = Container.For<DevelopmentModeRegistry>();
-
             var directory =
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
@@ -28,14 +21,11 @@ namespace Marten.Testing.Events
             eventGraph.StreamMappingFor<FakeAggregate>().AddEvent(typeof (EventA));
 
 
-            theEvents = theContainer.GetInstance<Marten.Events.IEventStore>();
+            var theEvents = theStore.EventStore;
 
-            throw new NotImplementedException("Need to redo");
-            /*
-            theEvents.Administration.RebuildEventStoreSchema();
-            theEvents.Administration.LoadProjections(directory);
-            theEvents.Administration.InitializeEventStoreInDatabase();
-            */
+            theEvents.RebuildEventStoreSchema();
+            theEvents.LoadProjections(directory);
+            theEvents.InitializeEventStoreInDatabase();
         }
 
         [Fact]
@@ -49,29 +39,30 @@ namespace Marten.Testing.Events
                 Id = Guid.NewGuid()
             };
 
-            throw new NotImplementedException("Need to redo");
 
-            /*
             var stream = Guid.NewGuid();
-            var json = theEvents.Transforms.Transform("location", stream, joined);
-            var expectation = "{'Day':3,'Location':'Baerlon','Id':'EVENT','Quest':'STREAM'}"
-                .Replace("EVENT", joined.Id.ToString())
-                .Replace("STREAM", stream.ToString())
-                .Replace('\'', '"');
 
-            json.ShouldBe(expectation);
-            */
+            using (var session = theStore.OpenSession())
+            {
+                var json = session.Events.Transforms.Transform("location", stream, joined);
+                var expectation = "{'Day':3,'Location':'Baerlon','Id':'EVENT','Quest':'STREAM'}"
+                    .Replace("EVENT", joined.Id.ToString())
+                    .Replace("STREAM", stream.ToString())
+                    .Replace('\'', '"');
+
+                json.ShouldBe(expectation);
+            }
         }
 
         [Fact]
         public void start_an_aggregate()
         {
-            throw new NotImplementedException("Need to redo");
-            /*
-            var aggregate = theEvents.Transforms.StartSnapshot<FakeAggregate>(new EventA {Name = "Alex Smith"});
+            using (var session = theStore.OpenSession())
+            {
+                var aggregate = session.Events.Transforms.StartSnapshot<FakeAggregate>(new EventA {Name = "Alex Smith"});
 
-            aggregate.ANames.Single().ShouldBe("Alex Smith");
-            */
+                aggregate.ANames.Single().ShouldBe("Alex Smith");
+            }
         }
 
         [Fact]
@@ -79,21 +70,17 @@ namespace Marten.Testing.Events
         {
             var aggregate = new FakeAggregate
             {
-                ANames = new string[] {"Jamaal Charles", "Tamba Hali"},
+                ANames = new[] {"Jamaal Charles", "Tamba Hali"},
                 Id = Guid.NewGuid()
-
             };
 
-            throw new NotImplementedException("Need to redo");
+            using (var session = theStore.OpenSession())
+            {
+                var snapshotted = session.Events.Transforms.ApplySnapshot(aggregate, new EventA {Name = "Eric Fisher"});
 
-            /*
-
-            var snapshotted = theEvents.Transforms.ApplySnapshot(aggregate, new EventA {Name = "Eric Fisher"});
-
-            snapshotted.Id.ShouldBe(aggregate.Id);
-            snapshotted.ANames.ShouldHaveTheSameElementsAs("Jamaal Charles", "Tamba Hali", "Eric Fisher");
-
-    */
+                snapshotted.Id.ShouldBe(aggregate.Id);
+                snapshotted.ANames.ShouldHaveTheSameElementsAs("Jamaal Charles", "Tamba Hali", "Eric Fisher");
+            }
         }
     }
 }

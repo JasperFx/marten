@@ -14,30 +14,35 @@ namespace Marten.Testing.Events
         [Fact]
         public void capture_events_to_a_new_stream_and_fetch_the_events_back()
         {
-            var schema = _container.GetInstance<IDocumentSchema>();
-            var quest = schema.Events.StreamMappingFor<Quest>();
+            var store = DocumentStore.For(_ =>
+            {
+                _.AutoCreateSchemaObjects = true;
 
-            quest.AddEvent(typeof(MembersJoined));
-            quest.AddEvent(typeof(MembersDeparted));
+                _.Connection(ConnectionSource.ConnectionString);
 
+                _.Events.EventMappingFor(typeof (MembersJoined));
+                _.Events.EventMappingFor(typeof (MembersDeparted));
+            });
 
-            _container.GetInstance<IDocumentCleaner>().CompletelyRemoveAll();
+            store.Advanced.Clean.CompletelyRemoveAll();
 
-            _container.GetInstance<IManagedConnection>().Execute(SchemaBuilder.GetText("mt_stream"));
+            // TODO -- REMOVE THIS WHEN IT IS SMARTER!
+            store.EventStore.RebuildEventStoreSchema();
 
-            var events = _container.GetInstance<Marten.Events.EventStore>();
+            using (var session = store.OpenSession())
+            {
+                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+                var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
+                var id = session.Events.StartStream<Quest>(joined, departed);
+                session.SaveChanges();
 
-            var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var streamEvents = session.Events.FetchStream<Quest>(id);
 
-            var id = events.StartStream<Quest>(joined, departed);
-
-            var streamEvents = events.FetchStream<Quest>(id);
-
-            streamEvents.Count().ShouldBe(2);
-            streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
-            streamEvents.ElementAt(1).ShouldBeOfType<MembersDeparted>();
+                streamEvents.Count().ShouldBe(2);
+                streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(1).ShouldBeOfType<MembersDeparted>();
+            }
         }
     }
 }

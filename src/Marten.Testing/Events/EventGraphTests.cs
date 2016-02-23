@@ -38,10 +38,10 @@ namespace Marten.Testing.Events
         [Fact]
         public void find_event_by_event_type_name()
         {
-            theGraph.StreamMappingFor<Issue>().AddEvent(typeof(IssueAssigned));
-            theGraph.StreamMappingFor<Issue>().AddEvent(typeof(IssueCreated));
-            theGraph.StreamMappingFor<Quest>().AddEvent(typeof(MembersJoined));
-            theGraph.StreamMappingFor<Quest>().AddEvent(typeof(MembersDeparted));
+            theGraph.AddEvent(typeof(IssueAssigned));
+            theGraph.AddEvent(typeof(IssueCreated));
+            theGraph.AddEvent(typeof(MembersJoined));
+            theGraph.AddEvent(typeof(MembersDeparted));
 
             theGraph.EventMappingFor("members_joined").DocumentType.ShouldBe(typeof(MembersJoined));
 
