@@ -48,9 +48,10 @@
     <Compile Include="ConnectionFactory.cs" />
     <Compile Include="DocumentStore.cs" />
     <Compile Include="DocumentTracking.cs" />
+    <Compile Include="Events\AggregateModel.cs" />
     <Compile Include="Events\EventStore.cs" />
     <Compile Include="Events\EventStoreAdmin.cs" />
-    <Compile Include="Events\Stream.cs" />
+    <Compile Include="Events\EventStream.cs" />
     <Compile Include="IDiagnostics.cs" />
     <Compile Include="IDocumentSessionListener.cs" />
     <Compile Include="IMartenLogger.cs" />
@@ -98,7 +99,7 @@
     <Compile Include="Events\ProjectionTiming.cs" />
     <Compile Include="Events\ProjectionType.cs" />
     <Compile Include="Events\ProjectionUsage.cs" />
-    <Compile Include="Events\AggregateStorage.cs" />
+    <Compile Include="Events\EventStreamStorage.cs" />
     <Compile Include="Generation\TableColumn.cs" />
     <Compile Include="Generation\TableDefinition.cs" />
     <Compile Include="Services\DirtyTrackingIdentityMap.cs" />

@@ -74,7 +74,7 @@ namespace Marten.Schema
             var subclass = new SubClassMapping(subclassType, this, alias);
             _subClasses.Add(subclass);
         }
-
+        
         public string Alias
         {
             get { return _alias; }

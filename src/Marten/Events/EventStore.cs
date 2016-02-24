@@ -63,9 +63,11 @@ namespace Marten.Events
         public Guid StartStream<T>(params IEvent[] events) where T : IAggregate
         {
             // TODO --- temp!
-            var streamStorage = _schema.StorageFor(typeof (Stream<T>)) as IAggregateStorage;
+            var streamStorage = _schema.StorageFor(typeof (EventStream));
             var stream = Guid.NewGuid();
 
+            throw new NotImplementedException("REDO!");
+            /*
             events.Each(@event =>
             {
                 var mapping = _schema.Events.EventMappingFor(@event.GetType());
@@ -74,6 +76,7 @@ namespace Marten.Events
             });
 
             return stream;
+            */
         }
 
         public T FetchSnapshot<T>(Guid streamId) where T : IAggregate
@@ -150,6 +153,9 @@ namespace Marten.Events
 
         public TAggregate ApplySnapshot<TAggregate>(TAggregate aggregate, IEvent @event) where TAggregate : IAggregate
         {
+            throw new NotImplementedException("Need to redo");
+
+            /*
             var aggregateId = aggregate.Id;
             var aggregateJson = _serializer.ToJson(aggregate);
             var projectionName = _schema.Events.StreamMappingFor<TAggregate>().StreamTypeName;
@@ -172,6 +178,7 @@ namespace Marten.Events
             returnValue.Id = aggregateId;
 
             return returnValue;
+            */
         }
 
         public T ApplyProjection<T>(string projectionName, T aggregate, IEvent @event) where T : IAggregate
@@ -181,6 +188,8 @@ namespace Marten.Events
 
         public TAggregate StartSnapshot<TAggregate>(IEvent @event) where TAggregate : IAggregate
         {
+            throw new NotImplementedException("Need to redo");
+            /*
             var aggregateId = Guid.NewGuid();
             var projectionName = _schema.Events.StreamMappingFor<TAggregate>().StreamTypeName;
 
@@ -202,6 +211,7 @@ namespace Marten.Events
             returnValue.Id = aggregateId;
 
             return returnValue;
+            */
         }
     }
 }

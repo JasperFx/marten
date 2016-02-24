@@ -223,7 +223,7 @@ namespace Marten.Testing.Schema
         public void resolve_storage_for_stream_type()
         {
             var schema = new DocumentSchema(new StoreOptions(), null, null);
-            schema.StorageFor(typeof (Stream<Race>)).ShouldBeOfType<AggregateStorage<Race>>();
+            schema.StorageFor(typeof (EventStream)).ShouldBeOfType<EventStreamStorage>();
         }
     }
 

@@ -69,10 +69,9 @@ namespace Marten.Schema
         {
             return _documentTypes.GetOrAdd(documentType, type =>
             {
-                if (type.Closes(typeof (Stream<>)))
+                if (documentType == typeof (EventStream))
                 {
-                    var aggregateType = type.GetGenericArguments().Single();
-                    return Events.StreamMappingFor(aggregateType);
+                    return new EventStreamStorage(StoreOptions.Events);
                 }
 
 

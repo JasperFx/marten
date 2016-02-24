@@ -10,19 +10,23 @@ namespace Marten.Testing.Events
         [Fact]
         public void derives_the_stream_type_name()
         {
-            new AggregateStorage<HouseRemodeling>().StreamTypeName.ShouldBe("house_remodeling");
-            new AggregateStorage<Quest>().StreamTypeName.ShouldBe("quest");
+            throw new NotImplementedException("Redo on EventGraph");
+            //new EventStreamStorage().StreamTypeName.ShouldBe("house_remodeling");
+            //new EventStreamStorage().StreamTypeName.ShouldBe("quest");
         }
 
         [Fact]
         public void has_event_type()
         {
-            var mapping = new AggregateStorage<Quest>();
+            throw new NotImplementedException("Redo on EventGraph");
+            /*
+            var mapping = new EventStreamStorage();
             mapping.HasEventType(typeof(MembersJoined)).ShouldBeFalse();
 
             mapping.AddEvent(typeof (MembersJoined));
 
             mapping.HasEventType(typeof(MembersJoined)).ShouldBeTrue();
+            */
 
         }
 

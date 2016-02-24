@@ -11,6 +11,9 @@ namespace Marten.Testing.Events
     {
         public plv8_transformation_functions_Tests()
         {
+            throw new NotImplementedException("REDO");
+
+            /*
             var directory =
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
@@ -26,6 +29,7 @@ namespace Marten.Testing.Events
             theEvents.RebuildEventStoreSchema();
             theEvents.LoadProjections(directory);
             theEvents.InitializeEventStoreInDatabase();
+            */
         }
 
         [Fact]

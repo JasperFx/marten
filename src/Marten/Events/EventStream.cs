@@ -3,15 +3,15 @@ using System.Collections.Generic;
 
 namespace Marten.Events
 {
-    public class Stream<T> where T : IAggregate
+    public class EventStream
     {
-        public Stream(Guid id)
+        public EventStream(Guid id)
         {
             Id = id;
         }
 
         public Guid Id { get; }
-        public Type AggregateType { get; } = typeof (T);
+        public Type AggregateType { get; set; } 
 
         public readonly IList<IEvent> Events = new List<IEvent>();
     }
