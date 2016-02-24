@@ -16,13 +16,18 @@ namespace Marten.Events
 
         public AggregateModel(Type aggregateType, string alias)
         {
+            if (!aggregateType.IsConcreteTypeOf<IAggregate>())
+            {
+                throw new ArgumentOutOfRangeException(nameof(aggregateType), "Only types implementing IAggregate can be used as an aggregate");
+            }
+
             AggregateType = aggregateType;
             Alias = alias;
         }
 
         public AggregateModel(Type aggregateType)
+            : this(aggregateType, aggregateType.Name.SplitPascalCase().ToLower().Replace(" ", "_"))
         {
-            AggregateType = aggregateType;
             Alias = AggregateType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
         }
 
