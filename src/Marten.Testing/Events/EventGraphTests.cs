@@ -12,36 +12,28 @@ namespace Marten.Testing.Events
         [Fact]
         public void find_stream_mapping_initially()
         {
-            throw new NotImplementedException("REDO");
-            /*
-            theGraph.StreamMappingFor<Issue>()
+            theGraph.AggregateFor<Issue>()
                 .AggregateType.ShouldBe(typeof(Issue));
-                */
+                
         }
 
         [Fact]
         public void caches_the_stream_mapping()
         {
-            throw new NotImplementedException("REDO");
-            /*
-            theGraph.StreamMappingFor<Issue>()
-                .ShouldBeSameAs(theGraph.StreamMappingFor<Issue>());
-                */
+            theGraph.AggregateFor<Issue>()
+                .ShouldBeSameAs(theGraph.AggregateFor<Issue>());
         }
 
         [Fact]
         public void register_event_types_and_retrieve()
         {
-            throw new NotImplementedException("REDO");
-
-            /*
-            theGraph.StreamMappingFor<Issue>().AddEvent(typeof (IssueAssigned));
-            theGraph.StreamMappingFor<Issue>().AddEvent(typeof (IssueCreated));
-            theGraph.StreamMappingFor<Quest>().AddEvent(typeof (MembersJoined));
-            theGraph.StreamMappingFor<Quest>().AddEvent(typeof (MembersDeparted));
+            theGraph.AddEventType(typeof (IssueAssigned));
+            theGraph.AddEventType(typeof (IssueCreated));
+            theGraph.AddEventType(typeof (MembersJoined));
+            theGraph.AddEventType(typeof (MembersDeparted));
 
             theGraph.EventMappingFor<IssueAssigned>().ShouldBeTheSameAs(theGraph.EventMappingFor<IssueAssigned>());
-            */
+            
         }
 
 

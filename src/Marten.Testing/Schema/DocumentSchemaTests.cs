@@ -220,6 +220,13 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void resolve_mapping_for_event_stream()
+        {
+            var schema = new DocumentSchema(new StoreOptions(), null, null);
+            schema.MappingFor(typeof (EventStream)).ShouldBeOfType<EventGraph>();
+        }
+
+        [Fact]
         public void resolve_storage_for_stream_type()
         {
             var schema = new DocumentSchema(new StoreOptions(), null, null);

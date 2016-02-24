@@ -49,6 +49,11 @@ namespace Marten.Schema
         {
             return _mappings.GetOrAdd(documentType, type =>
             {
+                if (type == typeof (EventStream))
+                {
+                    return StoreOptions.Events;
+                }
+
                 if (documentType.CanBeCastTo<IEvent>())
                 {
                     return StoreOptions.Events.EventMappingFor(type);

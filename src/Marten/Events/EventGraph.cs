@@ -15,7 +15,7 @@ namespace Marten.Events
     {
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
-        private readonly Cache<Type, AggregateModel> _aggregates = new Cache<Type, AggregateModel>();
+        private readonly Cache<Type, AggregateModel> _aggregates = new Cache<Type, AggregateModel>(type => new AggregateModel(type));
         private readonly Cache<string, AggregateModel> _aggregateByName = new Cache<string, AggregateModel>();  
 
         public EventGraph()
@@ -107,6 +107,16 @@ namespace Marten.Events
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
             throw new NotImplementedException();
+        }
+
+        public AggregateModel AggregateFor<T>() where T : IAggregate
+        {
+            return AggregateFor(typeof (T));
+        }
+
+        public AggregateModel AggregateFor(Type aggregateType)
+        {
+            return _aggregates[aggregateType];
         }
     }
 }
