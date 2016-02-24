@@ -118,5 +118,16 @@ namespace Marten.Events
         {
             return _aggregates[aggregateType];
         }
+
+        public void AddAggregateType<T>() where T : IAggregate
+        {
+            _aggregates.FillDefault(typeof(T));
+        }
+
+        public void AddAggregateType(Type aggregateType)
+        {
+            _aggregates.FillDefault(aggregateType);
+        }
+        
     }
 }

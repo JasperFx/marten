@@ -49,5 +49,18 @@ namespace Marten.Testing.Events
 
             theGraph.EventMappingFor("issue_created").DocumentType.ShouldBe(typeof(IssueCreated));
         }
+
+        [Fact]
+        public void derives_the_stream_type_name()
+        {
+
+            theGraph.AggregateFor<HouseRemodeling>().Alias.ShouldBe("house_remodeling");
+            theGraph.AggregateFor<Quest>().Alias.ShouldBe("quest");
+        }
+
+        public class HouseRemodeling : IAggregate
+        {
+            public Guid Id { get; set; }
+        }
     }
 }
