@@ -7,7 +7,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public class EventStreamStorage : IDocumentStorage
+    public class EventStreamStorage : IDocumentStorage, IdAssignment<EventStream>
     {
         private readonly EventGraph _graph;
 
@@ -47,21 +47,19 @@ namespace Marten.Events
         public void RegisterUpdate(UpdateBatch batch, object entity)
         {
             var stream = entity.As<EventStream>();
+
+            var streamTypeName = stream.AggregateType == null ? null : _graph.AggregateFor(stream.AggregateType).Alias;
+
             stream.Events.Each(@event =>
             {
-                throw new NotImplementedException();
-
-                /*
-                // TODO -- what if this doesn't exist? Get it lazily?
-                var mapping = EventMappingFor(@event.GetType());
+                var mapping = _graph.EventMappingFor(@event.GetType());
 
                 batch.Sproc("mt_append_event")
                 .Param("stream", stream.Id)
-                .Param("stream_type", StreamTypeName)
+                .Param("stream_type", streamTypeName)
                 .Param("event_id", @event.Id)
                 .Param("event_type", mapping.EventTypeName)
                 .JsonEntity("body", @event);
-                */
             });
         }
 
@@ -82,7 +80,12 @@ namespace Marten.Events
 
         public void Store(IIdentityMap map, object id, object entity)
         {
-            throw new NotImplementedException();
+            map.Store(id, entity.As<EventStream>());
+        }
+
+        public object Assign(EventStream document)
+        {
+            return document.Id;
         }
     }
 }

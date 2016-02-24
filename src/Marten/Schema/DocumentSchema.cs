@@ -34,8 +34,6 @@ namespace Marten.Schema
             options.AllDocumentMappings.Each(x => _mappings[x.DocumentType] = x);
 
             Sequences = new SequenceFactory(this, _factory, _creation);
-
-            Events = new EventGraph();
         }
 
         public StoreOptions StoreOptions { get; }
@@ -114,7 +112,7 @@ namespace Marten.Schema
             }
         }
 
-        public EventGraph Events { get; }
+        public EventGraph Events => StoreOptions.Events;
         public PostgresUpsertType UpsertType => StoreOptions.UpsertType;
 
         public IEnumerable<string> SchemaTableNames()

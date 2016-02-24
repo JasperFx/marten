@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Baseline;
 
 namespace Marten.Events
 {
@@ -13,6 +15,20 @@ namespace Marten.Events
         public Guid Id { get; }
         public Type AggregateType { get; set; } 
 
-        public readonly IList<IEvent> Events = new List<IEvent>();
+        private readonly IList<IEvent> _events = new List<IEvent>();
+
+        public EventStream(Guid stream, IEvent[] events)
+        {
+            Id = stream;
+            AddEvents(events);
+        }
+
+        public void AddEvents(IEnumerable<IEvent> events)
+        {
+            _events.AddRange(events);
+            _events.Where(x => x.Id == Guid.Empty).Each(x => x.Id = Guid.NewGuid());
+        }
+
+        public IEnumerable<IEvent> Events => _events;
     }
 }

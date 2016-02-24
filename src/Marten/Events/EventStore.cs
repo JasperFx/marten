@@ -34,49 +34,30 @@ namespace Marten.Events
 
         public void AppendEvents(Guid stream, params IEvent[] events)
         {
-            events.Each(@event =>
+            if (_identityMap.Has<EventStream>(stream))
             {
-                var mapping = _schema.Events.EventMappingFor((Type) @event.GetType());
-
-                appendEvent(mapping, stream, @event, null);
-            });
-        }
-
-        private void appendEvent(EventMapping eventMapping, Guid stream, IEvent @event, string streamType)
-        {
-            if (@event.Id == Guid.Empty) @event.Id = Guid.NewGuid();
-
-            _connection.Execute(cmd =>
+                _identityMap.Retrieve<EventStream>(stream).AddEvents(events);
+            }
+            else
             {
-                cmd.CallsSproc("mt_append_event")
-                    .With("stream", stream)
-                    .With("stream_type", streamType)
-                    .With("event_id", @event.Id)
-                    .With("event_type", eventMapping.EventTypeName)
-                    .With("body", _serializer.ToJson(@event), NpgsqlDbType.Jsonb)
-                    .ExecuteNonQuery();
-            });
+                var eventStream = new EventStream(stream, events);
 
-                
+
+                _session.Store(eventStream);
+            }
         }
 
         public Guid StartStream<T>(params IEvent[] events) where T : IAggregate
         {
-            // TODO --- temp!
-            var stream = Guid.NewGuid();
-
-            var alias = _schema.Events.AggregateFor<T>().Alias;
-
-
-            events.Each(@event =>
+            var id = Guid.NewGuid();
+            var stream = new EventStream(id, events)
             {
-                var mapping = _schema.Events.EventMappingFor(@event.GetType());
+                AggregateType = typeof(T)
+            };
 
-                appendEvent(mapping, stream, @event, alias);
-            });
+            _session.Store(stream);
 
-            return stream;
-            
+            return id;
         }
 
         public T FetchSnapshot<T>(Guid streamId) where T : IAggregate

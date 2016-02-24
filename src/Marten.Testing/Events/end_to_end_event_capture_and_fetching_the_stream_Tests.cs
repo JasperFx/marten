@@ -20,8 +20,8 @@ namespace Marten.Testing.Events
 
                 _.Connection(ConnectionSource.ConnectionString);
 
-                _.Events.EventMappingFor(typeof (MembersJoined));
-                _.Events.EventMappingFor(typeof (MembersDeparted));
+                _.Events.AddEventType(typeof (MembersJoined));
+                _.Events.AddEventType(typeof (MembersDeparted));
             });
 
             store.Advanced.Clean.CompletelyRemoveAll();
