@@ -11,17 +11,14 @@ namespace Marten.Testing.Events
     {
         public plv8_transformation_functions_Tests()
         {
-            throw new NotImplementedException("REDO");
-
-            /*
             var directory =
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
             var eventGraph = theContainer.GetInstance<IDocumentSchema>().Events;
-            eventGraph.StreamMappingFor<Quest>()
-                .AddEvent(typeof (MembersJoined));
+            eventGraph.AddEventType(typeof (MembersJoined));
 
-            eventGraph.StreamMappingFor<FakeAggregate>().AddEvent(typeof (EventA));
+            eventGraph.AddEventType(typeof (EventA));
+            
 
 
             var theEvents = theStore.EventStore;
@@ -29,7 +26,7 @@ namespace Marten.Testing.Events
             theEvents.RebuildEventStoreSchema();
             theEvents.LoadProjections(directory);
             theEvents.InitializeEventStoreInDatabase();
-            */
+            
         }
 
         [Fact]
