@@ -229,7 +229,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void resolve_storage_for_stream_type()
         {
-            var schema = new DocumentSchema(new StoreOptions(), new ConnectionSource(), new DevelopmentSchemaCreation(new ConnectionSource()));
+            var schema = new DocumentSchema(new StoreOptions(), new ConnectionSource(), new DevelopmentSchemaCreation(new ConnectionSource(), new NulloMartenLogger()));
             schema.StorageFor(typeof (EventStream)).ShouldBeOfType<EventStreamStorage>();
         }
     }

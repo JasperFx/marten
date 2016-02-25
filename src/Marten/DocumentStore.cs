@@ -70,8 +70,10 @@ namespace Marten
             _connectionFactory = options.ConnectionFactory();
             _runner = new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly);
 
+            _logger = options.Logger();
+
             var creation = options.AutoCreateSchemaObjects
-                ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_connectionFactory)
+                ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_connectionFactory, _logger)
                 : new ProductionSchemaCreation();
 
             Schema = new DocumentSchema(_options, _connectionFactory, creation);
@@ -90,6 +92,7 @@ namespace Marten
 
         private readonly StoreOptions _options;
         private readonly IConnectionFactory _connectionFactory;
+        private IMartenLogger _logger;
 
         public void Dispose()
         {

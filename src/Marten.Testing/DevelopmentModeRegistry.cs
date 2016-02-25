@@ -19,7 +19,7 @@ namespace Marten.Testing
                 _.UpsertType = UpsertType;
             });
 
-
+            For<IMartenLogger>().Use<NulloMartenLogger>();
 
             For<IDocumentStore>().Use(store);
             For<IIdentityMap>().Use<NulloIdentityMap>();

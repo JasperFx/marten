@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Npgsql;
 
@@ -34,9 +35,9 @@ namespace Marten
 
         public void SchemaChange(string sql)
         {
-            Console.WriteLine("Executing DDL change:");
-            Console.WriteLine(sql);
-            Console.WriteLine();
+            Debug.WriteLine("Executing DDL change:");
+            Debug.WriteLine(sql);
+            Debug.WriteLine("");
         }
 
         public void LogSuccess(NpgsqlCommand command)

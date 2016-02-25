@@ -6,11 +6,13 @@ namespace Marten.Schema
     public class DevelopmentSchemaCreation : IDocumentSchemaCreation
     {
         private readonly IConnectionFactory _factory;
+        private readonly IMartenLogger _logger;
         private readonly object _lock = new object();
 
-        public DevelopmentSchemaCreation(IConnectionFactory factory)
+        public DevelopmentSchemaCreation(IConnectionFactory factory, IMartenLogger logger)
         {
             _factory = factory;
+            _logger = logger;
         }
 
         public void CreateSchema(IDocumentSchema schema, IDocumentMapping mapping, Func<bool> shouldRegenerate)
@@ -38,6 +40,7 @@ namespace Marten.Schema
             try
             {
                 _factory.RunSql(sql);
+                _logger.SchemaChange(sql);
             }
             catch (Exception e)
             {
