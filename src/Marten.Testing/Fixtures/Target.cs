@@ -40,6 +40,8 @@ namespace Marten.Testing.Fixtures
             target.AnotherString = _otherStrings[_random.Next(0, 10)];
             target.Number = _random.Next();
 
+            target.Float = float.Parse(_random.NextDouble().ToString());
+
             target.NumberArray = new int[] {_random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) };
 
             switch (_random.Next(0, 2))
@@ -102,6 +104,8 @@ namespace Marten.Testing.Fixtures
         public decimal Decimal { get; set; }
         public DateTime Date { get; set; }
         public DateTimeOffset DateOffset { get; set; }
+
+        public float Float;
 
         public int[] NumberArray { get; set; }
 

@@ -124,6 +124,7 @@
     <Compile Include="Linq\query_running_through_the_IdentityMap_Tests.cs" />
     <Compile Include="Linq\query_with_any_within_child_collection_Tests.cs" />
     <Compile Include="Linq\query_beginning_with_constant_Tests.cs" />
+    <Compile Include="Linq\query_with_float_Tests.cs" />
     <Compile Include="Linq\query_with_modulo_Tests.cs" />
     <Compile Include="Linq\query_with_enums_Tests.cs" />
     <Compile Include="Linq\query_with_nullable_types_Tests.cs" />
