@@ -18,7 +18,7 @@ namespace Marten.Util
             {typeof (Boolean), "boolean"},
             {typeof (double), "double precision"},
             {typeof (decimal), "decimal"},
-            {typeof (DateTime), "date"},
+            {typeof (DateTime), "date"}, // We need to change this to timestamp, right?
             {typeof(float), "decimal" },
             {typeof (DateTimeOffset), "timestamp with time zone"}
         };

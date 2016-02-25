@@ -40,6 +40,29 @@ namespace Marten.Testing
             }
         }
 
+        [Fact]
+        public void default_logger_is_the_nullo()
+        {
+            var options = new StoreOptions();
+            options.Logger().ShouldBeOfType<NulloMartenLogger>();
+
+            options.Logger(null);
+
+            // doesn't matter, nullo is the default
+            options.Logger().ShouldBeOfType<NulloMartenLogger>();
+        }
+
+        [Fact]
+        public void can_overwrite_the_logger()
+        {
+            var logger = new ConsoleMartenLogger();
+
+            var options = new StoreOptions();
+            options.Logger(logger);
+
+            options.Logger().ShouldBeSameAs(logger);
+        }
+
         public class FakeUserStorage : IDocumentStorage, IdAssignment<User>
         {
             public Type DocumentType { get; } = typeof (User);

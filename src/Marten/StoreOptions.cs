@@ -21,6 +21,8 @@ namespace Marten
     {
         private ISerializer _serializer;
         private IConnectionFactory _factory;
+        private IMartenLogger _logger = new NulloMartenLogger();
+
 
         internal readonly IList<Type> PreBuiltStorage = new List<Type>(); 
 
@@ -168,6 +170,17 @@ namespace Marten
         public void LoadPrecompiledStorageFrom(Assembly assembly)
         {
             PreBuiltStorage.AddRange(assembly.GetExportedTypes().Where(x => x.IsConcreteTypeOf<IDocumentStorage>()));
+        }
+
+
+        public IMartenLogger Logger()
+        {
+            return _logger ?? new NulloMartenLogger();
+        }
+
+        public void Logger(IMartenLogger logger)
+        {
+            _logger = logger;
         }
     }
 }

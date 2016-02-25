@@ -1,24 +1,87 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Npgsql;
 
 namespace Marten
 {
     // Use this to inject default session loggers into DocumentSessions when opened
+    // The default would be a Nullo. Set the global one on the StoreOptions
     public interface IMartenLogger
     {
-        // Somehow, I'd like to be able to associate the description
-        // with what the system is doing. In our web based systems, I'd
-        // like to make that the URL of the request and maybe a user
-        IMartenSessionLogger StartSession(string description);
+        IMartenSessionLogger StartSession(IQuerySession session);
+
+        void SchemaChange(string sql);
     }
 
     // This would be injected into a DocumentSession.
-    // Might expose IQuerySession.Logger as a settable property
+    // WILL expose IQuerySession.Logger as a settable property to do the 
+    // easy contextual logging
     public interface IMartenSessionLogger
     {
-        // Using the Func or Action allows us to optionally capture
-        // performance timings or exceptions.
-        T Log<T>(NpgsqlCommand command, Func<T> func);
-        void Log(NpgsqlCommand command, Action action);
+        void LogSuccess(NpgsqlCommand command);
+        void LogFailure(NpgsqlCommand command, Exception ex);
+
+        // Called after a document session is saved/committed
+        void RecordSavedChanges(IDocumentSession session);
     }
+
+    public class NulloMartenLogger : IMartenLogger, IMartenSessionLogger
+    {
+        public IMartenSessionLogger StartSession(IQuerySession session)
+        {
+            return this;
+        }
+
+        public void SchemaChange(string sql)
+        {
+            Console.WriteLine("Executing DDL change:");
+            Console.WriteLine(sql);
+            Console.WriteLine();
+        }
+
+        public void LogSuccess(NpgsqlCommand command)
+        {
+        }
+
+        public void LogFailure(NpgsqlCommand command, Exception ex)
+        {
+        }
+
+        public void RecordSavedChanges(IDocumentSession session)
+        {
+        }
+    }
+
+    public class ConsoleMartenLogger : IMartenLogger, IMartenSessionLogger
+    {
+        public IMartenSessionLogger StartSession(IQuerySession session)
+        {
+            return this;
+        }
+
+        public void SchemaChange(string sql)
+        {
+            Console.WriteLine("Executing DDL change:");
+            Console.WriteLine(sql);
+            Console.WriteLine();
+        }
+
+        public void LogSuccess(NpgsqlCommand command)
+        {
+            Console.WriteLine(command.CommandText);
+        }
+
+        public void LogFailure(NpgsqlCommand command, Exception ex)
+        {
+            Console.WriteLine("Postgresql command failed!");
+            Console.WriteLine(command.CommandText);
+            Console.WriteLine(ex);
+        }
+
+        public void RecordSavedChanges(IDocumentSession session)
+        {
+            
+        }
+    }
+
 }
