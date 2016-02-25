@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using Marten.Services;
-using Marten.Util;
 
 namespace Marten.Schema
 {
@@ -46,8 +43,6 @@ namespace Marten.Schema
             {
                 throw new MartenSchemaException(mapping.DocumentType, sql, e);
             }
-
-
         }
 
 

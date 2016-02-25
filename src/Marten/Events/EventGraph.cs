@@ -13,6 +13,7 @@ namespace Marten.Events
 {
     public class EventGraph : IDocumentMapping
     {
+
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
         private readonly Cache<Type, AggregateModel> _aggregates = new Cache<Type, AggregateModel>(type => new AggregateModel(type));
@@ -71,7 +72,7 @@ namespace Marten.Events
 
         public bool ShouldRegenerate(IDocumentSchema schema)
         {
-            throw new NotImplementedException();
+            return !schema.DocumentTables().Contains("mt_streams");
         }
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
@@ -91,12 +92,35 @@ namespace Marten.Events
 
         public IDocumentStorage BuildStorage(IDocumentSchema schema)
         {
-            throw new NotImplementedException();
+            return new EventStreamStorage(this);
         }
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
-            throw new NotImplementedException();
+            // TODO -- will need to do something to add the JS module for mt_transforms
+            // maybe doing it by replacing all instances of ' with " and building the sql directly?
+            // See EventStoreAdmin.RebuildEventStoreSchema()
+
+            writer.WriteSql("mt_stream");
+            writer.WriteSql("mt_initialize_projections");
+            writer.WriteSql("mt_apply_transform");
+            writer.WriteSql("mt_apply_aggregation");
+
+
+            //writer.WriteLine("COMMIT;");
+            //writer.WriteLine("");
+
+
+            // This is going to have to be done separately
+            //var js = SchemaBuilder.GetJavascript("mt_transforms").Replace("'", "\"").Replace("\n", "").Replace("\r", "");
+
+            //writer.WriteLine($"insert into mt_modules (name, definition) values ('mt_transforms', '{js}');");
+
+            //writer.WriteLine();
+
+            //writer.WriteLine("select mt_initialize_projections();");
+            
+
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)

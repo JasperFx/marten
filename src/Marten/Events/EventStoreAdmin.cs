@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Baseline;
 using Marten.Schema;
@@ -59,8 +60,20 @@ namespace Marten.Events
 
         public IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase()
         {
+            var js = SchemaBuilder.GetJavascript("mt_transforms");
+
             using (var connection = new ManagedConnection(_connectionFactory))
             {
+               
+
+                connection.Execute(cmd =>
+                {
+                    cmd.WithText("delete from mt_modules where name = :name;insert into mt_modules (name, definition) values (:name, :definition)")
+                        .With("name", "mt_transforms")
+                        .With("definition", js)
+                        .ExecuteNonQuery();
+                });
+
                 connection.Execute(cmd =>
                 {
                     cmd.CallsSproc("mt_initialize_projections").ExecuteNonQuery();
@@ -81,8 +94,11 @@ namespace Marten.Events
             return _serializer.FromJson<ProjectionUsage[]>(json);
         }
 
+        [Obsolete("This should be going away now that EventGraph puts things together itself")]
         public void RebuildEventStoreSchema()
         {
+            
+
             _creation.RunScript("mt_stream");
             _creation.RunScript("mt_initialize_projections");
             _creation.RunScript("mt_apply_transform");

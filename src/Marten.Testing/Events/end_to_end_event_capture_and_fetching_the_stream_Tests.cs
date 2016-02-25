@@ -26,9 +26,6 @@ namespace Marten.Testing.Events
 
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            // TODO -- REMOVE THIS WHEN IT IS SMARTER!
-            store.EventStore.RebuildEventStoreSchema();
-
             using (var session = store.OpenSession())
             {
                 var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };

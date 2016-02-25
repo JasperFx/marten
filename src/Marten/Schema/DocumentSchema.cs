@@ -72,12 +72,6 @@ namespace Marten.Schema
         {
             return _documentTypes.GetOrAdd(documentType, type =>
             {
-                if (documentType == typeof (EventStream))
-                {
-                    return new EventStreamStorage(StoreOptions.Events);
-                }
-
-
                 var mapping = MappingFor(documentType);
                 if (mapping is IDocumentStorage) return mapping.As<IDocumentStorage>();
 
@@ -91,10 +85,15 @@ namespace Marten.Schema
 
                 storage = prebuiltType != null ? DocumentStorageBuilder.BuildStorageObject(this, prebuiltType, mapping.As<DocumentMapping>()) : mapping.BuildStorage(this);
 
-                _creation.CreateSchema(this, mapping, () => mapping.ShouldRegenerate(this));
+                buildSchemaObjectsIfNecessary(mapping);
 
                 return storage;
             });
+        }
+
+        private void buildSchemaObjectsIfNecessary(IDocumentMapping mapping)
+        {
+            _creation.CreateSchema(this, mapping, () => mapping.ShouldRegenerate(this));
         }
 
         private void assertNoDuplicateDocumentAliases()
