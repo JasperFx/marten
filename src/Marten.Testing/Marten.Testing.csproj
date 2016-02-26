@@ -73,6 +73,7 @@
     <Compile Include="Events\event_administration_Tests.cs" />
     <Compile Include="Events\FakeAggregate.cs" />
     <Compile Include="Events\plv8_transformation_functions_Tests.cs" />
+    <Compile Include="Events\query_against_event_documents_Tests.cs" />
     <Compile Include="Events\QuestTypes.cs" />
     <Compile Include="Events\using_the_schema_objects_Tests.cs" />
     <Compile Include="Examples\ConfiguringDocumentStore.cs" />

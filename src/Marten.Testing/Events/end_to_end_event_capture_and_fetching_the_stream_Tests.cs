@@ -9,8 +9,6 @@ namespace Marten.Testing.Events
 {
     public class end_to_end_event_capture_and_fetching_the_stream_Tests
     {
-        private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
-
         [Fact]
         public void capture_events_to_a_new_stream_and_fetch_the_events_back()
         {

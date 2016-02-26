@@ -73,7 +73,11 @@ namespace Marten.Schema
             return _documentTypes.GetOrAdd(documentType, type =>
             {
                 var mapping = MappingFor(documentType);
-                if (mapping is IDocumentStorage) return mapping.As<IDocumentStorage>();
+                if (mapping is IDocumentStorage)
+                {
+                    buildSchemaObjectsIfNecessary(mapping);
+                    return mapping.As<IDocumentStorage>();
+                }
 
 
                 assertNoDuplicateDocumentAliases();

@@ -207,15 +207,15 @@ namespace Marten.Testing.Schema
         public void resolve_a_document_mapping_for_an_event_type()
         {
             var schema = new DocumentSchema(new StoreOptions(), null, null);
-            schema.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping>()
+            schema.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 
         [Fact]
         public void resolve_storage_for_event_type()
         {
-            var schema = new DocumentSchema(new StoreOptions(), null, null);
-            schema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping>()
+            var schema = new DocumentSchema(new StoreOptions(), new ConnectionSource(), new DevelopmentSchemaCreation(new ConnectionSource(), new NulloMartenLogger()));
+            schema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 

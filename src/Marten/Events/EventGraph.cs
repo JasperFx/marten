@@ -21,7 +21,7 @@ namespace Marten.Events
 
         public EventGraph()
         {
-            _events.OnMissing = eventType => new EventMapping(eventType);
+            _events.OnMissing = eventType => typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
         }
@@ -72,7 +72,8 @@ namespace Marten.Events
 
         public bool ShouldRegenerate(IDocumentSchema schema)
         {
-            return !schema.DocumentTables().Contains("mt_streams");
+            var documentTables = schema.SchemaTableNames().ToArray();
+            return !documentTables.Contains("mt_streams");
         }
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
