@@ -28,6 +28,7 @@ namespace Marten
         private readonly IManagedConnection _connection;
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
+        private IMartenSessionLogger _logger;
 
         public QuerySession(IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
         {
@@ -322,6 +323,12 @@ namespace Marten
         }
 
         public NpgsqlConnection Connection => _connection.Connection;
+
+        public IMartenSessionLogger Logger
+        {
+            get { return _connection.As<ManagedConnection>().Logger; }
+            set { _connection.As<ManagedConnection>().Logger = value; }
+        }
 
         public void Dispose()
         {

@@ -1,4 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Threading.Tasks;
+using Marten;
 using Marten.Services;
 using Npgsql;
 using Shouldly;
@@ -33,16 +37,356 @@ namespace Marten.Testing.Services
                 await connection.ExecuteAsync(async (c, t) => { });
                 connection.RequestCount.ShouldBe(5);
 
-                await connection.ExecuteAsync(new NpgsqlCommand(), async (c, t) => {});
+                await connection.ExecuteAsync(new NpgsqlCommand(), async (c, t) => { });
                 connection.RequestCount.ShouldBe(6);
 
                 await connection.ExecuteAsync(async (c, t) => "");
                 connection.RequestCount.ShouldBe(7);
 
-                await connection.ExecuteAsync(new NpgsqlCommand(),async (c, t) => "");
+                await connection.ExecuteAsync(new NpgsqlCommand(), async (c, t) => "");
                 connection.RequestCount.ShouldBe(8);
 
             }
-        } 
+        }
+
+        [Fact]
+        public void log_execute_success_1()
+        {
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                connection.Execute(c => c.CommandText = "do something");
+
+                logger.LastCommand.CommandText.ShouldBe("do something");
+            }
+        }
+
+        [Fact]
+        public void log_execute_failure_1()
+        {
+            var ex = new DivideByZeroException();
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                Exception<DivideByZeroException>.ShouldBeThrownBy(() =>
+                {
+                    connection.Execute(c =>
+                    {
+                        c.CommandText = "do something";
+                        throw ex;
+                    });
+                });
+
+
+
+                logger.LastCommand.CommandText.ShouldBe("do something");
+                logger.LastException.ShouldBe(ex);
+            }
+        }
+
+
+        [Fact]
+        public void log_execute_success_2()
+        {
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                var cmd = new NpgsqlCommand();
+                connection.Execute(cmd, c => c.CommandText = "do something");
+
+                logger.LastCommand.ShouldBeSameAs(cmd);
+            }
+        }
+
+
+        [Fact]
+        public void log_execute_failure_2()
+        {
+            var ex = new DivideByZeroException();
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                var cmd = new NpgsqlCommand();
+
+                Exception<DivideByZeroException>.ShouldBeThrownBy(() =>
+                {
+                    connection.Execute(cmd, c =>
+                    {
+                        throw ex;
+                    });
+                });
+
+
+
+                logger.LastCommand.ShouldBe(cmd);
+                logger.LastException.ShouldBe(ex);
+            }
+        }
+
+
+
+
+        [Fact]
+        public void log_execute_success_with_answer_1()
+        {
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                connection.Execute(c =>
+                {
+                    c.CommandText = "do something";
+                    return "something";
+                });
+
+                logger.LastCommand.CommandText.ShouldBe("do something");
+            }
+        }
+
+        [Fact]
+        public void log_execute_with_answer_failure_1()
+        {
+            var ex = new DivideByZeroException();
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                Exception<DivideByZeroException>.ShouldBeThrownBy(() =>
+                {
+                    connection.Execute<string>(c =>
+                    {
+                        c.CommandText = "do something";
+                        throw ex;
+                    });
+                });
+
+
+
+                logger.LastCommand.CommandText.ShouldBe("do something");
+                logger.LastException.ShouldBe(ex);
+            }
+        }
+
+
+        [Fact]
+        public void log_execute_success_with_answer_2()
+        {
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                var cmd = new NpgsqlCommand();
+                connection.Execute(cmd, c => "something");
+
+                logger.LastCommand.ShouldBeSameAs(cmd);
+            }
+        }
+
+
+        [Fact]
+        public void log_execute_with_answer_failure_2()
+        {
+            var ex = new DivideByZeroException();
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                var cmd = new NpgsqlCommand();
+
+                Exception<DivideByZeroException>.ShouldBeThrownBy(() =>
+                {
+                    connection.Execute<string>(cmd, c =>
+                    {
+                        throw ex;
+                    });
+                });
+
+
+
+                logger.LastCommand.ShouldBe(cmd);
+                logger.LastException.ShouldBe(ex);
+            }
+        }
+
+
+
+
+        [Fact]
+        public async Task log_execute_success_1_async()
+        {
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                connection.ExecuteAsync(async (c, tkn) => c.CommandText = "do something");
+
+                logger.LastCommand.CommandText.ShouldBe("do something");
+            }
+        }
+
+        [Fact]
+        public async Task log_execute_failure_1_async()
+        {
+            var ex = new DivideByZeroException();
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
+                {
+                    await connection.ExecuteAsync((c, tkn) =>
+                    {
+                        c.CommandText = "do something";
+                        throw ex;
+                    });
+                });
+
+
+
+                logger.LastCommand.CommandText.ShouldBe("do something");
+                logger.LastException.ShouldBe(ex);
+            }
+        }
+
+
+        [Fact]
+        public async Task log_execute_success_2_async()
+        {
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                var cmd = new NpgsqlCommand();
+                await connection.ExecuteAsync(cmd, async (c, tkn) => c.CommandText = "do something");
+
+                logger.LastCommand.ShouldBeSameAs(cmd);
+            }
+        }
+
+
+        [Fact]
+        public async Task log_execute_failure_2_async()
+        {
+            var ex = new DivideByZeroException();
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                var cmd = new NpgsqlCommand();
+
+                Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
+                {
+                    await connection.ExecuteAsync(cmd, (c, tkn) =>
+                    {
+                        throw ex;
+                    });
+                });
+
+
+
+                logger.LastCommand.ShouldBe(cmd);
+                logger.LastException.ShouldBe(ex);
+            }
+        }
+
+
+
+
+        [Fact]
+        public async Task log_execute_success_with_answer_1_async()
+        {
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                connection.Execute(async c =>
+                {
+                    c.CommandText = "do something";
+                    return "something";
+                });
+
+                logger.LastCommand.CommandText.ShouldBe("do something");
+            }
+        }
+
+        [Fact]
+        public async Task log_execute_with_answer_failure_1_async()
+        {
+            var ex = new DivideByZeroException();
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
+                {
+                    connection.ExecuteAsync<string>((c, tkn) =>
+                    {
+                        c.CommandText = "do something";
+                        throw ex;
+                    });
+                });
+
+
+
+                logger.LastCommand.CommandText.ShouldBe("do something");
+                logger.LastException.ShouldBe(ex);
+            }
+        }
+
+
+        [Fact]
+        public async Task log_execute_success_with_answer_2_async()
+        {
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                var cmd = new NpgsqlCommand();
+                await connection.ExecuteAsync(cmd, async (c, tkn) => "something");
+
+                logger.LastCommand.ShouldBeSameAs(cmd);
+            }
+        }
+
+
+        [Fact]
+        public async Task log_execute_with_answer_failure_2_asycn()
+        {
+            var ex = new DivideByZeroException();
+            var logger = new RecordingLogger();
+            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            {
+                var cmd = new NpgsqlCommand();
+
+                Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
+                {
+                    connection.ExecuteAsync<string>(cmd, (c, tkn) =>
+                    {
+                        throw ex;
+                    }
+                )
+                    ;
+                });
+
+
+
+                logger.LastCommand.ShouldBe(cmd);
+                logger.LastException.ShouldBe(ex);
+            }
+        }
+
+    }
+
+
+
+    public class RecordingLogger : IMartenSessionLogger
+    {
+        public NpgsqlCommand LastCommand;
+        public Exception LastException;
+
+        public void LogSuccess(NpgsqlCommand command)
+        {
+            LastCommand = command;
+        }
+
+        public void LogFailure(NpgsqlCommand command, Exception ex)
+        {
+            LastCommand = command;
+            LastException = ex;
+        }
+
+        public void RecordSavedChanges(IDocumentSession session)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

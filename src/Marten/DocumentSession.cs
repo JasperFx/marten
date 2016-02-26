@@ -112,6 +112,8 @@ namespace Marten
 
             _connection.Commit();
 
+            Logger.RecordSavedChanges(this);
+
             _options.Listeners.Each(x => x.AfterCommit(this));
         }
 
@@ -127,6 +129,8 @@ namespace Marten
             await _unitOfWork.ApplyChangesAsync(batch, token);
 
             _connection.Commit();
+
+            Logger.RecordSavedChanges(this);
 
             foreach (var listener in _options.Listeners)
             {

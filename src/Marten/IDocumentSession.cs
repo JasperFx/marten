@@ -127,6 +127,13 @@ namespace Marten
         /// The currently open Npgsql connection for this session. Use with caution.
         /// </summary>
         NpgsqlConnection Connection { get; }
+
+
+        /// <summary>
+        /// The session specific logger for this session. Can be set for better integration
+        /// with custom diagnostics
+        /// </summary>
+        IMartenSessionLogger Logger { get; set; }
     }
 
     /// <summary>

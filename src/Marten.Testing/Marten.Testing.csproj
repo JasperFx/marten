@@ -53,6 +53,7 @@
     <Compile Include="bulk_loading_Tests.cs" />
     <Compile Include="Codegen\dumping_the_complete_source_code_Tests.cs" />
     <Compile Include="DocumentMappingTests.cs" />
+    <Compile Include="document_session_logs_SaveChanges_Tests.cs" />
     <Compile Include="document_session_storing_from_another_assembly_Tests.cs" />
     <Compile Include="ConnectionSource.cs" />
     <Compile Include="DevelopmentModeRegistry.cs" />

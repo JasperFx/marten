@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using Npgsql;
 
 namespace Marten
 {
-    // Use this to inject default session loggers into DocumentSessions when opened
-    // The default would be a Nullo. Set the global one on the StoreOptions
+    /// <summary>
+    /// Records command usage, schema changes, and sessions within Marten
+    /// </summary>
     public interface IMartenLogger
     {
         IMartenSessionLogger StartSession(IQuerySession session);
@@ -14,15 +14,29 @@ namespace Marten
         void SchemaChange(string sql);
     }
 
-    // This would be injected into a DocumentSession.
-    // WILL expose IQuerySession.Logger as a settable property to do the 
-    // easy contextual logging
+    /// <summary>
+    /// Use to create custom logging within an IQuerySession or IDocumentSession
+    /// </summary>
     public interface IMartenSessionLogger
     {
+        /// <summary>
+        /// Log a command that executed successfully
+        /// </summary>
+        /// <param name="command"></param>
         void LogSuccess(NpgsqlCommand command);
+
+        /// <summary>
+        /// Log a command that failed
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="ex"></param>
         void LogFailure(NpgsqlCommand command, Exception ex);
 
-        // Called after a document session is saved/committed
+        /// <summary>
+        /// Called immediately after committing an IDocumentSession
+        /// through SaveChanges() or SaveChangesAsync()
+        /// </summary>
+        /// <param name="session"></param>
         void RecordSavedChanges(IDocumentSession session);
     }
 

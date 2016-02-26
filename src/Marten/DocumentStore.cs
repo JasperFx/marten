@@ -209,7 +209,11 @@ namespace Marten
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly, IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
         {
             var map = createMap(tracking);
-            return new DocumentSession(_options, Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel), _parser, map);
+            var session = new DocumentSession(_options, Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel), _parser, map);
+
+            session.Logger = _logger.StartSession(session);
+
+            return session;
         }
 
         private IIdentityMap createMap(DocumentTracking tracking)
@@ -244,7 +248,11 @@ namespace Marten
         {
             var parser = new MartenQueryParser();
             
-            return new QuerySession(Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser, new NulloIdentityMap(_serializer));
+            var session = new QuerySession(Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser, new NulloIdentityMap(_serializer));
+
+            session.Logger = _logger.StartSession(session);
+
+            return session;
         }
 
 

@@ -20,6 +20,8 @@ namespace Marten.Services
             _connection = new Lazy<TransactionState>(() => new TransactionState(factory, mode, isolationLevel));
         }
 
+        public IMartenSessionLogger Logger { get; set; } = new NulloMartenLogger();
+
         public int RequestCount { get; private set; }
 
         public void Commit()
@@ -44,7 +46,16 @@ namespace Marten.Services
             }
 
             _connection.Value.Apply(cmd);
-            action(cmd);
+            try
+            {
+                action(cmd);
+                Logger.LogSuccess(cmd);
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public void Execute(Action<NpgsqlCommand> action)
@@ -52,7 +63,16 @@ namespace Marten.Services
             RequestCount++;
 
             var cmd = _connection.Value.CreateCommand();
-            action(cmd);
+            try
+            {
+                action(cmd);
+                Logger.LogSuccess(cmd);
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public T Execute<T>(Func<NpgsqlCommand, T> func)
@@ -60,7 +80,17 @@ namespace Marten.Services
             RequestCount++;
 
             var cmd = _connection.Value.CreateCommand();
-            return func(cmd);
+            try
+            {
+                var returnValue = func(cmd);
+                Logger.LogSuccess(cmd);
+                return returnValue;
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public T Execute<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, T> func)
@@ -68,7 +98,17 @@ namespace Marten.Services
             RequestCount++;
 
             _connection.Value.Apply(cmd);
-            return func(cmd);
+            try
+            {
+                var returnValue = func(cmd);
+                Logger.LogSuccess(cmd);
+                return returnValue;
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public async Task ExecuteAsync(Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
@@ -76,7 +116,17 @@ namespace Marten.Services
             RequestCount++;
 
             var cmd = _connection.Value.CreateCommand();
-            await action(cmd, token);
+
+            try
+            {
+                await action(cmd, token);
+                Logger.LogSuccess(cmd);
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public async Task ExecuteAsync(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
@@ -84,7 +134,17 @@ namespace Marten.Services
             RequestCount++;
 
             _connection.Value.Apply(cmd);
-            await action(cmd, token);
+
+            try
+            {
+                await action(cmd, token);
+                Logger.LogSuccess(cmd);
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public async Task<T> ExecuteAsync<T>(Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
@@ -92,7 +152,18 @@ namespace Marten.Services
             RequestCount++;
 
             var cmd = _connection.Value.CreateCommand();
-            return await func(cmd, token);
+
+            try
+            {
+                var returnValue = await func(cmd, token);
+                Logger.LogSuccess(cmd);
+                return returnValue;
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public async Task<T> ExecuteAsync<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
@@ -100,7 +171,18 @@ namespace Marten.Services
             RequestCount++;
 
             _connection.Value.Apply(cmd);
-            return await func(cmd, token);
+
+            try
+            {
+                var returnValue = await func(cmd, token);
+                Logger.LogSuccess(cmd);
+                return returnValue;
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
 
