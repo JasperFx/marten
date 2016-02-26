@@ -15,7 +15,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<Organization>();
             var duplicate = mapping.DuplicatedFields.Single(x => x.MemberName == "Time2");
 
-            duplicate.PgType.ShouldBe("date");
+            duplicate.PgType.ShouldBe("timestamp without time zone");
         }
 
         [Fact]
