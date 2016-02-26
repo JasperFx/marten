@@ -114,6 +114,8 @@ namespace Marten.Testing.Fixtures
         public Target[] Children { get; set; }
 
         public int? NullableNumber { get; set; }
+        public DateTime? NullableDateTime { get; set; }
+        public bool? NullableBoolean { get; set; }
 
     }
 
