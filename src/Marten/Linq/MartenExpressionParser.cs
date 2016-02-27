@@ -106,7 +106,7 @@ namespace Marten.Linq
                 if (binaryExpression.Right.NodeType == ExpressionType.Constant &&
                     binaryExpression.Right.As<ConstantExpression>().Value == null)
                 {
-                    return new WhereFragment($"({locator})::Boolean IS NULL");
+                    return new WhereFragment($"({locator}) IS NULL");
                 }
             }
 
