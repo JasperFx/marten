@@ -177,7 +177,7 @@ BLOCK:public void Store(IIdentityMap map, object id, object entity)
 map.Store<{typeName}>(id, ({typeName})entity);
 END
 
-BLOCK:public object Assign({typeName} document)
+BLOCK:public object Assign({typeName} document, out bool assigned)
 {mapping.IdStrategy.AssignmentBodyCode(mapping.IdMember)}
 return document.{mapping.IdMember.Name};
 END

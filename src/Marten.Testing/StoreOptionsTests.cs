@@ -117,7 +117,7 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public object Assign(User document)
+            public object Assign(User document, out bool assigned)
             {
                 throw new NotImplementedException();
             }
@@ -177,7 +177,7 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public object Assign(Company document)
+            public object Assign(Company document, out bool assigned)
             {
                 throw new NotImplementedException();
             }

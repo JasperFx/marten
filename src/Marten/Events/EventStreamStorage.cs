@@ -83,8 +83,9 @@ namespace Marten.Events
             map.Store(id, entity.As<EventStream>());
         }
 
-        public object Assign(EventStream document)
+        public object Assign(EventStream document, out bool assigned)
         {
+            assigned = false;
             return document.Id;
         }
     }
