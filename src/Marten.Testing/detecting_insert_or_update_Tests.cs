@@ -69,6 +69,21 @@ namespace Marten.Testing
             // 
             doc.Id.ShouldBe(theId);
         }
+
+        [Fact]
+        public void mixed_change_and_update()
+        {
+            var doc1 = new GuidDoc { Id = Guid.NewGuid() };
+            var doc2 = new GuidDoc { Id = Guid.NewGuid() };
+            var doc3 = new GuidDoc { Id = Guid.Empty };
+
+            theSession.Store(doc1, doc2, doc3);
+
+            theSession.PendingChanges.UpdatesFor<GuidDoc>().ShouldHaveTheSameElementsAs(doc1, doc2);
+            theSession.PendingChanges.InsertsFor<GuidDoc>().Single().ShouldBe(doc3);
+
+            theSession.PendingChanges.AllChangedFor<GuidDoc>().Count().ShouldBe(3);
+        }
     }
 
     public class NumericDoc
