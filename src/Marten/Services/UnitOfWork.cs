@@ -15,7 +15,7 @@ namespace Marten.Services
         private readonly IDocumentSchema _schema;
         private readonly ConcurrentDictionary<Type, IEnumerable> _updates = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Type, IEnumerable> _inserts = new ConcurrentDictionary<Type, IEnumerable>();
-        private readonly ConcurrentDictionary<Type, IList<PendingDeletion>> _deletes = new ConcurrentDictionary<Type, IList<PendingDeletion>>(); 
+        private readonly ConcurrentDictionary<Type, IList<Delete>> _deletes = new ConcurrentDictionary<Type, IList<Delete>>(); 
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>(); 
 
         public UnitOfWork(IDocumentSchema schema)
@@ -35,15 +35,15 @@ namespace Marten.Services
 
         private void delete<T>(object id)
         {
-            var list = _deletes.GetOrAdd(typeof (T), _ => new List<PendingDeletion>());
-            list.Add(new PendingDeletion(typeof(T), id));
+            var list = _deletes.GetOrAdd(typeof (T), _ => new List<Delete>());
+            list.Add(new Delete(typeof(T), id));
         }
 
         public void DeleteEntity<T>(T entity)
         {
             var id = _schema.StorageFor(typeof(T)).Identity(entity);
-            var list = _deletes.GetOrAdd(typeof(T), _ => new List<PendingDeletion>());
-            list.Add(new PendingDeletion(typeof(T), id, entity));
+            var list = _deletes.GetOrAdd(typeof(T), _ => new List<Delete>());
+            list.Add(new Delete(typeof(T), id, entity));
         }
 
         public void Delete<T>(ValueType id)
@@ -70,17 +70,17 @@ namespace Marten.Services
             list.AddRange(documents);
         }
 
-        public IEnumerable<PendingDeletion> Deletions()
+        public IEnumerable<Delete> Deletions()
         {
             return _deletes.Values.SelectMany(x => x);
         }
 
-        public IEnumerable<PendingDeletion> DeletionsFor<T>()
+        public IEnumerable<Delete> DeletionsFor<T>()
         {
             return Deletions().Where(x => x.DocumentType == typeof(T));
         }
 
-        public IEnumerable<PendingDeletion> DeletionsFor(Type documentType)
+        public IEnumerable<Delete> DeletionsFor(Type documentType)
         {
             return Deletions().Where(x => x.DocumentType == documentType);
         } 
@@ -109,22 +109,37 @@ namespace Marten.Services
         }
 
 
-        public void ApplyChanges(UpdateBatch batch)
+        public ChangeSet ApplyChanges(UpdateBatch batch)
         {
-            var documentChanges = GetChanges(batch);
+            ChangeSet changes = buildChangeSet(batch);
 
             batch.Execute();
 
-            ClearChanges(documentChanges);
+            ClearChanges(changes.Changes);
+
+            return changes;
         }
 
-        public async Task ApplyChangesAsync(UpdateBatch batch, CancellationToken token)
+        private ChangeSet buildChangeSet(UpdateBatch batch)
         {
             var documentChanges = GetChanges(batch);
+            var changes = new ChangeSet(documentChanges);
+            changes.Updated.Fill(Updates());
+            changes.Inserted.Fill(Inserts());
+            changes.Deleted.AddRange(Deletions());
+
+            return changes;
+        }
+
+        public async Task<ChangeSet> ApplyChangesAsync(UpdateBatch batch, CancellationToken token)
+        {
+            var changes = buildChangeSet(batch);
 
             await batch.ExecuteAsync(token).ConfigureAwait(false);
 
-            ClearChanges(documentChanges);
+            ClearChanges(changes.Changes);
+
+            return changes;
         }
 
         private DocumentChange[] GetChanges(UpdateBatch batch)

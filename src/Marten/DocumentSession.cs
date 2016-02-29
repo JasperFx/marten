@@ -116,7 +116,8 @@ namespace Marten
             _options.Listeners.Each(x => x.BeforeSaveChanges(this));
 
             var batch = new UpdateBatch(_options, _serializer, _connection);
-            _unitOfWork.ApplyChanges(batch);
+            var changes = _unitOfWork.ApplyChanges(batch);
+            _changes.Add(changes);
 
 
             _connection.Commit();
@@ -135,7 +136,9 @@ namespace Marten
 
 
             var batch = new UpdateBatch(_options, _serializer, _connection);
-            await _unitOfWork.ApplyChangesAsync(batch, token);
+            var changes = await _unitOfWork.ApplyChangesAsync(batch, token);
+
+            _changes.Add(changes);
 
             _connection.Commit();
 
@@ -146,6 +149,11 @@ namespace Marten
                 await listener.AfterCommitAsync(this);
             }
         }
+
+        private readonly IList<IChangeSet> _changes = new List<IChangeSet>();
+
+        public IEnumerable<IChangeSet> Commits => _changes;
+        public IChangeSet LastCommit => _changes.LastOrDefault();
 
         internal interface IHandler
         {

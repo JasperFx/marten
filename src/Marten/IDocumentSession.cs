@@ -200,6 +200,17 @@ namespace Marten
         /// Access to the event store functionality
         /// </summary>
         IEventStore Events { get; }
+
+        /// <summary>
+        /// A history of the commits for this session in 
+        /// order of commits
+        /// </summary>
+        IEnumerable<IChangeSet> Commits { get; }
+
+        /// <summary>
+        /// The last set of changes committed, if any
+        /// </summary>
+        IChangeSet LastCommit { get; }
     }
 
     public interface ILoadByKeys<TDoc>

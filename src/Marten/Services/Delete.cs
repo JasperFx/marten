@@ -2,13 +2,13 @@ using System;
 
 namespace Marten.Services
 {
-    public class PendingDeletion
+    public class Delete
     {
         public Type DocumentType { get; }
         public object Id { get; }
         public object Document { get; }
 
-        public PendingDeletion(Type documentType, object id, object document = null)
+        public Delete(Type documentType, object id, object document = null)
         {
             DocumentType = documentType;
             Id = id;
