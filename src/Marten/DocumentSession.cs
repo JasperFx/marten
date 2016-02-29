@@ -85,7 +85,14 @@ namespace Marten
                     // TODO -- categorize as insert or update on UnitOfWork
 
                     storage.Store(_identityMap, id, entity);
-                    _unitOfWork.Store(entity);
+                    if (assigned)
+                    {
+                        _unitOfWork.StoreInserts(entity);
+                    }
+                    else
+                    {
+                        _unitOfWork.StoreUpdates(entity);
+                    }
                 }
             }
 

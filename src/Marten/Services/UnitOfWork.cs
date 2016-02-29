@@ -14,6 +14,7 @@ namespace Marten.Services
     {
         private readonly IDocumentSchema _schema;
         private readonly ConcurrentDictionary<Type, IEnumerable> _updates = new ConcurrentDictionary<Type, IEnumerable>();
+        private readonly ConcurrentDictionary<Type, IEnumerable> _inserts = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Type, IList<PendingDeletion>> _deletes = new ConcurrentDictionary<Type, IList<PendingDeletion>>(); 
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>(); 
 
@@ -55,11 +56,18 @@ namespace Marten.Services
             delete<T>(id);
         }
 
-        public void Store<T>(params T[] entities)
+        public void StoreUpdates<T>(params T[] documents)
         {
             var list = _updates.GetOrAdd(typeof (T), type => typeof (List<>).CloseAndBuildAs<IEnumerable>(typeof (T))).As<List<T>>();
 
-            list.AddRange(entities);
+            list.AddRange(documents);
+        }
+
+        public void StoreInserts<T>(params T[] documents)
+        {
+            var list = _inserts.GetOrAdd(typeof(T), type => typeof(List<>).CloseAndBuildAs<IEnumerable>(typeof(T))).As<List<T>>();
+
+            list.AddRange(documents);
         }
 
         public IEnumerable<PendingDeletion> Deletions()
@@ -79,7 +87,8 @@ namespace Marten.Services
 
         public IEnumerable<object> Updates()
         {
-            return _updates.Values.SelectMany(x => x.OfType<object>()).Union(detectTrackerChanges().Select(x => x.Document));
+            return _updates.Values.SelectMany(x => x.OfType<object>())
+                .Union(detectTrackerChanges().Select(x => x.Document));
         }
 
         public IEnumerable<T> UpdatesFor<T>()
@@ -127,6 +136,13 @@ namespace Marten.Services
                 _updates[type].Each(o => storage.RegisterUpdate(batch, o));
             });
 
+            _inserts.Keys.Each(type =>
+            {
+                var storage = _schema.StorageFor(type);
+
+                _inserts[type].Each(o => storage.RegisterUpdate(batch, o));
+            });
+
             _deletes.Keys.Each(type =>
             {
                 var storage = _schema.StorageFor(type);
@@ -158,7 +174,28 @@ namespace Marten.Services
         {
             _deletes.Clear();
             _updates.Clear();
+            _inserts.Clear();
             changes.Each(x => x.ChangeCommitted());
+        }
+
+        public IEnumerable<object> Inserts()
+        {
+            return _inserts.Values.SelectMany(x => x.OfType<object>());
+        }
+
+        public IEnumerable<T> InsertsFor<T>()
+        {
+            if (_inserts.ContainsKey(typeof(T)))
+            {
+                return _inserts[typeof (T)].As<IList<T>>();
+            }
+
+            return Enumerable.Empty<T>();
+        }
+
+        public IEnumerable<T> AllChangedFor<T>()
+        {
+            return InsertsFor<T>().Union(UpdatesFor<T>());
         }
     }
 }

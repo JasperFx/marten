@@ -16,10 +16,10 @@ namespace Marten.Schema
             return $@"
 BLOCK:if (document.{idMember.Name} == System.Guid.Empty)
 document.{idMember.Name} = System.Guid.NewGuid();
-assigned = false;
+assigned = true;
 END
 BLOCK:else
-assigned = true;
+assigned = false;
 END
 ";
 
