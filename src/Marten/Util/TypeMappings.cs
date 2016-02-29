@@ -19,6 +19,7 @@ namespace Marten.Util
             {typeof (double), "double precision"},
             {typeof (decimal), "decimal"},
             {typeof(float), "decimal" },
+            {typeof(DateTime), "timestamp without time zone" },
             {typeof (DateTimeOffset), "timestamp with time zone"}
         };
 
