@@ -299,6 +299,11 @@ namespace Marten.Schema
             });
         }
 
+        public IField FieldForColumn(string columnName)
+        {
+            return _fields.Values.FirstOrDefault(x => x.ColumnName == columnName);
+        }
+
         public virtual TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
             // can do foreign keys
         {
@@ -376,7 +381,6 @@ namespace Marten.Schema
 
         private void buildSchemaObjects(TableDefinition existing, TableDefinition expected, AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
-            // TODO -- this will change w/ the enum later
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
             {
                 var className = nameof(StoreOptions);
@@ -386,8 +390,27 @@ namespace Marten.Schema
                 throw new InvalidOperationException(message);
             }
 
-            // TODO -- this will need to get fancier. Right now it just drops
-            // and replaces the tables. Later needs to add the extra fields and indexes
+            if (existing == null)
+            {
+                rebuildTableAndUpsertFunction(schema, executeSql);
+                return;
+            }
+
+            var diff = new TableDiff(expected, existing);
+            if (diff.CanPatch())
+            {
+                diff.CreatePatch(this, executeSql);
+            }
+            else
+            {
+                // TODO -- better evaluation here against the auto create mode
+                rebuildTableAndUpsertFunction(schema, executeSql);
+            }
+
+        }
+
+        private void rebuildTableAndUpsertFunction(IDocumentSchema schema, Action<string> executeSql)
+        {
             var writer = new StringWriter();
             WriteSchemaObjects(schema, writer);
 

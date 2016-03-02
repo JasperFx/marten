@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -63,6 +64,20 @@ namespace Marten.Schema
                 _columnName = value;
                 SqlLocator = "d." + _columnName;
             }
+        }
+
+        // TODO -- think this one might have to change w/ FK's
+        public void WritePatch(DocumentMapping mapping, Action<string> executeSql)
+        {
+            executeSql($"ALTER TABLE {mapping.TableName} ADD COLUMN {ColumnName} {PgType};");
+
+            var jsonField = new JsonLocatorField(Members);
+
+            // HOKEY, but I'm letting it pass for now.
+            var sqlLocator = jsonField.SqlLocator.Replace("d.", "");
+
+            executeSql($"update {mapping.TableName} set {ColumnName} = {sqlLocator}");
+
         }
 
         public DuplicatedFieldRole Role { get; set; } = DuplicatedFieldRole.Search;

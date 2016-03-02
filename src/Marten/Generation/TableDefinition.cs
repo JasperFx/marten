@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Baseline;
 using Marten.Services;
 
@@ -85,6 +86,11 @@ namespace Marten.Generation
                 hashCode = (hashCode*397) ^ (Name != null ? Name.GetHashCode() : 0);
                 return hashCode;
             }
+        }
+
+        public bool HasColumn(string name)
+        {
+            return Columns.Any(x => x.Name == name);
         }
     }
 }
