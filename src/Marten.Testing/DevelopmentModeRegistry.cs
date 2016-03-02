@@ -39,7 +39,8 @@ namespace Marten.Testing
 
             For<IMartenQueryExecutor>().Use<MartenQueryExecutor>();
 
-            For<IDocumentSchemaCreation>().Use<DevelopmentSchemaCreation>();
+            For<StoreOptions>().Use(c => c.GetInstance<IDocumentStore>().Advanced.Options);
+
         }
 
         public static PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;

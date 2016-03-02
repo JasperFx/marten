@@ -72,11 +72,7 @@ namespace Marten
 
             _logger = options.Logger();
 
-            var creation = options.AutoCreateSchemaObjects
-                ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_connectionFactory, _logger)
-                : new ProductionSchemaCreation();
-
-            Schema = new DocumentSchema(_options, _connectionFactory, creation, _logger);
+            Schema = new DocumentSchema(_options, _connectionFactory, _logger);
 
             Schema.Alter(options.Schema);
 
@@ -87,12 +83,12 @@ namespace Marten
 
             Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser, new NulloIdentityMap(_serializer)));
 
-            EventStore = new EventStoreAdmin(_connectionFactory, _options, creation, _serializer);
+            EventStore = new EventStoreAdmin(_connectionFactory, _options, _serializer);
         }
 
         private readonly StoreOptions _options;
         private readonly IConnectionFactory _connectionFactory;
-        private IMartenLogger _logger;
+        private readonly IMartenLogger _logger;
 
         public void Dispose()
         {

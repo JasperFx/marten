@@ -126,7 +126,6 @@
     <Compile Include="Linq\WhereFragment.cs" />
     <Compile Include="MartenRegistry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Schema\DevelopmentSchemaCreation.cs" />
     <Compile Include="Schema\DocumentMapping.cs" />
     <Compile Include="Schema\DocumentSchema.cs" />
     <Compile Include="Schema\DocumentStorageBuilder.cs" />
@@ -142,13 +141,11 @@
     <Compile Include="Schema\IdAssignment.cs" />
     <Compile Include="Schema\IDocumentCleaner.cs" />
     <Compile Include="Schema\IDocumentSchema.cs" />
-    <Compile Include="Schema\IDocumentSchemaCreation.cs" />
     <Compile Include="Schema\IDocumentStorage.cs" />
     <Compile Include="Schema\DocumentCleaner.cs" />
     <Compile Include="Schema\IField.cs" />
     <Compile Include="Schema\JsonLocatorField.cs" />
     <Compile Include="Schema\MartenAttribute.cs" />
-    <Compile Include="Schema\ProductionSchemaCreation.cs" />
     <Compile Include="Schema\PropertySearching.cs" />
     <Compile Include="Schema\PropertySearchingAttribute.cs" />
     <Compile Include="Schema\SchemaBuilder.cs" />

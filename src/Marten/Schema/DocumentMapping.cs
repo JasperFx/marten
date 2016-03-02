@@ -339,16 +339,6 @@ namespace Marten.Schema
             return function;
         }
 
-        public bool ShouldRegenerate(IDocumentSchema schema)
-        {
-            if (!schema.DocumentTables().Contains(TableName)) return true;
-
-            var existing = schema.TableSchema(TableName);
-            var expected = ToTable(schema);
-
-            return !expected.Equals(existing);
-        }
-
         private readonly object _lock = new object();
         private bool _hasCheckedSchema = false;
 

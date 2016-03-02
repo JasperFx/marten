@@ -70,12 +70,6 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
-        public bool ShouldRegenerate(IDocumentSchema schema)
-        {
-            var documentTables = schema.SchemaTableNames().ToArray();
-            return !documentTables.Contains("mt_streams");
-        }
-
 
         private bool _checkedSchema = false;
         private readonly object _locker = new object();

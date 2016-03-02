@@ -15,7 +15,6 @@ namespace Marten.Schema
     public class DocumentSchema : IDocumentSchema, IDisposable
     {
         private readonly IConnectionFactory _factory;
-        private readonly IDocumentSchemaCreation _creation;
         private readonly IMartenLogger _logger;
 
         private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
@@ -25,17 +24,16 @@ namespace Marten.Schema
             new ConcurrentDictionary<Type, IDocumentStorage>();
 
 
-        public DocumentSchema(StoreOptions options, IConnectionFactory factory, IDocumentSchemaCreation creation, IMartenLogger logger)
+        public DocumentSchema(StoreOptions options, IConnectionFactory factory, IMartenLogger logger)
         {
             _factory = factory;
-            _creation = creation;
             _logger = logger;
 
             StoreOptions = options;
 
             options.AllDocumentMappings.Each(x => _mappings[x.DocumentType] = x);
 
-            Sequences = new SequenceFactory(this, _factory, _creation);
+            Sequences = new SequenceFactory(this, _factory, options);
         }
 
         public StoreOptions StoreOptions { get; }

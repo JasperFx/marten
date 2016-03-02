@@ -12,14 +12,12 @@ namespace Marten.Events
     {
         private readonly IConnectionFactory _connectionFactory;
         private readonly StoreOptions _options;
-        private readonly IDocumentSchemaCreation _creation;
         private readonly ISerializer _serializer;
 
-        public EventStoreAdmin(IConnectionFactory connectionFactory, StoreOptions options, IDocumentSchemaCreation creation, ISerializer serializer)
+        public EventStoreAdmin(IConnectionFactory connectionFactory, StoreOptions options, ISerializer serializer)
         {
             _connectionFactory = connectionFactory;
             _options = options;
-            _creation = creation;
             _serializer = serializer;
         }
 
@@ -97,12 +95,10 @@ namespace Marten.Events
         [Obsolete("This should be going away now that EventGraph puts things together itself")]
         public void RebuildEventStoreSchema()
         {
-            
-
-            _creation.RunScript("mt_stream");
-            _creation.RunScript("mt_initialize_projections");
-            _creation.RunScript("mt_apply_transform");
-            _creation.RunScript("mt_apply_aggregation");
+            runScript("mt_stream");
+            runScript("mt_initialize_projections");
+            runScript("mt_apply_transform");
+            runScript("mt_apply_aggregation");
 
             var js = SchemaBuilder.GetJavascript("mt_transforms");
 
@@ -115,6 +111,20 @@ namespace Marten.Events
                         .With("definition", js)
                         .ExecuteNonQuery();
                 });
+            }
+        }
+
+        private void runScript(string script)
+        {
+            var sql = SchemaBuilder.GetText(script);
+            try
+            {
+                _connectionFactory.RunSql(sql);
+            }
+            catch (Exception e)
+            {
+
+                throw new MartenSchemaException(sql, e);
             }
         }
     }

@@ -41,10 +41,6 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
-        public bool ShouldRegenerate(IDocumentSchema schema)
-        {
-            throw new NotImplementedException();
-        }
 
         public void GenerateSchemaObjectsIfNecessary(bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {

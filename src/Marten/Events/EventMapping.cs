@@ -51,11 +51,6 @@ namespace Marten.Events
             return $"{tableAlias}.id, {tableAlias}.data";
         }
 
-        public bool ShouldRegenerate(IDocumentSchema schema)
-        {
-            return _parent.ShouldRegenerate(schema);
-        }
-
         public void GenerateSchemaObjectsIfNecessary(bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
             _parent.GenerateSchemaObjectsIfNecessary(autoCreateSchemaObjectsMode, schema, executeSql);
