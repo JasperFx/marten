@@ -71,7 +71,7 @@ namespace Marten.Testing.Examples
             var store = DocumentStore.For(_ =>
             {
                 // Turn this off in production 
-                _.AutoCreateSchemaObjects = false;
+                _.AutoCreateSchemaObjects = AutoCreate.None;
 
                 // This is still mandatory
                 _.Connection("some connection string");

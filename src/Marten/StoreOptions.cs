@@ -12,6 +12,31 @@ using Npgsql;
 
 namespace Marten
 {
+    public enum AutoCreate
+    {
+        /// <summary>
+        /// Will drop and recreate tables that do not match the Marten configuration or create new ones
+        /// </summary>
+        All,
+        /*
+        /// <summary>
+        /// Will never destroy existing tables. Attempts to add missing columns or missing tables
+        /// </summary>
+        CreateOrUpdate,
+
+        /// <summary>
+        /// Will create missing schema objects at runtime, but will not update or remove existing schema objects
+        /// </summary>
+        CreateOnly,
+        */
+        /// <summary>
+        /// Do not recreate, destroy, or update schema objects at runtime. Will throw exceptions if
+        /// the schema does not match the Marten configuration
+        /// </summary>
+        None
+    }
+
+
     /// <summary>
     /// StoreOptions supplies all the necessary configuration
     /// necessary to customize and bootstrap a working
@@ -101,10 +126,9 @@ namespace Marten
 
         /// <summary>
         /// Whether or Marten should attempt to create any missing database schema objects at runtime. This
-        /// property is False by default for production usage, but should be set to True at development time for
-        /// more efficient development. 
+        /// property is "All" by default for more efficient development, but can be set to lower values for production usage.
         /// </summary>
-        public bool AutoCreateSchemaObjects = false;
+        public AutoCreate AutoCreateSchemaObjects = AutoCreate.All;
 
         /// <summary>
         /// Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document

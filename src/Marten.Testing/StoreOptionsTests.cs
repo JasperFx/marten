@@ -32,7 +32,7 @@ namespace Marten.Testing
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.LoadPrecompiledStorageFrom(GetType().Assembly);
-                _.AutoCreateSchemaObjects = true;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
             }))
             {
                 store.Schema.StorageFor(typeof (User)).ShouldBeOfType<FakeUserStorage>();

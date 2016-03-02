@@ -21,7 +21,7 @@ namespace Marten.Schema.Sequences
         {
             if (!_schema.SchemaTableNames().Contains("mt_hilo"))
             {
-                if (!_options.AutoCreateSchemaObjects)
+                if (_options.AutoCreateSchemaObjects == AutoCreate.None)
                 {
                     throw new InvalidOperationException($"Hilo table is missing, but {nameof(StoreOptions.AutoCreateSchemaObjects)} is {_options.AutoCreateSchemaObjects}");
                 }

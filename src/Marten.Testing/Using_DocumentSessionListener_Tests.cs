@@ -15,7 +15,7 @@ namespace Marten.Testing
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.AutoCreateSchemaObjects = true;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
 
                 _.Listeners.Add(stub1);
                 _.Listeners.Add(stub2);
@@ -45,7 +45,7 @@ namespace Marten.Testing
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.AutoCreateSchemaObjects = true;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
 
                 _.Listeners.Add(stub1);
                 _.Listeners.Add(stub2);

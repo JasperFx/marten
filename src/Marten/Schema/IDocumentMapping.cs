@@ -17,7 +17,7 @@ namespace Marten.Schema
         MemberInfo IdMember { get; }
         string SelectFields(string tableAlias);
 
-        void GenerateSchemaObjectsIfNecessary(bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql);
+        void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql);
 
         IField FieldFor(IEnumerable<MemberInfo> members);
 

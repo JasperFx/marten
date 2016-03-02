@@ -342,7 +342,7 @@ namespace Marten.Schema
         private readonly object _lock = new object();
         private bool _hasCheckedSchema = false;
 
-        public void GenerateSchemaObjectsIfNecessary(bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
             if (_hasCheckedSchema) return;
 
@@ -374,10 +374,10 @@ namespace Marten.Schema
 
         }
 
-        private void buildSchemaObjects(TableDefinition existing, TableDefinition expected, bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        private void buildSchemaObjects(TableDefinition existing, TableDefinition expected, AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
             // TODO -- this will change w/ the enum later
-            if (!autoCreateSchemaObjectsMode)
+            if (autoCreateSchemaObjectsMode == AutoCreate.None)
             {
                 var className = nameof(StoreOptions);
                 var propName = nameof(StoreOptions.AutoCreateSchemaObjects);

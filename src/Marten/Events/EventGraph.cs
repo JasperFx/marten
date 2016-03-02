@@ -74,7 +74,7 @@ namespace Marten.Events
         private bool _checkedSchema = false;
         private readonly object _locker = new object();
 
-        public void GenerateSchemaObjectsIfNecessary(bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
             if (_checkedSchema) return;
 
@@ -83,7 +83,7 @@ namespace Marten.Events
             var schemaExists = schema.SchemaTableNames().Contains("mt_streams");
             if (schemaExists) return;
 
-            if (!autoCreateSchemaObjectsMode)
+            if (autoCreateSchemaObjectsMode == AutoCreate.None)
             {
                 throw new InvalidOperationException("The EventStore schema objects do not exist and the AutoCreateSchemaObjects is configured as " + autoCreateSchemaObjectsMode);
             }

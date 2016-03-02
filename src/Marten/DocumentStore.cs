@@ -32,7 +32,7 @@ namespace Marten
         {
             return For(_ =>
             {
-                _.AutoCreateSchemaObjects = true;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Connection(connectionString);
             });
         }

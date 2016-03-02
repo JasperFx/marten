@@ -15,7 +15,7 @@ namespace Marten.Testing
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.AutoCreateSchemaObjects = true;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.UpsertType = UpsertType;
             });
 
@@ -56,7 +56,7 @@ namespace Marten.Testing
                 return DocumentStore.For(_ =>
                 {
                     _.Connection("your connection string");
-                    _.AutoCreateSchemaObjects = false;
+                    _.AutoCreateSchemaObjects = AutoCreate.None;
                     
                     // other Marten configuration options
                 });

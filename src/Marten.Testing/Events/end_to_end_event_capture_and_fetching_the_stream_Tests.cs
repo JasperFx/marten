@@ -14,7 +14,7 @@ namespace Marten.Testing.Events
         {
             var store = DocumentStore.For(_ =>
             {
-                _.AutoCreateSchemaObjects = true;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
 
                 _.Connection(ConnectionSource.ConnectionString);
 
