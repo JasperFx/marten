@@ -76,6 +76,58 @@ namespace Marten.Events
             return !documentTables.Contains("mt_streams");
         }
 
+
+        private bool _checkedSchema = false;
+        private readonly object _locker = new object();
+
+        public void GenerateSchemaObjectsIfNecessary(bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        {
+            if (_checkedSchema) return;
+
+            _checkedSchema = true;
+
+            var schemaExists = schema.SchemaTableNames().Contains("mt_streams");
+            if (schemaExists) return;
+
+            if (!autoCreateSchemaObjectsMode)
+            {
+                throw new InvalidOperationException("The EventStore schema objects do not exist and the AutoCreateSchemaObjects is configured as " + autoCreateSchemaObjectsMode);
+            }
+
+            lock (_locker)
+            {
+                if (!schema.SchemaTableNames().Contains("mt_streams"))
+                {
+                    var writer = new StringWriter();
+
+                    writeBasicTables(writer);
+
+                    executeSql(writer.ToString());
+
+
+                    // This is going to have to be done separately
+                    // TODO -- doesn't work anyway. Do this differently somehow.
+
+
+                    //var js = SchemaBuilder.GetJavascript("mt_transforms").Replace("'", "\"").Replace("\n", "").Replace("\r", "");
+                    //var sql = $"insert into mt_modules (name, definition) values ('mt_transforms', '{js}');";
+                    //executeSql(sql);
+
+                    //executeSql("select mt_initialize_projections();");
+                }
+            }
+
+        }
+
+
+        private static void writeBasicTables(StringWriter writer)
+        {
+            writer.WriteSql("mt_stream");
+            writer.WriteSql("mt_initialize_projections");
+            writer.WriteSql("mt_apply_transform");
+            writer.WriteSql("mt_apply_aggregation");
+        }
+
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             throw new NotImplementedException();
@@ -98,30 +150,8 @@ namespace Marten.Events
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
-            // TODO -- will need to do something to add the JS module for mt_transforms
-            // maybe doing it by replacing all instances of ' with " and building the sql directly?
-            // See EventStoreAdmin.RebuildEventStoreSchema()
-
-            writer.WriteSql("mt_stream");
-            writer.WriteSql("mt_initialize_projections");
-            writer.WriteSql("mt_apply_transform");
-            writer.WriteSql("mt_apply_aggregation");
-
-
-            //writer.WriteLine("COMMIT;");
-            //writer.WriteLine("");
-
-
-            // This is going to have to be done separately
-            //var js = SchemaBuilder.GetJavascript("mt_transforms").Replace("'", "\"").Replace("\n", "").Replace("\r", "");
-
-            //writer.WriteLine($"insert into mt_modules (name, definition) values ('mt_transforms', '{js}');");
-
-            //writer.WriteLine();
-
-            //writer.WriteLine("select mt_initialize_projections();");
-            
-
+            writeBasicTables(writer);
+            // TODO -- need to load the projection and initialize
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)

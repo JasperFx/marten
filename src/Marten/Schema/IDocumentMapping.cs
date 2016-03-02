@@ -17,7 +17,10 @@ namespace Marten.Schema
         MemberInfo IdMember { get; }
         string SelectFields(string tableAlias);
 
+        [Obsolete("Should go away")]
         bool ShouldRegenerate(IDocumentSchema schema);
+
+        void GenerateSchemaObjectsIfNecessary(bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql);
 
         IField FieldFor(IEnumerable<MemberInfo> members);
 

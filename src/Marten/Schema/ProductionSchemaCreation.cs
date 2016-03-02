@@ -3,6 +3,7 @@ using Baseline;
 
 namespace Marten.Schema
 {
+    [Obsolete("Needs to go awa w/ the fancier schema creation")]
     public class ProductionSchemaCreation : IDocumentSchemaCreation
     {
         public void CreateSchema(IDocumentSchema schema, IDocumentMapping mapping, Func<bool> shouldRegenerate)

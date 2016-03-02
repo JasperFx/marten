@@ -76,7 +76,7 @@ namespace Marten
                 ? (IDocumentSchemaCreation) new DevelopmentSchemaCreation(_connectionFactory, _logger)
                 : new ProductionSchemaCreation();
 
-            Schema = new DocumentSchema(_options, _connectionFactory, creation);
+            Schema = new DocumentSchema(_options, _connectionFactory, creation, _logger);
 
             Schema.Alter(options.Schema);
 

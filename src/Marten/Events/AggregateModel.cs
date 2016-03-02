@@ -46,6 +46,11 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
+        public void GenerateSchemaObjectsIfNecessary(bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        {
+            throw new NotImplementedException();
+        }
+
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             throw new NotImplementedException();

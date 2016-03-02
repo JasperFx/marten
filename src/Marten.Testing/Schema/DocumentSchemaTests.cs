@@ -14,20 +14,14 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentSchemaTests : IDisposable
+    public class DocumentSchemaTests : IntegratedFixture
     {
-        private readonly DocumentSchema _schema;
-        private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
+        private readonly IDocumentSchema _schema;
 
         public DocumentSchemaTests()
         {
             ConnectionSource.CleanBasicDocuments();
-            _schema = _container.GetInstance<DocumentSchema>();
-        }
-
-        public void Dispose()
-        {
-            _schema.Dispose();
+            _schema = theStore.Schema;
         }
 
         [Fact]
@@ -206,31 +200,27 @@ namespace Marten.Testing.Schema
         [Fact]
         public void resolve_a_document_mapping_for_an_event_type()
         {
-            var schema = new DocumentSchema(new StoreOptions(), null, null);
-            schema.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            _schema.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 
         [Fact]
         public void resolve_storage_for_event_type()
         {
-            var schema = new DocumentSchema(new StoreOptions(), new ConnectionSource(), new DevelopmentSchemaCreation(new ConnectionSource(), new NulloMartenLogger()));
-            schema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            _schema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 
         [Fact]
         public void resolve_mapping_for_event_stream()
         {
-            var schema = new DocumentSchema(new StoreOptions(), null, null);
-            schema.MappingFor(typeof (EventStream)).ShouldBeOfType<EventGraph>();
+            _schema.MappingFor(typeof (EventStream)).ShouldBeOfType<EventGraph>();
         }
 
         [Fact]
         public void resolve_storage_for_stream_type()
         {
-            var schema = new DocumentSchema(new StoreOptions(), new ConnectionSource(), new DevelopmentSchemaCreation(new ConnectionSource(), new NulloMartenLogger()));
-            schema.StorageFor(typeof (EventStream)).ShouldBeOfType<EventStreamStorage>();
+            _schema.StorageFor(typeof (EventStream)).ShouldBeOfType<EventStreamStorage>();
         }
     }
 

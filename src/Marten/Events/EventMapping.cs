@@ -56,6 +56,11 @@ namespace Marten.Events
             return _parent.ShouldRegenerate(schema);
         }
 
+        public void GenerateSchemaObjectsIfNecessary(bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        {
+            _parent.GenerateSchemaObjectsIfNecessary(autoCreateSchemaObjectsMode, schema, executeSql);
+        }
+
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             return _inner.FieldFor(members);

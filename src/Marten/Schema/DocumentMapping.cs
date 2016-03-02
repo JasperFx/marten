@@ -349,6 +349,62 @@ namespace Marten.Schema
             return !expected.Equals(existing);
         }
 
+        private readonly object _lock = new object();
+        private bool _hasCheckedSchema = false;
+
+        public void GenerateSchemaObjectsIfNecessary(bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        {
+            if (_hasCheckedSchema) return;
+
+            try
+            {
+                var expected = ToTable(schema);
+
+                var existing = schema.TableSchema(TableName);
+                if (existing != null && expected.Equals(existing))
+                {
+                    _hasCheckedSchema = true;
+                    return;
+                }
+
+                lock (_lock)
+                {
+                    existing = schema.TableSchema(TableName);
+                    if (existing == null || !expected.Equals(existing))
+                    {
+                        buildSchemaObjects(existing, expected, autoCreateSchemaObjectsMode, schema, executeSql);
+                    }
+                }
+            }
+            finally
+            {
+                _hasCheckedSchema = true;
+            }
+
+
+        }
+
+        private void buildSchemaObjects(TableDefinition existing, TableDefinition expected, bool autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        {
+            // TODO -- this will change w/ the enum later
+            if (!autoCreateSchemaObjectsMode)
+            {
+                var className = nameof(StoreOptions);
+                var propName = nameof(StoreOptions.AutoCreateSchemaObjects);
+
+                string message = $"No document storage exists for type {DocumentType.FullName} and cannot be created dynamically unless the {className}.{propName} = true. See http://jasperfx.github.io/marten/documentation/documents/ for more information";
+                throw new InvalidOperationException(message);
+            }
+
+            // TODO -- this will need to get fancier. Right now it just drops
+            // and replaces the tables. Later needs to add the extra fields and indexes
+            var writer = new StringWriter();
+            WriteSchemaObjects(schema, writer);
+
+            var sql = writer.ToString();
+            executeSql(sql);
+        }
+
 
         public static DocumentMapping For<T>()
         {

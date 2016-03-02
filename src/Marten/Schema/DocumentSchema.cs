@@ -16,6 +16,7 @@ namespace Marten.Schema
     {
         private readonly IConnectionFactory _factory;
         private readonly IDocumentSchemaCreation _creation;
+        private readonly IMartenLogger _logger;
 
         private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
             new ConcurrentDictionary<Type, IDocumentMapping>();
@@ -24,10 +25,11 @@ namespace Marten.Schema
             new ConcurrentDictionary<Type, IDocumentStorage>();
 
 
-        public DocumentSchema(StoreOptions options, IConnectionFactory factory, IDocumentSchemaCreation creation)
+        public DocumentSchema(StoreOptions options, IConnectionFactory factory, IDocumentSchemaCreation creation, IMartenLogger logger)
         {
             _factory = factory;
             _creation = creation;
+            _logger = logger;
 
             StoreOptions = options;
 
@@ -97,8 +99,22 @@ namespace Marten.Schema
 
         private void buildSchemaObjectsIfNecessary(IDocumentMapping mapping)
         {
-            _creation.CreateSchema(this, mapping, () => mapping.ShouldRegenerate(this));
+            Action<string> executeSql = sql =>
+            {
+                try
+                {
+                    _factory.RunSql(sql);
+                    _logger.SchemaChange(sql);
+                }
+                catch (Exception e)
+                {
+                    throw new MartenSchemaException(mapping.DocumentType, sql, e);
+                }
+            };
+
+            mapping.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, executeSql);
         }
+
 
         private void assertNoDuplicateDocumentAliases()
         {
@@ -194,11 +210,9 @@ namespace Marten.Schema
 
         public TableDefinition TableSchema(string tableName)
         {
-            if (!DocumentTables().Contains(tableName.ToLower()))
-                throw new Exception($"No Marten table exists named '{tableName}'");
-
-
             var columns = findTableColumns(tableName);
+            if (!columns.Any()) return null;
+
             var pkName = primaryKeysFor(tableName).SingleOrDefault();
 
             return new TableDefinition(tableName, pkName, columns);
