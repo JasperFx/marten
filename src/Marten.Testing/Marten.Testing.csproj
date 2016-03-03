@@ -140,6 +140,7 @@
     <Compile Include="performance_tuning.cs" />
     <Compile Include="persisting_document_with_string_id_Tests.cs" />
     <Compile Include="QuerySessionTests.cs" />
+    <Compile Include="Schema\auto_create_mode_Tests.cs" />
     <Compile Include="Schema\configuring_searchable_fields_Tests.cs" />
     <Compile Include="Schema\configuring_the_document_type_alias_Tests.cs" />
     <Compile Include="Schema\do_not_overwrite_tables_with_searchable_fields_Tests.cs" />

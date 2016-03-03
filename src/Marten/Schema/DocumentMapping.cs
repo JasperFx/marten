@@ -367,7 +367,7 @@ namespace Marten.Schema
                     existing = schema.TableSchema(TableName);
                     if (existing == null || !expected.Equals(existing))
                     {
-                        buildSchemaObjects(existing, expected, autoCreateSchemaObjectsMode, schema, executeSql);
+                        buildOrModifySchemaObjects(existing, expected, autoCreateSchemaObjectsMode, schema, executeSql);
                     }
                 }
             }
@@ -379,7 +379,7 @@ namespace Marten.Schema
 
         }
 
-        private void buildSchemaObjects(TableDefinition existing, TableDefinition expected, AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        private void buildOrModifySchemaObjects(TableDefinition existing, TableDefinition expected, AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
             {
@@ -396,15 +396,24 @@ namespace Marten.Schema
                 return;
             }
 
+            if (autoCreateSchemaObjectsMode == AutoCreate.CreateOnly)
+            {
+                throw new InvalidOperationException($"The table for document type {DocumentType.FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{nameof(AutoCreate.CreateOnly)}'");
+            }
+
             var diff = new TableDiff(expected, existing);
             if (diff.CanPatch())
             {
                 diff.CreatePatch(this, executeSql);
             }
-            else
+            else if (autoCreateSchemaObjectsMode == AutoCreate.All)
             {
                 // TODO -- better evaluation here against the auto create mode
                 rebuildTableAndUpsertFunction(schema, executeSql);
+            }
+            else
+            {
+                throw new InvalidOperationException($"The table for document type {DocumentType.FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{autoCreateSchemaObjectsMode}'");
             }
 
         }
