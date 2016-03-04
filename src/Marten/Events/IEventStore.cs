@@ -43,7 +43,7 @@ namespace Marten.Events
 
         void ClearAllProjections();
 
-        IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase();
+        IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase(bool overwrite = false);
 
         IEnumerable<ProjectionUsage> ProjectionUsages(); 
 

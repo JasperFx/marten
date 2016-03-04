@@ -25,7 +25,7 @@ namespace Marten.Testing.Events
 
             theEvents.RebuildEventStoreSchema();
             theEvents.LoadProjections(directory);
-            theEvents.InitializeEventStoreInDatabase();
+            theEvents.InitializeEventStoreInDatabase(true);
             
         }
 

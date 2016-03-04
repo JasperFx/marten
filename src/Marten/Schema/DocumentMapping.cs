@@ -222,6 +222,8 @@ namespace Marten.Schema
 
         public void RemoveSchemaObjects(IManagedConnection connection)
         {
+            _hasCheckedSchema = false;
+
             connection.Execute($"DROP TABLE IF EXISTS {TableName} CASCADE;");
 
             var dropTargets = DocumentCleaner.DropFunctionSql.ToFormat(UpsertName);

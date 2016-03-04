@@ -84,6 +84,12 @@ namespace Marten
             Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, _serializer, _parser, new NulloIdentityMap(_serializer)));
 
             EventStore = new EventStoreAdmin(_connectionFactory, _options, _serializer);
+
+            if (Schema.Events.IsActive && options.AutoCreateSchemaObjects != AutoCreate.None)
+            {
+                Schema.EnsureStorageExists(typeof(EventStream));
+                EventStore.InitializeEventStoreInDatabase();
+            }
         }
 
         private readonly StoreOptions _options;

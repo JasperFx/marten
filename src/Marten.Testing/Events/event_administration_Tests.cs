@@ -16,7 +16,7 @@ namespace Marten.Testing.Events
             var schema = theContainer.GetInstance<IDocumentSchema>();
             schema.EnsureStorageExists(typeof(EventStream));
 
-            theStore.EventStore.InitializeEventStoreInDatabase();
+            theStore.EventStore.InitializeEventStoreInDatabase(true);
         }
 
         [Fact]
@@ -124,7 +124,7 @@ namespace Marten.Testing.Events
             
 
             theStore.EventStore.LoadProjections(directory);
-            var usages = theStore.EventStore.InitializeEventStoreInDatabase();
+            var usages = theStore.EventStore.InitializeEventStoreInDatabase(true);
 
             usages.Where(x => x.name == "location")
                 .Select(x => x.event_name)

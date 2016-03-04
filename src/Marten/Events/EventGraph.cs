@@ -146,6 +146,7 @@ namespace Marten.Events
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             writeBasicTables(writer);
+           
             // TODO -- need to load the projection and initialize
         }
 

@@ -22,7 +22,7 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof (MembersDeparted));
             });
 
-            store.Advanced.Clean.CompletelyRemoveAll();
+            store.Advanced.Clean.DeleteAllEventData();
 
             using (var session = store.OpenSession())
             {

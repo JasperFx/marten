@@ -56,14 +56,12 @@ namespace Marten.Events
             throw new System.NotImplementedException();
         }
 
-        public IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase()
+        public IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase(bool overwrite = false)
         {
             var js = SchemaBuilder.GetJavascript("mt_transforms");
 
             using (var connection = new ManagedConnection(_connectionFactory))
             {
-               
-
                 connection.Execute(cmd =>
                 {
                     cmd.WithText("delete from mt_modules where name = :name;insert into mt_modules (name, definition) values (:name, :definition)")
@@ -74,7 +72,7 @@ namespace Marten.Events
 
                 connection.Execute(cmd =>
                 {
-                    cmd.CallsSproc("mt_initialize_projections").ExecuteNonQuery();
+                    cmd.CallsSproc("mt_initialize_projections").With("overwrite", overwrite).ExecuteNonQuery();
                 });
             }
 
