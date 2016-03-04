@@ -49,7 +49,7 @@ namespace Marten.Schema
             {
                 if (type == typeof (EventStream))
                 {
-                    return StoreOptions.Events;
+                    return StoreOptions.Events.As<IDocumentMapping>();
                 }
 
                 if (documentType.CanBeCastTo<IEvent>())
@@ -129,7 +129,7 @@ namespace Marten.Schema
             }
         }
 
-        public EventGraph Events => StoreOptions.Events;
+        public IEventStoreConfiguration Events => StoreOptions.Events;
         public PostgresUpsertType UpsertType => StoreOptions.UpsertType;
 
         public IEnumerable<string> SchemaTableNames()
@@ -200,7 +200,7 @@ namespace Marten.Schema
                 var filename = directory.AppendPath("mt_streams.sql");
                 var writer = new StringWriter();
 
-                Events.WriteSchemaObjects(this, writer);
+                Events.As<IDocumentMapping>().WriteSchemaObjects(this, writer);
 
                 system.WriteStringToFile(filename, writer.ToString());
             }
@@ -215,7 +215,7 @@ namespace Marten.Schema
 
             if (Events.IsActive)
             {
-                Events.WriteSchemaObjects(this, writer);
+                Events.As<IDocumentMapping>().WriteSchemaObjects(this, writer);
             }
 
             writer.WriteLine(SchemaBuilder.GetText("mt_hilo"));

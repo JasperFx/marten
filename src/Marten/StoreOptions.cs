@@ -171,7 +171,7 @@ namespace Marten
         /// <summary>
         /// Configuration of event streams and projections
         /// </summary>
-        public EventGraph Events { get; } = new EventGraph();
+        public IEventStoreConfiguration Events { get; } = new EventGraph();
 
         internal ISerializer Serializer()
         {

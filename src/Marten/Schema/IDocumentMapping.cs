@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using Marten.Events;
 using Marten.Linq;
 using Marten.Services;
 
@@ -31,5 +32,6 @@ namespace Marten.Schema
 
         void RemoveSchemaObjects(IManagedConnection connection);
         void DeleteAllDocuments(IConnectionFactory factory);
+
     }
 }

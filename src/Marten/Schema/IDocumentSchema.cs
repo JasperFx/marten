@@ -25,7 +25,7 @@ namespace Marten.Schema
 
         ISequences Sequences { get; }
 
-        EventGraph Events { get; }
+        IEventStoreConfiguration Events { get; }
 
         PostgresUpsertType UpsertType { get; }
 

@@ -11,7 +11,27 @@ using Marten.Services;
 
 namespace Marten.Events
 {
-    public class EventGraph : IDocumentMapping
+    public interface IEventStoreConfiguration
+    {
+        void AddEventType(Type eventType);
+        void AddAllTypesFromAssembly(Assembly assembly);
+        void AddEventTypes(IEnumerable<Type> types);
+        void AddAggregateTypes(IEnumerable<Type> types);
+        void AddAggregateType<T>() where T : IAggregate;
+        void AddAggregateType(Type aggregateType);
+
+
+        EventMapping EventMappingFor(Type eventType);
+        EventMapping EventMappingFor<T>() where T : IEvent;
+        IEnumerable<EventMapping> AllEvents();
+        IEnumerable<AggregateModel> AllAggregates();
+        EventMapping EventMappingFor(string eventType);
+        bool IsActive { get; }
+        AggregateModel AggregateFor<T>() where T : IAggregate;
+        AggregateModel AggregateFor(Type aggregateType);
+    }
+
+    public class EventGraph : IDocumentMapping, IEventStoreConfiguration
     {
 
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
