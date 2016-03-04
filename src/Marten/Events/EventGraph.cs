@@ -41,6 +41,11 @@ namespace Marten.Events
             return _events;
         }
 
+        public IEnumerable<AggregateModel> AllAggregates()
+        {
+            return _aggregates;
+        } 
+
         public EventMapping EventMappingFor(string eventType)
         {
             return _byEventName[eventType];
@@ -56,6 +61,24 @@ namespace Marten.Events
             
 
             _events.FillDefault(eventType);
+        }
+
+        public void AddAllTypesFromAssembly(Assembly assembly)
+        {
+            var allTypes = assembly.GetExportedTypes();
+
+            AddEventTypes(allTypes.Where(x => x.IsConcreteTypeOf<IEvent>()));
+            AddAggregateTypes(allTypes.Where(x => x.IsConcreteTypeOf<IAggregate>()));
+        }
+
+        public void AddEventTypes(IEnumerable<Type> types)
+        {
+            types.Each(AddEventType);
+        }
+
+        public void AddAggregateTypes(IEnumerable<Type> types)
+        {
+            types.Each(AddAggregateType);
         }
 
         public bool IsActive => _events.Any() || _aggregates.Any();
