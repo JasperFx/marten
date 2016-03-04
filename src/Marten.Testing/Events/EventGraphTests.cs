@@ -61,21 +61,21 @@ namespace Marten.Testing.Events
         [Fact]
         public void has_any_in_starting_state()
         {
-            theGraph.HasAny.ShouldBeFalse();
+            theGraph.IsActive.ShouldBeFalse();
         }
 
         [Fact]
         public void has_any_is_true_with_any_events()
         {
             theGraph.AddEventType(typeof(IssueAssigned));
-            theGraph.HasAny.ShouldBeTrue();
+            theGraph.IsActive.ShouldBeTrue();
         }
 
         [Fact]
         public void has_any_is_true_with_any_aggregates()
         {
             theGraph.AddAggregateType<Quest>();
-            theGraph.HasAny.ShouldBeTrue();
+            theGraph.IsActive.ShouldBeTrue();
         }
 
         public class HouseRemodeling : IAggregate

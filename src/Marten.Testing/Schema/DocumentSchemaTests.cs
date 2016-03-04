@@ -7,10 +7,12 @@ using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.Hierarchies;
 using Marten.Testing.Documents;
+using Marten.Testing.Events;
 using Marten.Testing.Schema.Hierarchies;
 using Shouldly;
 using StructureMap;
 using Xunit;
+using Issue = Marten.Testing.Documents.Issue;
 
 namespace Marten.Testing.Schema
 {
@@ -100,6 +102,24 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("CREATE TABLE mt_doc_user");
             sql.ShouldContain("CREATE TABLE mt_doc_issue");
             sql.ShouldContain("CREATE TABLE mt_doc_company");
+        }
+
+        [Fact]
+        public void do_not_write_event_sql_if_the_event_graph_is_not_active()
+        {
+            _schema.Events.IsActive.ShouldBeFalse();
+
+            _schema.ToDDL().ShouldNotContain("mt_streams");
+        }
+
+        [Fact]
+        public void do_write_the_event_sql_if_the_event_graph_is_active()
+        {
+            _schema.Events.AddEventType(typeof(MembersJoined));
+            _schema.Events.IsActive.ShouldBeTrue();
+
+            _schema.ToDDL().ShouldContain("mt_streams");
+
         }
 
         [Fact]
@@ -195,6 +215,50 @@ namespace Marten.Testing.Schema
                 contents.ShouldContain("CREATE TABLE");
                 contents.ShouldContain("CREATE OR REPLACE FUNCTION");
             });
+        }
+
+        [Fact]
+        public void write_ddl_by_type_with_no_events()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.RegisterDocumentType<User>();
+                _.RegisterDocumentType<Company>();
+                _.RegisterDocumentType<Issue>();
+
+                _.Connection(ConnectionSource.ConnectionString);
+            }))
+            {
+                store.Schema.Events.IsActive.ShouldBeFalse();
+                store.Schema.WriteDDLByType("allsql");
+            }
+
+            var fileSystem = new FileSystem();
+            fileSystem.FindFiles("allsql", FileSet.Shallow("*mt_streams.sql"))
+                .Any().ShouldBeFalse();
+        }
+
+        [Fact]
+        public void write_ddl_by_type_with_events()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.RegisterDocumentType<User>();
+                _.RegisterDocumentType<Company>();
+                _.RegisterDocumentType<Issue>();
+
+                _.Events.AddAggregateType<Quest>();
+
+                _.Connection(ConnectionSource.ConnectionString);
+            }))
+            {
+                store.Schema.Events.IsActive.ShouldBeTrue();
+                store.Schema.WriteDDLByType("allsql");
+            }
+
+            var fileSystem = new FileSystem();
+            fileSystem.FindFiles("allsql", FileSet.Shallow("*mt_streams.sql"))
+                .Any().ShouldBeTrue();
         }
 
         [Fact]

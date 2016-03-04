@@ -58,7 +58,7 @@ namespace Marten.Events
             _events.FillDefault(eventType);
         }
 
-        public bool HasAny => _events.Any() || _aggregates.Any();
+        public bool IsActive => _events.Any() || _aggregates.Any();
 
         public string Alias { get; } = null;
         public Type DocumentType { get; } = typeof (EventStream);

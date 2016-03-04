@@ -32,5 +32,6 @@ namespace Marten.Testing.Examples
             Debug.WriteLine(sql);
         } 
         // ENDSAMPLE
+
     }
 }

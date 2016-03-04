@@ -193,6 +193,16 @@ namespace Marten.Schema
                 system.WriteStringToFile(filename, writer.ToString());
             });
 
+            if (Events.IsActive)
+            {
+                var filename = directory.AppendPath("mt_streams.sql");
+                var writer = new StringWriter();
+
+                Events.WriteSchemaObjects(this, writer);
+
+                system.WriteStringToFile(filename, writer.ToString());
+            }
+
         }
 
         public string ToDDL()
@@ -200,6 +210,11 @@ namespace Marten.Schema
             var writer = new StringWriter();
 
             StoreOptions.AllDocumentMappings.Each(x => x.WriteSchemaObjects(this, writer));
+
+            if (Events.IsActive)
+            {
+                Events.WriteSchemaObjects(this, writer);
+            }
 
             writer.WriteLine(SchemaBuilder.GetText("mt_hilo"));
 
