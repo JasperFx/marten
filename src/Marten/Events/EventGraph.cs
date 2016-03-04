@@ -46,7 +46,6 @@ namespace Marten.Events
             return _byEventName[eventType];
         }
 
-
         public void AddEventType(Type eventType)
         {
             if (!eventType.IsConcreteTypeOf<IEvent>())
@@ -58,6 +57,8 @@ namespace Marten.Events
 
             _events.FillDefault(eventType);
         }
+
+        public bool HasAny => _events.Any() || _aggregates.Any();
 
         public string Alias { get; } = null;
         public Type DocumentType { get; } = typeof (EventStream);

@@ -58,6 +58,26 @@ namespace Marten.Testing.Events
             theGraph.AggregateFor<Quest>().Alias.ShouldBe("quest");
         }
 
+        [Fact]
+        public void has_any_in_starting_state()
+        {
+            theGraph.HasAny.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void has_any_is_true_with_any_events()
+        {
+            theGraph.AddEventType(typeof(IssueAssigned));
+            theGraph.HasAny.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void has_any_is_true_with_any_aggregates()
+        {
+            theGraph.AddAggregateType<Quest>();
+            theGraph.HasAny.ShouldBeTrue();
+        }
+
         public class HouseRemodeling : IAggregate
         {
             public Guid Id { get; set; }
