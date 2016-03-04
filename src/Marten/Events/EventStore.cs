@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
@@ -107,6 +108,21 @@ namespace Marten.Events
         }
 
         public ITransforms Transforms => this;
+        public StreamState FetchStreamState(Guid streamId)
+        {
+            return _connection.Execute(cmd =>
+            {
+                Func<DbDataReader, StreamState> converter = r =>
+                {
+                    var typeName = r.GetString(1);
+                    var aggregateType = _schema.Events.AggregateTypeFor(typeName);
+                    return new StreamState(streamId, r.GetInt32(0), aggregateType);
+                };
+
+                return cmd.Fetch("select version, type from mt_streams where id = ?", converter, streamId).SingleOrDefault();
+            });
+        }
+
         public TTarget TransformTo<TEvent, TTarget>(Guid stream, TEvent @event) where TEvent : IEvent
         {
             throw new NotImplementedException();

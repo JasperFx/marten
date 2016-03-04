@@ -22,6 +22,8 @@ namespace Marten.Events
         void ReplaceEvent<T>(T @event);
 
         ITransforms Transforms { get; }
+
+        StreamState FetchStreamState(Guid streamId);
     }
 
     public interface ITransforms
@@ -49,5 +51,19 @@ namespace Marten.Events
 
         void RebuildEventStoreSchema();
 
+    }
+
+    public class StreamState
+    {
+        public Guid Id { get; }
+        public int Version { get; }
+        public Type AggregateType { get; }
+
+        public StreamState(Guid id, int version, Type aggregateType)
+        {
+            Id = id;
+            Version = version;
+            AggregateType = aggregateType;
+        }
     }
 }

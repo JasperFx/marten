@@ -91,6 +91,8 @@
     <Compile Include="Examples\SagaStorageExample.cs" />
     <Compile Include="Examples\Searching_Within_Child_Collections.cs" />
     <Compile Include="Examples\UnitOfWorkMechanics.cs" />
+    <Compile Include="Fixtures\EventStore\EventStoreFixture.cs" />
+    <Compile Include="Fixtures\EventStore\QuestEventFixture.cs" />
     <Compile Include="Fixtures\LinqFixture.cs" />
     <Compile Include="Fixtures\OrderingFixture.cs" />
     <Compile Include="Fixtures\ResultSet.cs" />

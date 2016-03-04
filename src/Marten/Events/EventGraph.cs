@@ -29,6 +29,7 @@ namespace Marten.Events
         bool IsActive { get; }
         AggregateModel AggregateFor<T>() where T : IAggregate;
         AggregateModel AggregateFor(Type aggregateType);
+        Type AggregateTypeFor(string aggregateTypeName);
     }
 
     public class EventGraph : IDocumentMapping, IEventStoreConfiguration
@@ -44,6 +45,11 @@ namespace Marten.Events
             _events.OnMissing = eventType => typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
+
+            _aggregateByName.OnMissing = name =>
+            {
+                return AllAggregates().FirstOrDefault(x => x.Alias == name);
+            };
         }
 
         public EventMapping EventMappingFor(Type eventType)
@@ -211,6 +217,11 @@ namespace Marten.Events
         public AggregateModel AggregateFor(Type aggregateType)
         {
             return _aggregates[aggregateType];
+        }
+
+        public Type AggregateTypeFor(string aggregateTypeName)
+        {
+            return _aggregateByName[aggregateTypeName].AggregateType;
         }
 
         public void AddAggregateType<T>() where T : IAggregate
