@@ -193,6 +193,8 @@ namespace Marten.Schema
                 system.WriteStringToFile(filename, writer.ToString());
             });
 
+            system.WriteStringToFile(directory.AppendPath("mt_hilo.sql"), SchemaBuilder.GetText("mt_hilo"));
+
             if (Events.IsActive)
             {
                 var filename = directory.AppendPath("mt_streams.sql");

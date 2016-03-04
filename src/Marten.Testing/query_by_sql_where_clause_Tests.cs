@@ -89,7 +89,10 @@ namespace Marten.Testing
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                using (var session = container.GetInstance<IDocumentStore>().OpenSession())
+                var store = container.GetInstance<IDocumentStore>();
+                store.Advanced.Clean.CompletelyRemoveAll();
+
+                using (var session = store.OpenSession())
                 {
                     session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
                     session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
