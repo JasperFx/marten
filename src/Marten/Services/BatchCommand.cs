@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Baseline;
+using Marten.Linq;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -49,6 +50,23 @@ namespace Marten.Services
         public interface ICall
         {
             void WriteToSql(StringBuilder builder);
+        }
+
+        public class DeleteWhereCall : ICall
+        {
+            private readonly string _table;
+            private readonly string _whereClause;
+
+            public DeleteWhereCall(string table, string whereClause)
+            {
+                _table = table;
+                _whereClause = whereClause;
+            }
+
+            public void WriteToSql(StringBuilder builder)
+            {
+                builder.AppendFormat("delete from {0} as d where {1}", _table, _whereClause);
+            }
         }
 
         public class DeleteCall : ICall
@@ -149,6 +167,14 @@ namespace Marten.Services
         {
             var param = addParameter(id, dbType);
             var call = new DeleteCall(tableName, param.ParameterName);
+            _calls.Add(call);
+        }
+
+
+        public void DeleteWhere(string tableName, IWhereFragment @where)
+        {
+            var whereClause = @where.ToSql(_command);
+            var call = new DeleteWhereCall(tableName, whereClause);
             _calls.Add(call);
         }
     }

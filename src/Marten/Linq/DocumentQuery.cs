@@ -21,7 +21,7 @@ namespace Marten.Linq
         {
             _mapping = mapping;
             _query = query;
-            _parser = new MartenExpressionParser(this, serializer);
+            _parser = new MartenExpressionParser(serializer);
         }
 
         public void ConfigureForAny(NpgsqlCommand command)

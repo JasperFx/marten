@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq;
 using NpgsqlTypes;
 
 namespace Marten.Services
@@ -63,6 +65,11 @@ namespace Marten.Services
 
 
         public IManagedConnection Connection { get; }
+
+        public void DeleteWhere(string tableName, IWhereFragment @where)
+        {
+            Current().DeleteWhere(tableName, @where);
+        }
     }
 
 

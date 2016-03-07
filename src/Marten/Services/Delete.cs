@@ -1,4 +1,7 @@
 using System;
+using System.Linq.Expressions;
+using Marten.Linq;
+using Marten.Schema;
 
 namespace Marten.Services
 {
@@ -13,6 +16,38 @@ namespace Marten.Services
             DocumentType = documentType;
             Id = id;
             Document = document;
+        }
+
+        public Delete(Type documentType, Expression query)
+        {
+            DocumentType = documentType;
+            Query = query;
+        }
+
+        public Expression Query { get; set; }
+
+        public void Configure(ISerializer serializer, IDocumentStorage storage, IDocumentMapping mapping, UpdateBatch batch)
+        {
+            if (Query == null)
+            {
+                batch.Delete(mapping.TableName, Id, storage.IdType);
+            }
+            else
+            {
+                var parser = new MartenExpressionParser(serializer);
+                var where = parser.ParseWhereFragment(mapping, Query);
+                where = mapping.FilterDocuments(where);
+
+                batch.DeleteWhere(mapping.TableName, where);
+            }
+            
+        }
+
+        public override string ToString()
+        {
+            if (Query != null) return $"Delete {DocumentType} matching {Query}";
+
+            return $"Delete {DocumentType} with Id {Id}";
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -28,7 +29,7 @@ namespace Marten
             _connection = connection;
 
             _identityMap = identityMap;
-            _unitOfWork = new UnitOfWork(_schema);
+            _unitOfWork = new UnitOfWork(_schema, _serializer);
 
             if (_identityMap is IDocumentTracker)
             {
@@ -63,6 +64,11 @@ namespace Marten
 
             var storage = _schema.StorageFor(typeof(T));
             storage.Delete(_identityMap, id);
+        }
+
+        public void DeleteWhere<T>(Expression<Func<T, bool>> expression)
+        {
+            _unitOfWork.Delete<T>(expression);
         }
 
         public void Store<T>(params T[] entities) 

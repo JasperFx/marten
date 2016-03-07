@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -13,14 +14,16 @@ namespace Marten.Services
     public class UnitOfWork : IUnitOfWork
     {
         private readonly IDocumentSchema _schema;
+        private readonly ISerializer _serializer;
         private readonly ConcurrentDictionary<Type, IEnumerable> _updates = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Type, IEnumerable> _inserts = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Type, IList<Delete>> _deletes = new ConcurrentDictionary<Type, IList<Delete>>(); 
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>(); 
 
-        public UnitOfWork(IDocumentSchema schema)
+        public UnitOfWork(IDocumentSchema schema, ISerializer serializer)
         {
             _schema = schema;
+            _serializer = serializer;
         }
 
         public void AddTracker(IDocumentTracker tracker)
@@ -163,7 +166,7 @@ namespace Marten.Services
                 var storage = _schema.StorageFor(type);
                 var mapping = _schema.MappingFor(type);
 
-                _deletes[type].Each(id => batch.Delete(mapping.TableName, id.Id, storage.IdType));
+                _deletes[type].Each(id => id.Configure(_serializer, storage, mapping, batch));
             });
 
             var changes = detectTrackerChanges();
@@ -211,6 +214,13 @@ namespace Marten.Services
         public IEnumerable<T> AllChangedFor<T>()
         {
             return InsertsFor<T>().Union(UpdatesFor<T>());
+        }
+
+        public void Delete<T>(Expression<Func<T, bool>> expression)
+        {
+            var delete = new Delete(typeof(T), expression);
+            var list = _deletes.GetOrAdd(typeof(T), _ => new List<Delete>());
+            list.Add(delete);
         }
     }
 }

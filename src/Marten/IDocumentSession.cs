@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
@@ -161,6 +162,14 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         void Delete<T>(string id);
+
+        /// <summary>
+        /// Bulk delete all documents of type T matching the expression condition
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="expression"></param>
+        void DeleteWhere<T>(Expression<Func<T, bool>> expression);
+
 
         /// <summary>
         /// Saves all the pending changes and deletions to the server in a single Postgresql transaction.

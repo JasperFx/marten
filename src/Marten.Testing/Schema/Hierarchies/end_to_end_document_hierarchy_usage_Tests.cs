@@ -8,6 +8,36 @@ using Xunit;
 
 namespace Marten.Testing.Schema.Hierarchies
 {
+    public class delete_by_where_for_hierarchy_Tests : end_to_end_document_hierarchy_usage_Tests<NulloIdentityMap>
+    {
+        [Fact]
+        public void can_delete_by_subclass()
+        {
+            loadData();
+
+            theSession.DeleteWhere<SuperUser>(x => x.FirstName.StartsWith("D"));
+            theSession.SaveChanges();
+
+            theSession.Query<SuperUser>().Count().ShouldBe(1);
+            theSession.Query<AdminUser>().Count().ShouldBe(2);
+            theSession.Query<User>().Count().ShouldBe(5);
+        }
+
+        [Fact]
+        public void can_delete_by_the_hierarchy()
+        {
+            loadData();
+
+            theSession.DeleteWhere<User>(x => x.FirstName.StartsWith("D"));
+            theSession.SaveChanges();
+
+            // Should delete one SuperUser and one AdminUser
+            theSession.Query<SuperUser>().Count().ShouldBe(1);
+            theSession.Query<AdminUser>().Count().ShouldBe(1);
+            theSession.Query<User>().Count().ShouldBe(4);
+        }
+    }
+
     public class persist_and_load_for_hierarchy_Tests : end_to_end_document_hierarchy_usage_Tests<IdentityMap>
     {
         [Fact]
@@ -262,5 +292,6 @@ public abstract class end_to_end_document_hierarchy_usage_Tests<T> : DocumentSes
 
             theSession.SaveChanges();
         }
+
     }
 }

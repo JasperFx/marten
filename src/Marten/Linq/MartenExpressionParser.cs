@@ -30,17 +30,20 @@ namespace Marten.Linq
             {ExpressionType.LessThanOrEqual, "<="}
         };
 
-        private readonly DocumentQuery _query;
         private readonly ISerializer _serializer;
 
-        public MartenExpressionParser(DocumentQuery query, ISerializer serializer)
+        public MartenExpressionParser(ISerializer serializer)
         {
-            _query = query;
             _serializer = serializer;
         }
 
         public IWhereFragment ParseWhereFragment(IDocumentMapping mapping, Expression expression)
         {
+            if (expression is LambdaExpression)
+            {
+                return ParseWhereFragment(mapping, expression.As<LambdaExpression>().Body);
+            }
+
             if (expression is BinaryExpression)
             {
                 return GetWhereFragment(mapping, expression.As<BinaryExpression>());

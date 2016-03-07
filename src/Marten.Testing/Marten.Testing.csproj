@@ -52,6 +52,7 @@
     <Compile Include="Bugs\Bug_127_do_not_recreate_a_table_with_duplicated_string_field_Tests.cs" />
     <Compile Include="bulk_loading_Tests.cs" />
     <Compile Include="Codegen\dumping_the_complete_source_code_Tests.cs" />
+    <Compile Include="delete_many_documents_by_query_Tests.cs" />
     <Compile Include="detecting_insert_or_update_Tests.cs" />
     <Compile Include="DocumentMappingTests.cs" />
     <Compile Include="DocumentSession_change_set_tracking_Tests.cs" />
