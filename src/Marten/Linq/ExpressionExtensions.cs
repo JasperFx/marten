@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
 using Remotion.Linq.Clauses.Expressions;
@@ -25,6 +26,14 @@ namespace Marten.Linq
             }
 
             throw new NotSupportedException();
+        }
+
+        public static bool IsValueExpression(this Expression expression)
+        {
+            Type[] valueExpressionTypes = {
+                typeof (ConstantExpression), typeof (PartialEvaluationExceptionExpression)
+            };
+            return valueExpressionTypes.Any(t => t.IsInstanceOfType(expression));
         }
     }
 }

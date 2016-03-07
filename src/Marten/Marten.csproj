@@ -44,6 +44,7 @@
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="AdvancedOptions.cs" />
+    <Compile Include="AutoCreate.cs" />
     <Compile Include="Codegen\AssemblyReferenceException.cs" />
     <Compile Include="ConnectionFactory.cs" />
     <Compile Include="DocumentStore.cs" />
@@ -57,9 +58,11 @@
     <Compile Include="IDocumentSessionListener.cs" />
     <Compile Include="IMartenLogger.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
+    <Compile Include="Linq\BadLinqExpressionException.cs" />
     <Compile Include="Linq\CollectionAnyContainmentWhereFragment.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />
     <Compile Include="Linq\ExpressionExtensions.cs" />
+    <Compile Include="Linq\FindMembers.cs" />
     <Compile Include="Linq\IMartenQueryable.cs" />
     <Compile Include="Linq\IMartenQueryProvider.cs" />
     <Compile Include="Linq\MartenQueryProvider.cs" />
