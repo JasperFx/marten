@@ -20,13 +20,13 @@ namespace Marten.Linq
         private readonly IIdentityMap _identityMap;
         private readonly IManagedConnection _runner;
         private readonly IDocumentSchema _schema;
-        private readonly ISerializer _serializer;
+        private readonly MartenExpressionParser _expressionParser;
         private readonly IList<Type> _scalarResultOperators;
 
-        public MartenQueryExecutor(IManagedConnection runner, IDocumentSchema schema, ISerializer serializer, IQueryParser parser, IIdentityMap identityMap)
+        public MartenQueryExecutor(IManagedConnection runner, IDocumentSchema schema, MartenExpressionParser expressionParser, IQueryParser parser, IIdentityMap identityMap)
         {
             _schema = schema;
-            _serializer = serializer;
+            _expressionParser = expressionParser;
             _parser = parser;
             _identityMap = identityMap;
             _runner = runner;
@@ -50,7 +50,7 @@ namespace Marten.Linq
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
             var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
-            var documentQuery = new DocumentQuery(mapping, queryModel, _serializer);
+            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
 
             _schema.EnsureStorageExists(mapping.DocumentType);
 
@@ -111,7 +111,7 @@ namespace Marten.Linq
         public NpgsqlCommand BuildCommand(QueryModel queryModel)
         {
             var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
-            var query = new DocumentQuery(mapping, queryModel, _serializer);
+            var query = new DocumentQuery(mapping, queryModel, _expressionParser);
 
             _schema.EnsureStorageExists(mapping.DocumentType);
 
@@ -174,7 +174,7 @@ namespace Marten.Linq
         private Task<T> ExecuteScalar<T>(ResultOperatorBase scalarResultOperator, QueryModel queryModel, CancellationToken token)
         {
             var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
-            var documentQuery = new DocumentQuery(mapping, queryModel, _serializer);
+            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
 
             _schema.EnsureStorageExists(mapping.DocumentType);
 

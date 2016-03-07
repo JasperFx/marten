@@ -30,9 +30,9 @@ namespace Marten
             _connection = connection;
 
             _identityMap = identityMap;
-           
 
-            _unitOfWork = new UnitOfWork(_schema, new MartenExpressionParser(serializer));
+
+            _unitOfWork = new UnitOfWork(_schema, Parser);
 
             if (_identityMap is IDocumentTracker)
             {

@@ -17,11 +17,11 @@ namespace Marten.Linq
         private readonly QueryModel _query;
         private readonly MartenExpressionParser _parser;
 
-        public DocumentQuery(IDocumentMapping mapping, QueryModel query, ISerializer serializer)
+        public DocumentQuery(IDocumentMapping mapping, QueryModel query, MartenExpressionParser parser)
         {
             _mapping = mapping;
             _query = query;
-            _parser = new MartenExpressionParser(serializer);
+            _parser = parser;
         }
 
         public void ConfigureForAny(NpgsqlCommand command)

@@ -37,11 +37,15 @@ namespace Marten
             _connection = connection;
             _parser = parser;
             _identityMap = identityMap;
+
+            Parser = new MartenExpressionParser(_serializer);
         }
+
+        internal MartenExpressionParser Parser { get; }
 
         public IQueryable<T> Query<T>()
         {
-            var executor = new MartenQueryExecutor(_connection, _schema, _serializer, _parser, _identityMap);
+            var executor = new MartenQueryExecutor(_connection, _schema, Parser, _parser, _identityMap);
 
             var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, executor);
             return new MartenQueryable<T>(queryProvider);
@@ -70,7 +74,7 @@ namespace Marten
 
         public IBatchedQuery CreateBatchQuery()
         {
-            return new BatchedQuery(_connection, _schema, _identityMap, this, _serializer);
+            return new BatchedQuery(_connection, _schema, _identityMap, this, _serializer, Parser);
         }
 
         public NpgsqlCommand BuildCommand<T>(string sql, params object[] parameters)

@@ -12,23 +12,24 @@ namespace Marten.Services.BatchQuerying
 {
     public class BatchedQuery : IBatchedQuery
     {
-        private static readonly MartenQueryParser _parser = new MartenQueryParser();
+        private static readonly MartenQueryParser QueryParser = new MartenQueryParser();
         private readonly IManagedConnection _runner;
         private readonly IDocumentSchema _schema;
         private readonly IIdentityMap _identityMap;
         private readonly QuerySession _parent;
         private readonly ISerializer _serializer;
+        private readonly MartenExpressionParser _parser;
         private readonly NpgsqlCommand _command = new NpgsqlCommand();
         private readonly IList<IDataReaderHandler> _handlers = new List<IDataReaderHandler>();
 
-        public BatchedQuery(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap,
-            QuerySession parent, ISerializer serializer)
+        public BatchedQuery(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap, QuerySession parent, ISerializer serializer, MartenExpressionParser parser)
         {
             _runner = runner;
             _schema = schema;
             _identityMap = identityMap;
             _parent = parent;
             _serializer = serializer;
+            _parser = parser;
         }
 
         public Task<T> Load<T>(string id) where T : class
@@ -130,11 +131,11 @@ namespace Marten.Services.BatchQuerying
             var queryable = _parent.Query<TDoc>();
             var expression = query(queryable).Expression;
 
-            var model = _parser.GetParsedQuery(expression);
+            var model = QueryParser.GetParsedQuery(expression);
 
             _schema.EnsureStorageExists(typeof(TDoc));
 
-            return new DocumentQuery(_schema.MappingFor(typeof(TDoc)), model, _serializer);
+            return new DocumentQuery(_schema.MappingFor(typeof(TDoc)), model, _parser);
         }
 
         public Task<TReturn> AddHandler<TDoc, THandler, TReturn>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query) where THandler : IDataReaderHandler<TReturn>, new()
