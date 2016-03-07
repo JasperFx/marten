@@ -22,7 +22,7 @@ namespace Marten
         private readonly IDocumentSchema _schema;
         private readonly UnitOfWork _unitOfWork;
 
-        public DocumentSession(StoreOptions options, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap) : base(schema, serializer, connection, parser, identityMap)
+        public DocumentSession(StoreOptions options, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap) : base(schema, serializer, connection, parser, identityMap, options)
         {
             _options = options;
             _schema = schema;

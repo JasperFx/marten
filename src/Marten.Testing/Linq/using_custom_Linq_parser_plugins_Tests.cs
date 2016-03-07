@@ -1,0 +1,89 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using Baseline;
+using Baseline.Reflection;
+using Marten.Linq;
+using Marten.Schema;
+using Marten.Testing.Fixtures;
+using Shouldly;
+using StructureMap;
+using Xunit;
+
+namespace Marten.Testing.Linq
+{
+    public class using_custom_Linq_parser_plugins_Tests
+    {
+        [Fact]
+        public void query_with_custom_parser()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Linq.MethodCallParsers.Add(new IsBlue());
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+            }))
+            {
+
+                store.Advanced.Clean.CompletelyRemoveAll();
+
+
+                var targets = new List<ColorTarget>();
+                for (var i = 0; i < 25; i++)
+                {
+                    targets.Add(new ColorTarget {Color = "Blue"});
+                    targets.Add(new ColorTarget {Color = "Green"});
+                    targets.Add(new ColorTarget {Color = "Red"});
+                }
+
+
+                var count = targets.Where(x => x.IsBlue()).Count();
+
+                targets.Each(x => x.Id = Guid.NewGuid());
+
+                store.BulkInsert(targets.ToArray());
+
+                using (var session = store.QuerySession())
+                {
+                    session.Query<ColorTarget>().Where(x => x.IsBlue()).Count()
+                        .ShouldBe(count);
+                }
+
+
+            }
+        }
+    }
+
+    public class ColorTarget
+    {
+        public string Color { get; set; }
+        public Guid Id { get; set; }
+    }
+
+    public static class CustomExtensions
+    {
+        public static bool IsBlue(this ColorTarget target)
+        {
+            return target.Color == "Blue";
+        }
+    }
+    
+    public class IsBlue : IMethodCallParser
+    {
+        private static readonly PropertyInfo _property = ReflectionHelper.GetProperty<ColorTarget>(x => x.Color);
+
+        public bool Matches(MethodCallExpression expression)
+        {
+            return expression.Method.Name == nameof(CustomExtensions.IsBlue);
+        }
+
+        public IWhereFragment Parse(IDocumentMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        {
+            var locator = mapping.FieldFor(new MemberInfo[] {_property}).SqlLocator;
+
+            return new WhereFragment($"{locator} = 'Blue'");
+        }
+    }
+}

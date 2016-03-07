@@ -23,10 +23,12 @@ namespace Marten.Linq
         };
 
         private readonly ISerializer _serializer;
+        private readonly StoreOptions _options;
 
-        public MartenExpressionParser(ISerializer serializer)
+        public MartenExpressionParser(ISerializer serializer, StoreOptions options)
         {
             _serializer = serializer;
+            _options = options;
         }
 
         public IWhereFragment ParseWhereFragment(IDocumentMapping mapping, Expression expression)
@@ -49,7 +51,7 @@ namespace Marten.Linq
         }
 
         // TODO -- have this exposed in a way such that you *can* do this
-        private readonly IList<IMethodCallParser> _parsers = new List<IMethodCallParser>
+        private static readonly IList<IMethodCallParser> _parsers = new List<IMethodCallParser>
         {
             new StringContains(),
             new EnumerableContains(),

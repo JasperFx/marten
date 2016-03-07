@@ -137,6 +137,7 @@
     <Compile Include="Linq\query_with_enums_Tests.cs" />
     <Compile Include="Linq\query_with_nullable_types_Tests.cs" />
     <Compile Include="Linq\using_containment_operator_in_linq_Tests.cs" />
+    <Compile Include="Linq\using_custom_Linq_parser_plugins_Tests.cs" />
     <Compile Include="Linq\using_multiple_where_clauses_Tests.cs" />
     <Compile Include="MartenRegistryTests.cs" />
     <Compile Include="performance_report.cs" />

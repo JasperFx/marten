@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Events;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Sequences;
 using Marten.Services;
@@ -181,5 +182,18 @@ namespace Marten
         {
             _logger = logger;
         }
+
+        /// <summary>
+        /// Extension point to add custom Linq query parsers
+        /// </summary>
+        public LinqCustomizations Linq { get; } = new LinqCustomizations();
+    }
+
+    public class LinqCustomizations
+    {
+        /// <summary>
+        /// Add custom Linq expression parsers for your own methods
+        /// </summary>
+        public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>(); 
     }
 }
