@@ -49,11 +49,54 @@ namespace Marten.Linq
 
         public override IWhereFragment Parse(IDocumentMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
-            
             var locator = mapping.JsonLocator(expression.Object);
             var value = expression.Arguments.Single().Value().As<string>();
             return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value + "%");
-            
+        }
+    }
+
+    public class StringStartsWith : MethodCallParser<string>
+    {
+        public StringStartsWith() : base(x => x.StartsWith(null))
+        {
+        }
+
+        public override IWhereFragment Parse(IDocumentMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        {
+            var locator = mapping.JsonLocator(expression.Object);
+            var value = expression.Arguments.Single().Value().As<string>();
+            return new WhereFragment("{0} like ?".ToFormat(locator), value + "%");
+        }
+    }
+
+    public class StringEndsWith : MethodCallParser<string>
+    {
+        public StringEndsWith() : base(x => x.EndsWith(null))
+        {
+        }
+
+        public override IWhereFragment Parse(IDocumentMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        {
+            var @object = expression.Object;
+            var locator = mapping.JsonLocator(@object);
+            var value = expression.Arguments.Single().Value().As<string>();
+            return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value);
+        }
+    }
+
+    public class EnumerableContains : IMethodCallParser
+    {
+        public bool Matches(MethodCallExpression expression)
+        {
+            return expression.Method.Name == MartenExpressionParser.CONTAINS &&
+                   expression.Object.Type.IsGenericEnumerable();
+        }
+
+        public IWhereFragment Parse(IDocumentMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        {
+            var value = expression.Arguments.Single().Value();
+            return ContainmentWhereFragment.SimpleArrayContains(serializer, expression.Object,
+                value);
         }
     }
 

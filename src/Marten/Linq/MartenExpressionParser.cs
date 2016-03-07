@@ -16,9 +16,9 @@ namespace Marten.Linq
 {
     public partial class MartenExpressionParser
     {
-        private static readonly string CONTAINS = nameof(string.Contains);
-        private static readonly string STARTS_WITH = nameof(string.StartsWith);
-        private static readonly string ENDS_WITH = nameof(string.EndsWith);
+        public static readonly string CONTAINS = nameof(string.Contains);
+        public static readonly string STARTS_WITH = nameof(string.StartsWith);
+        public static readonly string ENDS_WITH = nameof(string.EndsWith);
 
         private static readonly IDictionary<ExpressionType, string> _operators = new Dictionary<ExpressionType, string>
         {
@@ -65,7 +65,7 @@ namespace Marten.Linq
 
             if (expression.NodeType == ExpressionType.Call)
             {
-                return GetMethodCall(mapping, expression.As<MethodCallExpression>());
+                return parseMethodCall(mapping, expression.As<MethodCallExpression>());
             }
 
             if (expression is MemberExpression && expression.Type == typeof (bool))
@@ -132,51 +132,26 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        private IWhereFragment GetMethodCall(IDocumentMapping mapping, MethodCallExpression expression)
+        // TODO -- have this exposed in a way such that you *can* do this
+        private readonly IList<IMethodCallParser> _parsers = new List<IMethodCallParser>
         {
-            // TODO -- generalize this mess
-            if (expression.Method.Name == CONTAINS)
+            new StringContains(),
+            new EnumerableContains(),
+            new StringEndsWith(),
+            new StringStartsWith()
+            
+        }; 
+
+        private IWhereFragment parseMethodCall(IDocumentMapping mapping, MethodCallExpression expression)
+        {
+            var parser = _parsers.FirstOrDefault(x => x.Matches(expression));
+            if (parser != null)
             {
-                var @object = expression.Object;
-
-                if (@object.Type == typeof (string))
-                {
-                    var locator = mapping.JsonLocator(@object);
-                    var value = expression.Arguments.Single().Value().As<string>();
-                    return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value + "%");
-                }
-
-                if (@object.Type.IsGenericEnumerable())
-                {
-                    var value = expression.Arguments.Single().Value();
-                    return ContainmentWhereFragment.SimpleArrayContains(_serializer, @object,
-                        value);
-                }
+                return parser.Parse(mapping, _serializer, expression);
             }
 
-            if (expression.Method.Name == STARTS_WITH)
-            {
-                var @object = expression.Object;
-                if (@object.Type == typeof (string))
-                {
-                    var locator = mapping.JsonLocator(@object);
-                    var value = expression.Arguments.Single().Value().As<string>();
-                    return new WhereFragment("{0} like ?".ToFormat(locator), value + "%");
-                }
-            }
 
-            if (expression.Method.Name == ENDS_WITH)
-            {
-                var @object = expression.Object;
-                if (@object.Type == typeof (string))
-                {
-                    var locator = mapping.JsonLocator(@object);
-                    var value = expression.Arguments.Single().Value().As<string>();
-                    return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value);
-                }
-            }
-
-            throw new NotImplementedException();
+            throw new NotSupportedException($"Marten does not (yet) support Linq queries using the {expression.Method.DeclaringType.FullName}.{expression.Method.Name}() method");
         }
 
 

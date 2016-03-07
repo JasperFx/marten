@@ -15,7 +15,7 @@ namespace Marten.Testing
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                container.GetInstance<DocumentCleaner>().DeleteAllDocuments();
+                container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
             }
         }
 
