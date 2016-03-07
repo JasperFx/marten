@@ -14,7 +14,7 @@ using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
 {
-    public class MartenExpressionParser
+    public partial class MartenExpressionParser
     {
         private static readonly string CONTAINS = nameof(string.Contains);
         private static readonly string STARTS_WITH = nameof(string.StartsWith);
@@ -39,6 +39,20 @@ namespace Marten.Linq
 
         public IWhereFragment ParseWhereFragment(IDocumentMapping mapping, Expression expression)
         {
+            /*
+            var visitor = new WhereClauseVisitor(this, mapping);
+            visitor.Visit(expression);
+            var whereFragment = visitor.ToWhereFragment();
+
+            if (whereFragment == null)
+            {
+                throw new NotSupportedException("Marten does not (yet) support this Linq query type");
+            }
+
+            return whereFragment;
+            */
+            
+
             if (expression is LambdaExpression)
             {
                 return ParseWhereFragment(mapping, expression.As<LambdaExpression>().Body);
@@ -56,7 +70,7 @@ namespace Marten.Linq
 
             if (expression is MemberExpression && expression.Type == typeof (bool))
             {
-                var locator = JsonLocator(mapping, expression.As<MemberExpression>());
+                var locator = mapping.JsonLocator(expression.As<MemberExpression>());
                 return new WhereFragment("{0} = True".ToFormat(locator), true);
             }
 
@@ -71,6 +85,8 @@ namespace Marten.Linq
             }
 
             throw new NotSupportedException();
+
+    
         }
 
         private IWhereFragment GetWhereFragment(IDocumentMapping mapping, SubQueryExpression expression)
@@ -81,7 +97,7 @@ namespace Marten.Linq
                 var contains = expression.QueryModel.ResultOperators.OfType<ContainsResultOperator>().FirstOrDefault();
                 if (contains != null)
                 {
-                    return ContainmentWhereFragment.SimpleArrayContains(_serializer, expression.QueryModel.MainFromClause.FromExpression, Value(contains.Item));
+                    return ContainmentWhereFragment.SimpleArrayContains(_serializer, expression.QueryModel.MainFromClause.FromExpression, contains.Item.Value());
                 }
             }
 
@@ -97,7 +113,7 @@ namespace Marten.Linq
         {
             if (expression is MemberExpression && expression.Type == typeof (bool))
             {
-                var locator = JsonLocator(mapping, expression.As<MemberExpression>());
+                var locator = mapping.JsonLocator(expression.As<MemberExpression>());
                 return new WhereFragment("({0})::Boolean = False".ToFormat(locator));
             }
 
@@ -105,7 +121,7 @@ namespace Marten.Linq
                 expression is BinaryExpression)
             {
                 var binaryExpression = expression.As<BinaryExpression>();
-                var locator = JsonLocator(mapping, binaryExpression.Left);
+                var locator = mapping.JsonLocator(binaryExpression.Left);
                 if (binaryExpression.Right.NodeType == ExpressionType.Constant &&
                     binaryExpression.Right.As<ConstantExpression>().Value == null)
                 {
@@ -125,14 +141,14 @@ namespace Marten.Linq
 
                 if (@object.Type == typeof (string))
                 {
-                    var locator = JsonLocator(mapping, @object);
-                    var value = Value(expression.Arguments.Single()).As<string>();
+                    var locator = mapping.JsonLocator(@object);
+                    var value = expression.Arguments.Single().Value().As<string>();
                     return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value + "%");
                 }
 
                 if (@object.Type.IsGenericEnumerable())
                 {
-                    var value = Value(expression.Arguments.Single());
+                    var value = expression.Arguments.Single().Value();
                     return ContainmentWhereFragment.SimpleArrayContains(_serializer, @object,
                         value);
                 }
@@ -143,8 +159,8 @@ namespace Marten.Linq
                 var @object = expression.Object;
                 if (@object.Type == typeof (string))
                 {
-                    var locator = JsonLocator(mapping, @object);
-                    var value = Value(expression.Arguments.Single()).As<string>();
+                    var locator = mapping.JsonLocator(@object);
+                    var value = expression.Arguments.Single().Value().As<string>();
                     return new WhereFragment("{0} like ?".ToFormat(locator), value + "%");
                 }
             }
@@ -154,8 +170,8 @@ namespace Marten.Linq
                 var @object = expression.Object;
                 if (@object.Type == typeof (string))
                 {
-                    var locator = JsonLocator(mapping, @object);
-                    var value = Value(expression.Arguments.Single()).As<string>();
+                    var locator = mapping.JsonLocator(@object);
+                    var value = expression.Arguments.Single().Value().As<string>();
                     return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value);
                 }
             }
@@ -163,6 +179,8 @@ namespace Marten.Linq
             throw new NotImplementedException();
         }
 
+
+        // GOT ALL THIS
         public IWhereFragment GetWhereFragment(IDocumentMapping mapping, BinaryExpression binary)
         {
             if (_operators.ContainsKey(binary.NodeType))
@@ -201,7 +219,7 @@ namespace Marten.Linq
 
             var op = _operators[binary.NodeType];
 
-            var value = Value(valuExpression);
+            var value = valuExpression.Value();
 
             if (mapping.PropertySearching == PropertySearching.ContainmentOperator &&
                 binary.NodeType == ExpressionType.Equal && value != null)
@@ -209,7 +227,7 @@ namespace Marten.Linq
                 return new ContainmentWhereFragment(_serializer, binary);
             }
 
-            var jsonLocator = JsonLocator(mapping, jsonLocatorExpression);
+            var jsonLocator = mapping.JsonLocator(jsonLocatorExpression);
 
             if (value == null)
             {
@@ -233,40 +251,10 @@ namespace Marten.Linq
         {
             var moduloExpression = binary.Left as BinaryExpression;
             var moduloValueExpression = moduloExpression?.Right as ConstantExpression;
-            return moduloValueExpression != null ? Value(moduloValueExpression) : 1;
+            return moduloValueExpression != null ? moduloValueExpression.Value : 1;
         }
 
-        public static object Value(Expression expression)
-        {
-            if (expression is PartialEvaluationExceptionExpression)
-            {
-                var partialEvaluationExceptionExpression = expression.As<PartialEvaluationExceptionExpression>();
-                var inner = partialEvaluationExceptionExpression.Exception;
 
-                throw new BadLinqExpressionException($"Error in value expression inside of the query for '{partialEvaluationExceptionExpression.EvaluatedExpression}'. See the inner exception:", inner);
-            }
-
-            if (expression is ConstantExpression)
-            {
-                // TODO -- handle nulls
-                // TODO -- check out more types here.
-                return expression.As<ConstantExpression>().Value;
-            }
-
-            throw new NotSupportedException();
-        }
-
-        // TODO -- use the mapping off of DocumentQuery later
-        public string JsonLocator(IDocumentMapping mapping, Expression expression)
-        {
-            var visitor = new FindMembers();
-            visitor.Visit(expression);
-
-
-            var field = mapping.FieldFor(visitor.Members);
-
-            return field.SqlLocator;
-        }
     }
 
     public class FindMembers : RelinqExpressionVisitor

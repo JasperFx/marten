@@ -59,9 +59,12 @@
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="Linq\CollectionAnyContainmentWhereFragment.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />
+    <Compile Include="Linq\ExpressionExtensions.cs" />
     <Compile Include="Linq\IMartenQueryable.cs" />
     <Compile Include="Linq\IMartenQueryProvider.cs" />
     <Compile Include="Linq\MartenQueryProvider.cs" />
+    <Compile Include="Linq\MethodHandlers.cs" />
+    <Compile Include="Linq\WhereClauseVisitor.cs" />
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\ColumnValue.cs" />
     <Compile Include="Schema\DocumentAliasAttribute.cs" />

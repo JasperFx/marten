@@ -11,7 +11,7 @@ namespace Marten.Linq
     public class CompoundWhereFragment : IWhereFragment
     {
         private readonly string _separator;
-        private readonly IWhereFragment[] _children;
+        private readonly IList<IWhereFragment> _children = new List<IWhereFragment>();
 
         public CompoundWhereFragment(MartenExpressionParser parser, IDocumentMapping mapping, string separator, IEnumerable<WhereClause> wheres)
         {
@@ -22,7 +22,12 @@ namespace Marten.Linq
         public CompoundWhereFragment(string separator, params IWhereFragment[] children)
         {
             _separator = separator;
-            _children = children;
+            _children.AddRange(children);
+        }
+
+        public void Add(IWhereFragment child)
+        {
+            _children.Add(child);
         }
 
         public string ToSql(NpgsqlCommand command)

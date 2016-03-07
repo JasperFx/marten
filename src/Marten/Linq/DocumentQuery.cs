@@ -112,7 +112,7 @@ namespace Marten.Linq
 
         public string ToOrderClause(Ordering clause)
         {
-            var locator = _parser.JsonLocator(_mapping, clause.Expression);
+            var locator = _mapping.JsonLocator(clause.Expression);
             return clause.OrderingDirection == OrderingDirection.Asc
                 ? locator
                 : locator + " desc";

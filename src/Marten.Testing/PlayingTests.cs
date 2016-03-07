@@ -1,13 +1,6 @@
-﻿using System;
-using System.Data;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Linq;
-using Baseline;
-using Marten.Schema;
 using Marten.Testing.Fixtures;
-using Marten.Testing.Github;
-using Octokit;
-using Shouldly;
 using StoryTeller;
 using StoryTeller.Engine;
 using StructureMap;
@@ -27,5 +20,23 @@ namespace Marten.Testing
                 runner.OpenResultsInBrowser();
             }
         }
+
+        [Fact]
+        public void try_some_linq_queries()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                var store = container.GetInstance<IDocumentStore>();
+                store.BulkInsert(Target.GenerateRandomData(200).ToArray());
+
+                using (var session = store.LightweightSession())
+                {
+                    Debug.WriteLine(session.Query<Target>().Where(x => x.Double > 1.0).Count());
+                    Debug.WriteLine(session.Query<Target>().Where(x => x.Double > 1.0 && x.Double < 33).Count());
+                }
+            }
+        }
     }
+
+
 }
