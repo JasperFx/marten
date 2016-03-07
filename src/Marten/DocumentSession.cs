@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Remotion.Linq.Parsing.Structure;
@@ -29,7 +30,9 @@ namespace Marten
             _connection = connection;
 
             _identityMap = identityMap;
-            _unitOfWork = new UnitOfWork(_schema, _serializer);
+           
+
+            _unitOfWork = new UnitOfWork(_schema, new MartenExpressionParser(serializer));
 
             if (_identityMap is IDocumentTracker)
             {

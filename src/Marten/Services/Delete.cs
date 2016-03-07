@@ -26,7 +26,7 @@ namespace Marten.Services
 
         public Expression Query { get; set; }
 
-        public void Configure(ISerializer serializer, IDocumentStorage storage, IDocumentMapping mapping, UpdateBatch batch)
+        public void Configure(MartenExpressionParser parser, IDocumentStorage storage, IDocumentMapping mapping, UpdateBatch batch)
         {
             if (Query == null)
             {
@@ -34,7 +34,6 @@ namespace Marten.Services
             }
             else
             {
-                var parser = new MartenExpressionParser(serializer);
                 var where = parser.ParseWhereFragment(mapping, Query);
                 where = mapping.FilterDocuments(where);
 

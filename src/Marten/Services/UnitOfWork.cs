@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq;
 using Marten.Schema;
 
 namespace Marten.Services
@@ -14,16 +15,16 @@ namespace Marten.Services
     public class UnitOfWork : IUnitOfWork
     {
         private readonly IDocumentSchema _schema;
-        private readonly ISerializer _serializer;
+        private readonly MartenExpressionParser _parser;
         private readonly ConcurrentDictionary<Type, IEnumerable> _updates = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Type, IEnumerable> _inserts = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Type, IList<Delete>> _deletes = new ConcurrentDictionary<Type, IList<Delete>>(); 
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>(); 
 
-        public UnitOfWork(IDocumentSchema schema, ISerializer serializer)
+        public UnitOfWork(IDocumentSchema schema, MartenExpressionParser parser)
         {
             _schema = schema;
-            _serializer = serializer;
+            _parser = parser;
         }
 
         public void AddTracker(IDocumentTracker tracker)
@@ -166,7 +167,7 @@ namespace Marten.Services
                 var storage = _schema.StorageFor(type);
                 var mapping = _schema.MappingFor(type);
 
-                _deletes[type].Each(id => id.Configure(_serializer, storage, mapping, batch));
+                _deletes[type].Each(id => id.Configure(_parser, storage, mapping, batch));
             });
 
             var changes = detectTrackerChanges();
