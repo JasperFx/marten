@@ -6,6 +6,7 @@ using System.Reflection;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Linq;
+using Marten.Linq.Handlers;
 using Marten.Schema;
 using Marten.Testing.Fixtures;
 using Shouldly;

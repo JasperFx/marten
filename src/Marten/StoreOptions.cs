@@ -6,6 +6,7 @@ using System.Reflection;
 using Baseline;
 using Marten.Events;
 using Marten.Linq;
+using Marten.Linq.Handlers;
 using Marten.Schema;
 using Marten.Schema.Sequences;
 using Marten.Services;
