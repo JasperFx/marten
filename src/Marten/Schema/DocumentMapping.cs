@@ -19,6 +19,7 @@ namespace Marten.Schema
 {
     public class DocumentMapping : IDocumentMapping
     {
+        private readonly StoreOptions _storeOptions;
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
         public const string UpsertPrefix = "mt_upsert_";
@@ -34,8 +35,9 @@ namespace Marten.Schema
         {
         }
 
-        public DocumentMapping(Type documentType, StoreOptions options)
+        public DocumentMapping(Type documentType, StoreOptions storeOptions)
         {
+            _storeOptions = storeOptions;
             DocumentType = documentType;
             Alias = defaultDocumentAliasName(documentType);
 
@@ -49,7 +51,7 @@ namespace Marten.Schema
             }
 
 
-            assignIdStrategy(documentType, options);
+            assignIdStrategy(documentType, storeOptions);
 
             documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
 
@@ -136,8 +138,27 @@ namespace Marten.Schema
             return index;
         }
 
+        public ForeignKeyDefinition AddForeignKey(string memberName, Type referenceType)
+        {
+            var field = FieldFor(memberName);
+            return AddForeignKey(field.Members, referenceType);
+        }
+
+        public ForeignKeyDefinition AddForeignKey(MemberInfo[] members, Type referenceType)
+        {
+            var referenceMapping = _storeOptions.MappingFor(referenceType);
+
+            var duplicateField = DuplicateField(members);
+
+            var foreignKey = new ForeignKeyDefinition(duplicateField.ColumnName, this, referenceMapping);
+            ForeignKeys.Add(foreignKey);
+
+            return foreignKey;
+        }
 
         public IList<IndexDefinition> Indexes { get; } = new List<IndexDefinition>();
+
+        public IList<ForeignKeyDefinition> ForeignKeys { get; } = new List<ForeignKeyDefinition>();
 
         private void assignIdStrategy(Type documentType, StoreOptions options)
         {
@@ -210,6 +231,12 @@ namespace Marten.Schema
             writer.WriteLine();
 
             ToUpsertFunction().WriteFunctionSql(schema?.UpsertType ?? PostgresUpsertType.Legacy, writer);
+
+            ForeignKeys.Each(x =>
+            {
+                writer.WriteLine();
+                writer.WriteLine(x.ToDDL());
+            });
 
             Indexes.Each(x =>
             {
@@ -497,7 +524,7 @@ END
             return query;
         }
 
-        public IndexDefinition DuplicateField(MemberInfo[] members, string pgType = null)
+        public DuplicatedField DuplicateField(MemberInfo[] members, string pgType = null)
         {
             var memberName = members.Select(x => x.Name).Join("");
 
@@ -509,7 +536,7 @@ END
 
             _fields[memberName] = duplicatedField;
 
-            return AddIndex(duplicatedField.ColumnName);
+            return duplicatedField;
         }
 
         public IEnumerable<IndexDefinition> IndexesFor(string column)
