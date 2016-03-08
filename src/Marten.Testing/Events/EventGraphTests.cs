@@ -1,4 +1,7 @@
-﻿using Marten.Events;
+﻿using System;
+using System.Linq;
+using Marten.Events;
+using Marten.Testing.Schema;
 using Shouldly;
 using Xunit;
 
@@ -11,44 +14,87 @@ namespace Marten.Testing.Events
         [Fact]
         public void find_stream_mapping_initially()
         {
-            theGraph.StreamMappingFor<Issue>()
-                .DocumentType.ShouldBe(typeof(Issue));
+            theGraph.AggregateFor<Issue>()
+                .AggregateType.ShouldBe(typeof(Issue));
+                
         }
 
         [Fact]
         public void caches_the_stream_mapping()
         {
-            theGraph.StreamMappingFor<Issue>()
-                .ShouldBeSameAs(theGraph.StreamMappingFor<Issue>());
+            theGraph.AggregateFor<Issue>()
+                .ShouldBeSameAs(theGraph.AggregateFor<Issue>());
         }
 
         [Fact]
         public void register_event_types_and_retrieve()
         {
-            theGraph.StreamMappingFor<Issue>().AddEvent(typeof (IssueAssigned));
-            theGraph.StreamMappingFor<Issue>().AddEvent(typeof (IssueCreated));
-            theGraph.StreamMappingFor<Quest>().AddEvent(typeof (MembersJoined));
-            theGraph.StreamMappingFor<Quest>().AddEvent(typeof (MembersDeparted));
+            theGraph.AddEventType(typeof (IssueAssigned));
+            theGraph.AddEventType(typeof (IssueCreated));
+            theGraph.AddEventType(typeof (MembersJoined));
+            theGraph.AddEventType(typeof (MembersDeparted));
 
             theGraph.EventMappingFor<IssueAssigned>().ShouldBeTheSameAs(theGraph.EventMappingFor<IssueAssigned>());
-
-            theGraph.EventMappingFor<IssueAssigned>().Stream.DocumentType.ShouldBe(typeof(Issue));
-
-            theGraph.EventMappingFor<MembersJoined>().Stream.DocumentType.ShouldBe(typeof(Quest));
+            
         }
 
 
         [Fact]
         public void find_event_by_event_type_name()
         {
-            theGraph.StreamMappingFor<Issue>().AddEvent(typeof(IssueAssigned));
-            theGraph.StreamMappingFor<Issue>().AddEvent(typeof(IssueCreated));
-            theGraph.StreamMappingFor<Quest>().AddEvent(typeof(MembersJoined));
-            theGraph.StreamMappingFor<Quest>().AddEvent(typeof(MembersDeparted));
+            theGraph.AddEventType(typeof(IssueAssigned));
+            theGraph.AddEventType(typeof(IssueCreated));
+            theGraph.AddEventType(typeof(MembersJoined));
+            theGraph.AddEventType(typeof(MembersDeparted));
 
             theGraph.EventMappingFor("members_joined").DocumentType.ShouldBe(typeof(MembersJoined));
 
             theGraph.EventMappingFor("issue_created").DocumentType.ShouldBe(typeof(IssueCreated));
+        }
+
+        [Fact]
+        public void derives_the_stream_type_name()
+        {
+
+            theGraph.AggregateFor<HouseRemodeling>().Alias.ShouldBe("house_remodeling");
+            theGraph.AggregateFor<Quest>().Alias.ShouldBe("quest");
+        }
+
+        [Fact]
+        public void has_any_in_starting_state()
+        {
+            theGraph.IsActive.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void has_any_is_true_with_any_events()
+        {
+            theGraph.AddEventType(typeof(IssueAssigned));
+            theGraph.IsActive.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void has_any_is_true_with_any_aggregates()
+        {
+            theGraph.AddAggregateType<Quest>();
+            theGraph.IsActive.ShouldBeTrue();
+        }
+
+        public class HouseRemodeling : IAggregate
+        {
+            public Guid Id { get; set; }
+        }
+
+        [Fact]
+        public void add_types_from_assembly()
+        {
+            theGraph.AddAllTypesFromAssembly(GetType().Assembly);
+
+            theGraph.AllEvents().ShouldContain(x => x.DocumentType == typeof(MembersJoined));
+            theGraph.AllEvents().ShouldContain(x => x.DocumentType == typeof(MembersDeparted));
+
+            theGraph.AllAggregates().ShouldContain(x => x.AggregateType == typeof (Quest));
+            theGraph.AllAggregates().ShouldContain(x => x.AggregateType == typeof (Race));
         }
     }
 }

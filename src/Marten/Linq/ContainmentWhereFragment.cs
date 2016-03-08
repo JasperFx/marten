@@ -29,7 +29,7 @@ namespace Marten.Linq
 
         public static void CreateDictionaryForSearch(BinaryExpression binary, IDictionary<string, object> dict)
         {
-            var expressionValue = MartenExpressionParser.Value(binary.Right);
+            var expressionValue = binary.Right.Value();
             var memberExpression = binary.Left;
 
             CreateDictionaryForSearch(dict, memberExpression, expressionValue);

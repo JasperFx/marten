@@ -15,7 +15,7 @@ namespace Marten.Schema
     public class DocumentSchema : IDocumentSchema, IDisposable
     {
         private readonly IConnectionFactory _factory;
-        private readonly IDocumentSchemaCreation _creation;
+        private readonly IMartenLogger _logger;
 
         private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
             new ConcurrentDictionary<Type, IDocumentMapping>();
@@ -24,18 +24,16 @@ namespace Marten.Schema
             new ConcurrentDictionary<Type, IDocumentStorage>();
 
 
-        public DocumentSchema(StoreOptions options, IConnectionFactory factory, IDocumentSchemaCreation creation)
+        public DocumentSchema(StoreOptions options, IConnectionFactory factory, IMartenLogger logger)
         {
             _factory = factory;
-            _creation = creation;
+            _logger = logger;
 
             StoreOptions = options;
 
             options.AllDocumentMappings.Each(x => _mappings[x.DocumentType] = x);
 
-            Sequences = new SequenceFactory(this, _factory, _creation);
-
-            Events = new EventGraph();
+            Sequences = new SequenceFactory(this, _factory, options);
         }
 
         public StoreOptions StoreOptions { get; }
@@ -49,6 +47,16 @@ namespace Marten.Schema
         {
             return _mappings.GetOrAdd(documentType, type =>
             {
+                if (type == typeof (EventStream))
+                {
+                    return StoreOptions.Events.As<IDocumentMapping>();
+                }
+
+                if (documentType.CanBeCastTo<IEvent>())
+                {
+                    return StoreOptions.Events.EventMappingFor(type);
+                }
+
                 return StoreOptions.AllDocumentMappings.SelectMany(x => x.SubClasses)
                     .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping
                        ?? StoreOptions.MappingFor(type);
@@ -65,6 +73,13 @@ namespace Marten.Schema
             return _documentTypes.GetOrAdd(documentType, type =>
             {
                 var mapping = MappingFor(documentType);
+                if (mapping is IDocumentStorage)
+                {
+                    buildSchemaObjectsIfNecessary(mapping);
+                    return mapping.As<IDocumentStorage>();
+                }
+
+
                 assertNoDuplicateDocumentAliases();
 
                 IDocumentStorage storage = null;
@@ -74,11 +89,30 @@ namespace Marten.Schema
 
                 storage = prebuiltType != null ? DocumentStorageBuilder.BuildStorageObject(this, prebuiltType, mapping.As<DocumentMapping>()) : mapping.BuildStorage(this);
 
-                _creation.CreateSchema(this, mapping, () => mapping.ShouldRegenerate(this));
+                buildSchemaObjectsIfNecessary(mapping);
 
                 return storage;
             });
         }
+
+        private void buildSchemaObjectsIfNecessary(IDocumentMapping mapping)
+        {
+            Action<string> executeSql = sql =>
+            {
+                try
+                {
+                    _factory.RunSql(sql);
+                    _logger.SchemaChange(sql);
+                }
+                catch (Exception e)
+                {
+                    throw new MartenSchemaException(mapping.DocumentType, sql, e);
+                }
+            };
+
+            mapping.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, executeSql);
+        }
+
 
         private void assertNoDuplicateDocumentAliases()
         {
@@ -95,7 +129,7 @@ namespace Marten.Schema
             }
         }
 
-        public EventGraph Events { get; }
+        public IEventStoreConfiguration Events => StoreOptions.Events;
         public PostgresUpsertType UpsertType => StoreOptions.UpsertType;
 
         public IEnumerable<string> SchemaTableNames()
@@ -159,6 +193,18 @@ namespace Marten.Schema
                 system.WriteStringToFile(filename, writer.ToString());
             });
 
+            system.WriteStringToFile(directory.AppendPath("mt_hilo.sql"), SchemaBuilder.GetText("mt_hilo"));
+
+            if (Events.IsActive)
+            {
+                var filename = directory.AppendPath("mt_streams.sql");
+                var writer = new StringWriter();
+
+                Events.As<IDocumentMapping>().WriteSchemaObjects(this, writer);
+
+                system.WriteStringToFile(filename, writer.ToString());
+            }
+
         }
 
         public string ToDDL()
@@ -167,6 +213,11 @@ namespace Marten.Schema
 
             StoreOptions.AllDocumentMappings.Each(x => x.WriteSchemaObjects(this, writer));
 
+            if (Events.IsActive)
+            {
+                Events.As<IDocumentMapping>().WriteSchemaObjects(this, writer);
+            }
+
             writer.WriteLine(SchemaBuilder.GetText("mt_hilo"));
 
             return writer.ToString();
@@ -174,11 +225,9 @@ namespace Marten.Schema
 
         public TableDefinition TableSchema(string tableName)
         {
-            if (!DocumentTables().Contains(tableName.ToLower()))
-                throw new Exception($"No Marten table exists named '{tableName}'");
-
-
             var columns = findTableColumns(tableName);
+            if (!columns.Any()) return null;
+
             var pkName = primaryKeysFor(tableName).SingleOrDefault();
 
             return new TableDefinition(tableName, pkName, columns);

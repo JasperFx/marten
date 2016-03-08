@@ -1,60 +1,64 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
+using System.Data.Common;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public class EventStore : IEventStore, IEventStoreAdmin, ITransforms
+    public class EventStore : IEventStore, ITransforms
     {
-        private readonly IManagedConnection _connection;
+        private readonly IDocumentSession _session;
+        private readonly IIdentityMap _identityMap;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
-        private readonly IDocumentSchemaCreation _creation;
-        private readonly FileSystem _files = new FileSystem();
+        private readonly IManagedConnection _connection;
 
-        public EventStore(IManagedConnection connection, IDocumentSchema schema, ISerializer serializer, IDocumentSchemaCreation creation)
+        public EventStore(IDocumentSession session, IIdentityMap identityMap, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection)
         {
-            _connection = connection;
+            _session = session;
+            _identityMap = identityMap;
             _schema = schema;
             _serializer = serializer;
-            _creation = creation;
+            _connection = connection;
         }
-
-
 
         public void Append<T>(Guid stream, T @event) where T : IEvent
         {
-            var eventMapping = _schema.Events.EventMappingFor<T>();
-
-            _connection.Execute(cmd => appendEvent(cmd, eventMapping, stream, @event));
+            throw new NotImplementedException();
         }
 
         public void AppendEvents(Guid stream, params IEvent[] events)
         {
-            // TODO -- see if you can batch up the events into a single command
-            // TODO -- TRANSACTIONAL INTEGRITY!
-            events.Each(@event =>
+            if (_identityMap.Has<EventStream>(stream))
             {
-                var mapping = _schema.Events.EventMappingFor(@event.GetType());
+                _identityMap.Retrieve<EventStream>(stream).AddEvents(events);
+            }
+            else
+            {
+                var eventStream = new EventStream(stream, events);
 
-                _connection.Execute(cmd => appendEvent(cmd, mapping, stream, @event));
-            });
+
+                _session.Store(eventStream);
+            }
         }
 
         public Guid StartStream<T>(params IEvent[] events) where T : IAggregate
         {
-            var stream = Guid.NewGuid();
-            AppendEvents(stream, events);
+            var id = Guid.NewGuid();
+            var stream = new EventStream(id, events)
+            {
+                AggregateType = typeof(T)
+            };
 
-            return stream;
+            _session.Store(stream);
+
+            return id;
         }
 
         public T FetchSnapshot<T>(Guid streamId) where T : IAggregate
@@ -75,6 +79,19 @@ namespace Marten.Events
             });
         }
 
+        private IEnumerable<IEvent> fetchStream(IDataReader reader)
+        {
+            while (reader.Read())
+            {
+                var eventTypeName = reader.GetString(0);
+                var json = reader.GetString(1);
+
+                var mapping = _schema.Events.EventMappingFor(eventTypeName);
+
+                yield return _serializer.FromJson(mapping.DocumentType, json).As<IEvent>();
+            }
+        }
+
         public void DeleteEvent<T>(Guid id)
         {
             throw new NotImplementedException();
@@ -90,95 +107,19 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
-        private void appendEvent(NpgsqlCommand conn, EventMapping eventMapping, Guid stream, IEvent @event)
-        {
-            if (@event.Id == Guid.Empty) @event.Id = Guid.NewGuid();
-
-            conn.CallsSproc("mt_append_event")
-                .With("stream", stream)
-                .With("stream_type", eventMapping.Stream.StreamTypeName)
-                .With("event_id", @event.Id)
-                .With("event_type", eventMapping.EventTypeName)
-                .With("body", _serializer.ToJson(@event), NpgsqlDbType.Jsonb)
-                .ExecuteNonQuery();
-        }
-
-        private IEnumerable<IEvent> fetchStream(IDataReader reader)
-        {
-            while (reader.Read())
-            {
-                var eventTypeName = reader.GetString(0);
-                var json = reader.GetString(1);
-
-                var mapping = _schema.Events.EventMappingFor(eventTypeName);
-
-                yield return _serializer.FromJson(mapping.DocumentType, json).As<IEvent>();
-            }
-        }
-
-        public IEventStoreAdmin Administration => this;
-
         public ITransforms Transforms => this;
-
-        public void LoadProjections(string directory)
+        public StreamState FetchStreamState(Guid streamId)
         {
-            _files.FindFiles(directory, FileSet.Deep("*.js")).Each(file =>
+            return _connection.Execute(cmd =>
             {
-                var body = _files.ReadStringFromFile(file);
-                var name = Path.GetFileNameWithoutExtension(file);
-
-                _connection.Execute(cmd =>
+                Func<DbDataReader, StreamState> converter = r =>
                 {
-                    cmd.CallsSproc("mt_load_projection_body")
-                        .With("proj_name", name)
-                        .With("body", body)
-                        .ExecuteNonQuery();
+                    var typeName = r.GetString(1);
+                    var aggregateType = _schema.Events.AggregateTypeFor(typeName);
+                    return new StreamState(streamId, r.GetInt32(0), aggregateType);
+                };
 
-                });
-            });
-        }
-
-        public void LoadProjection(string file)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ClearAllProjections()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase()
-        {
-            _connection.Execute(cmd =>
-            {
-                cmd.CallsSproc("mt_initialize_projections").ExecuteNonQuery();
-            });
-
-            return ProjectionUsages();
-        }
-
-        public IEnumerable<ProjectionUsage> ProjectionUsages()
-        {
-            var json = _connection.Execute(cmd => cmd.CallsSproc("mt_get_projection_usage").ExecuteScalar().As<string>());
-
-            return _serializer.FromJson<ProjectionUsage[]>(json);
-        }
-
-        public void RebuildEventStoreSchema()
-        {
-            _creation.RunScript("mt_stream");
-            _creation.RunScript("mt_initialize_projections");
-            _creation.RunScript("mt_apply_transform");
-            _creation.RunScript("mt_apply_aggregation");
-
-            var js = SchemaBuilder.GetJavascript("mt_transforms");
-            _connection.Execute(cmd =>
-            {
-                cmd.WithText("insert into mt_modules (name, definition) values (:name, :definition)")
-                    .With("name", "mt_transforms")
-                    .With("definition", js)
-                    .ExecuteNonQuery();
+                return cmd.Fetch("select version, type from mt_streams where id = ?", converter, streamId).SingleOrDefault();
             });
         }
 
@@ -207,10 +148,43 @@ namespace Marten.Events
             return json.ToString();
         }
 
+        public TAggregate ApplySnapshot<TAggregate>(TAggregate aggregate, IEvent @event) where TAggregate : IAggregate
+        {
+ 
+            var aggregateId = aggregate.Id;
+            var aggregateJson = _serializer.ToJson(aggregate);
+            var projectionName = _schema.Events.AggregateFor<TAggregate>().Alias;
+
+            var eventType = _schema.Events.EventMappingFor(@event.GetType()).EventTypeName;
+
+            string json = _connection.Execute(cmd =>
+            {
+                return cmd.CallsSproc("mt_apply_aggregation")
+                    .With("stream_id", aggregateId)
+                    .With("event_id", @event.Id)
+                    .With("projection", projectionName)
+                    .With("event_type", eventType)
+                    .With("event", _serializer.ToJson(@event), NpgsqlDbType.Json)
+                    .With("aggregate", aggregateJson, NpgsqlDbType.Json).ExecuteScalar().As<string>();
+            });
+
+            var returnValue = _serializer.FromJson<TAggregate>(json);
+
+            returnValue.Id = aggregateId;
+
+            return returnValue;
+            
+        }
+
+        public T ApplyProjection<T>(string projectionName, T aggregate, IEvent @event) where T : IAggregate
+        {
+            throw new NotImplementedException();
+        }
+
         public TAggregate StartSnapshot<TAggregate>(IEvent @event) where TAggregate : IAggregate
         {
             var aggregateId = Guid.NewGuid();
-            var projectionName = _schema.Events.StreamMappingFor<TAggregate>().StreamTypeName;
+            var projectionName = _schema.Events.AggregateFor<TAggregate>().Alias;
 
             var eventType = _schema.Events.EventMappingFor(@event.GetType()).EventTypeName;
 
@@ -230,42 +204,7 @@ namespace Marten.Events
             returnValue.Id = aggregateId;
 
             return returnValue;
-        }
-
-        public TAggregate ApplySnapshot<TAggregate>(TAggregate aggregate, IEvent @event) where TAggregate : IAggregate
-        {
-            var aggregateId = aggregate.Id;
-            var aggregateJson = _serializer.ToJson(aggregate);
-            var projectionName = _schema.Events.StreamMappingFor<TAggregate>().StreamTypeName;
-
-            var eventType = _schema.Events.EventMappingFor(@event.GetType()).EventTypeName;
-
-            var json = _connection.Execute(cmd =>
-            {
-                return cmd.CallsSproc("mt_apply_aggregation")
-                    .With("stream_id", aggregateId)
-                    .With("event_id", @event.Id)
-                    .With("projection", projectionName)
-                    .With("event_type", eventType)
-                    .With("event", _serializer.ToJson(@event), NpgsqlDbType.Json)
-                    .With("aggregate", aggregateJson, NpgsqlDbType.Json).ExecuteScalar().As<string>();
-            });
-
-            var returnValue = _serializer.FromJson<TAggregate>(json);
-
-            returnValue.Id = aggregateId;
-
-            return returnValue;
-        }
-
-        public T ApplyProjection<T>(string projectionName, T aggregate, IEvent @event) where T : IAggregate
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Dispose()
-        {
-            _connection.SafeDispose();
+            
         }
     }
 }

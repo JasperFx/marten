@@ -17,11 +17,11 @@ namespace Marten.Linq
         private readonly QueryModel _query;
         private readonly MartenExpressionParser _parser;
 
-        public DocumentQuery(IDocumentMapping mapping, QueryModel query, ISerializer serializer)
+        public DocumentQuery(IDocumentMapping mapping, QueryModel query, MartenExpressionParser parser)
         {
             _mapping = mapping;
             _query = query;
-            _parser = new MartenExpressionParser(this, serializer);
+            _parser = parser;
         }
 
         public void ConfigureForAny(NpgsqlCommand command)
@@ -112,7 +112,7 @@ namespace Marten.Linq
 
         public string ToOrderClause(Ordering clause)
         {
-            var locator = _parser.JsonLocator(_mapping, clause.Expression);
+            var locator = _mapping.JsonLocator(clause.Expression);
             return clause.OrderingDirection == OrderingDirection.Asc
                 ? locator
                 : locator + " desc";

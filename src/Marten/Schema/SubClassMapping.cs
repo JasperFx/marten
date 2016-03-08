@@ -44,9 +44,9 @@ namespace Marten.Schema
             return _inner.SelectFields(tableAlias);
         }
 
-        public bool ShouldRegenerate(IDocumentSchema schema)
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
-            return _parent.ShouldRegenerate(schema);
+            _parent.GenerateSchemaObjectsIfNecessary(autoCreateSchemaObjectsMode, schema, executeSql);
         }
 
         public IField FieldFor(IEnumerable<MemberInfo> members)

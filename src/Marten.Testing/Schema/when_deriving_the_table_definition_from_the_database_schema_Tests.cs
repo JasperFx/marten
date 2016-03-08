@@ -11,7 +11,7 @@ namespace Marten.Testing.Schema
 {
     public class when_deriving_the_table_definition_from_the_database_schema_Tests
     {
-        private readonly DocumentSchema _schema;
+        private readonly IDocumentSchema _schema;
         private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
         private DocumentMapping theMapping;
         private IDocumentStorage _storage;
@@ -20,7 +20,7 @@ namespace Marten.Testing.Schema
         public when_deriving_the_table_definition_from_the_database_schema_Tests()
         {
             ConnectionSource.CleanBasicDocuments();
-            _schema = _container.GetInstance<DocumentSchema>();
+            _schema = _container.GetInstance<IDocumentStore>().Schema;
 
             theMapping = _schema.MappingFor(typeof(User)).As<DocumentMapping>();
             theMapping.DuplicateField("UserName");
@@ -33,7 +33,7 @@ namespace Marten.Testing.Schema
 
         public void Dispose()
         {
-            _schema.Dispose();
+            _container.Dispose();
         }
 
         [Fact]

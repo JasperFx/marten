@@ -15,7 +15,8 @@ namespace Marten.Services
         private readonly JsonSerializer _serializer = new JsonSerializer
         {
             TypeNameHandling = TypeNameHandling.Auto,
-            DateFormatHandling = DateFormatHandling.IsoDateFormat
+            DateFormatHandling = DateFormatHandling.IsoDateFormat,
+            MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead
         };
 
         public string ToJson(object document)

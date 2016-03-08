@@ -15,7 +15,7 @@ namespace Marten.Testing.Bugs
         {
             var store1 = DocumentStore.For(_ =>
             {
-                _.AutoCreateSchemaObjects = true;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Connection(ConnectionSource.ConnectionString);
             });
 
@@ -34,7 +34,7 @@ namespace Marten.Testing.Bugs
 
             var store2 = DocumentStore.For(_ =>
             {
-                _.AutoCreateSchemaObjects = true;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Connection(ConnectionSource.ConnectionString);
             });
 

@@ -7,65 +7,6 @@ using Npgsql;
 
 namespace Marten.Services
 {
-    public enum CommandRunnerMode
-    {
-        Transactional,
-        ReadOnly
-    }
-
-    public class TransactionState : IDisposable
-    {
-        private readonly IsolationLevel _isolationLevel;
-
-
-        public TransactionState(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel)
-        {
-            _isolationLevel = isolationLevel;
-            Connection = factory.Create();
-            Connection.Open();
-            if (mode == CommandRunnerMode.Transactional)
-            {
-                Transaction = Connection.BeginTransaction(isolationLevel);
-            }
-        }
-
-        public void Apply(NpgsqlCommand cmd)
-        {
-            cmd.Connection = Connection;
-            cmd.Transaction = Transaction;
-        }
-
-        public NpgsqlTransaction Transaction { get; private set; }
-
-        public NpgsqlConnection Connection { get; }
-
-        public void Commit()
-        {
-            Transaction.Commit();
-            Transaction = Connection.BeginTransaction(_isolationLevel);
-        }
-
-        public void Rollback()
-        {
-            Transaction.Rollback();
-            Transaction = Connection.BeginTransaction(_isolationLevel);
-        }
-
-        public void Dispose()
-        {
-            Connection.Close();
-            Connection.SafeDispose();
-        }
-
-        public NpgsqlCommand CreateCommand()
-        {
-            var cmd = Connection.CreateCommand();
-            cmd.Transaction = Transaction;
-
-            return cmd;
-        }
-    }
-
     public class ManagedConnection : IManagedConnection
     {
         private readonly Lazy<TransactionState> _connection; 
@@ -78,6 +19,10 @@ namespace Marten.Services
         {
             _connection = new Lazy<TransactionState>(() => new TransactionState(factory, mode, isolationLevel));
         }
+
+        public IMartenSessionLogger Logger { get; set; } = new NulloMartenLogger();
+
+        public int RequestCount { get; private set; }
 
         public void Commit()
         {
@@ -93,55 +38,151 @@ namespace Marten.Services
 
         public void Execute(NpgsqlCommand cmd, Action<NpgsqlCommand> action = null)
         {
+            RequestCount++;
+
             if (action == null)
             {
                 action = c => c.ExecuteNonQuery();
             }
 
             _connection.Value.Apply(cmd);
-            action(cmd);
+            try
+            {
+                action(cmd);
+                Logger.LogSuccess(cmd);
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public void Execute(Action<NpgsqlCommand> action)
         {
+            RequestCount++;
+
             var cmd = _connection.Value.CreateCommand();
-            action(cmd);
+            try
+            {
+                action(cmd);
+                Logger.LogSuccess(cmd);
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public T Execute<T>(Func<NpgsqlCommand, T> func)
         {
+            RequestCount++;
+
             var cmd = _connection.Value.CreateCommand();
-            return func(cmd);
+            try
+            {
+                var returnValue = func(cmd);
+                Logger.LogSuccess(cmd);
+                return returnValue;
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public T Execute<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, T> func)
         {
+            RequestCount++;
+
             _connection.Value.Apply(cmd);
-            return func(cmd);
+            try
+            {
+                var returnValue = func(cmd);
+                Logger.LogSuccess(cmd);
+                return returnValue;
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public async Task ExecuteAsync(Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
         {
+            RequestCount++;
+
             var cmd = _connection.Value.CreateCommand();
-            await action(cmd, token);
+
+            try
+            {
+                await action(cmd, token);
+                Logger.LogSuccess(cmd);
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public async Task ExecuteAsync(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
         {
+            RequestCount++;
+
             _connection.Value.Apply(cmd);
-            await action(cmd, token);
+
+            try
+            {
+                await action(cmd, token);
+                Logger.LogSuccess(cmd);
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public async Task<T> ExecuteAsync<T>(Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
         {
+            RequestCount++;
+
             var cmd = _connection.Value.CreateCommand();
-            return await func(cmd, token);
+
+            try
+            {
+                var returnValue = await func(cmd, token);
+                Logger.LogSuccess(cmd);
+                return returnValue;
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
         public async Task<T> ExecuteAsync<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
         {
+            RequestCount++;
+
             _connection.Value.Apply(cmd);
-            return await func(cmd, token);
+
+            try
+            {
+                var returnValue = await func(cmd, token);
+                Logger.LogSuccess(cmd);
+                return returnValue;
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw;
+            }
         }
 
 

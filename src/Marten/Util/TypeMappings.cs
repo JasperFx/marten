@@ -18,7 +18,8 @@ namespace Marten.Util
             {typeof (Boolean), "boolean"},
             {typeof (double), "double precision"},
             {typeof (decimal), "decimal"},
-            {typeof (DateTime), "date"},
+            {typeof(float), "decimal" },
+            {typeof(DateTime), "timestamp without time zone" },
             {typeof (DateTimeOffset), "timestamp with time zone"}
         };
 
@@ -58,8 +59,6 @@ namespace Marten.Util
         public static NpgsqlDbType ToDbType(Type type)
         {
             if (type.IsNullable()) return ToDbType(type.GetInnerTypeFromNullable());
-
-            if (type == typeof (DateTime)) return NpgsqlDbType.Date;
 
             return (NpgsqlDbType) _getNgpsqlDbTypeMethod.Invoke(null, new object[] {type});
         }

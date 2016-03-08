@@ -76,7 +76,7 @@ namespace Marten.Schema
             var subclass = new SubClassMapping(subclassType, this, alias);
             _subClasses.Add(subclass);
         }
-
+        
         public string Alias
         {
             get { return _alias; }
@@ -249,6 +249,8 @@ namespace Marten.Schema
 
         public void RemoveSchemaObjects(IManagedConnection connection)
         {
+            _hasCheckedSchema = false;
+
             connection.Execute($"DROP TABLE IF EXISTS {TableName} CASCADE;");
 
             var dropTargets = DocumentCleaner.DropFunctionSql.ToFormat(UpsertName);
@@ -326,6 +328,11 @@ namespace Marten.Schema
             });
         }
 
+        public IField FieldForColumn(string columnName)
+        {
+            return _fields.Values.FirstOrDefault(x => x.ColumnName == columnName);
+        }
+
         public virtual TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
             // can do foreign keys
         {
@@ -366,14 +373,87 @@ namespace Marten.Schema
             return function;
         }
 
-        public bool ShouldRegenerate(IDocumentSchema schema)
+        private readonly object _lock = new object();
+        private bool _hasCheckedSchema = false;
+
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
-            if (!schema.DocumentTables().Contains(TableName)) return true;
+            if (_hasCheckedSchema) return;
 
-            var existing = schema.TableSchema(TableName);
-            var expected = ToTable(schema);
+            try
+            {
+                var expected = ToTable(schema);
 
-            return !expected.Equals(existing);
+                var existing = schema.TableSchema(TableName);
+                if (existing != null && expected.Equals(existing))
+                {
+                    _hasCheckedSchema = true;
+                    return;
+                }
+
+                lock (_lock)
+                {
+                    existing = schema.TableSchema(TableName);
+                    if (existing == null || !expected.Equals(existing))
+                    {
+                        buildOrModifySchemaObjects(existing, expected, autoCreateSchemaObjectsMode, schema, executeSql);
+                    }
+                }
+            }
+            finally
+            {
+                _hasCheckedSchema = true;
+            }
+
+
+        }
+
+        private void buildOrModifySchemaObjects(TableDefinition existing, TableDefinition expected, AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        {
+            if (autoCreateSchemaObjectsMode == AutoCreate.None)
+            {
+                var className = nameof(StoreOptions);
+                var propName = nameof(StoreOptions.AutoCreateSchemaObjects);
+
+                string message = $"No document storage exists for type {DocumentType.FullName} and cannot be created dynamically unless the {className}.{propName} = true. See http://jasperfx.github.io/marten/documentation/documents/ for more information";
+                throw new InvalidOperationException(message);
+            }
+
+            if (existing == null)
+            {
+                rebuildTableAndUpsertFunction(schema, executeSql);
+                return;
+            }
+
+            if (autoCreateSchemaObjectsMode == AutoCreate.CreateOnly)
+            {
+                throw new InvalidOperationException($"The table for document type {DocumentType.FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{nameof(AutoCreate.CreateOnly)}'");
+            }
+
+            var diff = new TableDiff(expected, existing);
+            if (diff.CanPatch())
+            {
+                diff.CreatePatch(this, executeSql);
+            }
+            else if (autoCreateSchemaObjectsMode == AutoCreate.All)
+            {
+                // TODO -- better evaluation here against the auto create mode
+                rebuildTableAndUpsertFunction(schema, executeSql);
+            }
+            else
+            {
+                throw new InvalidOperationException($"The table for document type {DocumentType.FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{autoCreateSchemaObjectsMode}'");
+            }
+
+        }
+
+        private void rebuildTableAndUpsertFunction(IDocumentSchema schema, Action<string> executeSql)
+        {
+            var writer = new StringWriter();
+            WriteSchemaObjects(schema, writer);
+
+            var sql = writer.ToString();
+            executeSql(sql);
         }
 
 
@@ -404,7 +484,7 @@ namespace Marten.Schema
             }
 
             var key = members.Select(x => x.Name).Join("");
-            return _fields.GetOrAdd(key, _ => { return new JsonLocatorField(members.ToArray()); });
+            return _fields.GetOrAdd(key, _ => new JsonLocatorField(members.ToArray()));
         }
 
         public virtual string ToResolveMethod(string typeName)

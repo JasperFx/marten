@@ -3,30 +3,27 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.Hierarchies;
 using Marten.Testing.Documents;
+using Marten.Testing.Events;
 using Marten.Testing.Schema.Hierarchies;
 using Shouldly;
 using StructureMap;
 using Xunit;
+using Issue = Marten.Testing.Documents.Issue;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentSchemaTests : IDisposable
+    public class DocumentSchemaTests : IntegratedFixture
     {
-        private readonly DocumentSchema _schema;
-        private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
+        private readonly IDocumentSchema _schema;
 
         public DocumentSchemaTests()
         {
             ConnectionSource.CleanBasicDocuments();
-            _schema = _container.GetInstance<DocumentSchema>();
-        }
-
-        public void Dispose()
-        {
-            _schema.Dispose();
+            _schema = theStore.Schema;
         }
 
         [Fact]
@@ -105,6 +102,35 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("CREATE TABLE mt_doc_user");
             sql.ShouldContain("CREATE TABLE mt_doc_issue");
             sql.ShouldContain("CREATE TABLE mt_doc_company");
+        }
+
+        [Fact]
+        public void include_the_hilo_table_by_default()
+        {
+            _schema.StorageFor(typeof(User));
+            _schema.StorageFor(typeof(Issue));
+            _schema.StorageFor(typeof(Company));
+
+            var sql = _schema.ToDDL();
+            sql.ShouldContain(SchemaBuilder.GetText("mt_hilo"));
+        }
+
+        [Fact]
+        public void do_not_write_event_sql_if_the_event_graph_is_not_active()
+        {
+            _schema.Events.IsActive.ShouldBeFalse();
+
+            _schema.ToDDL().ShouldNotContain("mt_streams");
+        }
+
+        [Fact]
+        public void do_write_the_event_sql_if_the_event_graph_is_active()
+        {
+            _schema.Events.AddEventType(typeof(MembersJoined));
+            _schema.Events.IsActive.ShouldBeTrue();
+
+            _schema.ToDDL().ShouldContain("mt_streams");
+
         }
 
         [Fact]
@@ -191,7 +217,7 @@ namespace Marten.Testing.Schema
             var files = fileSystem.FindFiles("allsql", FileSet.Shallow("*.sql")).ToArray();
 
             files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x)
-                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "user.sql");
+                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "user.sql");
 
             files.Each(file =>
             {
@@ -200,10 +226,89 @@ namespace Marten.Testing.Schema
                 contents.ShouldContain("CREATE TABLE");
                 contents.ShouldContain("CREATE OR REPLACE FUNCTION");
             });
-
-
-
-
         }
+
+        [Fact]
+        public void write_ddl_by_type_with_no_events()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.RegisterDocumentType<User>();
+                _.RegisterDocumentType<Company>();
+                _.RegisterDocumentType<Issue>();
+
+                _.Connection(ConnectionSource.ConnectionString);
+            }))
+            {
+                store.Schema.Events.IsActive.ShouldBeFalse();
+                store.Schema.WriteDDLByType("allsql");
+            }
+
+            var fileSystem = new FileSystem();
+            fileSystem.FindFiles("allsql", FileSet.Shallow("*mt_streams.sql"))
+                .Any().ShouldBeFalse();
+        }
+
+        [Fact]
+        public void write_ddl_by_type_with_events()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.RegisterDocumentType<User>();
+                _.RegisterDocumentType<Company>();
+                _.RegisterDocumentType<Issue>();
+
+                _.Events.AddAggregateType<Quest>();
+
+                _.Connection(ConnectionSource.ConnectionString);
+            }))
+            {
+                store.Schema.Events.IsActive.ShouldBeTrue();
+                store.Schema.WriteDDLByType("allsql");
+            }
+
+            var fileSystem = new FileSystem();
+            fileSystem.FindFiles("allsql", FileSet.Shallow("*mt_streams.sql"))
+                .Any().ShouldBeTrue();
+        }
+
+        [Fact]
+        public void resolve_a_document_mapping_for_an_event_type()
+        {
+            _schema.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+                .DocumentType.ShouldBe(typeof(RaceStarted));
+        }
+
+        [Fact]
+        public void resolve_storage_for_event_type()
+        {
+            _schema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+                .DocumentType.ShouldBe(typeof(RaceStarted));
+        }
+
+        [Fact]
+        public void resolve_mapping_for_event_stream()
+        {
+            _schema.MappingFor(typeof (EventStream)).ShouldBeOfType<EventGraph>();
+        }
+
+        [Fact]
+        public void resolve_storage_for_stream_type()
+        {
+            _schema.StorageFor(typeof (EventStream)).ShouldBeOfType<EventStreamStorage>();
+        }
+    }
+
+
+
+    public class Race : IAggregate
+    {
+        public Guid Id { get; set; }
+    }
+
+    public class RaceStarted : IEvent
+    {
+        public Guid Id { get; set; }
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 }

@@ -24,9 +24,6 @@ function Snapshot(def){
 
 				result.push(usage);
 			}
-
-
-			
 		}
 
 		return result;

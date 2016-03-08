@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Remotion.Linq.Parsing.Structure;
@@ -19,7 +22,7 @@ namespace Marten
         private readonly IDocumentSchema _schema;
         private readonly UnitOfWork _unitOfWork;
 
-        public DocumentSession(StoreOptions options, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap) : base(schema, serializer, connection, parser, identityMap)
+        public DocumentSession(StoreOptions options, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap) : base(schema, serializer, connection, parser, identityMap, options)
         {
             _options = options;
             _schema = schema;
@@ -27,12 +30,16 @@ namespace Marten
             _connection = connection;
 
             _identityMap = identityMap;
-            _unitOfWork = new UnitOfWork(_schema);
+
+
+            _unitOfWork = new UnitOfWork(_schema, Parser);
 
             if (_identityMap is IDocumentTracker)
             {
                 _unitOfWork.AddTracker(_identityMap.As<IDocumentTracker>());
             }
+
+            Events = new EventStore(this, _identityMap, schema, _serializer, _connection);
 
         }
 
@@ -62,6 +69,11 @@ namespace Marten
             storage.Delete(_identityMap, id);
         }
 
+        public void DeleteWhere<T>(Expression<Func<T, bool>> expression)
+        {
+            _unitOfWork.Delete<T>(expression);
+        }
+
         public void Store<T>(params T[] entities) 
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
@@ -77,10 +89,19 @@ namespace Marten
 
                 foreach (var entity in entities)
                 {
-                    var id = idAssignment.Assign(entity);
+                    bool assigned = false;
+                    var id = idAssignment.Assign(entity, out assigned);
+                    // TODO -- categorize as insert or update on UnitOfWork
 
                     storage.Store(_identityMap, id, entity);
-                    _unitOfWork.Store(entity);
+                    if (assigned)
+                    {
+                        _unitOfWork.StoreInserts(entity);
+                    }
+                    else
+                    {
+                        _unitOfWork.StoreUpdates(entity);
+                    }
                 }
             }
 
@@ -97,15 +118,20 @@ namespace Marten
             });
         }
 
+        public IEventStore Events { get; }
+
         public void SaveChanges()
         {
             _options.Listeners.Each(x => x.BeforeSaveChanges(this));
 
             var batch = new UpdateBatch(_options, _serializer, _connection);
-            _unitOfWork.ApplyChanges(batch);
+            var changes = _unitOfWork.ApplyChanges(batch);
+            _changes.Add(changes);
 
 
             _connection.Commit();
+
+            Logger.RecordSavedChanges(this);
 
             _options.Listeners.Each(x => x.AfterCommit(this));
         }
@@ -119,15 +145,24 @@ namespace Marten
 
 
             var batch = new UpdateBatch(_options, _serializer, _connection);
-            await _unitOfWork.ApplyChangesAsync(batch, token);
+            var changes = await _unitOfWork.ApplyChangesAsync(batch, token);
+
+            _changes.Add(changes);
 
             _connection.Commit();
+
+            Logger.RecordSavedChanges(this);
 
             foreach (var listener in _options.Listeners)
             {
                 await listener.AfterCommitAsync(this);
             }
         }
+
+        private readonly IList<IChangeSet> _changes = new List<IChangeSet>();
+
+        public IEnumerable<IChangeSet> Commits => _changes;
+        public IChangeSet LastCommit => _changes.LastOrDefault();
 
         internal interface IHandler
         {

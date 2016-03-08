@@ -15,11 +15,11 @@ namespace Marten.Testing
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.AutoCreateSchemaObjects = true;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.UpsertType = UpsertType;
             });
 
-
+            For<IMartenLogger>().Use<NulloMartenLogger>();
 
             For<IDocumentStore>().Use(store);
             For<IIdentityMap>().Use<NulloIdentityMap>();
@@ -37,10 +37,10 @@ namespace Marten.Testing
 
             For<IQuerySession>().Use<QuerySession>().Ctor<IIdentityMap>().Is<NulloIdentityMap>();
 
-            For<IEventStore>().Use<EventStore>();
             For<IMartenQueryExecutor>().Use<MartenQueryExecutor>();
 
-            For<IDocumentSchemaCreation>().Use<DevelopmentSchemaCreation>();
+            For<StoreOptions>().Use(c => c.GetInstance<IDocumentStore>().Advanced.Options);
+
         }
 
         public static PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;
@@ -56,7 +56,7 @@ namespace Marten.Testing
                 return DocumentStore.For(_ =>
                 {
                     _.Connection("your connection string");
-                    _.AutoCreateSchemaObjects = false;
+                    _.AutoCreateSchemaObjects = AutoCreate.None;
                     
                     // other Marten configuration options
                 });

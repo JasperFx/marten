@@ -1,5 +1,8 @@
-CREATE OR REPLACE FUNCTION mt_initialize_projections() RETURNS VOID AS $$
+CREATE OR REPLACE FUNCTION mt_initialize_projections(overwrite boolean) RETURNS VOID AS $$
 
+if (plv8.transforms && !overwrite){
+	return;
+}
 
 var $modules = {};
 var module = {};
@@ -58,7 +61,7 @@ $$ LANGUAGE plv8;
 CREATE OR REPLACE FUNCTION mt_get_projection_usage() RETURNS JSON AS $$
 
 	if (!plv8.transforms){
-		plv8.execute('select mt_initialize_projections()');
+		plv8.execute('select mt_initialize_projections(true)');
 	}
 
 	return plv8.transforms.usages();

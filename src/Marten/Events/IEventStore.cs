@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Marten.Events
 {
-    public interface IEventStore : IDisposable
+    public interface IEventStore
     {
         void Append<T>(Guid stream, T @event) where T : IEvent;
 
@@ -21,9 +21,9 @@ namespace Marten.Events
 
         void ReplaceEvent<T>(T @event);
 
-        IEventStoreAdmin Administration { get; }
-
         ITransforms Transforms { get; }
+
+        StreamState FetchStreamState(Guid streamId);
     }
 
     public interface ITransforms
@@ -45,11 +45,25 @@ namespace Marten.Events
 
         void ClearAllProjections();
 
-        IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase();
+        IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase(bool overwrite = false);
 
         IEnumerable<ProjectionUsage> ProjectionUsages(); 
 
         void RebuildEventStoreSchema();
 
+    }
+
+    public class StreamState
+    {
+        public Guid Id { get; }
+        public int Version { get; }
+        public Type AggregateType { get; }
+
+        public StreamState(Guid id, int version, Type aggregateType)
+        {
+            Id = id;
+            Version = version;
+            AggregateType = aggregateType;
+        }
     }
 }

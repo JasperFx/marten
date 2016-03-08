@@ -32,5 +32,10 @@ namespace Marten.Schema
         /// Remove all Marten-related schema objects from the underlying Postgresql database
         /// </summary>
         void CompletelyRemoveAll();
+
+        /// <summary>
+        /// Completely deletes all the event and stream data
+        /// </summary>
+        void DeleteAllEventData();
     }
 }

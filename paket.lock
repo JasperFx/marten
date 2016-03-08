@@ -26,7 +26,7 @@ NUGET
     Remotion.Linq (2.0.1)
     Shouldly (2.6.0)
     Sigil (4.5.0)
-    Storyteller (3.0.0.300-alpha)
+    Storyteller (3.0.0.325-rc)
     structuremap (3.1.6.186)
     System.Collections (4.0.10) - framework: dnxcore50
       System.Diagnostics.Debug (>= 4.0.0)

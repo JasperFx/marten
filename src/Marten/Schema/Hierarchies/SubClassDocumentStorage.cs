@@ -90,9 +90,9 @@ namespace Marten.Schema.Hierarchies
             _parentBulkLoader.Load(serializer, conn, documents);
         }
 
-        public object Assign(T document)
+        public object Assign(T document, out bool assigned)
         {
-            return _parentIdAssignment.Assign(document);
+            return _parentIdAssignment.Assign(document, out assigned);
         }
 
         public void Remove(IIdentityMap map, object entity)

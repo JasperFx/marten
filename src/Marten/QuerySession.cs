@@ -29,18 +29,22 @@ namespace Marten
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
 
-        public QuerySession(IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
+        public QuerySession(IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
         {
             _schema = schema;
             _serializer = serializer;
             _connection = connection;
             _parser = parser;
             _identityMap = identityMap;
+
+            Parser = new MartenExpressionParser(_serializer, options);
         }
+
+        internal MartenExpressionParser Parser { get; }
 
         public IQueryable<T> Query<T>()
         {
-            var executor = new MartenQueryExecutor(_connection, _schema, _serializer, _parser, _identityMap);
+            var executor = new MartenQueryExecutor(_connection, _schema, Parser, _parser, _identityMap);
 
             var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, executor);
             return new MartenQueryable<T>(queryProvider);
@@ -69,7 +73,7 @@ namespace Marten
 
         public IBatchedQuery CreateBatchQuery()
         {
-            return new BatchedQuery(_connection, _schema, _identityMap, this, _serializer);
+            return new BatchedQuery(_connection, _schema, _identityMap, this, _serializer, Parser);
         }
 
         public NpgsqlCommand BuildCommand<T>(string sql, params object[] parameters)
@@ -322,6 +326,12 @@ namespace Marten
         }
 
         public NpgsqlConnection Connection => _connection.Connection;
+
+        public IMartenSessionLogger Logger
+        {
+            get { return _connection.As<ManagedConnection>().Logger; }
+            set { _connection.As<ManagedConnection>().Logger = value; }
+        }
 
         public void Dispose()
         {

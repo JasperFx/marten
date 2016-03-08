@@ -25,7 +25,7 @@ namespace Marten.Testing.Schema
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.AutoCreateSchemaObjects = false;
+                _.AutoCreateSchemaObjects = AutoCreate.None;
             }))
             {
                 using (var session = store.OpenSession())
@@ -47,7 +47,7 @@ namespace Marten.Testing.Schema
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.AutoCreateSchemaObjects = false;
+                _.AutoCreateSchemaObjects = AutoCreate.None;
             }))
             {
                 using (var session = store.OpenSession())

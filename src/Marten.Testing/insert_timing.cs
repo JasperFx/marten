@@ -194,7 +194,7 @@ namespace Marten.Testing
 
             return Timings.Time(() =>
             {
-                unitofwork.Store(data);
+                unitofwork.StoreUpdates(data);
                 unitofwork.ApplyChanges(batch);
             });
         }

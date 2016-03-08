@@ -52,7 +52,7 @@ namespace Marten.Linq
                     throw new NotSupportedException("Only the equality operator is supported on Collection.Any(x => x) searches directly against the element");
                 }
 
-                var values = binaryExpressions.Select(x => MartenExpressionParser.Value(x.Right)).ToArray();
+                var values = binaryExpressions.Select(x => x.Right.Value()).ToArray();
                 if (members.Count == 1)
                 {
                     dictionary.Add(members.Single().Name, values);

@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using Marten.Events;
+using Marten.Linq;
+using Marten.Linq.Handlers;
 using Marten.Schema;
 using Marten.Schema.Sequences;
 using Marten.Services;
@@ -20,6 +23,8 @@ namespace Marten
     {
         private ISerializer _serializer;
         private IConnectionFactory _factory;
+        private IMartenLogger _logger = new NulloMartenLogger();
+
 
         internal readonly IList<Type> PreBuiltStorage = new List<Type>(); 
 
@@ -98,10 +103,9 @@ namespace Marten
 
         /// <summary>
         /// Whether or Marten should attempt to create any missing database schema objects at runtime. This
-        /// property is False by default for production usage, but should be set to True at development time for
-        /// more efficient development. 
+        /// property is "All" by default for more efficient development, but can be set to lower values for production usage.
         /// </summary>
-        public bool AutoCreateSchemaObjects = false;
+        public AutoCreate AutoCreateSchemaObjects = AutoCreate.All;
 
         /// <summary>
         /// Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
@@ -141,6 +145,11 @@ namespace Marten
             documentTypes.Each(RegisterDocumentType);
         }
 
+        /// <summary>
+        /// Configuration of event streams and projections
+        /// </summary>
+        public IEventStoreConfiguration Events { get; } = new EventGraph();
+
         internal ISerializer Serializer()
         {
             return _serializer ?? new JsonNetSerializer();
@@ -163,5 +172,29 @@ namespace Marten
         {
             PreBuiltStorage.AddRange(assembly.GetExportedTypes().Where(x => x.IsConcreteTypeOf<IDocumentStorage>()));
         }
+
+
+        public IMartenLogger Logger()
+        {
+            return _logger ?? new NulloMartenLogger();
+        }
+
+        public void Logger(IMartenLogger logger)
+        {
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Extension point to add custom Linq query parsers
+        /// </summary>
+        public LinqCustomizations Linq { get; } = new LinqCustomizations();
+    }
+
+    public class LinqCustomizations
+    {
+        /// <summary>
+        /// Add custom Linq expression parsers for your own methods
+        /// </summary>
+        public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>(); 
     }
 }

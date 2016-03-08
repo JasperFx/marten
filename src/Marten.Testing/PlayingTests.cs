@@ -1,13 +1,8 @@
-﻿using System;
-using System.Data;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Linq;
-using Baseline;
-using Marten.Schema;
 using Marten.Testing.Fixtures;
-using Marten.Testing.Github;
-using Octokit;
-using Shouldly;
+using StoryTeller;
+using StoryTeller.Engine;
 using StructureMap;
 using Xunit;
 
@@ -15,60 +10,33 @@ namespace Marten.Testing
 {
     public class PlayingTests
     {
-        [Fact]
-        public void generate_code()
+        public void run_st_spec()
         {
-            var mapping = new DocumentMapping(typeof (Target));
-            mapping.DuplicateField("Number");
-            mapping.DuplicateField("Date");
-
-            var code = DocumentStorageBuilder.GenerateDocumentStorageCode(new[] {mapping});
-            Debug.WriteLine(code);
-        }
-
-        [Fact]
-        public void linq_spike()
-        {
-            using (var container = Container.For<DevelopmentModeRegistry>())
+            using (var runner = new SpecRunner<NulloSystem>())
             {
-                using (var session = container.GetInstance<IDocumentStore>().OpenSession())
-                {
-                    session.Store(new Target {Number = 1, NumberArray = new[] {1, 2, 3}});
-                    session.Store(new Target {Number = 2, NumberArray = new[] {4, 5, 6}});
-                    session.Store(new Target {Number = 3, NumberArray = new[] {2, 3, 4}});
-                    session.Store(new Target {Number = 4});
-
-                    session.SaveChanges();
+                var results = runner.Run("Event Store/Event Capture/Version a stream as part of event capture");
 
 
-                    session.Query<Target>().Where(x => x.String == null).ToList().Each(x => Debug.WriteLine(x));
-
-                    //session.Query<Target>("select data from mt_doc_target, jsonb_array_elements(data -> 'NumberArray') numbers where numbers @> ARRAY[3]").Each(x => Debug.WriteLine(x.Number));
-
-                    /*
-                    session.Query<Target>().Where(x => x.NumberArray.Contains(3)).ToArray()
-                        .Select(x => x.Number)
-                        .ShouldHaveTheSameElementsAs(1, 3);
-                     */
-                }
+                runner.OpenResultsInBrowser();
             }
         }
 
-
         [Fact]
-        public void try_ocktokit()
+        public void try_some_linq_queries()
         {
-            var basicAuth = new Credentials("jeremydmiller", "FAKE");
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                var store = container.GetInstance<IDocumentStore>();
+                store.BulkInsert(Target.GenerateRandomData(200).ToArray());
 
-            var exporter = new GitHubExporter(basicAuth,
-                AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("GitHub"));
-
-            //exporter.Export("darthfubumvc", "HtmlTags");
-            //exporter.Export("darthfubumvc", "Baseline");
-            //exporter.Export("darthfubumvc", "Bottles");
-            //exporter.Export("darthfubumvc", "FubuMVC");
-            //exporter.Export("structuremap", "structuremap");
-            //exporter.Export("storyteller", "storyteller");
+                using (var session = store.LightweightSession())
+                {
+                    Debug.WriteLine(session.Query<Target>().Where(x => x.Double > 1.0).Count());
+                    Debug.WriteLine(session.Query<Target>().Where(x => x.Double > 1.0 && x.Double < 33).Count());
+                }
+            }
         }
     }
+
+
 }

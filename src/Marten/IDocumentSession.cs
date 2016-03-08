@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Npgsql;
@@ -126,6 +128,13 @@ namespace Marten
         /// The currently open Npgsql connection for this session. Use with caution.
         /// </summary>
         NpgsqlConnection Connection { get; }
+
+
+        /// <summary>
+        /// The session specific logger for this session. Can be set for better integration
+        /// with custom diagnostics
+        /// </summary>
+        IMartenSessionLogger Logger { get; set; }
     }
 
     /// <summary>
@@ -153,6 +162,14 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         void Delete<T>(string id);
+
+        /// <summary>
+        /// Bulk delete all documents of type T matching the expression condition
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="expression"></param>
+        void DeleteWhere<T>(Expression<Func<T, bool>> expression);
+
 
         /// <summary>
         /// Saves all the pending changes and deletions to the server in a single Postgresql transaction.
@@ -186,6 +203,23 @@ namespace Marten
         /// </summary>
         /// <param name="documents"></param>
         void StoreObjects(IEnumerable<object> documents);
+
+
+        /// <summary>
+        /// Access to the event store functionality
+        /// </summary>
+        IEventStore Events { get; }
+
+        /// <summary>
+        /// A history of the commits for this session in 
+        /// order of commits
+        /// </summary>
+        IEnumerable<IChangeSet> Commits { get; }
+
+        /// <summary>
+        /// The last set of changes committed, if any
+        /// </summary>
+        IChangeSet LastCommit { get; }
     }
 
     public interface ILoadByKeys<TDoc>

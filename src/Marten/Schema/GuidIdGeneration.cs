@@ -13,8 +13,16 @@ namespace Marten.Schema
 
         public string AssignmentBodyCode(MemberInfo idMember)
         {
-            return
-                $"if (document.{idMember.Name} == System.Guid.Empty) document.{idMember.Name} = System.Guid.NewGuid();";
+            return $@"
+BLOCK:if (document.{idMember.Name} == System.Guid.Empty)
+document.{idMember.Name} = System.Guid.NewGuid();
+assigned = true;
+END
+BLOCK:else
+assigned = false;
+END
+";
+
         }
     }
 }

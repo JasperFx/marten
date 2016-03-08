@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Reflection;
 
 namespace Marten.Schema
@@ -8,5 +10,9 @@ namespace Marten.Schema
         string MemberName { get; }
 
         string SqlLocator { get; }
+
+        string ColumnName { get; }
+
+        void WritePatch(DocumentMapping mapping, Action<string> writer);
     }
 }

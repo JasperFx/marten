@@ -85,5 +85,13 @@ AND    pg_function_is_visible(oid)
                 drops.Each(drop => connection.Execute(drop));
             }
         }
+
+        public void DeleteAllEventData()
+        {
+            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
+            {
+                connection.Execute("truncate table mt_events cascade;truncate table mt_streams cascade");
+            }
+        }
     }
 }

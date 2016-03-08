@@ -32,12 +32,35 @@ namespace Marten.Testing
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.LoadPrecompiledStorageFrom(GetType().Assembly);
-                _.AutoCreateSchemaObjects = true;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
             }))
             {
                 store.Schema.StorageFor(typeof (User)).ShouldBeOfType<FakeUserStorage>();
                 store.Schema.StorageFor(typeof (Company)).ShouldBeOfType<FakeCompanyStorage>();
             }
+        }
+
+        [Fact]
+        public void default_logger_is_the_nullo()
+        {
+            var options = new StoreOptions();
+            options.Logger().ShouldBeOfType<NulloMartenLogger>();
+
+            options.Logger(null);
+
+            // doesn't matter, nullo is the default
+            options.Logger().ShouldBeOfType<NulloMartenLogger>();
+        }
+
+        [Fact]
+        public void can_overwrite_the_logger()
+        {
+            var logger = new ConsoleMartenLogger();
+
+            var options = new StoreOptions();
+            options.Logger(logger);
+
+            options.Logger().ShouldBeSameAs(logger);
         }
 
         public class FakeUserStorage : IDocumentStorage, IdAssignment<User>
@@ -94,7 +117,7 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public object Assign(User document)
+            public object Assign(User document, out bool assigned)
             {
                 throw new NotImplementedException();
             }
@@ -154,7 +177,7 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public object Assign(Company document)
+            public object Assign(Company document, out bool assigned)
             {
                 throw new NotImplementedException();
             }

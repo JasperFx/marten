@@ -1,0 +1,22 @@
+<Spec id="50fbeb18-1477-46c2-8478-32e6ae5dc3af" maxRetries="0" tags="" lifecycle="Regression" name="Version a stream as part of event capture" lastUpdated="Friday, March 04, 2016" expirationPeriod="0">
+  <EventStore id="f96ae53b-33a7-4c48-9094-efbfcb86b439">
+    <ForNewQuestStream name="Find the Orb" date="TODAY" />
+    <Comment id="f739adec-6648-4ba6-9746-d17ce33b8d53">There's only a single event for "QuestStarted", so the version should just be 1</Comment>
+    <TheQuestVersionShouldBe name="Find the Orb" version="1" />
+    <HasAdditionalEvents>
+      <QuestEvent id="8b1d37f3-e422-43bf-8a0a-3868a1d50629">
+        <Arrived location="Sendaria" day="5" />
+        <Arrived location="Algeria" day="15" />
+      </QuestEvent>
+    </HasAdditionalEvents>
+    <Comment id="d647ead8-5c8e-48ee-ae71-f1a696407022">After capturing the two events above,</Comment>
+    <TheQuestVersionShouldBe name="Find the Orb" version="3" />
+    <AllTheCapturedEventsShouldBe>
+      <Rows id="1997a35f-c97f-4b13-be8f-9616b2c0bf9d">
+        <AllTheCapturedEventsShouldBe-row expected="Quest Find the Orb started" />
+        <AllTheCapturedEventsShouldBe-row expected="Arrived at Sendaria on Day 5" />
+        <AllTheCapturedEventsShouldBe-row expected="Arrived at Algeria on Day 15" />
+      </Rows>
+    </AllTheCapturedEventsShouldBe>
+  </EventStore>
+</Spec>

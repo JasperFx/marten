@@ -24,4 +24,6 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs(1, 2, 3);
         }
     }
+
+    
 }

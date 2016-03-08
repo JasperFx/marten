@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Schema.Sequences
 {
-    public class SequenceFactoryTests
+    public class SequenceFactoryTests : IntegratedFixture
     {
         private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
 

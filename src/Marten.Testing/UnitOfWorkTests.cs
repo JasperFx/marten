@@ -34,9 +34,9 @@ namespace Marten.Testing
             var company2 = new Company();
 
             var uow = theContainer.GetInstance<UnitOfWork>();
-            uow.Store(user1, user2);
-            uow.Store(issue1, issue2);
-            uow.Store(company1, company2);
+            uow.StoreUpdates(user1, user2);
+            uow.StoreUpdates(issue1, issue2);
+            uow.StoreUpdates(company1, company2);
 
             var batch = theContainer.GetInstance<UpdateBatch>();
 
@@ -67,10 +67,10 @@ namespace Marten.Testing
             var long2 = new LongDoc {Id = 4};
 
             var uow1 = theContainer.GetInstance<UnitOfWork>();
-            uow1.Store(user1, user2);
-            uow1.Store(stringDoc1, stringDoc2);
-            uow1.Store(int1, int2);
-            uow1.Store(long1, long2);
+            uow1.StoreUpdates(user1, user2);
+            uow1.StoreUpdates(stringDoc1, stringDoc2);
+            uow1.StoreUpdates(int1, int2);
+            uow1.StoreUpdates(long1, long2);
             var batch1 = theContainer.GetInstance<UpdateBatch>();
             uow1.ApplyChanges(batch1);
 
@@ -110,10 +110,10 @@ namespace Marten.Testing
 
             var uow1 = theContainer.GetInstance<UnitOfWork>();
 
-            uow1.Store(user1, user2);
-            uow1.Store(stringDoc1, stringDoc2);
-            uow1.Store(int1, int2);
-            uow1.Store(long1, long2);
+            uow1.StoreUpdates(user1, user2);
+            uow1.StoreUpdates(stringDoc1, stringDoc2);
+            uow1.StoreUpdates(int1, int2);
+            uow1.StoreUpdates(long1, long2);
             var batch1 = theContainer.GetInstance<UpdateBatch>();
             uow1.ApplyChanges(batch1);
 

@@ -8,7 +8,7 @@ nuget Npgsql
 nuget Octokit
 nuget Remotion.Linq
 nuget Shouldly
-nuget Storyteller 3.0.0.300-alpha
+nuget Storyteller 3.0.0.325-rc
 nuget structuremap
 nuget Microsoft.CodeAnalysis.CSharp prerelease
 nuget xunit

@@ -31,5 +31,14 @@ namespace Marten.Schema
 
             return stream.ReadAllText();
         }
+
+        public static StringWriter WriteSql(this StringWriter writer, string scriptName)
+        {
+            writer.WriteLine(GetText(scriptName));
+            writer.WriteLine();
+            writer.WriteLine();
+
+            return writer;
+        }
     }
 }
