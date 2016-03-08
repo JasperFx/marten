@@ -105,13 +105,33 @@ namespace Marten
 
                 alter = mapping =>
                 {
-                   var index =  mapping.DuplicateField(visitor.Members.ToArray(), pgType);
-                    configure?.Invoke(index);
+                    var duplicateField = mapping.DuplicateField(visitor.Members.ToArray(), pgType);
+                    var indexDefinition = mapping.AddIndex(duplicateField.ColumnName);
+                    configure?.Invoke(indexDefinition);
                 };
 
                 return this;
-            }   
+            }
 
+            public DocumentMappingExpression<T> ForeignKey<TReference>(
+                Expression<Func<T, object>> expression,
+                Action<ForeignKeyDefinition> foreignKeyConfiguration = null,
+                Action<IndexDefinition> indexConfiguration = null)
+            {
+                var visitor = new FindMembers();
+                visitor.Visit(expression);
+
+                alter = mapping =>
+                {
+                    var foreignKeyDefinition = mapping.AddForeignKey(visitor.Members.ToArray(), typeof(TReference));
+                    foreignKeyConfiguration?.Invoke(foreignKeyDefinition);
+
+                    var indexDefinition = mapping.AddIndex(foreignKeyDefinition.ColumnName);
+                    indexConfiguration?.Invoke(indexDefinition);
+                };
+
+                return this;
+            }
 
             /// <summary>
             /// Overrides the Hilo sequence increment and "maximum low" number for document types that

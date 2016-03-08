@@ -12,5 +12,7 @@ namespace Marten.Testing.Documents
         public Guid Id { get; set; }
 
         public string Title { get; set; }
+
+        public Guid? AssigneeId { get; set; }
     }
 }

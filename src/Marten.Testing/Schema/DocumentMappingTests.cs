@@ -95,6 +95,21 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void generate_table_with_foreign_key()
+        {
+            var mapping = new DocumentMapping(typeof(Issue));
+            var foreignKey = mapping.AddForeignKey("AssigneeId", typeof(User));
+
+            var builder = new StringWriter();
+
+            mapping.WriteSchemaObjects(null, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldContain(foreignKey.ToDDL());
+        }
+
+        [Fact]
         public void generate_a_document_table_with_duplicated_tables()
         {
             var mapping = DocumentMapping.For<User>();

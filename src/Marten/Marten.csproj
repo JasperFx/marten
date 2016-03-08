@@ -60,6 +60,8 @@
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\ColumnValue.cs" />
     <Compile Include="Schema\DocumentAliasAttribute.cs" />
+    <Compile Include="Schema\ForeignKeyAttribute.cs" />
+    <Compile Include="Schema\ForeignKeyDefinition.cs" />
     <Compile Include="Schema\GinIndexedAttribute.cs" />
     <Compile Include="Schema\Hierarchies\HierarchyArgument.cs" />
     <Compile Include="Schema\Hierarchies\SubClassDocumentStorage.cs" />
