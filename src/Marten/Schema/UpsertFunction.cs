@@ -123,6 +123,8 @@ END
 BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{typeName}> documents)
 BLOCK:using (var writer = conn.BeginBinaryImport(`COPY {TableName}({columns}) FROM STDIN BINARY`))
 BLOCK:foreach (var x in documents)
+bool assigned = false;
+Assign(x, out assigned);
 writer.StartRow();
 {writerStatements}
 END
