@@ -48,9 +48,8 @@ namespace Marten.Events
             }
         }
 
-        public Guid StartStream<T>(params IEvent[] events) where T : IAggregate
+        public Guid StartStream<T>(Guid id, params IEvent[] events) where T : IAggregate
         {
-            var id = Guid.NewGuid();
             var stream = new EventStream(id, events)
             {
                 AggregateType = typeof(T)
@@ -59,6 +58,11 @@ namespace Marten.Events
             _session.Store(stream);
 
             return id;
+        }
+
+        public Guid StartStream<T>(params IEvent[] events) where T : IAggregate
+        {
+            return StartStream<T>(Guid.NewGuid(), events);
         }
 
         public T FetchSnapshot<T>(Guid streamId) where T : IAggregate

@@ -9,6 +9,7 @@ namespace Marten.Events
 
         void AppendEvents(Guid stream, params IEvent[] events);
 
+        Guid StartStream<T>(Guid id, params IEvent[] events) where T : IAggregate;
         Guid StartStream<T>(params IEvent[] events) where T : IAggregate;
 
         T FetchSnapshot<T>(Guid streamId) where T : IAggregate;
