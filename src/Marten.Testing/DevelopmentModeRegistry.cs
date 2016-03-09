@@ -16,6 +16,7 @@ namespace Marten.Testing
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+                
                 _.UpsertType = UpsertType;
             });
 

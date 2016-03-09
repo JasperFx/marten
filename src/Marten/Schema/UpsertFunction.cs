@@ -79,7 +79,7 @@ namespace Marten.Schema
                 writer.WriteLine($"CREATE OR REPLACE FUNCTION {FunctionName}({argList}) RETURNS VOID AS");
                 writer.WriteLine("$$");
                 writer.WriteLine("BEGIN");
-                writer.WriteLine($"INSERT INTO {TableName} VALUES ({valueList})");
+                writer.WriteLine($"INSERT INTO {TableName} ({inserts}) VALUES ({valueList})");
                 writer.WriteLine($"  ON CONFLICT ON CONSTRAINT pk_{TableName}");
                 writer.WriteLine($"  DO UPDATE SET {updates};");
                 writer.WriteLine("END;");
