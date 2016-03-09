@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.7.1</h3>
+		      	<h3>Marten 0.8.0</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -91,6 +91,7 @@
 			      	<div id="main-pane">
 			      		<!--Title:Deleting Documents-->
 <!--Url:deleting-->
+<h2>Delete by Id or by Document</h2>
 <p>You can register document deletions with an active <code>IDocumentSession</code> by either the document itself or just by the document id to avoid having to fetch
 a document from the database just to turn around and delete it. Deletions are executed within the single database transaction when you call
 <code>IDocumentSession.SaveChanges()</code>.</p>
@@ -109,6 +110,19 @@ a document from the database just to turn around and delete it. Deletions are ex
             session.SaveChanges();
         } 
 </code></pre>
+<h2>Delete by Linq Queries</h2>
+<p>New for Marten v0.8 is the ability to delete any documents of a certain type meeting a Linq expression using the new <code>IDocumentSession.DeleteWhere&lt;T&gt;()</code> method:</p>
+<pre><code class="language-csharp">
+            theSession.DeleteWhere&lt;Target&gt;(x =&gt; x.Double == 578);
+            
+            theSession.SaveChanges();
+</code></pre>
+<p>A couple things to note:</p>
+<ol>
+<li>The actual Sql command to delete documents by a query is not executed until <code>IDocumentSession.SaveChanges()</code> is called</li>
+<li>The bulk delete command runs in the same batched sql command and transaction as any other document updates or deletes
+in the session</li>
+</ol>
 
 
 			      	</div>

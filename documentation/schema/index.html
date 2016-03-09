@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Database Schema Objects</title>
+		<title>Marten - Marten and the Postgresql Schema</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/events" title="Marten as Event Store">Previous</a></li>
-		      	
+		      	<li><a href="/marten/documentation" title="Documentation">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents" title="Marten as Document Db">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li class="active">Database Schema Objects</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li class="active">Marten and the Postgresql Schema</li></ol>
 		  	</nav>
 		  </div>
 
@@ -69,29 +69,69 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.7.1</h3>
+		      	<h3>Marten 0.8.0</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
 
 		        </ul>
 
-		        	
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events">Marten as Event Store</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents">Marten as Document Db</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation">Documentation</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Database Schema Objects <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/schema.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Marten and the Postgresql Schema <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/schema.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title:Database Schema Objects-->
+			      		<!--Title:Marten and the Postgresql Schema-->
 <!--Url:schema-->
-<p>Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a Postgresql schema. In the default &quot;development&quot; mode, Marten will generate and add a table and matching &quot;upsert&quot; function for each unique document type as needed. In production, you
+<p>Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a Postgresql schema. Marten will generate and add a table and matching &quot;upsert&quot; function for each unique document type as needed. It also adds some other tables and functions for the <a href="/marten/documentation/events">event store functionality</a> and <a href="/marten/documentation/documents/document_ids">HiLo id generation</a></p>
+<p>In all cases, the Marten schema objects are all prefixed with &quot;mt_.&quot;</p>
+<p>As of Marten v0.8, you have much finer grained ability to control the automatic generation or updates of schema objects through the
+<code>StoreOptions.AutoCreateSchemaObjects</code> like so:</p>
+<pre><code class="language-csharp">
+var store = DocumentStore.For(_ =&gt;
+{
+    // Marten will create any new objects that are missing,
+    // attempt to update tables if it can, but drop and replace
+    // tables that it cannot patch. 
+    _.AutoCreateSchemaObjects = AutoCreate.All;
+
+
+    // Marten will create any new objects that are missing or
+    // attempt to update tables if it can. Will *never* drop
+    // any existing objects, so no data loss
+    _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+
+
+    // Marten will create missing objects on demand, but
+    // will not change any existing schema objects
+    _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
+
+    // Marten will not create or update any schema objects 
+    // and throws an exception in the case of a schema object
+    // not reflecting the Marten configuration
+    _.AutoCreateSchemaObjects = AutoCreate.None;
+});
+</code></pre>
+<p>To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:</p>
+<ol>
+<li>Compare the current schema table to what's configured for that document type</li>
+<li>If the table matches, do nothing</li>
+<li>If the table is missing, try to create the table depending on the auto create schema setting shown above</li>
+<li>If the table has new, searchable columns, adds the new column and runs an &quot;UPDATE&quot; command to duplicate the
+information in the JsonB data field. Do note that this could be expensive for large tables. This is also impacted
+by the auto create schema mode shown above.</li>
+</ol>
+<p>Our thought is that in development you probably run in the &quot;All&quot; mode, but in production use one of the more restrictive auto creation modes.</p>
+<h2>Exporting DDL</h2>
+<p>In production, you
 may either not have rights to generate new tables at runtime or simply not wish to do that. In that case, Marten exposes some ability to dump all
 the SQL for creating these objects for <em>all the known document types</em> from <code>IDocumentStore</code> like this:</p>
 <pre><code class="language-csharp">
@@ -115,11 +155,17 @@ the SQL for creating these objects for <em>all the known document types</em> fro
             // Export the SQL to a file
             store.Schema.WriteDDL(&quot;my_database.sql&quot;);
 
+            // Or instead, write a separate sql script
+            // to the named directory
+            // for each type of document
+            store.Schema.WriteDDLByType(&quot;sql&quot;);
+
             // or just see it
             var sql = store.Schema.ToDDL();
             Debug.WriteLine(sql);
         } 
 </code></pre>
+<p>As of v0.8, this export will include the Hilo id generation table and all the objects necessary to use the event store functionality if that is enabled.</p>
 <p>For the moment, Marten is not directly supporting any kind of database migration strategy. To be honest, we're waiting to see how Marten plays out in production before investing in anything like that.</p>
 <p>The code above creates the following SQL script below, with these elements:</p>
 <ol>
@@ -205,12 +251,12 @@ $$ LANGUAGE plpgsql;</p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/events">Marten as Event Store</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation">Documentation</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	
+				        	<strong>Next: </strong><a href="/marten/documentation/documents">Marten as Document Db</a>
 
 				        </span>
 			      	</nav>

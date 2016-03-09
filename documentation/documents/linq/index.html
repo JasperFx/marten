@@ -44,7 +44,7 @@
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
 		      	<li><a href="/marten/documentation/documents/json" title="Json Serialization">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/sql" title="Querying Documents with Postgresql SQL">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/customizing_linq" title="Extending Marten's Linq Support">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -69,14 +69,14 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.7.1</h3>
+		      	<h3>Marten 0.8.0</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/sql">Querying Documents with Postgresql SQL</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing_linq">Extending Marten's Linq Support</a></p>
 		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/json">Json Serialization</a></p>
 
 		        </ul>
@@ -330,6 +330,36 @@ using the <code>&amp;&amp;</code> operator:</p>
                 .Where(x =&gt; x.Children.Any(_ =&gt; _.Number == 6 &amp;&amp; _.Double == -1))
                 .ToArray();
 </code></pre>
+<h2>IsOneOf</h2>
+<p>Marten v0.8 added a new extension method called <code>IsOneOf()</code> that can be used to query for documents having
+a field or property matching one of many supplied values:</p>
+<pre><code class="language-csharp">
+            // Finds all SuperUser&#39;s whose role is either
+            // Admin, Supervisor, or Director
+            var users = theSession.Query&lt;SuperUser&gt;()
+                .Where(x =&gt; x.Role.IsOneOf(&quot;Admin&quot;, &quot;Supervisor&quot;, &quot;Director&quot;));
+
+</code></pre>
+<h2>Modulo Queries</h2>
+<p>Marten v0.8 added the ability to use the modulo operator in Linq queries:</p>
+<pre><code class="language-csharp">
+        [Fact]
+        public void use_modulo()
+        {
+            theSession.Store(new Target{Color = Colors.Blue, Number = 1});
+            theSession.Store(new Target{Color = Colors.Blue, Number = 2});
+            theSession.Store(new Target{Color = Colors.Blue, Number = 3});
+            theSession.Store(new Target{Color = Colors.Blue, Number = 4});
+            theSession.Store(new Target{Color = Colors.Blue, Number = 5});
+            theSession.Store(new Target{Color = Colors.Green, Number = 6});
+
+            theSession.SaveChanges();
+
+            theSession.Query&lt;Target&gt;().Where(x =&gt; x.Number % 2 == 0 &amp;&amp; x.Color == Colors.Blue).ToArray()
+                .Select(x =&gt; x.Number)
+                .ShouldHaveTheSameElementsAs(2, 4);
+        }
+</code></pre>
 <h2>Supported Types</h2>
 <p>At this point, Marten's Linq support has been tested against these .Net types:</p>
 <ol>
@@ -354,7 +384,7 @@ using the <code>&amp;&amp;</code> operator:</p>
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/sql">Querying Documents with Postgresql SQL</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/customizing_linq">Extending Marten's Linq Support</a>
 
 				        </span>
 			      	</nav>

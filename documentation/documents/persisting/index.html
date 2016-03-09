@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.7.1</h3>
+		      	<h3>Marten 0.8.0</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -97,6 +97,26 @@
 what documents have changed</li>
 <li>The &quot;dirty checking&quot; session tries to determine which documents loaded from that <code>IDocumentSession</code> has any changes when <code>IDocumentSession.SaveChanges()</code> is called</li>
 </ol>
+<h2>Storing Multiple Documents</h2>
+<p>The signature of <code>IDocumentSession.Store()</code> changed in v0.8 to allow you to specify a params array of one or more documents:</p>
+<pre><code class="language-csharp">
+            user1 = new User {FirstName = &quot;Jeremy&quot;};
+            user2 = new User {FirstName = &quot;Jens&quot;};
+            user3 = new User {FirstName = &quot;Jeff&quot;};
+            user4 = new User {FirstName = &quot;Corey&quot;};
+
+            theSession.Store(user1, user2, user3, user4);
+</code></pre>
+<p>You can also store a mixed array of different types by using either the <code>IDocumentSession.StoreObjects()</code> method or by calling <code>IDocumentSession.Store&lt;object&gt;(object[])</code>.</p>
+<pre><code class="language-csharp">
+            var user1 = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};
+            var issue1 = new Issue {Title = &quot;TV won&#39;t turn on&quot;}; // unfortunately true as I write this...
+            var company1 = new Company{Name = &quot;Widgets, inc.&quot;};
+            var company2 = new Company{Name = &quot;BigCo&quot;};
+            var company3 = new Company{Name = &quot;SmallCo&quot;};
+
+            theSession.Store&lt;object&gt;(user1, issue1, company1, company2, company3);
+</code></pre>
 <h2>Manual Change Tracking</h2>
 <p>The first step is to create a new <code>DocumentSession</code> with the <code>IDocumentStore.LightweightSession()</code> (or <code>IDocumentStore.OpenSession()</code>):</p>
 <pre><code class="language-csharp">

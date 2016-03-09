@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.7.1</h3>
+		      	<h3>Marten 0.8.0</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -166,7 +166,7 @@ use an IoC container specifically to manage dependencies and the lifecyle of Mar
                 return DocumentStore.For(_ =&gt;
                 {
                     _.Connection(&quot;your connection string&quot;);
-                    _.AutoCreateSchemaObjects = false;
+                    _.AutoCreateSchemaObjects = AutoCreate.None;
                     
                     // other Marten configuration options
                 });
