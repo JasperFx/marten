@@ -1,11 +1,35 @@
-<!--Title:Database Schema Objects-->
+<!--Title:Marten and the Postgresql Schema-->
 <!--Url:schema-->
 
-Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a Postgresql schema. In the default "development" mode, Marten will generate and add a table and matching "upsert" function for each unique document type as needed. In production, you
+Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a Postgresql schema. Marten will generate and add a table and matching "upsert" function for each unique document type as needed. It also adds some other tables and functions for the <[linkto:documentation/events;title=event store functionality]> and <[linkto:documentation/documents/document_ids;title=HiLo id generation]>
+
+In all cases, the Marten schema objects are all prefixed with "mt_."
+
+As of Marten v0.8, you have much finer grained ability to control the automatic generation or updates of schema objects through the 
+`StoreOptions.AutoCreateSchemaObjects` like so:
+
+<[sample:AutoCreateSchemaObjects]>
+
+To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:
+
+1. Compare the current schema table to what's configured for that document type
+1. If the table matches, do nothing
+1. If the table is missing, try to create the table depending on the auto create schema setting shown above
+1. If the table has new, searchable columns, adds the new column and runs an "UPDATE" command to duplicate the 
+   information in the JsonB data field. Do note that this could be expensive for large tables. This is also impacted
+   by the auto create schema mode shown above.
+
+Our thought is that in development you probably run in the "All" mode, but in production use one of the more restrictive auto creation modes.
+
+## Exporting DDL
+
+In production, you
 may either not have rights to generate new tables at runtime or simply not wish to do that. In that case, Marten exposes some ability to dump all
 the SQL for creating these objects for *all the known document types* from `IDocumentStore` like this:
 
 <[sample:export-ddl]>
+
+As of v0.8, this export will include the Hilo id generation table and all the objects necessary to use the event store functionality if that is enabled.
 
 For the moment, Marten is not directly supporting any kind of database migration strategy. To be honest, we're waiting to see how Marten plays out in production before investing in anything like that.
 

@@ -51,13 +51,15 @@ namespace Marten.Linq
             return whereFragment;
         }
 
-        // TODO -- have this exposed in a way such that you *can* do this
+        // The out of the box method call parsers
         private static readonly IList<IMethodCallParser> _parsers = new List<IMethodCallParser>
         {
             new StringContains(),
             new EnumerableContains(),
             new StringEndsWith(),
             new StringStartsWith(),
+
+            // Added
             new IsOneOf()
         };
 
