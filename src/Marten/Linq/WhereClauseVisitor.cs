@@ -56,6 +56,7 @@ namespace Marten.Linq
                     Visit(binary.Left);
                     Visit(binary.Right);
 
+                    _register.Pop();
 
                     return null;
                 }
