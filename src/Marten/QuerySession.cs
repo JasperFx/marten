@@ -232,7 +232,7 @@ namespace Marten
                 _parent = parent;
             }
 
-            public IEnumerable<TDoc> ById<TKey>(params TKey[] keys)
+            public IList<TDoc> ById<TKey>(params TKey[] keys)
             {
                 var hitsAndMisses = GetHitsAndMisses(keys);
                 var hits = hitsAndMisses.Item1;
@@ -242,17 +242,17 @@ namespace Marten
                 return ConcatDocuments(hits, documents);
             }
 
-            public async Task<IEnumerable<TDoc>> ByIdAsync<TKey>(params TKey[] keys)
+            public async Task<IList<TDoc>> ByIdAsync<TKey>(params TKey[] keys)
             {
                 return await ByIdAsync(keys, CancellationToken.None).ConfigureAwait(false);
             }
 
-            public IEnumerable<TDoc> ById<TKey>(IEnumerable<TKey> keys)
+            public IList<TDoc> ById<TKey>(IEnumerable<TKey> keys)
             {
                 return ById(keys.ToArray());
             }
 
-            public async Task<IEnumerable<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys, CancellationToken token)
+            public async Task<IList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys, CancellationToken token = default(CancellationToken))
             {
                 var hitsAndMisses = GetHitsAndMisses(keys.ToArray());
                 var hits = hitsAndMisses.Item1;
@@ -262,12 +262,12 @@ namespace Marten
                 return ConcatDocuments(hits, documents);
             }
 
-            private IEnumerable<TDoc> ConcatDocuments<TKey>(TKey[] hits, IEnumerable<TDoc> documents)
+            private IList<TDoc> ConcatDocuments<TKey>(TKey[] hits, IEnumerable<TDoc> documents)
             {
                 return
                     hits.Select(key => _parent._identityMap.Retrieve<TDoc>(key))
                         .Concat(documents)
-                        .ToArray();
+                        .ToList();
             }
 
             private Tuple<TKey[], TKey[]> GetHitsAndMisses<TKey>(TKey[] keys)
