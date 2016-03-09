@@ -2,6 +2,7 @@
 
 namespace Marten
 {
+    // SAMPLE: IDocumentSessionListener
     public interface IDocumentSessionListener
     {
         /// <summary>
@@ -11,7 +12,12 @@ namespace Marten
         /// <param name="session"></param>
         void BeforeSaveChanges(IDocumentSession session);
 
-
+        /// <summary>
+        /// Called just after IDocumentSession.SaveChanges() is called,
+        /// but before any database calls are made
+        /// </summary>
+        /// <param name="session"></param>
+        /// <returns></returns>
         Task BeforeSaveChangesAsync(IDocumentSession session);
 
 
@@ -21,8 +27,14 @@ namespace Marten
         /// <param name="session"></param>
         void AfterCommit(IDocumentSession session);
 
+        /// <summary>
+        /// After an IDocumentSession is committed
+        /// </summary>
+        /// <param name="session"></param>
+        /// <returns></returns>
         Task AfterCommitAsync(IDocumentSession session);
     }
+    // ENDSAMPLE
 
     public abstract class DocumentSessionListenerBase : IDocumentSessionListener
     {

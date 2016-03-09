@@ -22,8 +22,11 @@ namespace Marten.Testing
 
             var initialCount = theSession.Query<Target>().Where(x => x.Double == 578).Count();
 
+            // SAMPLE: DeleteWhere
             theSession.DeleteWhere<Target>(x => x.Double == 578);
+            
             theSession.SaveChanges();
+            // ENDSAMPLE
 
             theSession.Query<Target>().Count().ShouldBe(50 - initialCount);
 

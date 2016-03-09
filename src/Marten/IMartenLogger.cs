@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
+using Marten.Services;
 using Npgsql;
 
 namespace Marten
 {
+    // SAMPLE: IMartenLogger
     /// <summary>
     /// Records command usage, schema changes, and sessions within Marten
     /// </summary>
@@ -39,6 +42,7 @@ namespace Marten
         /// <param name="session"></param>
         void RecordSavedChanges(IDocumentSession session);
     }
+    // ENDSAMPLE
 
     public class NulloMartenLogger : IMartenLogger, IMartenSessionLogger
     {
@@ -67,6 +71,7 @@ namespace Marten
         }
     }
 
+    // SAMPLE: ConsoleMartenLogger
     public class ConsoleMartenLogger : IMartenLogger, IMartenSessionLogger
     {
         public IMartenSessionLogger StartSession(IQuerySession session)
@@ -95,8 +100,11 @@ namespace Marten
 
         public void RecordSavedChanges(IDocumentSession session)
         {
-            
+            var lastCommit = session.LastCommit;
+            Console.WriteLine(
+                $"Persisted {lastCommit.Updated.Count()} updates, {lastCommit.Inserted.Count()} inserts, and {lastCommit.Deleted.Count()} deletions");
         }
     }
+    // ENDSAMPLE
 
 }

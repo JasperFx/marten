@@ -9,6 +9,7 @@ namespace Marten.Testing
         [Fact]
         public void call_listener_events_on_synchronous_session_saves()
         {
+            // SAMPLE: registering-a-document-session-listener
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
@@ -20,6 +21,7 @@ namespace Marten.Testing
                 _.Listeners.Add(stub1);
                 _.Listeners.Add(stub2);
             }))
+            // ENDSAMPLE
             {
                 using (var session = store.LightweightSession())
                 {

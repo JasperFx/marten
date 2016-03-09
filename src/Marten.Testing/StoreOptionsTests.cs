@@ -28,9 +28,13 @@ namespace Marten.Testing
         [Fact]
         public void import_document_storage_from_assembly()
         {
+            // SAMPLE: import-document-storage-from-an-assembly
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
+
+                // Use any precompiled IDocumentStorage classes from the 
+                // supplied Assembly
                 _.LoadPrecompiledStorageFrom(GetType().Assembly);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
             }))
@@ -38,6 +42,7 @@ namespace Marten.Testing
                 store.Schema.StorageFor(typeof (User)).ShouldBeOfType<FakeUserStorage>();
                 store.Schema.StorageFor(typeof (Company)).ShouldBeOfType<FakeCompanyStorage>();
             }
+            // ENDSAMPLE
         }
 
         [Fact]
@@ -61,6 +66,24 @@ namespace Marten.Testing
             options.Logger(logger);
 
             options.Logger().ShouldBeSameAs(logger);
+        }
+
+        public void using_console_logger()
+        {
+            // SAMPLE: plugging-in-marten-logger
+            var store = DocumentStore.For(_ =>
+            {
+                _.Logger(new ConsoleMartenLogger());
+            });
+            // ENDSAMPLE
+
+            // SAMPLE: plugging-in-session-logger
+            using (var session = store.OpenSession())
+            {
+                // Replace the logger for only this one session
+                session.Logger = new RecordingLogger();
+            }
+            // ENDSAMPLE
         }
 
         public class FakeUserStorage : IDocumentStorage, IdAssignment<User>

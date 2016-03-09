@@ -3,6 +3,7 @@ using Marten.Schema;
 
 namespace Marten.Linq.Handlers
 {
+    // SAMPLE: IMethodCallParser
     /// <summary>
     /// Models the Sql generation for a method call
     /// in a Linq query. For example, map an expression like Where(x => x.Property.StartsWith("prefix"))
@@ -34,4 +35,5 @@ namespace Marten.Linq.Handlers
             MethodCallExpression expression
             );
     }
+    // ENDSAMPLE
 }

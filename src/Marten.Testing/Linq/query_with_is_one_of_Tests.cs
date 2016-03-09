@@ -35,8 +35,13 @@ namespace Marten.Testing.Linq
 
         public void is_one_of_example()
         {
+            // SAMPLE: is_one_of
+            // Finds all SuperUser's whose role is either
+            // Admin, Supervisor, or Director
             var users = theSession.Query<SuperUser>()
                 .Where(x => x.Role.IsOneOf("Admin", "Supervisor", "Director"));
+
+            // ENDSAMPLE
         }
     }
 }
