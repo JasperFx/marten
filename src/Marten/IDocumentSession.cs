@@ -135,6 +135,11 @@ namespace Marten
         /// with custom diagnostics
         /// </summary>
         IMartenSessionLogger Logger { get; set; }
+
+        /// <summary>
+        /// The store hosting the query session
+        /// </summary>
+        IDocumentStore Store { get; }
     }
 
     /// <summary>
