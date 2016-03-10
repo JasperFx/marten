@@ -11,14 +11,15 @@ namespace Marten.Services
     public class DirtyTrackingIdentityMap : IIdentityMap, IDocumentTracker
     {
         private readonly ISerializer _serializer;
+        private readonly IEnumerable<IDocumentSessionListener> _listeners;
 
         private readonly Cache<Type, ConcurrentDictionary<int, TrackedEntity>> _objects
             = new Cache<Type, ConcurrentDictionary<int, TrackedEntity>>(_ => new ConcurrentDictionary<int, TrackedEntity>());
 
-
-        public DirtyTrackingIdentityMap(ISerializer serializer)
+        public DirtyTrackingIdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners)
         {
             _serializer = serializer;
+            _listeners = listeners?.Any() == true ? listeners : null;
         }
 
         public T Get<T>(object id, Func<FetchResult<T>> result) where T : class
@@ -27,14 +28,14 @@ namespace Marten.Services
             {
                 var fetchResult = result();
 
+                _listeners?.Each(listener => listener.DocumentLoaded(id, fetchResult?.Document));
+
                 return new TrackedEntity(id, typeof(T), fetchResult?.Document, fetchResult?.Json, _serializer);
             }).Document as T;
         }
 
         public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class
         {
-
-
             var dict = _objects[typeof(T)];
             var hashCode = id.GetHashCode();
 
@@ -46,6 +47,8 @@ namespace Marten.Services
             var fetchResult = await result(token).ConfigureAwait(false);
             if (fetchResult == null) return null;
 
+            _listeners?.Each(listener => listener.DocumentLoaded(id, fetchResult.Document));
+
             dict[hashCode] = new TrackedEntity(id, typeof(T), fetchResult.Document, fetchResult.Json, _serializer);
 
             return fetchResult?.Document;
@@ -53,12 +56,19 @@ namespace Marten.Services
 
         public T Get<T>(object id, string json) where T : class
         {
-            return _objects[typeof(T)].GetOrAdd(id.GetHashCode(), _ => new TrackedEntity(id, _serializer, typeof(T), json)).Document.As<T>();
+            return Get<T>(id, typeof (T), json);
         }
 
         public T Get<T>(object id, Type concreteType, string json) where T : class
         {
-            return _objects[typeof(T)].GetOrAdd(id.GetHashCode(), _ => new TrackedEntity(id, _serializer, concreteType, json)).Document.As<T>();
+            return _objects[typeof(T)].GetOrAdd(id.GetHashCode(), _ =>
+            {
+                var trackedEntity = new TrackedEntity(id, _serializer, concreteType, json);
+
+                _listeners?.Each(listener => listener.DocumentLoaded(id, trackedEntity.Document));
+
+                return trackedEntity;
+            }).Document.As<T>();
         }
 
         public void Remove<T>(object id)
@@ -80,6 +90,8 @@ namespace Marten.Services
                       $"Document '{typeof(T).FullName}' with same Id already added to the session.");
                 }
             }
+
+            _listeners?.Each(listener => listener.DocumentAddedForStorage(id, entity));
 
             dictionary.AddOrUpdate(hashCode, new TrackedEntity(id, _serializer, typeof(T), entity), (i, e) => e);
         }
