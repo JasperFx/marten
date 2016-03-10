@@ -203,6 +203,140 @@ namespace Marten.Testing
                 }
             }
         }
+
+        [Fact]
+        public void call_listener_events_on_document_store_and_dirty_tracking_session()
+        {
+            var stub1 = new StubDocumentSessionListener();
+            var stub2 = new StubDocumentSessionListener();
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+
+                _.Listeners.Add(stub1);
+                _.Listeners.Add(stub2);
+            }))
+            {
+                using (var session = store.DirtyTrackedSession())
+                {
+                    var user1 = new User { Id = Guid.NewGuid() };
+                    var user2 = new User { Id = Guid.NewGuid() };
+
+                    session.Store(user1, user2);
+
+                    stub1.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
+                    stub1.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
+
+                    stub2.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
+                    stub2.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
+                }
+            }
+        }
+
+        [Fact]
+        public void call_listener_events_on_document_store_objects_and_dirty_tracking_session()
+        {
+            var stub1 = new StubDocumentSessionListener();
+            var stub2 = new StubDocumentSessionListener();
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+
+                _.Listeners.Add(stub1);
+                _.Listeners.Add(stub2);
+            }))
+            {
+                using (var session = store.DirtyTrackedSession())
+                {
+                    var user1 = new User { Id = Guid.NewGuid() };
+                    var user2 = new User { Id = Guid.NewGuid() };
+
+                    session.StoreObjects(new[] { user1, user2 });
+
+                    stub1.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
+                    stub1.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
+
+                    stub2.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
+                    stub2.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
+                }
+            }
+        }
+
+        [Fact]
+        public void call_listener_events_on_document_load_and_dirty_tracking_session()
+        {
+            var stub1 = new StubDocumentSessionListener();
+            var stub2 = new StubDocumentSessionListener();
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+
+                _.Listeners.Add(stub1);
+                _.Listeners.Add(stub2);
+            }))
+            {
+                var user1 = new User { Id = Guid.NewGuid() };
+                var user2 = new User { Id = Guid.NewGuid() };
+
+                using (var session = store.OpenSession())
+                {
+                    session.StoreObjects(new[] { user1, user2 });
+                    session.SaveChanges();
+                }
+
+                using (var session = store.DirtyTrackedSession())
+                {
+                    var user = session.Load<User>(user1.Id);
+
+                    stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, user);
+                    stub2.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, user);
+                }
+            }
+        }
+
+        [Fact]
+        public void call_listener_events_on_document_query_and_dirty_tracking_session()
+        {
+            var stub1 = new StubDocumentSessionListener();
+            var stub2 = new StubDocumentSessionListener();
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+
+                _.Listeners.Add(stub1);
+                _.Listeners.Add(stub2);
+            }))
+            {
+                var user1 = new User { Id = Guid.NewGuid() };
+                var user2 = new User { Id = Guid.NewGuid() };
+
+                using (var session = store.OpenSession())
+                {
+                    session.StoreObjects(new[] { user1, user2 });
+                    session.SaveChanges();
+                }
+
+                using (var session = store.DirtyTrackedSession())
+                {
+                    var users = session.Query<User>().ToList();
+
+                    stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, users.FirstOrDefault(where => where.Id == user1.Id));
+                    stub1.LoadedDocuments.ShouldContainKeyAndValue(user2.Id, users.FirstOrDefault(where => where.Id == user2.Id));
+
+                    stub2.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, users.FirstOrDefault(where => where.Id == user1.Id));
+                    stub2.LoadedDocuments.ShouldContainKeyAndValue(user2.Id, users.FirstOrDefault(where => where.Id == user2.Id));
+                }
+            }
+        }
+
     }
 
     public class StubDocumentSessionListener : DocumentSessionListenerBase
