@@ -18,12 +18,9 @@ namespace Marten.Testing.Linq
 
             theSession.SaveChanges();
 
+            theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
+                .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
 
-            Exception<NotSupportedException>.ShouldBeThrownBy(() =>
-            {
-                theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
-                    .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
-            });
 
 
         }

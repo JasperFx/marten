@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using Baseline;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Fixtures;
@@ -51,9 +52,8 @@ namespace Marten.Testing.Schema
             results
                 .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
 
-            Debug.WriteLine(theStore.Diagnostics.CommandFor(queryable).CommandText);
 
-            theStore.Diagnostics.CommandFor(queryable).CommandText
+            queryable.ToCommand(FetchType.FetchMany).CommandText
                 .ShouldContain("inner_date = :arg0");
         }
     }

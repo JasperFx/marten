@@ -7,6 +7,7 @@ using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
@@ -60,15 +61,15 @@ namespace Marten.Linq
         }
 
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public ISelector<T> ConfigureCommand<T>(NpgsqlCommand command)
         {
             if (_query.ResultOperators.OfType<LastResultOperator>().Any())
             {
                 throw new InvalidOperationException("Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
             }
 
-            var select = _mapping.SelectFields("d");
-            var sql = $"select {select} from {_mapping.TableName} as d";
+            var select = buildSelectClause<T>();
+            var sql = $"select {select.SelectClause(_mapping)} from {_mapping.TableName} as d";
 
             var where = buildWhereClause();
             var orderBy = toOrderClause();
@@ -81,6 +82,18 @@ namespace Marten.Linq
             sql = appendOffset(sql);
 
             command.AppendQuery(sql);
+
+            return select;
+        }
+
+        private ISelector<T> buildSelectClause<T>()
+        {
+            if (_query.SelectClause.Selector.Type == _query.MainFromClause.ItemType)
+            {
+                return new WholeDocumentSelector<T>();
+            }
+            
+            throw new NotImplementedException("Cannot yet do a Select() projection");
         }
 
         private string appendOffset(string sql)
@@ -142,4 +155,6 @@ namespace Marten.Linq
             return _mapping.FilterDocuments(where);
         }
     }
+
+    
 }

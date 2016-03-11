@@ -6,6 +6,7 @@ using System.Linq;
 using Baseline;
 using HtmlTags;
 using Jil;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Fixtures;
@@ -112,7 +113,7 @@ namespace Marten.Testing
                 var theDate = data.ElementAt(0).Date;
                 var queryable = session.Query<Target>().Where(x => x.Date == theDate);
 
-                Debug.WriteLine(store.Diagnostics.CommandFor(queryable).CommandText);
+                Debug.WriteLine(queryable.ToCommand(FetchType.FetchMany).CommandText);
 
                 // Once to warm up
                 var time = Timings.Time(() => { queryable.ToArray().Length.ShouldBeGreaterThan(0); });
