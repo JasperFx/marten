@@ -40,6 +40,9 @@ namespace Marten.Linq
             };
         }
 
+        public IDocumentSchema Schema => _schema;
+
+        public MartenExpressionParser ExpressionParser => _expressionParser;
 
         private IResolver<T> resolver<T>()
         {

@@ -130,6 +130,7 @@
     <Compile Include="Linq\invoking_queryable_through_to_list_async_Tests.cs" />
     <Compile Include="Linq\invoking_query_with_select_Tests.cs" />
     <Compile Include="Linq\ExpressionExtensionsTests.cs" />
+    <Compile Include="Linq\previewing_the_command_from_a_queryable_Tests.cs" />
     <Compile Include="Linq\query_against_dateoffset_Tests.cs" />
     <Compile Include="Linq\query_against_primitive_array_Tests.cs" />
     <Compile Include="Linq\query_running_through_the_IdentityMap_Tests.cs" />
