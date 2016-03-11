@@ -38,7 +38,7 @@ namespace Marten.Services.BatchQuerying
     public class MultipleResultsReader<T> : IDataReaderHandler where T : class
     {
         private readonly TaskCompletionSource<IList<T>> _taskSource = new TaskCompletionSource<IList<T>>();
-        private readonly IDocumentStorage _storage;
+        protected readonly IDocumentStorage _storage;
         private readonly IIdentityMap _map;
 
         public MultipleResultsReader(IDocumentStorage storage, IIdentityMap map)
@@ -74,7 +74,7 @@ namespace Marten.Services.BatchQuerying
         public void Configure(NpgsqlCommand command, DocumentQuery query)
         {
             // TODO -- gonna have to worry about selectors here!
-            query.ConfigureCommand<T>(command);
+            query.ConfigureCommand<T>(_storage, command);
         }
 
         

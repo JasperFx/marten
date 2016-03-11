@@ -72,7 +72,7 @@ namespace Marten.Linq
             ISelector<T> selector = null;
             var cmd = BuildCommand<T>(queryModel, out selector);
 
-            var all = selector.Execute(cmd, _runner, _schema, _identityMap).ToArray();
+            var all = _runner.Resolve(cmd, selector, _identityMap).ToArray();
 
             if (returnDefaultWhenEmpty && all.Length == 0) return default(T);
 
@@ -85,7 +85,7 @@ namespace Marten.Linq
             ISelector<T> selector = null;
             var cmd = BuildCommand<T>(queryModel, out selector);
 
-            return selector.Execute(cmd, _runner, _schema, _identityMap);
+            return _runner.Resolve(cmd, selector, _identityMap);
         }
 
 
@@ -97,7 +97,7 @@ namespace Marten.Linq
             _schema.EnsureStorageExists(mapping.DocumentType);
 
             var command = new NpgsqlCommand();
-            selector = query.ConfigureCommand<T>(command);
+            selector = query.ConfigureCommand<T>(_schema, command);
 
             return command;
         }
@@ -107,7 +107,7 @@ namespace Marten.Linq
             ISelector<T> selector = null;
             var cmd = BuildCommand<T>(queryModel, out selector);
 
-            return await selector.ExecuteAsync(cmd, _runner, _schema, _identityMap, token).ConfigureAwait(false);
+            return await _runner.ResolveAsync(cmd,selector, _identityMap, token).ConfigureAwait(false);
         }
 
         public async Task<T> ExecuteAsync<T>(QueryModel queryModel, CancellationToken token)
@@ -123,7 +123,7 @@ namespace Marten.Linq
             ISelector<T> selector = null;
             var cmd = BuildCommand<T>(queryModel, out selector);
 
-            var enumerable = await selector.ExecuteAsync(cmd, _runner, _schema, _identityMap, token).ConfigureAwait(false);
+            var enumerable = await _runner.ResolveAsync(cmd, selector, _identityMap, token).ConfigureAwait(false);
             var all = enumerable.ToArray();
 
             if (choiceResultOperator.ReturnDefaultWhenEmpty && all.Length == 0)

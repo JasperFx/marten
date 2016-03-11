@@ -61,15 +61,21 @@ namespace Marten.Linq
         }
 
 
-        public ISelector<T> ConfigureCommand<T>(NpgsqlCommand command)
+        public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, NpgsqlCommand command)
         {
             if (_query.ResultOperators.OfType<LastResultOperator>().Any())
             {
                 throw new InvalidOperationException("Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
             }
 
-            var select = buildSelectClause<T>();
-            var sql = $"select {select.SelectClause(_mapping)} from {_mapping.TableName} as d";
+            var documentStorage = schema.StorageFor(typeof(T));
+            return ConfigureCommand<T>(documentStorage, command);
+        }
+
+        public ISelector<T> ConfigureCommand<T>(IDocumentStorage documentStorage, NpgsqlCommand command)
+        {
+            var select = buildSelectClause<T>(documentStorage);
+            var sql = $"select {@select.SelectClause(_mapping)} from {_mapping.TableName} as d";
 
             var where = buildWhereClause();
             var orderBy = toOrderClause();
@@ -83,14 +89,14 @@ namespace Marten.Linq
 
             command.AppendQuery(sql);
 
-            return select;
+            return @select;
         }
 
-        private ISelector<T> buildSelectClause<T>()
+        private ISelector<T> buildSelectClause<T>(IDocumentStorage storage)
         {
             if (_query.SelectClause.Selector.Type == _query.MainFromClause.ItemType)
             {
-                return new WholeDocumentSelector<T>();
+                return new WholeDocumentSelector<T>(storage.As<IResolver<T>>());
             }
             
             throw new NotImplementedException("Cannot yet do a Select() projection");

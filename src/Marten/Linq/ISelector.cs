@@ -1,39 +1,55 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Baseline;
+﻿using System;
+using System.Data.Common;
+using System.Reflection;
 using Marten.Schema;
 using Marten.Services;
-using Npgsql;
 
 namespace Marten.Linq
 {
     public interface ISelector<T>
     {
-        IEnumerable<T> Execute(NpgsqlCommand command, IManagedConnection connection, IDocumentSchema schema, IIdentityMap identityMap);
-
-        Task<IEnumerable<T>> ExecuteAsync(NpgsqlCommand command, IManagedConnection connection, IDocumentSchema schema, IIdentityMap identityMap,
-            CancellationToken token);
+        T Resolve(DbDataReader reader, IIdentityMap map);
 
         string SelectClause(IDocumentMapping mapping);
     }
 
     public class WholeDocumentSelector<T> : ISelector<T>
     {
-        public IEnumerable<T> Execute(NpgsqlCommand command, IManagedConnection connection, IDocumentSchema schema, IIdentityMap identityMap)
+        private readonly IResolver<T> _resolver;
+
+        public WholeDocumentSelector(IResolver<T> resolver)
         {
-            return connection.Resolve(command, schema.StorageFor(typeof (T)).As<IResolver<T>>(), identityMap);
+            _resolver = resolver;
         }
 
-        public async Task<IEnumerable<T>> ExecuteAsync(NpgsqlCommand command, IManagedConnection connection, IDocumentSchema schema, IIdentityMap identityMap,
-            CancellationToken token)
+        public T Resolve(DbDataReader reader, IIdentityMap map)
         {
-            return await connection.ResolveAsync(command, schema.StorageFor(typeof(T)).As<IResolver<T>>(), identityMap, token).ConfigureAwait(false);
+            return _resolver.Resolve(reader, map);
         }
 
         public string SelectClause(IDocumentMapping mapping)
         {
             return mapping.SelectFields("d");
+        }
+    }
+
+    public class SingleFieldSelector<T> : ISelector<T>
+    {
+        private readonly MemberInfo[] _members;
+
+        public SingleFieldSelector(MemberInfo[] members)
+        {
+            _members = members;
+        }
+
+        public T Resolve(DbDataReader reader, IIdentityMap map)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string SelectClause(IDocumentMapping mapping)
+        {
+            throw new NotImplementedException();
         }
     }
 }

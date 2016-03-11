@@ -51,12 +51,12 @@ namespace Marten.Linq
                     break;
 
                 case FetchType.FetchMany:
-                    query.ConfigureCommand<T>(cmd);
+                    query.ConfigureCommand<T>(schema, cmd);
                     break;
 
                 case FetchType.FetchOne:
                     model.ResultOperators.Add(new TakeResultOperator(Expression.Constant(1)));
-                    query.ConfigureCommand<T>(cmd);
+                    query.ConfigureCommand<T>(schema, cmd);
                     break;
 
             }
