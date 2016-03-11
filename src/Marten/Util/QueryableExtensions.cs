@@ -56,7 +56,7 @@ namespace Marten.Util
 
         #endregion
 
-        #region Count/LongCount
+        #region Count/LongCount/Sum
 
         private static readonly MethodInfo _count = GetMethod(nameof(Queryable.Count));
 
@@ -67,6 +67,16 @@ namespace Marten.Util
             if (source == null) throw new ArgumentNullException(nameof(source));
 
             return ExecuteAsync<TSource, int>(_count, source, cancellationToken);
+        }
+
+        public static Task<TResult> SumAsync<TSource, TResult>(
+            this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var sum = GetMethod(nameof(Queryable.Sum), 1, mi => mi.ReturnType == typeof (TResult));
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            return ExecuteAsync<TSource, TResult>(sum, source, expression, cancellationToken);
         }
 
         private static readonly MethodInfo _countPredicate = GetMethod(nameof(Queryable.Count), 1);

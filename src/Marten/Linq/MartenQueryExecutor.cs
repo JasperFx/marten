@@ -8,7 +8,6 @@ using Marten.Schema;
 using Marten.Services;
 using Npgsql;
 using Remotion.Linq;
-using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing.Structure;
 
@@ -37,6 +36,7 @@ namespace Marten.Linq
                 typeof (AnyResultOperator),
                 typeof (CountResultOperator),
                 typeof (LongCountResultOperator),
+                typeof (SumResultOperator)
             };
         }
 
@@ -49,35 +49,16 @@ namespace Marten.Linq
             return _schema.StorageFor(typeof (T)).As<IResolver<T>>();
         }
             
-            
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
-            var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
-            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
-
-            _schema.EnsureStorageExists(mapping.DocumentType);
-
-            if (queryModel.ResultOperators.OfType<AnyResultOperator>().Any())
-            {
-                var anyCommand = new NpgsqlCommand();
-                documentQuery.ConfigureForAny(anyCommand);
-
-                return _runner.Execute(anyCommand, c => (T)c.ExecuteScalar());
-            }
-
-            if (queryModel.ResultOperators.OfType<CountResultOperator>().Any())
-            {
-                var countCommand = new NpgsqlCommand();
-                documentQuery.ConfigureForCount(countCommand);
-
-                return _runner.Execute(countCommand, c =>
-                {
-                    var returnValue = c.ExecuteScalar();
-                    return Convert.ToInt32(returnValue).As<T>();
-                });
-            }
-
-            throw new NotSupportedException();
+            var executors = new List<IScalarQueryExecution<T>> {
+                new AnyQueryExecution<T>(_expressionParser, _schema, _runner),
+                new CountQueryExecution<T>(_expressionParser, _schema, _runner),
+                new SumQueryExecution<T>(_expressionParser, _schema, _runner)
+            };
+            var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
+            if (queryExecution == null) throw new NotSupportedException();
+            return queryExecution.Execute(queryModel).As<T>();
         }
 
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
@@ -147,7 +128,7 @@ namespace Marten.Linq
             var scalarResultOperator = queryModel.ResultOperators.SingleOrDefault(x => _scalarResultOperators.Contains(x.GetType()));
             if (scalarResultOperator != null)
             {
-                return await ExecuteScalar<T>(scalarResultOperator, queryModel, token).ConfigureAwait(false);
+                return await ExecuteScalar<T>(queryModel, token).ConfigureAwait(false);
             }
 
             var choiceResultOperator = queryModel.ResultOperators.OfType<ChoiceResultOperatorBase>().Single();
@@ -174,50 +155,17 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        private Task<T> ExecuteScalar<T>(ResultOperatorBase scalarResultOperator, QueryModel queryModel, CancellationToken token)
+        private Task<T> ExecuteScalar<T>(QueryModel queryModel, CancellationToken token)
         {
-            var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
-            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
-
-            _schema.EnsureStorageExists(mapping.DocumentType);
-
-            if (scalarResultOperator is AnyResultOperator)
-            {
-                var anyCommand = new NpgsqlCommand();
-                documentQuery.ConfigureForAny(anyCommand);
-
-                return _runner.ExecuteAsync(anyCommand, async(c, tkn) =>
-                {
-                    var result = await c.ExecuteScalarAsync(tkn).ConfigureAwait(false);
-                    return (T)result;
-                }, token);
-            }
-
-            if (scalarResultOperator is CountResultOperator)
-            {
-                var countCommand = new NpgsqlCommand();
-                documentQuery.ConfigureForCount(countCommand);
-
-                return _runner.ExecuteAsync(countCommand, async(c, tkn) =>
-                {
-                    var returnValue = await c.ExecuteScalarAsync(tkn).ConfigureAwait(false);
-                    return Convert.ToInt32(returnValue).As<T>();
-                }, token);
-            }
-
-            if (scalarResultOperator is LongCountResultOperator)
-            {
-                var countCommand = new NpgsqlCommand();
-                documentQuery.ConfigureForCount(countCommand);
-
-                return _runner.ExecuteAsync(countCommand, async(c, tkn) =>
-                {
-                    var returnValue = await c.ExecuteScalarAsync(tkn).ConfigureAwait(false);
-                    return Convert.ToInt64(returnValue).As<T>();
-                }, token);
-            }
-
-            throw new NotSupportedException();
+            var executors = new List<IScalarQueryExecution<T>> {
+                new AnyQueryExecution<T>(_expressionParser, _schema, _runner),
+                new CountQueryExecution<T>(_expressionParser, _schema, _runner),
+                new LongCountQueryExecution<T>(_expressionParser, _schema, _runner),
+                new SumQueryExecution<T>(_expressionParser, _schema, _runner)
+            };
+            var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
+            if (queryExecution == null) throw new NotSupportedException();
+            return queryExecution.ExecuteAsync(queryModel, token);
         }
     }
 }

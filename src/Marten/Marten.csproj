@@ -74,6 +74,7 @@
     <Compile Include="Linq\IMartenQueryProvider.cs" />
     <Compile Include="Linq\MartenQueryProvider.cs" />
     <Compile Include="Linq\Handlers\IsOneOf.cs" />
+    <Compile Include="Linq\ScalarQueryExecution.cs" />
     <Compile Include="Linq\WhereClauseVisitor.cs" />
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\ColumnValue.cs" />

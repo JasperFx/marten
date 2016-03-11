@@ -47,6 +47,18 @@ namespace Marten.Linq
 
         }
 
+        public void ConfigureForSum(NpgsqlCommand command)
+        {
+            var propToSum = _mapping.JsonLocator(_query.SelectClause.Selector);
+            var sql = $"select sum({propToSum}) as number from {_mapping.TableName} as d";
+
+            var where = buildWhereClause();
+
+            if (@where != null) sql += " where " + @where.ToSql(command);
+
+            command.AppendQuery(sql);
+        }
+
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
@@ -129,6 +141,5 @@ namespace Marten.Linq
 
             return _mapping.FilterDocuments(where);
         }
-
     }
 }
