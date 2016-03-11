@@ -33,6 +33,17 @@ namespace Marten
         /// <param name="session"></param>
         /// <returns></returns>
         Task AfterCommitAsync(IDocumentSession session);
+
+
+        /// <summary>
+        /// After a document is loaded
+        /// </summary>
+        void DocumentLoaded(object id, object document);
+
+        /// <summary>
+        /// After a document is added for storage
+        /// </summary>
+        void DocumentAddedForStorage(object id, object document);
     }
     // ENDSAMPLE
 
@@ -43,7 +54,7 @@ namespace Marten
             // Nothing
         }
 
-        public async virtual Task BeforeSaveChangesAsync(IDocumentSession session)
+        public virtual async Task BeforeSaveChangesAsync(IDocumentSession session)
         {
             await Task.Run(() => BeforeSaveChanges(session));
         }
@@ -56,6 +67,16 @@ namespace Marten
         public virtual async Task AfterCommitAsync(IDocumentSession session)
         {
             await Task.Run(() => AfterCommit(session));
+        }
+
+        public virtual void DocumentLoaded(object id, object document)
+        {
+            // Nothing
+        }
+
+        public virtual void DocumentAddedForStorage(object id, object document)
+        {
+            // Nothing
         }
     }
 }
