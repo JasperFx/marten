@@ -76,7 +76,11 @@
     <Compile Include="Linq\MartenQueryProvider.cs" />
     <Compile Include="Linq\Handlers\IsOneOf.cs" />
     <Compile Include="Linq\ScalarQueryExecution.cs" />
+    <Compile Include="Linq\SelectorParser.cs" />
+    <Compile Include="Linq\SingleFieldSelector.cs" />
+    <Compile Include="Linq\TargetObject.cs" />
     <Compile Include="Linq\WhereClauseVisitor.cs" />
+    <Compile Include="Linq\WholeDocumentSelector.cs" />
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\ColumnValue.cs" />
     <Compile Include="Schema\DocumentAliasAttribute.cs" />
@@ -106,6 +110,7 @@
     <Compile Include="Services\BatchQuerying\SingleResultReader.cs" />
     <Compile Include="Services\ChangeSet.cs" />
     <Compile Include="Services\CommandRunnerMode.cs" />
+    <Compile Include="Services\FetchResult.cs" />
     <Compile Include="Services\IChangeSet.cs" />
     <Compile Include="Services\IUnitOfWork.cs" />
     <Compile Include="Services\ManagedConnection.cs" />

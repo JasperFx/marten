@@ -32,6 +32,8 @@ namespace Marten.Services
             }).As<T>();
         }
 
+        public ISerializer Serializer => _serializer;
+
         public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class
         {
             var dict = _objects[typeof(T)];

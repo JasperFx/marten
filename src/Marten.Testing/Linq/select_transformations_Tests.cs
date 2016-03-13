@@ -16,7 +16,7 @@ namespace Marten.Testing.Linq
 
             var cmd = theSession.Query<User>().Select(x => x.UserName).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select something");
+            cmd.CommandText.ShouldBe("select d.data ->> 'UserName' from mt_doc_user as d");
         }
     }
 }

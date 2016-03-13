@@ -68,7 +68,7 @@ namespace Marten.Linq
                 throw new InvalidOperationException("Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
             }
 
-            var documentStorage = schema.StorageFor(typeof(T));
+            var documentStorage = schema.StorageFor(_mapping.DocumentType);
             return ConfigureCommand<T>(documentStorage, command);
         }
 
@@ -99,7 +99,12 @@ namespace Marten.Linq
                 return new WholeDocumentSelector<T>(storage.As<IResolver<T>>());
             }
             
-            throw new NotImplementedException("Cannot yet do a Select() projection");
+            var visitor = new SelectorParser();
+            visitor.Visit(_query.SelectClause.Selector);
+
+            return visitor.ToSelector<T>();
+
+            
         }
 
         private string appendOffset(string sql)

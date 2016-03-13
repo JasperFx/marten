@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Marten.Testing
 {
+    
     public class Using_DocumentSessionListener_Tests
     {
         [Fact]
@@ -28,6 +29,8 @@ namespace Marten.Testing
             }))
             // ENDSAMPLE
             {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
                 using (var session = store.LightweightSession())
                 {
                     session.Store(new User(), new User());
@@ -58,6 +61,8 @@ namespace Marten.Testing
                 _.Listeners.Add(stub2);
             }))
             {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
                 using (var session = store.LightweightSession())
                 {
                     session.Store(new User(), new User());
@@ -88,6 +93,8 @@ namespace Marten.Testing
                 _.Listeners.Add(stub2);
             }))
             {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
                 using (var session = store.OpenSession())
                 {
                     var user1 = new User { Id = Guid.NewGuid() };
@@ -119,6 +126,8 @@ namespace Marten.Testing
                 _.Listeners.Add(stub2);
             }))
             {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
                 using (var session = store.OpenSession())
                 {
                     var user1 = new User { Id = Guid.NewGuid() };
@@ -150,6 +159,8 @@ namespace Marten.Testing
                 _.Listeners.Add(stub2);
             }))
             {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
 
@@ -184,6 +195,8 @@ namespace Marten.Testing
                 _.Listeners.Add(stub2);
             }))
             {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
 
@@ -221,6 +234,8 @@ namespace Marten.Testing
                 _.Listeners.Add(stub2);
             }))
             {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
                 using (var session = store.DirtyTrackedSession())
                 {
                     var user1 = new User { Id = Guid.NewGuid() };
@@ -252,6 +267,8 @@ namespace Marten.Testing
                 _.Listeners.Add(stub2);
             }))
             {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
                 using (var session = store.DirtyTrackedSession())
                 {
                     var user1 = new User { Id = Guid.NewGuid() };
@@ -283,6 +300,8 @@ namespace Marten.Testing
                 _.Listeners.Add(stub2);
             }))
             {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
 
@@ -317,6 +336,8 @@ namespace Marten.Testing
                 _.Listeners.Add(stub2);
             }))
             {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
 

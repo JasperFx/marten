@@ -4,19 +4,6 @@ using System.Threading.Tasks;
 
 namespace Marten.Services
 {
-    public class FetchResult<T>
-    {
-        public FetchResult(T document, string json)
-        {
-            Document = document;
-            Json = json;
-        }
-
-        public T Document { get; }
-
-        public string Json { get; }
-    }
-
     public interface IIdentityMap
     {
         T Get<T>(object id, Func<FetchResult<T>> result) where T : class;
@@ -27,7 +14,7 @@ namespace Marten.Services
         T Get<T>(object id, string json) where T : class;
         T Get<T>(object id, Type concreteType, string json) where T : class;
 
-        
+        ISerializer Serializer { get; }
 
         void Remove<T>(object id);
 
