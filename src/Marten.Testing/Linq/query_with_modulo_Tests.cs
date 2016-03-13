@@ -7,6 +7,7 @@ namespace Marten.Testing.Linq
 {
     public class query_with_modulo_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        // SAMPLE: querying-with-modulo
         [Fact]
         public void use_modulo()
         {
@@ -23,5 +24,6 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(2, 4);
         }
+        // ENDSAMPLE
     }
 }

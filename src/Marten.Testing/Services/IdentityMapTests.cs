@@ -16,7 +16,7 @@ namespace Marten.Testing.Services
 
             var serializer = new JilSerializer();
 
-            var map = new IdentityMap(serializer);
+            var map = new IdentityMap(serializer, null);
 
             var target2 = map.Get<Target>(target.Id, serializer.ToJson(target));
 
@@ -32,7 +32,7 @@ namespace Marten.Testing.Services
 
             var json = serializer.ToJson(camaro);
 
-            var map = new IdentityMap(serializer);
+            var map = new IdentityMap(serializer, null);
 
             map.Get<NulloIdentityMapTests.Car>(camaro.Id, typeof(NulloIdentityMapTests.Camaro), json)
                 .ShouldBeOfType<NulloIdentityMapTests.Camaro>()
@@ -48,7 +48,7 @@ namespace Marten.Testing.Services
 
             var serializer = new JilSerializer();
 
-            var map = new IdentityMap(serializer);
+            var map = new IdentityMap(serializer, null);
 
             var target2 = map.Get<Target>(target.Id, serializer.ToJson(target));
             var target3 = map.Get<Target>(target.Id, serializer.ToJson(target));
@@ -74,7 +74,7 @@ namespace Marten.Testing.Services
 
             var serializer = new JilSerializer();
 
-            var map = new IdentityMap(serializer);
+            var map = new IdentityMap(serializer, null);
 
             var target3 = map.Get<Target>(target.Id, serializer.ToJson(target));
 
@@ -94,7 +94,7 @@ namespace Marten.Testing.Services
 
             var serializer = new JilSerializer();
 
-            var map = new IdentityMap(serializer);
+            var map = new IdentityMap(serializer, null);
 
             var json = serializer.ToJson(target);
             var clonedTarget = serializer.FromJson<Target>(json);
@@ -116,7 +116,7 @@ namespace Marten.Testing.Services
 
             var serializer = new JilSerializer();
 
-            var map = new IdentityMap(serializer);
+            var map = new IdentityMap(serializer, null);
 
             var target2 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target)));
             var target3 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target)));
@@ -139,7 +139,7 @@ namespace Marten.Testing.Services
             var target = Target.Random();
             var serializer = new JilSerializer();
 
-            var map = new IdentityMap(serializer);
+            var map = new IdentityMap(serializer, null);
 
             map.Store(target.Id, target);
 
@@ -152,7 +152,7 @@ namespace Marten.Testing.Services
         {
             var serializer = new JilSerializer();
 
-            var map = new IdentityMap(serializer);
+            var map = new IdentityMap(serializer, null);
             map.Get<Target>(Guid.NewGuid(), () => null).ShouldBeNull();
         }
 
@@ -162,7 +162,7 @@ namespace Marten.Testing.Services
             var target = Target.Random();
             var serializer = new JilSerializer();
 
-            var map = new IdentityMap(serializer);
+            var map = new IdentityMap(serializer, null);
 
             map.Store(target.Id, target);
 
@@ -175,7 +175,7 @@ namespace Marten.Testing.Services
         {
             var serializer = new JilSerializer();
 
-            var map = new IdentityMap(serializer);
+            var map = new IdentityMap(serializer, null);
             map.Has<Target>(Guid.NewGuid()).ShouldBeFalse();
         }
 
@@ -185,7 +185,7 @@ namespace Marten.Testing.Services
             var target = Target.Random();
             var serializer = new JilSerializer();
 
-            var map = new IdentityMap(serializer);
+            var map = new IdentityMap(serializer, null);
 
             map.Store(target.Id, target);
 

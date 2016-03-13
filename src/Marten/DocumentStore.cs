@@ -226,10 +226,10 @@ namespace Marten
                     return new NulloIdentityMap(_serializer);
 
                 case DocumentTracking.IdentityOnly:
-                    return new IdentityMap(_serializer);
+                    return new IdentityMap(_serializer, _options.Listeners);
 
                 case DocumentTracking.DirtyTracking:
-                    return new DirtyTrackingIdentityMap(_serializer);
+                    return new DirtyTrackingIdentityMap(_serializer, _options.Listeners);
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(tracking));

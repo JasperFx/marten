@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Generation;
@@ -299,9 +300,15 @@ namespace Marten.Schema
 
         public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();
 
+        private static readonly Regex _aliasSanitizer = new Regex("<|>", RegexOptions.Compiled);
         private static string defaultDocumentAliasName(Type documentType)
         {
-            var parts = new List<string> {documentType.Name.ToLower()};
+            var nameToAlias = documentType.Name;
+            if (documentType.IsGenericType)
+            {
+                nameToAlias = _aliasSanitizer.Replace(documentType.GetPrettyName(), string.Empty);
+            }            
+            var parts = new List<string> {nameToAlias.ToLower()};
             if (documentType.IsNested)
             {
                 parts.Insert(0, documentType.DeclaringType.Name.ToLower());

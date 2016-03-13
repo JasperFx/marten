@@ -22,7 +22,10 @@ namespace Marten
         /// </summary>
         public IDocumentCleaner Clean { get; }
 
-
+        /// <summary>
+        /// Dumps all of the dynamic storage code that matches the current Marten configuration
+        /// </summary>
+        /// <param name="file"></param>
         public void WriteStorageCode(string file)
         {
             var code = DocumentStorageBuilder.GenerateDocumentStorageCode(Options.AllDocumentMappings.ToArray());

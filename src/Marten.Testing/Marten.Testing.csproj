@@ -45,6 +45,7 @@
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="auto_assign_missing_guid_ids_Tests.cs" />
+    <Compile Include="Bugs\ability_to_persist_generic_types.cs" />
     <Compile Include="Bugs\ability_to_persist_nested_types_Tests.cs" />
     <Compile Include="Bugs\Bug118_bad_exception_message_Tests.cs" />
     <Compile Include="Bugs\Bug145_table_getting_erroneously_regenerated_Tests.cs" />
@@ -92,6 +93,7 @@
     <Compile Include="Examples\MartenRegistryExamples.cs" />
     <Compile Include="Examples\SagaStorageExample.cs" />
     <Compile Include="Examples\Searching_Within_Child_Collections.cs" />
+    <Compile Include="Examples\SimpleSessionListener.cs" />
     <Compile Include="Examples\UnitOfWorkMechanics.cs" />
     <Compile Include="Fixtures\EventStore\EventStoreFixture.cs" />
     <Compile Include="Fixtures\EventStore\QuestEventFixture.cs" />
@@ -128,6 +130,7 @@
     <Compile Include="Linq\invoking_queryable_through_to_list_async_Tests.cs" />
     <Compile Include="Linq\invoking_query_with_select_Tests.cs" />
     <Compile Include="Linq\ExpressionExtensionsTests.cs" />
+    <Compile Include="Linq\previewing_the_command_from_a_queryable_Tests.cs" />
     <Compile Include="Linq\query_against_dateoffset_Tests.cs" />
     <Compile Include="Linq\query_against_primitive_array_Tests.cs" />
     <Compile Include="Linq\query_running_through_the_IdentityMap_Tests.cs" />
@@ -137,6 +140,7 @@
     <Compile Include="Linq\query_with_is_one_of_Tests.cs" />
     <Compile Include="Linq\query_with_modulo_Tests.cs" />
     <Compile Include="Linq\query_with_enums_Tests.cs" />
+    <Compile Include="Linq\query_with_nested_boolean_logic_Tests.cs" />
     <Compile Include="Linq\query_with_nullable_types_Tests.cs" />
     <Compile Include="Linq\using_containment_operator_in_linq_Tests.cs" />
     <Compile Include="Linq\using_custom_Linq_parser_plugins_Tests.cs" />

@@ -11,6 +11,7 @@ namespace Marten.Testing.Codegen
         [Fact]
         public void write_code_for_all_the_known_document_types()
         {
+            // SAMPLE: exporting_the_storage_code
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -22,6 +23,7 @@ namespace Marten.Testing.Codegen
             {
                 store.Advanced.WriteStorageCode("storage.cs");
             }
+            // ENDSAMPLE
 
             var generatedCode = new FileSystem().ReadStringFromFile("storage.cs");
 

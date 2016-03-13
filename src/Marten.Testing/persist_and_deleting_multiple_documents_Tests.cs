@@ -14,17 +14,16 @@ namespace Marten.Testing
         [Fact]
         public void multiple_documents()
         {
+            // SAMPLE: mixed-docs-to-store
             var user1 = new User {FirstName = "Jeremy", LastName = "Miller"};
             var issue1 = new Issue {Title = "TV won't turn on"}; // unfortunately true as I write this...
             var company1 = new Company{Name = "Widgets, inc."};
             var company2 = new Company{Name = "BigCo"};
             var company3 = new Company{Name = "SmallCo"};
 
-            theSession.Store(user1);
-            theSession.Store(issue1);
-            theSession.Store(company1);
-            theSession.Store(company2);
-            theSession.Store(company3);
+            theSession.Store<object>(user1, issue1, company1, company2, company3);
+            // ENDSAMPLE
+
             theSession.SaveChanges();
 
             using (var session = theStore.OpenSession())

@@ -106,6 +106,19 @@ using the `&&` operator:
 
 <[sample:any-query-through-child-collection-with-and]>
 
+## IsOneOf
+
+Marten v0.8 added a new extension method called `IsOneOf()` that can be used to query for documents having
+a field or property matching one of many supplied values:
+
+<[sample:is_one_of]>
+
+## Modulo Queries
+
+Marten v0.8 added the ability to use the modulo operator in Linq queries:
+
+<[sample:querying-with-modulo]>
+
 
 ## Supported Types
 

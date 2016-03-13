@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -79,6 +80,7 @@ namespace Marten.Schema
             return ctor.Invoke(arguments).As<IDocumentStorage>();
         }
 
+        private static readonly Regex _storenameSanitizer = new Regex("<|>", RegexOptions.Compiled);
 
         public static string GenerateDocumentStorageCode(DocumentMapping[] mappings)
         {
@@ -124,8 +126,9 @@ namespace Marten.Schema
             var upsertFunction = mapping.ToUpsertFunction();
 
             var id_NpgsqlDbType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
-
+            
             var typeName = mapping.DocumentType.GetTypeName();
+            var storeName = _storenameSanitizer.Replace(mapping.DocumentType.GetPrettyName(), string.Empty);
 
             var storageArguments = mapping.ToArguments().ToArray();
             var ctorArgs = storageArguments.Select(x => x.ToCtorArgument()).Join(", ");
@@ -134,11 +137,11 @@ namespace Marten.Schema
 
             writer.Write(
                 $@"
-BLOCK:public class {mapping.DocumentType.Name}Storage : IDocumentStorage, IBulkLoader<{typeName}>, IdAssignment<{typeName}>, IResolver<{typeName}>
+BLOCK:public class {storeName}Storage : IDocumentStorage, IBulkLoader<{typeName}>, IdAssignment<{typeName}>, IResolver<{typeName}>
 
 {fields}
 
-BLOCK:public {mapping.DocumentType.Name}Storage({ctorArgs})
+BLOCK:public {storeName}Storage({ctorArgs})
 {ctorLines}
 END
 

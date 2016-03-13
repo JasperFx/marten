@@ -17,15 +17,14 @@ namespace Marten.Testing.Linq
 
         public query_running_through_the_IdentityMap_Tests()
         {
+            // SAMPLE: using-store-with-multiple-docs
             user1 = new User {FirstName = "Jeremy"};
             user2 = new User {FirstName = "Jens"};
             user3 = new User {FirstName = "Jeff"};
             user4 = new User {FirstName = "Corey"};
 
-            theSession.Store(user1);
-            theSession.Store(user2);
-            theSession.Store(user3);
-            theSession.Store(user4);
+            theSession.Store(user1, user2, user3, user4);
+            // ENDSAMPLE
 
             theSession.SaveChanges();
 

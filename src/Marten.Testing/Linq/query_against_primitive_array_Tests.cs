@@ -16,9 +16,7 @@ namespace Marten.Testing.Linq
             var doc3 = new DocWithArrays {Numbers = new int[] {5, 6, 7}};
 
 
-            theSession.Store(doc1);
-            theSession.Store(doc2);
-            theSession.Store(doc3);
+            theSession.Store(doc1, doc2, doc3);
 
             theSession.SaveChanges();
 

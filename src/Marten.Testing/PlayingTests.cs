@@ -36,6 +36,22 @@ namespace Marten.Testing
                 }
             }
         }
+
+        public void try_out_select()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                var store = container.GetInstance<IDocumentStore>();
+                store.Advanced.Clean.CompletelyRemoveAll();
+                store.BulkInsert(Target.GenerateRandomData(200).ToArray());
+
+                using (var session = store.QuerySession())
+                {
+                    session.Query<Target>().Select(x => x.Double).ToArray();
+                }
+
+            }
+        }
     }
 
 

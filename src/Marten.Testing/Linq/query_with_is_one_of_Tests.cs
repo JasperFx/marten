@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Marten;
 using Marten.Services;
+using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
@@ -30,6 +31,17 @@ namespace Marten.Testing.Linq
 
             found.OrderBy(x => x.Id).Select(x => x.Id)
                 .ShouldHaveTheSameElementsAs(expected);
+        }
+
+        public void is_one_of_example()
+        {
+            // SAMPLE: is_one_of
+            // Finds all SuperUser's whose role is either
+            // Admin, Supervisor, or Director
+            var users = theSession.Query<SuperUser>()
+                .Where(x => x.Role.IsOneOf("Admin", "Supervisor", "Director"));
+
+            // ENDSAMPLE
         }
     }
 }

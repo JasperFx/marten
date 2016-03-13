@@ -8,6 +8,18 @@ At this point, the `IDocumentSession` is the sole [unit of work](http://martinfo
 1. The "dirty checking" session tries to determine which documents loaded from that `IDocumentSession` has any changes when `IDocumentSession.SaveChanges()` is called
 
 
+## Storing Multiple Documents
+
+The signature of `IDocumentSession.Store()` changed in v0.8 to allow you to specify a params array of one or more documents:
+
+<[sample:using-store-with-multiple-docs]>
+
+
+You can also store a mixed array of different types by using either the `IDocumentSession.StoreObjects()` method or by calling `IDocumentSession.Store<object>(object[])`.
+
+<[sample:mixed-docs-to-store]>
+
+
 ## Manual Change Tracking
 
 The first step is to create a new `DocumentSession` with the `IDocumentStore.LightweightSession()` (or `IDocumentStore.OpenSession()`):

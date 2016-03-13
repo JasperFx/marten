@@ -56,6 +56,7 @@ namespace Marten.Linq
                     Visit(binary.Left);
                     Visit(binary.Right);
 
+                    _register.Pop();
 
                     return null;
                 }
@@ -66,7 +67,9 @@ namespace Marten.Linq
 
             protected override Expression VisitMethodCall(MethodCallExpression expression)
             {
-                var parser = _parent._options.Linq.MethodCallParsers.FirstOrDefault(x => x.Matches(expression)) ?? _parsers.FirstOrDefault(x => x.Matches(expression));
+                var parser = _parent._options.Linq.MethodCallParsers.FirstOrDefault(x => x.Matches(expression)) 
+                    ?? _parsers.FirstOrDefault(x => x.Matches(expression));
+
                 if (parser != null)
                 {
                     var @where = parser.Parse(_mapping, _parent._serializer, expression);
