@@ -62,6 +62,7 @@
     <Compile Include="Linq\BadLinqExpressionException.cs" />
     <Compile Include="Linq\CollectionAnyContainmentWhereFragment.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />
+    <Compile Include="Linq\DeserializeSelector.cs" />
     <Compile Include="Linq\ExpressionExtensions.cs" />
     <Compile Include="Linq\FindMembers.cs" />
     <Compile Include="Linq\Handlers\EnumerableContains.cs" />
