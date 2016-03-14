@@ -41,14 +41,21 @@ namespace Marten.Testing.Fixtures
             expression(x => x.Long != 3);
 
             expression(x => x.String == "A");
+            expression(x => x.String.Equals("a", StringComparison.OrdinalIgnoreCase));
+            expression(x => string.Equals(x.String, "a", StringComparison.OrdinalIgnoreCase));
+            expression(x => string.Equals("a", x.String, StringComparison.OrdinalIgnoreCase));
+            expression(x => x.String.Equals("A", StringComparison.Ordinal));
             expression(x => x.String != "A");
 
             expression(x => x.String == "A" && x.Number == 1);
             expression(x => x.String == "A" || x.Number == 1);
 
             expression(x => x.String.Contains("B"));
+            expression(x => x.String.Contains("b", StringComparison.OrdinalIgnoreCase));
             expression(x => x.String.StartsWith("Bar"), "x.String.StartsWith(\"Bar\")");
+            expression(x => x.String.StartsWith("bar", StringComparison.OrdinalIgnoreCase), "x.String.StartsWith(\"bar\", StringComparison.OrdinalIgnoreCase)");
             expression(x => x.String.EndsWith("Foo"), "x.String.EndsWith(\"Foo\")");
+            expression(x => x.String.EndsWith("foo", StringComparison.OrdinalIgnoreCase), "x.String.EndsWith(\"Foo\", StringComparison.OrdinalIgnoreCase)");
 
             expression(x => x.String == null);
 
@@ -120,7 +127,7 @@ namespace Marten.Testing.Fixtures
         [FormatAs("The field {field} is configured to be duplicated")]
         public void FieldIsDuplicated([SelectionList("Fields")] string field)
         {
-            _container.GetInstance<IDocumentSchema>().MappingFor(typeof (Target)).As<DocumentMapping>().DuplicateField(field);
+            _container.GetInstance<IDocumentSchema>().MappingFor(typeof(Target)).As<DocumentMapping>().DuplicateField(field);
         }
 
         public IGrammar TheDocumentsAre()
