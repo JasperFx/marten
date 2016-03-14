@@ -163,6 +163,7 @@
     <Compile Include="Schema\Hierarchies\generating_code_and_sql_for_hierarchy_smoke_Tests.cs" />
     <Compile Include="Schema\Hierarchies\HierarchyArgumentTests.cs" />
     <Compile Include="Schema\IndexDefinitionTests.cs" />
+    <Compile Include="Schema\Sequences\DocumentIdStrategyTests.cs" />
     <Compile Include="Schema\table_regeneration_with_new_searchable_fields_Tests.cs" />
     <Compile Include="Schema\when_deriving_the_table_definition_from_the_database_schema_Tests.cs" />
     <Compile Include="Schema\will_build_a_new_database_table_if_definition_changes_Tests.cs" />

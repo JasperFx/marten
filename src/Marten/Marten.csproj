@@ -98,6 +98,7 @@
     <Compile Include="Schema\InvalidDocumentException.cs" />
     <Compile Include="Schema\IResolver.cs" />
     <Compile Include="Schema\MartenSchemaException.cs" />
+    <Compile Include="Schema\Sequences\NoOpIdGeneration.cs" />
     <Compile Include="Schema\SubClassMapping.cs" />
     <Compile Include="Schema\UpsertFunction.cs" />
     <Compile Include="Services\BatchCommand.cs" />
