@@ -41,7 +41,7 @@ namespace Marten.Schema
             DocumentType = documentType;
             Alias = defaultDocumentAliasName(documentType);
 
-            IdMember = (MemberInfo) documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
+            IdMember = (MemberInfo)documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
                        ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
 
             if (IdMember == null)
@@ -77,7 +77,7 @@ namespace Marten.Schema
             var subclass = new SubClassMapping(subclassType, this, alias);
             _subClasses.Add(subclass);
         }
-        
+
         public string Alias
         {
             get { return _alias; }
@@ -163,15 +163,20 @@ namespace Marten.Schema
         private void assignIdStrategy(Type documentType, StoreOptions options)
         {
             var idType = IdMember.GetMemberType();
-            if (idType == typeof (string))
+            
+            if (!CanSetIdMember())
+            {
+                IdStrategy = new NoOpIdGeneration();
+            }
+            else if (idType == typeof(string))
             {
                 IdStrategy = new StringIdGeneration();
             }
-            else if (idType == typeof (Guid))
+            else if (idType == typeof(Guid))
             {
                 IdStrategy = new GuidIdGeneration();
             }
-            else if (idType == typeof (int) || idType == typeof (long))
+            else if (idType == typeof(int) || idType == typeof(long))
             {
                 IdStrategy = new HiloIdGeneration(documentType, options.HiloSequenceDefaults);
             }
@@ -180,6 +185,15 @@ namespace Marten.Schema
                 throw new ArgumentOutOfRangeException(nameof(documentType),
                     $"Marten cannot use the type {idType.FullName} as the Id for a persisted document. Use int, long, Guid, or string");
             }
+        }
+
+        private bool CanSetIdMember()
+        {
+            var field = IdMember as FieldInfo;
+            if (field != null) return field.IsPublic;
+            var property = IdMember as PropertyInfo;
+            if (property != null) return property.CanWrite && property.GetSetMethod(false) != null;
+            return false;
         }
 
         public void HiloSettings(HiloSettings hilo)
@@ -307,8 +321,8 @@ namespace Marten.Schema
             if (documentType.IsGenericType)
             {
                 nameToAlias = _aliasSanitizer.Replace(documentType.GetPrettyName(), string.Empty);
-            }            
-            var parts = new List<string> {nameToAlias.ToLower()};
+            }
+            var parts = new List<string> { nameToAlias.ToLower() };
             if (documentType.IsNested)
             {
                 parts.Insert(0, documentType.DeclaringType.Name.ToLower());
@@ -341,11 +355,11 @@ namespace Marten.Schema
         }
 
         public virtual TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
-            // can do foreign keys
+                                                                       // can do foreign keys
         {
             var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
             var table = new TableDefinition(TableName, new TableColumn("id", pgIdType));
-            table.Columns.Add(new TableColumn("data", "jsonb") {Directive = "NOT NULL"});
+            table.Columns.Add(new TableColumn("data", "jsonb") { Directive = "NOT NULL" });
 
             _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
 
@@ -466,7 +480,7 @@ namespace Marten.Schema
 
         public static DocumentMapping For<T>()
         {
-            return new DocumentMapping(typeof (T));
+            return new DocumentMapping(typeof(T));
         }
 
         public DuplicatedField DuplicateField(string memberName, string pgType = null)
