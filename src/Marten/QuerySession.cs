@@ -122,9 +122,6 @@ namespace Marten
                     return found ? new FetchResult<T>(resolver.Build(reader, _serializer), reader.GetString(0)) : null;
                 }
             });
-
-
-
         }
 
         public Task<FetchResult<T>> LoadDocumentAsync<T>(object id, CancellationToken token) where T : class
@@ -134,18 +131,16 @@ namespace Marten
 
             var cmd = storage.LoaderCommand(id);
 
-            return _connection.ExecuteAsync(cmd, async (c, executeAsyncToken) =>
+            return _connection.ExecuteAsync(cmd, async (c, tkn) =>
             {
-                using (var reader = await cmd.ExecuteReaderAsync(executeAsyncToken).ConfigureAwait(false))
+                using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                 {
-                    var found = reader.Read();
+                    var found = await reader.ReadAsync(tkn).ConfigureAwait(false);
                     return found ? new FetchResult<T>(resolver.Build(reader, _serializer), reader.GetString(0)) : null;
                 }
 
             }, token);
         }
-
-
         
         public T Load<T>(string id) where T : class
         {
