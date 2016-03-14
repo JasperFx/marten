@@ -20,7 +20,6 @@ namespace Marten.Linq
         private readonly IManagedConnection _runner;
         private readonly IDocumentSchema _schema;
         private readonly MartenExpressionParser _expressionParser;
-        private readonly IList<Type> _scalarResultOperators;
 
         public MartenQueryExecutor(IManagedConnection runner, IDocumentSchema schema, MartenExpressionParser expressionParser, IQueryParser parser, IIdentityMap identityMap)
         {
@@ -29,15 +28,6 @@ namespace Marten.Linq
             _parser = parser;
             _identityMap = identityMap;
             _runner = runner;
-            
-
-            _scalarResultOperators = new[]
-            {
-                typeof (AnyResultOperator),
-                typeof (CountResultOperator),
-                typeof (LongCountResultOperator),
-                typeof (SumResultOperator)
-            };
         }
 
         public IDocumentSchema Schema => _schema;
@@ -54,7 +44,8 @@ namespace Marten.Linq
             var executors = new List<IScalarQueryExecution<T>> {
                 new AnyQueryExecution<T>(_expressionParser, _schema, _runner),
                 new CountQueryExecution<T>(_expressionParser, _schema, _runner),
-                new SumQueryExecution<T>(_expressionParser, _schema, _runner)
+                new SumQueryExecution<T>(_expressionParser, _schema, _runner),
+                new AverageQueryExecution<T>(_expressionParser, _schema, _runner)
             };
             var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
             if (queryExecution == null) throw new NotSupportedException();
@@ -63,6 +54,13 @@ namespace Marten.Linq
 
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
+            var executors = new List<IScalarQueryExecution<T>> {
+                new MaxQueryExecution<T>(_expressionParser, _schema, _runner),
+                new MinQueryExecution<T>(_expressionParser, _schema, _runner)
+            };
+            var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
+            if (queryExecution != null) return queryExecution.Execute(queryModel).As<T>();
+
             var isLast = queryModel.ResultOperators.OfType<LastResultOperator>().Any();
             if (isLast)
             {
@@ -112,11 +110,18 @@ namespace Marten.Linq
 
         public async Task<T> ExecuteAsync<T>(QueryModel queryModel, CancellationToken token)
         {
-            var scalarResultOperator = queryModel.ResultOperators.SingleOrDefault(x => _scalarResultOperators.Contains(x.GetType()));
-            if (scalarResultOperator != null)
-            {
-                return await ExecuteScalar<T>(queryModel, token).ConfigureAwait(false);
-            }
+            var scalarExecutions = new List<IScalarQueryExecution<T>> {
+                new AnyQueryExecution<T>(_expressionParser, _schema, _runner),
+                new CountQueryExecution<T>(_expressionParser, _schema, _runner),
+                new LongCountQueryExecution<T>(_expressionParser, _schema, _runner),
+                new SumQueryExecution<T>(_expressionParser, _schema, _runner),
+                new AverageQueryExecution<T>(_expressionParser, _schema, _runner),
+                new MaxQueryExecution<T>(_expressionParser, _schema, _runner),
+                new MinQueryExecution<T>(_expressionParser, _schema, _runner),
+            };
+            if (scalarExecutions.Any(ex=>ex.Match(queryModel)))
+                return await ExecuteScalar<T>(queryModel, token, scalarExecutions).ConfigureAwait(false);
+            
 
             var choiceResultOperator = queryModel.ResultOperators.OfType<ChoiceResultOperatorBase>().Single();
 
@@ -144,14 +149,8 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        private Task<T> ExecuteScalar<T>(QueryModel queryModel, CancellationToken token)
+        private Task<T> ExecuteScalar<T>(QueryModel queryModel, CancellationToken token, List<IScalarQueryExecution<T>> executors)
         {
-            var executors = new List<IScalarQueryExecution<T>> {
-                new AnyQueryExecution<T>(_expressionParser, _schema, _runner),
-                new CountQueryExecution<T>(_expressionParser, _schema, _runner),
-                new LongCountQueryExecution<T>(_expressionParser, _schema, _runner),
-                new SumQueryExecution<T>(_expressionParser, _schema, _runner)
-            };
             var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
             if (queryExecution == null) throw new NotSupportedException();
             return queryExecution.ExecuteAsync(queryModel, token);
