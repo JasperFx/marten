@@ -134,6 +134,7 @@
     <Compile Include="Linq\query_against_dateoffset_Tests.cs" />
     <Compile Include="Linq\query_against_primitive_array_Tests.cs" />
     <Compile Include="Linq\query_running_through_the_IdentityMap_Tests.cs" />
+    <Compile Include="Linq\query_with_aggregate_functions.cs" />
     <Compile Include="Linq\query_with_any_within_child_collection_Tests.cs" />
     <Compile Include="Linq\query_beginning_with_constant_Tests.cs" />
     <Compile Include="Linq\query_for_sum_Tests.cs" />
