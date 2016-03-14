@@ -11,7 +11,7 @@ namespace Marten.Testing.Services
         [Fact]
         public void detect_changes_with_no_document()
         {
-            var entity = new TrackedEntity(Guid.NewGuid(), new JilSerializer(), typeof (Target), null);
+            var entity = new TrackedEntity(Guid.NewGuid(), new JilSerializer(), typeof(Target), null, null);
             entity.DetectChange().ShouldBeNull();
         }
 
@@ -19,7 +19,7 @@ namespace Marten.Testing.Services
         public void detect_changes_positive()
         {
             var target = Target.Random();
-            var entity = new TrackedEntity(target.Id, new JilSerializer(), typeof(Target), target);
+            var entity = new TrackedEntity(target.Id, new JilSerializer(), typeof(Target), target, null);
             target.Long++;
 
             var change = entity.DetectChange();
@@ -34,7 +34,7 @@ namespace Marten.Testing.Services
         public void detect_changes_negative()
         {
             var target = Target.Random();
-            var entity = new TrackedEntity(target.Id, new JilSerializer(), typeof(Target), target);
+            var entity = new TrackedEntity(target.Id, new JilSerializer(), typeof(Target), target, null);
 
             entity.DetectChange().ShouldBeNull();
         }
@@ -43,15 +43,13 @@ namespace Marten.Testing.Services
         public void change_is_cleared()
         {
             var target = Target.Random();
-            var entity = new TrackedEntity(target.Id, new JilSerializer(), typeof(Target), target);
+            var entity = new TrackedEntity(target.Id, new JilSerializer(), typeof(Target), target,null);
             target.Long++;
 
             var change = entity.DetectChange();
             change.ChangeCommitted();
 
             entity.DetectChange().ShouldBeNull();
-            
-
         }
     }
 }
