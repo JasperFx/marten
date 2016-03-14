@@ -15,6 +15,7 @@
       <table id="3b2cca0e-a1d8-41d3-bc82-ffc68ff3d375">
         <ExecutingQuery-row WhereClause="x.String.StartsWith(&quot;Bar&quot;)" Results="A, E" />
         <ExecutingQuery-row WhereClause="x.String.EndsWith(&quot;Foo&quot;)" Results="D" />
+        <ExecutingQuery-row WhereClause="x.String.StartsWith(&quot;bar&quot;, StringComparison.OrdinalIgnoreCase)" Results="A, E, G" />
       </table>
     </ExecutingQuery>
   </Linq>
