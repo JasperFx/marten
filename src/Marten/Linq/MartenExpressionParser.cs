@@ -60,7 +60,8 @@ namespace Marten.Linq
             new StringStartsWith(),
 
             // Added
-            new IsOneOf()
+            new IsOneOf(),
+            new IsInGenericEnumerable()
         };
 
 
