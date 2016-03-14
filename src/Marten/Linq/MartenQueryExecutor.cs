@@ -102,12 +102,12 @@ namespace Marten.Linq
             return command;
         }
 
-        async Task<IEnumerable<T>> IMartenQueryExecutor.ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token)
+        Task<IEnumerable<T>> IMartenQueryExecutor.ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token)
         {
             ISelector<T> selector = null;
             var cmd = BuildCommand<T>(queryModel, out selector);
 
-            return await _runner.ResolveAsync(cmd,selector, _identityMap, token).ConfigureAwait(false);
+            return _runner.ResolveAsync(cmd, selector, _identityMap, token);
         }
 
         public async Task<T> ExecuteAsync<T>(QueryModel queryModel, CancellationToken token)

@@ -241,9 +241,9 @@ namespace Marten
                 return ConcatDocuments(hits, documents);
             }
 
-            public async Task<IList<TDoc>> ByIdAsync<TKey>(params TKey[] keys)
+            public Task<IList<TDoc>> ByIdAsync<TKey>(params TKey[] keys)
             {
-                return await ByIdAsync(keys, CancellationToken.None).ConfigureAwait(false);
+                return ByIdAsync(keys, CancellationToken.None);
             }
 
             public IList<TDoc> ById<TKey>(IEnumerable<TKey> keys)
