@@ -54,6 +54,7 @@
     <Compile Include="Bugs\Bug_187_not_assigning_id_in_BulkInsert_Tests.cs" />
     <Compile Include="bulk_loading_Tests.cs" />
     <Compile Include="Codegen\dumping_the_complete_source_code_Tests.cs" />
+    <Compile Include="CompileQueryDemonstrator.cs" />
     <Compile Include="delete_many_documents_by_query_Tests.cs" />
     <Compile Include="detecting_insert_or_update_Tests.cs" />
     <Compile Include="DocumentMappingTests.cs" />

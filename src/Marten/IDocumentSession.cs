@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Linq;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Npgsql;
@@ -97,6 +98,9 @@ namespace Marten
         /// <returns></returns>
         IQueryable<T> Query<T>();
         // ENDSAMPLE
+
+        TOut Query<TDoc, TOut>(ISingleItemCompiledQuery<TDoc, TOut> query);
+        IEnumerable<TOut> Query<TDoc, TOut>(IMultipleItemCompiledQuery<TDoc, TOut> query);
 
         /// <summary>
         /// Queries the document storage table for the document type T by supplied SQL. See http://jasperfx.github.io/marten/documentation/documents/sql/ for more information on usage.
