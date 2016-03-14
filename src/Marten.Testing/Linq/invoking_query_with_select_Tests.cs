@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Fixtures;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -130,6 +132,56 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
 
+        [Fact]
+        public void use_select_with_multiple_fields_in_anonymous()
+        {
+            theSession.Store(new User { FirstName = "Hank", LastName = "Aaron"});
+            theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer"});
+            theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell"});
+            theSession.Store(new User { FirstName = "Tom", LastName = "Chambers"});
+
+            theSession.SaveChanges();
+
+            var users = theSession.Query<User>().Select(x => new {First = x.FirstName, Last = x.LastName}).ToList();
+
+            users.Count.ShouldBe(4);
+
+            users.Each(x =>
+            {
+                x.First.ShouldNotBeNull();
+                x.Last.ShouldNotBeNull();
+            });
+        }
+
+
+        [Fact]
+        public void use_select_with_multiple_fields_to_other_type()
+        {
+            theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
+            theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer" });
+            theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell" });
+            theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
+
+            theSession.SaveChanges();
+
+            var users = theSession.Query<User>().Select(x => new User2{ First = x.FirstName, Last = x.LastName }).ToList();
+
+            users.Count.ShouldBe(4);
+
+            users.Each(x =>
+            {
+                x.First.ShouldNotBeNull();
+                x.Last.ShouldNotBeNull();
+            });
+        }
+
+
+        public class User2
+        {
+            public string First;
+            public string Last;
+        }
+
 
         [Fact]
         public async Task use_select_to_transform_to_an_anonymous_type_async()
@@ -150,6 +202,23 @@ namespace Marten.Testing.Linq
             users
                 .Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
+        }
+
+        [Fact]
+        public void transform_with_deep_properties()
+        {
+            var targets = Target.GenerateRandomData(100).ToArray();
+
+            theStore.BulkInsert(targets);
+
+            var actual = theSession.Query<Target>().Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).ToList().Distinct();
+
+            var expected = targets.Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).Distinct();
+
+            actual.ShouldHaveTheSameElementsAs(expected);
+
+
+
         }
 
 

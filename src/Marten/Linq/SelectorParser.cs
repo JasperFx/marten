@@ -57,7 +57,7 @@ namespace Marten.Linq
         public ISelector<T> ToSelector<T>()
         {
             return _target == null 
-                ? new SingleFieldSelector<T>(_currentField.Members.ToArray()) 
+                ? new SingleFieldSelector<T>(_currentField.Members.Reverse().ToArray()) 
                 : _target.ToSelector<T>();
         }
     }
