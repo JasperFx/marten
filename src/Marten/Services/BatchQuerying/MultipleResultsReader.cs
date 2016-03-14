@@ -35,7 +35,7 @@ namespace Marten.Services.BatchQuerying
         }
     }
 
-    public class MultipleResultsReader<T> : IDataReaderHandler where T : class
+    public class MultipleResultsReader<T> : IDataReaderHandler
     {
         private readonly TaskCompletionSource<IList<T>> _taskSource = new TaskCompletionSource<IList<T>>();
         private ISelector<T> _selector;
@@ -63,7 +63,7 @@ namespace Marten.Services.BatchQuerying
         }
     }
 
-    public class QueryHandler<T> : MultipleResultsReader<T> where T : class
+    public class QueryHandler<T> : MultipleResultsReader<T>
     {
         public static ISelector<T> SelectorFromQuery(IDocumentStorage storage, DocumentQuery query, NpgsqlCommand command)
         {

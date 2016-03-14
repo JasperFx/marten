@@ -6,80 +6,56 @@ using System.Threading.Tasks;
 
 namespace Marten.Services.BatchQuerying
 {
-    public class TransformedBatchQueryable<TDoc, TValue> : IBatchedFetcher<TValue>
+    public interface ITransformedBatchQueryable<TValue>
+    {
+        Task<IList<TValue>> ToList();
+        Task<TValue> First();
+        Task<TValue> FirstOrDefault();
+        Task<TValue> Single();
+        Task<TValue> SingleOrDefault();
+    }
+
+    public class TransformedBatchQueryable<TValue> : ITransformedBatchQueryable<TValue>
     {
         private readonly BatchedQuery _parent;
-        private readonly IQueryable<object> _inner;
+        private readonly IQueryable<TValue> _inner;
 
-        public TransformedBatchQueryable(BatchedQuery parent, IQueryable<object> inner)
+        public TransformedBatchQueryable(BatchedQuery parent, IQueryable<TValue> inner)
         {
             _parent = parent;
             _inner = inner;
         }
 
-        public Task<long> Count()
-        {
-            throw new NotSupportedException("Count() queries are not supported with Select() transforms in Batch queries");
-        }
-
-        public Task<long> Count(Expression<Func<TValue, bool>> filter)
-        {
-            throw new NotSupportedException("Count() queries are not supported with Select() transforms in Batch queries");
-        }
-
-        public Task<bool> Any()
-        {
-            throw new NotSupportedException("Any() queries are not supported with Select() transforms in Batch queries");
-        }
-
-        public Task<bool> Any(Expression<Func<TValue, bool>> filter)
-        {
-            throw new NotSupportedException("Any() queries are not supported with Select() transforms in Batch queries");
-        }
-
         public Task<IList<TValue>> ToList()
         {
-            throw new NotImplementedException();
+            return _parent.Query<TValue>(q => _inner);
         }
 
         public Task<TValue> First()
         {
-            throw new NotImplementedException();
+            return _parent.First<TValue>(q => _inner);
         }
 
         public Task<TValue> First(Expression<Func<TValue, bool>> filter)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public Task<TValue> FirstOrDefault()
         {
-            throw new NotImplementedException();
+            return _parent.FirstOrDefault<TValue>(q => _inner);
         }
 
-        public Task<TValue> FirstOrDefault(Expression<Func<TValue, bool>> filter)
-        {
-            throw new NotImplementedException();
-        }
 
         public Task<TValue> Single()
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<TValue> Single(Expression<Func<TValue, bool>> filter)
-        {
-            throw new NotImplementedException();
+            return _parent.Single<TValue>(q => _inner);
         }
 
         public Task<TValue> SingleOrDefault()
         {
-            throw new NotImplementedException();
+            return _parent.SingleOrDefault<TValue>(q => _inner);
         }
 
-        public Task<TValue> SingleOrDefault(Expression<Func<TValue, bool>> filter)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

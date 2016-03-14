@@ -7,19 +7,6 @@ using Marten.Schema;
 
 namespace Marten.Services.BatchQuerying
 {
-    public interface IBatchedQueryable<T> : IBatchedFetcher<T>
-    {
-        IBatchedQueryable<T> Where(Expression<Func<T, bool>> predicate);
-        IBatchedQueryable<T> Skip(int count);
-        IBatchedQueryable<T> Take(int count);
-        IBatchedQueryable<T> OrderBy<TKey>(Expression<Func<T, TKey>> expression);
-        IBatchedQueryable<T> OrderByDescending<TKey>(Expression<Func<T, TKey>> expression);
-
-        IBatchedFetcher<TValue> Select<TValue>(Expression<Func<T, TValue>> selection);
-
-
-    }
-
     public class BatchedQueryable<T> : IBatchedQueryable<T> where T : class
     {
         private readonly BatchedQuery _parent;
@@ -62,10 +49,9 @@ namespace Marten.Services.BatchQuerying
             return this;
         }
 
-        public IBatchedFetcher<TValue> Select<TValue>(Expression<Func<T, TValue>> selection)
+        public ITransformedBatchQueryable<TValue> Select<TValue>(Expression<Func<T, TValue>> selection)
         {
-            _inner.Select(selection);
-            return new TransformedBatchQueryable<T,TValue>(_parent, _inner);
+            return new TransformedBatchQueryable<TValue>(_parent, _inner.Select(selection));
             
         }
 

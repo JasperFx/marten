@@ -25,6 +25,8 @@ namespace Marten.Linq
             _parser = parser;
         }
 
+        public Type SourceDocumentType => _query.MainFromClause.ItemType;
+
         public void ConfigureForAny(NpgsqlCommand command)
         {
             var sql = "select (count(*) > 0) as result from " + _mapping.TableName + " as d";
