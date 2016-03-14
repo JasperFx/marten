@@ -141,6 +141,11 @@ namespace Marten
         /// Request count
         /// </summary>
         int RequestCount { get; }
+
+        /// <summary>
+        /// The document store that created this session
+        /// </summary>
+        IDocumentStore DocumentStore { get; }
     }
 
     /// <summary>

@@ -1,13 +1,9 @@
-using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
-using Marten.Schema;
 using Marten.Util;
 using Npgsql;
 
@@ -66,44 +62,6 @@ namespace Marten.Services
                     while (await reader.ReadAsync(tkn).ConfigureAwait(false))
                     {
                         list.Add(selector.Resolve(reader, selectMap));
-                    }
-
-                    reader.Close();
-                }
-
-                return list.AsEnumerable();
-            }, token);
-        }
-
-        public static IEnumerable<string> QueryJson(this IManagedConnection runner, NpgsqlCommand cmd)
-        {
-            return runner.Execute(cmd, c =>
-            {
-                var list = new List<string>();
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        list.Add(reader.GetString(0));
-                    }
-
-                    reader.Close();
-                }
-
-                return list;
-            });
-        }
-
-        public static Task<IEnumerable<string>> QueryJsonAsync(this IManagedConnection runner, NpgsqlCommand cmd, CancellationToken token)
-        {
-            return runner.ExecuteAsync(cmd, async (c, tkn) =>
-            {
-                var list = new List<string>();
-                using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
-                {
-                    while (await reader.ReadAsync(tkn).ConfigureAwait(false))
-                    {
-                        list.Add(reader.GetString(0));
                     }
 
                     reader.Close();

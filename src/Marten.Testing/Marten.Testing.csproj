@@ -57,6 +57,7 @@
     <Compile Include="Linq\Bug_260_Take_Skip_with_Select_Tests.cs" />
     <Compile Include="bulk_loading_Tests.cs" />
     <Compile Include="Codegen\dumping_the_complete_source_code_Tests.cs" />
+    <Compile Include="Linq\compiled_query_Tests.cs" />
     <Compile Include="delete_many_documents_by_query_Tests.cs" />
     <Compile Include="detecting_insert_or_update_Tests.cs" />
     <Compile Include="DocumentMappingTests.cs" />

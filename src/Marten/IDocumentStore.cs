@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using Marten.Events;
+using Marten.Linq;
 using Marten.Schema;
 
 namespace Marten
@@ -12,6 +13,8 @@ namespace Marten
         /// Information about the document and event storage
         /// </summary>
         IDocumentSchema Schema { get; }
+
+        ICompiledQueryExecutor CompiledQueryExecutor { get; }
 
         /// <summary>
         /// Infrequently used operations like document cleaning and the initial store configuration

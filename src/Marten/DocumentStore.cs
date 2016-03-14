@@ -85,6 +85,8 @@ namespace Marten
 
             EventStore = new EventStoreAdmin(_connectionFactory, _options, _serializer);
 
+            CompiledQueryExecutor = new CompiledQueryExecutor(_parser);
+
             if (Schema.Events.IsActive && options.AutoCreateSchemaObjects != AutoCreate.None)
             {
                 Schema.EnsureStorageExists(typeof(EventStream));
@@ -103,6 +105,7 @@ namespace Marten
 
         public IDocumentSchema Schema { get; }
         public AdvancedOptions Advanced { get; }
+        public ICompiledQueryExecutor CompiledQueryExecutor { get; set; }
 
 
         public void BulkInsert<T>(T[] documents, int batchSize = 1000)
@@ -211,7 +214,7 @@ namespace Marten
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly, IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
         {
             var map = createMap(tracking);
-            var session = new DocumentSession(_options, Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel), _parser, map);
+            var session = new DocumentSession(this, _options, Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel), _parser, map);
 
             session.Logger = _logger.StartSession(session);
 
@@ -250,7 +253,7 @@ namespace Marten
         {
             var parser = new MartenQueryParser();
             
-            var session = new QuerySession(Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser, new NulloIdentityMap(_serializer), _options);
+            var session = new QuerySession(this, Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser, new NulloIdentityMap(_serializer), _options);
 
             session.Logger = _logger.StartSession(session);
 

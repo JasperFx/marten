@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -23,14 +24,16 @@ namespace Marten
 
     public class QuerySession : IQuerySession, ILoader
     {
+        private readonly IDocumentStore _store;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
         private readonly IManagedConnection _connection;
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
 
-        public QuerySession(IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
+        public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
         {
+            _store = store;
             _schema = schema;
             _serializer = serializer;
             _connection = connection;
@@ -41,6 +44,7 @@ namespace Marten
         }
 
         internal MartenExpressionParser Parser { get; }
+        public IDocumentStore DocumentStore => _store;
 
         public IMartenQueryable<T> Query<T>()
         {
@@ -54,7 +58,7 @@ namespace Marten
         {
             using (var cmd = BuildCommand<T>(sql, parameters))
             {
-                return _connection.QueryJson(cmd)
+                return _connection.Resolve(cmd, new StringSelector(), _identityMap)
                     .Select(json => _serializer.FromJson<T>(json))
                     .ToArray();
             }
@@ -64,7 +68,7 @@ namespace Marten
         {
             using (var cmd = BuildCommand<T>(sql, parameters))
             {
-                var result = await _connection.QueryJsonAsync(cmd, token).ConfigureAwait(false);
+                var result = await _connection.ResolveAsync(cmd, new StringSelector(), _identityMap, token).ConfigureAwait(false);
                 return result
                     .Select(json => _serializer.FromJson<T>(json))
                     .ToArray();
