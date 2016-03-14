@@ -73,7 +73,6 @@ namespace Marten.Services.BatchQuerying
 
         public void Configure(NpgsqlCommand command, DocumentQuery query)
         {
-            // TODO -- gonna have to worry about selectors here!
             query.ConfigureCommand<T>(_storage, command);
         }
 

@@ -286,6 +286,15 @@ namespace Marten.Testing.Services.BatchedQuerying
             (await task1).ShouldHaveTheSameElementsAs(await task2);
         }
 
+        /*
+        [Fact]
+        public async Task can_use_select_transformations_to_single_field_in_batch()
+        {
+            var batch1 = theSession.CreateBatchQuery();
+
+            var task = batch1.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName).ToList();
+        }
+        */
 
         public async Task batch_samples()
         {

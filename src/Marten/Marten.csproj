@@ -102,12 +102,14 @@
     <Compile Include="Services\BatchQuerying\BatchedQuery.cs" />
     <Compile Include="Services\BatchQuerying\BatchedQueryable.cs" />
     <Compile Include="Services\BatchQuerying\CountHandler.cs" />
+    <Compile Include="Services\BatchQuerying\IBatchedFetcher.cs" />
     <Compile Include="Services\BatchQuerying\MultipleResultsReader.cs" />
     <Compile Include="Services\BatchQuerying\DataReaderAdvancer.cs" />
     <Compile Include="Services\BatchQuerying\IBatchedQuery.cs" />
     <Compile Include="Services\BatchQuerying\IBatchLoadByKeys.cs" />
     <Compile Include="Services\BatchQuerying\IDataReaderHandler.cs" />
     <Compile Include="Services\BatchQuerying\SingleResultReader.cs" />
+    <Compile Include="Services\BatchQuerying\TransformedBatchQueryable.cs" />
     <Compile Include="Services\ChangeSet.cs" />
     <Compile Include="Services\CommandRunnerMode.cs" />
     <Compile Include="Services\FetchResult.cs" />

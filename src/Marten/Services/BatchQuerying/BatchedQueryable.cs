@@ -7,7 +7,7 @@ using Marten.Schema;
 
 namespace Marten.Services.BatchQuerying
 {
-    public interface IBatchedQueryable<T>
+    public interface IBatchedQueryable<T> : IBatchedFetcher<T>
     {
         IBatchedQueryable<T> Where(Expression<Func<T, bool>> predicate);
         IBatchedQueryable<T> Skip(int count);
@@ -15,86 +15,9 @@ namespace Marten.Services.BatchQuerying
         IBatchedQueryable<T> OrderBy<TKey>(Expression<Func<T, TKey>> expression);
         IBatchedQueryable<T> OrderByDescending<TKey>(Expression<Func<T, TKey>> expression);
 
-        /// <summary>
-        /// Return a count of all the documents of type "T"
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        Task<long> Count();
+        IBatchedFetcher<TValue> Select<TValue>(Expression<Func<T, TValue>> selection);
 
-        /// <summary>
-        /// Return a count of all the documents of type "T" that match the query
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        Task<long> Count(Expression<Func<T, bool>> filter);
 
-        /// <summary>
-        /// Query for the existence of any documents of type "T" matching the query
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        Task<bool> Any();
-
-        /// <summary>
-        /// Query for the existence of any documents of type "T"
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        Task<bool> Any(Expression<Func<T, bool>> filter);
-        Task<IList<T>> ToList();
-        Task<T> First();
-
-        /// <summary>
-        /// Find the first document of type "T" matching this query. Will throw an exception if there are no matching documents
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        Task<T> First(Expression<Func<T, bool>> filter);
-
-        /// <summary>
-        /// Find the first document of type "T" that matches the query. Will return null if no documents match.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        Task<T> FirstOrDefault();
-        Task<T> FirstOrDefault(Expression<Func<T, bool>> filter);
-
-        /// <summary>
-        /// Returns the single document of type "T" matching this query. Will 
-        /// throw an exception if the results are null or contain more than one
-        /// document
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        Task<T> Single();
-
-        /// <summary>
-        /// Returns the single document of type "T" matching this query. Will 
-        /// throw an exception if the results are null or contain more than one
-        /// document
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        Task<T> Single(Expression<Func<T, bool>> filter);
-
-        /// <summary>
-        /// Returns the single document of type "T" matching this query or null. Will 
-        /// throw an exception if the results contain more than one
-        /// document
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        Task<T> SingleOrDefault();
-
-        /// <summary>
-        /// Returns the single document of type "T" matching this query or null. Will 
-        /// throw an exception if the results contain more than one
-        /// document
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        Task<T> SingleOrDefault(Expression<Func<T, bool>> filter);
     }
 
     public class BatchedQueryable<T> : IBatchedQueryable<T> where T : class
@@ -137,6 +60,13 @@ namespace Marten.Services.BatchQuerying
         {
             _inner = _inner.OrderByDescending(expression);
             return this;
+        }
+
+        public IBatchedFetcher<TValue> Select<TValue>(Expression<Func<T, TValue>> selection)
+        {
+            _inner.Select(selection);
+            return new TransformedBatchQueryable<T,TValue>(_parent, _inner);
+            
         }
 
         public Task<long> Count()
