@@ -1,7 +1,7 @@
 ﻿DROP TABLE IF EXISTS mt_streams CASCADE;
 CREATE TABLE mt_streams (
 	id					uuid CONSTRAINT pk_mt_streams PRIMARY KEY,
-	type				varchar(100) NOT NULL,
+	type				varchar(100) NULL,
 	version				integer NOT NULL,
 	snapshot			jsonb,
 	snapshot_version	integer	
