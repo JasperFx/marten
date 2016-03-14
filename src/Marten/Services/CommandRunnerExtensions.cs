@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -38,9 +39,9 @@ namespace Marten.Services
             });
         }
 
-        public static async Task<IEnumerable<T>> ResolveAsync<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map, CancellationToken token)
+        public static Task<IEnumerable<T>> ResolveAsync<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map, CancellationToken token)
         {
-            return await runner.ExecuteAsync(cmd, async (c, tkn) =>
+            return runner.ExecuteAsync(cmd, async (c, tkn) =>
             {
                 var list = new List<T>();
                 using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
@@ -53,8 +54,8 @@ namespace Marten.Services
                     reader.Close();
                 }
 
-                return list;
-            }, token).ConfigureAwait(false);
+                return list.AsEnumerable();
+            }, token);
         }
 
         public static IEnumerable<string> QueryJson(this IManagedConnection runner, NpgsqlCommand cmd)
@@ -76,9 +77,9 @@ namespace Marten.Services
             });
         }
 
-        public static async Task<IEnumerable<string>> QueryJsonAsync(this IManagedConnection runner, NpgsqlCommand cmd, CancellationToken token)
+        public static Task<IEnumerable<string>> QueryJsonAsync(this IManagedConnection runner, NpgsqlCommand cmd, CancellationToken token)
         {
-            return await runner.ExecuteAsync(cmd, async (c, tkn) =>
+            return runner.ExecuteAsync(cmd, async (c, tkn) =>
             {
                 var list = new List<string>();
                 using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
@@ -91,8 +92,8 @@ namespace Marten.Services
                     reader.Close();
                 }
 
-                return list;
-            }, token).ConfigureAwait(false);
+                return list.AsEnumerable();
+            }, token);
         }
 
         public static IList<string> GetStringList(this IManagedConnection runner, string sql, params object[] parameters)
@@ -121,8 +122,6 @@ namespace Marten.Services
 
             return list;
         }
-
-
 
         public static T QueryScalar<T>(this IManagedConnection runner, string sql)
         {
