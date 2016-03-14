@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Linq;
+using Marten.Linq;
 using Marten.Schema;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using StructureMap;
@@ -37,7 +38,7 @@ namespace Marten.Testing.Examples
             // SAMPLE: preview_linq_command
             // store is the active IDocumentStore
             var queryable = store.QuerySession().Query<Trade>().Where(x => x.Value > 2000);
-            var cmd = store.Diagnostics.CommandFor(queryable);
+            var cmd = queryable.ToCommand(FetchType.FetchMany);
 
             Debug.WriteLine(cmd.CommandText);
             // ENDSAMPLE

@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Util;
 using Npgsql;
@@ -19,7 +20,7 @@ namespace Marten.Services
         }
 
 
-        public static IEnumerable<T> Resolve<T>(this IManagedConnection runner, NpgsqlCommand cmd, IResolver<T> resolver, IIdentityMap map)
+        public static IEnumerable<T> Resolve<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map)
         {
             return runner.Execute(cmd, c =>
             {
@@ -29,7 +30,7 @@ namespace Marten.Services
                 {
                     while (reader.Read())
                     {
-                        list.Add(resolver.Resolve(reader, map));
+                        list.Add(selector.Resolve(reader, map));
                     }
                 }
 
@@ -37,7 +38,7 @@ namespace Marten.Services
             });
         }
 
-        public static async Task<IEnumerable<T>> ResolveAsync<T>(this IManagedConnection runner, NpgsqlCommand cmd, IResolver<T> resolver, IIdentityMap map, CancellationToken token)
+        public static async Task<IEnumerable<T>> ResolveAsync<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map, CancellationToken token)
         {
             return await runner.ExecuteAsync(cmd, async (c, tkn) =>
             {
@@ -46,7 +47,7 @@ namespace Marten.Services
                 {
                     while (await reader.ReadAsync(tkn).ConfigureAwait(false))
                     {
-                        list.Add(resolver.Resolve(reader, map));
+                        list.Add(selector.Resolve(reader, map));
                     }
 
                     reader.Close();

@@ -7,6 +7,7 @@ using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
@@ -23,6 +24,8 @@ namespace Marten.Linq
             _query = query;
             _parser = parser;
         }
+
+        public Type SourceDocumentType => _query.MainFromClause.ItemType;
 
         public void ConfigureForAny(NpgsqlCommand command)
         {
@@ -60,15 +63,21 @@ namespace Marten.Linq
         }
 
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, NpgsqlCommand command)
         {
             if (_query.ResultOperators.OfType<LastResultOperator>().Any())
             {
                 throw new InvalidOperationException("Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
             }
 
-            var select = _mapping.SelectFields("d");
-            var sql = $"select {select} from {_mapping.TableName} as d";
+            var documentStorage = schema.StorageFor(_mapping.DocumentType);
+            return ConfigureCommand<T>(documentStorage, command);
+        }
+
+        public ISelector<T> ConfigureCommand<T>(IDocumentStorage documentStorage, NpgsqlCommand command)
+        {
+            var select = buildSelectClause<T>(documentStorage);
+            var sql = $"select {@select.SelectClause(_mapping)} from {_mapping.TableName} as d";
 
             var where = buildWhereClause();
             var orderBy = toOrderClause();
@@ -81,6 +90,23 @@ namespace Marten.Linq
             sql = appendOffset(sql);
 
             command.AppendQuery(sql);
+
+            return @select;
+        }
+
+        private ISelector<T> buildSelectClause<T>(IDocumentStorage storage)
+        {
+            if (_query.SelectClause.Selector.Type == _query.MainFromClause.ItemType)
+            {
+                return new WholeDocumentSelector<T>(storage.As<IResolver<T>>());
+            }
+            
+            var visitor = new SelectorParser();
+            visitor.Visit(_query.SelectClause.Selector);
+
+            return visitor.ToSelector<T>();
+
+            
         }
 
         private string appendOffset(string sql)
@@ -142,4 +168,6 @@ namespace Marten.Linq
             return _mapping.FilterDocuments(where);
         }
     }
+
+    
 }

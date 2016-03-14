@@ -69,9 +69,10 @@ namespace Marten.Linq
                 throw new InvalidOperationException("Marten does not support Last()/LastOrDefault() querying. Reverse your ordering and use First()/FirstOrDefault() instead");
             }
 
-            // TODO -- optimize by using Top 1
-            var cmd = BuildCommand(queryModel);
-            var all = _runner.Resolve(cmd, resolver<T>(), _identityMap).ToArray();
+            ISelector<T> selector = null;
+            var cmd = BuildCommand<T>(queryModel, out selector);
+
+            var all = _runner.Resolve(cmd, selector, _identityMap).ToArray();
 
             if (returnDefaultWhenEmpty && all.Length == 0) return default(T);
 
@@ -81,18 +82,14 @@ namespace Marten.Linq
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
         {
-            var command = BuildCommand(queryModel);
+            ISelector<T> selector = null;
+            var cmd = BuildCommand<T>(queryModel, out selector);
 
-            if (queryModel.MainFromClause.ItemType == typeof (T))
-            {
-                return _runner.Resolve(command, resolver<T>(), _identityMap);
-            }
-
-            throw new NotSupportedException("Marten does not yet support Select() projections from queryables. Use an intermediate .ToArray() or .ToList() before adding Select() clauses");
+            return _runner.Resolve(cmd, selector, _identityMap);
         }
 
 
-        public NpgsqlCommand BuildCommand(QueryModel queryModel)
+        public NpgsqlCommand  BuildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
         {
             var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
             var query = new DocumentQuery(mapping, queryModel, _expressionParser);
@@ -100,27 +97,17 @@ namespace Marten.Linq
             _schema.EnsureStorageExists(mapping.DocumentType);
 
             var command = new NpgsqlCommand();
-            query.ConfigureCommand(command);
+            selector = query.ConfigureCommand<T>(_schema, command);
 
             return command;
         }
 
-        public NpgsqlCommand BuildCommand<T>(IQueryable<T> queryable)
-        {
-            var model = _parser.GetParsedQuery(queryable.Expression);
-            return BuildCommand(model);
-        }
-
         async Task<IEnumerable<T>> IMartenQueryExecutor.ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token)
         {
-            var command = BuildCommand(queryModel);
+            ISelector<T> selector = null;
+            var cmd = BuildCommand<T>(queryModel, out selector);
 
-            if (queryModel.MainFromClause.ItemType == typeof(T))
-            {
-                return await _runner.ResolveAsync(command, resolver<T>(), _identityMap, token).ConfigureAwait(false);
-            }
-
-            throw new NotSupportedException("Marten does not yet support Select() projections from queryables. Use an intermediate .ToArray() or .ToList() before adding Select() clauses");
+            return await _runner.ResolveAsync(cmd,selector, _identityMap, token).ConfigureAwait(false);
         }
 
         public async Task<T> ExecuteAsync<T>(QueryModel queryModel, CancellationToken token)
@@ -133,8 +120,10 @@ namespace Marten.Linq
 
             var choiceResultOperator = queryModel.ResultOperators.OfType<ChoiceResultOperatorBase>().Single();
 
-            var cmd = BuildCommand(queryModel);
-            var enumerable = await _runner.ResolveAsync(cmd, resolver<T>(), _identityMap, token).ConfigureAwait(false);
+            ISelector<T> selector = null;
+            var cmd = BuildCommand<T>(queryModel, out selector);
+
+            var enumerable = await _runner.ResolveAsync(cmd, selector, _identityMap, token).ConfigureAwait(false);
             var all = enumerable.ToArray();
 
             if (choiceResultOperator.ReturnDefaultWhenEmpty && all.Length == 0)

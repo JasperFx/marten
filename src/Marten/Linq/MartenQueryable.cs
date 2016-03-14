@@ -51,18 +51,15 @@ namespace Marten.Linq
                     break;
 
                 case FetchType.FetchMany:
-                    query.ConfigureCommand(cmd);
+                    query.ConfigureCommand<T>(schema, cmd);
                     break;
 
                 case FetchType.FetchOne:
                     model.ResultOperators.Add(new TakeResultOperator(Expression.Constant(1)));
-                    query.ConfigureCommand(cmd);
+                    query.ConfigureCommand<T>(schema, cmd);
                     break;
 
             }
-
-            
-
 
             return cmd;
         }
@@ -83,11 +80,29 @@ namespace Marten.Linq
         }
     }
 
+    /// <summary>
+    /// In basic terms, how is the IQueryable going to be executed?
+    /// </summary>
     public enum FetchType
     {
+        /// <summary>
+        /// First/FirstOrDefault/Single/SingleOrDefault
+        /// </summary>
         FetchOne,
+
+        /// <summary>
+        /// Any execution that returns an IEnumerable (ToArray()/ToList()/etc.)
+        /// </summary>
         FetchMany,
+
+        /// <summary>
+        /// Using IQueryable.Count()
+        /// </summary>
         Count,
+
+        /// <summary>
+        /// Using IQueryable.Any()
+        /// </summary>
         Any
     }
 }

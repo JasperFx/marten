@@ -14,6 +14,8 @@ namespace Marten.Services
             _serializer = serializer;
         }
 
+        public ISerializer Serializer => _serializer;
+
         public T Get<T>(object id, Func<FetchResult<T>> result) where T : class
         {
             return result()?.Document;

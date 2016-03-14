@@ -1,8 +1,4 @@
-using System;
-using System.Data;
-using System.Linq;
 using Baseline;
-using Marten.Linq;
 using Marten.Schema;
 
 namespace Marten.Services
@@ -10,33 +6,21 @@ namespace Marten.Services
     public class Diagnostics : IDiagnostics
     {
         private readonly IDocumentSchema _schema;
-        private readonly IMartenQueryExecutor _executor;
 
-        public Diagnostics(IDocumentSchema schema, IMartenQueryExecutor executor)
+        public Diagnostics(IDocumentSchema schema)
         {
             _schema = schema;
-            _executor = executor;
-        }
-
-        public IDbCommand CommandFor<T>(IQueryable<T> queryable)
-        {
-            if (queryable is MartenQueryable<T>)
-            {
-                return _executor.BuildCommand<T>(queryable);
-            }
-
-            throw new ArgumentOutOfRangeException(nameof(queryable), "This mechanism can only be used for MartenQueryable<T> objects");
         }
 
         public string DocumentStorageCodeFor<T>()
         {
-            var documentMapping = _schema.MappingFor(typeof(T));
+            var documentMapping = _schema.MappingFor(typeof (T));
             if (documentMapping is DocumentMapping)
             {
-                return DocumentStorageBuilder.GenerateDocumentStorageCode(new[] { documentMapping.As<DocumentMapping>() });
+                return DocumentStorageBuilder.GenerateDocumentStorageCode(new[] {documentMapping.As<DocumentMapping>()});
             }
 
-            return $"Docuemnt Storage for {typeof (T).FullName} is not generated";
+            return $"Document Storage for {typeof (T).FullName} is not generated";
         }
     }
 }

@@ -81,7 +81,7 @@ namespace Marten
             var cleaner = new DocumentCleaner(_connectionFactory, Schema);
             Advanced = new AdvancedOptions(cleaner, options);
 
-            Diagnostics = new Diagnostics(Schema, new MartenQueryExecutor(_runner, Schema, new MartenExpressionParser(_serializer, options), _parser, new NulloIdentityMap(_serializer)));
+            Diagnostics = new Diagnostics(Schema);
 
             EventStore = new EventStoreAdmin(_connectionFactory, _options, _serializer);
 

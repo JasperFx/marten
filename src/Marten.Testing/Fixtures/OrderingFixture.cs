@@ -80,7 +80,7 @@ namespace Marten.Testing.Fixtures
         public void ExecutingQuery([SelectionList("Expressions")]string Query, out ResultSet Results)
         {
             var queryable = _queries[Query](_session.Query<Target>()).As<MartenQueryable<Target>>();
-            var sql = _container.GetInstance<MartenQueryExecutor>().BuildCommand(queryable).CommandText;
+            var sql = queryable.ToCommand(FetchType.FetchMany).CommandText;
             Debug.WriteLine(sql);
 
             Results = new ResultSet(queryable.ToArray().Select(x => _idToName[x.Id]).ToArray());

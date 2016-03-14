@@ -35,15 +35,15 @@ namespace Marten.Services.BatchQuerying
         }
     }
 
-    public class MultipleResultsReader<T> : IDataReaderHandler where T : class
+    public class MultipleResultsReader<T> : IDataReaderHandler
     {
         private readonly TaskCompletionSource<IList<T>> _taskSource = new TaskCompletionSource<IList<T>>();
-        private readonly IDocumentStorage _storage;
+        private ISelector<T> _selector;
         private readonly IIdentityMap _map;
 
-        public MultipleResultsReader(IDocumentStorage storage, IIdentityMap map)
+        public MultipleResultsReader(ISelector<T> selector, IIdentityMap map)
         {
-            _storage = storage;
+            _selector = selector;
             _map = map;
         }
 
@@ -52,11 +52,10 @@ namespace Marten.Services.BatchQuerying
         public async Task Handle(DbDataReader reader, CancellationToken token)
         {
             var list = new List<T>();
-            var resolver = _storage.As<IResolver<T>>();
 
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                var doc = resolver.Resolve(reader, _map);
+                var doc = _selector.Resolve(reader, _map);
                 list.Add(doc);
             }
 
@@ -64,20 +63,16 @@ namespace Marten.Services.BatchQuerying
         }
     }
 
-    public class QueryHandler<T> : MultipleResultsReader<T> where T : class
+    public class QueryHandler<T> : MultipleResultsReader<T>
     {
-        public QueryHandler(IDocumentStorage storage, IIdentityMap map) : base(storage, map)
+        public static ISelector<T> SelectorFromQuery(IDocumentStorage storage, DocumentQuery query, NpgsqlCommand command)
         {
+            return query.ConfigureCommand<T>(storage, command);
         }
 
-
-        public void Configure(NpgsqlCommand command, DocumentQuery query)
+        public QueryHandler(IDocumentStorage storage, DocumentQuery query, NpgsqlCommand command, IIdentityMap map) : base(SelectorFromQuery(storage, query, command),map)
         {
-            query.ConfigureCommand(command);
         }
-
-        
-
     }
 
 }

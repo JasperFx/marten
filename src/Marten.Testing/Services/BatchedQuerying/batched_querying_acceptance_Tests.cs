@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
+using Marten.Testing.Linq;
 using Shouldly;
 using Xunit;
 
@@ -284,6 +285,68 @@ namespace Marten.Testing.Services.BatchedQuerying
             await batch2.Execute();
 
             (await task1).ShouldHaveTheSameElementsAs(await task2);
+        }
+
+        
+        [Fact]
+        public async Task can_use_select_transformations_to_single_field_in_batch()
+        {
+            var batch1 = theSession.CreateBatchQuery();
+
+            var toList = batch1.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName).ToList();
+            var first = batch1.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName).First();
+            var firstOrDefault = batch1.Query<User>().OrderBy(x => x.FirstName).Where(x => x.FirstName == "nobody").Select(x => x.FirstName).FirstOrDefault();
+            var single = batch1.Query<User>().Where(x => x.FirstName == "Tamba").Select(x => x.FirstName).Single();
+            var singleOrDefault = batch1.Query<User>().Where(x => x.FirstName == "nobody").Select(x => x.FirstName).SingleOrDefault();
+
+            await batch1.Execute();
+
+            (await toList).ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
+            (await first).ShouldBe("Derrick");
+            (await firstOrDefault).ShouldBeNull();
+            (await single).ShouldBe("Tamba");
+            (await singleOrDefault).ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task can_use_select_transformations_to_anonymous_type_in_batch()
+        {
+            var batch1 = theSession.CreateBatchQuery();
+
+            var toList = batch1.Query<User>().OrderBy(x => x.FirstName).Select(x => new {Name = x.FirstName}).ToList();
+            var first = batch1.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName }).First();
+            var firstOrDefault = batch1.Query<User>().OrderBy(x => x.FirstName).Where(x => x.FirstName == "nobody").Select(x => new { Name = x.FirstName }).FirstOrDefault();
+            var single = batch1.Query<User>().Where(x => x.FirstName == "Tamba").Select(x => new { Name = x.FirstName }).Single();
+            var singleOrDefault = batch1.Query<User>().Where(x => x.FirstName == "nobody").Select(x => new { Name = x.FirstName }).SingleOrDefault();
+
+            await batch1.Execute();
+
+            (await toList).Select(x => x.Name).ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
+            (await first).Name.ShouldBe("Derrick");
+            (await firstOrDefault).ShouldBeNull();
+            (await single).Name.ShouldBe("Tamba");
+            (await singleOrDefault).ShouldBeNull();
+        }
+
+
+        [Fact]
+        public async Task can_use_select_transformations_to_another_type_in_batch()
+        {
+            var batch1 = theSession.CreateBatchQuery();
+
+            var toList = batch1.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName{ Name = x.FirstName }).ToList();
+            var first = batch1.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName }).First();
+            var firstOrDefault = batch1.Query<User>().OrderBy(x => x.FirstName).Where(x => x.FirstName == "nobody").Select(x => new UserName { Name = x.FirstName }).FirstOrDefault();
+            var single = batch1.Query<User>().Where(x => x.FirstName == "Tamba").Select(x => new UserName { Name = x.FirstName }).Single();
+            var singleOrDefault = batch1.Query<User>().Where(x => x.FirstName == "nobody").Select(x => new UserName { Name = x.FirstName }).SingleOrDefault();
+
+            await batch1.Execute();
+
+            (await toList).Select(x => x.Name).ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
+            (await first).Name.ShouldBe("Derrick");
+            (await firstOrDefault).ShouldBeNull();
+            (await single).Name.ShouldBe("Tamba");
+            (await singleOrDefault).ShouldBeNull();
         }
 
 

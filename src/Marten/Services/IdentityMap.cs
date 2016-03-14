@@ -14,7 +14,7 @@ namespace Marten.Services
         protected Cache<Type, ConcurrentDictionary<object, TCacheValue>> Cache { get; }
             = new Cache<Type, ConcurrentDictionary<object, TCacheValue>>(_ => new ConcurrentDictionary<object, TCacheValue>());
 
-        protected ISerializer Serializer { get; }
+        public ISerializer Serializer { get; }
 
         protected IdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners)
         {

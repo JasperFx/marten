@@ -1,21 +1,21 @@
-using System.Linq;
-using System.Linq.Expressions;
-using Baseline;
-using Marten.Schema;
+using System;
+using System.Reflection;
+using Baseline.Reflection;
+using Marten.Util;
 
 namespace Marten.Linq.Handlers
 {
-    public class StringContains : MethodCallParser<string>
+    public class StringContains : StringComparisonParser
     {
-        public StringContains() : base(x => x.Contains(null))
+        public StringContains() : base(
+            ReflectionHelper.GetMethod<string>(s => s.Contains(null)),
+            ReflectionHelper.GetMethod<string>(s => s.Contains(null, StringComparison.CurrentCulture)))
         {
         }
 
-        public override IWhereFragment Parse(IDocumentMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        protected override string FormatValue(MethodInfo method, string value)
         {
-            var locator = mapping.JsonLocator(expression.Object);
-            var value = expression.Arguments.Single().Value().As<string>();
-            return new WhereFragment("{0} like ?".ToFormat(locator), "%" + value + "%");
+            return "%" + value + "%";
         }
     }
 }
