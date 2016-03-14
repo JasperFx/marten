@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Linq;
 
 namespace Marten.Util
@@ -56,6 +57,66 @@ namespace Marten.Util
 
         #endregion
 
+        #region Aggregate Functions
+
+        public static Task<TResult> SumAsync<TSource, TResult>(
+            this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var sum = GetMethod(nameof(Queryable.Sum), 1, mi => mi.ReturnType == typeof (TResult));
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            return ExecuteAsync<TSource, TResult>(sum, source, expression, cancellationToken);
+        }
+
+        private static readonly MethodInfo _max = GetMethod(nameof(Queryable.Max), 1);
+
+        public static Task<TResult> MaxAsync<TSource, TResult>(
+            this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            return ExecuteAsync<TSource, TResult>(_max, source, expression, cancellationToken);
+        }
+
+        private static readonly MethodInfo _min = GetMethod(nameof(Queryable.Min), 1);
+
+        public static Task<TResult> MinAsync<TSource, TResult>(
+            this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            return ExecuteAsync<TSource, TResult>(_min, source, expression, cancellationToken);
+        }
+
+        private static bool IsAverageMethod<TMember>(MethodInfo methodInfo)
+        {
+            var expressionParam = methodInfo.GetParameters()[1];
+            var expressionType = expressionParam.ParameterType;
+            var expressionGenericArgs = expressionType.GetGenericArguments();
+            if (expressionGenericArgs.Any())
+            {
+                var funcType = expressionGenericArgs.First();
+                var funcGenericArgs = funcType.GetGenericArguments();
+                return funcGenericArgs.Any(arg => arg == typeof (TMember));
+            }
+            return false;
+        }
+
+        public static Task<double> AverageAsync<TSource, TMember>(
+            this IQueryable<TSource> source, Expression<Func<TSource, TMember>> expression,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var average = GetMethod(nameof(Queryable.Average), 1, IsAverageMethod<TMember>);
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            return ExecuteAsync<TSource, double>(average, source, expression, cancellationToken);
+        }
+
+        #endregion
+
         #region Count/LongCount/Sum
 
         private static readonly MethodInfo _count = GetMethod(nameof(Queryable.Count));
@@ -67,16 +128,6 @@ namespace Marten.Util
             if (source == null) throw new ArgumentNullException(nameof(source));
 
             return ExecuteAsync<TSource, int>(_count, source, cancellationToken);
-        }
-
-        public static Task<TResult> SumAsync<TSource, TResult>(
-            this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
-            CancellationToken cancellationToken = default(CancellationToken))
-        {
-            var sum = GetMethod(nameof(Queryable.Sum), 1, mi => mi.ReturnType == typeof (TResult));
-            if (source == null) throw new ArgumentNullException(nameof(source));
-
-            return ExecuteAsync<TSource, TResult>(sum, source, expression, cancellationToken);
         }
 
         private static readonly MethodInfo _countPredicate = GetMethod(nameof(Queryable.Count), 1);
