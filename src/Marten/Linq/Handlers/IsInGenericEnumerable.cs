@@ -5,19 +5,26 @@ using Marten.Schema;
 
 namespace Marten.Linq.Handlers
 {
-    public class EnumerableContains : IMethodCallParser
+    public class IsInGenericEnumerable : IMethodCallParser
     {
         public bool Matches(MethodCallExpression expression)
         {
             return expression.Method.Name == MartenExpressionParser.CONTAINS &&
                    expression.Object.Type.IsGenericEnumerable() &&
-                   expression.Arguments.Single().IsValueExpression();
+                   !expression.Arguments.Single().IsValueExpression();
         }
 
         public IWhereFragment Parse(IDocumentMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
-            var value = expression.Arguments.Single().Value();
-            return ContainmentWhereFragment.SimpleArrayContains(serializer, expression.Object, value);
+            var finder = new FindMembers();
+            finder.Visit(expression);
+
+            var members = finder.Members;
+
+            var locator = mapping.FieldFor(members).SqlLocator;
+            var values = expression.Object.Value();
+
+            return new WhereFragment($"{locator} = ANY(?)", values);
         }
     }
 }

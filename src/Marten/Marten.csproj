@@ -66,6 +66,7 @@
     <Compile Include="Linq\FindMembers.cs" />
     <Compile Include="Linq\Handlers\EnumerableContains.cs" />
     <Compile Include="Linq\Handlers\IMethodCallParser.cs" />
+    <Compile Include="Linq\Handlers\IsInGenericEnumerable.cs" />
     <Compile Include="Linq\Handlers\MethodCallParser.cs" />
     <Compile Include="Linq\Handlers\StringContains.cs" />
     <Compile Include="Linq\Handlers\StringEndsWith.cs" />
