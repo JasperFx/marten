@@ -1,42 +1,45 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 
 namespace Marten.Services
 {
-    public class IdentityMap : IIdentityMap
+    public abstract class IdentityMap<TCacheValue> : IIdentityMap
     {
-        private readonly ISerializer _serializer;
         private readonly IEnumerable<IDocumentSessionListener> _listeners;
 
-        private readonly Cache<Type, ConcurrentDictionary<object, object>> _objects
-            = new Cache<Type, ConcurrentDictionary<object, object>>(_ => new ConcurrentDictionary<object, object>());
+        protected Cache<Type, ConcurrentDictionary<object, TCacheValue>> Cache { get; }
+            = new Cache<Type, ConcurrentDictionary<object, TCacheValue>>(_ => new ConcurrentDictionary<object, TCacheValue>());
 
-        public IdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners)
+        public ISerializer Serializer { get; }
+
+        protected IdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners)
         {
-            _serializer = serializer;
-            _listeners = listeners?.Any() == true ? listeners : null;
+            Serializer = serializer;
+            _listeners = listeners ?? new IDocumentSessionListener[] { };
         }
+
+        protected abstract TCacheValue ToCache(object id, Type concreteType, object document, string json);
+        protected abstract T FromCache<T>(TCacheValue cacheValue) where T : class;
 
         public T Get<T>(object id, Func<FetchResult<T>> result) where T : class
         {
-            return _objects[typeof(T)].GetOrAdd(id, _ =>
+            var cacheValue = Cache[typeof(T)].GetOrAdd(id, _ =>
             {
-                var document = result()?.Document;
-                _listeners?.Each(listener => listener.DocumentLoaded(id, document));
-                return document;
-            }).As<T>();
+                var fetchResult = result();
+                var document = fetchResult?.Document;
+                _listeners.Each(listener => listener.DocumentLoaded(id, document));
+                return ToCache(id, typeof(T), document, fetchResult?.Json);
+            });
+            return FromCache<T>(cacheValue);
         }
-
-        public ISerializer Serializer => _serializer;
 
         public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class
         {
-            var dict = _objects[typeof(T)];
+            var dict = Cache[typeof(T)];
 
             if (dict.ContainsKey(id))
             {
@@ -46,66 +49,89 @@ namespace Marten.Services
             var fetchResult = await result(token).ConfigureAwait(false);
             if (fetchResult == null) return null;
 
-            dict[id] = fetchResult.Document;
+            var document = fetchResult.Document;
 
-            _listeners?.Each(listener => listener.DocumentLoaded(id, fetchResult.Document));
+            dict[id] = ToCache(id, typeof(T), document, fetchResult.Json);
 
-            return fetchResult.Document;
+            _listeners.Each(listener => listener.DocumentLoaded(id, document));
+
+            return document;
         }
 
         public T Get<T>(object id, string json) where T : class
         {
-            return Get<T>(id, typeof (T), json);
+            return Get<T>(id, typeof(T), json);
         }
 
         public T Get<T>(object id, Type concreteType, string json) where T : class
         {
-            return (T)_objects[typeof(T)].GetOrAdd(id, _ =>
+            var cacheValue = Cache[typeof(T)].GetOrAdd(id, _ =>
             {
-                if (json.IsEmpty()) return null;
+                if (json.IsEmpty()) return ToCache(id, concreteType, null, json);
 
-                var document = _serializer.FromJson(concreteType, json);
+                var document = Serializer.FromJson(concreteType, json);
 
-                _listeners?.Each(listener => listener.DocumentLoaded(id, document));
+                _listeners.Each(listener => listener.DocumentLoaded(id, document));
 
-                return document;
+                return ToCache(id, concreteType, document, json);
             });
+            return FromCache<T>(cacheValue);
         }
 
         public void Remove<T>(object id)
         {
-            object value;
-            _objects[typeof(T)].TryRemove(id, out value);
+            TCacheValue value;
+            Cache[typeof(T)].TryRemove(id, out value);
         }
 
-        public void Store<T>(object id, T entity)
+        public void Store<T>(object id, T entity) where T : class
         {
-            var dictionary = _objects[typeof(T)];
+            var dictionary = Cache[typeof(T)];
 
             if (dictionary.ContainsKey(id) && dictionary[id] != null)
             {
-                if (!ReferenceEquals(dictionary[id], entity))
+                var existing = FromCache<T>(dictionary[id]);
+                if (existing != null && !ReferenceEquals(existing, entity))
                 {
                     throw new InvalidOperationException(
                         $"Document '{typeof(T).FullName}' with same Id already added to the session.");
                 }
             }
 
-            _listeners?.Each(listener => listener.DocumentAddedForStorage(id, entity));
+            _listeners.Each(listener => listener.DocumentAddedForStorage(id, entity));
 
-            dictionary.AddOrUpdate(id, entity, (i, e) => e);
+            var cacheValue = ToCache(id, typeof(T), entity, null);
+            dictionary.AddOrUpdate(id, cacheValue, (i, e) => e);
         }
 
-        public bool Has<T>(object id)
+        public bool Has<T>(object id) where T : class
         {
-            var dict = _objects[typeof(T)];
-            return dict.ContainsKey(id) && dict[id] != null;
+            var dict = Cache[typeof(T)];
+            return dict.ContainsKey(id) && FromCache<T>(dict[id]) != null;
         }
 
         public T Retrieve<T>(object id) where T : class
         {
-            var dict = _objects[typeof(T)];
-            return dict.ContainsKey(id) ? dict[id] as T : null;
+            var dict = Cache[typeof(T)];
+            return dict.ContainsKey(id) ? FromCache<T>(dict[id]): null;
+        }
+    }
+
+    public class IdentityMap : IdentityMap<object>
+    {
+        public IdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners)
+            : base(serializer, listeners)
+        {
+        }
+
+        protected override object ToCache(object id, Type concreteType, object document, string json)
+        {
+            return document;
+        }
+
+        protected override T FromCache<T>(object cacheValue)
+        {
+            return cacheValue.As<T>();
         }
     }
 }

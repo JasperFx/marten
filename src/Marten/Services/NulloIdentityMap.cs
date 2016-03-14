@@ -46,12 +46,12 @@ namespace Marten.Services
             // nothing
         }
 
-        public void Store<T>(object id, T entity)
+        public void Store<T>(object id, T entity) where T : class
         {
             // nothing
         }
 
-        public bool Has<T>(object id)
+        public bool Has<T>(object id) where T : class
         {
             return false;
         }
