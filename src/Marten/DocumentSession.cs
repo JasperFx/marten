@@ -140,12 +140,11 @@ namespace Marten
         {
             foreach (var listener in _options.Listeners)
             {
-                await listener.BeforeSaveChangesAsync(this);
+                await listener.BeforeSaveChangesAsync(this).ConfigureAwait(false);
             }
 
-
             var batch = new UpdateBatch(_options, _serializer, _connection);
-            var changes = await _unitOfWork.ApplyChangesAsync(batch, token);
+            var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
 
             _changes.Add(changes);
 
@@ -155,7 +154,7 @@ namespace Marten
 
             foreach (var listener in _options.Listeners)
             {
-                await listener.AfterCommitAsync(this);
+                await listener.AfterCommitAsync(this).ConfigureAwait(false);
             }
         }
 
