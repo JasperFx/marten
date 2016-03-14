@@ -50,10 +50,10 @@ namespace Marten.Linq
 
         }
 
-        public void ConfigureForSum(NpgsqlCommand command)
+        private void ConfigureAggregateCommand(NpgsqlCommand command, string selectFormat)
         {
             var propToSum = _mapping.JsonLocator(_query.SelectClause.Selector);
-            var sql = $"select sum({propToSum}) as number from {_mapping.TableName} as d";
+            var sql = string.Format(selectFormat, propToSum, _mapping.TableName);
 
             var where = buildWhereClause();
 
@@ -62,6 +62,25 @@ namespace Marten.Linq
             command.AppendQuery(sql);
         }
 
+        public void ConfigureForSum(NpgsqlCommand command)
+        {
+            ConfigureAggregateCommand(command, "select sum({0}) as number from {1} as d");
+        }
+
+        public void ConfigureForMax(NpgsqlCommand command)
+        {
+            ConfigureAggregateCommand(command, "select max({0}) as number from {1} as d");
+        }
+
+        public void ConfigureForMin(NpgsqlCommand command)
+        {
+            ConfigureAggregateCommand(command, "select min({0}) as number from {1} as d");
+        }
+
+        public void ConfigureForAverage(NpgsqlCommand command)
+        {
+            ConfigureAggregateCommand(command, "select avg({0}) as number from {1} as d");
+        }
 
         public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, NpgsqlCommand command)
         {
