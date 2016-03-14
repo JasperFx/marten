@@ -520,6 +520,14 @@ var typeAlias = reader.GetString(2);
 
 return map.Get<{typeName}>(id, _hierarchy.TypeFor(typeAlias), json);
 END
+
+BLOCK:public async Task<{typeName}> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+var id = await reader.GetFieldValueAsync<object>(1, token).ConfigureAwait(false);
+var typeAlias = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
+
+return map.Get<{typeName}>(id, _hierarchy.TypeFor(typeAlias), json);
+END
 ";
             }
 
@@ -528,6 +536,13 @@ BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
 var json = reader.GetString(0);
 var id = reader[1];
             
+return map.Get<{typeName}>(id, json);
+END
+
+BLOCK:public async Task<{typeName}> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+var id = await reader.GetFieldValueAsync<object>(1, token).ConfigureAwait(false);
+
 return map.Get<{typeName}>(id, json);
 END
 ";

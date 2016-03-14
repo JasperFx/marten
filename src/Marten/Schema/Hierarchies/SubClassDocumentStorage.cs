@@ -71,6 +71,14 @@ namespace Marten.Schema.Hierarchies
             return map.Get<TBase>(id, typeof(T), json) as T;
         }
 
+        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            var id = await reader.GetFieldValueAsync<object>(1, token).ConfigureAwait(false);
+
+            return map.Get<TBase>(id, typeof(T), json) as T;
+        }
+
         public T Build(DbDataReader reader, ISerializer serializer)
         {
             // TODO -- watch this, will need to validate that it's the right type first

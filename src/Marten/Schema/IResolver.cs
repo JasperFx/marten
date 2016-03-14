@@ -8,6 +8,7 @@ namespace Marten.Schema
     public interface IResolver<T>
     {
         T Resolve(DbDataReader reader, IIdentityMap map);
+        Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token);
         T Build(DbDataReader reader, ISerializer serializer);
 
         T Resolve(IIdentityMap map, ILoader loader, object id);
