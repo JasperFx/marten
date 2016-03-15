@@ -18,7 +18,8 @@ namespace Marten.Services
         private readonly MartenExpressionParser _parser;
         private readonly ConcurrentDictionary<Type, IEnumerable> _updates = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Type, IEnumerable> _inserts = new ConcurrentDictionary<Type, IEnumerable>();
-        private readonly ConcurrentDictionary<Type, IList<Delete>> _deletes = new ConcurrentDictionary<Type, IList<Delete>>(); 
+        private readonly ConcurrentDictionary<Type, IList<Delete>> _deletes = new ConcurrentDictionary<Type, IList<Delete>>();
+        private readonly ConcurrentDictionary<Type, IList<ConditionalUpdate>> _conditionalUpdates = new ConcurrentDictionary<Type, IList<ConditionalUpdate>>();
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>(); 
 
         public UnitOfWork(IDocumentSchema schema, MartenExpressionParser parser)
@@ -65,6 +66,15 @@ namespace Marten.Services
             var list = _updates.GetOrAdd(typeof (T), type => typeof (List<>).CloseAndBuildAs<IEnumerable>(typeof (T))).As<List<T>>();
 
             list.AddRange(documents);
+        }
+
+        public void StoreUpdate<T>(T entity, Expression<Func<T, bool>> expression)
+        {
+            var id = _schema.StorageFor(typeof(T)).Identity(entity);
+            var update = new ConditionalUpdate(typeof(T), id, entity, expression);
+            var list = _conditionalUpdates.GetOrAdd(typeof(T), _ => new List<ConditionalUpdate>());
+
+            list.Add(update);
         }
 
         public void StoreInserts<T>(params T[] documents)
@@ -168,6 +178,14 @@ namespace Marten.Services
                 var mapping = _schema.MappingFor(type);
 
                 _deletes[type].Each(id => id.Configure(_parser, storage, mapping, batch));
+            });
+
+            _conditionalUpdates.Keys.Each(type =>
+            {
+                var storage = _schema.StorageFor(type);
+                var mapping = _schema.MappingFor(type);
+
+                _conditionalUpdates[type].Each(id => id.Configure(_parser, storage, mapping, batch));
             });
 
             var changes = detectTrackerChanges();

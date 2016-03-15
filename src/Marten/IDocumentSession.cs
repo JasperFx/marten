@@ -192,6 +192,7 @@ namespace Marten
         /// <param name="entity"></param>
         void Store<T>(params T[] entities);
 
+        void Store<T>(T entity, Expression<Func<T, bool>> expression);
 
         /// <summary>
         /// List of all the pending changes to this IDocumentSession
