@@ -193,6 +193,7 @@
     <Compile Include="Services\TransactionState.cs" />
     <Compile Include="StoreOptions.cs" />
     <Compile Include="Util\QueryableExtensions.cs" />
+    <Compile Include="Util\EnumerableExtensions.cs" />
     <Compile Include="Util\SerializerExtensions.cs" />
     <Compile Include="DocumentSession.cs" />
     <Compile Include="Util\TypeMappings.cs" />

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace Marten.Schema
 {
@@ -23,6 +24,8 @@ namespace Marten.Schema
         }
 
         public string ColumnName => _columnName;
+
+        public Type ReferenceDocumentType => _reference.DocumentType;
 
         public string ToDDL()
         {

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Util;
 
 namespace Marten.Services
 {
@@ -148,18 +149,23 @@ namespace Marten.Services
 
         private DocumentChange[] GetChanges(UpdateBatch batch)
         {
-            _updates.Keys.Each(type =>
-            {
-                var storage = _schema.StorageFor(type);
+            int index = 0;
+            var order = _inserts.Keys.Union(_updates.Keys)
+                .TopologicalSort(GetTypeDependencies)
+                .ToDictionary(x => x, x => index++);
 
-                _updates[type].Each(o => storage.RegisterUpdate(batch, o));
-            });
-
-            _inserts.Keys.Each(type =>
+            _inserts.Keys.OrderBy(type => order[type]).Each(type =>
             {
                 var storage = _schema.StorageFor(type);
 
                 _inserts[type].Each(o => storage.RegisterUpdate(batch, o));
+            });
+
+            _updates.Keys.OrderBy(type => order[type]).Each(type =>
+            {
+                var storage = _schema.StorageFor(type);
+
+                _updates[type].Each(o => storage.RegisterUpdate(batch, o));
             });
 
             _deletes.Keys.Each(type =>
@@ -182,6 +188,17 @@ namespace Marten.Services
             });
 
             return changes;
+        }
+
+        private IEnumerable<Type> GetTypeDependencies(Type type)
+        {
+            var documentMapping = _schema.MappingFor(type) as DocumentMapping;
+            if (documentMapping == null)
+            {
+                return Enumerable.Empty<Type>();
+            }
+
+            return documentMapping.ForeignKeys.Select(keyDefinition => keyDefinition.ReferenceDocumentType);
         }
 
         private DocumentChange[] detectTrackerChanges()

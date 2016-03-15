@@ -110,9 +110,27 @@ namespace Marten.Schema
                 }
             };
 
-            mapping.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, executeSql);
+            buildSchemaObjectsIfNecessary(mapping, executeSql, new HashSet<Type>());
         }
 
+        private void buildSchemaObjectsIfNecessary(IDocumentMapping mapping, Action<string> executeSql, ISet<Type> documentTypes)
+        {
+            var documentMapping = mapping as DocumentMapping;
+            documentMapping?.ForeignKeys
+                .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
+                .Each(documentType =>
+                {
+                    if (!documentTypes.Add(documentType))
+                    {
+                        throw new Exception("Cyclic dependency found");
+                    }
+
+                    var mappingFor = MappingFor(documentType);
+                    buildSchemaObjectsIfNecessary(mappingFor, executeSql, documentTypes);
+                });
+
+            mapping.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, executeSql);
+        }
 
         private void assertNoDuplicateDocumentAliases()
         {
