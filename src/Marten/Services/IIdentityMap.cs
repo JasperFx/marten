@@ -18,9 +18,9 @@ namespace Marten.Services
 
         void Remove<T>(object id);
 
-        void Store<T>(object id, T entity);
+        void Store<T>(object id, T entity) where T : class;
 
-        bool Has<T>(object id);
+        bool Has<T>(object id) where T : class;
 
         T Retrieve<T>(object id) where T : class;
     }

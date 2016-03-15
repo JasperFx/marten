@@ -8,34 +8,22 @@ namespace Marten.Services
         private readonly ISerializer _serializer;
         private string _json;
 
-        public TrackedEntity(object id, ISerializer serializer, Type documentType, string json)
-        {
-            _serializer = serializer;
-            Id = id;
-            DocumentType = documentType;
-            _json = json;
-
-            if (json != null) Document = _serializer.FromJson(documentType, json);
-        }
-
-        public TrackedEntity(object id, ISerializer serializer, Type documentType, object document)
+        public TrackedEntity(object id, ISerializer serializer, Type documentType, object document, string json)
         {
             _serializer = serializer;
             Id = id;
             DocumentType = documentType;
             Document = document;
-            _json = _serializer.ToJson(document);
-        }
 
-        public TrackedEntity(object id, Type documentType, object document, string json, ISerializer serializer)
-        {
-            Id = id;
-            DocumentType = documentType;
-            Document = document;
-            _json = json;
-            _serializer = serializer;
+            if (json != null && document == null)
+            {
+                Document = _serializer.FromJson(documentType, json);
+            }
+            else if (document != null)
+            { 
+                _json = _serializer.ToJson(document);
+            }
         }
-
 
         public object Id { get; }
         public Type DocumentType { get; }
