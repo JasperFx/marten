@@ -61,7 +61,7 @@ namespace Marten.Linq
             var sumCommand = GetSumCommand(queryModel);
 
             return _runner.ExecuteAsync(sumCommand, async (c, tkn) => {
-                var returnValue = await c.ExecuteScalarAsync(tkn);
+                var returnValue = await c.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                 return typeof(TResult).IsNullable() ? 
                 Convert.ChangeType(returnValue, typeof(TResult).GetInnerTypeFromNullable()).As<TResult>() 
                 : Convert.ChangeType(returnValue, typeof(TResult)).As<TResult>();

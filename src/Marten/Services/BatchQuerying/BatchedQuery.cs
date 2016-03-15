@@ -230,9 +230,9 @@ namespace Marten.Services.BatchQuerying
             return reader.ReturnValue.ContinueWith(r => r.Result.SingleOrDefault());
         }
 
-        public async Task Execute(CancellationToken token = default(CancellationToken))
+        public Task Execute(CancellationToken token = default(CancellationToken))
         {
-            await _runner.ExecuteAsync(_command, async (cmd, tk) =>
+            return _runner.ExecuteAsync(_command, async (cmd, tk) =>
             {
                 using (var reader = await _command.ExecuteReaderAsync(tk).ConfigureAwait(false))
                 {
