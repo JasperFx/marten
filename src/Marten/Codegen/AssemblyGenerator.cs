@@ -40,6 +40,12 @@ namespace Marten.Codegen
                 var reference = MetadataReference.CreateFromFile(referencePath);
 
                 _references.Add(reference);
+
+                foreach (var assemblyName in assembly.GetReferencedAssemblies())
+                {
+                    var referencedAssembly = Assembly.Load(assemblyName);
+                    ReferenceAssembly(referencedAssembly);
+                }
             }
             catch (Exception e)
             {
