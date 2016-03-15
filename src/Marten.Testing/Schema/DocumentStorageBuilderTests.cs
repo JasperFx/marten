@@ -67,13 +67,6 @@ namespace Marten.Testing.Schema
                 .ShouldBe(3);
         }
 
-        [Fact]
-        public void generates_the_resolve_method()
-        {
-            var storage = DocumentStorageBuilder.Build(null, DocumentMapping.For<User>());
-
-            storage.ShouldBeAssignableTo<IResolver<User>>();
-        }
     }
 
 

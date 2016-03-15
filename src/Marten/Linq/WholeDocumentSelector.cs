@@ -19,7 +19,7 @@ namespace Marten.Linq
             return _resolver.Resolve(reader, map);
         }
 
-        public string[] SelectFields(IDocumentMapping mapping)
+        public string[] CalculateSelectedFields(IDocumentMapping mapping)
         {
             return mapping.SelectFields();
         }

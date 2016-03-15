@@ -27,7 +27,7 @@ namespace Marten.Linq
             return raw == DBNull.Value ? default(T) : (T)raw;
         }
 
-        public string[] SelectFields(IDocumentMapping mapping)
+        public string[] CalculateSelectedFields(IDocumentMapping mapping)
         {
             return new [] {mapping.FieldFor(_members).SqlLocator};
         }

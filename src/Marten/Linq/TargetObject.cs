@@ -48,7 +48,7 @@ namespace Marten.Linq
             return map.Serializer.FromJson<T>(json);
         }
 
-        public string[] SelectFields(IDocumentMapping mapping)
+        public string[] CalculateSelectedFields(IDocumentMapping mapping)
         {
             var jsonBuildObjectArgs = _target.Setters.Select(x => x.ToJsonBuildObjectPair(mapping)).Join(", ");
             return new [] { $"json_build_object({jsonBuildObjectArgs}) as json"};

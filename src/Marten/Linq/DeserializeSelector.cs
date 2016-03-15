@@ -19,7 +19,7 @@ namespace Marten.Linq
             return _serializer.FromJson<T>(reader.GetString(0));
         }
 
-        public string[] SelectFields(IDocumentMapping mapping)
+        public string[] CalculateSelectedFields(IDocumentMapping mapping)
         {
             throw new NotSupportedException();
         }

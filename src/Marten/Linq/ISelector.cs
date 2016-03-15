@@ -8,6 +8,6 @@ namespace Marten.Linq
     {
         T Resolve(DbDataReader reader, IIdentityMap map);
 
-        string[] SelectFields(IDocumentMapping mapping);
+        string[] CalculateSelectedFields(IDocumentMapping mapping);
     }
 }

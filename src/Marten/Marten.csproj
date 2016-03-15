@@ -121,6 +121,7 @@
     <Compile Include="Services\CommandRunnerMode.cs" />
     <Compile Include="Services\FetchResult.cs" />
     <Compile Include="Services\IChangeSet.cs" />
+    <Compile Include="Services\Includes\IncludeSpikeClasses.cs" />
     <Compile Include="Services\IUnitOfWork.cs" />
     <Compile Include="Services\ManagedConnection.cs" />
     <Compile Include="Services\CommandRunnerExtensions.cs" />
@@ -223,7 +224,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Schema\Javascript\" />
-    <Folder Include="Services\Includes\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Schema\SQL\mt_initialize_projections.sql" />
