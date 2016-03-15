@@ -40,15 +40,15 @@ namespace Marten.Linq
         public abstract Task<TResult> ExecuteAsync(QueryModel queryModel, CancellationToken token);
     }
 
-    class SumQueryExecution<TResult> : ScalarQueryExecution<SumResultOperator, TResult>
+    abstract class AggregateQueryExecution<TResultOperator, TResult> : ScalarQueryExecution<TResultOperator, TResult> where TResultOperator : ResultOperatorBase
     {
-        public SumQueryExecution(MartenExpressionParser expressionParser, IDocumentSchema schema, IManagedConnection runner)
+        protected AggregateQueryExecution(MartenExpressionParser expressionParser, IDocumentSchema schema, IManagedConnection runner)
             : base(expressionParser, schema, runner)
         { }
 
         public override TResult Execute(QueryModel queryModel)
         {
-            var sumCommand = GetSumCommand(queryModel);
+            var sumCommand = GetCommand(queryModel);
 
             return _runner.Execute(sumCommand, c => {
                 var returnValue = c.ExecuteScalar();
@@ -58,26 +58,72 @@ namespace Marten.Linq
 
         public override Task<TResult> ExecuteAsync(QueryModel queryModel, CancellationToken token)
         {
-            var sumCommand = GetSumCommand(queryModel);
+            var sumCommand = GetCommand(queryModel);
 
             return _runner.ExecuteAsync(sumCommand, async (c, tkn) => {
-                var returnValue = await c.ExecuteScalarAsync(tkn);
+                var returnValue = await c.ExecuteScalarAsync(tkn).ConfigureAwait(false);
                 return typeof(TResult).IsNullable() ? 
                 Convert.ChangeType(returnValue, typeof(TResult).GetInnerTypeFromNullable()).As<TResult>() 
                 : Convert.ChangeType(returnValue, typeof(TResult)).As<TResult>();
             }, token);
         }
 
-        private NpgsqlCommand GetSumCommand(QueryModel queryModel)
+        private NpgsqlCommand GetCommand(QueryModel queryModel)
         {
             var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
             var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
 
             _schema.EnsureStorageExists(mapping.DocumentType);
             var sumCommand = new NpgsqlCommand();
-            documentQuery.ConfigureForSum(sumCommand);
+            ConfigureCommand(documentQuery, sumCommand);
             return sumCommand;
         }
+
+        protected abstract void ConfigureCommand(DocumentQuery documentQuery, NpgsqlCommand command);
+    }
+
+    class SumQueryExecution<TResult> : AggregateQueryExecution<SumResultOperator, TResult>
+    {
+        protected override void ConfigureCommand(DocumentQuery documentQuery, NpgsqlCommand command)
+        {
+            documentQuery.ConfigureForSum(command);
+        }
+
+        public SumQueryExecution(MartenExpressionParser expressionParser, IDocumentSchema schema, IManagedConnection runner) 
+            : base(expressionParser, schema, runner){}
+    }
+
+    class MaxQueryExecution<TResult> : AggregateQueryExecution<MaxResultOperator,TResult>
+    {
+        protected override void ConfigureCommand(DocumentQuery documentQuery, NpgsqlCommand command)
+        {
+            documentQuery.ConfigureForMax(command);
+        }
+
+        public MaxQueryExecution(MartenExpressionParser expressionParser, IDocumentSchema schema, IManagedConnection runner) 
+            : base(expressionParser, schema, runner){ }
+    }
+
+    class MinQueryExecution<TResult> : AggregateQueryExecution<MinResultOperator, TResult>
+    {
+        protected override void ConfigureCommand(DocumentQuery documentQuery, NpgsqlCommand command)
+        {
+            documentQuery.ConfigureForMin(command);
+        }
+
+        public MinQueryExecution(MartenExpressionParser expressionParser, IDocumentSchema schema, IManagedConnection runner) 
+            : base(expressionParser, schema, runner){ }
+    }
+
+    class AverageQueryExecution<TResult> : AggregateQueryExecution<AverageResultOperator, TResult>
+    {
+        protected override void ConfigureCommand(DocumentQuery documentQuery, NpgsqlCommand command)
+        {
+            documentQuery.ConfigureForAverage(command);
+        }
+
+        public AverageQueryExecution(MartenExpressionParser expressionParser, IDocumentSchema schema, IManagedConnection runner) 
+            : base(expressionParser, schema, runner){ }
     }
 
     class AnyQueryExecution<TResult> : ScalarQueryExecution<AnyResultOperator, TResult>
@@ -163,7 +209,12 @@ namespace Marten.Linq
 
         public override TResult Execute(QueryModel queryModel)
         {
-            throw new NotImplementedException();
+            var countCommand = GetLongCountCommand(queryModel);
+            return _runner.Execute(countCommand, c =>
+            {
+                var returnValue = c.ExecuteScalar();
+                return Convert.ToInt64(returnValue).As<TResult>();
+            });
         }
 
         public override Task<TResult> ExecuteAsync(QueryModel queryModel, CancellationToken token)

@@ -51,10 +51,7 @@ namespace Marten.Services
         {
             foreach (var batch in _commands.ToArray())
             {
-                await Connection.ExecuteAsync(batch.BuildCommand(), async (c, tkn) =>
-                {
-                    await c.ExecuteNonQueryAsync(tkn).ConfigureAwait(false);
-                }, token);
+                await Connection.ExecuteAsync(batch.BuildCommand(), (c, tkn) => c.ExecuteNonQueryAsync(tkn), token).ConfigureAwait(false);
             }
         }
 

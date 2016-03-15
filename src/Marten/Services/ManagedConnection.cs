@@ -119,7 +119,7 @@ namespace Marten.Services
 
             try
             {
-                await action(cmd, token);
+                await action(cmd, token).ConfigureAwait(false);
                 Logger.LogSuccess(cmd);
             }
             catch (Exception e)
@@ -137,7 +137,7 @@ namespace Marten.Services
 
             try
             {
-                await action(cmd, token);
+                await action(cmd, token).ConfigureAwait(false);
                 Logger.LogSuccess(cmd);
             }
             catch (Exception e)
@@ -155,7 +155,7 @@ namespace Marten.Services
 
             try
             {
-                var returnValue = await func(cmd, token);
+                var returnValue = await func(cmd, token).ConfigureAwait(false);
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }
@@ -174,7 +174,7 @@ namespace Marten.Services
 
             try
             {
-                var returnValue = await func(cmd, token);
+                var returnValue = await func(cmd, token).ConfigureAwait(false);
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }

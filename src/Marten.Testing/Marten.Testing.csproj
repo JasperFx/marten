@@ -91,9 +91,11 @@
     <Compile Include="Examples\LinqExamples.cs" />
     <Compile Include="Examples\Load_by_Id.cs" />
     <Compile Include="Examples\MartenRegistryExamples.cs" />
+    <Compile Include="Examples\RecordingLogger.cs" />
     <Compile Include="Examples\SagaStorageExample.cs" />
     <Compile Include="Examples\Searching_Within_Child_Collections.cs" />
     <Compile Include="Examples\SimpleSessionListener.cs" />
+    <Compile Include="Examples\UnitOfWorkBlogSamples.cs" />
     <Compile Include="Examples\UnitOfWorkMechanics.cs" />
     <Compile Include="Fixtures\EventStore\EventStoreFixture.cs" />
     <Compile Include="Fixtures\EventStore\QuestEventFixture.cs" />
@@ -132,8 +134,10 @@
     <Compile Include="Linq\ExpressionExtensionsTests.cs" />
     <Compile Include="Linq\previewing_the_command_from_a_queryable_Tests.cs" />
     <Compile Include="Linq\query_against_dateoffset_Tests.cs" />
+    <Compile Include="Linq\query_with_is_in_generic_enumerable_Tests.cs" />
     <Compile Include="Linq\query_against_primitive_array_Tests.cs" />
     <Compile Include="Linq\query_running_through_the_IdentityMap_Tests.cs" />
+    <Compile Include="Linq\query_with_aggregate_functions.cs" />
     <Compile Include="Linq\query_with_any_within_child_collection_Tests.cs" />
     <Compile Include="Linq\query_beginning_with_constant_Tests.cs" />
     <Compile Include="Linq\query_for_sum_Tests.cs" />

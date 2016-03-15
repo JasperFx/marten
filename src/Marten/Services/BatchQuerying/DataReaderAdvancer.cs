@@ -23,7 +23,7 @@ namespace Marten.Services.BatchQuerying
                 throw new InvalidOperationException("There is no next result to read over.");
             }
 
-            await _inner.Handle(reader, token);
+            await _inner.Handle(reader, token).ConfigureAwait(false);
         }
     }
 }
