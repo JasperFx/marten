@@ -13,6 +13,8 @@ namespace Marten.Codegen
     {
         private readonly IList<MetadataReference> _references = new List<MetadataReference>();
 
+        public static string[] HintPaths { get; set; }
+
         public AssemblyGenerator()
         {
             ReferenceAssemblyContainingType<object>();
@@ -23,33 +25,65 @@ namespace Marten.Codegen
         {
             try
             {
-                bool alreadyReferenced = _references.Any(x => x.Display == assembly.Location);
+                var referencePath = CreateAssemblyReference(assembly);
+
+                if (referencePath == null)
+                {
+                    Console.WriteLine($"Could not make an assembly reference to {assembly.FullName}");
+                    return;
+                }
+
+                var alreadyReferenced = _references.Any(x => x.Display == referencePath);
                 if (alreadyReferenced)
                     return;
 
+                var reference = MetadataReference.CreateFromFile(referencePath);
 
-                try
+                _references.Add(reference);
+
+                foreach (var assemblyName in assembly.GetReferencedAssemblies())
                 {
-                    _references.Add(MetadataReference.CreateFromFile(assembly.Location));
-                    foreach (var assemblyName in assembly.GetReferencedAssemblies())
-                    {
-                        var referencedAssembly = Assembly.Load(assemblyName);
-                        ReferenceAssembly(referencedAssembly);
-                    }
+                    var referencedAssembly = Assembly.Load(assemblyName);
+                    ReferenceAssembly(referencedAssembly);
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Could not make an assembly reference to {assembly.FullName}\n\n{e}");
-                }
-            }
-            catch (AssemblyReferenceException)
-            {
-                throw;
             }
             catch (Exception e)
             {
-                throw new AssemblyReferenceException(assembly, e);
+                Console.WriteLine($"Could not make an assembly reference to {assembly.FullName}\n\n{e}");
             }
+        }
+
+        private static String CreateAssemblyReference(Assembly assembly)
+        {
+            if (string.IsNullOrEmpty(assembly.Location))
+            {
+                var path = GetPath(assembly);
+                return path != null ? path : null;
+            }
+            return assembly.Location;
+        }
+
+        private static String GetPath(Assembly assembly)
+        {
+            return HintPaths?
+                .Select(FindFile(assembly))
+                .FirstOrDefault(file => file.IsNotEmpty());
+        }
+
+        private static Func<String, String> FindFile(Assembly assembly)
+        {
+            return hintPath =>
+            {
+                var name = assembly.GetName().Name;
+                Console.WriteLine($"Find {name}.dll in {hintPath}");
+                var files = Directory.GetFiles(hintPath, name + ".dll", SearchOption.AllDirectories);
+                var firstOrDefault = files.FirstOrDefault();
+                if (firstOrDefault != null)
+                {
+                    Console.WriteLine($"Found {name}.dll in {firstOrDefault}");
+                }
+                return firstOrDefault;
+            };
         }
 
         public void ReferenceAssemblyContainingType<T>()
