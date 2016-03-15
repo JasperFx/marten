@@ -48,10 +48,10 @@ namespace Marten.Linq
             return map.Serializer.FromJson<T>(json);
         }
 
-        public string SelectClause(IDocumentMapping mapping)
+        public string[] SelectFields(IDocumentMapping mapping)
         {
             var jsonBuildObjectArgs = _target.Setters.Select(x => x.ToJsonBuildObjectPair(mapping)).Join(", ");
-            return $"json_build_object({jsonBuildObjectArgs}) as json";
+            return new [] { $"json_build_object({jsonBuildObjectArgs}) as json"};
         }
     }
 }

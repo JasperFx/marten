@@ -19,9 +19,9 @@ namespace Marten.Linq
             return _resolver.Resolve(reader, map);
         }
 
-        public string SelectClause(IDocumentMapping mapping)
+        public string[] SelectFields(IDocumentMapping mapping)
         {
-            return mapping.SelectFields().Join(", ");
+            return mapping.SelectFields();
         }
     }
 }

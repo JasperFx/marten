@@ -223,6 +223,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Schema\Javascript\" />
+    <Folder Include="Services\Includes\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Schema\SQL\mt_initialize_projections.sql" />

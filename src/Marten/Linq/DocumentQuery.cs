@@ -96,7 +96,7 @@ namespace Marten.Linq
         public ISelector<T> ConfigureCommand<T>(IDocumentStorage documentStorage, NpgsqlCommand command)
         {
             var select = buildSelectClause<T>(documentStorage);
-            var sql = $"select {@select.SelectClause(_mapping)} from {_mapping.TableName} as d";
+            var sql = $"select {@select.SelectFields(_mapping).Join(", ")} from {_mapping.TableName} as d";
 
             var where = buildWhereClause();
             var orderBy = toOrderClause();

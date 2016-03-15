@@ -19,7 +19,7 @@ namespace Marten.Linq
             return _serializer.FromJson<T>(reader.GetString(0));
         }
 
-        public string SelectClause(IDocumentMapping mapping)
+        public string[] SelectFields(IDocumentMapping mapping)
         {
             throw new NotSupportedException();
         }
