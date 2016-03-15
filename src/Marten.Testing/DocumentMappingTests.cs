@@ -47,7 +47,7 @@ namespace Marten.Testing
         public void select_fields_for_non_hierarchy_mapping()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.SelectFields("d").ShouldBe("d.data, d.id");
+            mapping.SelectFields().ShouldHaveTheSameElementsAs("data", "id");
         }
 
         [Fact]
@@ -144,7 +144,7 @@ namespace Marten.Testing
         public void select_fields_without_subclasses()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.SelectFields("d").ShouldBe("d.data, d.id");
+            mapping.SelectFields().ShouldHaveTheSameElementsAs("data", "id");
         }
 
         [Fact]
@@ -153,7 +153,7 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<Squad>();
             mapping.AddSubClass(typeof(BaseballTeam));
 
-            mapping.SelectFields("d").ShouldBe($"d.data, d.id, d.{DocumentMapping.DocumentTypeColumn}");
+            mapping.SelectFields().ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.DocumentTypeColumn);
         }
 
         [Fact]

@@ -115,7 +115,7 @@ namespace Marten.Events
         public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
         public IIdGeneration IdStrategy { get; } = new GuidIdGeneration();
         public MemberInfo IdMember { get; } = ReflectionHelper.GetProperty<EventStream>(x => x.Id);
-        public string SelectFields(string tableAlias)
+        public string[] SelectFields()
         {
             throw new NotImplementedException();
         }

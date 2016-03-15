@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Baseline;
 using Marten.Schema;
 using Marten.Services;
 
@@ -20,7 +21,7 @@ namespace Marten.Linq
 
         public string SelectClause(IDocumentMapping mapping)
         {
-            return mapping.SelectFields("d");
+            return mapping.SelectFields().Join(", ");
         }
     }
 }

@@ -46,9 +46,9 @@ namespace Marten.Events
         public string TableName { get; } = "mt_events";
         public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
 
-        public string SelectFields(string tableAlias)
+        public string[] SelectFields()
         {
-            return $"{tableAlias}.id, {tableAlias}.data";
+            return new[] {"id", "data"};
         }
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)

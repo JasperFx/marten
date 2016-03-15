@@ -152,7 +152,7 @@ return UpsertCommand(({typeName})document, json);
 END
 
 BLOCK:public NpgsqlCommand LoaderCommand(object id)
-return new NpgsqlCommand(`select {mapping.SelectFields("d")} from {mapping.TableName} as d where id = :id`).With(`id`, id);
+return new NpgsqlCommand(`select {mapping.SelectFields().Join(", ")} from {mapping.TableName} as d where id = :id`).With(`id`, id);
 END
 
 BLOCK:public NpgsqlCommand DeleteCommandForId(object id)
@@ -164,7 +164,7 @@ return DeleteCommandForId((({typeName})entity).{mapping.IdMember.Name});
 END
 
 BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
-return new NpgsqlCommand(`select {mapping.SelectFields("d")} from {mapping.TableName} as d where id = ANY(:ids)`).With(`ids`, ids);
+return new NpgsqlCommand(`select {mapping.SelectFields().Join(", ")} from {mapping.TableName} as d where id = ANY(:ids)`).With(`ids`, ids);
 END
 
 BLOCK:public void Remove(IIdentityMap map, object entity)

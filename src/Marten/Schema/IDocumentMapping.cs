@@ -17,7 +17,7 @@ namespace Marten.Schema
         PropertySearching PropertySearching { get; }
         IIdGeneration IdStrategy { get; }
         MemberInfo IdMember { get; }
-        string SelectFields(string tableAlias);
+        string[] SelectFields();
 
         void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql);
 

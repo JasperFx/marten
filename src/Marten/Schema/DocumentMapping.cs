@@ -24,7 +24,6 @@ namespace Marten.Schema
         public const string TablePrefix = "mt_doc_";
         public const string UpsertPrefix = "mt_upsert_";
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
-        private PropertySearching _propertySearching = PropertySearching.JSON_Locator_Only;
         private string _alias;
 
         public static readonly string DocumentTypeColumn = "mt_doc_type";
@@ -292,25 +291,14 @@ namespace Marten.Schema
 
         public MemberInfo IdMember { get; set; }
 
-        public virtual string SelectFields(string tableAlias)
+        public virtual string[] SelectFields()
         {
-            if (IsHierarchy())
-            {
-                return $"{tableAlias}.data, {tableAlias}.id, {tableAlias}.{DocumentTypeColumn}";
-            }
-
-
-            return $"{tableAlias}.data, {tableAlias}.id";
+            return IsHierarchy() 
+                ? new [] {"data", "id", DocumentTypeColumn} 
+                : new[] {"data", "id"};
         }
 
-        public PropertySearching PropertySearching
-        {
-            get { return _propertySearching; }
-            set
-            {
-                _propertySearching = value;
-            }
-        }
+        public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;
 
         public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();
 

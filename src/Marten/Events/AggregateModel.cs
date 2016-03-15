@@ -36,7 +36,7 @@ namespace Marten.Events
         public PropertySearching PropertySearching { get; }
         public IIdGeneration IdStrategy { get; }
         public MemberInfo IdMember { get; }
-        public string SelectFields(string tableAlias)
+        public string[] SelectFields()
         {
             throw new NotImplementedException();
         }

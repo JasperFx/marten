@@ -39,9 +39,9 @@ namespace Marten.Schema
         public IIdGeneration IdStrategy => _parent.IdStrategy;
         public IEnumerable<DuplicatedField> DuplicatedFields => _parent.DuplicatedFields;
         public MemberInfo IdMember => _parent.IdMember;
-        public string SelectFields(string tableAlias)
+        public string[] SelectFields()
         {
-            return _inner.SelectFields(tableAlias);
+            return _inner.SelectFields();
         }
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
