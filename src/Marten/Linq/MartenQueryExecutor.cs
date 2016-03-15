@@ -44,6 +44,7 @@ namespace Marten.Linq
             var executors = new List<IScalarQueryExecution<T>> {
                 new AnyQueryExecution<T>(_expressionParser, _schema, _runner),
                 new CountQueryExecution<T>(_expressionParser, _schema, _runner),
+                new LongCountQueryExecution<T>(_expressionParser, _schema, _runner),
                 new SumQueryExecution<T>(_expressionParser, _schema, _runner),
                 new AverageQueryExecution<T>(_expressionParser, _schema, _runner)
             };

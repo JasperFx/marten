@@ -209,7 +209,12 @@ namespace Marten.Linq
 
         public override TResult Execute(QueryModel queryModel)
         {
-            throw new NotImplementedException();
+            var countCommand = GetLongCountCommand(queryModel);
+            return _runner.Execute(countCommand, c =>
+            {
+                var returnValue = c.ExecuteScalar();
+                return Convert.ToInt64(returnValue).As<TResult>();
+            });
         }
 
         public override Task<TResult> ExecuteAsync(QueryModel queryModel, CancellationToken token)
