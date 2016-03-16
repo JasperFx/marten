@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -58,6 +59,7 @@ namespace Marten.Linq
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
 
             return executor.ExecuteFirstToJsonAsync<T>(model, returnDefaultWhenEmpty, token);
+        }
 
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : class
         {
