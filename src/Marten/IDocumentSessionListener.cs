@@ -54,9 +54,10 @@ namespace Marten
             // Nothing
         }
 
-        public virtual async Task BeforeSaveChangesAsync(IDocumentSession session)
+        public virtual Task BeforeSaveChangesAsync(IDocumentSession session)
         {
-            await Task.Run(() => BeforeSaveChanges(session));
+            // Nothing
+            return Task.CompletedTask;
         }
 
         public virtual void AfterCommit(IDocumentSession session)
@@ -64,9 +65,10 @@ namespace Marten
             // Nothing
         }
 
-        public virtual async Task AfterCommitAsync(IDocumentSession session)
+        public virtual Task AfterCommitAsync(IDocumentSession session)
         {
-            await Task.Run(() => AfterCommit(session));
+            // Nothing
+            return Task.CompletedTask;
         }
 
         public virtual void DocumentLoaded(object id, object document)
