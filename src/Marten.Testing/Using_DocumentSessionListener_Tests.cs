@@ -383,6 +383,18 @@ namespace Marten.Testing
             SaveChangesSession = session;
         }
 
+        public override Task BeforeSaveChangesAsync(IDocumentSession session)
+        {
+            SaveChangesSession = session;
+            return Task.CompletedTask;
+        }
+
+        public override Task AfterCommitAsync(IDocumentSession session)
+        {
+            AfterCommitSession = session;
+            return Task.CompletedTask;
+        }
+
         public IDocumentSession SaveChangesSession { get; set; }
 
         public override void AfterCommit(IDocumentSession session)
