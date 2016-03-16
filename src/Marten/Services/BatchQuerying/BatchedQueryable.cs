@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Marten.Schema;
 
 namespace Marten.Services.BatchQuerying
 {
@@ -52,7 +51,6 @@ namespace Marten.Services.BatchQuerying
         public ITransformedBatchQueryable<TValue> Select<TValue>(Expression<Func<T, TValue>> selection)
         {
             return new TransformedBatchQueryable<TValue>(_parent, _inner.Select(selection));
-            
         }
 
         public Task<long> Count()

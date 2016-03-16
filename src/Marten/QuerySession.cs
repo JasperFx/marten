@@ -42,7 +42,7 @@ namespace Marten
 
         internal MartenExpressionParser Parser { get; }
 
-        public IQueryable<T> Query<T>()
+        public IMartenQueryable<T> Query<T>()
         {
             var executor = new MartenQueryExecutor(_connection, _schema, Parser, _parser, _identityMap);
 

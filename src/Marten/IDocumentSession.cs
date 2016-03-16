@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Linq;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Npgsql;
@@ -95,7 +96,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IQueryable<T> Query<T>();
+        IMartenQueryable<T> Query<T>();
         // ENDSAMPLE
 
         /// <summary>
