@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Data.Common;
 using System.Linq;
-using System.Reflection;
-using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 
@@ -14,39 +12,31 @@ namespace Marten.Services.Includes
         LeftOuter
     }
 
-    public class IncludeJoin<T> where T : class
+    public interface IIncludeJoin
     {
-        private readonly JoinType _joinType;
-        private readonly DocumentMapping _mapping;
-        private readonly MemberInfo[] _members;
+        string JoinText { get; }
+        string TableAlias { get; }
+        ISelector<TSearched> WrapSelector<TSearched>(IDocumentSchema schema, ISelector<TSearched> inner);
+    }
+
+    public class IncludeJoin<T> : IIncludeJoin where T : class
+    {
+        public string JoinText { get; }
         private readonly Action<T> _callback;
 
-        public IncludeJoin(JoinType joinType, DocumentMapping mapping, MemberInfo[] members, Action<T> callback)
+        public IncludeJoin(string joinText, string tableAlias, Action<T> callback)
         {
-            _joinType = joinType;
-            _mapping = mapping;
-            _members = members;
+            JoinText = joinText;
             _callback = callback;
 
-            TableAlias = _members.Select(x => x.Name.ToLower()).Join("_");
+            TableAlias = tableAlias;
         }
 
         public string TableAlias { get; }
 
-        public ISelector<TSearched> WrapSelector<TSearched>(ISelector<TSearched> inner)
+        public ISelector<TSearched> WrapSelector<TSearched>(IDocumentSchema schema, ISelector<TSearched> inner)
         {
-            if (_mapping.IsHierarchy())
-            {
-                return new HierarchicalIncludeSelector<TSearched,T>(TableAlias, _callback, inner, _mapping);
-            }
-
-            // Switch on IsHierarchy
-            throw new NotImplementedException();
-        }
-
-        public string ToJoin(IDocumentMapping searched)
-        {
-            throw new NotImplementedException();
+            return new IncludeSelector<TSearched, T>(TableAlias, _callback, inner, schema.ResolverFor<T>());
         }
     }
 
@@ -55,24 +45,23 @@ namespace Marten.Services.Includes
         private readonly string _tableAlias;
         private readonly Action<TIncluded> _callback;
         private readonly ISelector<TSearched> _inner;
-        private int _dataIndex;
-        private int _idIndex;
+        private readonly IResolver<TIncluded> _resolver;
+        private readonly int _startingIndex;
 
-        public IncludeSelector(string tableAlias, Action<TIncluded> callback, ISelector<TSearched> inner)
+        public IncludeSelector(string tableAlias, Action<TIncluded> callback, ISelector<TSearched> inner,
+            IResolver<TIncluded> resolver)
         {
             _tableAlias = tableAlias;
             _callback = callback;
             _inner = inner;
-            
+            _resolver = resolver;
+
+            _startingIndex = _inner.SelectFields().Length;
         }
 
         public TSearched Resolve(DbDataReader reader, IIdentityMap map)
         {
-            // Do the include here
-            var json = reader.GetString(_dataIndex);
-            var id = reader[_idIndex];
-
-            var included = map.Get<TIncluded>(id, json);
+            var included = _resolver.Resolve(_startingIndex, reader, map);
             _callback(included);
 
             return _inner.Resolve(reader, map);
@@ -81,62 +70,12 @@ namespace Marten.Services.Includes
         public string[] SelectFields()
         {
             var innerFields = _inner.SelectFields();
-            _dataIndex = innerFields.Length;
-            _idIndex = _dataIndex + 1;
 
-            return innerFields.Concat(new [] {$"{_tableAlias}.data as {_tableAlias}_data", $"${_tableAlias}.id as {_tableAlias}_id"}).ToArray();
+            // Have resolver return the fields here.
+
+            return
+                innerFields.Concat(new[]
+                {$"{_tableAlias}.data as {_tableAlias}_data", $"${_tableAlias}.id as {_tableAlias}_id"}).ToArray();
         }
-
-    }
-
-
-    public class HierarchicalIncludeSelector<TSearched, TIncluded> : ISelector<TSearched> where TIncluded : class
-    {
-        private readonly string _tableAlias;
-        private readonly Action<TIncluded> _callback;
-        private readonly ISelector<TSearched> _inner;
-        private readonly DocumentMapping _hierarchy;
-        private int _dataIndex;
-        private int _idIndex;
-        private int _typeIndex;
-
-        public HierarchicalIncludeSelector(string tableAlias, Action<TIncluded> callback, ISelector<TSearched> inner, DocumentMapping hierarchy)
-        {
-            _tableAlias = tableAlias;
-            _callback = callback;
-            _inner = inner;
-            _hierarchy = hierarchy;
-        }
-
-        public TSearched Resolve(DbDataReader reader, IIdentityMap map)
-        {
-            // Do the include here
-            var json = reader.GetString(_dataIndex);
-            var id = reader[_idIndex];
-            var typeAlias = reader.GetString(_typeIndex);
-            var concreteType = _hierarchy.TypeFor(typeAlias);
-
-
-            var included = map.Get<TIncluded>(id, concreteType, json);
-            _callback(included);
-
-            return _inner.Resolve(reader, map);
-        }
-
-        public string[] SelectFields()
-        {
-            var innerFields = _inner.SelectFields();
-            _dataIndex = innerFields.Length;
-            _idIndex = _dataIndex + 1;
-            _typeIndex = _idIndex + 1;
-
-            return innerFields.Concat(new[]
-            {
-                $"{_tableAlias}.data as {_tableAlias}_data",
-                $"{_tableAlias}.id as {_tableAlias}_id",
-                $"{_tableAlias}.{DocumentMapping.DocumentTypeColumn} as {_tableAlias}_{DocumentMapping.DocumentTypeColumn}",
-            }).ToArray();
-        }
-
     }
 }

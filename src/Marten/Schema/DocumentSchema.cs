@@ -261,6 +261,11 @@ namespace Marten.Schema
             return StoreOptions.AllDocumentMappings;
         }
 
+        public IResolver<T> ResolverFor<T>()
+        {
+            return StorageFor(typeof (T)).As<IResolver<T>>();
+        }
+
         private string[] primaryKeysFor(string tableName)
         {
             var sql = @"
