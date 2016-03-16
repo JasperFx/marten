@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Codegen;
+using Marten.Schema.Hierarchies;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -135,13 +136,17 @@ namespace Marten.Schema
             var ctorLines = storageArguments.Select(x => x.ToCtorLine()).Join("\n");
             var fields = storageArguments.Select(x => x.ToFieldDeclaration()).Join("\n");
 
+            var baseType = mapping.IsHierarchy() ? "HierarchicalResolver" : "Resolver";
+
+            var callBaseCtor = mapping.IsHierarchy() ? $": base({HierarchyArgument.Hierarchy})" : string.Empty;
+
             writer.Write(
                 $@"
-BLOCK:public class {storeName}Storage : IDocumentStorage, IBulkLoader<{typeName}>, IdAssignment<{typeName}>, IResolver<{typeName}>
+BLOCK:public class {storeName}Storage : {baseType}<{typeName}>, IDocumentStorage, IBulkLoader<{typeName}>, IdAssignment<{typeName}>, IResolver<{typeName}>
 
 {fields}
 
-BLOCK:public {storeName}Storage({ctorArgs})
+BLOCK:public {storeName}Storage({ctorArgs}) {callBaseCtor}
 {ctorLines}
 END
 
@@ -189,25 +194,12 @@ BLOCK:public object Retrieve({typeName} document)
 return document.{mapping.IdMember.Name};
 END
 
-BLOCK:public {typeName} Build(DbDataReader reader, ISerializer serializer)
-return serializer.FromJson<{typeName}>(reader.GetString(0));
-END
 
 public NpgsqlDbType IdType => NpgsqlDbType.{id_NpgsqlDbType};
 
 BLOCK:public object Identity(object document)
 return (({typeName})document).{mapping.IdMember.Name};
 END
-
-BLOCK:public {typeName} Resolve(IIdentityMap map, ILoader loader, object id)
-return map.Get(id, () => loader.LoadDocument<{typeName}>(id)) as {typeName};
-END
-
-BLOCK:public Task<{typeName}> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
-return map.GetAsync(id, (tk => loader.LoadDocumentAsync<{typeName}>(id, tk)), token).ContinueWith(x => x.Result as {typeName}, token);
-END
-
-{mapping.ToResolveMethod(typeName)}
 
 {upsertFunction.ToUpdateBatchMethod(typeName)}
 

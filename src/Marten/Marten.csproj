@@ -93,6 +93,7 @@
     <Compile Include="Schema\ForeignKeyAttribute.cs" />
     <Compile Include="Schema\ForeignKeyDefinition.cs" />
     <Compile Include="Schema\GinIndexedAttribute.cs" />
+    <Compile Include="Schema\HierarchicalResolver.cs" />
     <Compile Include="Schema\Hierarchies\HierarchyArgument.cs" />
     <Compile Include="Schema\Hierarchies\SubClassDocumentStorage.cs" />
     <Compile Include="Schema\HiLoSequenceAttribute.cs" />
@@ -101,6 +102,7 @@
     <Compile Include="Schema\InvalidDocumentException.cs" />
     <Compile Include="Schema\IResolver.cs" />
     <Compile Include="Schema\MartenSchemaException.cs" />
+    <Compile Include="Schema\Resolver.cs" />
     <Compile Include="Schema\Sequences\NoOpIdGeneration.cs" />
     <Compile Include="Schema\SubClassMapping.cs" />
     <Compile Include="Schema\UpsertFunction.cs" />

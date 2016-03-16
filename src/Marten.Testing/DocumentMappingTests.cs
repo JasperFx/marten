@@ -157,29 +157,6 @@ namespace Marten.Testing
         }
 
         [Fact]
-        public void to_resolve_method_without_subclasses()
-        {
-            var mapping = DocumentMapping.For<User>();
-            var code = mapping.ToResolveMethod("User");
-
-
-            code.ShouldContain("return map.Get<User>(id, json);");
-        }
-
-        [Fact]
-        public void to_resolve_method_with_subclasses()
-        {
-            var mapping = DocumentMapping.For<Squad>();
-            mapping.AddSubClass(typeof(BaseballTeam));
-            mapping.AddSubClass(typeof(FootballTeam));
-
-            var code = mapping.ToResolveMethod("User");
-
-            code.ShouldContain("var typeAlias = reader.GetString(2);");
-            code.ShouldContain("return map.Get<User>(id, _hierarchy.TypeFor(typeAlias), json);");
-        }
-
-        [Fact]
         public void is_hierarchy__is_false_for_concrete_type_with_no_subclasses()
         {
             DocumentMapping.For<User>().IsHierarchy().ShouldBeFalse();

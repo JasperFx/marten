@@ -27,9 +27,9 @@ namespace Marten.Testing.Codegen
 
             var generatedCode = new FileSystem().ReadStringFromFile("storage.cs");
 
-            generatedCode.ShouldContain("public class UserStorage : IDocumentStorage, IBulkLoader<User>, IdAssignment<User>, IResolver<User>");
-            generatedCode.ShouldContain("public class CompanyStorage : IDocumentStorage, IBulkLoader<Company>, IdAssignment<Company>, IResolver<Company>");
-            generatedCode.ShouldContain("public class IssueStorage : IDocumentStorage, IBulkLoader<Issue>, IdAssignment<Issue>, IResolver<Issue>");
+            generatedCode.ShouldContain("public class UserStorage : Resolver<User>, IDocumentStorage, IBulkLoader<User>, IdAssignment<User>, IResolver<User>");
+            generatedCode.ShouldContain("public class CompanyStorage : Resolver<Company>, IDocumentStorage, IBulkLoader<Company>, IdAssignment<Company>, IResolver<Company>");
+            generatedCode.ShouldContain("public class IssueStorage : Resolver<Issue>, IDocumentStorage, IBulkLoader<Issue>, IdAssignment<Issue>, IResolver<Issue>");
         }
     }
 }

@@ -63,10 +63,10 @@ namespace Marten.Schema.Hierarchies
             _parent.RegisterUpdate(batch, entity, json);
         }
 
-        public T Resolve(DbDataReader reader, IIdentityMap map)
+        public T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
-            var json = reader.GetString(0);
-            var id = reader[1];
+            var json = reader.GetString(startingIndex);
+            var id = reader[startingIndex + 1];
             
             return map.Get<TBase>(id, typeof(T), json) as T;
         }

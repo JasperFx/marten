@@ -151,10 +151,10 @@ namespace Marten.Events
             throw new InvalidOperationException("Use IDocumentSession.Events for all persistence of IEvent objects");
         }
 
-        public T Resolve(DbDataReader reader, IIdentityMap map)
+        public T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
-            var id = reader.GetGuid(0);
-            var json = reader.GetString(1);
+            var id = reader.GetGuid(startingIndex);
+            var json = reader.GetString(startingIndex + 1);
 
             return map.Get<T>(id, json);
         }

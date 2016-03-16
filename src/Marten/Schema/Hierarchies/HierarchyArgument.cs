@@ -1,10 +1,14 @@
+using System.Security.Permissions;
+
 namespace Marten.Schema.Hierarchies
 {
     public class HierarchyArgument : StorageArgument
     {
+        public const string Hierarchy = "hierarchy";
+
         public DocumentMapping Mapping { get; set; }
 
-        public HierarchyArgument(DocumentMapping mapping) : base("hierarchy", typeof(DocumentMapping))
+        public HierarchyArgument(DocumentMapping mapping) : base(Hierarchy, typeof(DocumentMapping))
         {
             Mapping = mapping;
         }

@@ -18,7 +18,7 @@ namespace Marten.Linq
 
         public T Resolve(DbDataReader reader, IIdentityMap map)
         {
-            return _resolver.Resolve(reader, map);
+            return _resolver.Resolve(0, reader, map);
         }
 
         public string[] SelectFields()

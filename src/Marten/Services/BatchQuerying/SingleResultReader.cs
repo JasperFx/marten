@@ -27,7 +27,7 @@ namespace Marten.Services.BatchQuerying
                 _taskSource.SetResult(null);
             }
 
-            var doc = _storage.As<IResolver<T>>().Resolve(reader, _map);
+            var doc = _storage.As<IResolver<T>>().Resolve(0, reader, _map);
             _taskSource.SetResult(doc);
         }
     }

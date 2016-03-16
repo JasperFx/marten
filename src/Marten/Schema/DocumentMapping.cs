@@ -496,31 +496,6 @@ namespace Marten.Schema
             return _fields.GetOrAdd(key, _ => new JsonLocatorField(members.ToArray()));
         }
 
-        public virtual string ToResolveMethod(string typeName)
-        {
-            if (IsHierarchy())
-            {
-                return $@"
-BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
-var json = reader.GetString(0);
-var id = reader[1];
-var typeAlias = reader.GetString(2);
-
-return map.Get<{typeName}>(id, _hierarchy.TypeFor(typeAlias), json);
-END
-";
-            }
-
-            return $@"
-BLOCK:public {typeName} Resolve(DbDataReader reader, IIdentityMap map)
-var json = reader.GetString(0);
-var id = reader[1];
-            
-return map.Get<{typeName}>(id, json);
-END
-";
-        }
-
         public IWhereFragment FilterDocuments(IWhereFragment query)
         {
             return query;

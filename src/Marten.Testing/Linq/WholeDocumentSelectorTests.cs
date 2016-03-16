@@ -37,7 +37,7 @@ namespace Marten.Testing.Linq
 
             var user = new User();
 
-            theResolver.Resolve(reader, map).Returns(user);
+            theResolver.Resolve(0, reader, map).Returns(user);
 
             theSelector.Resolve(reader, map).ShouldBe(user);
         }

@@ -285,7 +285,7 @@ namespace Marten
                     {
                         while (reader.Read())
                         {
-                            var doc = resolver.Resolve(reader, _parent._identityMap);
+                            var doc = resolver.Resolve(0, reader, _parent._identityMap);
                             list.Add(doc);
                         }
                     }
@@ -308,7 +308,7 @@ namespace Marten
                     {
                         while (await reader.ReadAsync(tkn).ConfigureAwait(false))
                         {
-                            var doc = resolver.Resolve(reader, _parent._identityMap);
+                            var doc = resolver.Resolve(0, reader, _parent._identityMap);
                             list.Add(doc);
                         }
                     }
