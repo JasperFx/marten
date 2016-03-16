@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Services.Includes;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.ResultOperators;
@@ -57,6 +58,24 @@ namespace Marten.Linq
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
 
             return executor.ExecuteFirstToJsonAsync<T>(model, returnDefaultWhenEmpty, token);
+
+        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : class
+        {
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+            var schema = executor.Schema;
+
+            var mapping = schema.MappingFor(typeof (T));
+            var included = schema.MappingFor(typeof (TInclude));
+
+            var visitor = new FindMembers();
+            visitor.Visit(idSource);
+            var members = visitor.Members.ToArray();
+
+            var include = mapping.JoinToInclude<TInclude>(JoinType.Inner, included, members, callback);
+
+            executor.AddInclude(include);
+
+            return this;
         }
 
         public NpgsqlCommand BuildCommand(FetchType fetchType)
@@ -69,7 +88,9 @@ namespace Marten.Linq
             var mapping = schema.MappingFor(rootType);
             
             var query = new DocumentQuery(mapping, model, executor.ExpressionParser);
-            
+            var parser = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+            query.Includes.AddRange(parser.Includes);
+
             var cmd = new NpgsqlCommand();
 
             switch (fetchType)

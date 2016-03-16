@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Includes;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.ResultOperators;
@@ -28,6 +29,15 @@ namespace Marten.Linq
             _parser = parser;
             _identityMap = identityMap;
             _runner = runner;
+        }
+
+        private readonly IList<IIncludeJoin> _includes = new List<IIncludeJoin>();
+
+        public IEnumerable<IIncludeJoin> Includes => _includes;
+
+        public void AddInclude(IIncludeJoin include)
+        {
+            _includes.Add(include);
         }
 
         public IDocumentSchema Schema => _schema;
@@ -142,6 +152,7 @@ namespace Marten.Linq
         {
             var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
             var query = new DocumentQuery(mapping, queryModel, _expressionParser);
+            query.Includes.AddRange(Includes);
 
             _schema.EnsureStorageExists(mapping.DocumentType);
 
@@ -170,6 +181,7 @@ namespace Marten.Linq
                 new MaxQueryExecution<T>(_expressionParser, _schema, _runner),
                 new MinQueryExecution<T>(_expressionParser, _schema, _runner),
             };
+
             if (scalarExecutions.Any(ex=>ex.Match(queryModel)))
                 return await ExecuteScalar<T>(queryModel, token, scalarExecutions).ConfigureAwait(false);
             

@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
@@ -23,7 +24,7 @@ namespace Marten.Linq
 
         public string[] SelectFields()
         {
-            return _fields;
+            return _fields.Select(x => $"d.{x}").ToArray();
         }
 
     }

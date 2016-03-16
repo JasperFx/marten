@@ -65,12 +65,12 @@ namespace Marten.Services.BatchQuerying
 
     public class QueryHandler<T> : MultipleResultsReader<T>
     {
-        public static ISelector<T> SelectorFromQuery(IDocumentStorage storage, DocumentQuery query, NpgsqlCommand command)
+        public static ISelector<T> SelectorFromQuery(IDocumentSchema schema, IDocumentStorage storage, DocumentQuery query, NpgsqlCommand command)
         {
-            return query.ConfigureCommand<T>(storage, command);
+            return query.ConfigureCommand<T>(schema, storage, command);
         }
 
-        public QueryHandler(IDocumentStorage storage, DocumentQuery query, NpgsqlCommand command, IIdentityMap map) : base(SelectorFromQuery(storage, query, command),map)
+        public QueryHandler(IDocumentSchema schema, IDocumentStorage storage, DocumentQuery query, NpgsqlCommand command, IIdentityMap map) : base(SelectorFromQuery(schema, storage, query, command),map)
         {
         }
     }

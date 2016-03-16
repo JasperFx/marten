@@ -287,7 +287,7 @@ namespace Marten.Schema
             var tableAlias = members.ToTableAlias();
             var locator = FieldFor(members).SqlLocator;
 
-            var joinText = $"{joinOperator} {other.TableName} as {tableAlias} ON {locator} = {other.TableName}.id";
+            var joinText = $"{joinOperator} {other.TableName} as {tableAlias} ON {locator} = {tableAlias}.id";
 
             return new IncludeJoin<TOther>(other, joinText, tableAlias, callback);
         }

@@ -128,7 +128,7 @@ namespace Marten.Services.BatchQuerying
             return handler.ReturnValue;
         }
 
-        private DocumentQuery toDocumentQuery<TDoc>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query)
+        private DocumentQuery _schemacumentQuery<TDoc>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query)
         {
             var queryable = _parent.Query<TDoc>();
             var expression = query(queryable).Expression;
@@ -142,7 +142,7 @@ namespace Marten.Services.BatchQuerying
 
         public Task<TReturn> AddHandler<TDoc, THandler, TReturn>(Func<IQueryable<TDoc>, IQueryable<TDoc>> query) where THandler : IDataReaderHandler<TReturn>, new()
         {
-            var model = toDocumentQuery(query);
+            var model = _schemacumentQuery(query);
             var handler = new THandler();
             handler.Configure(_command, model);
             AddHandler(handler);
@@ -172,9 +172,9 @@ namespace Marten.Services.BatchQuerying
 
         internal Task<IList<T>> Query<T>(Func<IQueryable<T>, IQueryable<T>> query)
         {
-            var documentQuery = toDocumentQuery(query);
+            var documentQuery = _schemacumentQuery(query);
             var documentStorage = _schema.StorageFor(documentQuery.SourceDocumentType);
-            var reader = new QueryHandler<T>(documentStorage, documentQuery, _command, _identityMap);
+            var reader = new QueryHandler<T>(_schema, documentStorage, documentQuery, _command, _identityMap);
 
             AddHandler(reader);
 
@@ -189,8 +189,8 @@ namespace Marten.Services.BatchQuerying
 
         public Task<T> First<T>(Func<IQueryable<T>, IQueryable<T>> query) 
         {
-            var documentQuery = toDocumentQuery<T>(q => query(q).Take(1));
-            var reader = new QueryHandler<T>(_schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
+            var documentQuery = _schemacumentQuery<T>(q => query(q).Take(1));
+            var reader = new QueryHandler<T>(_schema, _schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
 
             AddHandler(reader);
 
@@ -199,8 +199,8 @@ namespace Marten.Services.BatchQuerying
 
         public Task<T> FirstOrDefault<T>(Func<IQueryable<T>, IQueryable<T>> query) 
         {
-            var documentQuery = toDocumentQuery<T>(q => query(q).Take(1));
-            var reader = new QueryHandler<T>(_schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
+            var documentQuery = _schemacumentQuery<T>(q => query(q).Take(1));
+            var reader = new QueryHandler<T>(_schema, _schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
 
 
             AddHandler(reader);
@@ -210,8 +210,8 @@ namespace Marten.Services.BatchQuerying
 
         public Task<T> Single<T>(Func<IQueryable<T>, IQueryable<T>> query) 
         {
-            var documentQuery = toDocumentQuery<T>(q => query(q).Take(2));
-            var reader = new QueryHandler<T>(_schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
+            var documentQuery = _schemacumentQuery<T>(q => query(q).Take(2));
+            var reader = new QueryHandler<T>(_schema, _schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
 
 
             AddHandler(reader);
@@ -221,8 +221,8 @@ namespace Marten.Services.BatchQuerying
 
         public Task<T> SingleOrDefault<T>(Func<IQueryable<T>, IQueryable<T>> query)
         {
-            var documentQuery = toDocumentQuery<T>(q => query(q).Take(2));
-            var reader = new QueryHandler<T>(_schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
+            var documentQuery = _schemacumentQuery<T>(q => query(q).Take(2));
+            var reader = new QueryHandler<T>(_schema, _schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
 
 
             AddHandler(reader);

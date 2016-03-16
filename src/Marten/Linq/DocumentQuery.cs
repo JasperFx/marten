@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Services.Includes;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
@@ -90,13 +91,20 @@ namespace Marten.Linq
             }
 
             var documentStorage = schema.StorageFor(_mapping.DocumentType);
-            return ConfigureCommand<T>(documentStorage, command);
+            return ConfigureCommand<T>(schema, documentStorage, command);
         }
 
-        public ISelector<T> ConfigureCommand<T>(IDocumentStorage documentStorage, NpgsqlCommand command)
+        public IList<IIncludeJoin> Includes { get; } = new List<IIncludeJoin>(); 
+
+        public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, IDocumentStorage documentStorage, NpgsqlCommand command)
         {
-            var select = buildSelectClause<T>(documentStorage);
+            var select = buildSelectClause<T>(schema, documentStorage);
             var sql = $"select {@select.SelectFields().Join(", ")} from {_mapping.TableName} as d";
+
+            if (Includes.Any())
+            {
+                sql = $"{sql} {Includes.Select(x => x.JoinText).Join(" ")}";
+            }
 
             var where = buildWhereClause();
             var orderBy = toOrderClause();
@@ -113,19 +121,25 @@ namespace Marten.Linq
             return @select;
         }
 
-        private ISelector<T> buildSelectClause<T>(IDocumentStorage storage)
+        private ISelector<T> buildSelectClause<T>(IDocumentSchema schema, IDocumentStorage storage)
         {
+            ISelector<T> selector = null;
+
             if (_query.SelectClause.Selector.Type == _query.MainFromClause.ItemType)
             {
-                return new WholeDocumentSelector<T>(_mapping, storage.As<IResolver<T>>());
+                selector = new WholeDocumentSelector<T>(_mapping, storage.As<IResolver<T>>());
             }
-            
-            var visitor = new SelectorParser();
-            visitor.Visit(_query.SelectClause.Selector);
+            else
+            {
+                var visitor = new SelectorParser();
+                visitor.Visit(_query.SelectClause.Selector);
 
-            return visitor.ToSelector<T>(_mapping);
+                selector = visitor.ToSelector<T>(_mapping);
+            }
 
-            
+            Includes.Each(x => selector = x.WrapSelector(schema, selector));
+
+            return selector;
         }
 
         private string appendOffset(string sql)
