@@ -87,6 +87,56 @@ namespace Marten.Linq
             return _runner.Resolve(cmd, selector, _identityMap);
         }
 
+        public IEnumerable<string> ExecuteCollectionToJson<T>(QueryModel queryModel)
+        {
+            ISelector<T> selector = null;
+            var cmd = BuildCommand(queryModel, out selector);
+
+            return _runner.QueryJson(cmd);
+        }
+
+        public Task<IEnumerable<string>> ExecuteCollectionToJsonAsync<T>(QueryModel queryModel, CancellationToken token)
+        {
+            ISelector<T> selector = null;
+            var cmd = BuildCommand(queryModel, out selector);
+
+            return _runner.QueryJsonAsync(cmd, token);
+        }
+
+        public string ExecuteFirstToJson<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
+        {
+            queryModel.ResultOperators.Add(new FirstResultOperator(true));
+            var cmd = new NpgsqlCommand();
+            var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
+            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
+            documentQuery.ConfigureCommand<T>(_schema, cmd);
+
+            var all = _runner.QueryJson(cmd).ToArray();
+
+            return GetFirst(returnDefaultWhenEmpty, all);
+        }
+
+        private static string GetFirst(bool returnDefaultWhenEmpty, string[] all)
+        {
+            if (returnDefaultWhenEmpty && !all.Any()) return null;
+
+            return all.First();
+        }
+
+        public Task<string> ExecuteFirstToJsonAsync<T>(QueryModel queryModel, bool returnDefaultWhenEmpty, CancellationToken token)
+        {
+            queryModel.ResultOperators.Add(new FirstResultOperator(true));
+            var cmd = new NpgsqlCommand();
+            var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
+            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
+            documentQuery.ConfigureCommand<T>(_schema, cmd);
+
+            return _runner.QueryJsonAsync(cmd, token).ContinueWith(task =>
+            {
+                var all = task.Result.ToArray();
+                return GetFirst(returnDefaultWhenEmpty, all);
+            }, token);
+        }
 
         public NpgsqlCommand  BuildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
         {
