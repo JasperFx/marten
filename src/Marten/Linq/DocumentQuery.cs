@@ -96,7 +96,7 @@ namespace Marten.Linq
         public ISelector<T> ConfigureCommand<T>(IDocumentStorage documentStorage, NpgsqlCommand command)
         {
             var select = buildSelectClause<T>(documentStorage);
-            var sql = $"select {@select.CalculateSelectedFields(_mapping).Join(", ")} from {_mapping.TableName} as d";
+            var sql = $"select {@select.SelectFields().Join(", ")} from {_mapping.TableName} as d";
 
             var where = buildWhereClause();
             var orderBy = toOrderClause();
@@ -117,13 +117,13 @@ namespace Marten.Linq
         {
             if (_query.SelectClause.Selector.Type == _query.MainFromClause.ItemType)
             {
-                return new WholeDocumentSelector<T>(storage.As<IResolver<T>>());
+                return new WholeDocumentSelector<T>(_mapping, storage.As<IResolver<T>>());
             }
             
             var visitor = new SelectorParser();
             visitor.Visit(_query.SelectClause.Selector);
 
-            return visitor.ToSelector<T>();
+            return visitor.ToSelector<T>(_mapping);
 
             
         }

@@ -1,11 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
 using System.Reflection;
-using Baseline;
 using Marten.Schema;
-using Marten.Services;
 
 namespace Marten.Linq
 {
@@ -27,31 +23,9 @@ namespace Marten.Linq
             return setter.Field;
         }
 
-        public ISelector<T> ToSelector<T>()
+        public ISelector<T> ToSelector<T>(IDocumentMapping mapping)
         {
-            return new SelectTransformer<T>(this);
-        }
-    }
-
-    public class SelectTransformer<T> : ISelector<T>
-    {
-        private readonly TargetObject _target;
-
-        public SelectTransformer(TargetObject target)
-        {
-            _target = target;
-        }
-
-        public T Resolve(DbDataReader reader, IIdentityMap map)
-        {
-            var json = reader.GetString(0);
-            return map.Serializer.FromJson<T>(json);
-        }
-
-        public string[] CalculateSelectedFields(IDocumentMapping mapping)
-        {
-            var jsonBuildObjectArgs = _target.Setters.Select(x => x.ToJsonBuildObjectPair(mapping)).Join(", ");
-            return new [] { $"json_build_object({jsonBuildObjectArgs}) as json"};
+            return new SelectTransformer<T>(mapping, this);
         }
     }
 }

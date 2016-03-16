@@ -111,6 +111,7 @@
     <Compile Include="Github\GitHubExporter.cs" />
     <Compile Include="Github\RepositoryHistory.cs" />
     <Compile Include="insert_timing.cs" />
+    <Compile Include="Linq\DeserializeSelectorTests.cs" />
     <Compile Include="Linq\invoking_queryable_any_async_Tests.cs" />
     <Compile Include="Linq\invoking_queryable_count_async_Tests.cs" />
     <Compile Include="Linq\invoking_queryable_through_first_async_Tests.cs" />
@@ -148,10 +149,13 @@
     <Compile Include="Linq\query_with_enums_Tests.cs" />
     <Compile Include="Linq\query_with_nested_boolean_logic_Tests.cs" />
     <Compile Include="Linq\query_with_nullable_types_Tests.cs" />
+    <Compile Include="Linq\SelectTransformerTests.cs" />
     <Compile Include="Linq\select_transformations_Tests.cs" />
+    <Compile Include="Linq\SingleFieldSelectorTests.cs" />
     <Compile Include="Linq\using_containment_operator_in_linq_Tests.cs" />
     <Compile Include="Linq\using_custom_Linq_parser_plugins_Tests.cs" />
     <Compile Include="Linq\using_multiple_where_clauses_Tests.cs" />
+    <Compile Include="Linq\WholeDocumentSelectorTests.cs" />
     <Compile Include="MartenRegistryTests.cs" />
     <Compile Include="performance_report.cs" />
     <Compile Include="performance_tuning.cs" />
@@ -775,6 +779,35 @@
       <ItemGroup>
         <Reference Include="Npgsql">
           <HintPath>..\..\packages\Npgsql\lib\net45\Npgsql.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v3.5'">
+      <ItemGroup>
+        <Reference Include="NSubstitute">
+          <HintPath>..\..\packages\NSubstitute\lib\net35\NSubstitute.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.0')">
+      <ItemGroup>
+        <Reference Include="NSubstitute">
+          <HintPath>..\..\packages\NSubstitute\lib\net40\NSubstitute.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="NSubstitute">
+          <HintPath>..\..\packages\NSubstitute\lib\net45\NSubstitute.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>

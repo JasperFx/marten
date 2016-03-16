@@ -78,14 +78,15 @@ namespace Marten.Services.Includes
             return _inner.Resolve(reader, map);
         }
 
-        public string[] CalculateSelectedFields(IDocumentMapping mapping)
+        public string[] SelectFields()
         {
-            var innerFields = _inner.CalculateSelectedFields(mapping);
+            var innerFields = _inner.SelectFields();
             _dataIndex = innerFields.Length;
             _idIndex = _dataIndex + 1;
 
             return innerFields.Concat(new [] {$"{_tableAlias}.data as {_tableAlias}_data", $"${_tableAlias}.id as {_tableAlias}_id"}).ToArray();
         }
+
     }
 
 
@@ -122,9 +123,9 @@ namespace Marten.Services.Includes
             return _inner.Resolve(reader, map);
         }
 
-        public string[] CalculateSelectedFields(IDocumentMapping mapping)
+        public string[] SelectFields()
         {
-            var innerFields = _inner.CalculateSelectedFields(mapping);
+            var innerFields = _inner.SelectFields();
             _dataIndex = innerFields.Length;
             _idIndex = _dataIndex + 1;
             _typeIndex = _idIndex + 1;
@@ -136,5 +137,6 @@ namespace Marten.Services.Includes
                 $"{_tableAlias}.{DocumentMapping.DocumentTypeColumn} as {_tableAlias}_{DocumentMapping.DocumentTypeColumn}",
             }).ToArray();
         }
+
     }
 }

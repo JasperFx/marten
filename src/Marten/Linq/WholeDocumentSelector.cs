@@ -8,10 +8,12 @@ namespace Marten.Linq
     public class WholeDocumentSelector<T> : ISelector<T>
     {
         private readonly IResolver<T> _resolver;
+        private readonly string[] _fields;
 
-        public WholeDocumentSelector(IResolver<T> resolver)
+        public WholeDocumentSelector(IDocumentMapping mapping, IResolver<T> resolver)
         {
             _resolver = resolver;
+            _fields = mapping.SelectFields();
         }
 
         public T Resolve(DbDataReader reader, IIdentityMap map)
@@ -19,9 +21,10 @@ namespace Marten.Linq
             return _resolver.Resolve(reader, map);
         }
 
-        public string[] CalculateSelectedFields(IDocumentMapping mapping)
+        public string[] SelectFields()
         {
-            return mapping.SelectFields();
+            return _fields;
         }
+
     }
 }

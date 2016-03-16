@@ -82,6 +82,7 @@
     <Compile Include="Linq\QueryableExtensions.cs" />
     <Compile Include="Linq\ScalarQueryExecution.cs" />
     <Compile Include="Linq\SelectorParser.cs" />
+    <Compile Include="Linq\SelectTransformer.cs" />
     <Compile Include="Linq\SingleFieldSelector.cs" />
     <Compile Include="Linq\TargetObject.cs" />
     <Compile Include="Linq\WhereClauseVisitor.cs" />

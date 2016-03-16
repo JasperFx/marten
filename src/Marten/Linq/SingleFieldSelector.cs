@@ -9,16 +9,16 @@ namespace Marten.Linq
 {
     public class SingleFieldSelector<T> : ISelector<T>
     {
-        private readonly MemberInfo[] _members;
+        private readonly string _locator;
 
-        public SingleFieldSelector(MemberInfo[] members)
+        public SingleFieldSelector(IDocumentMapping mapping, MemberInfo[] members)
         {
             if (members == null || !members.Any())
             {
                 throw new ArgumentOutOfRangeException(nameof(members), "No members to select!");
             }
 
-            _members = members;
+            _locator = mapping.FieldFor(members).SqlLocator;
         }
 
         public T Resolve(DbDataReader reader, IIdentityMap map)
@@ -27,9 +27,10 @@ namespace Marten.Linq
             return raw == DBNull.Value ? default(T) : (T)raw;
         }
 
-        public string[] CalculateSelectedFields(IDocumentMapping mapping)
+        public string[] SelectFields()
         {
-            return new [] {mapping.FieldFor(_members).SqlLocator};
+            return new [] {_locator};
         }
+
     }
 }

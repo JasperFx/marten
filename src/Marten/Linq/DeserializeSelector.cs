@@ -1,6 +1,4 @@
-using System;
 using System.Data.Common;
-using Marten.Schema;
 using Marten.Services;
 
 namespace Marten.Linq
@@ -19,9 +17,9 @@ namespace Marten.Linq
             return _serializer.FromJson<T>(reader.GetString(0));
         }
 
-        public string[] CalculateSelectedFields(IDocumentMapping mapping)
+        public string[] SelectFields()
         {
-            throw new NotSupportedException();
+            return new[] {"data"};
         }
     }
 }

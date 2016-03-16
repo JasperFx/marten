@@ -6,6 +6,7 @@ nuget ilrepack
 nuget Jil
 nuget Newtonsoft.Json
 nuget Npgsql
+nuget NSubstitute
 nuget Octokit
 nuget Remotion.Linq
 nuget Shouldly

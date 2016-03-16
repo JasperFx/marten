@@ -54,11 +54,11 @@ namespace Marten.Linq
             return base.VisitMemberBinding(node);
         }
 
-        public ISelector<T> ToSelector<T>()
+        public ISelector<T> ToSelector<T>(IDocumentMapping mapping)
         {
             return _target == null 
-                ? new SingleFieldSelector<T>(_currentField.Members.Reverse().ToArray()) 
-                : _target.ToSelector<T>();
+                ? new SingleFieldSelector<T>(mapping, _currentField.Members.Reverse().ToArray()) 
+                : _target.ToSelector<T>(mapping);
         }
     }
 

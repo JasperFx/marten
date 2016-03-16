@@ -100,7 +100,7 @@ namespace Marten.Services.BatchQuerying
 
                 var resolver = _parent._schema.StorageFor(typeof (TDoc)).As<IResolver<TDoc>>();
 
-                var handler = new MultipleResultsReader<TDoc>(new WholeDocumentSelector<TDoc>(resolver), _parent._identityMap);
+                var handler = new MultipleResultsReader<TDoc>(new WholeDocumentSelector<TDoc>(mapping, resolver), _parent._identityMap);
 
                 _parent.AddHandler(handler);
 
