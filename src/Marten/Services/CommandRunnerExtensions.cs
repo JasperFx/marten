@@ -48,7 +48,7 @@ namespace Marten.Services
                 {
                     while (await reader.ReadAsync(tkn).ConfigureAwait(false))
                     {
-                        list.Add(selector.Resolve(reader, map));
+                        list.Add(await selector.ResolveAsync(reader, map, token).ConfigureAwait(false));
                     }
 
                     reader.Close();

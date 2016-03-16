@@ -38,7 +38,7 @@ namespace Marten.Services.BatchQuerying
     public class MultipleResultsReader<T> : IDataReaderHandler
     {
         private readonly TaskCompletionSource<IList<T>> _taskSource = new TaskCompletionSource<IList<T>>();
-        private ISelector<T> _selector;
+        private readonly ISelector<T> _selector;
         private readonly IIdentityMap _map;
 
         public MultipleResultsReader(ISelector<T> selector, IIdentityMap map)
@@ -55,7 +55,7 @@ namespace Marten.Services.BatchQuerying
 
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                var doc = _selector.Resolve(reader, _map);
+                var doc = await _selector.ResolveAsync(reader, _map, token).ConfigureAwait(false);
                 list.Add(doc);
             }
 

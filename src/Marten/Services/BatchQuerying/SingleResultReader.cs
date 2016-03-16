@@ -27,7 +27,7 @@ namespace Marten.Services.BatchQuerying
                 _taskSource.SetResult(null);
             }
 
-            var doc = _storage.As<IResolver<T>>().Resolve(reader, _map);
+            var doc = await _storage.As<IResolver<T>>().ResolveAsync(reader, _map, token).ConfigureAwait(false);
             _taskSource.SetResult(doc);
         }
     }

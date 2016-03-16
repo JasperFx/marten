@@ -308,7 +308,7 @@ namespace Marten
                     {
                         while (await reader.ReadAsync(tkn).ConfigureAwait(false))
                         {
-                            var doc = resolver.Resolve(reader, _parent._identityMap);
+                            var doc = await resolver.ResolveAsync(reader, _parent._identityMap, tkn).ConfigureAwait(false);
                             list.Add(doc);
                         }
                     }
