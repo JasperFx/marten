@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -44,20 +43,20 @@ namespace Marten.Linq
             return executor.ExecuteCollectionToJsonAsync<T>(model, token).ContinueWith(task => $"[{task.Result.Join(",")}]", token);
         }
 
-        public string FirstOrDefaultJson()
+        public string FirstJson(bool returnDefaultWhenEmpty)
         {
             var model = new MartenQueryParser().GetParsedQuery(Expression);
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
 
-            return executor.ExecuteFirstToJson<T>(model, true);
+            return executor.ExecuteFirstToJson<T>(model, returnDefaultWhenEmpty);
         }
 
-        public Task<string> FirstOrDefaultJsonAsync(CancellationToken token)
+        public Task<string> FirstJsonAsync(CancellationToken token, bool returnDefaultWhenEmpty)
         {
             var model = new MartenQueryParser().GetParsedQuery(Expression);
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
 
-            return executor.ExecuteFirstToJsonAsync<T>(model, true, token);
+            return executor.ExecuteFirstToJsonAsync<T>(model, returnDefaultWhenEmpty, token);
         }
 
         public NpgsqlCommand BuildCommand(FetchType fetchType)
@@ -95,69 +94,6 @@ namespace Marten.Linq
             }
 
             return cmd;
-        }
-    }
-
-    public static class QueryableExtensions
-    {
-        public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType)
-        {
-            var q = queryable as MartenQueryable<T>;
-
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(ToCommand)} is only valid on Marten IQueryable objects");
-            }
-
-            return q.BuildCommand(fetchType);
-        }
-
-        public static string ToListJson<T>(this IQueryable<T> queryable)
-        {
-            var q = queryable as MartenQueryable<T>;
-
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(ToListJson)} is only valid on Marten IQueryable objects");
-            }
-
-            return q.ToListJson();
-        }
-
-        public static Task<string> ToListJsonAsync<T>(this IQueryable<T> queryable, CancellationToken token = default(CancellationToken))
-        {
-            var q = queryable as MartenQueryable<T>;
-
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(ToListJson)} is only valid on Marten IQueryable objects");
-            }
-
-            return q.ToListJsonAsync(token);
-        }
-
-        public static string FirstOrDefaultJson<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression)
-        {
-            var q = queryable.Where(expression) as MartenQueryable<T>;
-
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(FirstOrDefaultJson)} is only valid on Marten IQueryable objects");
-            }
-
-            return q.FirstOrDefaultJson();
-        }
-
-        public static Task<string> FirstOrDefaultJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression, CancellationToken token = default(CancellationToken))
-        {
-            var q = queryable.Where(expression) as MartenQueryable<T>;
-
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(FirstOrDefaultJson)} is only valid on Marten IQueryable objects");
-            }
-
-            return q.FirstOrDefaultJsonAsync(token);
         }
     }
 
