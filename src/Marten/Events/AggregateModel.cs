@@ -6,6 +6,7 @@ using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Util;
 
 namespace Marten.Events
 {
@@ -26,9 +27,9 @@ namespace Marten.Events
         }
 
         public AggregateModel(Type aggregateType)
-            : this(aggregateType, aggregateType.Name.SplitPascalCase().ToLower().Replace(" ", "_"))
+            : this(aggregateType, aggregateType.Name.ToTableAlias())
         {
-            Alias = AggregateType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
+            Alias = AggregateType.Name.ToTableAlias();
         }
 
         public Type DocumentType { get; }

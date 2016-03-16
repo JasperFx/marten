@@ -22,7 +22,7 @@ namespace Marten.Events
         // TODO -- this logic is duplicated. Centralize in an ext method
         public static string ToEventTypeName(Type eventType)
         {
-            return eventType.Name.SplitPascalCase().ToLower().Replace(" ", "_");
+            return eventType.Name.ToTableAlias();
         }
 
         protected EventMapping(EventGraph parent, Type eventType)

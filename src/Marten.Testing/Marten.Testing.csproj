@@ -223,6 +223,7 @@
     <Compile Include="Using_DocumentSessionListener_Tests.cs" />
     <Compile Include="Util\CommandExtensionsTests.cs" />
     <Compile Include="Util\EnumerableExtensionsTests.cs" />
+    <Compile Include="Util\ReflectionExtensionsTests.cs" />
     <Compile Include="Util\update_batch_Tests.cs" />
   </ItemGroup>
   <ItemGroup>

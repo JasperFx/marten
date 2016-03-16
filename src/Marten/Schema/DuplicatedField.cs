@@ -35,7 +35,7 @@ namespace Marten.Schema
 
         public DuplicatedField(MemberInfo[] memberPath) : base(memberPath)
         {
-            ColumnName = MemberName.SplitPascalCase().ToLower().Replace(" ", "_");
+            ColumnName = MemberName.ToTableAlias();
 
             if (MemberType.IsEnum)
             {
