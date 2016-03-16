@@ -6,6 +6,7 @@ using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Includes;
 using Marten.Util;
 
 namespace Marten.Events
@@ -79,6 +80,11 @@ namespace Marten.Events
         }
 
         public void DeleteAllDocuments(IConnectionFactory factory)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class
         {
             throw new NotImplementedException();
         }

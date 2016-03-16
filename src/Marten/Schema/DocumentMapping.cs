@@ -12,6 +12,7 @@ using Marten.Linq;
 using Marten.Schema.Hierarchies;
 using Marten.Schema.Sequences;
 using Marten.Services;
+using Marten.Services.Includes;
 using Marten.Util;
 using NpgsqlTypes;
 
@@ -277,6 +278,18 @@ namespace Marten.Schema
         {
             var sql = "truncate {0} cascade".ToFormat(TableName);
             factory.RunSql(sql);
+        }
+
+        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class
+        {
+            var joinOperator = joinType == JoinType.Inner ? "INNER JOIN" : "LEFT OUTER JOIN";
+
+            var tableAlias = members.ToTableAlias();
+            var locator = FieldFor(members).SqlLocator;
+
+            var joinText = $"{joinOperator} {other.TableName} as {tableAlias} ON {locator} = {other.TableName}.id";
+
+            return new IncludeJoin<TOther>(other, joinText, tableAlias, callback);
         }
 
         public IEnumerable<SubClassMapping> SubClasses => _subClasses;

@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Services.Includes;
 
 namespace Marten.Schema
 {
@@ -33,6 +34,7 @@ namespace Marten.Schema
         void RemoveSchemaObjects(IManagedConnection connection);
         void DeleteAllDocuments(IConnectionFactory factory);
 
+        IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class;
     }
 
     public static class DocumentMappingExtensions

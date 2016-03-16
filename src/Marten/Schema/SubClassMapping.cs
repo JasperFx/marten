@@ -7,6 +7,7 @@ using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema.Hierarchies;
 using Marten.Services;
+using Marten.Services.Includes;
 using Marten.Util;
 using Npgsql;
 
@@ -84,6 +85,11 @@ namespace Marten.Schema
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
             factory.RunSql($"delete from {_parent.TableName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
+        }
+
+        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class
+        {
+            return _parent.JoinToInclude<TOther>(joinType, other, members, callback);
         }
     }
 
