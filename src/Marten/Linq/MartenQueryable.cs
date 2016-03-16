@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -25,6 +24,39 @@ namespace Marten.Linq
         {
             var queryProvider = (IMartenQueryProvider)Provider;
             return queryProvider.ExecuteCollectionAsync<T>(Expression, token);
+        }
+
+        public string ToListJson()
+        {
+            var model = new MartenQueryParser().GetParsedQuery(Expression);
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+
+            var listJsons = executor.ExecuteCollectionToJson<T>(model).ToArray();
+            return $"[{listJsons.Join(",")}]";
+        }
+
+        public Task<string> ToListJsonAsync(CancellationToken token)
+        {
+            var model = new MartenQueryParser().GetParsedQuery(Expression);
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+
+            return executor.ExecuteCollectionToJsonAsync<T>(model, token).ContinueWith(task => $"[{task.Result.Join(",")}]", token);
+        }
+
+        public string FirstJson(bool returnDefaultWhenEmpty)
+        {
+            var model = new MartenQueryParser().GetParsedQuery(Expression);
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+
+            return executor.ExecuteFirstToJson<T>(model, returnDefaultWhenEmpty);
+        }
+
+        public Task<string> FirstJsonAsync(CancellationToken token, bool returnDefaultWhenEmpty)
+        {
+            var model = new MartenQueryParser().GetParsedQuery(Expression);
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+
+            return executor.ExecuteFirstToJsonAsync<T>(model, returnDefaultWhenEmpty, token);
         }
 
         public NpgsqlCommand BuildCommand(FetchType fetchType)
@@ -62,21 +94,6 @@ namespace Marten.Linq
             }
 
             return cmd;
-        }
-    }
-
-    public static class QueryableExtensions
-    {
-        public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType)
-        {
-            var q = queryable as MartenQueryable<T>;
-
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(ToCommand)} is only valid on Marten IQueryable objects");
-            }
-
-            return q.BuildCommand(fetchType);
         }
     }
 
