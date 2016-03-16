@@ -45,9 +45,9 @@ namespace Marten.Linq
             return q.ToListJsonAsync(token);
         }
 
-        public static string FirstJson<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression)
+        public static string FirstJson<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression = null)
         {
-            var q = queryable.Where(expression) as MartenQueryable<T>;
+            var q = expression != null ? queryable.Where(expression) as MartenQueryable<T> : queryable as MartenQueryable<T>;
 
             if (q == null)
             {
@@ -57,9 +57,9 @@ namespace Marten.Linq
             return q.FirstJson(false);
         }
 
-        public static Task<string> FirstJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression, CancellationToken token = default(CancellationToken))
+        public static Task<string> FirstJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression = null, CancellationToken token = default(CancellationToken))
         {
-            var q = queryable.Where(expression) as MartenQueryable<T>;
+            var q = expression != null ? queryable.Where(expression) as MartenQueryable<T> : queryable as MartenQueryable<T>;
 
             if (q == null)
             {
@@ -69,9 +69,9 @@ namespace Marten.Linq
             return q.FirstJsonAsync(token, false);
         }
 
-        public static string FirstOrDefaultJson<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression)
+        public static string FirstOrDefaultJson<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression = null)
         {
-            var q = queryable.Where(expression) as MartenQueryable<T>;
+            var q = expression != null ? queryable.Where(expression) as MartenQueryable<T> : queryable as MartenQueryable<T>;
 
             if (q == null)
             {
@@ -81,9 +81,9 @@ namespace Marten.Linq
             return q.FirstJson(true);
         }
 
-        public static Task<string> FirstOrDefaultJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression, CancellationToken token = default(CancellationToken))
+        public static Task<string> FirstOrDefaultJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression = null, CancellationToken token = default(CancellationToken))
         {
-            var q = queryable.Where(expression) as MartenQueryable<T>;
+            var q = expression != null ? queryable.Where(expression) as MartenQueryable<T> : queryable as MartenQueryable<T>;
 
             if (q == null)
             {
