@@ -24,5 +24,7 @@ namespace Marten.Services
         void Commit();
         void Rollback();
         NpgsqlConnection Connection { get; }
+
+        int RequestCount { get; }
     }
 }
