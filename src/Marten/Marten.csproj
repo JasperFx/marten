@@ -124,7 +124,10 @@
     <Compile Include="Services\CommandRunnerMode.cs" />
     <Compile Include="Services\FetchResult.cs" />
     <Compile Include="Services\IChangeSet.cs" />
-    <Compile Include="Services\Includes\IncludeSpikeClasses.cs" />
+    <Compile Include="Services\Includes\IIncludeJoin.cs" />
+    <Compile Include="Services\Includes\IncludeSelector.cs" />
+    <Compile Include="Services\Includes\IncludeJoin.cs" />
+    <Compile Include="Services\Includes\JoinType.cs" />
     <Compile Include="Services\IUnitOfWork.cs" />
     <Compile Include="Services\ManagedConnection.cs" />
     <Compile Include="Services\CommandRunnerExtensions.cs" />

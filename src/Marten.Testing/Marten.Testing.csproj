@@ -182,6 +182,7 @@
     <Compile Include="Services\BatchedQuerying\batched_querying_acceptance_Tests.cs" />
     <Compile Include="Services\DirtyTrackingIdentityMapTests.cs" />
     <Compile Include="Services\IdentityMapTests.cs" />
+    <Compile Include="Services\Includes\IncludeSelectorTests.cs" />
     <Compile Include="Services\ManagedConnectionTests.cs" />
     <Compile Include="Services\NulloIdentityMapTests.cs" />
     <Compile Include="Services\TrackedEntityTests.cs" />
