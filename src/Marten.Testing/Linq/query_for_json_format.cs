@@ -24,6 +24,19 @@ namespace Marten.Testing.Linq
         public DateTime Birthdate { get; set; }
         public int Number { get; set; }
         public Address Address { get; set; }
+
+        public string ToJson()
+        {
+            return $@"
+{{
+""Id"": ""{Id}"", ""Number"": {Number}, ""Address"": 
+{{
+""Street"": ""{Address.Street}"", ""HouseNumber"": ""{Address.HouseNumber}""
+}}, 
+""UserName"": ""{UserName}"", 
+""Birthdate"": ""{Birthdate.ToString("s")}""
+}}".Replace("\r\n", "");
+        }
     }
 
     public class query_for_json_format : DocumentSessionFixture<NulloIdentityMap>
@@ -56,24 +69,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var listJson = theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToListJson();
-            listJson.ShouldBe($@"[
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}},
-{{
-""Id"": ""{user2.Id}"", ""Number"": {user2.Number}, ""Address"": 
-{{
-""Street"": ""{user2.Address.Street}"", ""HouseNumber"": ""{user2.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user2.UserName}"", 
-""Birthdate"": ""{user2.Birthdate.ToString("s")}""
-}}
-]".Replace("\r\n",""));
+            listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
         }
 
         [Fact]
@@ -104,24 +100,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var listJson = theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToListJsonAsync().GetAwaiter().GetResult();
-            listJson.ShouldBe($@"[
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}},
-{{
-""Id"": ""{user2.Id}"", ""Number"": {user2.Number}, ""Address"": 
-{{
-""Street"": ""{user2.Address.Street}"", ""HouseNumber"": ""{user2.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user2.UserName}"", 
-""Birthdate"": ""{user2.Birthdate.ToString("s")}""
-}}
-]".Replace("\r\n",""));
+            listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
         }
 
         [Fact]
@@ -152,15 +131,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstJson(x => x.Number == 5);
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -191,15 +162,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstJson();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user0.Id}"", ""Number"": {user0.Number}, ""Address"": 
-{{
-""Street"": ""{user0.Address.Street}"", ""HouseNumber"": ""{user0.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user0.UserName}"", 
-""Birthdate"": ""{user0.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
         [Fact]
@@ -254,15 +217,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstJsonAsync(x => x.Number == 5).GetAwaiter().GetResult();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -293,15 +248,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstJsonAsync().GetAwaiter().GetResult();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user0.Id}"", ""Number"": {user0.Number}, ""Address"": 
-{{
-""Street"": ""{user0.Address.Street}"", ""HouseNumber"": ""{user0.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user0.UserName}"", 
-""Birthdate"": ""{user0.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
         [Fact]
@@ -356,15 +303,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJson(x => x.Number == 5);
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -395,15 +334,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJson();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user0.Id}"", ""Number"": {user0.Number}, ""Address"": 
-{{
-""Street"": ""{user0.Address.Street}"", ""HouseNumber"": ""{user0.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user0.UserName}"", 
-""Birthdate"": ""{user0.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
         [Fact]
@@ -434,15 +365,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync(x => x.Number == 5).GetAwaiter().GetResult();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -473,15 +396,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync().GetAwaiter().GetResult();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user0.Id}"", ""Number"": {user0.Number}, ""Address"": 
-{{
-""Street"": ""{user0.Address.Street}"", ""HouseNumber"": ""{user0.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user0.UserName}"", 
-""Birthdate"": ""{user0.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
         [Fact]

@@ -45,6 +45,22 @@ namespace Marten.Linq
             return executor.ExecuteCollectionToJsonAsync<T>(model, token).ContinueWith(task => $"[{task.Result.Join(",")}]", token);
         }
 
+        public string SingleJson(bool returnDefaultWhenEmpty)
+        {
+            var model = new MartenQueryParser().GetParsedQuery(Expression);
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+
+            return executor.ExecuteSingleToJson<T>(model, returnDefaultWhenEmpty);
+        }
+
+        public Task<string> SingleJsonAsync(bool returnDefaultWhenEmpty, CancellationToken token)
+        {
+            var model = new MartenQueryParser().GetParsedQuery(Expression);
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+
+            return executor.ExecuteSingleToJsonAsync<T>(model, returnDefaultWhenEmpty, token);
+        }
+
         public string FirstJson(bool returnDefaultWhenEmpty)
         {
             var model = new MartenQueryParser().GetParsedQuery(Expression);
@@ -53,7 +69,7 @@ namespace Marten.Linq
             return executor.ExecuteFirstToJson<T>(model, returnDefaultWhenEmpty);
         }
 
-        public Task<string> FirstJsonAsync(CancellationToken token, bool returnDefaultWhenEmpty)
+        public Task<string> FirstJsonAsync(bool returnDefaultWhenEmpty, CancellationToken token)
         {
             var model = new MartenQueryParser().GetParsedQuery(Expression);
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
