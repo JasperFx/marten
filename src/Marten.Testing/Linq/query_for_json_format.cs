@@ -73,7 +73,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public void to_list_async()
+        public async void to_list_async()
         {
             var user0 = new SimpleUser
             {
@@ -99,7 +99,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var listJson = theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToListJsonAsync().GetAwaiter().GetResult();
+            var listJson = await theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToListJsonAsync();
             listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
         }
 
@@ -190,7 +190,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public void first_async_returns_first()
+        public async void first_async_returns_first()
         {
             var user0 = new SimpleUser
             {
@@ -216,12 +216,12 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().FirstJsonAsync(x => x.Number == 5).GetAwaiter().GetResult();
+            var userJson = await theSession.Query<SimpleUser>().FirstJsonAsync(x => x.Number == 5);
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
         [Fact]
-        public void first_async_returns_first_line()
+        public async void first_async_returns_first_line()
         {
             var user0 = new SimpleUser
             {
@@ -247,12 +247,12 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().FirstJsonAsync().GetAwaiter().GetResult();
+            var userJson = await theSession.Query<SimpleUser>().FirstJsonAsync();
             userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
         [Fact]
-        public void first_async_throws_when_none_returned()
+        public async void first_async_throws_when_none_returned()
         {
             var user1 = new SimpleUser
             {
@@ -271,7 +271,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1,user2);
             theSession.SaveChanges();
 
-            var ex = Exception<InvalidOperationException>.ShouldBeThrownByAsync(()=>theSession.Query<SimpleUser>().FirstJsonAsync(x=>x.Number != 5)).GetAwaiter().GetResult();
+            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(()=>theSession.Query<SimpleUser>().FirstJsonAsync(x=>x.Number != 5));
             ex.Message.ShouldBe("Sequence contains no elements");
         }
 
@@ -338,7 +338,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public void first_or_default_returns_first_async()
+        public async void first_or_default_returns_first_async()
         {
             var user0 = new SimpleUser
             {
@@ -364,12 +364,12 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync(x => x.Number == 5).GetAwaiter().GetResult();
+            var userJson = await theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync(x => x.Number == 5);
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
         [Fact]
-        public void first_or_default_returns_first_line_async()
+        public async void first_or_default_returns_first_line_async()
         {
             var user0 = new SimpleUser
             {
@@ -395,7 +395,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync().GetAwaiter().GetResult();
+            var userJson = await theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync();
             userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
@@ -424,7 +424,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public void first_or_default_async_returns_default()
+        public async void first_or_default_async_returns_default()
         {
             var user1 = new SimpleUser
             {
@@ -443,7 +443,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1,user2);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync(x=>x.Number != 5).GetAwaiter().GetResult();
+            var userJson = await theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync(x=>x.Number != 5);
             userJson.ShouldBeNull();
         }
     }

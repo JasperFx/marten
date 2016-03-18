@@ -117,7 +117,7 @@ namespace Marten.Linq
         public string ExecuteSingleToJson<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
             var all = executeJson<T>(queryModel, new SingleResultOperator(returnDefaultWhenEmpty));
-            return all.Single();
+            return returnDefaultWhenEmpty ? all.SingleOrDefault() : all.Single();
         }
 
         public Task<string> ExecuteSingleToJsonAsync<T>(QueryModel queryModel, bool returnDefaultWhenEmpty, CancellationToken token)
@@ -127,7 +127,7 @@ namespace Marten.Linq
             return _runner.QueryJsonAsync(cmd, token).ContinueWith(task =>
             {
                 var all = task.Result.ToArray();
-                return all.Single();
+                return returnDefaultWhenEmpty ? all.SingleOrDefault() : all.Single();
             }, token);
         }
 
