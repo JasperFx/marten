@@ -85,7 +85,7 @@ namespace Marten.Schema
             {
                 if (value.IsEmpty()) throw new ArgumentNullException(nameof(value));
 
-                _alias = value;
+                _alias = value.ToLower();
                 TableName = TablePrefix + _alias;
                 UpsertName = UpsertPrefix + _alias;
             }

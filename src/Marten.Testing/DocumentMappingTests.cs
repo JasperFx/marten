@@ -43,6 +43,18 @@ namespace Marten.Testing
             mapping.UpsertName.ShouldBe("mt_upsert_users");
         }
 
+
+        [Fact]
+        public void override_the_alias_converts_to_lowercase()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.Alias = "Users";
+
+            mapping.TableName.ShouldBe("mt_doc_users");
+            mapping.UpsertName.ShouldBe("mt_upsert_users");
+            mapping.Alias.ShouldBe("users");
+        }
+
         [Fact]
         public void select_fields_for_non_hierarchy_mapping()
         {
