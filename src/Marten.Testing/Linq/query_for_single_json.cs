@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
 using Shouldly;
@@ -99,7 +100,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void single_async_returns_only_match()
+        public async Task single_async_returns_only_match()
         {
             var user0 = new SimpleUser
             {
@@ -123,7 +124,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void single_async_returns_first_and_only()
+        public async Task single_async_returns_first_and_only()
         {
             var user1 = new SimpleUser
             {
@@ -141,7 +142,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void single_async_throws_when_none_returned()
+        public async Task single_async_throws_when_none_returned()
         {
             var user1 = new SimpleUser
             {
@@ -165,7 +166,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void single_async_throws_when_more_than_one_returned()
+        public async Task single_async_throws_when_more_than_one_returned()
         {
             var user1 = new SimpleUser
             {
@@ -230,7 +231,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void single_or_default_returns_first_async()
+        public async Task single_or_default_returns_first_async()
         {
             var user0 = new SimpleUser
             {
@@ -261,7 +262,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void single_or_default_returns_first_line_async()
+        public async Task single_or_default_returns_first_line_async()
         {
             var user1 = new SimpleUser
             {
@@ -326,7 +327,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void single_or_default_async_returns_default_when_none_found()
+        public async Task single_or_default_async_returns_default_when_none_found()
         {
             var user1 = new SimpleUser
             {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
 using Shouldly;
@@ -73,7 +74,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void to_list_async()
+        public async Task to_list_async()
         {
             var user0 = new SimpleUser
             {
@@ -190,7 +191,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void first_async_returns_first()
+        public async Task first_async_returns_first()
         {
             var user0 = new SimpleUser
             {
@@ -221,7 +222,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void first_async_returns_first_line()
+        public async Task first_async_returns_first_line()
         {
             var user0 = new SimpleUser
             {
@@ -252,7 +253,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void first_async_throws_when_none_returned()
+        public async Task first_async_throws_when_none_returned()
         {
             var user1 = new SimpleUser
             {
@@ -338,7 +339,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void first_or_default_returns_first_async()
+        public async Task first_or_default_returns_first_async()
         {
             var user0 = new SimpleUser
             {
@@ -369,7 +370,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void first_or_default_returns_first_line_async()
+        public async Task first_or_default_returns_first_line_async()
         {
             var user0 = new SimpleUser
             {
@@ -424,7 +425,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public async void first_or_default_async_returns_default()
+        public async Task first_or_default_async_returns_default()
         {
             var user1 = new SimpleUser
             {
