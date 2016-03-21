@@ -58,6 +58,7 @@ namespace Marten.Linq
             new EnumerableContains(),
             new StringEndsWith(),
             new StringStartsWith(),
+            new StringEquals(),
 
             // Added
             new IsOneOf(),
