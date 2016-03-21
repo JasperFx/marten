@@ -39,9 +39,21 @@ namespace Marten.Testing.Generation
             var table1 = users.ToTable(null);
             var table2 = users.ToTable(null);
 
-            table2.PrimaryKey.Type = "int";
+            table2.ReplaceOrAddColumn(table2.PrimaryKey.Name, "int", table2.PrimaryKey.Directive);
 
             table2.ShouldNotBe(table1);
+        }
+
+        [Fact]
+        public void equivalency_positive_column_name_case_insensitive()
+        {
+            var users = new DocumentMapping(typeof(User));
+            var table1 = users.ToTable(null);
+            var table2 = users.ToTable(null);
+
+            table2.Column("username").ShouldBeSameAs(table1.Column("UserName"));
+
+            table2.ShouldBe(table1);
         }
 
         [Fact]
@@ -55,26 +67,26 @@ namespace Marten.Testing.Generation
             var table1 = users.ToTable(null);
             var table2 = users.ToTable(null);
 
-            table1.Column("first_name").Type = "varchar";
-            table2.Column("first_name").Type = "character varying";
+            table1.ReplaceOrAddColumn("first_name", "varchar");
+            table2.ReplaceOrAddColumn("first_name", "character varying");
 
             table1.Equals(table2).ShouldBeTrue();
             table2.Equals(table1).ShouldBeTrue();
 
-            table1.Column("first_name").Type = "character varying";
-            table2.Column("first_name").Type = "varchar";
+            table1.ReplaceOrAddColumn("first_name", "character varying");
+            table2.ReplaceOrAddColumn("first_name", "varchar");
 
             table1.Equals(table2).ShouldBeTrue();
             table2.Equals(table1).ShouldBeTrue();
 
-            table1.Column("first_name").Type = "character varying";
-            table2.Column("first_name").Type = "character varying";
+            table1.ReplaceOrAddColumn("first_name", "character varying");
+            table2.ReplaceOrAddColumn("first_name", "character varying");
 
             table1.Equals(table2).ShouldBeTrue();
             table2.Equals(table1).ShouldBeTrue();
 
-            table1.Column("first_name").Type = "varchar";
-            table2.Column("first_name").Type = "varchar";
+            table1.ReplaceOrAddColumn("first_name", "varchar");
+            table2.ReplaceOrAddColumn("first_name", "varchar");
 
             table1.Equals(table2).ShouldBeTrue();
             table2.Equals(table1).ShouldBeTrue();

@@ -73,7 +73,7 @@ namespace Marten.Testing.Generation
         {
             var users = new DocumentMapping(typeof(User));
             var actual = users.ToTable(null);
-            actual.Column("id").Type = "int";
+            actual.ReplaceOrAddColumn("id", "int");
 
             var expected = users.ToTable(null);
 

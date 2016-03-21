@@ -1,40 +1,51 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Baseline;
-using Marten.Services;
 
 namespace Marten.Generation
 {
     public class TableDefinition
     {
-        public readonly IList<TableColumn> Columns = new List<TableColumn>();
+        public IList<TableColumn> Columns { get; } = new List<TableColumn>();
 
-        public TableColumn PrimaryKey;
+        private string primaryKeyDirective => $"CONSTRAINT pk_{Name} PRIMARY KEY";
+
+        public TableColumn PrimaryKey
+        {
+            get { return Columns.FirstOrDefault(c => c.Directive == primaryKeyDirective); }
+            set
+            {
+                if(value == null)throw new ArgumentNullException(nameof(value));
+                value.Directive = $"CONSTRAINT pk_{Name} PRIMARY KEY";
+                if (!Columns.Contains(value)) Columns.Add(value);
+            }
+        }
 
         public TableDefinition(string name, TableColumn primaryKey)
         {
-            Name = name;
+            if (string.IsNullOrEmpty(name)) throw new ArgumentOutOfRangeException(nameof(name));
+            if (primaryKey == null) throw new ArgumentNullException(nameof(primaryKey));
+            Name = name.ToLower();
             PrimaryKey = primaryKey;
-            PrimaryKey.Directive = "CONSTRAINT pk_{0} PRIMARY KEY".ToFormat(name);
-
-            Columns.Add(primaryKey);
         }
 
         public TableDefinition(string name, string pkName, IEnumerable<TableColumn> columns)
         {
+            if (string.IsNullOrEmpty(name)) throw new ArgumentOutOfRangeException(nameof(name));
+            if (string.IsNullOrEmpty(pkName)) throw new ArgumentOutOfRangeException(nameof(pkName));
+
             Name = name;
             Columns.AddRange(columns);
 
-            PrimaryKey = columns.FirstOrDefault(x => x.Name == pkName);
-            if (PrimaryKey != null)
-            {
-                PrimaryKey.Directive = "CONSTRAINT pk_{0} PRIMARY KEY".ToFormat(name);
-            }
+            var primaryKey = Column(pkName);
+            if (primaryKey == null) throw new InvalidOperationException($"Primary key {pkName} not found in columns.");
+            primaryKey.Directive = primaryKeyDirective;
         }
 
-        public string Name { get; set; }
+        public string Name { get; }
 
         public void Write(StringWriter writer)
         {
@@ -61,7 +72,18 @@ namespace Marten.Generation
 
         public TableColumn Column(string name)
         {
-            return Columns.FirstOrDefault(x => x.Name == name);
+            return Columns.FirstOrDefault(x => x.Name.Equals(name, System.StringComparison.OrdinalIgnoreCase));
+        }
+
+        public void ReplaceOrAddColumn(string name, string type, string directive = null)
+        {
+            var column = new TableColumn(name, type) { Directive = directive };
+            var columnIndex = Columns.ToList().FindIndex(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            if (columnIndex >= 0)
+            {
+                Columns[columnIndex] = column;
+            }
+            else Columns.Add(column);
         }
 
         protected bool Equals(TableDefinition other)
@@ -74,7 +96,7 @@ namespace Marten.Generation
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((TableDefinition) obj);
+            return Equals((TableDefinition)obj);
         }
 
         public override int GetHashCode()
@@ -82,15 +104,15 @@ namespace Marten.Generation
             unchecked
             {
                 var hashCode = (Columns != null ? Columns.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ (PrimaryKey != null ? PrimaryKey.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (PrimaryKey != null ? PrimaryKey.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (Name != null ? Name.GetHashCode() : 0);
                 return hashCode;
             }
         }
 
         public bool HasColumn(string name)
         {
-            return Columns.Any(x => x.Name == name);
+            return Columns.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
     }
 }
