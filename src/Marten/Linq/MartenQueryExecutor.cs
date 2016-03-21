@@ -9,6 +9,7 @@ using Marten.Services;
 using Marten.Services.Includes;
 using Npgsql;
 using Remotion.Linq;
+using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing.Structure;
 
@@ -113,17 +114,38 @@ namespace Marten.Linq
             return _runner.QueryJsonAsync(cmd, token);
         }
 
+        public string ExecuteSingleToJson<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
+        {
+            var all = executeJson<T>(queryModel, new SingleResultOperator(returnDefaultWhenEmpty));
+            return returnDefaultWhenEmpty ? all.SingleOrDefault() : all.Single();
+        }
+
+        public Task<string> ExecuteSingleToJsonAsync<T>(QueryModel queryModel, bool returnDefaultWhenEmpty, CancellationToken token)
+        {
+            var cmd = prepareCommand<T>(queryModel, new SingleResultOperator(returnDefaultWhenEmpty));
+
+            return _runner.QueryJsonAsync(cmd, token).ContinueWith(task =>
+            {
+                var all = task.Result.ToArray();
+                return returnDefaultWhenEmpty ? all.SingleOrDefault() : all.Single();
+            }, token);
+        }
+
         public string ExecuteFirstToJson<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
-            queryModel.ResultOperators.Add(new FirstResultOperator(true));
-            var cmd = new NpgsqlCommand();
-            var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
-            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
-            documentQuery.ConfigureCommand<T>(_schema, cmd);
+            var all = executeJson<T>(queryModel, new FirstResultOperator(returnDefaultWhenEmpty));
+            return GetFirst(returnDefaultWhenEmpty, all.ToArray());
+        }
 
-            var all = _runner.QueryJson(cmd).ToArray();
+        public Task<string> ExecuteFirstToJsonAsync<T>(QueryModel queryModel, bool returnDefaultWhenEmpty, CancellationToken token)
+        {
+            var cmd = prepareCommand<T>(queryModel, new FirstResultOperator(returnDefaultWhenEmpty));
 
-            return GetFirst(returnDefaultWhenEmpty, all);
+            return _runner.QueryJsonAsync(cmd, token).ContinueWith(task =>
+            {
+                var all = task.Result.ToArray();
+                return GetFirst(returnDefaultWhenEmpty, all);
+            }, token);
         }
 
         private static string GetFirst(bool returnDefaultWhenEmpty, string[] all)
@@ -133,19 +155,21 @@ namespace Marten.Linq
             return all.First();
         }
 
-        public Task<string> ExecuteFirstToJsonAsync<T>(QueryModel queryModel, bool returnDefaultWhenEmpty, CancellationToken token)
+        private IEnumerable<string> executeJson<T>(QueryModel queryModel, ResultOperatorBase resultOperator)
         {
-            queryModel.ResultOperators.Add(new FirstResultOperator(true));
+            var cmd = prepareCommand<T>(queryModel, resultOperator);
+            var all = _runner.QueryJson(cmd);
+            return all;
+        }
+
+        private NpgsqlCommand prepareCommand<T>(QueryModel queryModel, ResultOperatorBase resultOperator)
+        {
+            queryModel.ResultOperators.Add(resultOperator);
             var cmd = new NpgsqlCommand();
             var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
             var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
             documentQuery.ConfigureCommand<T>(_schema, cmd);
-
-            return _runner.QueryJsonAsync(cmd, token).ContinueWith(task =>
-            {
-                var all = task.Result.ToArray();
-                return GetFirst(returnDefaultWhenEmpty, all);
-            }, token);
+            return cmd;
         }
 
         public NpgsqlCommand  BuildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
@@ -183,7 +207,7 @@ namespace Marten.Linq
             };
 
             if (scalarExecutions.Any(ex=>ex.Match(queryModel)))
-                return await ExecuteScalar<T>(queryModel, token, scalarExecutions).ConfigureAwait(false);
+                return await ExecuteScalarAsync<T>(queryModel, token, scalarExecutions).ConfigureAwait(false);
             
 
             var choiceResultOperator = queryModel.ResultOperators.OfType<ChoiceResultOperatorBase>().Single();
@@ -212,7 +236,7 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        private Task<T> ExecuteScalar<T>(QueryModel queryModel, CancellationToken token, List<IScalarQueryExecution<T>> executors)
+        private Task<T> ExecuteScalarAsync<T>(QueryModel queryModel, CancellationToken token, List<IScalarQueryExecution<T>> executors)
         {
             var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
             if (queryExecution == null) throw new NotSupportedException();

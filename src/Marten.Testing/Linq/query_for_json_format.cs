@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
 using Shouldly;
@@ -24,6 +25,19 @@ namespace Marten.Testing.Linq
         public DateTime Birthdate { get; set; }
         public int Number { get; set; }
         public Address Address { get; set; }
+
+        public string ToJson()
+        {
+            return $@"
+{{
+""Id"": ""{Id}"", ""Number"": {Number}, ""Address"": 
+{{
+""Street"": ""{Address.Street}"", ""HouseNumber"": ""{Address.HouseNumber}""
+}}, 
+""UserName"": ""{UserName}"", 
+""Birthdate"": ""{Birthdate.ToString("s")}""
+}}".Replace("\r\n", "");
+        }
     }
 
     public class query_for_json_format : DocumentSessionFixture<NulloIdentityMap>
@@ -56,28 +70,11 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var listJson = theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToListJson();
-            listJson.ShouldBe($@"[
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}},
-{{
-""Id"": ""{user2.Id}"", ""Number"": {user2.Number}, ""Address"": 
-{{
-""Street"": ""{user2.Address.Street}"", ""HouseNumber"": ""{user2.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user2.UserName}"", 
-""Birthdate"": ""{user2.Birthdate.ToString("s")}""
-}}
-]".Replace("\r\n",""));
+            listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
         }
 
         [Fact]
-        public void to_list_async()
+        public async Task to_list_async()
         {
             var user0 = new SimpleUser
             {
@@ -103,25 +100,8 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var listJson = theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToListJsonAsync().GetAwaiter().GetResult();
-            listJson.ShouldBe($@"[
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}},
-{{
-""Id"": ""{user2.Id}"", ""Number"": {user2.Number}, ""Address"": 
-{{
-""Street"": ""{user2.Address.Street}"", ""HouseNumber"": ""{user2.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user2.UserName}"", 
-""Birthdate"": ""{user2.Birthdate.ToString("s")}""
-}}
-]".Replace("\r\n",""));
+            var listJson = await theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToListJsonAsync();
+            listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
         }
 
         [Fact]
@@ -152,15 +132,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstJson(x => x.Number == 5);
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -191,15 +163,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstJson();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user0.Id}"", ""Number"": {user0.Number}, ""Address"": 
-{{
-""Street"": ""{user0.Address.Street}"", ""HouseNumber"": ""{user0.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user0.UserName}"", 
-""Birthdate"": ""{user0.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
         [Fact]
@@ -227,7 +191,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public void first_async_returns_first()
+        public async Task first_async_returns_first()
         {
             var user0 = new SimpleUser
             {
@@ -253,20 +217,12 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().FirstJsonAsync(x => x.Number == 5).GetAwaiter().GetResult();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            var userJson = await theSession.Query<SimpleUser>().FirstJsonAsync(x => x.Number == 5);
+            userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
         [Fact]
-        public void first_async_returns_first_line()
+        public async Task first_async_returns_first_line()
         {
             var user0 = new SimpleUser
             {
@@ -292,20 +248,12 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().FirstJsonAsync().GetAwaiter().GetResult();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user0.Id}"", ""Number"": {user0.Number}, ""Address"": 
-{{
-""Street"": ""{user0.Address.Street}"", ""HouseNumber"": ""{user0.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user0.UserName}"", 
-""Birthdate"": ""{user0.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            var userJson = await theSession.Query<SimpleUser>().FirstJsonAsync();
+            userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
         [Fact]
-        public void first_async_throws_when_none_returned()
+        public async Task first_async_throws_when_none_returned()
         {
             var user1 = new SimpleUser
             {
@@ -324,7 +272,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1,user2);
             theSession.SaveChanges();
 
-            var ex = Exception<InvalidOperationException>.ShouldBeThrownByAsync(()=>theSession.Query<SimpleUser>().FirstJsonAsync(x=>x.Number != 5)).GetAwaiter().GetResult();
+            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(()=>theSession.Query<SimpleUser>().FirstJsonAsync(x=>x.Number != 5));
             ex.Message.ShouldBe("Sequence contains no elements");
         }
 
@@ -356,15 +304,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJson(x => x.Number == 5);
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -395,19 +335,11 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJson();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user0.Id}"", ""Number"": {user0.Number}, ""Address"": 
-{{
-""Street"": ""{user0.Address.Street}"", ""HouseNumber"": ""{user0.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user0.UserName}"", 
-""Birthdate"": ""{user0.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
         [Fact]
-        public void first_or_default_returns_first_async()
+        public async Task first_or_default_returns_first_async()
         {
             var user0 = new SimpleUser
             {
@@ -433,20 +365,12 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync(x => x.Number == 5).GetAwaiter().GetResult();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user1.Id}"", ""Number"": {user1.Number}, ""Address"": 
-{{
-""Street"": ""{user1.Address.Street}"", ""HouseNumber"": ""{user1.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user1.UserName}"", 
-""Birthdate"": ""{user1.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            var userJson = await theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync(x => x.Number == 5);
+            userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
         [Fact]
-        public void first_or_default_returns_first_line_async()
+        public async Task first_or_default_returns_first_line_async()
         {
             var user0 = new SimpleUser
             {
@@ -472,16 +396,8 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync().GetAwaiter().GetResult();
-            userJson.ShouldBe($@"
-{{
-""Id"": ""{user0.Id}"", ""Number"": {user0.Number}, ""Address"": 
-{{
-""Street"": ""{user0.Address.Street}"", ""HouseNumber"": ""{user0.Address.HouseNumber}""
-}}, 
-""UserName"": ""{user0.UserName}"", 
-""Birthdate"": ""{user0.Birthdate.ToString("s")}""
-}}".Replace("\r\n",""));
+            var userJson = await theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync();
+            userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
         [Fact]
@@ -509,7 +425,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public void first_or_default_async_returns_default()
+        public async Task first_or_default_async_returns_default()
         {
             var user1 = new SimpleUser
             {
@@ -528,7 +444,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1,user2);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync(x=>x.Number != 5).GetAwaiter().GetResult();
+            var userJson = await theSession.Query<SimpleUser>().FirstOrDefaultJsonAsync(x=>x.Number != 5);
             userJson.ShouldBeNull();
         }
     }

@@ -39,58 +39,77 @@ namespace Marten.Linq
 
             if (q == null)
             {
-                throw new InvalidOperationException($"{nameof(ToListJson)} is only valid on Marten IQueryable objects");
+                throw new InvalidOperationException($"{nameof(ToListJsonAsync)} is only valid on Marten IQueryable objects");
             }
 
             return q.ToListJsonAsync(token);
         }
 
-        public static string FirstJson<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression = null)
+        public static string SingleJson<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> predicate = null)
         {
-            var q = expression != null ? queryable.Where(expression) as MartenQueryable<T> : queryable as MartenQueryable<T>;
+            var q = GetMartenQueryable(queryable, predicate, nameof(SingleJson));
 
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(FirstOrDefaultJson)} is only valid on Marten IQueryable objects");
-            }
+            return q.SingleJson(false);
+        }
+
+        public static Task<string> SingleJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> predicate = null, CancellationToken token = default(CancellationToken))
+        {
+            var q = GetMartenQueryable(queryable, predicate, nameof(SingleJsonAsync));
+
+            return q.SingleJsonAsync(false, token);
+        }
+
+        public static string SingleOrDefaultJson<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> predicate = null)
+        {
+            var q = GetMartenQueryable(queryable, predicate, nameof(SingleOrDefaultJson));
+
+            return q.SingleJson(true);
+        }
+
+        public static Task<string> SingleOrDefaultJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T, bool>> predicate = null, CancellationToken token = default(CancellationToken))
+        {
+            var q = GetMartenQueryable(queryable, predicate, nameof(SingleOrDefaultJson));
+
+            return q.SingleJsonAsync(true, token);
+        }
+
+        public static string FirstJson<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> predicate = null)
+        {
+            var q = GetMartenQueryable(queryable, predicate, nameof(FirstJson));
 
             return q.FirstJson(false);
         }
 
-        public static Task<string> FirstJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression = null, CancellationToken token = default(CancellationToken))
+        public static Task<string> FirstJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> predicate = null, CancellationToken token = default(CancellationToken))
         {
-            var q = expression != null ? queryable.Where(expression) as MartenQueryable<T> : queryable as MartenQueryable<T>;
+            var q = GetMartenQueryable(queryable, predicate, nameof(FirstJsonAsync));
 
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(FirstOrDefaultJson)} is only valid on Marten IQueryable objects");
-            }
-
-            return q.FirstJsonAsync(token, false);
+            return q.FirstJsonAsync(false, token);
         }
 
-        public static string FirstOrDefaultJson<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression = null)
+        public static string FirstOrDefaultJson<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> predicate = null)
         {
-            var q = expression != null ? queryable.Where(expression) as MartenQueryable<T> : queryable as MartenQueryable<T>;
-
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(FirstOrDefaultJson)} is only valid on Marten IQueryable objects");
-            }
+            var q = GetMartenQueryable(queryable, predicate, nameof(FirstOrDefaultJson));
 
             return q.FirstJson(true);
         }
 
-        public static Task<string> FirstOrDefaultJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> expression = null, CancellationToken token = default(CancellationToken))
+        public static Task<string> FirstOrDefaultJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T,bool>> predicate = null, CancellationToken token = default(CancellationToken))
         {
-            var q = expression != null ? queryable.Where(expression) as MartenQueryable<T> : queryable as MartenQueryable<T>;
+            var q = GetMartenQueryable(queryable, predicate, nameof(FirstOrDefaultJsonAsync));
+
+            return q.FirstJsonAsync(true, token);
+        }
+
+        private static MartenQueryable<T> GetMartenQueryable<T>(IQueryable<T> queryable, Expression<Func<T, bool>> predicate, string methodName)
+        {
+            var q = predicate != null ? queryable.Where(predicate) as MartenQueryable<T> : queryable as MartenQueryable<T>;
 
             if (q == null)
             {
-                throw new InvalidOperationException($"{nameof(FirstOrDefaultJson)} is only valid on Marten IQueryable objects");
+                throw new InvalidOperationException($"{methodName} is only valid on Marten IQueryable objects");
             }
-
-            return q.FirstJsonAsync(token, true);
+            return q;
         }
     }
 }
