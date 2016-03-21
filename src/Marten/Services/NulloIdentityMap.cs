@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -59,6 +60,11 @@ namespace Marten.Services
         public T Retrieve<T>(object id) where T : class
         {
             return null;
+        }
+
+        public IIdentityMap ForQuery()
+        {
+            return new IdentityMap(_serializer, Enumerable.Empty<IDocumentSessionListener>());
         }
     }
 }

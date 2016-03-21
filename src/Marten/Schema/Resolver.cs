@@ -9,6 +9,8 @@ namespace Marten.Schema
     {
         public virtual T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
+            if (reader.IsDBNull(startingIndex)) return null;
+
             var json = reader.GetString(startingIndex);
             var id = reader[startingIndex + 1];
 

@@ -77,10 +77,12 @@ namespace Marten.Linq
             return executor.ExecuteFirstToJsonAsync<T>(model, returnDefaultWhenEmpty, token);
         }
 
-        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : class
+        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, JoinType joinType = JoinType.Inner) where TInclude : class
         {
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var schema = executor.Schema;
+
+            schema.EnsureStorageExists(typeof(TInclude));
 
             var mapping = schema.MappingFor(typeof (T));
             var included = schema.MappingFor(typeof (TInclude));
@@ -89,11 +91,33 @@ namespace Marten.Linq
             visitor.Visit(idSource);
             var members = visitor.Members.ToArray();
 
-            var include = mapping.JoinToInclude<TInclude>(JoinType.Inner, included, members, callback);
+            var include = mapping.JoinToInclude(joinType, included, members, callback);
 
             executor.AddInclude(include);
 
             return this;
+        }
+
+        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list, JoinType joinType = JoinType.Inner) where TInclude : class
+        {
+            return Include<TInclude>(idSource, list.Fill);
+        }
+
+        public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource, IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner) where TInclude : class
+        {
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+            var schema = executor.Schema;
+
+            var storage = schema.StorageFor(typeof (TInclude));
+
+            return Include<TInclude>(idSource, x =>
+            {
+                var id = storage.Identity(x).As<TKey>();
+                if (!dictionary.ContainsKey(id))
+                {
+                    dictionary.Add(id, x);
+                }
+            });
         }
 
         public NpgsqlCommand BuildCommand(FetchType fetchType)

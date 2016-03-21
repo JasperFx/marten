@@ -23,5 +23,7 @@ namespace Marten.Services
         bool Has<T>(object id) where T : class;
 
         T Retrieve<T>(object id) where T : class;
+
+        IIdentityMap ForQuery();
     }
 }

@@ -115,6 +115,11 @@ namespace Marten.Services
             var dict = Cache[typeof(T)];
             return dict.ContainsKey(id) ? FromCache<T>(dict[id]): null;
         }
+
+        public IIdentityMap ForQuery()
+        {
+            return this;
+        }
     }
 
     public class IdentityMap : IdentityMap<object>
