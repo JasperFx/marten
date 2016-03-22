@@ -14,5 +14,7 @@ namespace Marten.Testing.Documents
         public string Title { get; set; }
 
         public Guid? AssigneeId { get; set; }
+
+        public Guid? ReporterId { get; set; }
     }
 }

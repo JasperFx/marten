@@ -226,5 +226,36 @@ namespace Marten.Testing.Services.Includes
         }
 
 
+        [Fact]
+        public void multiple_includes()
+        {
+            var assignee = new User();
+            var reporter = new User();
+
+            var issue1 = new Issue { AssigneeId = assignee.Id, ReporterId = reporter.Id, Title = "Garage Door is busted" };
+
+            theSession.Store(assignee, reporter);
+            theSession.Store(issue1);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+
+                User assignee2 = null;
+                User reporter2 = null;
+
+                query
+                    .Query<Issue>()
+                    .Include<User>(x => x.AssigneeId, x => assignee2 = x)
+                    .Include<User>(x => x.ReporterId, x => reporter2 = x).Single()
+                    .ShouldNotBeNull();
+
+                assignee2.Id.ShouldBe(assignee.Id);
+                reporter2.Id.ShouldBe(reporter.Id);
+
+            }
+        }
+
+
     }
 }
