@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Marten.Linq;
 using Marten.Services;
+using Marten.Util;
 using Shouldly;
 using Xunit;
 

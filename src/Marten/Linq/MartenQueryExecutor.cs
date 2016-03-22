@@ -9,7 +9,6 @@ using Marten.Services;
 using Marten.Services.Includes;
 using Npgsql;
 using Remotion.Linq;
-using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing.Structure;
 
@@ -49,7 +48,7 @@ namespace Marten.Linq
         {
             return _schema.StorageFor(typeof (T)).As<IResolver<T>>();
         }
-            
+
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
             var executors = new List<IScalarQueryExecution<T>> {
@@ -60,7 +59,7 @@ namespace Marten.Linq
                 new AverageQueryExecution<T>(_expressionParser, _schema, _runner)
             };
             var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
-            if (queryExecution == null) throw new NotSupportedException();
+            if (queryExecution == null) throw new NotSupportedException(); 
             return queryExecution.Execute(queryModel).As<T>();
         }
 
@@ -73,123 +72,26 @@ namespace Marten.Linq
             var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
             if (queryExecution != null) return queryExecution.Execute(queryModel).As<T>();
 
-            var isLast = queryModel.ResultOperators.OfType<LastResultOperator>().Any();
-            if (isLast)
-            {
-                throw new InvalidOperationException("Marten does not support Last()/LastOrDefault() querying. Reverse your ordering and use First()/FirstOrDefault() instead");
-            }
+            ISelector<T> selector;
+            var cmd = BuildCommand(queryModel, out selector);
 
-            ISelector<T> selector = null;
-            var cmd = BuildCommand<T>(queryModel, out selector);
+            var enumerable = _runner.Resolve(cmd, selector, _identityMap);
 
-            var all = _runner.Resolve(cmd, selector, _identityMap).ToArray();
-
-            if (returnDefaultWhenEmpty && all.Length == 0) return default(T);
-
-            return all.Single();
+            return GetResult(enumerable, queryModel);
         }
-
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
         {
-            ISelector<T> selector = null;
-            var cmd = BuildCommand<T>(queryModel, out selector);
+            ISelector<T> selector;
+            var cmd = BuildCommand(queryModel, out selector);
 
             return _runner.Resolve(cmd, selector, _identityMap);
         }
 
-        public IEnumerable<string> ExecuteCollectionToJson<T>(QueryModel queryModel)
-        {
-            ISelector<T> selector = null;
-            var cmd = BuildCommand(queryModel, out selector);
-
-            return _runner.QueryJson(cmd);
-        }
-
-        public Task<IEnumerable<string>> ExecuteCollectionToJsonAsync<T>(QueryModel queryModel, CancellationToken token)
-        {
-            ISelector<T> selector = null;
-            var cmd = BuildCommand(queryModel, out selector);
-
-            return _runner.QueryJsonAsync(cmd, token);
-        }
-
-        public string ExecuteSingleToJson<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
-        {
-            var all = executeJson<T>(queryModel, new SingleResultOperator(returnDefaultWhenEmpty));
-            return returnDefaultWhenEmpty ? all.SingleOrDefault() : all.Single();
-        }
-
-        public Task<string> ExecuteSingleToJsonAsync<T>(QueryModel queryModel, bool returnDefaultWhenEmpty, CancellationToken token)
-        {
-            var cmd = prepareCommand<T>(queryModel, new SingleResultOperator(returnDefaultWhenEmpty));
-
-            return _runner.QueryJsonAsync(cmd, token).ContinueWith(task =>
-            {
-                var all = task.Result.ToArray();
-                return returnDefaultWhenEmpty ? all.SingleOrDefault() : all.Single();
-            }, token);
-        }
-
-        public string ExecuteFirstToJson<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
-        {
-            var all = executeJson<T>(queryModel, new FirstResultOperator(returnDefaultWhenEmpty));
-            return GetFirst(returnDefaultWhenEmpty, all.ToArray());
-        }
-
-        public Task<string> ExecuteFirstToJsonAsync<T>(QueryModel queryModel, bool returnDefaultWhenEmpty, CancellationToken token)
-        {
-            var cmd = prepareCommand<T>(queryModel, new FirstResultOperator(returnDefaultWhenEmpty));
-
-            return _runner.QueryJsonAsync(cmd, token).ContinueWith(task =>
-            {
-                var all = task.Result.ToArray();
-                return GetFirst(returnDefaultWhenEmpty, all);
-            }, token);
-        }
-
-        private static string GetFirst(bool returnDefaultWhenEmpty, string[] all)
-        {
-            if (returnDefaultWhenEmpty && !all.Any()) return null;
-
-            return all.First();
-        }
-
-        private IEnumerable<string> executeJson<T>(QueryModel queryModel, ResultOperatorBase resultOperator)
-        {
-            var cmd = prepareCommand<T>(queryModel, resultOperator);
-            var all = _runner.QueryJson(cmd);
-            return all;
-        }
-
-        private NpgsqlCommand prepareCommand<T>(QueryModel queryModel, ResultOperatorBase resultOperator)
-        {
-            queryModel.ResultOperators.Add(resultOperator);
-            var cmd = new NpgsqlCommand();
-            var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
-            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
-            documentQuery.ConfigureCommand<T>(_schema, cmd);
-            return cmd;
-        }
-
-        public NpgsqlCommand  BuildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
-        {
-            var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
-            var query = new DocumentQuery(mapping, queryModel, _expressionParser);
-            query.Includes.AddRange(Includes);
-
-            _schema.EnsureStorageExists(mapping.DocumentType);
-
-            var command = new NpgsqlCommand();
-            selector = query.ConfigureCommand<T>(_schema, command);
-
-            return command;
-        }
-
         Task<IEnumerable<T>> IMartenQueryExecutor.ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token)
         {
-            ISelector<T> selector = null;
-            var cmd = BuildCommand<T>(queryModel, out selector);
+            ISelector<T> selector;
+            var cmd = BuildCommand(queryModel, out selector);
 
             return _runner.ResolveAsync(cmd, selector, _identityMap, token);
         }
@@ -206,19 +108,70 @@ namespace Marten.Linq
                 new MinQueryExecution<T>(_expressionParser, _schema, _runner),
             };
 
-            if (scalarExecutions.Any(ex=>ex.Match(queryModel)))
-                return await ExecuteScalarAsync<T>(queryModel, token, scalarExecutions).ConfigureAwait(false);
-            
+            var queryExecution = scalarExecutions.FirstOrDefault(x => x.Match(queryModel));
+            if (queryExecution != null)
+            {
+                return await queryExecution.ExecuteAsync(queryModel, token).ConfigureAwait(false);
+            }
 
-            var choiceResultOperator = queryModel.ResultOperators.OfType<ChoiceResultOperatorBase>().Single();
-
-            ISelector<T> selector = null;
-            var cmd = BuildCommand<T>(queryModel, out selector);
+            ISelector<T> selector;
+            var cmd = BuildCommand(queryModel, out selector);
 
             var enumerable = await _runner.ResolveAsync(cmd, selector, _identityMap, token).ConfigureAwait(false);
-            var all = enumerable.ToArray();
+            return GetResult(enumerable, queryModel);
+        }
 
-            if (choiceResultOperator.ReturnDefaultWhenEmpty && all.Length == 0)
+        public async Task<IEnumerable<string>> ExecuteCollectionToJsonAsync<T>(QueryModel queryModel, CancellationToken token)
+        {
+            ISelector<T> selector;
+            var cmd = BuildCommand(queryModel, out selector);
+            return await _runner.QueryJsonAsync(cmd, token).ConfigureAwait(false);
+        }
+
+        public IEnumerable<string> ExecuteCollectionToJson<T>(QueryModel queryModel)
+        {
+            ISelector<T> selector;
+            var cmd = BuildCommand(queryModel, out selector);
+            return _runner.QueryJson(cmd);
+        }
+
+        public async Task<string> ExecuteJsonAsync<T>(QueryModel queryModel, CancellationToken token)
+        {
+            ISelector<T> selector;
+            var cmd = BuildCommand(queryModel, out selector);
+
+            var enumerable = await _runner.QueryJsonAsync(cmd, token).ConfigureAwait(false);
+            return GetResult(enumerable, queryModel);
+        }
+
+        public string ExecuteJson<T>(QueryModel queryModel)
+        {
+            ISelector<T> selector;
+            var cmd = BuildCommand(queryModel, out selector);
+
+            var enumerable = _runner.QueryJson(cmd);
+            return GetResult(enumerable, queryModel);
+        }
+
+        private NpgsqlCommand BuildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
+        {
+            var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
+            var query = new DocumentQuery(mapping, queryModel, _expressionParser);
+            query.Includes.AddRange(Includes);
+
+            _schema.EnsureStorageExists(mapping.DocumentType);
+
+            var command = new NpgsqlCommand();
+            selector = query.ConfigureCommand<T>(_schema, command);
+
+            return command;
+        }
+
+        private T GetResult<T>(IEnumerable<T> enumerable, QueryModel queryModel)
+        {
+            var all = enumerable.ToList();
+            var choiceResultOperator = queryModel.ResultOperators.OfType<ChoiceResultOperatorBase>().Single();
+            if (choiceResultOperator.ReturnDefaultWhenEmpty && all.Count == 0)
             {
                 return default(T);
             }
@@ -234,13 +187,6 @@ namespace Marten.Linq
             }
 
             throw new NotSupportedException();
-        }
-
-        private Task<T> ExecuteScalarAsync<T>(QueryModel queryModel, CancellationToken token, List<IScalarQueryExecution<T>> executors)
-        {
-            var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
-            if (queryExecution == null) throw new NotSupportedException();
-            return queryExecution.ExecuteAsync(queryModel, token);
         }
     }
 }
