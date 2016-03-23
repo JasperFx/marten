@@ -16,7 +16,7 @@ namespace Marten.Testing.Linq
 
         public SelectTransformerTests()
         {
-            theMapping = DocumentMapping.For<User>();
+            theMapping = DocumentMappingFactory.For<User>();
             theTarget = new TargetObject(typeof(invoking_query_with_select_Tests.User2));
             theTarget.StartBinding(ReflectionHelper.GetProperty<User>(x => x.FirstName)).Members.Add(ReflectionHelper.GetProperty<User2>(x => x.First));
             theTarget.StartBinding(ReflectionHelper.GetProperty<User>(x => x.LastName)).Members.Add(ReflectionHelper.GetProperty<User2>(x => x.Last));

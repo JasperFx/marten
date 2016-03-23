@@ -31,6 +31,11 @@ namespace Marten
         private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
             new ConcurrentDictionary<Type, DocumentMapping>();
 
+        public StoreOptions()
+        {
+            Events = new EventGraph(this);
+        }
+
         public DocumentMapping MappingFor(Type documentType)
         {
             return _documentMappings.GetOrAdd(documentType, type => new DocumentMapping(type, this));
@@ -49,6 +54,10 @@ namespace Marten
         /// </summary>
         public PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;
 
+        /// <summary>
+        /// Sets the database default schema name used to store the documents.
+        /// </summary>
+        public string DatabaseSchemaName { get; set; } = "public";
 
         /// <summary>
         /// Supply the connection string to the Postgresql database
@@ -148,7 +157,7 @@ namespace Marten
         /// <summary>
         /// Configuration of event streams and projections
         /// </summary>
-        public IEventStoreConfiguration Events { get; } = new EventGraph();
+        public IEventStoreConfiguration Events { get; }
 
         internal ISerializer Serializer()
         {

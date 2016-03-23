@@ -12,7 +12,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void use_the_default_pg_type_for_the_member_type_if_not_overridden()
         {
-            var mapping = DocumentMapping.For<Organization>();
+            var mapping = DocumentMappingFactory.For<Organization>();
             var duplicate = mapping.DuplicatedFields.Single(x => x.MemberName == "Time2");
 
             duplicate.PgType.ShouldBe("timestamp without time zone");
@@ -21,7 +21,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_override_field_type_selection_on_the_attribute()
         {
-            var mapping = DocumentMapping.For<Organization>();
+            var mapping = DocumentMappingFactory.For<Organization>();
             var duplicate = mapping.DuplicatedFields.Single(x => x.MemberName == "Time");
 
             duplicate.PgType.ShouldBe("timestamp");

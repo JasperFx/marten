@@ -24,10 +24,10 @@ namespace Marten.Testing.Events
         {
             var schema = theContainer.GetInstance<IDocumentSchema>();
             var tableNames = schema.SchemaTableNames();
-            tableNames.ShouldContain("mt_streams");
-            tableNames.ShouldContain("mt_events");
-            tableNames.ShouldContain("mt_modules");
-            tableNames.ShouldContain("mt_projections");
+            tableNames.ShouldContain("public.mt_streams");
+            tableNames.ShouldContain("public.mt_events");
+            tableNames.ShouldContain("public.mt_modules");
+            tableNames.ShouldContain("public.mt_projections");
         }
 
         [Fact]
@@ -36,8 +36,8 @@ namespace Marten.Testing.Events
             var schema = theContainer.GetInstance<IDocumentSchema>();
 
             var functions = schema.SchemaFunctionNames();
-            functions.ShouldContain("mt_append_event");
-            functions.ShouldContain("mt_load_projection_body");
+            functions.ShouldContain("public.mt_append_event");
+            functions.ShouldContain("public.mt_load_projection_body");
         }
 
 
@@ -47,7 +47,7 @@ namespace Marten.Testing.Events
             var schema = theContainer.GetInstance<IDocumentSchema>();
 
             var functions = schema.SchemaFunctionNames();
-            functions.ShouldContain("mt_apply_transform");
+            functions.ShouldContain("public.mt_apply_transform");
         }
 
         [Fact]
@@ -56,7 +56,7 @@ namespace Marten.Testing.Events
             var schema = theContainer.GetInstance<IDocumentSchema>();
 
             var functions = schema.SchemaFunctionNames();
-            functions.ShouldContain("mt_apply_aggregation");
+            functions.ShouldContain("public.mt_apply_aggregation");
         }
 
         [Fact]
@@ -65,7 +65,7 @@ namespace Marten.Testing.Events
             var schema = theContainer.GetInstance<IDocumentSchema>();
 
             var functions = schema.SchemaFunctionNames();
-            functions.ShouldContain("mt_start_aggregation");
+            functions.ShouldContain("public.mt_start_aggregation");
         }
 
         [Fact]
@@ -73,7 +73,7 @@ namespace Marten.Testing.Events
         {
             var runner = theContainer.GetInstance<IConnectionFactory>();
 
-            var loadedModules = runner.GetStringList("select name from mt_modules");
+            var loadedModules = runner.GetStringList("select name from public.mt_modules");
             loadedModules.ShouldContain("mt_transforms");
         }
 
@@ -83,7 +83,7 @@ namespace Marten.Testing.Events
             var schema = theContainer.GetInstance<IDocumentSchema>();
 
             var functions = schema.SchemaFunctionNames();
-            functions.ShouldContain("mt_initialize_projections");
+            functions.ShouldContain("public.mt_initialize_projections");
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace Marten.Testing.Events
             var schema = theContainer.GetInstance<IDocumentSchema>();
 
             var functions = schema.SchemaFunctionNames();
-            functions.ShouldContain("mt_get_projection_usage");
+            functions.ShouldContain("public.mt_get_projection_usage");
         }
 
 

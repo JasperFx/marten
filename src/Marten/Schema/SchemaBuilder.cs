@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Reflection;
 using Baseline;
 
@@ -6,21 +7,17 @@ namespace Marten.Schema
 {
     public static class SchemaBuilder
     {
-        public static void Write(StringWriter writer, string script)
-        {
-            var text = GetText(script);
-            writer.WriteLine(text);
-            writer.WriteLine();
-            writer.WriteLine();
-        }
-
-        public static string GetText(string script)
+        public static string GetSqlScript(StoreOptions options, string script)
         {
             var name = $"{typeof (SchemaBuilder).Namespace}.SQL.{script}.sql";
 
             var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
-
-            return stream.ReadAllText();
+            if (stream == null)
+            {
+                throw new InvalidOperationException("Could not find embedded resource: " + name);
+            }
+            var text = stream.ReadAllText();    
+            return text.Replace("{databaseSchema}", options.DatabaseSchemaName);
         }
 
         public static string GetJavascript(string jsfile)
@@ -32,9 +29,11 @@ namespace Marten.Schema
             return stream.ReadAllText();
         }
 
-        public static StringWriter WriteSql(this StringWriter writer, string scriptName)
+        public static StringWriter WriteSql(this StringWriter writer, StoreOptions options, string scriptName)
         {
-            writer.WriteLine(GetText(scriptName));
+            var format = GetSqlScript(options, scriptName);
+
+            writer.WriteLine(format);
             writer.WriteLine();
             writer.WriteLine();
 

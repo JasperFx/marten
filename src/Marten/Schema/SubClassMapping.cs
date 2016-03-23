@@ -18,10 +18,10 @@ namespace Marten.Schema
         private readonly DocumentMapping _parent;
         private readonly DocumentMapping _inner;
 
-        public SubClassMapping(Type documentType, DocumentMapping parent, string alias = null)
+        public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions, string alias = null)
         {
             DocumentType = documentType;
-            _inner = new DocumentMapping(documentType);
+            _inner = new DocumentMapping(documentType, storeOptions);
             _parent = parent;
             Alias = alias ?? documentType.GetTypeName().Replace(".", "_").SplitCamelCase().Replace(" ", "_").ToLowerInvariant();
         }
@@ -32,10 +32,18 @@ namespace Marten.Schema
 
         public string Alias { get; set; }
 
-        public string UpsertName => _parent.UpsertName;
+        public string UpsertName => _parent.QualifiedUpsertName;
         public Type DocumentType { get; }
 
+        public string QualifiedTableName => _parent.QualifiedTableName;
         public string TableName => _parent.TableName;
+
+        public string DatabaseSchemaName
+        {
+            get { return _parent.DatabaseSchemaName; }
+            set { throw new NotSupportedException("The DatabaseSchemaName is sub class mapping can't be set."); }
+        }
+
         public PropertySearching PropertySearching => _parent.PropertySearching;
         public IIdGeneration IdStrategy => _parent.IdStrategy;
         public IEnumerable<DuplicatedField> DuplicatedFields => _parent.DuplicatedFields;
@@ -84,7 +92,7 @@ namespace Marten.Schema
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
-            factory.RunSql($"delete from {_parent.TableName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
+            factory.RunSql($"delete from {_parent.QualifiedTableName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
         }
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class

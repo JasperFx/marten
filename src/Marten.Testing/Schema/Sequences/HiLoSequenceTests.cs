@@ -21,7 +21,7 @@ namespace Marten.Testing.Schema.Sequences
         {
             _container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
-            var sql = SchemaBuilder.GetText("mt_hilo");
+            var sql = SchemaBuilder.GetSqlScript(new StoreOptions(), "mt_hilo");
 
             _connectionFactory = _container.GetInstance<IConnectionFactory>();
             _connectionFactory.RunSql(sql);

@@ -28,7 +28,7 @@ namespace Marten.Testing.Schema
 
             _storage = _schema.StorageFor(typeof(User));
 
-            theDerivedTable = _schema.TableSchema(theMapping.TableName);
+            theDerivedTable = _schema.TableSchema(theMapping);
         }
 
         public void Dispose()
@@ -39,7 +39,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void it_maps_the_name()
         {
-            theDerivedTable.Name.ShouldBe(theMapping.TableName);
+            theDerivedTable.QualifiedName.ShouldBe(theMapping.QualifiedTableName);
         }
 
         [Fact]

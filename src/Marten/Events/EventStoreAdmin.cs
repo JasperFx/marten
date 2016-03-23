@@ -114,14 +114,13 @@ namespace Marten.Events
 
         private void runScript(string script)
         {
-            var sql = SchemaBuilder.GetText(script);
+            var sql = SchemaBuilder.GetSqlScript(_options, script);
             try
             {
                 _connectionFactory.RunSql(sql);
             }
             catch (Exception e)
             {
-
                 throw new MartenSchemaException(sql, e);
             }
         }

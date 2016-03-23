@@ -9,14 +9,13 @@ namespace Marten.Testing.Events
 {
     public class EventGraphTests
     {
-        private readonly EventGraph theGraph = new EventGraph();
+        private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
 
         [Fact]
         public void find_stream_mapping_initially()
         {
             theGraph.AggregateFor<Issue>()
                 .AggregateType.ShouldBe(typeof(Issue));
-                
         }
 
         [Fact]

@@ -1,7 +1,5 @@
-﻿using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 using Marten.Schema;
-using Marten.Schema.Hierarchies;
 using Xunit;
 
 namespace Marten.Testing.Schema.Hierarchies
@@ -12,11 +10,10 @@ namespace Marten.Testing.Schema.Hierarchies
 
         public generating_code_and_sql_for_hierarchy_smoke_Tests()
         {
-            theHierarchy = new DocumentMapping(typeof(Squad), new StoreOptions());
+            theHierarchy = DocumentMappingFactory.For<Squad>();
             theHierarchy.AddSubClass(typeof (BasketballTeam));
             theHierarchy.AddSubClass(typeof (BaseballTeam));
             theHierarchy.AddSubClass(typeof (FootballTeam));
-
         }
 
         [Fact]
@@ -28,7 +25,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS VOID AS");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS VOID AS");
             sql.ShouldContain("DO UPDATE SET \"data\" = doc, \"mt_doc_type\" = docType;");
         }
 
@@ -41,8 +38,8 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS VOID AS");
-            sql.ShouldContain("WITH upsert AS (UPDATE mt_doc_squad SET \"data\" = doc, \"mt_doc_type\" = docType WHERE id=docId RETURNING *)");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS VOID AS");
+            sql.ShouldContain("WITH upsert AS (UPDATE public.mt_doc_squad SET \"data\" = doc, \"mt_doc_type\" = docType WHERE id=docId RETURNING *)");
         }
 
         [Fact]

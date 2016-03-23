@@ -18,7 +18,7 @@ namespace Marten.Testing.Linq
 
         public SingleFieldSelectorTests()
         {
-            theMapping = DocumentMapping.For<User>();
+            theMapping = DocumentMappingFactory.For<User>();
             var prop = ReflectionHelper.GetProperty<User>(x => x.FirstName);
 
             theSelector = new SingleFieldSelector<string>(theMapping, new MemberInfo[] {prop});
