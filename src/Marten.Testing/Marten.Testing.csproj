@@ -112,6 +112,7 @@
     <Compile Include="Github\RepositoryHistory.cs" />
     <Compile Include="insert_timing.cs" />
     <Compile Include="Linq\DeserializeSelectorTests.cs" />
+    <Compile Include="Linq\explain_query.cs" />
     <Compile Include="Linq\invoking_queryable_any_async_Tests.cs" />
     <Compile Include="Linq\invoking_queryable_count_async_Tests.cs" />
     <Compile Include="Linq\invoking_queryable_through_first_async_Tests.cs" />

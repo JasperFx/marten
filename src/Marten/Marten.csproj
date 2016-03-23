@@ -64,6 +64,7 @@
     <Compile Include="Linq\ContainmentWhereFragment.cs" />
     <Compile Include="Linq\DeserializeSelector.cs" />
     <Compile Include="Linq\ExpressionExtensions.cs" />
+    <Compile Include="Linq\FetchType.cs" />
     <Compile Include="Linq\FindMembers.cs" />
     <Compile Include="Linq\Handlers\EnumerableContains.cs" />
     <Compile Include="Linq\Handlers\IMethodCallParser.cs" />
@@ -80,6 +81,7 @@
     <Compile Include="Linq\MartenQueryProvider.cs" />
     <Compile Include="Linq\Handlers\IsOneOf.cs" />
     <Compile Include="Linq\QueryableExtensions.cs" />
+    <Compile Include="Linq\QueryPlan.cs" />
     <Compile Include="Linq\ScalarQueryExecution.cs" />
     <Compile Include="Linq\SelectorParser.cs" />
     <Compile Include="Linq\SelectTransformer.cs" />

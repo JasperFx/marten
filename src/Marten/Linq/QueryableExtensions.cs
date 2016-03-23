@@ -11,36 +11,28 @@ namespace Marten.Linq
     {
         public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType)
         {
-            var q = queryable as MartenQueryable<T>;
-
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(ToCommand)} is only valid on Marten IQueryable objects");
-            }
+            var q = GetMartenQueryable(queryable, nameof(ToCommand));
 
             return q.BuildCommand(fetchType);
         }
 
+        public static QueryPlan Explain<T>(this IQueryable<T> queryable)
+        {
+            var q = GetMartenQueryable(queryable, nameof(Explain));
+
+            return q.Explain();
+        }
+
         public static string ToListJson<T>(this IQueryable<T> queryable)
         {
-            var q = queryable as MartenQueryable<T>;
-
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(ToListJson)} is only valid on Marten IQueryable objects");
-            }
+            var q = GetMartenQueryable(queryable, nameof(ToListJson));
 
             return q.ToListJson();
         }
 
         public static Task<string> ToListJsonAsync<T>(this IQueryable<T> queryable, CancellationToken token = default(CancellationToken))
         {
-            var q = queryable as MartenQueryable<T>;
-
-            if (q == null)
-            {
-                throw new InvalidOperationException($"{nameof(ToListJsonAsync)} is only valid on Marten IQueryable objects");
-            }
+            var q = GetMartenQueryable(queryable, nameof(ToListJsonAsync));
 
             return q.ToListJsonAsync(token);
         }
@@ -68,7 +60,7 @@ namespace Marten.Linq
 
         public static Task<string> SingleOrDefaultJsonAsync<T>(this IQueryable<T> queryable, Expression<Func<T, bool>> predicate = null, CancellationToken token = default(CancellationToken))
         {
-            var q = GetMartenQueryable(queryable, predicate, nameof(SingleOrDefaultJson));
+            var q = GetMartenQueryable(queryable, predicate, nameof(SingleOrDefaultJsonAsync));
 
             return q.SingleJsonAsync(true, token);
         }
@@ -104,6 +96,17 @@ namespace Marten.Linq
         private static MartenQueryable<T> GetMartenQueryable<T>(IQueryable<T> queryable, Expression<Func<T, bool>> predicate, string methodName)
         {
             var q = predicate != null ? queryable.Where(predicate) as MartenQueryable<T> : queryable as MartenQueryable<T>;
+
+            if (q == null)
+            {
+                throw new InvalidOperationException($"{methodName} is only valid on Marten IQueryable objects");
+            }
+            return q;
+        }
+
+        private static MartenQueryable<T> GetMartenQueryable<T>(IQueryable<T> queryable, string methodName)
+        {
+            var q = queryable as MartenQueryable<T>;
 
             if (q == null)
             {

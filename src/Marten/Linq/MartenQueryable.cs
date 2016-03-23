@@ -28,53 +28,55 @@ namespace Marten.Linq
             return queryProvider.ExecuteCollectionAsync<T>(Expression, token);
         }
 
+        public QueryPlan Explain()
+        {
+            return executeJsonQuery((executor, model) => executor.ExecuteExplain<T>(model));
+        }
+
         public string ToListJson()
         {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-            var listJsons = executor.ExecuteCollectionToJson<T>(model).ToArray();
+            var listJsons = executeJsonQuery((executor, model) => executor.ExecuteCollectionToJson<T>(model)).ToArray();
             return $"[{listJsons.Join(",")}]";
         }
 
         public Task<string> ToListJsonAsync(CancellationToken token)
         {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-            return executor.ExecuteCollectionToJsonAsync<T>(model, token).ContinueWith(task => $"[{task.Result.Join(",")}]", token);
+            var getListTask = executeJsonQueryAsync((executor, model) => executor.ExecuteCollectionToJsonAsync<T>(model, token));
+            return getListTask.ContinueWith(task => $"[{task.Result.Join(",")}]", token);
         }
 
         public string SingleJson(bool returnDefaultWhenEmpty)
         {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-            return executor.ExecuteSingleToJson<T>(model, returnDefaultWhenEmpty);
+            return executeJsonQuery((executor, model) => executor.ExecuteSingleToJson<T>(model, returnDefaultWhenEmpty));
         }
 
         public Task<string> SingleJsonAsync(bool returnDefaultWhenEmpty, CancellationToken token)
         {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-            return executor.ExecuteSingleToJsonAsync<T>(model, returnDefaultWhenEmpty, token);
+            return executeJsonQueryAsync((executor, model) => executor.ExecuteSingleToJsonAsync<T>(model, returnDefaultWhenEmpty, token));
         }
 
         public string FirstJson(bool returnDefaultWhenEmpty)
         {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-            return executor.ExecuteFirstToJson<T>(model, returnDefaultWhenEmpty);
+            return executeJsonQuery((executor, model) => executor.ExecuteFirstToJson<T>(model, returnDefaultWhenEmpty));
         }
 
         public Task<string> FirstJsonAsync(bool returnDefaultWhenEmpty, CancellationToken token)
         {
+            return executeJsonQueryAsync((executor,model)=>executor.ExecuteFirstToJsonAsync<T>(model,returnDefaultWhenEmpty,token));
+        }
+
+        public TResult executeJsonQuery<TResult>(Func<MartenQueryExecutor, QueryModel, TResult> execute)
+        {
             var model = new MartenQueryParser().GetParsedQuery(Expression);
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+            return execute(executor, model);
+        }
 
-            return executor.ExecuteFirstToJsonAsync<T>(model, returnDefaultWhenEmpty, token);
+        public Task<TResult> executeJsonQueryAsync<TResult>(Func<MartenQueryExecutor, QueryModel, Task<TResult>> execute)
+        {
+            var model = new MartenQueryParser().GetParsedQuery(Expression);
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+            return execute(executor, model);
         }
 
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, JoinType joinType = JoinType.Inner) where TInclude : class
@@ -158,31 +160,5 @@ namespace Marten.Linq
 
             return cmd;
         }
-    }
-
-    /// <summary>
-    /// In basic terms, how is the IQueryable going to be executed?
-    /// </summary>
-    public enum FetchType
-    {
-        /// <summary>
-        /// First/FirstOrDefault/Single/SingleOrDefault
-        /// </summary>
-        FetchOne,
-
-        /// <summary>
-        /// Any execution that returns an IEnumerable (ToArray()/ToList()/etc.)
-        /// </summary>
-        FetchMany,
-
-        /// <summary>
-        /// Using IQueryable.Count()
-        /// </summary>
-        Count,
-
-        /// <summary>
-        /// Using IQueryable.Any()
-        /// </summary>
-        Any
     }
 }
