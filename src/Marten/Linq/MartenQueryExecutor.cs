@@ -165,8 +165,8 @@ namespace Marten.Linq
         private IEnumerable<string> executeJson<T>(QueryModel queryModel, ResultOperatorBase resultOperator)
         {
             var cmd = prepareCommand<T>(queryModel, resultOperator);
-            var all = _runner.QueryJson(cmd);
-            return all;
+            var queryResult = _runner.QueryJson(cmd);
+            return queryResult;
         }
 
         private NpgsqlCommand prepareCommand<T>(QueryModel queryModel, ResultOperatorBase resultOperator)
