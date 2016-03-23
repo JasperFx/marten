@@ -26,9 +26,9 @@ namespace Marten.Testing.Schema.Sequences
 
             var schema = _container.GetInstance<IDocumentSchema>();
             schema.SchemaTableNames()
-                .ShouldContain("mt_hilo");
+                .ShouldContain("public.mt_hilo");
 
-            schema.SchemaFunctionNames().ShouldContain("mt_get_next_hi");
+            schema.SchemaFunctionNames().ShouldContain("public.mt_get_next_hi");
         }
     }
 }

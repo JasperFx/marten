@@ -69,9 +69,7 @@ namespace Marten.Testing.Schema
 
             _schema.StorageFor(typeof (BaseballTeam))
                 .ShouldBeOfType<SubClassDocumentStorage<BaseballTeam, Squad>>();
-
         }
-
 
         [Fact]
         public void caches_storage_for_a_document_type()
@@ -95,13 +93,13 @@ namespace Marten.Testing.Schema
 
             var sql = _schema.ToDDL();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_get_next_hi");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_user");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_issue");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_company");
-            sql.ShouldContain("CREATE TABLE mt_doc_user");
-            sql.ShouldContain("CREATE TABLE mt_doc_issue");
-            sql.ShouldContain("CREATE TABLE mt_doc_company");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_get_next_hi");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_issue");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_company");
+            sql.ShouldContain("CREATE TABLE public.mt_doc_user");
+            sql.ShouldContain("CREATE TABLE public.mt_doc_issue");
+            sql.ShouldContain("CREATE TABLE public.mt_doc_company");
         }
 
         [Fact]
@@ -112,7 +110,7 @@ namespace Marten.Testing.Schema
             _schema.StorageFor(typeof(Company));
 
             var sql = _schema.ToDDL();
-            sql.ShouldContain(SchemaBuilder.GetText("mt_hilo"));
+            sql.ShouldContain(SchemaBuilder.GetSqlScript(_schema.StoreOptions, "mt_hilo"));
         }
 
         [Fact]
@@ -120,7 +118,7 @@ namespace Marten.Testing.Schema
         {
             _schema.Events.IsActive.ShouldBeFalse();
 
-            _schema.ToDDL().ShouldNotContain("mt_streams");
+            _schema.ToDDL().ShouldNotContain("public.mt_streams");
         }
 
         [Fact]
@@ -129,8 +127,7 @@ namespace Marten.Testing.Schema
             _schema.Events.AddEventType(typeof(MembersJoined));
             _schema.Events.IsActive.ShouldBeTrue();
 
-            _schema.ToDDL().ShouldContain("mt_streams");
-
+            _schema.ToDDL().ShouldContain("public.mt_streams");
         }
 
         [Fact]
@@ -144,15 +141,14 @@ namespace Marten.Testing.Schema
 
             var schema = Container.For<DevelopmentModeRegistry>().GetInstance<IDocumentSchema>();
             var tables = schema.SchemaTableNames();
-            tables.ShouldContain(schema.MappingFor(typeof(User)).TableName);
-            tables.ShouldContain(schema.MappingFor(typeof(Issue)).TableName);
-            tables.ShouldContain(schema.MappingFor(typeof(Company)).TableName);
+            tables.ShouldContain(schema.MappingFor(typeof(User)).QualifiedTableName);
+            tables.ShouldContain(schema.MappingFor(typeof(Issue)).QualifiedTableName);
+            tables.ShouldContain(schema.MappingFor(typeof(Company)).QualifiedTableName);
 
             var functions = schema.SchemaFunctionNames();
-            functions.ShouldContain(schema.MappingFor(typeof(User)).As<DocumentMapping>().UpsertName);
-            functions.ShouldContain(schema.MappingFor(typeof(Issue)).As<DocumentMapping>().UpsertName);
-            functions.ShouldContain(schema.MappingFor(typeof(Company)).As<DocumentMapping>().UpsertName);
-
+            functions.ShouldContain(schema.MappingFor(typeof(User)).As<DocumentMapping>().QualifiedUpsertName);
+            functions.ShouldContain(schema.MappingFor(typeof(Issue)).As<DocumentMapping>().QualifiedUpsertName);
+            functions.ShouldContain(schema.MappingFor(typeof(Company)).As<DocumentMapping>().QualifiedUpsertName);
         }
 
         [Fact]
@@ -177,7 +173,6 @@ namespace Marten.Testing.Schema
                     session.Query<User>().Count().ShouldBeGreaterThanOrEqualTo(3);
                 }
             }
-
         }
 
         [Fact]
@@ -194,8 +189,6 @@ namespace Marten.Testing.Schema
                     schema.StorageFor(typeof (User));
                 });
             }
-
-
         }
 
         [Fact]

@@ -8,8 +8,6 @@ namespace Marten.Testing.Bugs
 {
     public class Bug_127_do_not_recreate_a_table_with_duplicated_string_field_Tests
     {
-
-
         [Fact]
         public void does_not_recreate_the_table()
         {
@@ -43,8 +41,6 @@ namespace Marten.Testing.Bugs
                 session2.Query<Team>().Count().ShouldBe(3);
             }
         }
-
-
     }
 
     public class Team

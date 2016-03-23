@@ -18,8 +18,10 @@ namespace Marten.Events
 {
     public abstract class EventMapping : IDocumentMapping
     {
+        private readonly StoreOptions _options;
         private readonly EventGraph _parent;
         protected readonly DocumentMapping _inner;
+
         // TODO -- this logic is duplicated. Centralize in an ext method
         public static string ToEventTypeName(Type eventType)
         {
@@ -28,14 +30,14 @@ namespace Marten.Events
 
         protected EventMapping(EventGraph parent, Type eventType)
         {
+            _options = parent.Options;
             _parent = parent;
             DocumentType = eventType;
 
             EventTypeName = Alias = ToEventTypeName(DocumentType);
             IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
 
-            // TODO -- may need to pull StoreOptions through here.
-            _inner = new DocumentMapping(eventType);
+            _inner = new DocumentMapping(eventType, parent.Options);
         }
 
         public Type DocumentType { get; }
@@ -44,7 +46,16 @@ namespace Marten.Events
         public MemberInfo IdMember { get; }
         public IIdGeneration IdStrategy { get; } = new GuidIdGeneration();
         public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
-        public string TableName { get; } = "mt_events";
+
+        public string QualifiedTableName => _options.DatabaseSchemaName + ".mt_events";
+        public string TableName => "mt_events";
+
+        public string DatabaseSchemaName
+        {
+            get { return _options.DatabaseSchemaName; }
+            set { throw new NotSupportedException("The DatabaseSchemaName of Event can't be set."); }
+        }
+
         public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
 
         public string[] SelectFields()

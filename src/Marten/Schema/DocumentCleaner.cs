@@ -8,24 +8,26 @@ namespace Marten.Schema
     public class DocumentCleaner : IDocumentCleaner
     {
         public static string DropAllFunctionSql = @"
-SELECT format('DROP FUNCTION %s(%s);'
-             ,oid::regproc
-             ,pg_get_function_identity_arguments(oid))
-FROM   pg_proc
-WHERE  proname like 'mt_%' 
-AND    pg_function_is_visible(oid)  
-                                  
-";
+SELECT format('DROP FUNCTION %s.%s(%s);'
+             ,n.nspname
+             ,p.oid::regproc
+             ,pg_get_function_identity_arguments(p.oid))
+FROM   pg_proc p
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
+WHERE  p.proname like 'mt_%' 
+AND    pg_function_is_visible(p.oid)";
 
         public static readonly string DropFunctionSql = @"
-SELECT format('DROP FUNCTION %s(%s);'
-             ,oid::regproc
-             ,pg_get_function_identity_arguments(oid))
-FROM   pg_proc
-WHERE  proname = '{0}' 
-AND    pg_function_is_visible(oid)  
-                                  
-";
+SELECT format('DROP FUNCTION %s.%s(%s);'
+             ,n.nspname
+             ,p.oid::regproc
+             ,pg_get_function_identity_arguments(p.oid))
+FROM   pg_proc p
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
+WHERE  p.proname = '{0}' 
+AND    pg_function_is_visible(p.oid)
+AND    n.nspname = '{1}';";
+
         private readonly IConnectionFactory _factory;
         private readonly IDocumentSchema _schema;
 
@@ -65,13 +67,11 @@ AND    pg_function_is_visible(oid)
         {
             var mapping = _schema.MappingFor(documentType);
 
-
             using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
             {
                 mapping.RemoveSchemaObjects(connection);
             }
         }
-
 
         public void CompletelyRemoveAll()
         {
@@ -79,7 +79,6 @@ AND    pg_function_is_visible(oid)
             {
                 _schema.SchemaTableNames()
                     .Each(tableName => { connection.Execute($"DROP TABLE IF EXISTS {tableName} CASCADE;"); });
-
 
                 var drops = connection.GetStringList(DropAllFunctionSql);
                 drops.Each(drop => connection.Execute(drop));
@@ -90,7 +89,8 @@ AND    pg_function_is_visible(oid)
         {
             using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
             {
-                connection.Execute("truncate table mt_events cascade;truncate table mt_streams cascade");
+                connection.Execute($"truncate table {_schema.StoreOptions.DatabaseSchemaName}.mt_events cascade;" +
+                                   $"truncate table {_schema.StoreOptions.DatabaseSchemaName}.mt_streams cascade");
             }
         }
     }

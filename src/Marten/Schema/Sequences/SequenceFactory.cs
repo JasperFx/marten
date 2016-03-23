@@ -19,7 +19,7 @@ namespace Marten.Schema.Sequences
 
         public ISequence Hilo(Type documentType, HiloSettings settings)
         {
-            if (!_schema.SchemaTableNames().Contains("mt_hilo"))
+            if (!_schema.TableExists("mt_hilo"))
             {
                 if (_options.AutoCreateSchemaObjects == AutoCreate.None)
                 {
@@ -27,7 +27,7 @@ namespace Marten.Schema.Sequences
                 }
 
 
-                _factory.RunSql(SchemaBuilder.GetText("mt_hilo"));
+                _factory.RunSql(SchemaBuilder.GetSqlScript(_options, "mt_hilo"));
             }
 
             return new HiloSequence(_factory, documentType.Name, settings);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Linq;
@@ -35,14 +36,16 @@ namespace Marten.Events
 
     public class EventGraph : IDocumentMapping, IEventStoreConfiguration
     {
-
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
         private readonly Cache<Type, AggregateModel> _aggregates = new Cache<Type, AggregateModel>(type => new AggregateModel(type));
-        private readonly Cache<string, AggregateModel> _aggregateByName = new Cache<string, AggregateModel>();  
+        private readonly Cache<string, AggregateModel> _aggregateByName = new Cache<string, AggregateModel>();
 
-        public EventGraph()
+        internal StoreOptions Options { get; }
+
+        public EventGraph(StoreOptions options)
         {
+            Options = options;
             _events.OnMissing = eventType => typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
@@ -112,7 +115,16 @@ namespace Marten.Events
 
         public string Alias { get; } = null;
         public Type DocumentType { get; } = typeof (EventStream);
+
+        public string QualifiedTableName => $"{DatabaseSchemaName}.{TableName}";
         public string TableName { get; } = "mt_stream";
+
+        public string DatabaseSchemaName
+        {
+            get { return Options.DatabaseSchemaName; }
+            set { throw new NotSupportedException("The DatabaseSchemaName of EventGraphs can't be set."); }
+        }
+
         public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
         public IIdGeneration IdStrategy { get; } = new GuidIdGeneration();
         public MemberInfo IdMember { get; } = ReflectionHelper.GetProperty<EventStream>(x => x.Id);
@@ -131,7 +143,7 @@ namespace Marten.Events
 
             _checkedSchema = true;
 
-            var schemaExists = schema.SchemaTableNames().Contains("mt_streams");
+            var schemaExists = schema.TableExists("mt_streams");
             if (schemaExists) return;
 
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
@@ -141,11 +153,11 @@ namespace Marten.Events
 
             lock (_locker)
             {
-                if (!schema.SchemaTableNames().Contains("mt_streams"))
+                if (!schema.TableExists("mt_streams"))
                 {
                     var writer = new StringWriter();
 
-                    writeBasicTables(writer);
+                    writeBasicTables(schema, writer);
 
                     executeSql(writer.ToString());
 
@@ -165,12 +177,12 @@ namespace Marten.Events
         }
 
 
-        private static void writeBasicTables(StringWriter writer)
+        private static void writeBasicTables(IDocumentSchema schema, StringWriter writer)
         {
-            writer.WriteSql("mt_stream");
-            writer.WriteSql("mt_initialize_projections");
-            writer.WriteSql("mt_apply_transform");
-            writer.WriteSql("mt_apply_aggregation");
+            writer.WriteSql(schema.StoreOptions, "mt_stream");
+            writer.WriteSql(schema.StoreOptions, "mt_initialize_projections");
+            writer.WriteSql(schema.StoreOptions, "mt_apply_transform");
+            writer.WriteSql(schema.StoreOptions, "mt_apply_aggregation");
         }
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
@@ -195,7 +207,7 @@ namespace Marten.Events
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
-            writeBasicTables(writer);
+            writeBasicTables(schema, writer);
            
             // TODO -- need to load the projection and initialize
         }
