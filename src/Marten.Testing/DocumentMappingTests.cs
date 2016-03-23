@@ -13,6 +13,21 @@ namespace Marten.Testing
     public class DocumentMappingTests
     {
         [Fact]
+        public void get_the_sql_locator_for_the_Id_member()
+        {
+            DocumentMapping.For<User>().FieldFor("Id")
+                .SqlLocator.ShouldBe("id");
+
+            DocumentMapping.For<FieldId>().FieldFor("id")
+                .SqlLocator.ShouldBe("id");
+        }
+
+        public class FieldId
+        {
+            public string id;
+        }
+
+        [Fact]
         public void default_alias_for_a_type_that_is_not_nested()
         {
             var mapping = DocumentMapping.For<User>();

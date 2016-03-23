@@ -44,11 +44,16 @@ namespace Marten.Schema
             IdMember = (MemberInfo)documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
                        ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
 
+            
+
+
             if (IdMember == null)
             {
                 throw new InvalidDocumentException(
                     $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
             }
+
+            _fields[IdMember.Name] = new IdField(IdMember);
 
 
             assignIdStrategy(documentType, storeOptions);
@@ -532,6 +537,25 @@ namespace Marten.Schema
         public IEnumerable<IndexDefinition> IndexesFor(string column)
         {
             return Indexes.Where(x => x.Columns.Contains(column));
+        }
+    }
+
+    public class IdField : IField
+    {
+        private readonly MemberInfo _idMember;
+
+        public IdField(MemberInfo idMember)
+        {
+            _idMember = idMember;
+        }
+
+        public MemberInfo[] Members => new[] {_idMember};
+        public string MemberName => _idMember.Name;
+        public string SqlLocator { get; } = "id";
+        public string ColumnName { get; } = "id";
+        public void WritePatch(DocumentMapping mapping, Action<string> writer)
+        {
+            // Nothing
         }
     }
 }
