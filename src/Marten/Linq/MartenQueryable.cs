@@ -28,6 +28,14 @@ namespace Marten.Linq
             return queryProvider.ExecuteCollectionAsync<T>(Expression, token);
         }
 
+        public QueryPlan Explain()
+        {
+            var model = new MartenQueryParser().GetParsedQuery(Expression);
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+
+            return executor.ExecuteExplain<T>(model);
+        }
+
         public string ToListJson()
         {
             var model = new MartenQueryParser().GetParsedQuery(Expression);
