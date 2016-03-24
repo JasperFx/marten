@@ -33,7 +33,7 @@ namespace Marten.Testing
 
         public static void CleanBasicDocuments()
         {
-            using (var container = Container.For<DevelopmentModeRegistry>())
+            using (var container = ContainerFactory.Default())
             {
                 var cleaner = container.GetInstance<DocumentCleaner>();
 

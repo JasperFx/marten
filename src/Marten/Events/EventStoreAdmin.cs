@@ -117,7 +117,7 @@ namespace Marten.Events
 
         private void runScript(string script)
         {
-            var sql = SchemaBuilder.GetSqlScript(_options, script);
+            var sql = SchemaBuilder.GetSqlScript(_options.Events.DatabaseSchemaName, script);
             try
             {
                 _connectionFactory.RunSql(sql);
@@ -135,7 +135,7 @@ namespace Marten.Events
 
         private string qualifyName(string name)
         {
-            return $"{_options.DatabaseSchemaName}.{name}";
+            return $"{_options.Events.DatabaseSchemaName}.{name}";
         }
     }
 }

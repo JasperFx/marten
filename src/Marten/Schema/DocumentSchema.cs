@@ -212,9 +212,8 @@ namespace Marten.Schema
                 system.WriteStringToFile(filename, writer.ToString());
             });
 
-            var script = SchemaBuilder.GetSqlScript(StoreOptions, "mt_hilo");
-
-            system.WriteStringToFile(directory.AppendPath("mt_hilo.sql"), script);
+            var hiloScript = getHiloScript();
+            system.WriteStringToFile(directory.AppendPath("mt_hilo.sql"), hiloScript);
 
             if (Events.IsActive)
             {
@@ -227,9 +226,21 @@ namespace Marten.Schema
             }
         }
 
+        private string getHiloScript()
+        {
+            var writer = new StringWriter();
+
+            EnsureDatabaseSchema.WriteSql(StoreOptions.DatabaseSchemaName, writer);
+            writer.WriteLine(SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo"));
+
+            return writer.ToString();
+        }
+
         public string ToDDL()
         {
             var writer = new StringWriter();
+
+            EnsureDatabaseSchema.WriteSql(StoreOptions.DatabaseSchemaName, writer);
 
             StoreOptions.AllDocumentMappings.Each(x => x.WriteSchemaObjects(this, writer));
 
@@ -238,7 +249,7 @@ namespace Marten.Schema
                 Events.As<IDocumentMapping>().WriteSchemaObjects(this, writer);
             }
 
-            writer.WriteLine(SchemaBuilder.GetSqlScript(StoreOptions, "mt_hilo"));
+            writer.WriteLine(SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo"));
 
             return writer.ToString();
         }

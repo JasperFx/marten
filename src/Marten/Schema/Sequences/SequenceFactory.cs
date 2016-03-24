@@ -25,7 +25,7 @@ namespace Marten.Schema.Sequences
                     throw new InvalidOperationException($"Hilo table is missing, but {nameof(StoreOptions.AutoCreateSchemaObjects)} is {_options.AutoCreateSchemaObjects}");
                 }
 
-                _factory.RunSql(SchemaBuilder.GetSqlScript(_options, "mt_hilo"));
+                _factory.RunSql(SchemaBuilder.GetSqlScript(_options.DatabaseSchemaName, "mt_hilo"));
             }
 
             return new HiloSequence(_factory, _options, documentType.Name, settings);

@@ -1,3 +1,4 @@
+using System;
 using StructureMap;
 
 namespace Marten.Testing
@@ -12,6 +13,12 @@ namespace Marten.Testing
         public static IContainer OnOtherDatabaseSchema()
         {
             var registry = new DevelopmentModeRegistry(options => options.DatabaseSchemaName = "other");
+            return new Container(registry);
+        }
+
+        public static IContainer Configure(Action<StoreOptions> configureOptions)
+        {
+            var registry = new DevelopmentModeRegistry(configureOptions);
             return new Container(registry);
         }
     }

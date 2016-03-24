@@ -29,6 +29,14 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void default_table_name_on_overriden_schema()
+        {
+            var mapping = DocumentMappingFactory.For<User>("other");
+            mapping.DatabaseSchemaName = "overriden";
+            mapping.QualifiedTableName.ShouldBe("overriden.mt_doc_user");
+        }
+
+        [Fact]
         public void default_search_mode_is_jsonb_to_record()
         {
             var mapping = DocumentMappingFactory.For<User>();
@@ -92,6 +100,22 @@ namespace Marten.Testing.Schema
             var sql = builder.ToString();
 
             sql.ShouldContain("CREATE TABLE other.mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("jsonb NOT NULL");
+        }
+
+        [Fact]
+        public void generate_simple_document_table_on_overriden_schema()
+        {
+            var mapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            mapping.DatabaseSchemaName = "overriden";
+
+            var builder = new StringWriter();
+
+            mapping.WriteSchemaObjects(null, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldContain("CREATE TABLE overriden.mt_doc_documentmappingtests_myspecialdocument");
             sql.ShouldContain("jsonb NOT NULL");
         }
 
@@ -185,6 +209,22 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void write_upsert_sql_on_overriden_schema()
+        {
+            var mapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            mapping.DatabaseSchemaName = "overriden";
+
+            var builder = new StringWriter();
+
+            mapping.WriteSchemaObjects(null, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldContain("INSERT INTO overriden.mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION overriden.mt_upsert_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
         public void table_name_with_schema_for_document()
         {
             DocumentMappingFactory.For<MySpecialDocument>().QualifiedTableName
@@ -199,6 +239,16 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void table_name_with_schema_for_document_on_overriden_schema()
+        {
+            var documentMapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            documentMapping.DatabaseSchemaName = "overriden";
+
+            documentMapping.QualifiedTableName
+                .ShouldBe("overriden.mt_doc_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
         public void upsert_name_with_schema_for_document_type()
         {
             DocumentMappingFactory.For<MySpecialDocument>().QualifiedUpsertName
@@ -210,6 +260,16 @@ namespace Marten.Testing.Schema
         {
             DocumentMappingFactory.For<MySpecialDocument>("other").QualifiedUpsertName
                 .ShouldBe("other.mt_upsert_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
+        public void upsert_name_with_schema_for_document_type_on_overriden_schema()
+        {
+            var documentMapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            documentMapping.DatabaseSchemaName = "overriden";
+
+            documentMapping.QualifiedUpsertName
+                .ShouldBe("overriden.mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]

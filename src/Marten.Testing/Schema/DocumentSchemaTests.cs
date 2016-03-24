@@ -110,7 +110,7 @@ namespace Marten.Testing.Schema
             _schema.StorageFor(typeof(Company));
 
             var sql = _schema.ToDDL();
-            sql.ShouldContain(SchemaBuilder.GetSqlScript(_schema.StoreOptions, "mt_hilo"));
+            sql.ShouldContain(SchemaBuilder.GetSqlScript(_schema.StoreOptions.DatabaseSchemaName, "mt_hilo"));
         }
 
         [Fact]
@@ -288,6 +288,7 @@ namespace Marten.Testing.Schema
             _schema.StorageFor(typeof(EventStream)).ShouldBeOfType<EventStreamStorage>();
         }
     }
+
     public class DocumentSchemaOnOtherSchemaTests : IntegratedFixture
     {
         private readonly IDocumentSchema _schema;
@@ -329,7 +330,7 @@ namespace Marten.Testing.Schema
             _schema.StorageFor(typeof(Company));
 
             var sql = _schema.ToDDL();
-            sql.ShouldContain(SchemaBuilder.GetSqlScript(_schema.StoreOptions, "mt_hilo"));
+            sql.ShouldContain(SchemaBuilder.GetSqlScript(_schema.StoreOptions.DatabaseSchemaName, "mt_hilo"));
         }
 
         [Fact]
@@ -505,6 +506,307 @@ namespace Marten.Testing.Schema
         public void resolve_storage_for_stream_type()
         {
             _schema.StorageFor(typeof(EventStream)).ShouldBeOfType<EventStreamStorage>();
+        }
+    }
+
+    public class DocumentSchemaWithOverridenSchemaTests : IntegratedFixture
+    {
+        private readonly string _sql;
+        private readonly string[] _tables;
+        private readonly string[] _functions;
+        private readonly IDocumentSchema _schema;
+
+        public DocumentSchemaWithOverridenSchemaTests()
+        {
+            ConnectionSource.CleanBasicDocuments();
+
+            _schema = theStore.Schema;
+            _sql = _schema.ToDDL();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new User());
+                session.Store(new Issue());
+                session.Store(new Company());
+                session.SaveChanges();
+            }
+
+            _tables = _schema.SchemaTableNames();
+            _functions = _schema.SchemaFunctionNames();
+        }
+
+        protected override void StoreOptions(StoreOptions options)
+        {
+            options.MappingFor(typeof(User)).DatabaseSchemaName = "other";
+            options.MappingFor(typeof(Issue)).DatabaseSchemaName = "overriden";
+            options.MappingFor(typeof(Company));
+        }
+
+        [Fact]
+        public void include_the_hilo_table_by_default()
+        {
+            _sql.ShouldContain(SchemaBuilder.GetSqlScript(_schema.StoreOptions.DatabaseSchemaName, "mt_hilo"));
+        }
+
+        [Fact]
+        public void do_not_write_event_sql_if_the_event_graph_is_not_active()
+        {
+            _schema.Events.IsActive.ShouldBeFalse();
+            _sql.ShouldNotContain("public.mt_streams");
+        }
+
+        [Fact]
+        public void then_the_hilo_function_should_be_generated_in_the_default_schema()
+        {
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_get_next_hi");
+        }
+
+        [Fact]
+        public void then_the_user_function_should_be_generated_in_the_default_schema()
+        {
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
+        }
+
+        [Fact]
+        public void then_the_issue_function_should_be_generated_in_the_overriden_schema()
+        {
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION overriden.mt_upsert_issue");
+        }
+
+        [Fact]
+        public void then_the_company_function_should_be_generated_in_the_default_schema()
+        {
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_company");
+        }
+
+        [Fact]
+        public void then_the_user_table_should_be_generated_in_the_other_schema()
+        {
+            _sql.ShouldContain("CREATE TABLE other.mt_doc_user");
+        }
+
+        [Fact]
+        public void then_the_issue_table_should_be_generated_in_the_overriden_schema()
+        {
+            _sql.ShouldContain("CREATE TABLE overriden.mt_doc_issue");
+        }
+
+        [Fact]
+        public void then_company_table_should_be_generated_in_the_default()
+        {
+            _sql.ShouldContain("CREATE TABLE public.mt_doc_company");
+        }
+
+        [Fact]
+        public void then_the_user_table_should_be_generated()
+        {
+            _tables.ShouldContain("other.mt_doc_user");
+        }
+
+        [Fact]
+        public void then_the_issue_table_should_be_generated()
+        {
+            _tables.ShouldContain("overriden.mt_doc_issue");
+        }
+
+        [Fact]
+        public void then_the_company_table_should_be_generated()
+        {
+            _tables.ShouldContain("public.mt_doc_company");
+        }
+
+        [Fact]
+        public void then_the_user_function_should_be_generated()
+        {
+            _functions.ShouldContain("other.mt_upsert_user");
+        }
+
+        [Fact]
+        public void then_the_issue_function_should_be_generated()
+        {
+            _functions.ShouldContain("overriden.mt_upsert_issue");
+        }
+
+        [Fact]
+        public void then_the_company_function_should_be_generated()
+        {
+            _functions.ShouldContain("public.mt_upsert_company");
+        }
+
+        [Fact]
+        public void the_user_should_be_stored()
+        {
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<User>().Count().ShouldBe(1);
+            }
+        }
+
+        [Fact]
+        public void the_issue_should_be_stored()
+        {
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<Issue>().Count().ShouldBe(1);
+            }
+        }
+
+        [Fact]
+        public void the_company_should_be_stored()
+        {
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<Company>().Count().ShouldBe(1);
+            }
+        }
+    }
+
+    public class DocumentSchemaWithOverridenDefaultSchemaAndEventsTests : IntegratedFixture
+    {
+        private readonly string _sql;
+        private readonly string[] _tables;
+        private readonly string[] _functions;
+        private readonly IDocumentSchema _schema;
+
+        public DocumentSchemaWithOverridenDefaultSchemaAndEventsTests()
+        {
+            ConnectionSource.CleanBasicDocuments();
+
+            _schema = theStore.Schema;
+
+            _sql = _schema.ToDDL();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new User());
+                session.Store(new Issue());
+                session.Store(new Company());
+                session.SaveChanges();
+            }
+
+            _tables = _schema.SchemaTableNames();
+            _functions = _schema.SchemaFunctionNames();
+        }
+
+        protected override void StoreOptions(StoreOptions options)
+        {
+            options.DatabaseSchemaName = "other";
+            options.MappingFor(typeof(User)).DatabaseSchemaName = "yet_another";
+            options.MappingFor(typeof(Issue)).DatabaseSchemaName = "overriden";
+            options.MappingFor(typeof(Company));
+            options.Events.AddEventType(typeof(MembersJoined));
+        }
+
+        [Fact]
+        public void do_write_the_event_sql_if_the_event_graph_is_active()
+        {
+            _schema.Events.IsActive.ShouldBeTrue();
+            _schema.ToDDL().ShouldContain("other.mt_streams");
+        }
+
+        [Fact]
+        public void then_the_hilo_function_should_be_generated_in_the_default_schema()
+        {
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_get_next_hi");
+        }
+
+        [Fact]
+        public void then_the_user_function_should_be_generated_in_the_default_schema()
+        {
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION yet_another.mt_upsert_user");
+        }
+
+        [Fact]
+        public void then_the_issue_function_should_be_generated_in_the_overriden_schema()
+        {
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION overriden.mt_upsert_issue");
+        }
+
+        [Fact]
+        public void then_the_company_function_should_be_generated_in_the_default_schema()
+        {
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_company");
+        }
+
+        [Fact]
+        public void then_the_user_table_should_be_generated_in_the_default_schema()
+        {
+            _sql.ShouldContain("CREATE TABLE yet_another.mt_doc_user");
+        }
+
+        [Fact]
+        public void then_the_issue_table_should_be_generated_in_the_overriden_schema()
+        {
+            _sql.ShouldContain("CREATE TABLE overriden.mt_doc_issue");
+        }
+
+        [Fact]
+        public void then_company_table_should_be_generated_in_the_default()
+        {
+            _sql.ShouldContain("CREATE TABLE other.mt_doc_company");
+        }
+
+        [Fact]
+        public void then_the_user_table_should_be_generated()
+        {
+            _tables.ShouldContain("yet_another.mt_doc_user");
+        }
+
+        [Fact]
+        public void then_the_issue_table_should_be_generated()
+        {
+            _tables.ShouldContain("overriden.mt_doc_issue");
+        }
+
+        [Fact]
+        public void then_the_company_table_should_be_generated()
+        {
+            _tables.ShouldContain("other.mt_doc_company");
+        }
+
+        [Fact]
+        public void then_the_user_function_should_be_generated()
+        {
+            _functions.ShouldContain("yet_another.mt_upsert_user");
+        }
+
+        [Fact]
+        public void then_the_issue_function_should_be_generated()
+        {
+            _functions.ShouldContain("overriden.mt_upsert_issue");
+        }
+
+        [Fact]
+        public void then_the_company_function_should_be_generated()
+        {
+            _functions.ShouldContain("other.mt_upsert_company");
+        }
+
+        [Fact]
+        public void the_user_should_be_stored()
+        {
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<User>().Count().ShouldBe(1);
+            }
+        }
+
+        [Fact]
+        public void the_issue_should_be_stored()
+        {
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<Issue>().Count().ShouldBe(1);
+            }
+        }
+
+        [Fact]
+        public void the_company_should_be_stored()
+        {
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<Company>().Count().ShouldBe(1);
+            }
         }
     }
 
