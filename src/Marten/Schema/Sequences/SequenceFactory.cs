@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using Marten.Services;
 
 namespace Marten.Schema.Sequences
 {
@@ -19,18 +17,18 @@ namespace Marten.Schema.Sequences
 
         public ISequence Hilo(Type documentType, HiloSettings settings)
         {
-            if (!_schema.TableExists("mt_hilo"))
+            var qualiffiedTableName = _options.DatabaseSchemaName + ".mt_hilo";
+            if (!_schema.TableExists(qualiffiedTableName))
             {
                 if (_options.AutoCreateSchemaObjects == AutoCreate.None)
                 {
                     throw new InvalidOperationException($"Hilo table is missing, but {nameof(StoreOptions.AutoCreateSchemaObjects)} is {_options.AutoCreateSchemaObjects}");
                 }
 
-
                 _factory.RunSql(SchemaBuilder.GetSqlScript(_options, "mt_hilo"));
             }
 
-            return new HiloSequence(_factory, documentType.Name, settings);
+            return new HiloSequence(_factory, _options, documentType.Name, settings);
         }
     }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Data;
-using Marten.Services;
 using Marten.Util;
 using NpgsqlTypes;
 
@@ -9,12 +8,14 @@ namespace Marten.Schema.Sequences
     public class HiloSequence : ISequence
     {
         private readonly IConnectionFactory _factory;
+        private readonly StoreOptions _options;
         private readonly string _entityName;
         private readonly object _lock = new object();
 
-        public HiloSequence(IConnectionFactory factory, string entityName, HiloSettings settings)
+        public HiloSequence(IConnectionFactory factory, StoreOptions options, string entityName, HiloSettings settings)
         {
             _factory = factory;
+            _options = options;
             _entityName = entityName;
 
             CurrentHi = -1;
@@ -58,7 +59,7 @@ namespace Marten.Schema.Sequences
                 try
                 {
                     var tx = conn.BeginTransaction(IsolationLevel.Serializable);
-                    var raw = conn.CreateCommand().CallsSproc("mt_get_next_hi")
+                    var raw = conn.CreateCommand().CallsSproc(_options.DatabaseSchemaName + ".mt_get_next_hi")
                         .With("entity", _entityName)
                         .Returns("next", NpgsqlDbType.Bigint).ExecuteScalar();
 

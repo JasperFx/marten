@@ -151,11 +151,11 @@ namespace Marten.Schema
         public IEventStoreConfiguration Events => StoreOptions.Events;
         public PostgresUpsertType UpsertType => StoreOptions.UpsertType;
 
-        public IEnumerable<string> SchemaTableNames()
+        public string[] SchemaTableNames()
         {
             var sql = "select table_schema || '.' || table_name from information_schema.tables where table_name like ?;";
 
-            return _factory.GetStringList(sql, DocumentMapping.MartenPrefix + "%");
+            return _factory.GetStringList(sql, DocumentMapping.MartenPrefix + "%").ToArray();
         }
 
         public string[] DocumentTables()
@@ -164,7 +164,7 @@ namespace Marten.Schema
             return SchemaTableNames().Where(x => x.StartsWith(tablePrefix)).ToArray();
         }
 
-        public IEnumerable<string> SchemaFunctionNames()
+        public string[] SchemaFunctionNames()
         {
             return findFunctionNames().ToArray();
         }

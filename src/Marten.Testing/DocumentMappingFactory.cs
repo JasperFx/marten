@@ -4,9 +4,11 @@ namespace Marten.Testing
 {
     public static class DocumentMappingFactory
     {
-        public static DocumentMapping For<T>()
+        public static DocumentMapping For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName)
         {
-            return new DocumentMapping(typeof(T), new StoreOptions());
+            var storeOptions = new StoreOptions { DatabaseSchemaName = databaseSchemaName };
+
+            return new DocumentMapping(typeof(T), storeOptions);
         }
     }
 }

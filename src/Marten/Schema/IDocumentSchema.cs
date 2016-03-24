@@ -11,9 +11,9 @@ namespace Marten.Schema
         StoreOptions StoreOptions { get; }
 
         IDocumentStorage StorageFor(Type documentType);
-        IEnumerable<string> SchemaTableNames();
+        string[] SchemaTableNames();
         string[] DocumentTables();
-        IEnumerable<string> SchemaFunctionNames();
+        string[] SchemaFunctionNames();
 
         IDocumentMapping MappingFor(Type documentType);
         void EnsureStorageExists(Type documentType);

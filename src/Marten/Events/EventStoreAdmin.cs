@@ -34,7 +34,7 @@ namespace Marten.Events
 
                     connection.Execute(cmd =>
                     {
-                        cmd.CallsSproc("mt_load_projection_body")
+                        cmd.CallsSproc(qualifyName("mt_load_projection_body"))
                             .With("proj_name", name)
                             .With("body", body)
                             .ExecuteNonQuery();
@@ -42,8 +42,6 @@ namespace Marten.Events
                     });
                 });
             }
-
-
         }
 
         public void LoadProjection(string file)
@@ -58,13 +56,17 @@ namespace Marten.Events
 
         public IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase(bool overwrite = false)
         {
-            var js = SchemaBuilder.GetJavascript("mt_transforms");
+            var js = SchemaBuilder.GetJavascript(_options, "mt_transforms");
 
             using (var connection = new ManagedConnection(_connectionFactory))
             {
                 connection.Execute(cmd =>
                 {
-                    cmd.WithText("delete from mt_modules where name = :name;insert into mt_modules (name, definition) values (:name, :definition)")
+                    var table = modulesTable();
+                    var sql = $"delete from {table} where name = :name;" +
+                              $"insert into {table} (name, definition) values (:name, :definition)";
+
+                    cmd.WithText(sql)
                         .With("name", "mt_transforms")
                         .With("definition", js)
                         .ExecuteNonQuery();
@@ -72,7 +74,7 @@ namespace Marten.Events
 
                 connection.Execute(cmd =>
                 {
-                    cmd.CallsSproc("mt_initialize_projections").With("overwrite", overwrite).ExecuteNonQuery();
+                    cmd.CallsSproc(qualifyName("mt_initialize_projections")).With("overwrite", overwrite).ExecuteNonQuery();
                 });
             }
 
@@ -84,7 +86,8 @@ namespace Marten.Events
             string json = null;
             using (var connection = new ManagedConnection(_connectionFactory))
             {
-                json = connection.Execute(cmd => cmd.CallsSproc("mt_get_projection_usage").ExecuteScalar().As<string>());
+                json = connection.Execute(cmd => cmd.CallsSproc(qualifyName("mt_get_projection_usage"))
+                    .ExecuteScalar().As<string>());
             }
 
             return _serializer.FromJson<ProjectionUsage[]>(json);
@@ -98,13 +101,13 @@ namespace Marten.Events
             runScript("mt_apply_transform");
             runScript("mt_apply_aggregation");
 
-            var js = SchemaBuilder.GetJavascript("mt_transforms");
+            var js = SchemaBuilder.GetJavascript(_options, "mt_transforms");
 
             using (var connection = new ManagedConnection(_connectionFactory))
             {
                 connection.Execute(cmd =>
                 {
-                    cmd.WithText("insert into mt_modules (name, definition) values (:name, :definition)")
+                    cmd.WithText($"insert into {modulesTable()} (name, definition) values (:name, :definition)")
                         .With("name", "mt_transforms")
                         .With("definition", js)
                         .ExecuteNonQuery();
@@ -123,6 +126,16 @@ namespace Marten.Events
             {
                 throw new MartenSchemaException(sql, e);
             }
+        }
+
+        private string modulesTable()
+        {
+            return qualifyName("mt_modules");
+        }
+
+        private string qualifyName(string name)
+        {
+            return $"{_options.DatabaseSchemaName}.{name}";
         }
     }
 }

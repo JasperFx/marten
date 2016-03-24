@@ -10,22 +10,20 @@ namespace Marten.Schema
         public static string DropAllFunctionSql = @"
 SELECT format('DROP FUNCTION %s.%s(%s);'
              ,n.nspname
-             ,p.oid::regproc
+             ,p.proname
              ,pg_get_function_identity_arguments(p.oid))
 FROM   pg_proc p
 LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
-WHERE  p.proname like 'mt_%' 
-AND    pg_function_is_visible(p.oid)";
+WHERE  p.proname like 'mt_%'";
 
         public static readonly string DropFunctionSql = @"
 SELECT format('DROP FUNCTION %s.%s(%s);'
              ,n.nspname
-             ,p.oid::regproc
+             ,p.proname
              ,pg_get_function_identity_arguments(p.oid))
 FROM   pg_proc p
 LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
-WHERE  p.proname = '{0}' 
-AND    pg_function_is_visible(p.oid)
+WHERE  p.proname = '{0}'
 AND    n.nspname = '{1}';";
 
         private readonly IConnectionFactory _factory;

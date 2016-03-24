@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Diagnostics;
+using System.Linq;
 using Baseline;
 using Marten.Generation;
 using Marten.Schema;
@@ -123,8 +124,14 @@ namespace Marten.Testing.Schema
 
             var schema = theContainer.GetInstance<DocumentSchema>();
 
-            schema.DocumentTables().Any().ShouldBeFalse();
-            schema.SchemaFunctionNames().Any().ShouldBeFalse();
+            ShouldBeEmpty(schema.DocumentTables());
+            ShouldBeEmpty(schema.SchemaFunctionNames());
+        }
+
+        private static void ShouldBeEmpty(string[] documentTables)
+        {
+            var stillInDatabase = string.Join(",", documentTables);
+            documentTables.Any().ShouldBeFalse(stillInDatabase);
         }
 
         [Fact]
