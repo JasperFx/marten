@@ -1,4 +1,5 @@
-﻿using Marten.Schema;
+﻿using Marten.Events;
+using Marten.Schema;
 using Marten.Services;
 using Shouldly;
 using StructureMap;
@@ -12,19 +13,13 @@ namespace Marten.Testing.Events
         public void can_build_the_mt_stream_schema_objects()
         {
             var container = Container.For<DevelopmentModeRegistry>();
-            var schema = container.GetInstance<IDocumentSchema>();
-
-            build_and_verify_mt_stream(container, schema);
-        }
-
-        private static void build_and_verify_mt_stream(IContainer container, IDocumentSchema schema)
-        {
             container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
-            var runner = container.GetInstance<IManagedConnection>();
-            var sql = SchemaBuilder.GetSqlScript(schema.StoreOptions, "mt_stream");
+            var schema = container.GetInstance<IDocumentSchema>();
+            schema.EnsureStorageExists(typeof(EventStream));
 
-            runner.Execute(sql);
+            var store = container.GetInstance<IDocumentStore>();
+            store.EventStore.InitializeEventStoreInDatabase(true);
 
             var schemaFunctionNames = schema.SchemaFunctionNames();
             schemaFunctionNames.ShouldContain("public.mt_append_event");
@@ -38,16 +33,14 @@ namespace Marten.Testing.Events
         [Fact]
         public void can_build_the_mt_stream_schema_objects_in_different_database_schema()
         {
-            var container = Container.For<DevelopmentModeRegistry>();
-            var schema = container.GetInstance<IDocumentSchema>();
-            schema.StoreOptions.DatabaseSchemaName = "other";
-
+            var container = ContainerFactory.Configure(options => options.DatabaseSchemaName = "other");
             container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
-            var runner = container.GetInstance<IManagedConnection>();
-            var sql = SchemaBuilder.GetSqlScript(schema.StoreOptions, "mt_stream");
+            var schema = container.GetInstance<IDocumentSchema>();
+            schema.EnsureStorageExists(typeof(EventStream));
 
-            runner.Execute(sql);
+            var store = container.GetInstance<IDocumentStore>();
+            store.EventStore.InitializeEventStoreInDatabase(true);
 
             var schemaFunctionNames = schema.SchemaFunctionNames();
             schemaFunctionNames.ShouldContain("other.mt_append_event");
@@ -56,6 +49,27 @@ namespace Marten.Testing.Events
             var schemaTableNames = schema.SchemaTableNames();
             schemaTableNames.ShouldContain("other.mt_streams");
             schemaTableNames.ShouldContain("other.mt_events");
+        }
+
+        [Fact]
+        public void can_build_the_event_schema_objects_in_a_separted_schema()
+        {
+            var container = ContainerFactory.Configure(options => options.Events.DatabaseSchemaName = "event_store");
+            container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
+
+            var schema = container.GetInstance<IDocumentSchema>();
+            schema.EnsureStorageExists(typeof(EventStream));
+
+            var store = container.GetInstance<IDocumentStore>();
+            store.EventStore.InitializeEventStoreInDatabase(true);
+
+            var schemaFunctionNames = schema.SchemaFunctionNames();
+            schemaFunctionNames.ShouldContain("event_store.mt_append_event");
+            schemaFunctionNames.ShouldContain("event_store.mt_version_stream");
+
+            var schemaTableNames = schema.SchemaTableNames();
+            schemaTableNames.ShouldContain("event_store.mt_streams");
+            schemaTableNames.ShouldContain("event_store.mt_events");
         }
     }
 }

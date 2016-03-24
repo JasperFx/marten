@@ -2,7 +2,6 @@
 using Marten.Schema.Sequences;
 using Marten.Testing.Fixtures;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Schema.Sequences
@@ -41,6 +40,7 @@ namespace Marten.Testing.Schema.Sequences
         public SequenceFactoryOnOtherDatabaseSchemaTests()
         {
             theContainer.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
+
             _schema = theContainer.GetInstance<IDocumentSchema>();
 
             _schema.Sequences.Hilo(typeof(Target), new HiloSettings())

@@ -269,6 +269,8 @@ namespace Marten.Schema
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
+            EnsureDatabaseSchema.WriteSql(DatabaseSchemaName, writer);
+
             var table = ToTable(schema);
             table.Write(writer);
             writer.WriteLine();

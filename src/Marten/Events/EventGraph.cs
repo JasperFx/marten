@@ -43,6 +43,10 @@ namespace Marten.Events
         private readonly Cache<Type, AggregateModel> _aggregates = new Cache<Type, AggregateModel>(type => new AggregateModel(type));
         private readonly Cache<string, AggregateModel> _aggregateByName = new Cache<string, AggregateModel>();
 
+        private bool _checkedSchema = false;
+        private readonly object _locker = new object();
+        private string _databaseSchemaName;
+
         internal StoreOptions Options { get; }
 
         public EventGraph(StoreOptions options)
@@ -123,21 +127,18 @@ namespace Marten.Events
 
         public string DatabaseSchemaName
         {
-            get { return Options.DatabaseSchemaName; }
-            set { throw new NotSupportedException("The DatabaseSchemaName of EventGraphs can't be set."); }
+            get { return _databaseSchemaName ?? Options.DatabaseSchemaName; }
+            set { _databaseSchemaName = value; }
         }
 
         public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
         public IIdGeneration IdStrategy { get; } = new GuidIdGeneration();
         public MemberInfo IdMember { get; } = ReflectionHelper.GetProperty<EventStream>(x => x.Id);
+
         public string[] SelectFields()
         {
             throw new NotImplementedException();
         }
-
-
-        private bool _checkedSchema = false;
-        private readonly object _locker = new object();
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
@@ -178,13 +179,14 @@ namespace Marten.Events
 
         }
 
-
-        private static void writeBasicTables(IDocumentSchema schema, StringWriter writer)
+        private void writeBasicTables(IDocumentSchema schema, StringWriter writer)
         {
-            writer.WriteSql(schema.StoreOptions, "mt_stream");
-            writer.WriteSql(schema.StoreOptions, "mt_initialize_projections");
-            writer.WriteSql(schema.StoreOptions, "mt_apply_transform");
-            writer.WriteSql(schema.StoreOptions, "mt_apply_aggregation");
+            EnsureDatabaseSchema.WriteSql(DatabaseSchemaName, writer);
+
+            writer.WriteSql(DatabaseSchemaName, "mt_stream");
+            writer.WriteSql(DatabaseSchemaName, "mt_initialize_projections");
+            writer.WriteSql(DatabaseSchemaName, "mt_apply_transform");
+            writer.WriteSql(DatabaseSchemaName, "mt_apply_aggregation");
         }
 
         public IField FieldFor(IEnumerable<MemberInfo> members)

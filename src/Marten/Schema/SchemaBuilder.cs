@@ -7,13 +7,11 @@ namespace Marten.Schema
 {
     public static class SchemaBuilder
     {
-        public static string GetSqlScript(StoreOptions options, string script)
+        public static string GetSqlScript(string databaseSchemaName, string script)
         {
-            if (options == null) throw new ArgumentNullException(nameof(options));
-
             var name = $"{typeof (SchemaBuilder).Namespace}.SQL.{script}.sql";
 
-            return ReadFromStream(name, options.DatabaseSchemaName);
+            return ReadFromStream(name, databaseSchemaName);
         }
 
         public static string GetJavascript(StoreOptions options, string jsfile)
@@ -25,9 +23,9 @@ namespace Marten.Schema
             return ReadFromStream(name, options.DatabaseSchemaName);
         }
 
-        public static StringWriter WriteSql(this StringWriter writer, StoreOptions options, string scriptName)
+        public static StringWriter WriteSql(this StringWriter writer, string databaseSchemaName, string scriptName)
         {
-            var format = GetSqlScript(options, scriptName);
+            var format = GetSqlScript(databaseSchemaName, scriptName);
 
             writer.WriteLine(format);
             writer.WriteLine();
