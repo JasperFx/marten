@@ -49,7 +49,15 @@ namespace Marten.Linq
         {
             return _schema.StorageFor(typeof (T)).As<IResolver<T>>();
         }
-            
+
+        public QueryPlan ExecuteExplain<T>(QueryModel queryModel)
+        {
+            ISelector<T> selector = null;
+            var cmd = BuildCommand(queryModel, out selector);
+
+            return _runner.ExplainQuery(cmd);
+        }
+
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
             var executors = new List<IScalarQueryExecution<T>> {
@@ -88,8 +96,7 @@ namespace Marten.Linq
 
             return all.Single();
         }
-
-
+        
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
         {
             ISelector<T> selector = null;
@@ -158,8 +165,8 @@ namespace Marten.Linq
         private IEnumerable<string> executeJson<T>(QueryModel queryModel, ResultOperatorBase resultOperator)
         {
             var cmd = prepareCommand<T>(queryModel, resultOperator);
-            var all = _runner.QueryJson(cmd);
-            return all;
+            var queryResult = _runner.QueryJson(cmd);
+            return queryResult;
         }
 
         private NpgsqlCommand prepareCommand<T>(QueryModel queryModel, ResultOperatorBase resultOperator)
