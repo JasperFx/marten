@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using Shouldly;
 using Xunit;
@@ -117,10 +118,122 @@ namespace Marten.Testing.Events
             }
         }
 
-        private static DocumentStore InitStore()
+        [Theory]
+        [MemberData("SessionTypes")]
+        public void capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema(DocumentTracking sessionType)
         {
+            var store = InitStore("event_store");
+
+            using (var session = store.OpenSession(sessionType))
+            {
+                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+                var id = session.Events.StartStream<Quest>(joined, departed);
+                session.SaveChanges();
+
+                var streamEvents = session.Events.FetchStream<Quest>(id);
+
+                streamEvents.Count().ShouldBe(2);
+                streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(1).ShouldBeOfType<MembersDeparted>();
+            }
+        }
+
+        [Theory]
+        [MemberData("SessionTypes")]
+        public void capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided_in_another_database_schema(DocumentTracking sessionType)
+        {
+            var store = InitStore("event_store");
+
+            using (var session = store.OpenSession(sessionType))
+            {
+                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+                var id = Guid.NewGuid();
+                session.Events.StartStream<Quest>(id, joined, departed);
+                session.SaveChanges();
+
+                var streamEvents = session.Events.FetchStream<Quest>(id);
+
+                streamEvents.Count().ShouldBe(2);
+                streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(1).ShouldBeOfType<MembersDeparted>();
+            }
+        }
+
+        [Theory]
+        [MemberData("SessionTypes")]
+        public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema(DocumentTracking sessionType)
+        {
+            var store = InitStore("event_store");
+
+            using (var session = store.OpenSession(sessionType))
+            {
+                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+                var id = Guid.NewGuid();
+                session.Events.StartStream<Quest>(id, joined);
+                session.Events.AppendEvents(id, departed);
+
+                session.SaveChanges();
+
+                var streamEvents = session.Events.FetchStream<Quest>(id);
+
+                streamEvents.Count().ShouldBe(2);
+                streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(1).ShouldBeOfType<MembersDeparted>();
+            }
+        }
+
+        [Theory]
+        [MemberData("SessionTypes")]
+        public void capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema(DocumentTracking sessionType)
+        {
+            var store = InitStore("event_store");
+
+            var id = Guid.NewGuid();
+            var started = new QuestStarted();
+
+            using (var session = store.OpenSession(sessionType))
+            {
+                session.Events.StartStream<Quest>(id, started);
+                session.SaveChanges();
+            }
+
+            using (var session = store.OpenSession(sessionType))
+            {
+                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+                session.Events.AppendEvents(id, joined);
+                session.Events.AppendEvents(id, departed);
+
+                session.SaveChanges();
+
+                var streamEvents = session.Events.FetchStream<Quest>(id);
+
+                streamEvents.Count().ShouldBe(3);
+                streamEvents.ElementAt(0).ShouldBeOfType<QuestStarted>();
+                streamEvents.ElementAt(1).ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(2).ShouldBeOfType<MembersDeparted>();
+           }
+        }
+
+        private static  DocumentStore InitStore(string databascSchema = null)
+        {
+            DocumentStore.For(ConnectionSource.ConnectionString)
+                .Advanced.Clean.CompletelyRemoveAll();
+
             var store = DocumentStore.For(_ =>
             {
+                if (databascSchema != null)
+                {
+                    _.Events.DatabaseSchemaName = databascSchema;
+                }
+
                 _.AutoCreateSchemaObjects = AutoCreate.All;
 
                 _.Connection(ConnectionSource.ConnectionString);
@@ -128,8 +241,7 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));
             });
-
-            store.Advanced.Clean.DeleteAllEventData();
+            
             return store;
         }
     }

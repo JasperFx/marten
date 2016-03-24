@@ -284,6 +284,11 @@ namespace Marten.Schema
             return SchemaTableNames().Contains($"{StoreOptions.DatabaseSchemaName}.{tableName}");
         }
 
+        public bool TableExists(string databaseSchemaName, string tableName)
+        {
+            return SchemaTableNames().Contains($"{databaseSchemaName}.{tableName}");
+        }
+
         private string[] primaryKeysFor(IDocumentMapping documentMapping)
         {
             var sql = @"

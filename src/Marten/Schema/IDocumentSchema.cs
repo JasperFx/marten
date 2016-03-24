@@ -58,5 +58,6 @@ namespace Marten.Schema
         IEnumerable<IDocumentMapping> AllDocumentMaps();
         IResolver<T> ResolverFor<T>();
         bool TableExists(string tableName);
+        bool TableExists(string databaseSchemaName, string tableName);
     }
 }
