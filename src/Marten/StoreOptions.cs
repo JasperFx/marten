@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Events;
-using Marten.Linq;
 using Marten.Linq.Handlers;
 using Marten.Schema;
 using Marten.Schema.Sequences;
@@ -30,6 +29,13 @@ namespace Marten
 
         private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
             new ConcurrentDictionary<Type, DocumentMapping>();
+
+        private string _databaseSchemaName = DefaultDatabaseSchemaName;
+
+        /// <summary>
+        /// The default database schema used 'public'.
+        /// </summary>
+        public const string DefaultDatabaseSchemaName = "public";
 
         public StoreOptions()
         {
@@ -57,7 +63,11 @@ namespace Marten
         /// <summary>
         /// Sets the database default schema name used to store the documents.
         /// </summary>
-        public string DatabaseSchemaName { get; set; } = "public";
+        public string DatabaseSchemaName
+        {
+            get { return _databaseSchemaName; }
+            set { _databaseSchemaName = value?.ToLowerInvariant(); }
+        }
 
         /// <summary>
         /// Supply the connection string to the Postgresql database

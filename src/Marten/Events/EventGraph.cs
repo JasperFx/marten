@@ -15,6 +15,8 @@ namespace Marten.Events
 {
     public interface IEventStoreConfiguration
     {
+        string DatabaseSchemaName { get; set; }
+
         void AddEventType(Type eventType);
         void AddAllTypesFromAssembly(Assembly assembly);
         void AddEventTypes(IEnumerable<Type> types);

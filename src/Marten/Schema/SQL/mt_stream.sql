@@ -11,7 +11,7 @@ CREATE TABLE {databaseSchema}.mt_streams (
 DROP TABLE IF EXISTS {databaseSchema}.mt_events;
 CREATE TABLE {databaseSchema}.mt_events (
 	id 			uuid CONSTRAINT pk_mt_events PRIMARY KEY,
-	stream_id	uuid REFERENCES mt_streams ON DELETE CASCADE,
+	stream_id	uuid REFERENCES {databaseSchema}.mt_streams ON DELETE CASCADE,
 	version		integer NOT NULL,
 	data		jsonb NOT NULL,
 	type 		varchar(100) NOT NULL,
@@ -40,10 +40,10 @@ BEGIN
   
   IF v_now IS NULL THEN
 	v_next := 1;
-	insert into mt_streams (id, type, version) values (stream, stream_type, v_next);
+	insert into {databaseSchema}.mt_streams (id, type, version) values (stream, stream_type, v_next);
   ELSE
 	v_next := v_now + 1;
-	update mt_streams set version = v_next where id = stream;
+	update {databaseSchema}.mt_streams set version = v_next where id = stream;
   END IF; 
 
   RETURN v_next;

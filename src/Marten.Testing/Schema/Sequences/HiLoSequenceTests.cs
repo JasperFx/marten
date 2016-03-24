@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Schema.Sequences;
-using Marten.Services;
 using Shouldly;
 using StructureMap;
 using Xunit;
@@ -14,71 +13,70 @@ namespace Marten.Testing.Schema.Sequences
     {
         private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
 
-        private readonly HiloSequence theSequence;
-        private IConnectionFactory _connectionFactory;
+        private readonly HiloSequence _theSequence;
 
         public HiloSequenceTests()
         {
             _container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
-            var sql = SchemaBuilder.GetSqlScript(new StoreOptions(), "mt_hilo");
+            var storeOptions = new StoreOptions();
+            var sql = SchemaBuilder.GetSqlScript(storeOptions, "mt_hilo");
 
-            _connectionFactory = _container.GetInstance<IConnectionFactory>();
-            _connectionFactory.RunSql(sql);
-
+            var connectionFactory = _container.GetInstance<IConnectionFactory>();
+            connectionFactory.RunSql(sql);
             
-            theSequence = new HiloSequence(_connectionFactory, "foo", new HiloSettings());
+            _theSequence = new HiloSequence(connectionFactory, storeOptions, "foo", new HiloSettings());
         }
 
         [Fact]
         public void default_values()
         {
-            theSequence.CurrentHi.ShouldBe(-1);
-            theSequence.Increment.ShouldBe(1);
-            theSequence.MaxLo.ShouldBe(1000);
+            _theSequence.CurrentHi.ShouldBe(-1);
+            _theSequence.Increment.ShouldBe(1);
+            _theSequence.MaxLo.ShouldBe(1000);
         }
 
         [Fact]
         public void should_advance_initial_case()
         {
-            theSequence.ShouldAdvanceHi().ShouldBeTrue();
+            _theSequence.ShouldAdvanceHi().ShouldBeTrue();
         }
 
         [Fact]
         public void advance_to_next_hi_from_initial_state()
         {
-            theSequence.AdvanceToNextHi();
+            _theSequence.AdvanceToNextHi();
 
-            theSequence.CurrentLo.ShouldBe(1);
-            theSequence.CurrentHi.ShouldBe(0);
+            _theSequence.CurrentLo.ShouldBe(1);
+            _theSequence.CurrentHi.ShouldBe(0);
         }
 
         [Fact]
         public void advance_to_next_hi_several_times()
         {
-            theSequence.AdvanceToNextHi();
+            _theSequence.AdvanceToNextHi();
 
-            theSequence.AdvanceToNextHi();
-            theSequence.CurrentHi.ShouldBe(1);
+            _theSequence.AdvanceToNextHi();
+            _theSequence.CurrentHi.ShouldBe(1);
 
-            theSequence.AdvanceToNextHi();
-            theSequence.CurrentHi.ShouldBe(2);
+            _theSequence.AdvanceToNextHi();
+            _theSequence.CurrentHi.ShouldBe(2);
 
-            theSequence.AdvanceToNextHi();
-            theSequence.CurrentHi.ShouldBe(3);
+            _theSequence.AdvanceToNextHi();
+            _theSequence.CurrentHi.ShouldBe(3);
         }
 
         [Fact]
         public void advance_value_from_initial_state()
         {
             // Gotta do this at least once
-            theSequence.AdvanceToNextHi();
+            _theSequence.AdvanceToNextHi();
 
-            theSequence.AdvanceValue().ShouldBe(1);
-            theSequence.AdvanceValue().ShouldBe(2);
-            theSequence.AdvanceValue().ShouldBe(3);
-            theSequence.AdvanceValue().ShouldBe(4);
-            theSequence.AdvanceValue().ShouldBe(5);
+            _theSequence.AdvanceValue().ShouldBe(1);
+            _theSequence.AdvanceValue().ShouldBe(2);
+            _theSequence.AdvanceValue().ShouldBe(3);
+            _theSequence.AdvanceValue().ShouldBe(4);
+            _theSequence.AdvanceValue().ShouldBe(5);
         }
 
         [Fact]
@@ -86,7 +84,7 @@ namespace Marten.Testing.Schema.Sequences
         {
             for (var i = 0; i < 5000; i++)
             {
-                theSequence.NextLong().ShouldBe(i + 1);
+                _theSequence.NextLong().ShouldBe(i + 1);
             }
         }
 
@@ -98,13 +96,12 @@ namespace Marten.Testing.Schema.Sequences
 
                 for (int i = 0; i < 1000; i++)
                 {
-                    list.Add(theSequence.NextInt());
+                    list.Add(_theSequence.NextInt());
                 }
 
                 return list;
             });
         }
-
 
         [Fact]
         public void is_thread_safe()
@@ -118,8 +115,6 @@ namespace Marten.Testing.Schema.Sequences
             all.GroupBy(x => x).Any(x => x.Count() > 1).ShouldBeFalse();
 
             all.Distinct().Count().ShouldBe(tasks.Length * 1000);
-
         }
-
     }
 }

@@ -9,24 +9,20 @@ namespace Marten.Schema
     {
         public static string GetSqlScript(StoreOptions options, string script)
         {
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
             var name = $"{typeof (SchemaBuilder).Namespace}.SQL.{script}.sql";
 
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
-            if (stream == null)
-            {
-                throw new InvalidOperationException("Could not find embedded resource: " + name);
-            }
-            var text = stream.ReadAllText();    
-            return text.Replace("{databaseSchema}", options.DatabaseSchemaName);
+            return ReadFromStream(name, options.DatabaseSchemaName);
         }
 
-        public static string GetJavascript(string jsfile)
+        public static string GetJavascript(StoreOptions options, string jsfile)
         {
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
             var name = $"{typeof (SchemaBuilder).Namespace}.SQL.{jsfile}.js";
 
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
-
-            return stream.ReadAllText();
+            return ReadFromStream(name, options.DatabaseSchemaName);
         }
 
         public static StringWriter WriteSql(this StringWriter writer, StoreOptions options, string scriptName)
@@ -38,6 +34,17 @@ namespace Marten.Schema
             writer.WriteLine();
 
             return writer;
+        }
+
+        private static string ReadFromStream(string name, string databaseSchemaName)
+        {
+            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
+            if (stream == null)
+            {
+                throw new InvalidOperationException("Could not find embedded resource: " + name);
+            }
+            var text = stream.ReadAllText();
+            return text.Replace("{databaseSchema}", databaseSchemaName);
         }
     }
 }

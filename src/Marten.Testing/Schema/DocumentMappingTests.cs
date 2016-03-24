@@ -22,6 +22,13 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void default_table_name_on_other_schema()
+        {
+            var mapping = DocumentMappingFactory.For<User>("other");
+            mapping.QualifiedTableName.ShouldBe("other.mt_doc_user");
+        }
+
+        [Fact]
         public void default_search_mode_is_jsonb_to_record()
         {
             var mapping = DocumentMappingFactory.For<User>();
@@ -75,6 +82,20 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void generate_simple_document_table_on_other_schema()
+        {
+            var mapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            var builder = new StringWriter();
+
+            mapping.WriteSchemaObjects(null, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldContain("CREATE TABLE other.mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("jsonb NOT NULL");
+        }
+
+        [Fact]
         public void generate_table_with_indexes()
         {
             var mapping = DocumentMappingFactory.For<User>();
@@ -87,11 +108,8 @@ namespace Marten.Testing.Schema
 
             var sql = builder.ToString();
 
-            
-
             sql.ShouldContain(i1.ToDDL());
             sql.ShouldContain(i2.ToDDL());
-
         }
 
         [Fact]
@@ -138,7 +156,6 @@ namespace Marten.Testing.Schema
             }
         }
 
-
         [Fact]
         public void write_upsert_sql()
         {
@@ -154,6 +171,20 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void write_upsert_sql_on_other_schema()
+        {
+            var mapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            var builder = new StringWriter();
+
+            mapping.WriteSchemaObjects(null, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldContain("INSERT INTO other.mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
         public void table_name_with_schema_for_document()
         {
             DocumentMappingFactory.For<MySpecialDocument>().QualifiedTableName
@@ -161,10 +192,24 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void table_name_with_schema_for_document_on_other_schema()
+        {
+            DocumentMappingFactory.For<MySpecialDocument>("other").QualifiedTableName
+                .ShouldBe("other.mt_doc_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
         public void upsert_name_with_schema_for_document_type()
         {
             DocumentMappingFactory.For<MySpecialDocument>().QualifiedUpsertName
                 .ShouldBe("public.mt_upsert_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
+        public void upsert_name_with_schema_for_document_type_on_other_schema()
+        {
+            DocumentMappingFactory.For<MySpecialDocument>("other").QualifiedUpsertName
+                .ShouldBe("other.mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
@@ -362,6 +407,5 @@ namespace Marten.Testing.Schema
             public string OtherProp;
             public string OtherField { get; set; }
         }
-
     }
 }
