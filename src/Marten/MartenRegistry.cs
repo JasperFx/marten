@@ -143,7 +143,16 @@ namespace Marten
             {
                 alter = mapping => mapping.HiloSettings(settings);
                 return this;
-            }    
+            }
+
+            /// <summary>
+            /// Overrides the database schema name used to store the documents.
+            /// </summary>
+            public DocumentMappingExpression<T> DatabaseSchemaName(string databaseSchemaName)
+            {
+                alter = mapping => mapping.DatabaseSchemaName = databaseSchemaName;
+                return this;
+            }
 
             private Action<DocumentMapping> alter
             {
