@@ -330,7 +330,7 @@ namespace Marten.Testing.Schema
             _schema.StorageFor(typeof(Company));
 
             var sql = _schema.ToDDL();
-            sql.ShouldContain(SchemaBuilder.GetSqlScript(_schema.StoreOptions.DatabaseSchemaName, "mt_hilo"));
+            sql.ShouldContain(SchemaBuilder.GetSqlScript("other", "mt_hilo"));
         }
 
         [Fact]
@@ -338,7 +338,7 @@ namespace Marten.Testing.Schema
         {
             _schema.Events.IsActive.ShouldBeFalse();
 
-            _schema.ToDDL().ShouldNotContain("public.mt_streams");
+            _schema.ToDDL().ShouldNotContain("other.mt_streams");
         }
 
         [Fact]
@@ -545,7 +545,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void include_the_hilo_table_by_default()
         {
-            _sql.ShouldContain(SchemaBuilder.GetSqlScript(_schema.StoreOptions.DatabaseSchemaName, "mt_hilo"));
+            _sql.ShouldContain(SchemaBuilder.GetSqlScript("public", "mt_hilo"));
         }
 
         [Fact]
