@@ -46,7 +46,7 @@ namespace Marten.Schema
                 index += " CONCURRENTLY";
             }
 
-            index += $" {IndexName} ON {_parent.TableName}";
+            index += $" {IndexName} ON {_parent.QualifiedTableName}";
 
             if (Method != IndexMethod.btree)
             {

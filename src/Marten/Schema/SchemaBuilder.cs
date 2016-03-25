@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Reflection;
 using Baseline;
 
@@ -6,39 +7,42 @@ namespace Marten.Schema
 {
     public static class SchemaBuilder
     {
-        public static void Write(StringWriter writer, string script)
-        {
-            var text = GetText(script);
-            writer.WriteLine(text);
-            writer.WriteLine();
-            writer.WriteLine();
-        }
-
-        public static string GetText(string script)
+        public static string GetSqlScript(string databaseSchemaName, string script)
         {
             var name = $"{typeof (SchemaBuilder).Namespace}.SQL.{script}.sql";
 
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
-
-            return stream.ReadAllText();
+            return ReadFromStream(name, databaseSchemaName);
         }
 
-        public static string GetJavascript(string jsfile)
+        public static string GetJavascript(StoreOptions options, string jsfile)
         {
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
             var name = $"{typeof (SchemaBuilder).Namespace}.SQL.{jsfile}.js";
 
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
-
-            return stream.ReadAllText();
+            return ReadFromStream(name, options.DatabaseSchemaName);
         }
 
-        public static StringWriter WriteSql(this StringWriter writer, string scriptName)
+        public static StringWriter WriteSql(this StringWriter writer, string databaseSchemaName, string scriptName)
         {
-            writer.WriteLine(GetText(scriptName));
+            var format = GetSqlScript(databaseSchemaName, scriptName);
+
+            writer.WriteLine(format);
             writer.WriteLine();
             writer.WriteLine();
 
             return writer;
+        }
+
+        private static string ReadFromStream(string name, string databaseSchemaName)
+        {
+            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
+            if (stream == null)
+            {
+                throw new InvalidOperationException("Could not find embedded resource: " + name);
+            }
+            var text = stream.ReadAllText();
+            return text.Replace("{databaseSchema}", databaseSchemaName);
         }
     }
 }

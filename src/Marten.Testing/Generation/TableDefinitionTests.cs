@@ -11,7 +11,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void equivalency_positive()
         {
-            var users = new DocumentMapping(typeof(User));
+            var users = DocumentMappingFactory.For<User>();
             var table1 = users.ToTable(null);
             var table2 = users.ToTable(null);
 
@@ -23,7 +23,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void equivalency_negative_different_numbers_of_columns()
         {
-            var users = new DocumentMapping(typeof(User));
+            var users = DocumentMappingFactory.For<User>();
             var table1 = users.ToTable(null);
             var table2 = users.ToTable(null);
 
@@ -35,7 +35,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void equivalency_negative_column_type_changed()
         {
-            var users = new DocumentMapping(typeof(User));
+            var users = DocumentMappingFactory.For<User>();
             var table1 = users.ToTable(null);
             var table2 = users.ToTable(null);
 
@@ -47,7 +47,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void equivalency_positive_column_name_case_insensitive()
         {
-            var users = new DocumentMapping(typeof(User));
+            var users = DocumentMappingFactory.For<User>();
             var table1 = users.ToTable(null);
             var table2 = users.ToTable(null);
 
@@ -61,7 +61,7 @@ namespace Marten.Testing.Generation
         {
             // This was meant to address GH-127
 
-            var users = DocumentMapping.For<User>();
+            var users = DocumentMappingFactory.For<User>();
             users.DuplicateField("FirstName");
 
             var table1 = users.ToTable(null);

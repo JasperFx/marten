@@ -56,6 +56,7 @@
     <Compile Include="Codegen\dumping_the_complete_source_code_Tests.cs" />
     <Compile Include="delete_many_documents_by_query_Tests.cs" />
     <Compile Include="detecting_insert_or_update_Tests.cs" />
+    <Compile Include="DocumentMappingFactory.cs" />
     <Compile Include="DocumentMappingTests.cs" />
     <Compile Include="DocumentSession_change_set_tracking_Tests.cs" />
     <Compile Include="document_session_logs_SaveChanges_Tests.cs" />
@@ -167,6 +168,7 @@
     <Compile Include="Schema\configuring_foreign_key_fields_Tests.cs" />
     <Compile Include="Schema\configuring_searchable_fields_Tests.cs" />
     <Compile Include="Schema\configuring_the_document_type_alias_Tests.cs" />
+    <Compile Include="ContainerFactory.cs" />
     <Compile Include="Schema\do_not_overwrite_tables_with_searchable_fields_Tests.cs" />
     <Compile Include="Schema\ForeignKeyDefinitionTests.cs" />
     <Compile Include="Schema\Hierarchies\end_to_end_document_hierarchy_usage_Tests.cs" />

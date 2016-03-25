@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -20,36 +21,32 @@ namespace Marten.Schema
 {
     public class DocumentMapping : IDocumentMapping
     {
-        private readonly StoreOptions _storeOptions;
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
         public const string UpsertPrefix = "mt_upsert_";
+        public const string DocumentTypeColumn = "mt_doc_type";
+        public const string MartenPrefix = "mt_";
+
+        private readonly StoreOptions _storeOptions;
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
         private string _alias;
 
-        public static readonly string DocumentTypeColumn = "mt_doc_type";
+        private readonly object _lock = new object();
+        private bool _hasCheckedSchema = false;
+        private string _databaseSchemaName;
+
         private readonly IList<SubClassMapping> _subClasses = new List<SubClassMapping>();
 
-
-        public DocumentMapping(Type documentType) : this(documentType, new StoreOptions())
+		public DocumentMapping(Type documentType, StoreOptions storeOptions)
         {
-        }
+            if (documentType == null) throw new ArgumentNullException(nameof(documentType));
+            if (storeOptions == null) throw new ArgumentNullException(nameof(storeOptions));
 
-        public DocumentMapping(Type documentType, StoreOptions storeOptions)
-        {
             _storeOptions = storeOptions;
+
             DocumentType = documentType;
             Alias = defaultDocumentAliasName(documentType);
-
-            IdMember = (MemberInfo)documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
-                       ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
-
-            if (IdMember == null)
-            {
-                throw new InvalidDocumentException(
-                    $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
-            }
-
+            IdMember = determineId(documentType);
 
             assignIdStrategy(documentType, storeOptions);
 
@@ -66,6 +63,19 @@ namespace Marten.Schema
             });
         }
 
+        private static MemberInfo determineId(Type documentType)
+        {
+            var idMember = (MemberInfo) documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
+                           ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
+
+            if (idMember == null)
+            {
+                throw new InvalidDocumentException(
+                    $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
+            }
+            return idMember;
+        }
+
         public void AddSubClass(Type subclassType, string alias = null)
         {
             if (!subclassType.CanBeCastTo(DocumentType))
@@ -74,7 +84,7 @@ namespace Marten.Schema
                     $"Type '{subclassType.GetFullName()}' cannot be cast to '{DocumentType.GetFullName()}'");
             }
 
-            var subclass = new SubClassMapping(subclassType, this, alias);
+            var subclass = new SubClassMapping(subclassType, this, _storeOptions, alias);
             _subClasses.Add(subclass);
         }
 
@@ -86,8 +96,8 @@ namespace Marten.Schema
                 if (value.IsEmpty()) throw new ArgumentNullException(nameof(value));
 
                 _alias = value.ToLower();
-                TableName = TablePrefix + _alias;
-                UpsertName = UpsertPrefix + _alias;
+
+                TableName = $"{TablePrefix}{_alias}";
             }
         }
 
@@ -103,7 +113,6 @@ namespace Marten.Schema
 
             return type.Alias;
         }
-
 
         public Type TypeFor(string alias)
         {
@@ -239,6 +248,8 @@ namespace Marten.Schema
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
+            EnsureDatabaseSchema.WriteSql(DatabaseSchemaName, writer);
+
             var table = ToTable(schema);
             table.Write(writer);
             writer.WriteLine();
@@ -266,9 +277,9 @@ namespace Marten.Schema
         {
             _hasCheckedSchema = false;
 
-            connection.Execute($"DROP TABLE IF EXISTS {TableName} CASCADE;");
+            connection.Execute($"DROP TABLE IF EXISTS {QualifiedTableName} CASCADE;");
 
-            var dropTargets = DocumentCleaner.DropFunctionSql.ToFormat(UpsertName);
+            var dropTargets = DocumentCleaner.DropFunctionSql.ToFormat(UpsertName, DatabaseSchemaName);
 
             var drops = connection.GetStringList(dropTargets);
             drops.Each(drop => connection.Execute(drop));
@@ -276,7 +287,7 @@ namespace Marten.Schema
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
-            var sql = "truncate {0} cascade".ToFormat(TableName);
+            var sql = "truncate {0} cascade".ToFormat(QualifiedTableName);
             factory.RunSql(sql);
         }
 
@@ -287,18 +298,27 @@ namespace Marten.Schema
             var tableAlias = members.ToTableAlias();
             var locator = FieldFor(members).SqlLocator;
 
-            var joinText = $"{joinOperator} {other.TableName} as {tableAlias} ON {locator} = {tableAlias}.id";
+            var joinText = $"{joinOperator} {other.QualifiedTableName} as {tableAlias} ON {locator} = {tableAlias}.id";
 
             return new IncludeJoin<TOther>(other, joinText, tableAlias, callback);
         }
 
         public IEnumerable<SubClassMapping> SubClasses => _subClasses;
 
-        public IIdGeneration IdStrategy { get; set; } = new StringIdGeneration();
+        public IIdGeneration IdStrategy { get; private set; } = new StringIdGeneration();
 
-        public string UpsertName { get; private set; }
+        public string QualifiedUpsertName => $"{DatabaseSchemaName}.{UpsertName}";
+        public string UpsertName => $"{UpsertPrefix}{_alias}";
 
         public Type DocumentType { get; }
+
+        public string DatabaseSchemaName
+        {
+            get { return _databaseSchemaName ?? _storeOptions.DatabaseSchemaName; }
+            set { _databaseSchemaName = value; }
+        }
+
+        public string QualifiedTableName => $"{DatabaseSchemaName}.{TableName}";
 
         public string TableName { get; private set; }
 
@@ -313,7 +333,7 @@ namespace Marten.Schema
 
         public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;
 
-        public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();
+        public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();        
 
         private static readonly Regex _aliasSanitizer = new Regex("<|>", RegexOptions.Compiled);
         private static string defaultDocumentAliasName(Type documentType)
@@ -359,7 +379,7 @@ namespace Marten.Schema
                                                                        // can do foreign keys
         {
             var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
-            var table = new TableDefinition(TableName, new TableColumn("id", pgIdType));
+            var table = new TableDefinition(QualifiedTableName, TableName, new TableColumn("id", pgIdType));
             table.Columns.Add(new TableColumn("data", "jsonb") { Directive = "NOT NULL" });
 
             _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
@@ -395,9 +415,6 @@ namespace Marten.Schema
             return function;
         }
 
-        private readonly object _lock = new object();
-        private bool _hasCheckedSchema = false;
-
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
             if (_hasCheckedSchema) return;
@@ -406,7 +423,7 @@ namespace Marten.Schema
             {
                 var expected = ToTable(schema);
 
-                var existing = schema.TableSchema(TableName);
+                var existing = schema.TableSchema(this);
                 if (existing != null && expected.Equals(existing))
                 {
                     _hasCheckedSchema = true;
@@ -415,7 +432,7 @@ namespace Marten.Schema
 
                 lock (_lock)
                 {
-                    existing = schema.TableSchema(TableName);
+                    existing = schema.TableSchema(this);
                     if (existing == null || !expected.Equals(existing))
                     {
                         buildOrModifySchemaObjects(existing, expected, autoCreateSchemaObjectsMode, schema, executeSql);
@@ -476,12 +493,6 @@ namespace Marten.Schema
 
             var sql = writer.ToString();
             executeSql(sql);
-        }
-
-
-        public static DocumentMapping For<T>()
-        {
-            return new DocumentMapping(typeof(T));
         }
 
         public DuplicatedField DuplicateField(string memberName, string pgType = null)

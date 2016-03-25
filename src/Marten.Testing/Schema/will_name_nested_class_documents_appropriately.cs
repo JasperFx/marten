@@ -16,7 +16,36 @@ namespace Marten.Testing.Schema
             TableDefinition table1;
             TableDefinition table2;
 
-            using (var container = Container.For<DevelopmentModeRegistry>())
+            using (var container = ContainerFactory.Default())
+            {
+                var store = container.GetInstance<IDocumentStore>();
+
+                store.Advanced.Clean.CompletelyRemoveAll();
+
+                store.Schema.StorageFor(typeof (Foo.Document));
+                store.Schema.StorageFor(typeof (Bar.Document));
+
+                var documentTables = store.Schema.DocumentTables();
+                documentTables.ShouldContain("public.mt_doc_foo_document");
+                documentTables.ShouldContain("public.mt_doc_bar_document");
+
+                table1 = store.Schema.TableSchema(typeof (Foo.Document));
+                table1.Name.ShouldBe("mt_doc_foo_document");
+
+                table2 = store.Schema.TableSchema(typeof (Bar.Document));
+                table2.Name.ShouldBe("mt_doc_bar_document");
+            }
+
+            table2.ShouldNotBe(table1);
+        }
+
+        [Fact]
+        public void will_name_nested_class_table_with_containing_class_name_prefix_on_other_database_schema()
+        {
+            TableDefinition table1;
+            TableDefinition table2;
+
+            using (var container = ContainerFactory.OnOtherDatabaseSchema())
             {
                 var store = container.GetInstance<IDocumentStore>();
 
@@ -25,11 +54,15 @@ namespace Marten.Testing.Schema
                 store.Schema.StorageFor(typeof(Foo.Document));
                 store.Schema.StorageFor(typeof(Bar.Document));
 
-                store.Schema.DocumentTables().ShouldContain(x => x == "mt_doc_foo_document");
-                store.Schema.DocumentTables().ShouldContain(x => x == "mt_doc_bar_document");
+                var documentTables = store.Schema.DocumentTables();
+                documentTables.ShouldContain("other.mt_doc_foo_document");
+                documentTables.ShouldContain("other.mt_doc_bar_document");
 
-                table1 = store.Schema.TableSchema("mt_doc_foo_document");
-                table2 = store.Schema.TableSchema("mt_doc_bar_document");
+                table1 = store.Schema.TableSchema(typeof(Foo.Document));
+                table1.Name.ShouldBe("mt_doc_foo_document");
+
+                table2 = store.Schema.TableSchema(typeof(Bar.Document));
+                table2.Name.ShouldBe("mt_doc_bar_document");
             }
 
             table2.ShouldNotBe(table1);

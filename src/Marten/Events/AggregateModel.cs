@@ -34,8 +34,16 @@ namespace Marten.Events
         }
 
         public Type DocumentType { get; }
+        public string QualifiedTableName { get; }
         public string TableName { get; }
         public PropertySearching PropertySearching { get; }
+
+        public string DatabaseSchemaName
+        {
+            get { throw new NotSupportedException("The DatabaseSchemaName of Event can't be get."); }
+            set { throw new NotSupportedException("The DatabaseSchemaName of Event can't be set."); }
+        }
+
         public IIdGeneration IdStrategy { get; }
         public MemberInfo IdMember { get; }
         public string[] SelectFields()

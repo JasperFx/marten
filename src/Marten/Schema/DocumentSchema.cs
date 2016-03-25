@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -150,20 +151,20 @@ namespace Marten.Schema
         public IEventStoreConfiguration Events => StoreOptions.Events;
         public PostgresUpsertType UpsertType => StoreOptions.UpsertType;
 
-        public IEnumerable<string> SchemaTableNames()
+        public string[] SchemaTableNames()
         {
-            var sql =
-                "select table_name from information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema') ";
+            var sql = "select table_schema || '.' || table_name from information_schema.tables where table_name like ?;";
 
-            return _factory.GetStringList(sql);
+            return _factory.GetStringList(sql, DocumentMapping.MartenPrefix + "%").ToArray();
         }
 
         public string[] DocumentTables()
         {
-            return SchemaTableNames().Where(x => x.StartsWith(DocumentMapping.TablePrefix)).ToArray();
+            var tablePrefix = StoreOptions.DatabaseSchemaName + "." + DocumentMapping.TablePrefix;
+            return SchemaTableNames().Where(x => x.StartsWith(tablePrefix)).ToArray();
         }
 
-        public IEnumerable<string> SchemaFunctionNames()
+        public string[] SchemaFunctionNames()
         {
             return findFunctionNames().ToArray();
         }
@@ -211,7 +212,8 @@ namespace Marten.Schema
                 system.WriteStringToFile(filename, writer.ToString());
             });
 
-            system.WriteStringToFile(directory.AppendPath("mt_hilo.sql"), SchemaBuilder.GetText("mt_hilo"));
+            var hiloScript = getHiloScript();
+            system.WriteStringToFile(directory.AppendPath("mt_hilo.sql"), hiloScript);
 
             if (Events.IsActive)
             {
@@ -222,12 +224,23 @@ namespace Marten.Schema
 
                 system.WriteStringToFile(filename, writer.ToString());
             }
+        }
 
+        private string getHiloScript()
+        {
+            var writer = new StringWriter();
+
+            EnsureDatabaseSchema.WriteSql(StoreOptions.DatabaseSchemaName, writer);
+            writer.WriteLine(SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo"));
+
+            return writer.ToString();
         }
 
         public string ToDDL()
         {
             var writer = new StringWriter();
+
+            EnsureDatabaseSchema.WriteSql(StoreOptions.DatabaseSchemaName, writer);
 
             StoreOptions.AllDocumentMappings.Each(x => x.WriteSchemaObjects(this, writer));
 
@@ -236,24 +249,24 @@ namespace Marten.Schema
                 Events.As<IDocumentMapping>().WriteSchemaObjects(this, writer);
             }
 
-            writer.WriteLine(SchemaBuilder.GetText("mt_hilo"));
+            writer.WriteLine(SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo"));
 
             return writer.ToString();
         }
 
-        public TableDefinition TableSchema(string tableName)
+        public TableDefinition TableSchema(IDocumentMapping documentMapping)
         {
-            var columns = findTableColumns(tableName);
+            var columns = findTableColumns(documentMapping);
             if (!columns.Any()) return null;
 
-            var pkName = primaryKeysFor(tableName).SingleOrDefault();
+            var pkName = primaryKeysFor(documentMapping).SingleOrDefault();
 
-            return new TableDefinition(tableName, pkName, columns);
+            return new TableDefinition(documentMapping.QualifiedTableName, documentMapping.TableName, pkName,  columns);
         }
 
         public TableDefinition TableSchema(Type documentType)
         {
-            return TableSchema(MappingFor(documentType).TableName);
+            return TableSchema(MappingFor(documentType));
         }
 
         public IEnumerable<IDocumentMapping> AllDocumentMaps()
@@ -266,40 +279,47 @@ namespace Marten.Schema
             return StorageFor(typeof (T)).As<IResolver<T>>();
         }
 
-        private string[] primaryKeysFor(string tableName)
+        public bool TableExists(string tableName)
         {
-            var sql = @"
-SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
-FROM pg_index i
-JOIN   pg_attribute a ON a.attrelid = i.indrelid
-                     AND a.attnum = ANY(i.indkey)
-WHERE i.indrelid = ?::regclass
-AND i.indisprimary; 
-";
-
-            return _factory.GetStringList(sql, tableName).ToArray();
+            return SchemaTableNames().Contains($"{StoreOptions.DatabaseSchemaName}.{tableName}");
         }
 
-        private IEnumerable<TableColumn> findTableColumns(string tableName)
+        public bool TableExists(string databaseSchemaName, string tableName)
+        {
+            return SchemaTableNames().Contains($"{databaseSchemaName}.{tableName}");
+        }
+
+        private string[] primaryKeysFor(IDocumentMapping documentMapping)
+        {
+            var sql = @"
+select a.attname, format_type(a.atttypid, a.atttypmod) as data_type
+from pg_index i
+join   pg_attribute a on a.attrelid = i.indrelid and a.attnum = ANY(i.indkey)
+where attrelid = (select pg_class.oid 
+                  from pg_class 
+                  join pg_catalog.pg_namespace n ON n.oid = pg_class.relnamespace
+                  where n.nspname = ? and relname = ?)
+and i.indisprimary; 
+";
+
+            return _factory.GetStringList(sql, documentMapping.DatabaseSchemaName, documentMapping.TableName).ToArray();
+        }
+
+        private IEnumerable<TableColumn> findTableColumns(IDocumentMapping documentMapping)
         {
             Func<DbDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));
 
-            var sql =
-                "select column_name, data_type from information_schema.columns where table_name = ? order by ordinal_position";
-            return _factory.Fetch(sql, transform, tableName);
+            var sql = "select column_name, data_type from information_schema.columns where table_name = ? and table_schema = ? order by ordinal_position";
+
+            return _factory.Fetch(sql, transform, documentMapping.TableName, documentMapping.DatabaseSchemaName);
         }
 
 
         private IEnumerable<string> findFunctionNames()
         {
-            var sql = @"
-SELECT routine_name
-FROM information_schema.routines
-WHERE specific_schema NOT IN ('pg_catalog', 'information_schema')
-AND type_udt_name != 'trigger';
-";
+            var sql = "SELECT specific_schema || '.' || routine_name FROM information_schema.routines WHERE type_udt_name != 'trigger' and routine_name like ?;";
 
-            return _factory.GetStringList(sql);
+            return _factory.GetStringList(sql, DocumentMapping.MartenPrefix + "%");
         }
     }
 
