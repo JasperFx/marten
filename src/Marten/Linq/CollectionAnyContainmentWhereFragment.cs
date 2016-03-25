@@ -83,7 +83,7 @@ namespace Marten.Linq
 
             var json = _serializer.ToCleanJson(dictionary);
 
-            return $"data @> '{json}'";
+            return $"d.data @> '{json}'";
         }
 
         private static void gatherSearch(BinaryExpression x, Dictionary<string, object> search)
