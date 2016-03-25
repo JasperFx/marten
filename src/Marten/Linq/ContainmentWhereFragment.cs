@@ -66,7 +66,7 @@ namespace Marten.Linq
         {
             var json = _serializer.ToCleanJson(_dictionary);
 
-            return $"data @> '{json}'";
+            return $"d.data @> '{json}'";
         }
 
         public static IWhereFragment SimpleArrayContains(ISerializer serializer, Expression from,
