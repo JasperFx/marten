@@ -137,6 +137,12 @@ namespace Marten.Schema
 
         public IndexDefinition AddIndex(params string[] columns)
         {
+            var existing = Indexes.FirstOrDefault(x => x.Columns.SequenceEqual(columns));
+            if (existing != null)
+            {
+                return existing;
+            }
+
             var index = new IndexDefinition(this, columns);
             Indexes.Add(index);
 
