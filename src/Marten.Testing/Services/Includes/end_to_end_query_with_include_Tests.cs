@@ -40,6 +40,54 @@ namespace Marten.Testing.Services.Includes
         }
 
         [Fact]
+        public void include_with_containment_where_for_a_single_document()
+        {
+            var user = new User();
+            var issue = new Issue {AssigneeId = user.Id, Tags = new []{"DIY"}, Title = "Garage Door is busted"};
+
+            theSession.Store<object>(user, issue);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                User included = null;
+                var issue2 = query.Query<Issue>()
+                    .Include<User>(x => x.AssigneeId, x => included = x)
+                    .Where(x => x.Tags.Contains("DIY"))
+                    .Single();
+
+                included.ShouldNotBeNull();
+                included.Id.ShouldBe(user.Id);
+
+                issue2.ShouldNotBeNull();
+            }
+        }
+
+        [Fact]
+        public void include_with_any_containment_where_for_a_single_document()
+        {
+            var user = new User();
+            var issue = new Issue {AssigneeId = user.Id, Tags = new []{"DIY"}, Title = "Garage Door is busted"};
+
+            theSession.Store<object>(user, issue);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                User included = null;
+                var issue2 = query.Query<Issue>()
+                    .Include<User>(x => x.AssigneeId, x => included = x)
+                    .Where(x => x.Tags.Any(t=>t=="DIY"))
+                    .Single();
+
+                included.ShouldNotBeNull();
+                included.Id.ShouldBe(user.Id);
+
+                issue2.ShouldNotBeNull();
+            }
+        }
+
+        [Fact]
         public void simple_include_for_a_single_document_using_outer_join()
         {
             var issue = new Issue { AssigneeId = null, Title = "Garage Door is busted" };

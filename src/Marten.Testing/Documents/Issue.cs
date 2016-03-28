@@ -9,6 +9,8 @@ namespace Marten.Testing.Documents
             Id = Guid.NewGuid();
         }
 
+        public string[] Tags { get; set; }
+
         public Guid Id { get; set; }
 
         public string Title { get; set; }
