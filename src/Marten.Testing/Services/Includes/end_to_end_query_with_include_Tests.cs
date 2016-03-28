@@ -298,9 +298,64 @@ namespace Marten.Testing.Services.Includes
                 list.Any(x => x.Id == user1.Id);
                 list.Any(x => x.Id == user2.Id);
             }
+        }
 
+        [Fact]
+        public async Task include_to_list_with_orderby_descending_async()
+        {
+            var user1 = new User();
+            var user2 = new User();
 
+            var issue1 = new Issue { AssigneeId = user1.Id, Title = "Garage Door is busted" };
+            var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+            var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
+            theSession.Store(user1, user2);
+            theSession.Store(issue1, issue2, issue3);
+            await theSession.SaveChangesAsync();
+
+            using (var query = theStore.QuerySession())
+            {
+                var list = new List<User>();
+
+                await query.Query<Issue>().Include(x => x.AssigneeId, list)
+                           .OrderByDescending(x => x.Id)
+                           .ToListAsync();
+
+                list.Count.ShouldBe(2);
+
+                list.Any(x => x.Id == user1.Id);
+                list.Any(x => x.Id == user2.Id);
+            }
+        }
+
+        [Fact]
+        public async Task include_to_list_with_orderby_ascending_async()
+        {
+            var user1 = new User();
+            var user2 = new User();
+
+            var issue1 = new Issue { AssigneeId = user1.Id, Title = "Garage Door is busted" };
+            var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+            var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+
+            theSession.Store(user1, user2);
+            theSession.Store(issue1, issue2, issue3);
+            await theSession.SaveChangesAsync();
+
+            using (var query = theStore.QuerySession())
+            {
+                var list = new List<User>();
+
+                await query.Query<Issue>().Include(x => x.AssigneeId, list)
+                           .OrderBy(x => x.Id)
+                           .ToListAsync();
+
+                list.Count.ShouldBe(2);
+
+                list.Any(x => x.Id == user1.Id);
+                list.Any(x => x.Id == user2.Id);
+            }
         }
 
         [Fact]
