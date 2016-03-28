@@ -80,6 +80,7 @@
     <Compile Include="Linq\MartenQueryProvider.cs" />
     <Compile Include="Linq\Handlers\IsOneOf.cs" />
     <Compile Include="Linq\QueryableExtensions.cs" />
+    <Compile Include="Linq\QueryPlan.cs" />
     <Compile Include="Linq\ScalarQueryExecution.cs" />
     <Compile Include="Linq\SelectorParser.cs" />
     <Compile Include="Linq\SelectTransformer.cs" />
