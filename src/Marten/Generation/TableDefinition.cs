@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -9,48 +8,52 @@ namespace Marten.Generation
 {
     public class TableDefinition
     {
-        public IList<TableColumn> Columns { get; } = new List<TableColumn>();
-
         private string primaryKeyDirective => $"CONSTRAINT pk_{Name} PRIMARY KEY";
+
+        public string QualifiedName { get; }
+        public string Name { get; }
+
+        public IList<TableColumn> Columns { get; } = new List<TableColumn>();
 
         public TableColumn PrimaryKey
         {
             get { return Columns.FirstOrDefault(c => c.Directive == primaryKeyDirective); }
-            set
+            private set
             {
-                if(value == null)throw new ArgumentNullException(nameof(value));
-                value.Directive = $"CONSTRAINT pk_{Name} PRIMARY KEY";
+                if(value == null) throw new ArgumentNullException(nameof(value));
+                value.Directive = primaryKeyDirective;
                 if (!Columns.Contains(value)) Columns.Add(value);
             }
         }
 
-        public TableDefinition(string name, TableColumn primaryKey)
+        public TableDefinition(string qualifiedName, string name, TableColumn primaryKey)
         {
-            if (string.IsNullOrEmpty(name)) throw new ArgumentOutOfRangeException(nameof(name));
+            if (string.IsNullOrEmpty(qualifiedName)) throw new ArgumentOutOfRangeException(nameof(qualifiedName));
             if (primaryKey == null) throw new ArgumentNullException(nameof(primaryKey));
-            Name = name.ToLower();
+
+            QualifiedName = qualifiedName.ToLower();
+            Name = name;
             PrimaryKey = primaryKey;
         }
 
-        public TableDefinition(string name, string pkName, IEnumerable<TableColumn> columns)
+        public TableDefinition(string qualifiedName, string name, string pkName, IEnumerable<TableColumn> columns)
         {
-            if (string.IsNullOrEmpty(name)) throw new ArgumentOutOfRangeException(nameof(name));
+            if (string.IsNullOrEmpty(qualifiedName)) throw new ArgumentOutOfRangeException(nameof(qualifiedName));
             if (string.IsNullOrEmpty(pkName)) throw new ArgumentOutOfRangeException(nameof(pkName));
 
+            QualifiedName = qualifiedName;
             Name = name;
             Columns.AddRange(columns);
 
             var primaryKey = Column(pkName);
             if (primaryKey == null) throw new InvalidOperationException($"Primary key {pkName} not found in columns.");
-            primaryKey.Directive = primaryKeyDirective;
+            PrimaryKey = primaryKey;
         }
-
-        public string Name { get; }
 
         public void Write(StringWriter writer)
         {
-            writer.WriteLine("DROP TABLE IF EXISTS {0} CASCADE;", Name);
-            writer.WriteLine("CREATE TABLE {0} (", Name);
+            writer.WriteLine("DROP TABLE IF EXISTS {0} CASCADE;", QualifiedName);
+            writer.WriteLine("CREATE TABLE {0} (", QualifiedName);
 
             var length = Columns.Select(x => x.Name.Length).Max() + 4;
 
@@ -72,7 +75,7 @@ namespace Marten.Generation
 
         public TableColumn Column(string name)
         {
-            return Columns.FirstOrDefault(x => x.Name.Equals(name, System.StringComparison.OrdinalIgnoreCase));
+            return Columns.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
 
         public void ReplaceOrAddColumn(string name, string type, string directive = null)
@@ -88,7 +91,7 @@ namespace Marten.Generation
 
         protected bool Equals(TableDefinition other)
         {
-            return Columns.OrderBy(x => x.Name).SequenceEqual(other.Columns.OrderBy(x => x.Name)) && Equals(PrimaryKey, other.PrimaryKey) && string.Equals(Name, other.Name);
+            return Columns.OrderBy(x => x.Name).SequenceEqual(other.Columns.OrderBy(x => x.Name)) && Equals(PrimaryKey, other.PrimaryKey) && string.Equals(QualifiedName, other.QualifiedName);
         }
 
         public override bool Equals(object obj)
@@ -105,7 +108,7 @@ namespace Marten.Generation
             {
                 var hashCode = (Columns != null ? Columns.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (PrimaryKey != null ? PrimaryKey.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (QualifiedName != null ? QualifiedName.GetHashCode() : 0);
                 return hashCode;
             }
         }

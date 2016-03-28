@@ -8,13 +8,19 @@ namespace Marten.Testing
 
     public abstract class IntegratedFixture : IDisposable
     {
-        protected readonly IContainer theContainer = Container.For<DevelopmentModeRegistry>();
+        protected readonly IContainer theContainer;
         protected readonly IDocumentStore theStore;
 
         protected IntegratedFixture()
         {
+            theContainer = new Container(new DevelopmentModeRegistry(StoreOptions));
+
             theStore = theContainer.GetInstance<IDocumentStore>();
             theStore.Advanced.Clean.CompletelyRemoveAll();
+        }
+
+        protected virtual void StoreOptions(StoreOptions options)
+        {
         }
 
         public virtual void Dispose()

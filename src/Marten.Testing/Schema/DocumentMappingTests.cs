@@ -17,21 +17,36 @@ namespace Marten.Testing.Schema
         [Fact]
         public void default_table_name()
         {
-            var mapping = new DocumentMapping(typeof (User));
-            mapping.TableName.ShouldBe("mt_doc_user");
+            var mapping = DocumentMapping.For<User>();
+            mapping.QualifiedTableName.ShouldBe("public.mt_doc_user");
+        }
+
+        [Fact]
+        public void default_table_name_on_other_schema()
+        {
+            var mapping = DocumentMapping.For<User>("other");
+            mapping.QualifiedTableName.ShouldBe("other.mt_doc_user");
+        }
+
+        [Fact]
+        public void default_table_name_on_overriden_schema()
+        {
+            var mapping = DocumentMapping.For<User>("other");
+            mapping.DatabaseSchemaName = "overriden";
+            mapping.QualifiedTableName.ShouldBe("overriden.mt_doc_user");
         }
 
         [Fact]
         public void default_search_mode_is_jsonb_to_record()
         {
-            var mapping = new DocumentMapping(typeof(User));
+            var mapping = DocumentMapping.For<User>();
             mapping.PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
         [Fact]
         public void pick_up_upper_case_property_id()
         {
-            var mapping = new DocumentMapping(typeof (UpperCaseProperty));
+            var mapping = DocumentMapping.For<UpperCaseProperty>();
             mapping.IdMember.ShouldBeAssignableTo<PropertyInfo>()
                 .Name.ShouldBe(nameof(UpperCaseProperty.Id));
         }
@@ -39,7 +54,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void pick_up_lower_case_property_id()
         {
-            var mapping = new DocumentMapping(typeof (LowerCaseProperty));
+            var mapping = DocumentMapping.For<LowerCaseProperty>();
             mapping.IdMember.ShouldBeAssignableTo<PropertyInfo>()
                 .Name.ShouldBe(nameof(LowerCaseProperty.id));
         }
@@ -47,7 +62,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void pick_up_lower_case_field_id()
         {
-            var mapping = new DocumentMapping(typeof (LowerCaseField));
+            var mapping = DocumentMapping.For<LowerCaseField>();
             mapping.IdMember.ShouldBeAssignableTo<FieldInfo>()
                 .Name.ShouldBe(nameof(LowerCaseField.id));
         }
@@ -55,7 +70,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void pick_up_upper_case_field_id()
         {
-            var mapping = new DocumentMapping(typeof (UpperCaseField));
+            var mapping = DocumentMapping.For<UpperCaseField>();
             mapping.IdMember.ShouldBeAssignableTo<FieldInfo>()
                 .Name.ShouldBe(nameof(UpperCaseField.Id));
         }
@@ -63,21 +78,51 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_simple_document_table()
         {
-            var mapping = new DocumentMapping(typeof (MySpecialDocument));
+            var mapping = DocumentMapping.For<MySpecialDocument>();
             var builder = new StringWriter();
 
             mapping.WriteSchemaObjects(null, builder);
 
             var sql = builder.ToString();
 
-            sql.ShouldContain("CREATE TABLE mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("CREATE TABLE public.mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("jsonb NOT NULL");
+        }
+
+        [Fact]
+        public void generate_simple_document_table_on_other_schema()
+        {
+            var mapping = DocumentMapping.For<MySpecialDocument>("other");
+            var builder = new StringWriter();
+
+            mapping.WriteSchemaObjects(null, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldContain("CREATE TABLE other.mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("jsonb NOT NULL");
+        }
+
+        [Fact]
+        public void generate_simple_document_table_on_overriden_schema()
+        {
+            var mapping = DocumentMapping.For<MySpecialDocument>("other");
+            mapping.DatabaseSchemaName = "overriden";
+
+            var builder = new StringWriter();
+
+            mapping.WriteSchemaObjects(null, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldContain("CREATE TABLE overriden.mt_doc_documentmappingtests_myspecialdocument");
             sql.ShouldContain("jsonb NOT NULL");
         }
 
         [Fact]
         public void generate_table_with_indexes()
         {
-            var mapping = new DocumentMapping(typeof(User));
+            var mapping = DocumentMapping.For<User>();
             var i1 = mapping.AddIndex("first_name");
             var i2 = mapping.AddIndex("last_name");
 
@@ -87,17 +132,14 @@ namespace Marten.Testing.Schema
 
             var sql = builder.ToString();
 
-            
-
             sql.ShouldContain(i1.ToDDL());
             sql.ShouldContain(i2.ToDDL());
-
         }
 
         [Fact]
         public void generate_table_with_foreign_key()
         {
-            var mapping = new DocumentMapping(typeof(Issue));
+            var mapping = DocumentMapping.For<Issue>();
             var foreignKey = mapping.AddForeignKey("AssigneeId", typeof(User));
 
             var builder = new StringWriter();
@@ -134,36 +176,113 @@ namespace Marten.Testing.Schema
 
                 var storage = schema.StorageFor(typeof (User));
 
-                schema.DocumentTables().ShouldContain(mapping.TableName);
+                schema.DocumentTables().ShouldContain(mapping.QualifiedTableName);
             }
         }
-
 
         [Fact]
         public void write_upsert_sql()
         {
-            var mapping = new DocumentMapping(typeof (MySpecialDocument));
+            var mapping = DocumentMapping.For<MySpecialDocument>();
             var builder = new StringWriter();
 
             mapping.WriteSchemaObjects(null, builder);
 
             var sql = builder.ToString();
 
-            sql.ShouldContain("INSERT INTO mt_doc_documentmappingtests_myspecialdocument");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION mt_upsert_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("INSERT INTO public.mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
+        public void write_upsert_sql_on_other_schema()
+        {
+            var mapping = DocumentMapping.For<MySpecialDocument>("other");
+            var builder = new StringWriter();
+
+            mapping.WriteSchemaObjects(null, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldContain("INSERT INTO other.mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
+        public void write_upsert_sql_on_overriden_schema()
+        {
+            var mapping = DocumentMapping.For<MySpecialDocument>("other");
+            mapping.DatabaseSchemaName = "overriden";
+
+            var builder = new StringWriter();
+
+            mapping.WriteSchemaObjects(null, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldContain("INSERT INTO overriden.mt_doc_documentmappingtests_myspecialdocument");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION overriden.mt_upsert_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
+        public void table_name_with_schema_for_document()
+        {
+            DocumentMapping.For<MySpecialDocument>().QualifiedTableName
+                .ShouldBe("public.mt_doc_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
+        public void table_name_with_schema_for_document_on_other_schema()
+        {
+            DocumentMapping.For<MySpecialDocument>("other").QualifiedTableName
+                .ShouldBe("other.mt_doc_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
+        public void table_name_with_schema_for_document_on_overriden_schema()
+        {
+            var documentMapping = DocumentMapping.For<MySpecialDocument>("other");
+            documentMapping.DatabaseSchemaName = "overriden";
+
+            documentMapping.QualifiedTableName
+                .ShouldBe("overriden.mt_doc_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
+        public void upsert_name_with_schema_for_document_type()
+        {
+            DocumentMapping.For<MySpecialDocument>().QualifiedUpsertName
+                .ShouldBe("public.mt_upsert_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
+        public void upsert_name_with_schema_for_document_type_on_other_schema()
+        {
+            DocumentMapping.For<MySpecialDocument>("other").QualifiedUpsertName
+                .ShouldBe("other.mt_upsert_documentmappingtests_myspecialdocument");
+        }
+
+        [Fact]
+        public void upsert_name_with_schema_for_document_type_on_overriden_schema()
+        {
+            var documentMapping = DocumentMapping.For<MySpecialDocument>("other");
+            documentMapping.DatabaseSchemaName = "overriden";
+
+            documentMapping.QualifiedUpsertName
+                .ShouldBe("overriden.mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void table_name_for_document()
         {
-            new DocumentMapping(typeof(MySpecialDocument)).TableName
+            DocumentMapping.For<MySpecialDocument>().TableName
                 .ShouldBe("mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void upsert_name_for_document_type()
         {
-            new DocumentMapping(typeof(MySpecialDocument)).UpsertName
+            DocumentMapping.For<MySpecialDocument>().UpsertName
                 .ShouldBe("mt_upsert_documentmappingtests_myspecialdocument");
         }
 
@@ -348,6 +467,5 @@ namespace Marten.Testing.Schema
             public string OtherProp;
             public string OtherField { get; set; }
         }
-
     }
 }

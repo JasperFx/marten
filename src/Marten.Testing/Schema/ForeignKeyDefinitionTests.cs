@@ -21,10 +21,26 @@ namespace Marten.Testing.Schema
         public void generate_ddl()
         {
             var expected = string.Join(Environment.NewLine,
-                "ALTER TABLE mt_doc_issue",
+                "ALTER TABLE public.mt_doc_issue",
                 "ADD CONSTRAINT mt_doc_issue_user_id_fkey FOREIGN KEY (user_id)",
-                "REFERENCES mt_doc_user (id);");
+                "REFERENCES public.mt_doc_user (id);");
+
             new ForeignKeyDefinition("user_id", _issueMapping, _userMapping).ToDDL()
+                .ShouldBe(expected);
+        }
+
+        [Fact]
+        public void generate_ddl_on_other_schema()
+        {
+            var issueMappingOtherSchema = DocumentMapping.For<Issue>("schema1");
+            var userMappingOtherSchema = DocumentMapping.For<User>("schema2");
+
+            var expected = string.Join(Environment.NewLine,
+                "ALTER TABLE schema1.mt_doc_issue",
+                "ADD CONSTRAINT mt_doc_issue_user_id_fkey FOREIGN KEY (user_id)",
+                "REFERENCES schema2.mt_doc_user (id);");
+
+            new ForeignKeyDefinition("user_id", issueMappingOtherSchema, userMappingOtherSchema).ToDDL()
                 .ShouldBe(expected);
         }
     }

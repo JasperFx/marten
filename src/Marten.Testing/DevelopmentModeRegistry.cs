@@ -1,3 +1,4 @@
+using System;
 using Marten.Events;
 using Marten.Linq;
 using Marten.Schema;
@@ -10,7 +11,11 @@ namespace Marten.Testing
 {
     public class DevelopmentModeRegistry : Registry
     {
-        public DevelopmentModeRegistry()
+        public DevelopmentModeRegistry() : this(null)
+        {
+        }
+
+        public DevelopmentModeRegistry(Action<StoreOptions> optionsHandler = null)
         {
             var store = DocumentStore.For(_ =>
             {
@@ -18,6 +23,8 @@ namespace Marten.Testing
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 
                 _.UpsertType = UpsertType;
+
+                optionsHandler?.Invoke(_);
             });
 
             For<IMartenLogger>().Use<NulloMartenLogger>();

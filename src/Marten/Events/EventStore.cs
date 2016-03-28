@@ -75,7 +75,7 @@ namespace Marten.Events
             return _connection.Execute(cmd =>
             {
                 using (var reader = cmd
-                    .WithText("select type, data from mt_events where stream_id = :id order by version")
+                    .WithText($"select type, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :id order by version")
                     .With("id", streamId).ExecuteReader())
                 {
                     return fetchStream(reader).ToArray();
@@ -123,7 +123,7 @@ namespace Marten.Events
                     return new StreamState(streamId, r.GetInt32(0), aggregateType);
                 };
 
-                return cmd.Fetch("select version, type from mt_streams where id = ?", converter, streamId).SingleOrDefault();
+                return cmd.Fetch($"select version, type from {_schema.Events.DatabaseSchemaName}.mt_streams where id = ?", converter, streamId).SingleOrDefault();
             });
         }
 
@@ -141,7 +141,7 @@ namespace Marten.Events
 
             var json = _connection.Execute(cmd =>
             {
-                return cmd.CallsSproc("mt_apply_transform")
+                return cmd.CallsSproc(_schema.Events.DatabaseSchemaName + ".mt_apply_transform")
                     .With("stream_id", stream)
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)
@@ -163,7 +163,7 @@ namespace Marten.Events
 
             string json = _connection.Execute(cmd =>
             {
-                return cmd.CallsSproc("mt_apply_aggregation")
+                return cmd.CallsSproc(_schema.Events.DatabaseSchemaName + ".mt_apply_aggregation")
                     .With("stream_id", aggregateId)
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)
@@ -194,7 +194,7 @@ namespace Marten.Events
 
             var json = _connection.Execute(cmd =>
             {
-                return cmd.CallsSproc("mt_start_aggregation")
+                return cmd.CallsSproc(_schema.Events.DatabaseSchemaName + ".mt_start_aggregation")
                     .With("stream_id", aggregateId)
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)

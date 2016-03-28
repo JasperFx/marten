@@ -33,7 +33,6 @@ namespace Marten.Testing.Schema
                     session.Query<User>().Count().ShouldBeGreaterThan(0);
                 }
             }
-
         }
 
         [Fact]

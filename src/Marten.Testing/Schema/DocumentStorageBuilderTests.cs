@@ -15,7 +15,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_not_blow_up_building_one()
         {
-            var mapping = new DocumentMapping(typeof(User));
+            var mapping = DocumentMapping.For<User>();
 
             var storage = DocumentStorageBuilder.Build(null, mapping);
 
@@ -30,7 +30,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void implements_the_id_type()
         {
-            DocumentStorageBuilder.Build(null, new DocumentMapping(typeof (User))).IdType.ShouldBe(NpgsqlDbType.Uuid);
+            DocumentStorageBuilder.Build(null, DocumentMapping.For<User>()).IdType.ShouldBe(NpgsqlDbType.Uuid);
 
             var schema = Container.For<DevelopmentModeRegistry>().GetInstance<IDocumentSchema>();
 
@@ -58,9 +58,9 @@ namespace Marten.Testing.Schema
         {
             var mappings = new[]
             {
-                new DocumentMapping(typeof (User)),
-                new DocumentMapping(typeof (Company)),
-                new DocumentMapping(typeof (Issue))
+                DocumentMapping.For<User>(),
+                DocumentMapping.For<Company>(),
+                DocumentMapping.For<Issue>()
             };
 
             DocumentStorageBuilder.Build(null, mappings).Count()

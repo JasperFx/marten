@@ -42,10 +42,38 @@ namespace Marten.Testing
         }
 
         [Fact]
+        public void default_table_name_with_schema()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.QualifiedTableName.ShouldBe("public.mt_doc_user");
+        }
+
+        [Fact]
+        public void default_table_name_with_different_shema()
+        {
+            var mapping = DocumentMapping.For<User>("other");
+            mapping.QualifiedTableName.ShouldBe("other.mt_doc_user");
+        }
+
+        [Fact]
         public void default_upsert_name()
         {
             var mapping = DocumentMapping.For<User>();
             mapping.UpsertName.ShouldBe("mt_upsert_user");
+        }
+
+        [Fact]
+        public void default_upsert_name_with_schema()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.QualifiedUpsertName.ShouldBe("public.mt_upsert_user");
+        }
+
+        [Fact]
+        public void default_upsert_name_with_different_schema()
+        {
+            var mapping = DocumentMapping.For<User>("other");
+            mapping.QualifiedUpsertName.ShouldBe("other.mt_upsert_user");
         }
 
         [Fact]
@@ -58,15 +86,66 @@ namespace Marten.Testing
             mapping.UpsertName.ShouldBe("mt_upsert_users");
         }
 
+        [Fact]
+        public void override_the_alias_converts_tablename_with_schema_to_lowercase()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.Alias = "Users";
+
+            mapping.QualifiedTableName.ShouldBe("public.mt_doc_users");
+        }
 
         [Fact]
-        public void override_the_alias_converts_to_lowercase()
+        public void override_the_alias_converts_tablename_with_different_schema_to_lowercase()
+        {
+            var mapping = DocumentMapping.For<User>("OTHER");
+            mapping.Alias = "Users";
+
+            mapping.QualifiedTableName.ShouldBe("other.mt_doc_users");
+        }
+
+        [Fact]
+        public void override_the_alias_converts_upsertname_with_schema_to_lowercase()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.Alias = "Users";
+
+            mapping.QualifiedUpsertName.ShouldBe("public.mt_upsert_users");
+        }
+
+        [Fact]
+        public void override_the_alias_converts_upsertname_with_different_schema_to_lowercase()
+        {
+            var mapping = DocumentMapping.For<User>("OTHER");
+            mapping.Alias = "Users";
+
+            mapping.QualifiedUpsertName.ShouldBe("other.mt_upsert_users");
+        }
+
+        [Fact]
+        public void override_the_alias_converts_table_name_to_lowercase()
         {
             var mapping = DocumentMapping.For<User>();
             mapping.Alias = "Users";
 
             mapping.TableName.ShouldBe("mt_doc_users");
+        }
+
+        [Fact]
+        public void override_the_alias_converts_upsertname_to_lowercase()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.Alias = "Users";
+
             mapping.UpsertName.ShouldBe("mt_upsert_users");
+        }
+
+        [Fact]
+        public void override_the_alias_converts_alias_to_lowercase()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.Alias = "Users";
+
             mapping.Alias.ShouldBe("users");
         }
 
@@ -94,7 +173,7 @@ namespace Marten.Testing
         [Fact]
         public void storage_arguments_adds_hierarchy_argument_with_subclasses()
         {
-            var mapping = new DocumentMapping(typeof(Squad), new StoreOptions());
+            var mapping = DocumentMapping.For<Squad>();
             mapping.AddSubClass(typeof(FootballTeam));
 
             mapping.ToArguments().OfType<HierarchyArgument>()

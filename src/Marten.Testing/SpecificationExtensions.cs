@@ -165,12 +165,12 @@ namespace Marten.Testing
 
         public static void ShouldContain(this string actual, string expected)
         {
-            actual.Contains(expected).ShouldBeTrue();
+            actual.Contains(expected).ShouldBeTrue($"Actual: {actual}{Environment.NewLine}Expected: {expected}");
         }
 
         public static string ShouldNotContain(this string actual, string expected)
         {
-            actual.Contains(expected).ShouldBeFalse();
+            actual.Contains(expected).ShouldBeFalse($"Actual: {actual}{Environment.NewLine}Expected: {expected}");
             return actual;
         }
 

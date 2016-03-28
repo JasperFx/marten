@@ -8,10 +8,12 @@ namespace Marten.Schema
 {
     public interface IDocumentSchema
     {
+        StoreOptions StoreOptions { get; }
+
         IDocumentStorage StorageFor(Type documentType);
-        IEnumerable<string> SchemaTableNames();
+        string[] SchemaTableNames();
         string[] DocumentTables();
-        IEnumerable<string> SchemaFunctionNames();
+        string[] SchemaFunctionNames();
 
         IDocumentMapping MappingFor(Type documentType);
         void EnsureStorageExists(Type documentType);
@@ -51,9 +53,11 @@ namespace Marten.Schema
         /// <returns></returns>
         string ToDDL();
 
-        TableDefinition TableSchema(string tableName);
+        TableDefinition TableSchema(IDocumentMapping documentMapping);
         TableDefinition TableSchema(Type documentType);
         IEnumerable<IDocumentMapping> AllDocumentMaps();
         IResolver<T> ResolverFor<T>();
+        bool TableExists(string tableName);
+        bool TableExists(string databaseSchemaName, string tableName);
     }
 }

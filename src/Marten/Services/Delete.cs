@@ -30,14 +30,14 @@ namespace Marten.Services
         {
             if (Query == null)
             {
-                batch.Delete(mapping.TableName, Id, storage.IdType);
+                batch.Delete(mapping.QualifiedTableName, Id, storage.IdType);
             }
             else
             {
                 var where = parser.ParseWhereFragment(mapping, Query);
                 where = mapping.FilterDocuments(where);
 
-                batch.DeleteWhere(mapping.TableName, where);
+                batch.DeleteWhere(mapping.QualifiedTableName, where);
             }
             
         }

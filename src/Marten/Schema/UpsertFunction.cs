@@ -10,26 +10,27 @@ namespace Marten.Schema
 {
     public class UpsertFunction
     {
+        private readonly string _primaryKeyConstraintName;
+        private readonly string _functionName;
+        private readonly string _tableName;
+
         public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
-        public readonly IList<ColumnValue> Values = new List<ColumnValue>();
-
-
-
-        public string FunctionName { get; }
 
         public UpsertFunction(DocumentMapping mapping)
         {
-            FunctionName = mapping.UpsertName;
-            TableName = mapping.TableName;
+            if (mapping == null) throw new ArgumentNullException(nameof(mapping));
 
+            _functionName = mapping.QualifiedUpsertName;
+            _tableName = mapping.QualifiedTableName;
+            _primaryKeyConstraintName = "pk_" + mapping.TableName;
+                
             var idType = mapping.IdMember.GetMemberType();
-            PgIdType = TypeMappings.GetPgType(idType);
-            Id_NpgsqlDbType = TypeMappings.ToDbType(idType);
+            var pgIdType = TypeMappings.GetPgType(idType);
 
             Arguments.Add(new UpsertArgument
             {
                 Arg = "docId",
-                PostgresType = PgIdType,
+                PostgresType = pgIdType,
                 Column = "id",
                 Members = new[] {mapping.IdMember}
             });
@@ -43,12 +44,6 @@ namespace Marten.Schema
                 BatchUpdatePattern = "*"
             });
         }
-
-        public NpgsqlDbType Id_NpgsqlDbType { get; }
-
-        public string TableName { get; set; }
-
-        public string PgIdType { get; }
 
         public void WriteFunctionSql(PostgresUpsertType upsertType, StringWriter writer)
         {
@@ -64,31 +59,30 @@ namespace Marten.Schema
 
             if (upsertType == PostgresUpsertType.Legacy)
             {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {FunctionName}({argList}) RETURNS VOID AS");
+                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName}({argList}) RETURNS VOID AS");
                 writer.WriteLine("$$");
                 writer.WriteLine("BEGIN");
-                writer.WriteLine($"LOCK TABLE {TableName} IN SHARE ROW EXCLUSIVE MODE;");
-                writer.WriteLine($"  WITH upsert AS (UPDATE {TableName} SET {updates} WHERE id=docId RETURNING *) ");
-                writer.WriteLine($"  INSERT INTO {TableName} ({inserts})");
+                writer.WriteLine($"LOCK TABLE {_tableName} IN SHARE ROW EXCLUSIVE MODE;");
+                writer.WriteLine($"  WITH upsert AS (UPDATE {_tableName} SET {updates} WHERE id=docId RETURNING *) ");
+                writer.WriteLine($"  INSERT INTO {_tableName} ({inserts})");
                 writer.WriteLine($"  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);");
                 writer.WriteLine("END;");
                 writer.WriteLine("$$ LANGUAGE plpgsql;");
             }
             else
             {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {FunctionName}({argList}) RETURNS VOID AS");
+                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName}({argList}) RETURNS VOID AS");
                 writer.WriteLine("$$");
                 writer.WriteLine("BEGIN");
-                writer.WriteLine($"INSERT INTO {TableName} ({inserts}) VALUES ({valueList})");
-                writer.WriteLine($"  ON CONFLICT ON CONSTRAINT pk_{TableName}");
+                writer.WriteLine($"INSERT INTO {_tableName} ({inserts}) VALUES ({valueList})");
+                writer.WriteLine($"  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}");
                 writer.WriteLine($"  DO UPDATE SET {updates};");
                 writer.WriteLine("END;");
                 writer.WriteLine("$$ LANGUAGE plpgsql;");
             }
-
         }
 
-        public UpsertArgument[] OrderedArguments()
+        private UpsertArgument[] OrderedArguments()
         {
             return Arguments.OrderBy(x => x.Arg).ToArray();
         }
@@ -100,12 +94,12 @@ namespace Marten.Schema
             return $@"
 BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity)
 var document = ({typeName})entity;
-batch.Sproc(`{FunctionName}`){parameters.Replace("*", ".JsonEntity(`doc`, document)")};
+batch.Sproc(`{_functionName}`){parameters.Replace("*", ".JsonEntity(`doc`, document)")};
 END
 
 BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity, string json)
 var document = ({typeName})entity;
-batch.Sproc(`{FunctionName}`){parameters.Replace("*", ".JsonBody(`doc`, json)")};
+batch.Sproc(`{_functionName}`){parameters.Replace("*", ".JsonBody(`doc`, json)")};
 END
 ";
         }
@@ -118,10 +112,9 @@ END
                 .Select(x => x.ToBulkInsertWriterStatement())
                 .Join("\n");
 
-
             return $@"
 BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{typeName}> documents)
-BLOCK:using (var writer = conn.BeginBinaryImport(`COPY {TableName}({columns}) FROM STDIN BINARY`))
+BLOCK:using (var writer = conn.BeginBinaryImport(`COPY {_tableName}({columns}) FROM STDIN BINARY`))
 BLOCK:foreach (var x in documents)
 bool assigned = false;
 Assign(x, out assigned);
@@ -130,7 +123,6 @@ writer.StartRow();
 END
 END
 END
-
 ";
         }
     }

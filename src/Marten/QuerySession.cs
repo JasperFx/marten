@@ -90,7 +90,7 @@ namespace Marten
             if (!sql.Contains("select", StringComparison.OrdinalIgnoreCase))
             {
                 var mapping = _schema.MappingFor(typeof(T));
-                var tableName = mapping.TableName;
+                var tableName = mapping.QualifiedTableName;
                 sql = "select data from {0} {1}".ToFormat(tableName, sql);
             }
 
