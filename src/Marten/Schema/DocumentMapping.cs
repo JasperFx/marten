@@ -21,6 +21,13 @@ namespace Marten.Schema
 {
     public class DocumentMapping : IDocumentMapping
     {
+        public static DocumentMapping For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName)
+        {
+            var storeOptions = new StoreOptions { DatabaseSchemaName = databaseSchemaName };
+
+            return new DocumentMapping(typeof(T), storeOptions);
+        }
+
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
         public const string UpsertPrefix = "mt_upsert_";
@@ -47,21 +54,11 @@ namespace Marten.Schema
             DocumentType = documentType;
             Alias = defaultDocumentAliasName(documentType);
 
-            IdMember = (MemberInfo)documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
-                       ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
-
-            
-
-
-            if (IdMember == null)
-            {
-                throw new InvalidDocumentException(
-                    $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
-            }
+            IdMember = determineId(documentType);
 
             _fields[IdMember.Name] = new IdField(IdMember);
 
-            IdMember = determineId(documentType);
+            
 
             assignIdStrategy(documentType, storeOptions);
 
@@ -88,6 +85,7 @@ namespace Marten.Schema
                 throw new InvalidDocumentException(
                     $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
             }
+
             return idMember;
         }
 

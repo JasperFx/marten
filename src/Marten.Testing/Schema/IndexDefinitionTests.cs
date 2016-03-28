@@ -7,8 +7,8 @@ namespace Marten.Testing.Schema
 {
     public class IndexDefinitionTests
     {
-        private readonly DocumentMapping mapping = DocumentMappingFactory.For<Target>();
-        private readonly DocumentMapping mappingOhterSchema = DocumentMappingFactory.For<Target>("other");
+        private readonly DocumentMapping mapping = DocumentMapping.For<Target>();
+        private readonly DocumentMapping mappingOhterSchema = DocumentMapping.For<Target>("other");
 
         [Fact]
         public void default_index_name_with_one_column()

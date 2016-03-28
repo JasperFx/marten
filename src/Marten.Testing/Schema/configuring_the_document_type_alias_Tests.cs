@@ -11,7 +11,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void DocumentAlias_attribute_changes_the_alias()
         {
-            var mapping = DocumentMappingFactory.For<Tractor>();
+            var mapping = DocumentMapping.For<Tractor>();
 
             mapping.Alias.ShouldBe("johndeere");
             mapping.TableName.ShouldBe("mt_doc_johndeere");

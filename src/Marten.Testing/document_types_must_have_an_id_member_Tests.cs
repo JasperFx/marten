@@ -10,7 +10,7 @@ namespace Marten.Testing
         {
             Exception<InvalidDocumentException>.ShouldBeThrownBy(() =>
             {
-                DocumentMappingFactory.For<BadDoc>();
+                DocumentMapping.For<BadDoc>();
             });
             
         }

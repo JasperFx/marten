@@ -10,7 +10,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
         public generating_code_and_sql_for_hierarchy_smoke_Tests()
         {
-            theHierarchy = DocumentMappingFactory.For<Squad>();
+            theHierarchy = DocumentMapping.For<Squad>();
             theHierarchy.AddSubClass(typeof (BasketballTeam));
             theHierarchy.AddSubClass(typeof (BaseballTeam));
             theHierarchy.AddSubClass(typeof (FootballTeam));
@@ -55,7 +55,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
         public generating_code_and_sql_for_hierarchy_smoke_Tests_on_other_database_schema()
         {
-            theHierarchy = DocumentMappingFactory.For<Squad>("other");
+            theHierarchy = DocumentMapping.For<Squad>("other");
             theHierarchy.AddSubClass(typeof(BasketballTeam));
             theHierarchy.AddSubClass(typeof(BaseballTeam));
             theHierarchy.AddSubClass(typeof(FootballTeam));

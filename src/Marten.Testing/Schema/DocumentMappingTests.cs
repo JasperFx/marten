@@ -17,21 +17,21 @@ namespace Marten.Testing.Schema
         [Fact]
         public void default_table_name()
         {
-            var mapping = DocumentMappingFactory.For<User>();
+            var mapping = DocumentMapping.For<User>();
             mapping.QualifiedTableName.ShouldBe("public.mt_doc_user");
         }
 
         [Fact]
         public void default_table_name_on_other_schema()
         {
-            var mapping = DocumentMappingFactory.For<User>("other");
+            var mapping = DocumentMapping.For<User>("other");
             mapping.QualifiedTableName.ShouldBe("other.mt_doc_user");
         }
 
         [Fact]
         public void default_table_name_on_overriden_schema()
         {
-            var mapping = DocumentMappingFactory.For<User>("other");
+            var mapping = DocumentMapping.For<User>("other");
             mapping.DatabaseSchemaName = "overriden";
             mapping.QualifiedTableName.ShouldBe("overriden.mt_doc_user");
         }
@@ -39,14 +39,14 @@ namespace Marten.Testing.Schema
         [Fact]
         public void default_search_mode_is_jsonb_to_record()
         {
-            var mapping = DocumentMappingFactory.For<User>();
+            var mapping = DocumentMapping.For<User>();
             mapping.PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
         [Fact]
         public void pick_up_upper_case_property_id()
         {
-            var mapping = DocumentMappingFactory.For<UpperCaseProperty>();
+            var mapping = DocumentMapping.For<UpperCaseProperty>();
             mapping.IdMember.ShouldBeAssignableTo<PropertyInfo>()
                 .Name.ShouldBe(nameof(UpperCaseProperty.Id));
         }
@@ -54,7 +54,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void pick_up_lower_case_property_id()
         {
-            var mapping = DocumentMappingFactory.For<LowerCaseProperty>();
+            var mapping = DocumentMapping.For<LowerCaseProperty>();
             mapping.IdMember.ShouldBeAssignableTo<PropertyInfo>()
                 .Name.ShouldBe(nameof(LowerCaseProperty.id));
         }
@@ -62,7 +62,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void pick_up_lower_case_field_id()
         {
-            var mapping = DocumentMappingFactory.For<LowerCaseField>();
+            var mapping = DocumentMapping.For<LowerCaseField>();
             mapping.IdMember.ShouldBeAssignableTo<FieldInfo>()
                 .Name.ShouldBe(nameof(LowerCaseField.id));
         }
@@ -70,7 +70,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void pick_up_upper_case_field_id()
         {
-            var mapping = DocumentMappingFactory.For<UpperCaseField>();
+            var mapping = DocumentMapping.For<UpperCaseField>();
             mapping.IdMember.ShouldBeAssignableTo<FieldInfo>()
                 .Name.ShouldBe(nameof(UpperCaseField.Id));
         }
@@ -78,7 +78,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_simple_document_table()
         {
-            var mapping = DocumentMappingFactory.For<MySpecialDocument>();
+            var mapping = DocumentMapping.For<MySpecialDocument>();
             var builder = new StringWriter();
 
             mapping.WriteSchemaObjects(null, builder);
@@ -92,7 +92,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_simple_document_table_on_other_schema()
         {
-            var mapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            var mapping = DocumentMapping.For<MySpecialDocument>("other");
             var builder = new StringWriter();
 
             mapping.WriteSchemaObjects(null, builder);
@@ -106,7 +106,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_simple_document_table_on_overriden_schema()
         {
-            var mapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            var mapping = DocumentMapping.For<MySpecialDocument>("other");
             mapping.DatabaseSchemaName = "overriden";
 
             var builder = new StringWriter();
@@ -122,7 +122,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_table_with_indexes()
         {
-            var mapping = DocumentMappingFactory.For<User>();
+            var mapping = DocumentMapping.For<User>();
             var i1 = mapping.AddIndex("first_name");
             var i2 = mapping.AddIndex("last_name");
 
@@ -139,7 +139,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_table_with_foreign_key()
         {
-            var mapping = DocumentMappingFactory.For<Issue>();
+            var mapping = DocumentMapping.For<Issue>();
             var foreignKey = mapping.AddForeignKey("AssigneeId", typeof(User));
 
             var builder = new StringWriter();
@@ -154,7 +154,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_a_document_table_with_duplicated_tables()
         {
-            var mapping = DocumentMappingFactory.For<User>();
+            var mapping = DocumentMapping.For<User>();
             mapping.DuplicateField("FirstName");
 
             var table = mapping.ToTable(null);
@@ -183,7 +183,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void write_upsert_sql()
         {
-            var mapping = DocumentMappingFactory.For<MySpecialDocument>();
+            var mapping = DocumentMapping.For<MySpecialDocument>();
             var builder = new StringWriter();
 
             mapping.WriteSchemaObjects(null, builder);
@@ -197,7 +197,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void write_upsert_sql_on_other_schema()
         {
-            var mapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            var mapping = DocumentMapping.For<MySpecialDocument>("other");
             var builder = new StringWriter();
 
             mapping.WriteSchemaObjects(null, builder);
@@ -211,7 +211,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void write_upsert_sql_on_overriden_schema()
         {
-            var mapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            var mapping = DocumentMapping.For<MySpecialDocument>("other");
             mapping.DatabaseSchemaName = "overriden";
 
             var builder = new StringWriter();
@@ -227,21 +227,21 @@ namespace Marten.Testing.Schema
         [Fact]
         public void table_name_with_schema_for_document()
         {
-            DocumentMappingFactory.For<MySpecialDocument>().QualifiedTableName
+            DocumentMapping.For<MySpecialDocument>().QualifiedTableName
                 .ShouldBe("public.mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void table_name_with_schema_for_document_on_other_schema()
         {
-            DocumentMappingFactory.For<MySpecialDocument>("other").QualifiedTableName
+            DocumentMapping.For<MySpecialDocument>("other").QualifiedTableName
                 .ShouldBe("other.mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void table_name_with_schema_for_document_on_overriden_schema()
         {
-            var documentMapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            var documentMapping = DocumentMapping.For<MySpecialDocument>("other");
             documentMapping.DatabaseSchemaName = "overriden";
 
             documentMapping.QualifiedTableName
@@ -251,21 +251,21 @@ namespace Marten.Testing.Schema
         [Fact]
         public void upsert_name_with_schema_for_document_type()
         {
-            DocumentMappingFactory.For<MySpecialDocument>().QualifiedUpsertName
+            DocumentMapping.For<MySpecialDocument>().QualifiedUpsertName
                 .ShouldBe("public.mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void upsert_name_with_schema_for_document_type_on_other_schema()
         {
-            DocumentMappingFactory.For<MySpecialDocument>("other").QualifiedUpsertName
+            DocumentMapping.For<MySpecialDocument>("other").QualifiedUpsertName
                 .ShouldBe("other.mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void upsert_name_with_schema_for_document_type_on_overriden_schema()
         {
-            var documentMapping = DocumentMappingFactory.For<MySpecialDocument>("other");
+            var documentMapping = DocumentMapping.For<MySpecialDocument>("other");
             documentMapping.DatabaseSchemaName = "overriden";
 
             documentMapping.QualifiedUpsertName
@@ -275,21 +275,21 @@ namespace Marten.Testing.Schema
         [Fact]
         public void table_name_for_document()
         {
-            DocumentMappingFactory.For<MySpecialDocument>().TableName
+            DocumentMapping.For<MySpecialDocument>().TableName
                 .ShouldBe("mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void upsert_name_for_document_type()
         {
-            DocumentMappingFactory.For<MySpecialDocument>().UpsertName
+            DocumentMapping.For<MySpecialDocument>().UpsertName
                 .ShouldBe("mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void find_field_for_immediate_property_that_is_not_duplicated()
         {
-            var mapping = DocumentMappingFactory.For<UpperCaseProperty>();
+            var mapping = DocumentMapping.For<UpperCaseProperty>();
             var field = mapping.FieldFor("Id");
             field.Members.Single().ShouldBeAssignableTo<PropertyInfo>()
                 .Name.ShouldBe("Id");
@@ -298,7 +298,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void find_field_for_immediate_field_that_is_not_duplicated()
         {
-            var mapping = DocumentMappingFactory.For<UpperCaseField>();
+            var mapping = DocumentMapping.For<UpperCaseField>();
             var field = mapping.FieldFor("Id");
             field.Members.Single().ShouldBeAssignableTo<FieldInfo>()
                 .Name.ShouldBe("Id");
@@ -307,7 +307,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void duplicate_a_field()
         {
-            var mapping = DocumentMappingFactory.For<User>();
+            var mapping = DocumentMapping.For<User>();
 
             mapping.DuplicateField("FirstName");
 
@@ -321,7 +321,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void switch_to_only_using_json_locator_fields()
         {
-            var mapping = DocumentMappingFactory.For<User>();
+            var mapping = DocumentMapping.For<User>();
 
             mapping.DuplicateField("FirstName");
 
@@ -338,7 +338,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void picks_up_searchable_attribute_on_fields()
         {
-            var mapping = DocumentMappingFactory.For<Organization>();
+            var mapping = DocumentMapping.For<Organization>();
 
             mapping.FieldFor("OtherName").ShouldBeOfType<DuplicatedField>();
             mapping.FieldFor(nameof(Organization.OtherField)).ShouldNotBeOfType<DuplicatedField>();
@@ -347,7 +347,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void picks_up_searchable_attribute_on_properties()
         {
-            var mapping = DocumentMappingFactory.For<Organization>();
+            var mapping = DocumentMapping.For<Organization>();
 
             mapping.FieldFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
             mapping.FieldFor(nameof(Organization.OtherProp)).ShouldNotBeOfType<DuplicatedField>();
@@ -356,42 +356,42 @@ namespace Marten.Testing.Schema
         [Fact]
         public void picks_up_marten_attibute_on_document_type()
         {
-            var mapping = DocumentMappingFactory.For<Organization>();
+            var mapping = DocumentMapping.For<Organization>();
             mapping.PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
         [Fact]
         public void use_string_id_generation_for_string()
         {
-            var mapping = DocumentMappingFactory.For<StringId>();
+            var mapping = DocumentMapping.For<StringId>();
             mapping.IdStrategy.ShouldBeOfType<StringIdGeneration>();
         }
 
         [Fact]
         public void use_guid_id_generation_for_guid_id()
         {
-            var mapping = DocumentMappingFactory.For<UpperCaseProperty>();
+            var mapping = DocumentMapping.For<UpperCaseProperty>();
             mapping.IdStrategy.ShouldBeOfType<GuidIdGeneration>();
         }
 
         [Fact]
         public void use_hilo_id_generation_for_int_id()
         {
-            DocumentMappingFactory.For<IntId>()
+            DocumentMapping.For<IntId>()
                 .IdStrategy.ShouldBeOfType<HiloIdGeneration>();
         }
 
         [Fact]
         public void use_hilo_id_generation_for_long_id()
         {
-            DocumentMappingFactory.For<LongId>()
+            DocumentMapping.For<LongId>()
                 .IdStrategy.ShouldBeOfType<HiloIdGeneration>();
         }
 
         [Fact]
         public void can_replace_hilo_def_settings()
         {
-            var mapping = DocumentMappingFactory.For<LongId>();
+            var mapping = DocumentMapping.For<LongId>();
 
             var newDef = new HiloSettings {Increment = 3, MaxLo = 33};
 
@@ -408,7 +408,7 @@ namespace Marten.Testing.Schema
         {
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
-                DocumentMappingFactory.For<StringId>().HiloSettings(new HiloSettings());
+                DocumentMapping.For<StringId>().HiloSettings(new HiloSettings());
             });
         }
 

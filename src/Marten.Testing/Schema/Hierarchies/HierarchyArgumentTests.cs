@@ -14,7 +14,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
         public HierarchyArgumentTests()
         {
-            mapping = DocumentMappingFactory.For<Squad>();
+            mapping = DocumentMapping.For<Squad>();
 
             arg = new HierarchyArgument(mapping);
 

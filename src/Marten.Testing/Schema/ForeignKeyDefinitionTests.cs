@@ -8,8 +8,8 @@ namespace Marten.Testing.Schema
 {
     public class ForeignKeyDefinitionTests
     {
-        private readonly DocumentMapping _userMapping = DocumentMappingFactory.For<User>();
-        private readonly DocumentMapping _issueMapping = DocumentMappingFactory.For<Issue>();
+        private readonly DocumentMapping _userMapping = DocumentMapping.For<User>();
+        private readonly DocumentMapping _issueMapping = DocumentMapping.For<Issue>();
 
         [Fact]
         public void default_key_name()
@@ -32,8 +32,8 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_ddl_on_other_schema()
         {
-            var issueMappingOtherSchema = DocumentMappingFactory.For<Issue>("schema1");
-            var userMappingOtherSchema = DocumentMappingFactory.For<User>("schema2");
+            var issueMappingOtherSchema = DocumentMapping.For<Issue>("schema1");
+            var userMappingOtherSchema = DocumentMapping.For<User>("schema2");
 
             var expected = string.Join(Environment.NewLine,
                 "ALTER TABLE schema1.mt_doc_issue",
