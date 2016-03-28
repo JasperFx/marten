@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Services;
 using Marten.Services.Includes;
 using Marten.Util;
@@ -15,6 +17,62 @@ namespace Marten.Testing.Services.Includes
 {
     public class end_to_end_query_with_include_Tests : DocumentSessionFixture<IdentityMap>
     {
+        [Fact]
+        public async Task include_within_batch_query()
+        {
+            var user1 = new User();
+            var user2 = new User();
+
+            var issue1 = new Issue { AssigneeId = user1.Id, Title = "Garage Door is busted #1" };
+            var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted #2" };
+            var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted #3" };
+
+            theSession.Store(user1, user2);
+            theSession.Store(issue1, issue2, issue3);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                User included = null;
+                var list = new List<User>();
+                var dict = new Dictionary<Guid, User>();
+
+                var batch = query.CreateBatchQuery();
+
+                var found = batch.Query<Issue>()
+                    .Include<User>(x => x.AssigneeId, x => included = x)
+                    .Where(x => x.Title == issue1.Title)
+                    .Single();
+
+                var toList = batch.Query<Issue>()
+                    .Include<User>(x => x.AssigneeId, list).ToList();
+
+                var toDict = batch.Query<Issue>()
+                    .Include(x => x.AssigneeId, dict).ToList();
+
+                await batch.Execute();
+
+
+                (await found).Id.ShouldBe(issue1.Id);
+
+                included.ShouldNotBeNull();
+                included.Id.ShouldBe(user1.Id);
+
+                (await toList).Count.ShouldBe(3);
+
+                list.Count.ShouldBe(2); // Only 2 users
+
+
+                (await toDict).Count.ShouldBe(3);
+
+                dict.Count.ShouldBe(2);
+
+                dict.ContainsKey(user1.Id).ShouldBeTrue();
+                dict.ContainsKey(user2.Id).ShouldBeTrue();
+                
+            }
+        }
+
         [Fact]
         public void simple_include_for_a_single_document()
         {

@@ -38,7 +38,7 @@ namespace Marten.Services.BatchQuerying
     public class MultipleResultsReader<T> : IDataReaderHandler
     {
         private readonly TaskCompletionSource<IList<T>> _taskSource = new TaskCompletionSource<IList<T>>();
-        private ISelector<T> _selector;
+        private readonly ISelector<T> _selector;
         private readonly IIdentityMap _map;
 
         public MultipleResultsReader(ISelector<T> selector, IIdentityMap map)

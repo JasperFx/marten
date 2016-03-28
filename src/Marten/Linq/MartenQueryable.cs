@@ -24,20 +24,29 @@ namespace Marten.Linq
 
         public Task<IEnumerable<T>> ExecuteCollectionAsync(CancellationToken token)
         {
-            var queryProvider = (IMartenQueryProvider)Provider;
+            var queryProvider = (IMartenQueryProvider) Provider;
             return queryProvider.ExecuteCollectionAsync<T>(Expression, token);
         }
 
         public Task<IEnumerable<string>> ExecuteCollectionToJsonAsync(CancellationToken token)
         {
-            var queryProvider = (IMartenQueryProvider)Provider;
+            var queryProvider = (IMartenQueryProvider) Provider;
             return queryProvider.ExecuteJsonCollectionAsync<T>(Expression, token);
         }
 
         public IEnumerable<string> ExecuteCollectionToJson()
         {
-            var queryProvider = (IMartenQueryProvider)Provider;
+            var queryProvider = (IMartenQueryProvider) Provider;
             return queryProvider.ExecuteJsonCollection<T>(Expression);
+        }
+
+        public IEnumerable<IIncludeJoin> Includes
+        {
+            get
+            {
+                var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+                return executor.Includes;
+            }
         }
 
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, JoinType joinType = JoinType.Inner) where TInclude : class
@@ -60,6 +69,7 @@ namespace Marten.Linq
 
             return this;
         }
+
 
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list, JoinType joinType = JoinType.Inner) where TInclude : class
         {

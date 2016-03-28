@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Marten.Linq;
 
 namespace Marten.Services.BatchQuerying
 {
@@ -18,9 +19,9 @@ namespace Marten.Services.BatchQuerying
     public class TransformedBatchQueryable<TValue> : ITransformedBatchQueryable<TValue>
     {
         private readonly BatchedQuery _parent;
-        private readonly IQueryable<TValue> _inner;
+        private readonly IMartenQueryable<TValue> _inner;
 
-        public TransformedBatchQueryable(BatchedQuery parent, IQueryable<TValue> inner)
+        public TransformedBatchQueryable(BatchedQuery parent, IMartenQueryable<TValue> inner)
         {
             _parent = parent;
             _inner = inner;
@@ -28,12 +29,12 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IList<TValue>> ToList()
         {
-            return _parent.Query<TValue>(q => _inner);
+            return _parent.Query<TValue>(_inner);
         }
 
         public Task<TValue> First()
         {
-            return _parent.First<TValue>(q => _inner);
+            return _parent.First<TValue>(_inner);
         }
 
         public Task<TValue> First(Expression<Func<TValue, bool>> filter)
@@ -43,18 +44,18 @@ namespace Marten.Services.BatchQuerying
 
         public Task<TValue> FirstOrDefault()
         {
-            return _parent.FirstOrDefault<TValue>(q => _inner);
+            return _parent.FirstOrDefault<TValue>(_inner);
         }
 
 
         public Task<TValue> Single()
         {
-            return _parent.Single<TValue>(q => _inner);
+            return _parent.Single<TValue>(_inner);
         }
 
         public Task<TValue> SingleOrDefault()
         {
-            return _parent.SingleOrDefault<TValue>(q => _inner);
+            return _parent.SingleOrDefault<TValue>(_inner);
         }
 
     }

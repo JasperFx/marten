@@ -73,7 +73,7 @@ namespace Marten
 
         public IBatchedQuery CreateBatchQuery()
         {
-            return new BatchedQuery(_connection, _schema, _identityMap, this, _serializer, Parser);
+            return new BatchedQuery(_connection, _schema, _identityMap.ForQuery(), this, _serializer, Parser);
         }
 
         public NpgsqlCommand BuildCommand<T>(string sql, params object[] parameters)
