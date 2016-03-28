@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Services.Includes;
 using Remotion.Linq;
 using Remotion.Linq.Parsing.Structure;
 
@@ -31,6 +30,20 @@ namespace Marten.Linq
             return queryExecutor.ExecuteCollectionAsync<T>(queryModel, token);
         }
 
+        public Task<IEnumerable<string>> ExecuteJsonCollectionAsync<T>(Expression expression, CancellationToken token)
+        {
+            var queryModel = QueryParser.GetParsedQuery(expression);
+            var queryExecutor = (IMartenQueryExecutor)Executor;
+            return queryExecutor.ExecuteCollectionToJsonAsync<T>(queryModel, token);
+        }
+
+        public IEnumerable<string> ExecuteJsonCollection<T>(Expression expression)
+        {
+            var queryModel = QueryParser.GetParsedQuery(expression);
+            var queryExecutor = (IMartenQueryExecutor)Executor;
+            return queryExecutor.ExecuteCollectionToJson<T>(queryModel);
+        }
+
         public Task<T> ExecuteAsync<T>(Expression expression, CancellationToken token)
         {
             var queryModel = QueryParser.GetParsedQuery(expression);
@@ -38,6 +51,18 @@ namespace Marten.Linq
             return queryExecutor.ExecuteAsync<T>(queryModel, token);
         }
 
+        public Task<string> ExecuteJsonAsync<T>(Expression expression, CancellationToken token)
+        {
+            var queryModel = QueryParser.GetParsedQuery(expression);
+            var queryExecutor = (IMartenQueryExecutor)Executor;
+            return queryExecutor.ExecuteJsonAsync<T>(queryModel, token);
+        }
 
+        public string ExecuteJson<T>(Expression expression)
+        {
+            var queryModel = QueryParser.GetParsedQuery(expression);
+            var queryExecutor = (IMartenQueryExecutor)Executor;
+            return queryExecutor.ExecuteJson<T>(queryModel);
+        }
     }
 }

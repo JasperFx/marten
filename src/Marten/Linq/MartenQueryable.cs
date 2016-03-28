@@ -28,53 +28,16 @@ namespace Marten.Linq
             return queryProvider.ExecuteCollectionAsync<T>(Expression, token);
         }
 
-        public string ToListJson()
+        public Task<IEnumerable<string>> ExecuteCollectionToJsonAsync(CancellationToken token)
         {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-            var listJsons = executor.ExecuteCollectionToJson<T>(model).ToArray();
-            return $"[{listJsons.Join(",")}]";
+            var queryProvider = (IMartenQueryProvider)Provider;
+            return queryProvider.ExecuteJsonCollectionAsync<T>(Expression, token);
         }
 
-        public Task<string> ToListJsonAsync(CancellationToken token)
+        public IEnumerable<string> ExecuteCollectionToJson()
         {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-            return executor.ExecuteCollectionToJsonAsync<T>(model, token).ContinueWith(task => $"[{task.Result.Join(",")}]", token);
-        }
-
-        public string SingleJson(bool returnDefaultWhenEmpty)
-        {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-            return executor.ExecuteSingleToJson<T>(model, returnDefaultWhenEmpty);
-        }
-
-        public Task<string> SingleJsonAsync(bool returnDefaultWhenEmpty, CancellationToken token)
-        {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-            return executor.ExecuteSingleToJsonAsync<T>(model, returnDefaultWhenEmpty, token);
-        }
-
-        public string FirstJson(bool returnDefaultWhenEmpty)
-        {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-            return executor.ExecuteFirstToJson<T>(model, returnDefaultWhenEmpty);
-        }
-
-        public Task<string> FirstJsonAsync(bool returnDefaultWhenEmpty, CancellationToken token)
-        {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-            return executor.ExecuteFirstToJsonAsync<T>(model, returnDefaultWhenEmpty, token);
+            var queryProvider = (IMartenQueryProvider)Provider;
+            return queryProvider.ExecuteJsonCollection<T>(Expression);
         }
 
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, JoinType joinType = JoinType.Inner) where TInclude : class
