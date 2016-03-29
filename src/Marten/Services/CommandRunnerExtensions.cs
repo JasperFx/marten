@@ -20,6 +20,19 @@ namespace Marten.Services
             return runner.Execute(cmd => cmd.WithText(sql).ExecuteNonQuery());
         }
 
+        public static QueryPlan ExplainQuery(this IManagedConnection runner, NpgsqlCommand cmd)
+        {
+            var serializer = new JsonNetSerializer();
+            cmd.CommandText = string.Concat("explain (format json) ", cmd.CommandText);
+            return runner.Execute(cmd, c =>
+            {
+                using (var reader = cmd.ExecuteReader())
+                {
+                    var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetString(0)) : null;
+                    return queryPlans?[0].Plan;
+                }
+            });
+        }
 
         public static IEnumerable<T> Resolve<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map)
         {

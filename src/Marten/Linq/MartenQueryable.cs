@@ -22,7 +22,15 @@ namespace Marten.Linq
         {
         }
 
-        public Task<IEnumerable<T>> ExecuteCollectionAsync(CancellationToken token)
+        public QueryPlan Explain()
+        {
+            var model = new MartenQueryParser().GetParsedQuery(Expression);
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+
+            return executor.ExecuteExplain<T>(model);
+        }
+
+    public Task<IEnumerable<T>> ExecuteCollectionAsync(CancellationToken token)
         {
             var queryProvider = (IMartenQueryProvider) Provider;
             return queryProvider.ExecuteCollectionAsync<T>(Expression, token);
