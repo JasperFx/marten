@@ -136,6 +136,11 @@ namespace Marten
         /// with custom diagnostics
         /// </summary>
         IMartenSessionLogger Logger { get; set; }
+
+        /// <summary>
+        /// Request count
+        /// </summary>
+        int RequestCount { get; }
     }
 
     /// <summary>
@@ -221,11 +226,6 @@ namespace Marten
         /// The last set of changes committed, if any
         /// </summary>
         IChangeSet LastCommit { get; }
-
-        /// <summary>
-        /// Request count
-        /// </summary>
-        int RequestCount { get; }
     }
 
     public interface ILoadByKeys<TDoc>

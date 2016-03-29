@@ -14,7 +14,6 @@ async
 query_json
 batched_queries
 versioning
-diagnostics
 customizing
 text_search
 cleaning

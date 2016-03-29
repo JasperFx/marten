@@ -96,6 +96,7 @@
     <Compile Include="Examples\SagaStorageExample.cs" />
     <Compile Include="Examples\Searching_Within_Child_Collections.cs" />
     <Compile Include="Examples\SimpleSessionListener.cs" />
+    <Compile Include="Examples\TradeDocumentStorage.cs" />
     <Compile Include="Examples\UnitOfWorkBlogSamples.cs" />
     <Compile Include="Examples\UnitOfWorkMechanics.cs" />
     <Compile Include="Fixtures\EventStore\EventStoreFixture.cs" />

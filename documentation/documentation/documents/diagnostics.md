@@ -85,6 +85,16 @@ PlanWidth: 36
 </pre>
 
 
+## Request Counting and Thresholds
+
+Marten has several facilities for improving system performance by reducing the number of network round trips to the server, but the first step maybe to
+just understand what kinds of operations are being chatty in the first place. To that end, Marten exposes the request count for each `IQuerySession` or `IDocumentSession` that simply tells you how many commands have been issued to Postgresql by that session:
+
+<[sample:using_request_count]>
+
+At this point, Marten does not have any built in support for asserting requests per session thresholds like other tools. While I think that we are uncomfortable with that functionality ever being turned on in production, it should be easily feasible to build those kinds of automated threshold testing like "fail the test if there were more than 25 requests issued for any given HTTP request."
+
+
 ## Previewing Storage Code
 
 To unwind a problem in Marten usage or just to understand how Marten is acting to persist a document type, you can also preview the storage code that Marten would generate for a document type behind the scenes. The usage of that preview for the same `Trade` document type used above is shown in the sample below:
