@@ -10,7 +10,7 @@ For information on accessing and previewing the database schema objects generate
 
 **All of the functionality in this section was added as part of Marten v0.8**
 
-Marten has a limited facility now for listening and even intercepting document persistence events with the `IDocumentSessionListener` interface:
+Marten has a facility for listening and even intercepting document persistence events with the `IDocumentSessionListener` interface:
 
 <[sample:IDocumentSessionListener]>
 

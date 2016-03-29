@@ -36,12 +36,13 @@ namespace Marten
 
 
         /// <summary>
-        /// After a document is loaded
+        /// Called after a document is loaded
         /// </summary>
         void DocumentLoaded(object id, object document);
 
         /// <summary>
-        /// After a document is added for storage
+        /// Called after a document is explicitly added to a session
+        /// as a staged insert or update
         /// </summary>
         void DocumentAddedForStorage(object id, object document);
     }
