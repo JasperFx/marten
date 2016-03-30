@@ -21,7 +21,6 @@ namespace Marten.Testing.Schema.Sequences
 
             generation.GetValue(schema).ShouldBeOfType<HiloSequence>()
                 .EntityName.ShouldBe("Target");
- 
         }
 
         [Fact]
@@ -30,10 +29,5 @@ namespace Marten.Testing.Schema.Sequences
             var generation = new HiloIdGeneration(typeof(Target), new HiloSettings());
             generation.ToArguments().Single().ShouldBeSameAs(generation);
         }
-
-
-
-
-        
     }
 }
