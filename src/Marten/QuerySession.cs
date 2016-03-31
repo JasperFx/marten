@@ -29,7 +29,7 @@ namespace Marten
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
 
-        public QuerySession(IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
+        public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
         {
             _schema = schema;
             _serializer = serializer;
@@ -38,6 +38,7 @@ namespace Marten
             _identityMap = identityMap;
 
             Parser = new MartenExpressionParser(_serializer, options);
+            Store = store;
         }
 
         internal MartenExpressionParser Parser { get; }
@@ -326,6 +327,8 @@ namespace Marten
             get { return _connection.As<ManagedConnection>().Logger; }
             set { _connection.As<ManagedConnection>().Logger = value; }
         }
+
+        public IDocumentStore Store { get; }
 
         public void Dispose()
         {

@@ -98,6 +98,7 @@
     <Compile Include="Examples\SimpleSessionListener.cs" />
     <Compile Include="Examples\UnitOfWorkBlogSamples.cs" />
     <Compile Include="Examples\UnitOfWorkMechanics.cs" />
+    <Compile Include="Extras\project_document_Tests.cs" />
     <Compile Include="Fixtures\EventStore\EventStoreFixture.cs" />
     <Compile Include="Fixtures\EventStore\QuestEventFixture.cs" />
     <Compile Include="Fixtures\LinqFixture.cs" />
