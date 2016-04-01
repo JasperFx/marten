@@ -16,6 +16,7 @@ namespace Marten.Testing.Fixtures.EventStore
         private IContainer _container;
         private IDocumentStore _store;
         private Guid _lastStream;
+        private int _version;
 
         public override void SetUp()
         {
@@ -73,7 +74,41 @@ namespace Marten.Testing.Fixtures.EventStore
                 // TODO -- eliminate the aggregate type here
                 return session.Events.FetchStream<Quest>(_lastStream).Select(x => x.ToString()).ToArray();
             }
-        } 
+        }
+
+
+        [Hidden, FormatAs("For version # {version}")]
+        public void Version(int version)
+        {
+            _version = version;
+        }
+
+        [Hidden]
+        public IGrammar EventsAtVersionShouldBe()
+        {
+            return VerifyStringList(() => allEvents(_version))
+                .Titled("The captured events for this stream and specified version should be")
+                .Ordered();
+        }
+
+        public IGrammar FetchEventsByVersion()
+        {
+            return Paragraph("Fetch the events by version", _ =>
+            {
+                _ += this["Version"];
+                _ += this["EventsAtVersionShouldBe"];
+            });
+        }
+
+        private IEnumerable<string> allEvents(int version)
+        {
+            using (var session = _store.LightweightSession())
+            {
+                // TODO -- eliminate the aggregate type here
+                return session.Events.FetchStream<Quest>(_lastStream, version).Select(x => x.ToString()).ToArray();
+            }
+        }
+
 
         public IGrammar HasAdditionalEvents()
         {

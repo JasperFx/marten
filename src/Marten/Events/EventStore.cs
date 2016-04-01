@@ -83,6 +83,19 @@ namespace Marten.Events
             });
         }
 
+        public IEnumerable<IEvent> FetchStream<T>(Guid streamId, int version) where T : IAggregate
+        {
+            return _connection.Execute(cmd =>
+            {
+                using (var reader = cmd
+                    .WithText($"select type, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :id and version <= :version order by version")
+                    .With("id", streamId).With("version", version).ExecuteReader())
+                {
+                    return fetchStream(reader).ToArray();
+                }
+            });
+        }
+
         private IEnumerable<IEvent> fetchStream(IDataReader reader)
         {
             while (reader.Read())
