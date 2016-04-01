@@ -70,7 +70,7 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
-        public IEnumerable<IEvent> FetchStream<T>(Guid streamId) where T : IAggregate
+        public IEnumerable<IEvent> FetchStream(Guid streamId) 
         {
             return _connection.Execute(cmd =>
             {
@@ -83,13 +83,33 @@ namespace Marten.Events
             });
         }
 
-        public IEnumerable<IEvent> FetchStream<T>(Guid streamId, int version) where T : IAggregate
+
+
+        public IEnumerable<IEvent> FetchStream(Guid streamId, int version) 
         {
             return _connection.Execute(cmd =>
             {
                 using (var reader = cmd
                     .WithText($"select type, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :id and version <= :version order by version")
                     .With("id", streamId).With("version", version).ExecuteReader())
+                {
+                    return fetchStream(reader).ToArray();
+                }
+            });
+        }
+
+        public IEnumerable<IEvent> FetchStream(Guid streamId, DateTime timestamp) 
+        {
+            if (timestamp.Kind != DateTimeKind.Utc)
+            {
+                throw new ArgumentOutOfRangeException(nameof(timestamp), "This method only accepts UTC dates");
+            }
+
+            return _connection.Execute(cmd =>
+            {
+                using (var reader = cmd
+                    .WithText($"select type, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :id and timestamp <= :timestamp order by version")
+                    .With("id", streamId).With("timestamp", timestamp).ExecuteReader())
                 {
                     return fetchStream(reader).ToArray();
                 }
