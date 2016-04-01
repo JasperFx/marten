@@ -95,6 +95,7 @@
     <Compile Include="Examples\RecordingLogger.cs" />
     <Compile Include="Examples\SagaStorageExample.cs" />
     <Compile Include="Examples\Searching_Within_Child_Collections.cs" />
+    <Compile Include="Examples\Setting_Timestamp_on_all_changes_by_base_class_Tests.cs" />
     <Compile Include="Examples\SimpleSessionListener.cs" />
     <Compile Include="Examples\TradeDocumentStorage.cs" />
     <Compile Include="Examples\UnitOfWorkBlogSamples.cs" />
