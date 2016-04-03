@@ -21,7 +21,7 @@ namespace Marten.Schema
 {
     public class DocumentMapping : IDocumentMapping
     {
-        public static DocumentMapping For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName, IIdGeneration idGeneration = null)
+        public static DocumentMapping For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName, Func<IDocumentMapping, StoreOptions, IIdGeneration> idGeneration = null)
         {
             var storeOptions = new StoreOptions { DatabaseSchemaName = databaseSchemaName, DefaultIdStrategy = idGeneration };
 
@@ -192,9 +192,10 @@ namespace Marten.Schema
                 return new NoOpIdGeneration();
             }
 
-            if (options.DefaultIdStrategy != null)
+            var strategy = options.DefaultIdStrategy?.Invoke(this, options);
+            if (strategy != null)
             {
-                return options.DefaultIdStrategy;
+                return strategy;
             }
             
             var idType = IdMember.GetMemberType();
