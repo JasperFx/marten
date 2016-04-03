@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Baseline;
-using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema.Hierarchies;
 using Marten.Services;
 using Marten.Services.Includes;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Schema
 {
@@ -41,11 +39,17 @@ namespace Marten.Schema
         public string DatabaseSchemaName
         {
             get { return _parent.DatabaseSchemaName; }
-            set { throw new NotSupportedException("The DatabaseSchemaName is sub class mapping can't be set."); }
+            set { throw new NotSupportedException("The DatabaseSchemaName of a sub class mapping can't be set. The DatabaseSchemaName of the parent will be used."); }
         }
 
         public PropertySearching PropertySearching => _parent.PropertySearching;
-        public IIdGeneration IdStrategy => _parent.IdStrategy;
+
+        public IIdGeneration IdStrategy
+        {
+            get { return _parent.IdStrategy; }
+            set { throw new NotSupportedException("The IdStrategy of a sub class mapping can't be set. The IdStrategy of the parent will be used."); }
+        }
+
         public IEnumerable<DuplicatedField> DuplicatedFields => _parent.DuplicatedFields;
         public MemberInfo IdMember => _parent.IdMember;
         public string[] SelectFields()

@@ -19,7 +19,7 @@ namespace Marten.Schema
         string DatabaseSchemaName { get; set; }
 
         PropertySearching PropertySearching { get; }
-        IIdGeneration IdStrategy { get; }
+        IIdGeneration IdStrategy { get; set; }
         MemberInfo IdMember { get; }
         string[] SelectFields();
 
