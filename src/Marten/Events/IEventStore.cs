@@ -14,7 +14,11 @@ namespace Marten.Events
 
         T FetchSnapshot<T>(Guid streamId) where T : IAggregate;
 
-        IEnumerable<IEvent> FetchStream<T>(Guid streamId) where T : IAggregate;
+        IEnumerable<IEvent> FetchStream(Guid streamId);
+        IEnumerable<IEvent> FetchStream(Guid streamId, int version);
+        IEnumerable<IEvent> FetchStream(Guid streamId, DateTime timestamp);
+
+        
 
         void DeleteEvent<T>(Guid id);
         void DeleteEvent<T>(T @event) where T : IEvent;
@@ -25,6 +29,7 @@ namespace Marten.Events
         ITransforms Transforms { get; }
 
         StreamState FetchStreamState(Guid streamId);
+        
     }
 
     public interface ITransforms

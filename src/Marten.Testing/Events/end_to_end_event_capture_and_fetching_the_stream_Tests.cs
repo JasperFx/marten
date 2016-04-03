@@ -28,7 +28,7 @@ namespace Marten.Testing.Events
                 var id = session.Events.StartStream<Quest>(joined, departed);
                 session.SaveChanges();
 
-                var streamEvents = session.Events.FetchStream<Quest>(id);
+                var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
@@ -51,7 +51,7 @@ namespace Marten.Testing.Events
                 session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
 
-                var streamEvents = session.Events.FetchStream<Quest>(id);
+                var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
@@ -76,7 +76,7 @@ namespace Marten.Testing.Events
 
                 session.SaveChanges();
 
-                var streamEvents = session.Events.FetchStream<Quest>(id);
+                var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
@@ -109,7 +109,7 @@ namespace Marten.Testing.Events
 
                 session.SaveChanges();
 
-                var streamEvents = session.Events.FetchStream<Quest>(id);
+                var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(3);
                 streamEvents.ElementAt(0).ShouldBeOfType<QuestStarted>();
@@ -132,7 +132,7 @@ namespace Marten.Testing.Events
                 var id = session.Events.StartStream<Quest>(joined, departed);
                 session.SaveChanges();
 
-                var streamEvents = session.Events.FetchStream<Quest>(id);
+                var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
@@ -155,7 +155,7 @@ namespace Marten.Testing.Events
                 session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
 
-                var streamEvents = session.Events.FetchStream<Quest>(id);
+                var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
@@ -180,7 +180,7 @@ namespace Marten.Testing.Events
 
                 session.SaveChanges();
 
-                var streamEvents = session.Events.FetchStream<Quest>(id);
+                var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
@@ -213,7 +213,7 @@ namespace Marten.Testing.Events
 
                 session.SaveChanges();
 
-                var streamEvents = session.Events.FetchStream<Quest>(id);
+                var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(3);
                 streamEvents.ElementAt(0).ShouldBeOfType<QuestStarted>();

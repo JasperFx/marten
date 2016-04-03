@@ -5,6 +5,7 @@ using Marten.Testing.Events;
 using Marten.Util;
 using NpgsqlTypes;
 using StoryTeller;
+using StoryTeller.Grammars.Tables;
 using StructureMap;
 using StructureMap.Util;
 
@@ -16,6 +17,8 @@ namespace Marten.Testing.Fixtures.EventStore
         private IContainer _container;
         private IDocumentStore _store;
         private Guid _lastStream;
+        private int _version;
+        private DateTime _time;
 
         public override void SetUp()
         {
@@ -59,6 +62,24 @@ namespace Marten.Testing.Fixtures.EventStore
             }
         }
 
+        [ExposeAsTable("If the Event Timestamps were")]
+        public void OverwriteTimestamps(int version, DateTime time)
+        {
+            var store = Context.State.Retrieve<IDocumentStore>();
+            using (var session = store.OpenSession())
+            {
+                var cmd = session.Connection.CreateCommand()
+                    .WithText("update mt_events set timestamp = :time where stream_id = :stream and version = :version")
+                    .With("stream", _lastStream)
+                    .With("version", version)
+                    .With("time", time.ToUniversalTime());
+
+                cmd.ExecuteNonQuery();
+
+                session.SaveChanges();
+            }
+        }
+
         public IGrammar AllTheCapturedEventsShouldBe()
         {
             return VerifyStringList(allEvents)
@@ -70,10 +91,81 @@ namespace Marten.Testing.Fixtures.EventStore
         {
             using (var session = _store.LightweightSession())
             {
-                // TODO -- eliminate the aggregate type here
-                return session.Events.FetchStream<Quest>(_lastStream).Select(x => x.ToString()).ToArray();
+                return session.Events.FetchStream(_lastStream).Select(x => x.ToString()).ToArray();
             }
-        } 
+        }
+
+
+        [Hidden, FormatAs("For version # {version}")]
+        public void Version(int version)
+        {
+            _version = version;
+        }
+
+        [Hidden]
+        public IGrammar EventsAtTimeShouldBe()
+        {
+            return VerifyStringList(() => allEvents(_time))
+                .Titled("The captured events for this stream and specified time should be")
+                .Ordered();
+        }
+
+        public IGrammar FetchEventsByTimestamp()
+        {
+            return Paragraph("Fetch the events by time", _ =>
+            {
+                _ += this["Time"];
+                _ += this["EventsAtTimeShouldBe"];
+            });
+        }
+
+        private IEnumerable<string> allEvents(DateTime time)
+        {
+            using (var session = _store.LightweightSession())
+            {
+                return session.Events.FetchStream(_lastStream, time.ToUniversalTime()).Select(x => x.ToString()).ToArray();
+            }
+        }
+
+
+
+
+        [Hidden, FormatAs("For time # {time}")]
+        public void Time(DateTime time)
+        {
+            _time = time;
+        }
+
+        [Hidden]
+        public IGrammar EventsAtVersionShouldBe()
+        {
+            return VerifyStringList(() => allEvents(_version))
+                .Titled("The captured events for this stream and specified version should be")
+                .Ordered();
+        }
+
+        public IGrammar FetchEventsByVersion()
+        {
+            return Paragraph("Fetch the events by version", _ =>
+            {
+                _ += this["Version"];
+                _ += this["EventsAtVersionShouldBe"];
+            });
+        }
+
+        private IEnumerable<string> allEvents(int version)
+        {
+            using (var session = _store.LightweightSession())
+            {
+                // TODO -- eliminate the aggregate type here
+                return session.Events.FetchStream(_lastStream, version).Select(x => x.ToString()).ToArray();
+            }
+        }
+
+
+
+
+
 
         public IGrammar HasAdditionalEvents()
         {

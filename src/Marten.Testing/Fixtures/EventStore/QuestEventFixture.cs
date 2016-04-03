@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Marten.Events;
 using Marten.Testing.Events;
+using Marten.Util;
 using StoryTeller;
 
 namespace Marten.Testing.Fixtures.EventStore
@@ -15,12 +16,6 @@ namespace Marten.Testing.Fixtures.EventStore
         public override void SetUp()
         {
             _events = new List<IEvent>();
-        }
-
-        [FormatAs("Captured at {time}")]
-        public void AtTime(DateTime time)
-        {
-            _time = time;
         }
 
         [FormatAs("Members {names} joined the quest on day {day} at {location}")]

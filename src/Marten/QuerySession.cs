@@ -327,6 +327,8 @@ namespace Marten
             set { _connection.As<ManagedConnection>().Logger = value; }
         }
 
+        public int RequestCount => _connection.RequestCount;
+
         public void Dispose()
         {
             _connection.Dispose();

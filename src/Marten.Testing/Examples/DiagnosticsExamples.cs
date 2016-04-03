@@ -1,8 +1,11 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Util;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Shouldly;
 using StructureMap;
 
 namespace Marten.Testing.Examples
@@ -42,6 +45,37 @@ namespace Marten.Testing.Examples
 
             Debug.WriteLine(cmd.CommandText);
             // ENDSAMPLE
-        } 
+
+
+            // SAMPLE: preview_linq_explain_plan
+            // Explain() is an extension method off of IQueryable<T>
+            var plan = queryable.Explain();
+            Console.WriteLine($"NodeType: {plan.NodeType}");
+            Console.WriteLine($"RelationName: {plan.RelationName}");
+            Console.WriteLine($"Alias: {plan.Alias}");
+            Console.WriteLine($"StartupCost: {plan.StartupCost}");
+            Console.WriteLine($"TotalCost: {plan.TotalCost}");
+            Console.WriteLine($"PlanRows: {plan.PlanRows}");
+            Console.WriteLine($"PlanWidth: {plan.PlanWidth}");
+            // ENDSAMPLE
+        }
+
+        public void use_request_count()
+        {
+            var container = Container.For<DevelopmentModeRegistry>();
+
+            var store = container.GetInstance<IDocumentStore>();
+
+            // SAMPLE: using_request_count
+            using (var session = store.QuerySession())
+            {
+                var users = session.Query<User>().ToList();
+                var count = session.Query<User>().Count();
+                var any = session.Query<User>().Any();
+
+                session.RequestCount.ShouldBe(3);
+            }
+            // ENDSAMPLE
+        }
     }
 }

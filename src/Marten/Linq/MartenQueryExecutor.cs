@@ -49,6 +49,14 @@ namespace Marten.Linq
             return _schema.StorageFor(typeof (T)).As<IResolver<T>>();
         }
 
+        public QueryPlan ExecuteExplain<T>(QueryModel queryModel)
+        {
+            ISelector<T> selector = null;
+            var cmd = BuildCommand(queryModel, out selector);
+
+            return _runner.ExplainQuery(cmd);
+        }
+
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
             var executors = new List<IScalarQueryExecution<T>> {

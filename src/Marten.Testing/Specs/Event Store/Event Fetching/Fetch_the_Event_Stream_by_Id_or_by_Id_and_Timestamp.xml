@@ -1,0 +1,42 @@
+<Spec id="f98fd82a-766b-4e1d-b5b6-48d2039b06b3" maxRetries="0" tags="" lifecycle="Regression" name="Fetch the Event Stream by Id or by Id and Timestamp" lastUpdated="Friday, April 01, 2016" expirationPeriod="0">
+  <EventStore id="1526fbc5-7d6e-4a16-b453-5defa59818a4">
+    <ForNewQuestStream name="Destroy the Ring" date="6/1/2015" />
+    <HasAdditionalEvents>
+      <QuestEvent id="62943124-62aa-4917-ab2c-56833228cb2e">
+        <MembersJoinedAt names="Frodo, Sam, Merry, Pippin" day="1" location="Hobbiton" />
+        <Arrived location="Bree" day="3" />
+        <MembersJoinedAt names="Strider" day="4" location="Bree" />
+        <Arrived location="Rivendell" day="10" />
+        <MembersJoinedAt names="Gimli, Gandalf, Boromir, Legolas" day="15" location="Rivendell" />
+        <Arrived location="Moria" day="25" />
+      </QuestEvent>
+    </HasAdditionalEvents>
+    <OverwriteTimestamps>
+      <table id="c76306e6-7b12-4698-9560-cbe423a859b9">
+        <OverwriteTimestamps-row version="1" time="TODAY-8" />
+        <OverwriteTimestamps-row version="2" time="TODAY-7" />
+        <OverwriteTimestamps-row version="3" time="TODAY-7" />
+        <OverwriteTimestamps-row version="4" time="TODAY-5" />
+        <OverwriteTimestamps-row version="5" time="TODAY-5" />
+        <OverwriteTimestamps-row version="6" time="TODAY" />
+        <OverwriteTimestamps-row version="7" time="TODAY" />
+      </table>
+    </OverwriteTimestamps>
+    <FetchEventsByTimestamp time="TODAY-3">
+      <Rows id="d6915141-e013-4535-884b-7fb7deb8f302">
+        <null-row expected="Quest Destroy the Ring started" />
+        <null-row expected="Members Frodo, Sam, Merry, Pippin joined at Hobbiton on Day 1" />
+        <null-row expected="Arrived at Bree on Day 3" />
+        <null-row expected="Members Strider joined at Bree on Day 4" />
+        <null-row expected="Arrived at Rivendell on Day 10" />
+      </Rows>
+    </FetchEventsByTimestamp>
+    <FetchEventsByTimestamp time="TODAY-6">
+      <Rows id="0db77aee-62ed-4da8-965a-07b00e7eec7b">
+        <null-row expected="Quest Destroy the Ring started" />
+        <null-row expected="Members Frodo, Sam, Merry, Pippin joined at Hobbiton on Day 1" />
+        <null-row expected="Arrived at Bree on Day 3" />
+      </Rows>
+    </FetchEventsByTimestamp>
+  </EventStore>
+</Spec>

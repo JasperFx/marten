@@ -162,7 +162,6 @@ namespace Marten
 
         public IEnumerable<IChangeSet> Commits => _changes;
         public IChangeSet LastCommit => _changes.LastOrDefault();
-        public int RequestCount => _connection.RequestCount;
 
         internal interface IHandler
         {

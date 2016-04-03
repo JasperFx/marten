@@ -11,6 +11,14 @@ namespace Marten.Util
 {
     public static class QueryableExtensions
     {
+        #region Explain
+
+        public static QueryPlan Explain<T>(this IQueryable<T> queryable)
+        {
+            var martenQueryable = CastToMartenQueryable(queryable);
+            return martenQueryable.Explain();
+        }
+        #endregion
         #region ToListJson
 
         public static async Task<string> ToListJsonAsync<T>(this IQueryable<T> queryable,

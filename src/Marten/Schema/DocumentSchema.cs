@@ -34,7 +34,7 @@ namespace Marten.Schema
 
             options.AllDocumentMappings.Each(x => _mappings[x.DocumentType] = x);
 
-            Sequences = new SequenceFactory(this, _factory, options);
+            Sequences = new SequenceFactory(this, _factory, options, _logger);
         }
 
         public StoreOptions StoreOptions { get; }

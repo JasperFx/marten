@@ -1,0 +1,42 @@
+<Spec id="b112ba8e-2619-4d27-86f3-b8ffb51a0de9" maxRetries="0" tags="" lifecycle="Regression" name="Fetch the Event Stream by Id or by Id and Version" lastUpdated="Friday, April 01, 2016" expirationPeriod="0">
+  <EventStore id="1526fbc5-7d6e-4a16-b453-5defa59818a4">
+    <ForNewQuestStream name="Destroy the Ring" date="6/1/2015" />
+    <HasAdditionalEvents>
+      <QuestEvent id="62943124-62aa-4917-ab2c-56833228cb2e">
+        <MembersJoinedAt names="Frodo, Sam, Merry, Pippin" day="1" location="Hobbiton" />
+        <Arrived location="Bree" day="3" />
+        <MembersJoinedAt names="Strider" day="4" location="Bree" />
+        <Arrived location="Rivendell" day="10" />
+        <MembersJoinedAt names="Gimli, Gandalf, Boromir, Legolas" day="15" location="Rivendell" />
+        <Arrived location="Moria" day="25" />
+      </QuestEvent>
+    </HasAdditionalEvents>
+    <AllTheCapturedEventsShouldBe>
+      <Rows id="1b0b01f6-6c6d-4dc3-af28-efa5db0563a9">
+        <AllTheCapturedEventsShouldBe-row expected="Quest Destroy the Ring started" />
+        <AllTheCapturedEventsShouldBe-row expected="Members Frodo, Sam, Merry, Pippin joined at Hobbiton on Day 1" />
+        <AllTheCapturedEventsShouldBe-row expected="Arrived at Bree on Day 3" />
+        <AllTheCapturedEventsShouldBe-row expected="Members Strider joined at Bree on Day 4" />
+        <AllTheCapturedEventsShouldBe-row expected="Arrived at Rivendell on Day 10" />
+        <AllTheCapturedEventsShouldBe-row expected="Members Gimli, Gandalf, Boromir, Legolas joined at Rivendell on Day 15" />
+        <AllTheCapturedEventsShouldBe-row expected="Arrived at Moria on Day 25" />
+      </Rows>
+    </AllTheCapturedEventsShouldBe>
+    <FetchEventsByVersion version="3">
+      <Rows id="ef8f9859-aafb-4162-ae67-d92d233d8e31">
+        <null-row expected="Quest Destroy the Ring started" />
+        <null-row expected="Members Frodo, Sam, Merry, Pippin joined at Hobbiton on Day 1" />
+        <null-row expected="Arrived at Bree on Day 3" />
+      </Rows>
+    </FetchEventsByVersion>
+    <FetchEventsByVersion version="5">
+      <Rows id="285b4c65-5cfa-48b0-b93a-131da5479981">
+        <null-row expected="Quest Destroy the Ring started" />
+        <null-row expected="Members Frodo, Sam, Merry, Pippin joined at Hobbiton on Day 1" />
+        <null-row expected="Arrived at Bree on Day 3" />
+        <null-row expected="Members Strider joined at Bree on Day 4" />
+        <null-row expected="Arrived at Rivendell on Day 10" />
+      </Rows>
+    </FetchEventsByVersion>
+  </EventStore>
+</Spec>

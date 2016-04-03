@@ -98,19 +98,7 @@ namespace Marten.Services
 
         public IEnumerable<T> UpdatesFor<T>()
         {
-            var tracked =
-                detectTrackerChanges()
-                    .Where(x => x.DocumentType == typeof (T))
-                    .Select(x => x.Document)
-                    .OfType<T>()
-                    .ToArray();
-
-            if (_updates.ContainsKey(typeof (T)))
-            {
-                return _updates[typeof (T)].As<IList<T>>().Union(tracked).ToArray();
-            }
-
-            return tracked;
+            return Updates().OfType<T>();
         }
 
 
@@ -221,12 +209,7 @@ namespace Marten.Services
 
         public IEnumerable<T> InsertsFor<T>()
         {
-            if (_inserts.ContainsKey(typeof(T)))
-            {
-                return _inserts[typeof (T)].As<IList<T>>();
-            }
-
-            return Enumerable.Empty<T>();
+            return Inserts().OfType<T>();
         }
 
         public IEnumerable<T> AllChangedFor<T>()
