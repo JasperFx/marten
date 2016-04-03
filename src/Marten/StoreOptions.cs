@@ -140,7 +140,7 @@ namespace Marten
         /// <summary>
         /// Set the default Id strategy for the document mapping.
         /// </summary>
-        public IIdGeneration DefaultIdStrategy { get; set; }
+        public Func<IDocumentMapping, StoreOptions, IIdGeneration> DefaultIdStrategy { get; set; }
 
         /// <summary>
         /// Force Marten to create document mappings for type T

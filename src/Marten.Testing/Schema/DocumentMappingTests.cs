@@ -392,8 +392,8 @@ namespace Marten.Testing.Schema
         [Fact]
         public void use_custom_default_id_generation_for_long_id()
         {
-            DocumentMapping.For<LongId>(idGeneration: new CustomerIdGeneration())
-                .IdStrategy.ShouldBeOfType<CustomerIdGeneration>();
+            DocumentMapping.For<LongId>(idGeneration: (m, o) => new CustomIdGeneration())
+                .IdStrategy.ShouldBeOfType<CustomIdGeneration>();
         }
 
         [Fact]
@@ -401,8 +401,8 @@ namespace Marten.Testing.Schema
         {
             var mapping = DocumentMapping.For<LongId>();
 
-            mapping.IdStrategy = new CustomerIdGeneration();
-            mapping.IdStrategy.ShouldBeOfType<CustomerIdGeneration>();
+            mapping.IdStrategy = new CustomIdGeneration();
+            mapping.IdStrategy.ShouldBeOfType<CustomIdGeneration>();
         }
 
         [Fact]
@@ -484,7 +484,7 @@ namespace Marten.Testing.Schema
             public string OtherField { get; set; }
         }
 
-        public class CustomerIdGeneration : IIdGeneration
+        public class CustomIdGeneration : IIdGeneration
         {
             public IEnumerable<StorageArgument> ToArguments()
             {

@@ -1,42 +1,14 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Marten.Schema;
-using Marten.Testing.Examples;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Schema.Sequences
 {
     public class CombGuidIdGenerationTests
     {
-        private readonly ITestOutputHelper _output;
-
-        public CombGuidIdGenerationTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
-        public class User
-        {
-            public Guid Id { get; set; }
-            public string FirstName { get; set; }
-            public string LastName { get; set; }
-            public bool Internal { get; set; }
-            public string UserName { get; set; }
-        }
-
-        public class UserWithInt
-        {
-            public Int32 Id { get; set; }
-            public string FirstName { get; set; }
-            public string LastName { get; set; }
-            public bool Internal { get; set; }
-            public string UserName { get; set; }
-        }
-
         [Fact]
         public void When_ids_are_generated_the_first_id_should_be_less_than_the_second()
         {
@@ -51,7 +23,7 @@ namespace Marten.Testing.Schema.Sequences
         {
             using (
                 var container =
-                    ContainerFactory.Configure(options => options.DefaultIdStrategy = new CombGuidIdGeneration()))
+                    ContainerFactory.Configure(options => options.DefaultIdStrategy = (mapping, storeOptions) => new CombGuidIdGeneration()))
             {
                 container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
                 var store = container.GetInstance<IDocumentStore>();
@@ -73,7 +45,7 @@ namespace Marten.Testing.Schema.Sequences
             }
         }
 
-        private static string FormatIdAsByteArrayString(User[] users, string user1)
+        private static string FormatIdAsByteArrayString(UserWithGuid[] users, string user1)
         {
             var id = users.Single(user => user.LastName == user1).Id;
             return Format(id);
@@ -86,11 +58,11 @@ namespace Marten.Testing.Schema.Sequences
             return BitConverter.ToString(bytes);
         }
 
-        private User[] GetUsers(IDocumentStore documentStore)
+        private UserWithGuid[] GetUsers(IDocumentStore documentStore)
         {
             using (var session = documentStore.QuerySession())
             {
-                return session.Query<User>().ToArray();
+                return session.Query<UserWithGuid>().ToArray();
             }
         }
 
@@ -98,7 +70,7 @@ namespace Marten.Testing.Schema.Sequences
         {
             using (var session = documentStore.OpenSession())
             {
-                session.Store(new User { LastName = lastName });
+                session.Store(new UserWithGuid { LastName = lastName });
                 session.SaveChanges();
             }
         }
