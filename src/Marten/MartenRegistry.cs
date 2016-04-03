@@ -24,7 +24,7 @@ namespace Marten
         public DocumentMappingExpression<T> For<T>()
         {
             return new DocumentMappingExpression<T>(this);
-        } 
+        }
 
         private Action<StoreOptions> alter
         {
@@ -52,6 +52,14 @@ namespace Marten
         public void Include(MartenRegistry registry)
         {
             alter = registry.Alter;
+        }
+
+        /// <summary>
+        /// Overrides the strategy used to generate the ids.
+        /// </summary>
+        public void DefaultIdStrategy(Func<IDocumentMapping, StoreOptions, IIdGeneration> strategy)
+        {
+            alter = x => x.DefaultIdStrategy = strategy;
         }
 
         public class DocumentMappingExpression<T>
@@ -151,6 +159,15 @@ namespace Marten
             public DocumentMappingExpression<T> DatabaseSchemaName(string databaseSchemaName)
             {
                 alter = mapping => mapping.DatabaseSchemaName = databaseSchemaName;
+                return this;
+            }
+
+            /// <summary>
+            /// Overrides the stragtegy used for id generation.
+            /// </summary>
+            public DocumentMappingExpression<T> IdStrategy(IIdGeneration idStrategy)
+            {
+                alter = mapping => mapping.IdStrategy = idStrategy;
                 return this;
             }
 
