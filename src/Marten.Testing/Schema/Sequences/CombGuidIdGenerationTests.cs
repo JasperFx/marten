@@ -37,6 +37,15 @@ namespace Marten.Testing.Schema.Sequences
             public string UserName { get; set; }
         }
 
+        public class UserWithString
+        {
+            public Int32 Id { get; set; }
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+            public bool Internal { get; set; }
+            public string UserName { get; set; }
+        }
+
         [Fact]
         public void When_ids_are_generated_the_first_id_should_be_less_than_the_second()
         {
@@ -100,6 +109,75 @@ namespace Marten.Testing.Schema.Sequences
             {
                 session.Store(new User { LastName = lastName });
                 session.SaveChanges();
+            }
+        }
+
+
+        [Fact]
+        public void When_ids_are_generated_verify_the_performance()
+        {
+            using (var container = ContainerFactory.Default())
+            {
+                container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
+            }
+
+            CheckPerformance<User>("Comb Guid", options =>
+            {
+                options.DefaultIdStrategy = new CombGuidIdGeneration();
+                options.MappingFor(typeof(User)).Alias = "UserWithComb";
+            });
+
+            CheckPerformance<User>("Guid", options =>
+            {
+                options.MappingFor(typeof(User)).Alias = "UserWithGuid";
+            });
+
+            CheckPerformance<UserWithInt>("Int", options =>
+            {
+                options.MappingFor(typeof(UserWithInt)).Alias = "UserWithInt";
+            });
+
+            CheckPerformance<UserWithString>("Int", options =>
+            {
+                options.DefaultIdStrategy = new IdentityKeyGeneration();
+                options.MappingFor(typeof(UserWithString)).Alias = "UserWithInt";
+            });
+        }
+
+        private double CheckPerformance<T>(string title, Action<StoreOptions> options) where T : new()
+        {
+            using (var container = ContainerFactory.Configure(options))
+            {
+                var store = container.GetInstance<IDocumentStore>();
+
+                //ramp up
+                Insert<T>(store, 10);
+
+                //measure
+                var numberOfDocuments = 10000000;
+                var start = DateTime.Now;
+                Insert<T>(store, numberOfDocuments);
+                var totalMilliseconds = (DateTime.Now - start).TotalMilliseconds;
+
+                _output.WriteLine(title + ": " + numberOfDocuments + " " + totalMilliseconds);
+
+                return totalMilliseconds;
+            }
+        }
+
+        private void Insert<T>(IDocumentStore store, int number) where T : new()
+        {
+            var batch = 1;
+            for (var i = 0; i < number / batch; i++)
+            {
+                using (var session = store.OpenSession())
+                {
+                    for (var j = 0; j < batch; j++)
+                    {
+                        session.Store(new T());
+                    }
+                    session.SaveChanges();
+                }
             }
         }
     }
