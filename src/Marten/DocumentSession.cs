@@ -71,7 +71,10 @@ namespace Marten
 
         public void DeleteWhere<T>(Expression<Func<T, bool>> expression)
         {
-            _unitOfWork.Delete<T>(expression);
+            var queryable = Query<T>().Where(expression).As<MartenQueryable<T>>();
+            var query = queryable.ToDocumentQuery();
+
+            _unitOfWork.Delete<T>(query);
         }
 
         public void Store<T>(params T[] entities) 

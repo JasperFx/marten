@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using Marten.Linq;
 using Marten.Schema;
@@ -18,13 +19,13 @@ namespace Marten.Services
             Document = document;
         }
 
-        public Delete(Type documentType, Expression query)
+        public Delete(Type documentType, DocumentQuery query)
         {
             DocumentType = documentType;
             Query = query;
         }
 
-        public Expression Query { get; set; }
+        public DocumentQuery Query { get; set; }
 
         public void Configure(MartenExpressionParser parser, IDocumentStorage storage, IDocumentMapping mapping, UpdateBatch batch)
         {
@@ -34,9 +35,7 @@ namespace Marten.Services
             }
             else
             {
-                var where = parser.ParseWhereFragment(mapping, Query);
-                where = mapping.FilterDocuments(where);
-
+                var where = Query.BuildWhereClause();
                 batch.DeleteWhere(mapping.QualifiedTableName, where);
             }
             

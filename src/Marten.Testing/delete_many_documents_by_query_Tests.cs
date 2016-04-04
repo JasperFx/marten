@@ -36,6 +36,30 @@ namespace Marten.Testing
         }
 
         [Fact]
+        public void can_delete_by_query_with_complex_where_clauses()
+        {
+            var targets = Target.GenerateRandomData(50).ToArray();
+            for (var i = 0; i < 15; i++)
+            {
+                targets[i].Double = 578;
+            }
+
+            theStore.BulkInsert(targets);
+
+            var current = new IntDoc {Id = 5};
+
+            theSession.DeleteWhere<Target>(x => x.Double == 578 && x.Number == current.Id);
+
+            theSession.SaveChanges();
+
+            theSession.Query<Target>().Where(x => x.Double == 578 && x.Number == current.Id).Count()
+                .ShouldBe(0);
+
+        }
+
+        
+
+        [Fact]
         public void in_a_mix_with_other_commands()
         {
             var targets = Target.GenerateRandomData(50).ToArray();

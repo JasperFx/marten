@@ -63,7 +63,7 @@ namespace Marten.Linq
         {
             var sql = "select (count(*) > 0) as result from " + _mapping.QualifiedTableName + " as d";
 
-            var where = buildWhereClause();
+            var where = BuildWhereClause();
 
             if (@where != null) sql += " where " + @where.ToSql(command);
 
@@ -74,7 +74,7 @@ namespace Marten.Linq
         {
             var sql = "select count(*) as number from " + _mapping.QualifiedTableName + " as d";
 
-            var where = buildWhereClause();
+            var where = BuildWhereClause();
 
             if (@where != null) sql += " where " + @where.ToSql(command);
 
@@ -87,7 +87,7 @@ namespace Marten.Linq
             var propToSum = _mapping.JsonLocator(_query.SelectClause.Selector);
             var sql = string.Format(selectFormat, propToSum, _mapping.QualifiedTableName);
 
-            var where = buildWhereClause();
+            var where = BuildWhereClause();
 
             if (@where != null) sql += " where " + @where.ToSql(command);
 
@@ -139,7 +139,7 @@ namespace Marten.Linq
                 sql = $"{sql} {Includes.Select(x => x.JoinText).Join(" ")}";
             }
 
-            var where = buildWhereClause();
+            var where = BuildWhereClause();
             var orderBy = toOrderClause();
 
             if (@where != null) sql += " where " + @where.ToSql(command);
@@ -221,7 +221,7 @@ namespace Marten.Linq
                 : locator + " desc";
         }
 
-        private IWhereFragment buildWhereClause()
+        public IWhereFragment BuildWhereClause()
         {
             var wheres = _query.BodyClauses.OfType<WhereClause>().ToArray();
             if (wheres.Length == 0) return _mapping.DefaultWhereFragment();

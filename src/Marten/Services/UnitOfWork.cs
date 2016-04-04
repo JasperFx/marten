@@ -217,9 +217,9 @@ namespace Marten.Services
             return InsertsFor<T>().Union(UpdatesFor<T>());
         }
 
-        public void Delete<T>(Expression<Func<T, bool>> expression)
+        public void Delete<T>(DocumentQuery query)
         {
-            var delete = new Delete(typeof(T), expression);
+            var delete = new Delete(typeof(T), query);
             var list = _deletes.GetOrAdd(typeof(T), _ => new List<Delete>());
             list.Add(delete);
         }

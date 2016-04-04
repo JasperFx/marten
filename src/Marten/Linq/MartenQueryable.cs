@@ -30,7 +30,7 @@ namespace Marten.Linq
             return executor.ExecuteExplain<T>(model);
         }
 
-    public Task<IEnumerable<T>> ExecuteCollectionAsync(CancellationToken token)
+        public Task<IEnumerable<T>> ExecuteCollectionAsync(CancellationToken token)
         {
             var queryProvider = (IMartenQueryProvider) Provider;
             return queryProvider.ExecuteCollectionAsync<T>(Expression, token);
@@ -57,12 +57,13 @@ namespace Marten.Linq
             }
         }
 
-        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, JoinType joinType = JoinType.Inner) where TInclude : class
+        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback,
+            JoinType joinType = JoinType.Inner) where TInclude : class
         {
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var schema = executor.Schema;
 
-            schema.EnsureStorageExists(typeof(TInclude));
+            schema.EnsureStorageExists(typeof (TInclude));
 
             var mapping = schema.MappingFor(typeof (T));
             var included = schema.MappingFor(typeof (TInclude));
@@ -79,12 +80,14 @@ namespace Marten.Linq
         }
 
 
-        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list, JoinType joinType = JoinType.Inner) where TInclude : class
+        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list,
+            JoinType joinType = JoinType.Inner) where TInclude : class
         {
             return Include<TInclude>(idSource, list.Fill);
         }
 
-        public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource, IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner) where TInclude : class
+        public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
+            IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner) where TInclude : class
         {
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var schema = executor.Schema;
@@ -101,6 +104,17 @@ namespace Marten.Linq
             });
         }
 
+        public DocumentQuery ToDocumentQuery()
+        {
+            var model = new MartenQueryParser().GetParsedQuery(Expression);
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+            var schema = executor.Schema;
+            var rootType = model.MainFromClause.ItemType;
+            var mapping = schema.MappingFor(rootType);
+
+            return new DocumentQuery(mapping, model, executor.ExpressionParser);
+        }
+
         public NpgsqlCommand BuildCommand(FetchType fetchType)
         {
             // Need to do each fetch type
@@ -109,8 +123,9 @@ namespace Marten.Linq
             var schema = executor.Schema;
             var rootType = model.MainFromClause.ItemType;
             var mapping = schema.MappingFor(rootType);
-            
+
             var query = new DocumentQuery(mapping, model, executor.ExpressionParser);
+
             var parser = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             query.Includes.AddRange(parser.Includes);
 
@@ -134,7 +149,6 @@ namespace Marten.Linq
                     model.ResultOperators.Add(new TakeResultOperator(Expression.Constant(1)));
                     query.ConfigureCommand<T>(schema, cmd);
                     break;
-
             }
 
             return cmd;
