@@ -180,6 +180,8 @@ namespace Marten.Linq
 
                 return base.VisitMember(expression);
             }
+
+
         }
     }
 }

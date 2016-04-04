@@ -26,6 +26,37 @@ namespace Marten.Linq
             _parser = parser;
         }
 
+        private IEnumerable<ResultOperatorBase> allResultOperators()
+        {
+            foreach (var @operator in _query.ResultOperators)
+            {
+                yield return @operator;
+            }
+
+            if (_query.MainFromClause.FromExpression is SubQueryExpression)
+            {
+                foreach (var @operator in _query.MainFromClause.FromExpression.As<SubQueryExpression>().QueryModel.ResultOperators)
+                {
+                    yield return @operator;
+                }
+            }
+        }
+
+        private T findOperator<T>() where T : ResultOperatorBase
+        {
+            return allResultOperators().OfType<T>().FirstOrDefault();
+        }
+
+        private IEnumerable<T> findOperators<T>() where T : ResultOperatorBase
+        {
+            return allResultOperators().OfType<T>();
+        }
+
+        private bool hasOperator<T>() where T : ResultOperatorBase
+        {
+            return allResultOperators().OfType<T>().Any();
+        }
+
         public Type SourceDocumentType => _query.MainFromClause.ItemType;
 
         public void ConfigureForAny(NpgsqlCommand command)
@@ -83,9 +114,11 @@ namespace Marten.Linq
             ConfigureAggregateCommand(command, "select avg({0}) as number from {1} as d");
         }
 
+
+
         public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, NpgsqlCommand command)
         {
-            if (_query.ResultOperators.OfType<LastResultOperator>().Any())
+            if (hasOperator<LastResultOperator>())
             {
                 throw new InvalidOperationException("Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
             }
@@ -144,8 +177,7 @@ namespace Marten.Linq
 
         private string appendOffset(string sql)
         {
-            var take =
-                _query.ResultOperators.OfType<SkipResultOperator>().OrderByDescending(x => x.Count).FirstOrDefault();
+            var take = findOperators<SkipResultOperator>().OrderByDescending(x => x.Count).FirstOrDefault();
 
             return take == null ? sql : sql + " OFFSET " + take.Count + " ";
         }
@@ -153,19 +185,19 @@ namespace Marten.Linq
         private string appendLimit(string sql)
         {
             var take =
-                _query.ResultOperators.OfType<TakeResultOperator>().OrderByDescending(x => x.Count).FirstOrDefault();
+                findOperators<TakeResultOperator>().OrderByDescending(x => x.Count).FirstOrDefault();
 
             string limitNumber = null;
             if (take != null)
             {
                 limitNumber = take.Count.ToString();
             }
-            else if (_query.ResultOperators.Any(x => x is FirstResultOperator))
+            else if (hasOperator<FirstResultOperator>())
             {
                 limitNumber = "1";
             }
             // Got to return more than 1 to make it fail if there is more than one in the db
-            else if (_query.ResultOperators.Any(x => x is SingleResultOperator))
+            else if (hasOperator<SingleResultOperator>())
             {
                 limitNumber = "2";
             }
