@@ -16,10 +16,10 @@ namespace Marten.Testing
         public void get_the_sql_locator_for_the_Id_member()
         {
             DocumentMapping.For<User>().FieldFor("Id")
-                .SqlLocator.ShouldBe("id");
+                .SqlLocator.ShouldBe("d.id");
 
             DocumentMapping.For<FieldId>().FieldFor("id")
-                .SqlLocator.ShouldBe("id");
+                .SqlLocator.ShouldBe("d.id");
         }
 
         public class FieldId
