@@ -177,7 +177,7 @@ namespace Marten.Linq
 
         private string appendOffset(string sql)
         {
-            var take = findOperators<SkipResultOperator>().OrderByDescending(x => x.Count).FirstOrDefault();
+            var take = findOperators<SkipResultOperator>().LastOrDefault();
 
             return take == null ? sql : sql + " OFFSET " + take.Count + " ";
         }
@@ -185,7 +185,7 @@ namespace Marten.Linq
         private string appendLimit(string sql)
         {
             var take =
-                findOperators<TakeResultOperator>().OrderByDescending(x => x.Count).FirstOrDefault();
+                findOperators<TakeResultOperator>().LastOrDefault();
 
             string limitNumber = null;
             if (take != null)
