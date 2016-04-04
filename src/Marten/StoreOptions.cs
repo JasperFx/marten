@@ -138,6 +138,11 @@ namespace Marten
         public int UpdateBatchSize { get; set; } = 500;
 
         /// <summary>
+        /// Set the default Id strategy for the document mapping.
+        /// </summary>
+        public Func<IDocumentMapping, StoreOptions, IIdGeneration> DefaultIdStrategy { get; set; }
+
+        /// <summary>
         /// Force Marten to create document mappings for type T
         /// </summary>
         /// <typeparam name="T"></typeparam>

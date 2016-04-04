@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -140,7 +141,7 @@ namespace Marten.Testing.Schema
         public void generate_table_with_foreign_key()
         {
             var mapping = DocumentMapping.For<Issue>();
-            var foreignKey = mapping.AddForeignKey("AssigneeId", typeof(User));
+            var foreignKey = mapping.AddForeignKey("AssigneeId", typeof (User));
 
             var builder = new StringWriter();
 
@@ -167,11 +168,11 @@ namespace Marten.Testing.Schema
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
             {
-                container.GetInstance<DocumentCleaner>().CompletelyRemove(typeof(User));
+                container.GetInstance<DocumentCleaner>().CompletelyRemove(typeof (User));
 
                 var schema = container.GetInstance<IDocumentSchema>();
 
-                var mapping = schema.MappingFor(typeof(User)).As<DocumentMapping>();
+                var mapping = schema.MappingFor(typeof (User)).As<DocumentMapping>();
                 mapping.DuplicateField("FirstName");
 
                 var storage = schema.StorageFor(typeof (User));
@@ -389,6 +390,22 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void use_custom_default_id_generation_for_long_id()
+        {
+            DocumentMapping.For<LongId>(idGeneration: (m, o) => new CustomIdGeneration())
+                .IdStrategy.ShouldBeOfType<CustomIdGeneration>();
+        }
+
+        [Fact]
+        public void use_custom_id_generation_on_mapping_shoudl_be_settable()
+        {
+            var mapping = DocumentMapping.For<LongId>();
+
+            mapping.IdStrategy = new CustomIdGeneration();
+            mapping.IdStrategy.ShouldBeOfType<CustomIdGeneration>();
+        }
+
+        [Fact]
         public void can_replace_hilo_def_settings()
         {
             var mapping = DocumentMapping.For<LongId>();
@@ -400,7 +417,7 @@ namespace Marten.Testing.Schema
             var sequence = mapping.IdStrategy.ShouldBeOfType<HiloIdGeneration>();
             sequence.MaxLo.ShouldBe(newDef.MaxLo);
             sequence.Increment.ShouldBe(newDef.Increment);
-            
+
         }
 
         [Fact]
@@ -461,11 +478,23 @@ namespace Marten.Testing.Schema
             [Searchable]
             public string Name { get; set; }
 
-            [Searchable]
-            public string OtherName;
+            [Searchable] public string OtherName;
 
             public string OtherProp;
             public string OtherField { get; set; }
+        }
+
+        public class CustomIdGeneration : IIdGeneration
+        {
+            public IEnumerable<StorageArgument> ToArguments()
+            {
+                yield break;
+            }
+
+            public string AssignmentBodyCode(MemberInfo idMember)
+            {
+                return null;
+            }
         }
     }
 }

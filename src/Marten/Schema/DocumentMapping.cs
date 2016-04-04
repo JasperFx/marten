@@ -21,9 +21,9 @@ namespace Marten.Schema
 {
     public class DocumentMapping : IDocumentMapping
     {
-        public static DocumentMapping For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName)
+        public static DocumentMapping For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName, Func<IDocumentMapping, StoreOptions, IIdGeneration> idGeneration = null)
         {
-            var storeOptions = new StoreOptions { DatabaseSchemaName = databaseSchemaName };
+            var storeOptions = new StoreOptions { DatabaseSchemaName = databaseSchemaName, DefaultIdStrategy = idGeneration };
 
             return new DocumentMapping(typeof(T), storeOptions);
         }
@@ -55,12 +55,9 @@ namespace Marten.Schema
             Alias = defaultDocumentAliasName(documentType);
 
             IdMember = determineId(documentType);
-
             _fields[IdMember.Name] = new IdField(IdMember);
 
-            
-
-            assignIdStrategy(documentType, storeOptions);
+            IdStrategy = defineIdStrategy(documentType, storeOptions);
 
             documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
 
@@ -188,31 +185,35 @@ namespace Marten.Schema
 
         public IList<ForeignKeyDefinition> ForeignKeys { get; } = new List<ForeignKeyDefinition>();
 
-        private void assignIdStrategy(Type documentType, StoreOptions options)
+        private IIdGeneration defineIdStrategy(Type documentType, StoreOptions options)
         {
-            var idType = IdMember.GetMemberType();
-            
             if (!CanSetIdMember())
             {
-                IdStrategy = new NoOpIdGeneration();
+                return new NoOpIdGeneration();
             }
-            else if (idType == typeof(string))
+
+            var strategy = options.DefaultIdStrategy?.Invoke(this, options);
+            if (strategy != null)
             {
-                IdStrategy = new StringIdGeneration();
+                return strategy;
             }
-            else if (idType == typeof(Guid))
+            
+            var idType = IdMember.GetMemberType();
+            if (idType == typeof(string))
             {
-                IdStrategy = new GuidIdGeneration();
+                return new StringIdGeneration();
             }
-            else if (idType == typeof(int) || idType == typeof(long))
+            if (idType == typeof(Guid))
             {
-                IdStrategy = new HiloIdGeneration(documentType, options.HiloSequenceDefaults);
+                return new GuidIdGeneration();
             }
-            else
+            if (idType == typeof(int) || idType == typeof(long))
             {
-                throw new ArgumentOutOfRangeException(nameof(documentType),
-                    $"Marten cannot use the type {idType.FullName} as the Id for a persisted document. Use int, long, Guid, or string");
+                return new HiloIdGeneration(documentType, options.HiloSequenceDefaults);
             }
+
+            throw new ArgumentOutOfRangeException(nameof(documentType),
+                $"Marten cannot use the type {idType.FullName} as the Id for a persisted document. Use int, long, Guid, or string");
         }
 
         private bool CanSetIdMember()
@@ -324,7 +325,7 @@ namespace Marten.Schema
 
         public IEnumerable<SubClassMapping> SubClasses => _subClasses;
 
-        public IIdGeneration IdStrategy { get; private set; } = new StringIdGeneration();
+        public IIdGeneration IdStrategy { get; set; }
 
         public string QualifiedUpsertName => $"{DatabaseSchemaName}.{UpsertName}";
         public string UpsertName => $"{UpsertPrefix}{_alias}";

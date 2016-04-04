@@ -44,7 +44,12 @@ namespace Marten.Events
             set { throw new NotSupportedException("The DatabaseSchemaName of Event can't be set."); }
         }
 
-        public IIdGeneration IdStrategy { get; }
+        public IIdGeneration IdStrategy
+        {
+            get { throw new NotSupportedException("The IdStrategy of Event can't be get."); }
+            set { throw new NotSupportedException("The IdStrategy of Event can't be set."); }
+        }
+
         public MemberInfo IdMember { get; }
         public string[] SelectFields()
         {
