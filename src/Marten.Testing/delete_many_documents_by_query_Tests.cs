@@ -83,5 +83,30 @@ namespace Marten.Testing
 
             theSession.Query<User>().Count().ShouldBe(3);
         }
+
+        public class FailureInLife
+        {
+            public int Id { get; set; }
+            public int What { get; set; }
+        }
+
+        [Fact]
+        public void can_delete_by_query_multiple()
+        {
+
+            var targets = new[] { new FailureInLife { Id = 1, What = 2 } };
+
+            theStore.BulkInsert(targets);
+            var id = 1;
+            var what = 2;
+
+            theSession.DeleteWhere<FailureInLife>(x => x.Id == id && x.What == what);
+
+            theSession.SaveChanges();
+            // ENDSAMPLE
+
+            theSession.Query<FailureInLife>().Count().ShouldBe(0);
+
+        }
     }
 }
