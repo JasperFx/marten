@@ -88,6 +88,7 @@
     <Compile Include="Linq\TargetObject.cs" />
     <Compile Include="Linq\WhereClauseVisitor.cs" />
     <Compile Include="Linq\WholeDocumentSelector.cs" />
+    <Compile Include="Projections\ProjectionClasses.cs" />
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\ColumnValue.cs" />
     <Compile Include="Schema\CombGuidIdGeneration.cs" />
