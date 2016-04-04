@@ -178,11 +178,8 @@
     <Compile Include="Schema\Hierarchies\generating_code_and_sql_for_hierarchy_smoke_Tests.cs" />
     <Compile Include="Schema\Hierarchies\HierarchyArgumentTests.cs" />
     <Compile Include="Schema\IndexDefinitionTests.cs" />
-<<<<<<< HEAD
     <Compile Include="Schema\Sequences\Bug_255_Hilo_table_being_erroneously_recreated.cs" />
-=======
     <Compile Include="Schema\Sequences\Users.cs" />
->>>>>>> Add IdentityKey generator
     <Compile Include="Schema\Sequences\DocumentIdStrategyTests.cs" />
     <Compile Include="Schema\Sequences\CombGuidIdGenerationTests.cs" />
     <Compile Include="Schema\Sequences\IdentityKeyGenerationTests.cs" />
