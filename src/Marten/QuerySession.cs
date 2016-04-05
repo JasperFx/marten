@@ -50,6 +50,18 @@ namespace Marten
             return new MartenQueryable<T>(queryProvider);
         }
 
+        public TOut Query<TDoc, TOut>(ISingleItemCompiledQuery<TDoc, TOut> query)
+        {
+            //precompiled first use and cached by type, parameters will be substituted for current query
+            //via precompiled func's as well.
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<TOut> Query<TDoc, TOut>(IMultipleItemCompiledQuery<TDoc, TOut> query)
+        {
+            throw new NotImplementedException();
+        }
+
         public IEnumerable<T> Query<T>(string sql, params object[] parameters)
         {
             using (var cmd = BuildCommand<T>(sql, parameters))
