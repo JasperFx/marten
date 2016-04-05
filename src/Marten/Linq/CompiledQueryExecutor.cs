@@ -55,7 +55,7 @@ namespace Marten.Linq
             var cachedQuery = GetOrAddCachedQuery<TDoc, TOut>(query.GetType(), query.QueryIs, queryable, executor);
             var command = PrepareCommand(query, cachedQuery);
             var results = await executor.Connection.ResolveAsync(command, cachedQuery.Selector.As<ISelector<TOut>>(), executor.IdentityMap, token).ConfigureAwait(false);
-            return results.Single();
+            return results.FirstOrDefault();
         }
 
         public TOut ExecuteQuery<TDoc, TOut>(IQuerySession session, ICompiledQuery<TDoc, TOut> query)
@@ -64,7 +64,7 @@ namespace Marten.Linq
             var executor = queryable.Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var cachedQuery = GetOrAddCachedQuery<TDoc, TOut>(query.GetType(), query.QueryIs, queryable, executor);
             var command = PrepareCommand(query, cachedQuery);
-            return executor.Connection.Resolve(command, cachedQuery.Selector.As<ISelector<TOut>>(), executor.IdentityMap).Single();
+            return executor.Connection.Resolve(command, cachedQuery.Selector.As<ISelector<TOut>>(), executor.IdentityMap).FirstOrDefault();
         }
 
         private NpgsqlCommand PrepareCommand(object query, CachedQuery cachedQuery)
