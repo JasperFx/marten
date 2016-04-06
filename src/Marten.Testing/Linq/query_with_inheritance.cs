@@ -18,7 +18,9 @@ namespace Marten.Testing.Linq
         public string Ability { get; set; }
         public Guid Id { get; set; }
     }
-    public class PapaSmurf : Smurf{}
+    public interface IPapaSmurf : ISmurf{}
+    public class PapaSmurf : Smurf, IPapaSmurf{}
+    public class PapySmurf : Smurf, IPapaSmurf{}
     public class BrainySmurf : PapaSmurf{}
 
     public class query_with_inheritance : DocumentSessionFixture<NulloIdentityMap>
@@ -28,7 +30,7 @@ namespace Marten.Testing.Linq
             StoreOptions(_ =>
             {
                 _.Schema.For<ISmurf>()
-                    .AddSubclassHierarchy(typeof(Smurf), typeof(PapaSmurf), typeof(BrainySmurf));
+                    .AddSubclassHierarchy(typeof(Smurf), typeof(PapaSmurf), typeof(PapySmurf), typeof(IPapaSmurf), typeof(BrainySmurf));
 
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -62,6 +64,33 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             theSession.Query<PapaSmurf>().Count().ShouldBe(2);
+        }
+
+        [Fact]
+        public void get_all_subclasses_of_a_subclass_with_where()
+        {
+            var smurf = new Smurf {Ability = "Follow the herd"};
+            var papa = new PapaSmurf {Ability = "Lead"};
+            var brainy = new BrainySmurf{Ability = "Invent"};
+            theSession.Store(smurf,papa,brainy);
+
+            theSession.SaveChanges();
+
+            theSession.Query<PapaSmurf>().Count(s=>s.Ability == "Invent").ShouldBe(1);
+        }
+
+        [Fact]
+        public void get_all_subclasses_of_an_interface()
+        {
+            var smurf = new Smurf { Ability = "Follow the herd" };
+            var papa = new PapaSmurf { Ability = "Lead" };
+            var papy = new PapySmurf { Ability = "Lead" };
+            var brainy = new BrainySmurf { Ability = "Invent" };
+            theSession.Store(smurf, papa, brainy, papy);
+
+            theSession.SaveChanges();
+
+            theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
         }
     }
 }

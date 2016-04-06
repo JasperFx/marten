@@ -30,7 +30,7 @@ namespace Marten.Schema
             : this(documentType, parent, storeOptions)
         {
             Aliases = otherSubclassTypes
-                    .Where(t => t.IsSubclassOf(documentType) || t == documentType)
+                    .Where(t => t.IsSubclassOf(documentType) || (documentType.IsInterface && t.GetInterfaces().Contains(documentType)) || t == documentType)
                     .Select(GetTypeMartenAlias).Concat(Aliases).ToArray();
         }
 

@@ -74,7 +74,7 @@ namespace Marten.Schema
 
         private static MemberInfo determineId(Type documentType)
         {
-            var idMember = (MemberInfo) documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
+            var idMember = (MemberInfo) GetProperties(documentType).FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
                            ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
 
             if (idMember == null)
@@ -84,6 +84,13 @@ namespace Marten.Schema
             }
 
             return idMember;
+        }
+
+        private static PropertyInfo[] GetProperties(Type type)
+        {
+            return type.IsInterface ? (new [] { type })
+                .Concat(type.GetInterfaces())
+                .SelectMany(i => i.GetProperties()).ToArray() : type.GetProperties();
         }
 
         public void AddSubClass(Type subclassType, IEnumerable<Type> otherSubclassTypes)
