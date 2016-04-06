@@ -1,17 +1,23 @@
 ﻿using System;
+using System.Threading;
 
 namespace Marten.Testing
 {
     public class TestingDocumentStore : DocumentStore
     {
         public static int SchemaCount = 0;
+        private static object _locker = new object();
 
         public new static IDocumentStore For(Action<StoreOptions> configure)
         {
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
 
-            options.DatabaseSchemaName = "Test_" + SchemaCount++;
+            lock (_locker)
+            {
+                options.DatabaseSchemaName = "Test_" + SchemaCount++;
+            }
+            
 
             configure(options);
 
