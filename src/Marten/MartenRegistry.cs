@@ -233,6 +233,16 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Programmatically directs Marten to map all the subclasses of <typeparamref name="T"/> to a hierarchy of types
+            /// </summary>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> AddSubclassHierarchy(params Type[] allSubclassTypes)
+            {
+                alter = mapping => Array.ForEach(allSubclassTypes, subclassType => mapping.AddSubClass(subclassType, allSubclassTypes.Except(new [] {subclassType})));
+                return this;
+            }
+
 
             public DocumentMappingExpression<T> AddSubclass<TSubclass>(string alias = null) where TSubclass : T
             {

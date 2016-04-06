@@ -86,16 +86,29 @@ namespace Marten.Schema
             return idMember;
         }
 
+        public void AddSubClass(Type subclassType, IEnumerable<Type> otherSubclassTypes)
+        {
+            VerifyIsSubclass(subclassType);
+
+            var subclass = new SubClassMapping(subclassType, this, _storeOptions, otherSubclassTypes);
+            _subClasses.Add(subclass);
+        }
+
         public void AddSubClass(Type subclassType, string alias = null)
+        {
+            VerifyIsSubclass(subclassType);
+
+            var subclass = new SubClassMapping(subclassType, this, _storeOptions, alias);
+            _subClasses.Add(subclass);
+        }
+
+        private void VerifyIsSubclass(Type subclassType)
         {
             if (!subclassType.CanBeCastTo(DocumentType))
             {
                 throw new ArgumentOutOfRangeException(nameof(subclassType),
                     $"Type '{subclassType.GetFullName()}' cannot be cast to '{DocumentType.GetFullName()}'");
             }
-
-            var subclass = new SubClassMapping(subclassType, this, _storeOptions, alias);
-            _subClasses.Add(subclass);
         }
 
         public string Alias
@@ -328,6 +341,7 @@ namespace Marten.Schema
         public IIdGeneration IdStrategy { get; set; }
 
         public string QualifiedUpsertName => $"{DatabaseSchemaName}.{UpsertName}";
+
         public string UpsertName => $"{UpsertPrefix}{_alias}";
 
         public Type DocumentType { get; }
@@ -353,9 +367,10 @@ namespace Marten.Schema
 
         public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;
 
-        public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();        
+        public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();
 
         private static readonly Regex _aliasSanitizer = new Regex("<|>", RegexOptions.Compiled);
+
         private static string defaultDocumentAliasName(Type documentType)
         {
             var nameToAlias = documentType.Name;

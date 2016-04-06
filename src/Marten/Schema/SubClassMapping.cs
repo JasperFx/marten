@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Linq;
@@ -21,13 +22,28 @@ namespace Marten.Schema
             DocumentType = documentType;
             _inner = new DocumentMapping(documentType, storeOptions);
             _parent = parent;
-            Alias = alias ?? documentType.GetTypeName().Replace(".", "_").SplitCamelCase().Replace(" ", "_").ToLowerInvariant();
+            Alias = alias ?? GetTypeMartenAlias(documentType);
+            Aliases = new[] {Alias};
+        }
+
+        public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions, IEnumerable<Type> otherSubclassTypes)
+            : this(documentType, parent, storeOptions)
+        {
+            Aliases = otherSubclassTypes
+                    .Where(t => t.IsSubclassOf(documentType) || t == documentType)
+                    .Select(GetTypeMartenAlias).Concat(Aliases).ToArray();
+        }
+
+        private static string GetTypeMartenAlias(Type documentType)
+        {
+            return documentType.GetTypeName().Replace(".", "_").SplitCamelCase().Replace(" ", "_").ToLowerInvariant();
         }
 
 
         public DocumentMapping Parent => _parent;
 
 
+        public string[] Aliases { get; }
         public string Alias { get; set; }
 
         public string UpsertName => _parent.QualifiedUpsertName;
@@ -74,7 +90,7 @@ namespace Marten.Schema
 
         public IWhereFragment DefaultWhereFragment()
         {
-            return new WhereFragment($"d.{DocumentMapping.DocumentTypeColumn} = '{Alias}'");
+            return new WhereFragment(Aliases.Select(a=>$"d.{DocumentMapping.DocumentTypeColumn} = '{a}'").ToArray().Join(" or "));
         }
 
         public IDocumentStorage BuildStorage(IDocumentSchema schema)
