@@ -14,7 +14,17 @@ namespace Marten
     /// </summary>
     public class MartenRegistry
     {
+        private readonly StoreOptions _options;
         private readonly IList<Action<StoreOptions>> _alterations = new List<Action<StoreOptions>>();
+
+        public MartenRegistry()
+        {
+        }
+
+        public MartenRegistry(StoreOptions options)
+        {
+            _options = options;
+        }
 
         /// <summary>
         /// Configure a single document type
@@ -28,12 +38,15 @@ namespace Marten
 
         private Action<StoreOptions> alter
         {
-            set { _alterations.Add(value); }
-        }
+            set
+            {
+                if (_options != null)
+                {
+                    value(_options);
+                }
 
-        internal void Alter(StoreOptions schema)
-        {
-            _alterations.Each(x => x(schema));
+                _alterations.Add(value);
+            }
         }
 
         /// <summary>
@@ -42,7 +55,11 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         public void Include<T>() where T : MartenRegistry, new()
         {
-            alter = x => new T().Alter(x);
+            alter = x =>
+            {
+                var registry = new T();
+                registry._alterations.Each(a => alter = a);
+            };
         }
 
         /// <summary>
@@ -51,7 +68,7 @@ namespace Marten
         /// <param name="registry"></param>
         public void Include(MartenRegistry registry)
         {
-            alter = registry.Alter;
+            registry._alterations.Each(a => alter = a);
         }
 
         /// <summary>
@@ -180,7 +197,9 @@ namespace Marten
                         value(o.MappingFor(typeof (T)));
                     };
 
-                    _parent._alterations.Add(alteration);
+
+                    _parent.alter = alteration;
+                   
                 }
             }
 

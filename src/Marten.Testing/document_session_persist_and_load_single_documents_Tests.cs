@@ -14,7 +14,7 @@ namespace Marten.Testing
     public class document_session_persist_and_load_single_documents_with_dirty_tracking_Tests : document_session_persist_and_load_single_documents_Tests<DirtyTrackingIdentityMap> { }
 
 
-
+    [Collection("DefaultSchema")]
     public abstract class document_session_persist_and_load_single_documents_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
     {
         [Fact]
@@ -27,18 +27,18 @@ namespace Marten.Testing
 
             theSession.SaveChanges();
 
-            var runner = theContainer.GetInstance<IManagedConnection>();
-            
-            var json = runner.QueryScalar<string>("select data from mt_doc_user where id = '{0}'".ToFormat(user.Id));
+            using (var runner = theStore.Advanced.OpenConnection())
+            {
+                var json = runner.QueryScalar<string>("select data from mt_doc_user where id = '{0}'".ToFormat(user.Id));
 
-            json.ShouldNotBeNull();
+                json.ShouldNotBeNull();
 
-            var loadedUser = new JsonNetSerializer().FromJson<User>(json);
+                var loadedUser = new JsonNetSerializer().FromJson<User>(json);
 
-            user.ShouldNotBeSameAs(loadedUser);
-            loadedUser.FirstName.ShouldBe(user.FirstName);
-            loadedUser.LastName.ShouldBe(user.LastName);
-            
+                user.ShouldNotBeSameAs(loadedUser);
+                loadedUser.FirstName.ShouldBe(user.FirstName);
+                loadedUser.LastName.ShouldBe(user.LastName);
+            }
         }
 
         [Fact]
@@ -50,7 +50,7 @@ namespace Marten.Testing
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session2 = theContainer.GetInstance<IDocumentStore>().OpenSession())
+            using (var session2 = theStore.OpenSession())
             {
                 session2.ShouldNotBeSameAs(theSession);
 
@@ -71,7 +71,7 @@ namespace Marten.Testing
             theSession.Store(user);
             await theSession.SaveChangesAsync();
 
-            using (var session2 = theContainer.GetInstance<IDocumentStore>().OpenSession())
+            using (var session2 = theStore.OpenSession())
             {
                 session2.ShouldNotBeSameAs(theSession);
 
@@ -105,7 +105,7 @@ namespace Marten.Testing
             theSession.Store(user5);
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
+            using (var session = theStore.OpenSession())
             {
                 var users = session.LoadMany<User>().ById(user2.Id, user3.Id, user4.Id);
                 users.Count().ShouldBe(3);
@@ -131,7 +131,7 @@ namespace Marten.Testing
             await theSession.SaveChangesAsync();
             // ENDSAMPLE
 
-            var store = theContainer.GetInstance<IDocumentStore>();
+            var store = theStore;
 
             // SAMPLE: load_by_id_array_async
             using (var session = store.OpenSession())

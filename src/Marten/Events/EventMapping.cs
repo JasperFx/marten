@@ -108,9 +108,12 @@ namespace Marten.Events
 
     public class EventMapping<T> : EventMapping, IDocumentStorage, IResolver<T> where T : class, IEvent
     {
+        private readonly string _tableName = "mt_events";
+
         public EventMapping(EventGraph parent) : base(parent, typeof(T))
         {
-
+            var schemaName = parent.DatabaseSchemaName;
+            _tableName = schemaName == StoreOptions.DefaultDatabaseSchemaName ? "mt_events" : $"{schemaName}.mt_events";
         }
 
         public override IDocumentStorage BuildStorage(IDocumentSchema schema)
@@ -120,7 +123,7 @@ namespace Marten.Events
 
         public NpgsqlCommand LoaderCommand(object id)
         {
-            return new NpgsqlCommand($"select d.data, d.id from mt_events as d where id = :id and type = '{Alias}'").With("id", id);
+            return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = :id and type = '{Alias}'").With("id", id);
         }
 
         public NpgsqlCommand DeleteCommandForId(object id)
@@ -135,7 +138,7 @@ namespace Marten.Events
 
         public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
         {
-            return new NpgsqlCommand($"select d.data, d.id from mt_events as d where id = ANY(:ids) and type = '{Alias}'").With("ids", ids);
+            return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = ANY(:ids) and type = '{Alias}'").With("ids", ids);
         }
 
         public object Identity(object document)

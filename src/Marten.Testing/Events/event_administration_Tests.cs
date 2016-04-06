@@ -2,18 +2,18 @@
 using System.Linq;
 using Baseline;
 using Marten.Events;
-using Marten.Schema;
+using Marten.Services;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
+    [Collection("DefaultSchema")]
     public class event_administration_Tests : IntegratedFixture
     {
         public event_administration_Tests()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
-            schema.EnsureStorageExists(typeof(EventStream));
+            theStore.Schema.EnsureStorageExists(typeof (EventStream));
 
             theStore.EventStore.InitializeEventStoreInDatabase(true);
         }
@@ -21,7 +21,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void has_the_event_tables()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
             var tableNames = schema.SchemaTableNames();
             tableNames.ShouldContain("public.mt_streams");
             tableNames.ShouldContain("public.mt_events");
@@ -32,7 +32,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void has_the_commands_for_appending_events()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("public.mt_append_event");
@@ -43,7 +43,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void has_the_command_for_transforming_events()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("public.mt_apply_transform");
@@ -52,7 +52,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void has_the_command_for_applying_aggregation()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("public.mt_apply_aggregation");
@@ -61,7 +61,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void has_the_command_for_starting_a_new_aggregate()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("public.mt_start_aggregation");
@@ -70,16 +70,17 @@ namespace Marten.Testing.Events
         [Fact]
         public void loads_the_mt_transform_module()
         {
-            var runner = theContainer.GetInstance<IConnectionFactory>();
-
-            var loadedModules = runner.GetStringList("select name from public.mt_modules");
-            loadedModules.ShouldContain("mt_transforms");
+            using (var runner = theStore.Advanced.OpenConnection())
+            {
+                var loadedModules = runner.GetStringList("select name from public.mt_modules");
+                loadedModules.ShouldContain("mt_transforms");
+            }
         }
 
         [Fact]
         public void loads_the_initialize_projections_function()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("public.mt_initialize_projections");
@@ -88,7 +89,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void loads_the_get_projection_usage_function()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("public.mt_get_projection_usage");
@@ -103,13 +104,16 @@ namespace Marten.Testing.Events
 
             theStore.EventStore.LoadProjections(directory);
 
-            var factory = theContainer.GetInstance<IConnectionFactory>();
-            var list = factory.GetStringList("select name from public.mt_projections order by name");
+
+            using (var runner = theStore.Advanced.OpenConnection())
+            {
+                var list = runner.GetStringList("select name from public.mt_projections order by name");
 
 
-            list.ShouldContain("fake_aggregate");
-            list.ShouldContain("location");
-            list.ShouldContain("party");
+                list.ShouldContain("fake_aggregate");
+                list.ShouldContain("location");
+                list.ShouldContain("party");
+            }
         }
 
 
@@ -120,7 +124,6 @@ namespace Marten.Testing.Events
             var directory =
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
-            
 
             theStore.EventStore.LoadProjections(directory);
             var usages = theStore.EventStore.InitializeEventStoreInDatabase(true);
@@ -157,9 +160,9 @@ Projection party (snapshot) for Event quest_started executed inline
     {
         public event_administration_in_different_store_schema_Tests()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
             schema.StoreOptions.DatabaseSchemaName = "other";
-            schema.EnsureStorageExists(typeof(EventStream));
+            schema.EnsureStorageExists(typeof (EventStream));
 
             theStore.EventStore.InitializeEventStoreInDatabase(true);
         }
@@ -167,7 +170,7 @@ Projection party (snapshot) for Event quest_started executed inline
         [Fact]
         public void has_the_event_tables()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
             var tableNames = schema.SchemaTableNames();
             tableNames.ShouldContain("other.mt_streams");
             tableNames.ShouldContain("other.mt_events");
@@ -178,7 +181,7 @@ Projection party (snapshot) for Event quest_started executed inline
         [Fact]
         public void has_the_commands_for_appending_events()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("other.mt_append_event");
@@ -189,7 +192,7 @@ Projection party (snapshot) for Event quest_started executed inline
         [Fact]
         public void has_the_command_for_transforming_events()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("other.mt_apply_transform");
@@ -198,7 +201,7 @@ Projection party (snapshot) for Event quest_started executed inline
         [Fact]
         public void has_the_command_for_applying_aggregation()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("other.mt_apply_aggregation");
@@ -207,7 +210,7 @@ Projection party (snapshot) for Event quest_started executed inline
         [Fact]
         public void has_the_command_for_starting_a_new_aggregate()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("other.mt_start_aggregation");
@@ -216,16 +219,17 @@ Projection party (snapshot) for Event quest_started executed inline
         [Fact]
         public void loads_the_mt_transform_module()
         {
-            var runner = theContainer.GetInstance<IConnectionFactory>();
-
-            var loadedModules = runner.GetStringList("select name from other.mt_modules");
-            loadedModules.ShouldContain("mt_transforms");
+            using (var runner = theStore.Advanced.OpenConnection())
+            {
+                var loadedModules = runner.GetStringList("select name from other.mt_modules");
+                loadedModules.ShouldContain("mt_transforms");
+            }
         }
 
         [Fact]
         public void loads_the_initialize_projections_function()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("other.mt_initialize_projections");
@@ -234,7 +238,7 @@ Projection party (snapshot) for Event quest_started executed inline
         [Fact]
         public void loads_the_get_projection_usage_function()
         {
-            var schema = theContainer.GetInstance<IDocumentSchema>();
+            var schema = theStore.Schema;
 
             var functions = schema.SchemaFunctionNames();
             functions.ShouldContain("other.mt_get_projection_usage");
@@ -248,12 +252,14 @@ Projection party (snapshot) for Event quest_started executed inline
 
             theStore.EventStore.LoadProjections(directory);
 
-            var factory = theContainer.GetInstance<IConnectionFactory>();
-            var list = factory.GetStringList("select name from other.mt_projections order by name");
+            using (var runner = theStore.Advanced.OpenConnection())
+            {
+                var list = runner.GetStringList("select name from other.mt_projections order by name");
 
-            list.ShouldContain("fake_aggregate");
-            list.ShouldContain("location");
-            list.ShouldContain("party");
+                list.ShouldContain("fake_aggregate");
+                list.ShouldContain("location");
+                list.ShouldContain("party");
+            }
         }
 
         // Turning this off just for the moment
@@ -262,8 +268,6 @@ Projection party (snapshot) for Event quest_started executed inline
         {
             var directory =
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
-
-
 
             theStore.EventStore.LoadProjections(directory);
             var usages = theStore.EventStore.InitializeEventStoreInDatabase(true);

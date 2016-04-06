@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
+    [Collection("DefaultSchema")]
     public class select_transformations_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
@@ -22,19 +23,17 @@ namespace Marten.Testing.Linq
 
     public class select_transformations_with_database_schema_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
-        protected override void StoreOptions(StoreOptions options)
-        {
-            options.DatabaseSchemaName = "other";
-        }
 
         [Fact]
         public void build_query_for_a_single_field()
         {
+            StoreOptions(_ => _.DatabaseSchemaName = "other_select");
+
             theSession.Query<User>().Select(x => x.UserName).FirstOrDefault().ShouldBeNull();
 
             var cmd = theSession.Query<User>().Select(x => x.UserName).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data ->> 'UserName' from other.mt_doc_user as d");
+            cmd.CommandText.ShouldBe("select d.data ->> 'UserName' from other_select.mt_doc_user as d");
         }
     }
 }

@@ -17,13 +17,11 @@ namespace Marten.Testing.TrackingSession
                 var user2 = new User { FirstName = "James", LastName = "Worthy 2" };
                 var user3 = new User { FirstName = "James", LastName = "Worthy 3" };
 
-                theSession.Store(user1);
-                theSession.Store(user2);
-                theSession.Store(user3);
+                theSession.Store(user1, user2, user3);
 
                 theSession.SaveChanges();
 
-                using (var session2 = CreateSession())
+                using (var session2 = theStore.OpenSession(DocumentTracking.DirtyTracking))
                 {
                     var users = session2.Query<User>().Where(x => x.FirstName == "James").ToList();
 
@@ -35,7 +33,7 @@ namespace Marten.Testing.TrackingSession
                     session2.SaveChanges();
                 }
 
-                using (var session2 = CreateSession())
+                using (var session2 = theStore.OpenSession())
                 {
                     var users = session2.Query<User>().Where(x => x.FirstName == "James").OrderBy(x => x.LastName).ToList();
 
@@ -59,7 +57,7 @@ namespace Marten.Testing.TrackingSession
 
                 theSession.SaveChanges();
 
-                using (var session2 = CreateSession())
+                using (var session2 = theStore.OpenSession(DocumentTracking.DirtyTracking))
                 {
                     var users = session2.Query<User>().Where(x => x.FirstName == "James").ToList();
 
@@ -71,7 +69,7 @@ namespace Marten.Testing.TrackingSession
                     session2.SaveChanges();
                 }
 
-                using (var session2 = CreateSession())
+                using (var session2 = theStore.OpenSession())
                 {
                     var users = session2.Query<User>().Where(x => x.FirstName == "James").OrderBy(x => x.LastName).ToList();
 

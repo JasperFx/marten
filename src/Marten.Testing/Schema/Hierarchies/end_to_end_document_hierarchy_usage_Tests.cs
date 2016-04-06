@@ -280,9 +280,9 @@ public abstract class end_to_end_document_hierarchy_usage_Tests<T> : DocumentSes
 
         protected end_to_end_document_hierarchy_usage_Tests()
         {
-            theStore.Schema.Alter(x =>
+            StoreOptions(_ =>
             {
-                x.For<User>().AddSubclass<SuperUser>().AddSubclass<AdminUser>().Searchable(_ => _.UserName);
+                _.Schema.For<User>().AddSubclass<SuperUser>().AddSubclass<AdminUser>().Searchable(x => x.UserName);
             });
         }
 

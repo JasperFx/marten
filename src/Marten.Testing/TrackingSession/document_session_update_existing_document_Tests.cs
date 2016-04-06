@@ -5,7 +5,6 @@ using Xunit;
 
 namespace Marten.Testing.TrackingSession
 {
-
     public class document_session_update_existing_document_Tests : DocumentSessionFixture<DirtyTrackingIdentityMap>
     {
         [Fact]
@@ -16,7 +15,7 @@ namespace Marten.Testing.TrackingSession
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session3 = CreateSession())
+            using (var session3 = theStore.OpenSession())
             {
                 var user3 = session3.Load<User>(user.Id);
                 user3.FirstName.ShouldBe("James");
@@ -32,7 +31,7 @@ namespace Marten.Testing.TrackingSession
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session2 = CreateSession())
+            using (var session2 = theStore.OpenSession(DocumentTracking.DirtyTracking))
             {
                 session2.ShouldNotBeSameAs(theSession);
 
@@ -43,7 +42,7 @@ namespace Marten.Testing.TrackingSession
                 session2.SaveChanges();
             }
 
-            using (var session3 = CreateSession())
+            using (var session3 = theStore.OpenSession())
             {
                 var user3 = session3.Load<User>(user.Id);
                 user3.FirstName.ShouldBe("Jens");
@@ -63,7 +62,7 @@ namespace Marten.Testing.TrackingSession
             user.LastName = "Pettersson";
             theSession.SaveChanges();
 
-            using (var session3 = CreateSession())
+            using (var session3 = theStore.OpenSession())
             {
                 var user3 = session3.Load<User>(user.Id);
                 user3.FirstName.ShouldBe("Jens");
@@ -84,7 +83,7 @@ namespace Marten.Testing.TrackingSession
             user2.LastName = "Pettersson";
             theSession.SaveChanges();
 
-            using (var session = CreateSession())
+            using (var session = theStore.OpenSession())
             {
                 var user3 = session.Load<User>(user.Id);
                 user3.FirstName.ShouldBe("Jens");

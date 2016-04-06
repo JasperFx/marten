@@ -20,8 +20,10 @@ namespace Marten.Testing.Schema
         [Fact]
         public void should_get_foreign_key_from_registry()
         {
-            var schema = new DocumentSchema(new StoreOptions(), null, null);
-            schema.Alter(x => x.For<Issue>().ForeignKey<User>(i => i.OtherUserId));
+            var storeOptions = new StoreOptions();
+            storeOptions.Schema.For<Issue>().ForeignKey<User>(i => i.OtherUserId);
+
+            var schema = new DocumentSchema(storeOptions, null, null);
 
             schema.MappingFor(typeof(Issue))
                 .As<DocumentMapping>()

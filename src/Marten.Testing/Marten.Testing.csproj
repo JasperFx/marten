@@ -54,6 +54,7 @@
     <Compile Include="Bugs\Bug_187_not_assigning_id_in_BulkInsert_Tests.cs" />
     <Compile Include="Bugs\Bug_237_duplicate_indexing_Tests.cs" />
     <Compile Include="Bugs\Bug_261_double_take_or_skip.cs" />
+    <Compile Include="IntegratedFixture.cs" />
     <Compile Include="Linq\Bug_260_Take_Skip_with_Select_Tests.cs" />
     <Compile Include="bulk_loading_Tests.cs" />
     <Compile Include="Codegen\dumping_the_complete_source_code_Tests.cs" />
@@ -175,6 +176,7 @@
     <Compile Include="Schema\configuring_searchable_fields_Tests.cs" />
     <Compile Include="Schema\configuring_the_document_type_alias_Tests.cs" />
     <Compile Include="ContainerFactory.cs" />
+    <Compile Include="Schema\DocumentSchemaOnOtherSchemaTests.cs" />
     <Compile Include="Schema\do_not_overwrite_tables_with_searchable_fields_Tests.cs" />
     <Compile Include="Schema\ForeignKeyDefinitionTests.cs" />
     <Compile Include="Schema\Hierarchies\end_to_end_document_hierarchy_usage_Tests.cs" />
@@ -207,6 +209,7 @@
     <Compile Include="Session\document_session_update_existing_document_without_dirty_checking_Tests.cs" />
     <Compile Include="StoreOptionsTests.cs" />
     <Compile Include="store_and_bulk_insert_by_mixed_bag_of_document_types_Tests.cs" />
+    <Compile Include="TestingDocumentStore.cs" />
     <Compile Include="TrackingSession\document_session_load_already_loaded_document_Tests.cs" />
     <Compile Include="TrackingSession\document_session_load_not_found_then_stored_Tests.cs" />
     <Compile Include="TrackingSession\document_session_load_not_yet_persisted_document_Tests.cs" />

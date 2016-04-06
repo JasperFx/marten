@@ -40,6 +40,7 @@ namespace Marten
         public StoreOptions()
         {
             Events = new EventGraph(this);
+            Schema = new MartenRegistry(this);
         }
 
         public DocumentMapping MappingFor(Type documentType)
@@ -118,7 +119,7 @@ namespace Marten
         /// <summary>
         /// Modify the document and event store database mappings for indexes and searching options
         /// </summary>
-        public readonly MartenRegistry Schema = new MartenRegistry();
+        public readonly MartenRegistry Schema;
 
         /// <summary>
         /// Whether or Marten should attempt to create any missing database schema objects at runtime. This

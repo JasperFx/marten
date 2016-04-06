@@ -30,11 +30,10 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_override_with_MartenRegistry()
         {
-            var registry = new MartenRegistry();
-            registry.For<Organization>().Searchable(x => x.Time2, pgType:"timestamp");
+            var storeOptions = new StoreOptions();
+            storeOptions.Schema.For<Organization>().Searchable(x => x.Time2, pgType: "timestamp");
 
-            var schema = new DocumentSchema(new StoreOptions(), null, new NulloMartenLogger());
-            schema.Alter(registry);
+            var schema = new DocumentSchema(storeOptions, null, new NulloMartenLogger());
 
             schema.MappingFor(typeof(Organization)).As<DocumentMapping>().DuplicatedFields.Single(x => x.MemberName == "Time2")
                 .PgType.ShouldBe("timestamp");

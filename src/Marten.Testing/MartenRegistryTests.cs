@@ -11,13 +11,14 @@ namespace Marten.Testing
 {
     public class MartenRegistryTests
     {
-        private DocumentSchema theSchema;
+        private readonly DocumentSchema theSchema;
         
         public MartenRegistryTests()
         {
-            theSchema = Container.For<DevelopmentModeRegistry>().GetInstance<DocumentSchema>();
+            var storeOptions = new StoreOptions();
+            storeOptions.Schema.Include<TestRegistry>();
 
-            theSchema.Alter<TestRegistry>();
+            theSchema = new DocumentSchema(storeOptions, new ConnectionSource(), new NulloMartenLogger());
         }
 
         [Fact]

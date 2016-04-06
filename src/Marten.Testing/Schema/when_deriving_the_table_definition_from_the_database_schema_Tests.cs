@@ -4,23 +4,21 @@ using Marten.Generation;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class when_deriving_the_table_definition_from_the_database_schema_Tests
+    
+    public class when_deriving_the_table_definition_from_the_database_schema_Tests : IntegratedFixture
     {
         private readonly IDocumentSchema _schema;
-        private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
         private DocumentMapping theMapping;
         private IDocumentStorage _storage;
         private TableDefinition theDerivedTable;
 
         public when_deriving_the_table_definition_from_the_database_schema_Tests()
         {
-            ConnectionSource.CleanBasicDocuments();
-            _schema = _container.GetInstance<IDocumentStore>().Schema;
+            _schema = theStore.Schema;
 
             theMapping = _schema.MappingFor(typeof(User)).As<DocumentMapping>();
             theMapping.DuplicateField("UserName");
@@ -29,11 +27,6 @@ namespace Marten.Testing.Schema
             _storage = _schema.StorageFor(typeof(User));
 
             theDerivedTable = _schema.TableSchema(theMapping);
-        }
-
-        public void Dispose()
-        {
-            _container.Dispose();
         }
 
         [Fact]

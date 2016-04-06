@@ -101,8 +101,8 @@ namespace Marten.Testing
             container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
             // Apply the schema customizations
-            container.GetInstance<IDocumentSchema>().Alter<TRegistry>();
-
+            //container.GetInstance<IDocumentSchema>().Alter<TRegistry>();
+            throw new NotImplementedException("See line of code above, no longer valid");
 
             using (var session = container.GetInstance<IDocumentStore>().OpenSession())
             {
@@ -149,8 +149,8 @@ namespace Marten.Testing
             container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
             
             // Apply the schema customizations
-            container.GetInstance<IDocumentSchema>().Alter<TRegistry>();
-
+            //container.GetInstance<IDocumentSchema>().Alter<TRegistry>();
+            throw new NotImplementedException("See above line of code");
 
             using (var session = container.GetInstance<IDocumentStore>().OpenSession())
             {

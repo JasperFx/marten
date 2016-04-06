@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Schema;
@@ -8,13 +9,11 @@ using Xunit;
 
 namespace Marten.Testing
 {
-    public class UnitOfWorkTests : IntegratedFixture
+    public class UnitOfWorkTests : DocumentSessionFixture<NulloIdentityMap>
     {
-        private readonly IDocumentSession theSession;
 
         public UnitOfWorkTests()
         {
-            theSession = theContainer.GetInstance<IDocumentStore>().OpenSession();
         }
 
         public override void Dispose()
@@ -33,18 +32,19 @@ namespace Marten.Testing
             var company1 = new Company();
             var company2 = new Company();
 
-            var uow = theContainer.GetInstance<UnitOfWork>();
+            var uow = theStore.Advanced.CreateUnitOfWork();
             uow.StoreUpdates(user1, user2);
             uow.StoreUpdates(issue1, issue2);
             uow.StoreUpdates(company1, company2);
 
-            var batch = theContainer.GetInstance<UpdateBatch>();
+            using (var connection = theStore.Advanced.OpenConnection())
+            {
+                var batch = new UpdateBatch(theStore.Advanced.Options, new JsonNetSerializer(), connection);
 
-            uow.ApplyChanges(batch);
+                uow.ApplyChanges(batch);
+            }
 
-            batch.Connection.Dispose();
-
-            using (var session2 = theContainer.GetInstance<IDocumentStore>().OpenSession())
+            using (var session2 = theStore.OpenSession())
             {
                 session2.Query<User>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(user1.Id, user2.Id);
                 session2.Query<Issue>().ToArray().Select(x => x.Id).ShouldHaveTheSameElementsAs(issue1.Id, issue2.Id);
@@ -53,6 +53,7 @@ namespace Marten.Testing
 
 
         }
+
 
         [Fact]
         public void apply_updates_via_the_actual_document()
@@ -66,23 +67,27 @@ namespace Marten.Testing
             var long1 = new LongDoc {Id = 3};
             var long2 = new LongDoc {Id = 4};
 
-            var uow1 = theContainer.GetInstance<UnitOfWork>();
+            var uow1 = theStore.Advanced.CreateUnitOfWork();
             uow1.StoreUpdates(user1, user2);
             uow1.StoreUpdates(stringDoc1, stringDoc2);
             uow1.StoreUpdates(int1, int2);
             uow1.StoreUpdates(long1, long2);
-            var batch1 = theContainer.GetInstance<UpdateBatch>();
+
+
+
+
+            var batch1 = theStore.Advanced.CreateUpdateBatch();
             uow1.ApplyChanges(batch1);
 
             batch1.Connection.Dispose();
 
 
-            var uow2 = theContainer.GetInstance<UnitOfWork>();
+            var uow2 = theStore.Advanced.CreateUnitOfWork();
             uow2.DeleteEntity(stringDoc2);
             uow2.DeleteEntity(user2);
             uow2.DeleteEntity(int2);
             uow2.DeleteEntity(long2);
-            var batch2 = theContainer.GetInstance<UpdateBatch>();
+            var batch2 = theStore.Advanced.CreateUpdateBatch();
             uow2.ApplyChanges(batch2);
 
             batch2.Connection.Dispose();
@@ -108,23 +113,23 @@ namespace Marten.Testing
             var long1 = new LongDoc { Id = 3 };
             var long2 = new LongDoc { Id = 4 };
 
-            var uow1 = theContainer.GetInstance<UnitOfWork>();
+            var uow1 = theStore.Advanced.CreateUnitOfWork();
 
             uow1.StoreUpdates(user1, user2);
             uow1.StoreUpdates(stringDoc1, stringDoc2);
             uow1.StoreUpdates(int1, int2);
             uow1.StoreUpdates(long1, long2);
-            var batch1 = theContainer.GetInstance<UpdateBatch>();
+            var batch1 = theStore.Advanced.CreateUpdateBatch();
             uow1.ApplyChanges(batch1);
 
             batch1.Connection.Dispose();
 
-            var uow2 = theContainer.GetInstance<UnitOfWork>();
+            var uow2 = theStore.Advanced.CreateUnitOfWork();
             uow2.Delete<StringDoc>(stringDoc2.Id);
             uow2.Delete<User>(user2.Id);
             uow2.Delete<IntDoc>(int2.Id);
             uow2.Delete<LongDoc>(long2.Id);
-            var batch2 = theContainer.GetInstance<UpdateBatch>();
+            var batch2 = theStore.Advanced.CreateUpdateBatch();
             uow2.ApplyChanges(batch2);
 
             batch2.Connection.Dispose();

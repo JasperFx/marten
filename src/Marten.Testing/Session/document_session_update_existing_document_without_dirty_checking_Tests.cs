@@ -20,7 +20,7 @@ namespace Marten.Testing.Session
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session3 = CreateSession())
+            using (var session3 = theStore.OpenSession())
             {
                 var user3 = session3.Load<User>(user.Id);
                 user3.FirstName.ShouldBe("James");
@@ -36,7 +36,7 @@ namespace Marten.Testing.Session
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session2 = CreateSession())
+            using (var session2 = theStore.OpenSession())
             {
                 session2.ShouldNotBeSameAs(theSession);
 
@@ -47,7 +47,7 @@ namespace Marten.Testing.Session
                 session2.SaveChanges();
             }
 
-            using (var session3 = CreateSession())
+            using (var session3 = theStore.OpenSession())
             {
                 var user3 = session3.Load<User>(user.Id);
                 user3.FirstName.ShouldBe("James");
@@ -67,7 +67,7 @@ namespace Marten.Testing.Session
             user.LastName = "Pettersson";
             theSession.SaveChanges();
 
-            using (var session3 = CreateSession())
+            using (var session3 = theStore.OpenSession())
             {
                 var user3 = session3.Load<User>(user.Id);
                 user3.FirstName.ShouldBe("James");
@@ -88,7 +88,7 @@ namespace Marten.Testing.Session
             user2.LastName = "Pettersson";
             theSession.SaveChanges();
 
-            using (var session = CreateSession())
+            using (var session = theStore.OpenSession())
             {
                 var user3 = session.Load<User>(user.Id);
                 user3.FirstName.ShouldBe("James");
