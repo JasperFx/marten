@@ -26,17 +26,30 @@ namespace Marten.Schema
             Aliases = new[] {Alias};
         }
 
-        public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions, IEnumerable<Type> otherSubclassTypes)
-            : this(documentType, parent, storeOptions)
+        public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions, IEnumerable<Type> otherSubclassTypes, string alias = null)
+            : this(documentType, parent, storeOptions, alias)
         {
             Aliases = otherSubclassTypes
                     .Where(t => t.IsSubclassOf(documentType) || (documentType.IsInterface && t.GetInterfaces().Contains(documentType)) || t == documentType)
                     .Select(GetTypeMartenAlias).Concat(Aliases).ToArray();
         }
 
+        public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions, IEnumerable<SubclassType> otherSubclassTypes, string alias = null)
+            : this(documentType, parent, storeOptions, alias)
+        {
+            Aliases = otherSubclassTypes
+                    .Where(t => t.Type.IsSubclassOf(documentType) || (documentType.IsInterface && t.Type.GetInterfaces().Contains(documentType)) || t.Type == documentType)
+                    .Select(GetTypeMartenAlias).Concat(Aliases).ToArray();
+        }
+
         private static string GetTypeMartenAlias(Type documentType)
         {
-            return documentType.GetTypeName().Replace(".", "_").SplitCamelCase().Replace(" ", "_").ToLowerInvariant();
+            return GetTypeMartenAlias(new SubclassType(documentType));
+        }
+
+        private static string GetTypeMartenAlias(SubclassType documentType)
+        {
+            return documentType.Alias ?? documentType.Type.GetTypeName().Replace(".", "_").SplitCamelCase().Replace(" ", "_").ToLowerInvariant();
         }
 
 

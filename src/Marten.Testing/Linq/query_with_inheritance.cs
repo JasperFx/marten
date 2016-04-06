@@ -23,6 +23,43 @@ namespace Marten.Testing.Linq
     public class PapySmurf : Smurf, IPapaSmurf{}
     public class BrainySmurf : PapaSmurf{}
 
+    public class query_with_inheritance_and_aliases : DocumentSessionFixture<NulloIdentityMap>
+    {
+        public query_with_inheritance_and_aliases()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<ISmurf>()
+                    .AddSubclassHierarchy(
+                        new SubclassType(typeof(Smurf)), 
+                        new SubclassType(typeof(PapaSmurf), "papa"), 
+                        new SubclassType(typeof(PapySmurf)), 
+                        new SubclassType(typeof(IPapaSmurf)), 
+                        new SubclassType(typeof(BrainySmurf))
+                    );
+
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+
+                _.UpsertType = PostgresUpsertType.Legacy;
+                _.Schema.For<ISmurf>().GinIndexJsonData();
+            });
+        }
+
+        [Fact]
+        public void get_all_subclasses_of_a_subclass()
+        {
+            var smurf = new Smurf { Ability = "Follow the herd" };
+            var papa = new PapaSmurf { Ability = "Lead" };
+            var brainy = new BrainySmurf { Ability = "Invent" };
+            theSession.Store(smurf, papa, brainy);
+
+            theSession.SaveChanges();
+
+            theSession.Query<Smurf>().Count().ShouldBe(3);
+        }
+    }
+
     public class query_with_inheritance : DocumentSessionFixture<NulloIdentityMap>
     {
         public query_with_inheritance()
