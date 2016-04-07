@@ -234,20 +234,12 @@ namespace Marten
             }
 
             /// <summary>
-            /// Programmatically directs Marten to map all the subclasses of <typeparamref name="T"/> to a hierarchy of types
+            /// Programmatically directs Marten to map all the subclasses of <cref name="T"/> to a hierarchy of types
             /// </summary>
+            /// <param name="allSubclassTypes">All the subclass types of <cref name="T"/> that you wish to map. 
+            /// You can use either params of <see cref="Type"/> or <see cref="MappedType"/> or a mix, since Type can implicitly convert to MappedType (without an alias)</param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> AddSubclassHierarchy(params Type[] allSubclassTypes)
-            {
-                alter = mapping => Array.ForEach(allSubclassTypes, subclassType => mapping.AddSubClass(subclassType, allSubclassTypes.Except(new [] {subclassType})));
-                return this;
-            }
-
-            /// <summary>
-            /// Programmatically directs Marten to map all the subclasses of <typeparamref name="T"/> to a hierarchy of types
-            /// </summary>
-            /// <returns></returns>
-            public DocumentMappingExpression<T> AddSubclassHierarchy(params SubclassType[] allSubclassTypes)
+            public DocumentMappingExpression<T> AddSubclassHierarchy(params MappedType[] allSubclassTypes)
             {
                 alter = mapping => Array.ForEach(allSubclassTypes, subclassType => 
                     mapping.AddSubClass(
@@ -267,14 +259,19 @@ namespace Marten
         }
     }
 
-    public class SubclassType
+    public class MappedType
     {
-        public SubclassType(Type type, string alias = null)
+        public MappedType(Type type, string alias = null)
         {
             Type = type;
             Alias = alias;
         }
         public Type Type { get; set; }
         public string Alias { get; set; }
+
+        public static implicit operator MappedType (Type type)
+        {
+            return new MappedType(type);
+        }
     }
 }

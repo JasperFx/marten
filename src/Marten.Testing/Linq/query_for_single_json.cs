@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Util;
@@ -70,8 +71,11 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
 
-            var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().SingleJson(x => x.Number != 5));
-            ex.Message.ShouldBe("Sequence contains no elements");
+            using (new CultureScope())
+            {
+                var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().SingleJson(x => x.Number != 5));
+                ex.Message.ShouldBe("Sequence contains no elements"); 
+            }
         }
 
         [Fact]
@@ -94,8 +98,11 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
 
-            var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().SingleJson(x => x.Number == 5));
-            ex.Message.ShouldBe("Sequence contains more than one element");
+            using (new CultureScope())
+            {
+                var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().SingleJson(x => x.Number == 5));
+                ex.Message.ShouldBe("Sequence contains more than one element"); 
+            }
         }
 
         [Fact]
@@ -160,8 +167,11 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
 
-            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => theSession.Query<SimpleUser>().SingleJsonAsync(x => x.Number != 5));
-            ex.Message.ShouldBe("Sequence contains no elements");
+            using (new CultureScope())
+            {
+                var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => theSession.Query<SimpleUser>().SingleJsonAsync(x => x.Number != 5));
+                ex.Message.ShouldBe("Sequence contains no elements"); 
+            }
         }
 
         [Fact]
@@ -184,8 +194,11 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
 
-            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => theSession.Query<SimpleUser>().SingleJsonAsync(x => x.Number == 5));
-            ex.Message.ShouldBe("Sequence contains more than one element");
+            using (new CultureScope())
+            {
+                var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => theSession.Query<SimpleUser>().SingleJsonAsync(x => x.Number == 5));
+                ex.Message.ShouldBe("Sequence contains more than one element"); 
+            }
         }
 
         [Fact]
@@ -321,8 +334,11 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
 
-            var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().SingleOrDefaultJson(x => x.Number == 5));
-            ex.Message.ShouldBe("Sequence contains more than one element");
+            using (new CultureScope())
+            {
+                var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().SingleOrDefaultJson(x => x.Number == 5));
+                ex.Message.ShouldBe("Sequence contains more than one element");
+            }
         }
 
         [Fact]

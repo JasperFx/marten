@@ -31,11 +31,11 @@ namespace Marten.Testing.Linq
             {
                 _.Schema.For<ISmurf>()
                     .AddSubclassHierarchy(
-                        new SubclassType(typeof(Smurf)), 
-                        new SubclassType(typeof(PapaSmurf), "papa"), 
-                        new SubclassType(typeof(PapySmurf)), 
-                        new SubclassType(typeof(IPapaSmurf)), 
-                        new SubclassType(typeof(BrainySmurf))
+                        typeof(Smurf), 
+                        new MappedType(typeof(PapaSmurf), "papa"), 
+                        typeof(PapySmurf), 
+                        typeof(IPapaSmurf), 
+                        typeof(BrainySmurf)
                     );
 
                 _.Connection(ConnectionSource.ConnectionString);

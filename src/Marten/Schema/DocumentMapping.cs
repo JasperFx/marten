@@ -93,15 +93,7 @@ namespace Marten.Schema
                 .SelectMany(i => i.GetProperties()).ToArray() : type.GetProperties();
         }
 
-        public void AddSubClass(Type subclassType, IEnumerable<Type> otherSubclassTypes, string alias = null)
-        {
-            VerifyIsSubclass(subclassType);
-
-            var subclass = new SubClassMapping(subclassType, this, _storeOptions, otherSubclassTypes, alias);
-            _subClasses.Add(subclass);
-        }
-
-        public void AddSubClass(Type subclassType, IEnumerable<SubclassType> otherSubclassTypes, string alias)
+        public void AddSubClass(Type subclassType, IEnumerable<MappedType> otherSubclassTypes, string alias)
         {
             VerifyIsSubclass(subclassType);
 
