@@ -145,6 +145,7 @@
     <Compile Include="Linq\query_against_dateoffset_Tests.cs" />
     <Compile Include="Linq\query_for_json_format.cs" />
     <Compile Include="Linq\query_for_single_json.cs" />
+    <Compile Include="Linq\query_with_inheritance.cs" />
     <Compile Include="Linq\query_with_is_in_generic_enumerable_Tests.cs" />
     <Compile Include="Linq\query_against_primitive_array_Tests.cs" />
     <Compile Include="Linq\query_running_through_the_IdentityMap_Tests.cs" />

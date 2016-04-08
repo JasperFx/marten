@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Globalization;
+using System.Threading;
 using HtmlTags.Reflection;
 using Xunit;
 
@@ -6,14 +8,18 @@ namespace Marten.Testing
 {
     public abstract class IntegratedFixture : IDisposable
     {
-        private Lazy<IDocumentStore> _store; 
-        
+        private Lazy<IDocumentStore> _store;
+        private CultureInfo _originalCulture;
 
         protected IntegratedFixture()
         {
             _store = new Lazy<IDocumentStore>(TestingDocumentStore.Basic);
 
             GetType().ForAttribute<CollectionAttribute>(att => UseDefaultSchema());
+
+            _originalCulture = Thread.CurrentThread.CurrentCulture;
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
         }
 
         protected IDocumentStore theStore => _store.Value;
@@ -34,6 +40,8 @@ namespace Marten.Testing
             {
                 _store.Value.Dispose();
             }
+            Thread.CurrentThread.CurrentCulture = _originalCulture;
+            Thread.CurrentThread.CurrentUICulture = _originalCulture;
         }
     }
 }

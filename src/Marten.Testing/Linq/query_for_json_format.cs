@@ -185,9 +185,9 @@ namespace Marten.Testing.Linq
             };
             theSession.Store(user1,user2);
             theSession.SaveChanges();
-
-            var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(()=>theSession.Query<SimpleUser>().FirstJson(x=>x.Number != 5));
-            ex.Message.ShouldBe("Sequence contains no elements");
+            
+            var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().FirstJson(x => x.Number != 5));
+            ex.Message.ShouldBe("Sequence contains no elements"); 
         }
 
         [Fact]
@@ -271,9 +271,9 @@ namespace Marten.Testing.Linq
             };
             theSession.Store(user1,user2);
             theSession.SaveChanges();
-
-            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(()=>theSession.Query<SimpleUser>().FirstJsonAsync(x=>x.Number != 5));
-            ex.Message.ShouldBe("Sequence contains no elements");
+            
+            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => theSession.Query<SimpleUser>().FirstJsonAsync(x => x.Number != 5));
+            ex.Message.ShouldBe("Sequence contains no elements"); 
         }
 
         [Fact]
