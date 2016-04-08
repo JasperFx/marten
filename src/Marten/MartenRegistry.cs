@@ -233,11 +233,45 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Programmatically directs Marten to map all the subclasses of <cref name="T"/> to a hierarchy of types
+            /// </summary>
+            /// <param name="allSubclassTypes">All the subclass types of <cref name="T"/> that you wish to map. 
+            /// You can use either params of <see cref="Type"/> or <see cref="MappedType"/> or a mix, since Type can implicitly convert to MappedType (without an alias)</param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> AddSubclassHierarchy(params MappedType[] allSubclassTypes)
+            {
+                alter = mapping => Array.ForEach(allSubclassTypes, subclassType => 
+                    mapping.AddSubClass(
+                        subclassType.Type, 
+                        allSubclassTypes.Except(new [] {subclassType}), 
+                        subclassType.Alias
+                    )
+                );
+                return this;
+            }
+
 
             public DocumentMappingExpression<T> AddSubclass<TSubclass>(string alias = null) where TSubclass : T
             {
                 return AddSubclass(typeof(TSubclass), alias);
             }    
+        }
+    }
+
+    public class MappedType
+    {
+        public MappedType(Type type, string alias = null)
+        {
+            Type = type;
+            Alias = alias;
+        }
+        public Type Type { get; set; }
+        public string Alias { get; set; }
+
+        public static implicit operator MappedType (Type type)
+        {
+            return new MappedType(type);
         }
     }
 }
