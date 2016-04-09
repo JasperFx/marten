@@ -251,6 +251,26 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Programmatically directs Marten to map all the subclasses of <cref name="T"/> to a hierarchy of types. <c>Unadvised in projects with many types.</c>
+            /// </summary>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> AddSubclassHierarchy()
+            {
+                var baseType = typeof (T);
+                var allSubclassTypes = baseType.Assembly.GetTypes()
+                    .Where(t => t.IsSubclassOf(baseType) || baseType.IsInterface && t.GetInterfaces().Contains(baseType))
+                    .Select(t=>(MappedType)t).ToList();
+                alter = mapping => allSubclassTypes.Each<MappedType>(subclassType => 
+                    mapping.AddSubClass(
+                        subclassType.Type, 
+                        allSubclassTypes.Except<MappedType>(new [] {subclassType}),
+                        null
+                    )
+                );
+                return this;
+            }
+
 
             public DocumentMappingExpression<T> AddSubclass<TSubclass>(string alias = null) where TSubclass : T
             {
