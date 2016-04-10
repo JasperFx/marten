@@ -87,12 +87,30 @@ namespace Marten.Services
             }
         }
 
+        public class UpdateWhereCall : ICall
+        {            
+            private readonly SprocCall _updateCall;
+            private string _whereClause;
+
+            public UpdateWhereCall(SprocCall updateCall, string whereClause)
+            {                
+                _updateCall = updateCall;
+                _whereClause = whereClause;
+            }
+
+            public void WriteToSql(StringBuilder builder)
+            {
+                _updateCall.WriteToSql(builder);
+                builder.Append($"where exists (select 1 {_whereClause}");
+            }
+        }
+
         public class SprocCall : ICall
         {
             private readonly BatchCommand _parent;
             private readonly string _sprocName;
             private readonly IList<ParameterArg> _parameters = new List<ParameterArg>();
-
+            private readonly Lazy<IList<Tuple<string, NpgsqlParameterCollection>>> _postConditions = new Lazy<IList<Tuple<string, NpgsqlParameterCollection>>>(() => new List<Tuple<string, NpgsqlParameterCollection>>());
 
             public SprocCall(BatchCommand parent, string sprocName)
             {
@@ -104,6 +122,20 @@ namespace Marten.Services
             {
                 var parameters = _parameters.Select(x => x.Declaration()).Join(", ");
                 builder.AppendFormat("select {0}({1})", _sprocName, parameters);
+
+                if (_postConditions.IsValueCreated)
+                {                    
+                    _postConditions.Value.Each(x =>
+                    {
+                        var query = x.Item1;
+                        x.Item2?.Each(p =>
+                        {
+                            var parameter = _parent.addParameter(p.Value, p.NpgsqlDbType);
+                            query = query.Replace($":{p.ParameterName}", $":{parameter.ParameterName}");
+                        });
+                        builder.AppendFormat($"{query}");
+                    });
+                }
             }
 
             public SprocCall Param(string argName, Guid value)
@@ -130,8 +162,15 @@ namespace Marten.Services
             public SprocCall Param(string argName, object value, NpgsqlDbType dbType)
             {
                 var param = _parent.addParameter(value, dbType);
-
+                
                 _parameters.Add(new ParameterArg(argName, param));
+
+                return this;
+            }
+
+            public SprocCall PostCondition(string @where, NpgsqlParameterCollection parameters)
+            {
+                _postConditions.Value.Add(Tuple.Create(@where, parameters));
 
                 return this;
             }

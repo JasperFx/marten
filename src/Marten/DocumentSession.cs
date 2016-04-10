@@ -107,8 +107,11 @@ namespace Marten
                     }
                 }
             }
+        }
 
-
+        public void Store<T>(T entity, Expression<Func<T, bool>> expression)
+        {
+            _unitOfWork.StoreUpdate(entity, expression);
         }
 
         public IUnitOfWork PendingChanges => _unitOfWork;

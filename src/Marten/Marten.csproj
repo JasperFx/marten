@@ -133,6 +133,7 @@
     <Compile Include="Services\BatchQuerying\TransformedBatchQueryable.cs" />
     <Compile Include="Services\ChangeSet.cs" />
     <Compile Include="Services\CommandRunnerMode.cs" />
+    <Compile Include="Services\ConditionalUpdate.cs" />
     <Compile Include="Services\FetchResult.cs" />
     <Compile Include="Services\IChangeSet.cs" />
     <Compile Include="Services\Includes\IIncludeJoin.cs" />
