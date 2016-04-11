@@ -85,6 +85,7 @@
     <Compile Include="Linq\MartenQueryProvider.cs" />
     <Compile Include="Linq\Handlers\IsOneOf.cs" />
     <Compile Include="Linq\QueryableExtensions.cs" />
+    <Compile Include="Linq\Results\IResultTransformer.cs" />
     <Compile Include="Linq\ScalarCommandBuilder.cs" />
     <Compile Include="Linq\ScalarSelector.cs" />
     <Compile Include="Linq\QueryPlan.cs" />

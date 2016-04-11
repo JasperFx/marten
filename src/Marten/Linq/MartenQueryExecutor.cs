@@ -109,7 +109,7 @@ namespace Marten.Linq
             return _runner.Resolve(cmd, selector, _identityMap);
         }
 
-        Task<IEnumerable<T>> IMartenQueryExecutor.ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token)
+        Task<IList<T>> IMartenQueryExecutor.ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token)
         {
             ISelector<T> selector;
             var cmd = buildCommand(queryModel, out selector);

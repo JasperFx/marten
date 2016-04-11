@@ -11,7 +11,7 @@ namespace Marten.Linq
     public interface IMartenQueryable<T> : IQueryable<T>
     {
 
-        Task<IEnumerable<T>> ExecuteCollectionAsync(CancellationToken token);
+        Task<IList<T>> ExecuteCollectionAsync(CancellationToken token);
         Task<IEnumerable<string>> ExecuteCollectionToJsonAsync(CancellationToken token);
         IEnumerable<string> ExecuteCollectionToJson();
         QueryPlan Explain();

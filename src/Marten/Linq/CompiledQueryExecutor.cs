@@ -14,7 +14,7 @@ namespace Marten.Linq
     public interface ICompiledQueryExecutor
     {
         IEnumerable<TOut> ExecuteQuery<TDoc, TOut>(IQuerySession session, IEnumerableCompiledQuery<TDoc, TOut> query);
-        Task<IEnumerable<TOut>> ExecuteQueryAsync<TDoc, TOut>(IQuerySession session, IEnumerableCompiledQuery<TDoc, TOut> query, CancellationToken token);
+        Task<IList<TOut>> ExecuteQueryAsync<TDoc, TOut>(IQuerySession session, IEnumerableCompiledQuery<TDoc, TOut> query, CancellationToken token);
         TOut ExecuteQuery<TDoc, TOut>(IQuerySession session, ICompiledQuery<TDoc, TOut> query);
         Task<TOut> ExecuteQueryAsync<TDoc, TOut>(IQuerySession session, ICompiledQuery<TDoc, TOut> query, CancellationToken token);
     }
@@ -39,7 +39,7 @@ namespace Marten.Linq
             return executor.Connection.Resolve(command, cachedQuery.Selector.As<ISelector<TOut>>(), executor.IdentityMap);
         }
 
-        public Task<IEnumerable<TOut>> ExecuteQueryAsync<TDoc, TOut>(IQuerySession session, IEnumerableCompiledQuery<TDoc, TOut> query, CancellationToken token)
+        public Task<IList<TOut>> ExecuteQueryAsync<TDoc, TOut>(IQuerySession session, IEnumerableCompiledQuery<TDoc, TOut> query, CancellationToken token)
         {
             var queryable = session.Query<TDoc>().As<MartenQueryable<TDoc>>();
             var executor = queryable.Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();

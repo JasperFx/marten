@@ -8,7 +8,7 @@ namespace Marten.Linq
 {
     public interface IMartenQueryProvider : IQueryProvider
     {
-        Task<IEnumerable<TResult>> ExecuteCollectionAsync<TResult>(Expression expression, CancellationToken token);
+        Task<IList<TResult>> ExecuteCollectionAsync<TResult>(Expression expression, CancellationToken token);
         Task<IEnumerable<string>> ExecuteJsonCollectionAsync<TResult>(Expression expression, CancellationToken token);
         IEnumerable<string> ExecuteJsonCollection<TResult>(Expression expression);
         Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token);

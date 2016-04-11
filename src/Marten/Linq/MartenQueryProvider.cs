@@ -23,7 +23,7 @@ namespace Marten.Linq
             return (IQueryable<T>)Activator.CreateInstance(_queryableType.MakeGenericType(typeof(T)), this, expression);
         }
 
-        public Task<IEnumerable<T>> ExecuteCollectionAsync<T>(Expression expression, CancellationToken token)
+        public Task<IList<T>> ExecuteCollectionAsync<T>(Expression expression, CancellationToken token)
         {
             var queryModel = QueryParser.GetParsedQuery(expression);
             var queryExecutor = (IMartenQueryExecutor)Executor;

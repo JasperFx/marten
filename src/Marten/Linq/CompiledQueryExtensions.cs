@@ -55,8 +55,7 @@ namespace Marten.Linq
         /// <param name="query">The instance of a compiled query</param>
         /// <param name="token">A cancellation token</param>
         /// <returns>A Task for an enumerable query result</returns>
- 
-        public static Task<IEnumerable<TOut>> QueryAsync<TDoc, TOut>(this IQuerySession session, IEnumerableCompiledQuery<TDoc, TOut> query, CancellationToken token = default(CancellationToken))
+        public static Task<IList<TOut>> QueryAsync<TDoc, TOut>(this IQuerySession session, IEnumerableCompiledQuery<TDoc, TOut> query, CancellationToken token = default(CancellationToken))
         {
             return session.DocumentStore.CompiledQueryExecutor.ExecuteQueryAsync(session, query, token);
         }

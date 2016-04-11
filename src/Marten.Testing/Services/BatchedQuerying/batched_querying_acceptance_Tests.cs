@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Marten.Testing.Services.BatchedQuerying
 {
+    // TODO -- I vote to move this to ST specs for perf reasons
     public class batched_querying_acceptance_Tests : DocumentSessionFixture<IdentityMap>
     {
         private readonly Target target1 = Target.Random();

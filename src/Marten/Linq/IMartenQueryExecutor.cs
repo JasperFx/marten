@@ -7,7 +7,7 @@ namespace Marten.Linq
 {
     public interface IMartenQueryExecutor : IQueryExecutor
     {
-        Task<IEnumerable<T>> ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token);
+        Task<IList<T>> ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token);
         Task<T> ExecuteAsync<T>(QueryModel queryModel, CancellationToken token);
         Task<IEnumerable<string>> ExecuteCollectionToJsonAsync<T>(QueryModel queryModel, CancellationToken token);
         IEnumerable<string> ExecuteCollectionToJson<T>(QueryModel queryModel);

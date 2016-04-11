@@ -30,7 +30,7 @@ namespace Marten.Services
             });
         }
 
-        public static IEnumerable<T> Resolve<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map)
+        public static IList<T> Resolve<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map)
         {
             var selectMap = map.ForQuery();
 
@@ -50,7 +50,7 @@ namespace Marten.Services
             });
         }
 
-        public static Task<IEnumerable<T>> ResolveAsync<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map, CancellationToken token)
+        public static Task<IList<T>> ResolveAsync<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map, CancellationToken token)
         {
             var selectMap = map.ForQuery();
 
@@ -67,7 +67,7 @@ namespace Marten.Services
                     reader.Close();
                 }
 
-                return list.AsEnumerable();
+                return list.As<IList<T>>();
             }, token);
         }
 

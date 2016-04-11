@@ -30,7 +30,7 @@ namespace Marten.Linq
             return executor.ExecuteExplain<T>(model);
         }
 
-        public Task<IEnumerable<T>> ExecuteCollectionAsync(CancellationToken token)
+        public Task<IList<T>> ExecuteCollectionAsync(CancellationToken token)
         {
             var queryProvider = (IMartenQueryProvider) Provider;
             return queryProvider.ExecuteCollectionAsync<T>(Expression, token);
