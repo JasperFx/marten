@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Schema;
 using Shouldly;
 using Xunit;
@@ -35,12 +36,11 @@ namespace Marten.Testing.Events
                 Id = Guid.NewGuid()
             };
 
-
             var stream = Guid.NewGuid();
 
             using (var session = theStore.OpenSession())
             {
-                var json = session.Events.Transforms.Transform("location", stream, joined);
+                var json = session.Events.Transforms.Transform("location", stream, new Event { Body = joined });
                 var expectation = "{'Day':3,'Location':'Baerlon','Id':'EVENT','Quest':'STREAM'}"
                     .Replace("EVENT", joined.Id.ToString())
                     .Replace("STREAM", stream.ToString())
@@ -55,7 +55,9 @@ namespace Marten.Testing.Events
         {
             using (var session = theStore.OpenSession())
             {
-                var aggregate = session.Events.Transforms.StartSnapshot<FakeAggregate>(Guid.NewGuid(), new EventA { Name = "Alex Smith" });
+                var @event = new Event { Body = new EventA { Name = "Alex Smith" } };
+
+                var aggregate = session.Events.Transforms.StartSnapshot<FakeAggregate>(Guid.NewGuid(), @event);
 
                 aggregate.ANames.Single().ShouldBe("Alex Smith");
             }
@@ -72,7 +74,9 @@ namespace Marten.Testing.Events
 
             using (var session = theStore.OpenSession())
             {
-                var snapshotted = session.Events.Transforms.ApplySnapshot(aggregate.Id, aggregate, new EventA { Name = "Eric Fisher" });
+                var @event = new Event { Body = new EventA { Name = "Eric Fisher" } };
+
+                var snapshotted = session.Events.Transforms.ApplySnapshot(aggregate.Id, aggregate, @event);
 
                 snapshotted.ANames.ShouldHaveTheSameElementsAs("Jamaal Charles", "Tamba Hali", "Eric Fisher");
             }

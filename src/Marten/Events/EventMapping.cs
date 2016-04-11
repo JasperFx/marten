@@ -35,7 +35,7 @@ namespace Marten.Events
             DocumentType = eventType;
 
             EventTypeName = Alias = ToEventTypeName(DocumentType);
-            IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
+            IdMember = DocumentType.GetProperty(nameof(Event.Id));
 
             _inner = new DocumentMapping(eventType, parent.Options);
         }
@@ -105,7 +105,7 @@ namespace Marten.Events
         }
     }
 
-    public class EventMapping<T> : EventMapping, IDocumentStorage, IResolver<T> where T : class, IEvent
+    public class EventMapping<T> : EventMapping, IDocumentStorage, IResolver<T> where T : class, new()
     {
         private readonly string _tableName = "mt_events";
 
@@ -142,7 +142,7 @@ namespace Marten.Events
 
         public object Identity(object document)
         {
-            return document.As<IEvent>().Id;
+            return document.As<Event>().Id;
         }
 
         public void RegisterUpdate(UpdateBatch batch, object entity)
