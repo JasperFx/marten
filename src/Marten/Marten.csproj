@@ -50,6 +50,7 @@
     <Compile Include="DocumentStore.cs" />
     <Compile Include="DocumentTracking.cs" />
     <Compile Include="Events\AggregateModel.cs" />
+    <Compile Include="Events\Event.cs" />
     <Compile Include="Events\EventStore.cs" />
     <Compile Include="Events\EventStoreAdmin.cs" />
     <Compile Include="Events\EventStream.cs" />
@@ -146,7 +147,6 @@
     <Compile Include="Linq\IMartenQueryExecutor.cs" />
     <Compile Include="Events\EventGraph.cs" />
     <Compile Include="Events\EventMapping.cs" />
-    <Compile Include="Events\IEvent.cs" />
     <Compile Include="Events\IEventStore.cs" />
     <Compile Include="Events\ProjectionTiming.cs" />
     <Compile Include="Events\ProjectionType.cs" />

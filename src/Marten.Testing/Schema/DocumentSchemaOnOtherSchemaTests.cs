@@ -201,20 +201,6 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
-        public void resolve_a_document_mapping_for_an_event_type()
-        {
-            theSchema.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
-                .DocumentType.ShouldBe(typeof(RaceStarted));
-        }
-
-        [Fact]
-        public void resolve_storage_for_event_type()
-        {
-            theSchema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
-                .DocumentType.ShouldBe(typeof(RaceStarted));
-        }
-
-        [Fact]
         public void resolve_mapping_for_event_stream()
         {
             theSchema.MappingFor(typeof(EventStream)).ShouldBeOfType<EventGraph>();

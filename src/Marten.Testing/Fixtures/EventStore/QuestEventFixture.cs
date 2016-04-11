@@ -10,12 +10,12 @@ namespace Marten.Testing.Fixtures.EventStore
     [Hidden]
     public class QuestEventFixture : Fixture
     {
-        private List<IEvent> _events;
+        private List<object> _events;
         private DateTime _time;
 
         public override void SetUp()
         {
-            _events = new List<IEvent>();
+            _events = new List<object>();
         }
 
         [FormatAs("Members {names} joined the quest on day {day} at {location}")]

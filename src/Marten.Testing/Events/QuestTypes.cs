@@ -10,7 +10,7 @@ namespace Marten.Testing.Events
     }
 
 
-    public class ArrivedAtLocation : IEvent
+    public class ArrivedAtLocation
     {
         public Guid Id { get; set; }
 
@@ -24,7 +24,7 @@ namespace Marten.Testing.Events
         }
     }
 
-    public class MembersJoined : IEvent
+    public class MembersJoined
     {
         public Guid Id { get; set; }
 
@@ -41,7 +41,7 @@ namespace Marten.Testing.Events
     }
 
 
-    public class QuestStarted : IEvent
+    public class QuestStarted
     {
         public string Name { get; set; }
         public Guid Id { get; set; }
@@ -52,7 +52,7 @@ namespace Marten.Testing.Events
         }
     }
 
-    public class MembersDeparted : IEvent
+    public class MembersDeparted
     {
         public Guid Id { get; set; }
 
@@ -73,12 +73,12 @@ namespace Marten.Testing.Events
         public Guid Id { get; set; }
     }
 
-    public class IssueCreated : IEvent
+    public class IssueCreated
     {
         public Guid Id { get; set; }
     }
 
-    public class IssueAssigned : IEvent
+    public class IssueAssigned
     {
         public Guid Id { get; set; }
     }

@@ -24,7 +24,7 @@ namespace Marten.Events
 
 
         EventMapping EventMappingFor(Type eventType);
-        EventMapping EventMappingFor<T>() where T : IEvent;
+        EventMapping EventMappingFor<T>() where T : class, new();
         IEnumerable<EventMapping> AllEvents();
         IEnumerable<AggregateModel> AllAggregates();
         EventMapping EventMappingFor(string eventType);
@@ -65,7 +65,7 @@ namespace Marten.Events
             return _events[eventType];
         }
 
-        public EventMapping EventMappingFor<T>() where T : IEvent
+        public EventMapping EventMappingFor<T>() where T : class, new()
         {
             return EventMappingFor(typeof (T));
         }
@@ -87,10 +87,10 @@ namespace Marten.Events
 
         public void AddEventType(Type eventType)
         {
-            if (!eventType.IsConcreteTypeOf<IEvent>())
-            {
-                throw new ArgumentOutOfRangeException(nameof(eventType), "Event types must be concrete types implementing the IEvent interface");    
-            }
+            //if (!eventType.IsConcreteTypeOf<IEvent>())
+            //{
+            //    throw new ArgumentOutOfRangeException(nameof(eventType), "Event types must be concrete types implementing the IEvent interface");    
+            //}
 
             _events.FillDefault(eventType);
         }

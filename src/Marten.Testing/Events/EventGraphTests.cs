@@ -32,7 +32,6 @@ namespace Marten.Testing.Events
             theGraph.AddEventType(typeof (MembersDeparted));
 
             theGraph.EventMappingFor<IssueAssigned>().ShouldBeTheSameAs(theGraph.EventMappingFor<IssueAssigned>());
-            
         }
 
         [Fact]
