@@ -45,7 +45,18 @@ namespace Marten
 
         public DocumentMapping MappingFor(Type documentType)
         {
-            return _documentMappings.GetOrAdd(documentType, type => new DocumentMapping(type, this));
+            return _documentMappings.GetOrAdd(documentType, type =>
+            {
+                var mapping = new DocumentMapping(type, this);
+
+                if (mapping.IdMember == null)
+                {
+                    throw new InvalidDocumentException(
+                        $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
+                }
+
+                return mapping;
+            });
         }
 
         /// <summary>
