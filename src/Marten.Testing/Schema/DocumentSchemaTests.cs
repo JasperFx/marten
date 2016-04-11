@@ -590,7 +590,7 @@ namespace Marten.Testing.Schema
         }
     }
 
-    public class Race : IAggregate
+    public class Race
     {
         public Guid Id { get; set; }
     }

@@ -15,22 +15,11 @@ namespace Marten.Events
     {
         public Type AggregateType { get; }
         public string Alias { get; set; }
-
-        public AggregateModel(Type aggregateType, string alias)
-        {
-            if (!aggregateType.IsConcreteTypeOf<IAggregate>())
-            {
-                throw new ArgumentOutOfRangeException(nameof(aggregateType), "Only types implementing IAggregate can be used as an aggregate");
-            }
-
-            AggregateType = aggregateType;
-            Alias = alias;
-        }
-
+      
         public AggregateModel(Type aggregateType)
-            : this(aggregateType, aggregateType.Name.ToTableAlias())
         {
-            Alias = AggregateType.Name.ToTableAlias();
+            AggregateType = aggregateType;
+            Alias = aggregateType.Name.ToTableAlias();
         }
 
         public Type DocumentType { get; }

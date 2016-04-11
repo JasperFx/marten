@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using Marten.Events;
-using Marten.Testing.Schema;
 using Shouldly;
 using Xunit;
 
@@ -36,7 +34,6 @@ namespace Marten.Testing.Events
             theGraph.EventMappingFor<IssueAssigned>().ShouldBeTheSameAs(theGraph.EventMappingFor<IssueAssigned>());
             
         }
-
 
         [Fact]
         public void find_event_by_event_type_name()
@@ -79,21 +76,9 @@ namespace Marten.Testing.Events
             theGraph.IsActive.ShouldBeTrue();
         }
 
-        public class HouseRemodeling : IAggregate
+        public class HouseRemodeling
         {
             public Guid Id { get; set; }
-        }
-
-        [Fact]
-        public void add_types_from_assembly()
-        {
-            theGraph.AddAllTypesFromAssembly(GetType().Assembly);
-
-            theGraph.AllEvents().ShouldContain(x => x.DocumentType == typeof(MembersJoined));
-            theGraph.AllEvents().ShouldContain(x => x.DocumentType == typeof(MembersDeparted));
-
-            theGraph.AllAggregates().ShouldContain(x => x.AggregateType == typeof (Quest));
-            theGraph.AllAggregates().ShouldContain(x => x.AggregateType == typeof (Race));
         }
     }
 }

@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Linq;
 using Baseline;
 using Marten.Events;
 
 namespace Marten.Testing.Events
 {
-    public class Quest : IAggregate
+    public class Quest
     {
         public Guid Id { get; set; }
     }
@@ -69,7 +68,7 @@ namespace Marten.Testing.Events
         }
     }
 
-    public class Issue : IAggregate
+    public class Issue
     {
         public Guid Id { get; set; }
     }
