@@ -11,9 +11,9 @@ namespace Marten.Testing.Linq
     {
         public using_containment_operator_in_linq_Tests()
         {
-            theStore.Schema.Alter(_ =>
+            StoreOptions(_ =>
             {
-                _.For<Target>().GinIndexJsonData();
+                _.Schema.For<Target>().GinIndexJsonData();
             });
         }
 

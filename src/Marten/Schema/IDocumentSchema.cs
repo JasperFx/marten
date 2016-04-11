@@ -18,13 +18,6 @@ namespace Marten.Schema
         IDocumentMapping MappingFor(Type documentType);
         void EnsureStorageExists(Type documentType);
 
-        [Obsolete("Having all this done on StoreOptions now")]
-        void Alter(Action<MartenRegistry> configure);
-        [Obsolete("Having all this done on StoreOptions now")]
-        void Alter<T>() where T : MartenRegistry, new();
-        [Obsolete("Having all this done on StoreOptions now")]
-        void Alter(MartenRegistry registry);
-
         ISequences Sequences { get; }
 
         IEventStoreConfiguration Events { get; }

@@ -12,13 +12,15 @@ namespace Marten.Testing
         [Fact]
         public void persist_and_overwrite_foreign_key()
         {
-            ((DocumentSchema) theStore.Schema).Alter(registry => registry.For<Issue>()
-                .ForeignKey<User>(x => x.AssigneeId));
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId);
+            });
 
             var issue = new Issue();
             var user = new User();
 
-            using (var session = CreateSession())
+            using (var session = theStore.OpenSession())
             {
                 session.Store(user);
                 session.Store(issue);
@@ -27,7 +29,7 @@ namespace Marten.Testing
 
             issue.AssigneeId = user.Id;
 
-            using (var session = CreateSession())
+            using (var session = theStore.OpenSession())
             {
                 session.Store(issue);
                 session.SaveChanges();
@@ -35,7 +37,7 @@ namespace Marten.Testing
 
             issue.AssigneeId = null;
 
-            using (var session = CreateSession())
+            using (var session = theStore.OpenSession())
             {
                 session.Store(issue);
                 session.SaveChanges();
@@ -45,15 +47,18 @@ namespace Marten.Testing
         [Fact]
         public void throws_exception_if_trying_to_delete_referenced_user()
         {
-            ((DocumentSchema) theStore.Schema).Alter(registry => registry.For<Issue>()
-                .ForeignKey<User>(x => x.AssigneeId));
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Issue>()
+                    .ForeignKey<User>(x => x.AssigneeId);
+            });
 
             var issue = new Issue();
             var user = new User();
 
             issue.AssigneeId = user.Id;
 
-            using (var session = CreateSession())
+            using (var session = theStore.OpenSession())
             {
                 session.Store(user);
                 session.Store(issue);
@@ -62,7 +67,7 @@ namespace Marten.Testing
 
             Exception<NpgsqlException>.ShouldBeThrownBy(() =>
             {
-                using (var session = CreateSession())
+                using (var session = theStore.OpenSession())
                 {
                     session.Delete(user);
                     session.SaveChanges();
@@ -73,10 +78,13 @@ namespace Marten.Testing
         [Fact]
         public void persist_without_referenced_user()
         {
-            ((DocumentSchema)theStore.Schema).Alter(registry => registry.For<Issue>()
-               .ForeignKey<User>(x => x.AssigneeId));
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Issue>()
+                    .ForeignKey<User>(x => x.AssigneeId);
+            });
 
-            using (var session = CreateSession())
+            using (var session = theStore.OpenSession())
             {
                 session.Store(new Issue());
                 session.SaveChanges();
@@ -86,15 +94,18 @@ namespace Marten.Testing
         [Fact]
         public void order_inserts()
         {
-            ((DocumentSchema)theStore.Schema).Alter(registry => registry.For<Issue>()
-               .ForeignKey<User>(x => x.AssigneeId));
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Issue>()
+                    .ForeignKey<User>(x => x.AssigneeId);
+            });
 
             var issue = new Issue();
             var user = new User();
 
             issue.AssigneeId = user.Id;
 
-            using (var session = CreateSession())
+            using (var session = theStore.OpenSession())
             {
                 session.Store(issue);
                 session.Store(user);
@@ -106,16 +117,16 @@ namespace Marten.Testing
         [Fact]
         public void throws_exception_on_cyclic_dependency()
         {
-            ((DocumentSchema)theStore.Schema).Alter(registry =>
+            StoreOptions(_ =>
             {
-                registry.For<Node1>().ForeignKey<Node3>(x => x.Link);
-                registry.For<Node2>().ForeignKey<Node1>(x => x.Link);
-                registry.For<Node3>().ForeignKey<Node2>(x => x.Link);
+                _.Schema.For<Node1>().ForeignKey<Node3>(x => x.Link);
+                _.Schema.For<Node2>().ForeignKey<Node1>(x => x.Link);
+                _.Schema.For<Node3>().ForeignKey<Node2>(x => x.Link);
             });
 
             Exception<Exception>.ShouldBeThrownBy(() =>
             {
-                using (var session = CreateSession())
+                using (var session = theStore.OpenSession())
                 {
                     session.Store(new Node1());
                     session.Store(new Node2());

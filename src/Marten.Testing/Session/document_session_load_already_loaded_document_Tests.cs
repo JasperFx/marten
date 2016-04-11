@@ -20,7 +20,7 @@ namespace Marten.Testing.Session
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session = CreateSession())
+            using (var session = theStore.OpenSession())
             {
                 var first = session.Load<User>(user.Id);
                 var second = session.Load<User>(user.Id);
@@ -36,7 +36,7 @@ namespace Marten.Testing.Session
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session = CreateSession())
+            using (var session = theStore.OpenSession())
             {
                 var first = session.Load<User>(user.Id);
                 var second = session.LoadMany<User>()

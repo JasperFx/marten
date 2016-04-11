@@ -102,8 +102,9 @@ namespace Marten.Testing.Fixtures
         {
             _idToName.ClearAll();
 
-            ConnectionSource.CleanBasicDocuments();
             _container = Container.For<DevelopmentModeRegistry>();
+            _container.GetInstance<IDocumentStore>().Advanced.Clean.CompletelyRemoveAll();
+
             _session = _container.GetInstance<IDocumentStore>().OpenSession();
 
 

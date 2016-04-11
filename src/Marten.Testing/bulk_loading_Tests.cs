@@ -35,9 +35,9 @@ namespace Marten.Testing
         [Fact]
         public void load_with_small_batch_and_duplicated_fields()
         {
-            theContainer.GetInstance<IDocumentSchema>().Alter(_ =>
+            StoreOptions(_ =>
             {
-                _.For<Target>().Searchable(x => x.String);
+                _.Schema.For<Target>().Searchable(x => x.String);
             });
 
             var data = Target.GenerateRandomData(100).ToArray();
@@ -53,9 +53,9 @@ namespace Marten.Testing
         [Fact]
         public void load_with_small_batch_and_duplicated_data_field()
         {
-            theContainer.GetInstance<IDocumentSchema>().Alter(_ =>
+            StoreOptions(_ =>
             {
-                _.For<Target>().Searchable(x => x.Date);
+                _.Schema.For<Target>().Searchable(x => x.Date);
             });
 
             var data = Target.GenerateRandomData(100).ToArray();

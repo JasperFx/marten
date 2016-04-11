@@ -7,46 +7,31 @@ using Marten.Testing.Fixtures;
 using Marten.Util;
 using NpgsqlTypes;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Util
 {
-    public class update_batch_Tests : IntegratedFixture
+    public class update_batch_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         private readonly DocumentMapping theMapping;
-        private readonly IDocumentSession theSession;
 
         public update_batch_Tests()
         {
-            theMapping = theContainer.GetInstance<IDocumentSchema>().MappingFor(typeof(Target)).As<DocumentMapping>();
-            theSession = theContainer.GetInstance<IDocumentStore>().OpenSession();
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
-            theSession.Dispose();
+            theMapping = theStore.Schema.MappingFor(typeof (Target)).As<DocumentMapping>();
         }
 
         [Fact]
         public void can_make_updates_with_more_than_one_batch()
         {
-            var targets = Target.GenerateRandomData(100);
-            using (var container = Container.For<DevelopmentModeRegistry>())
+            var targets = Target.GenerateRandomData(100).ToArray();
+            StoreOptions(_ => _.UpdateBatchSize = 10);
+
+            using (var session = theStore.LightweightSession())
             {
-                using (var store = container.GetInstance<IDocumentStore>())
-                {
-                    store.Advanced.Options.UpdateBatchSize = 10;
+                targets.Each(x => session.Store(x));
+                session.SaveChanges();
 
-                    using (var session = store.LightweightSession())
-                    {
-                        targets.Each(x => session.Store(x));
-                        session.SaveChanges();
-
-                        session.Query<Target>().Count().ShouldBe(100);
-                    }
-                }
+                session.Query<Target>().Count().ShouldBe(100);
             }
         }
 
@@ -54,24 +39,18 @@ namespace Marten.Testing.Util
         [Fact]
         public async Task can_make_updates_with_more_than_one_batch_async()
         {
-            var targets = Target.GenerateRandomData(100);
-            using (var container = Container.For<DevelopmentModeRegistry>())
+            StoreOptions(_ => { _.UpdateBatchSize = 10; });
+
+            var targets = Target.GenerateRandomData(100).ToArray();
+
+            using (var session = theStore.LightweightSession())
             {
-                using (var store = container.GetInstance<IDocumentStore>())
-                {
-                    store.Advanced.Options.UpdateBatchSize = 10;
+                session.Store(targets);
+                await session.SaveChangesAsync();
 
-                    using (var session = store.LightweightSession())
-                    {
-                        targets.Each(x => session.Store(x));
-                        await session.SaveChangesAsync();
-
-                        var t = await session.Query<Target>().CountAsync();
-                        t.ShouldBe(100);
-                    }
-                }
+                var t = await session.Query<Target>().CountAsync();
+                t.ShouldBe(100);
             }
-
         }
 
         [Fact]
@@ -82,14 +61,13 @@ namespace Marten.Testing.Util
             theSession.Store(initialTarget);
             theSession.SaveChanges();
 
-            var batch = theContainer.GetInstance<UpdateBatch>();
+            var batch = theStore.Advanced.CreateUpdateBatch();
 
             var target1 = Target.Random();
             var target2 = Target.Random();
             var target3 = Target.Random();
 
             var upsertName = theMapping.QualifiedUpsertName;
-
 
 
             batch.Sproc(upsertName).Param("docId", target1.Id).JsonEntity("doc", target1);
@@ -119,7 +97,7 @@ namespace Marten.Testing.Util
             theSession.Store(initialTarget);
             theSession.SaveChanges();
 
-            var batch = theContainer.GetInstance<UpdateBatch>();
+            var batch = theStore.Advanced.CreateUpdateBatch();
 
             var target1 = Target.Random();
             var target2 = Target.Random();
@@ -127,7 +105,7 @@ namespace Marten.Testing.Util
 
             var upsertName = theMapping.QualifiedUpsertName;
 
-            var serializer = theContainer.GetInstance<ISerializer>();
+            var serializer = new JsonNetSerializer();
 
             batch.Sproc(upsertName).Param("docId", target1.Id).JsonBody("doc", serializer.ToJson(target1));
             batch.Sproc(upsertName).Param("docId", target2.Id).JsonBody("doc", serializer.ToJson(target2));

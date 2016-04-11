@@ -11,10 +11,14 @@ namespace Marten.Testing.Bugs
     {
         public Bug145_table_getting_erroneously_regenerated_Tests()
         {
-            theStore.Schema.Alter(_ => _.For<Login>()
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Login>()
                 .GinIndexJsonData()
                 .Searchable(x => x.Email)
-                .Searchable(x => x.Identifier));
+                .Searchable(x => x.Identifier);
+            });
+
 
             theStore.Schema.StorageFor(typeof(Login)).ShouldNotBeNull();
         }

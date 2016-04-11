@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Events;
@@ -17,7 +18,6 @@ namespace Marten
     /// </summary>
     public class DocumentStore : IDocumentStore
     {
-        private readonly IManagedConnection _runner;
         private readonly ISerializer _serializer;
         private readonly IQueryParser _parser = new MartenQueryParser();
 
@@ -68,18 +68,16 @@ namespace Marten
         {
             _options = options;
             _connectionFactory = options.ConnectionFactory();
-            _runner = new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly);
 
             _logger = options.Logger();
 
             Schema = new DocumentSchema(_options, _connectionFactory, _logger);
 
-            Schema.Alter(options.Schema);
 
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_connectionFactory, Schema);
-            Advanced = new AdvancedOptions(cleaner, options);
+            Advanced = new AdvancedOptions(cleaner, options, _serializer, Schema);
 
             Diagnostics = new Diagnostics(Schema);
 
@@ -89,8 +87,22 @@ namespace Marten
 
             if (Schema.Events.IsActive && options.AutoCreateSchemaObjects != AutoCreate.None)
             {
-                Schema.EnsureStorageExists(typeof(EventStream));
+                Schema.EnsureStorageExists(typeof (EventStream));
                 EventStore.InitializeEventStoreInDatabase();
+            }
+
+            // TODO -- don't like the spread of responsibilities here
+            if (_options.AutoCreateSchemaObjects != AutoCreate.None &&
+                _options.DatabaseSchemaName != StoreOptions.DefaultDatabaseSchemaName)
+            {
+                var writer = new StringWriter();
+                EnsureDatabaseSchema.WriteSql(_options.DatabaseSchemaName, writer);
+                var sql = writer.ToString();
+
+                using (var runner = Advanced.OpenConnection())
+                {
+                    runner.Execute(sql);
+                }
             }
         }
 
@@ -98,14 +110,16 @@ namespace Marten
         private readonly IConnectionFactory _connectionFactory;
         private readonly IMartenLogger _logger;
 
-        public void Dispose()
+        public virtual void Dispose()
         {
-            _runner.Dispose();
         }
+
+        
 
         public IDocumentSchema Schema { get; }
         public AdvancedOptions Advanced { get; }
         public ICompiledQueryExecutor CompiledQueryExecutor { get; set; }
+
 
 
         public void BulkInsert<T>(T[] documents, int batchSize = 1000)
@@ -138,10 +152,12 @@ namespace Marten
 
         public void BulkInsertDocuments(IEnumerable<object> documents, int batchSize = 1000)
         {
-            var groups = documents.Where(x => x != null).GroupBy(x => x.GetType()).Select(group =>
-            {
-                return typeof (BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key);
-            }).ToArray();
+            var groups =
+                documents.Where(x => x != null)
+                    .GroupBy(x => x.GetType())
+                    .Select(
+                        group => { return typeof (BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key); })
+                    .ToArray();
 
             using (var conn = _connectionFactory.Create())
             {
@@ -180,7 +196,7 @@ namespace Marten
 
             public void BulkInsert(int batchSize, NpgsqlConnection connection, DocumentStore parent)
             {
-                parent.bulkInsertDocuments<T>(_documents, batchSize, connection);
+                parent.bulkInsertDocuments(_documents, batchSize, connection);
             }
         }
 
@@ -211,10 +227,12 @@ namespace Marten
 
         public IDiagnostics Diagnostics { get; }
 
-        public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly, IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
+        public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
+            IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
         {
             var map = createMap(tracking);
-            var session = new DocumentSession(this, _options, Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel), _parser, map);
+            var session = new DocumentSession(this, _options, Schema, _serializer,
+                new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel), _parser, map);
 
             session.Logger = _logger.StartSession(session);
 
@@ -252,14 +270,14 @@ namespace Marten
         public IQuerySession QuerySession()
         {
             var parser = new MartenQueryParser();
-            
-            var session = new QuerySession(this, Schema, _serializer, new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser, new NulloIdentityMap(_serializer), _options);
+
+            var session = new QuerySession(this, Schema, _serializer,
+                new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser,
+                new NulloIdentityMap(_serializer), _options);
 
             session.Logger = _logger.StartSession(session);
 
             return session;
         }
-
-
     }
 }

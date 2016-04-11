@@ -46,7 +46,7 @@ namespace Marten.Testing
             container.GetInstance<IDocumentCleaner>().CompletelyRemoveAll();
 
             var schema = container.GetInstance<IDocumentSchema>();
-            schema.Alter<TRegistry>();
+throw new NotImplementedException("No longer have an Alter() mechanism to add the MartenRegistry");
             schema.EnsureStorageExists(typeof(Target));
 
             var strategy = new TStrategy();

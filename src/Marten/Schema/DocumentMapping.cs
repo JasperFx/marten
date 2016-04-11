@@ -55,9 +55,12 @@ namespace Marten.Schema
             Alias = defaultDocumentAliasName(documentType);
 
             IdMember = determineId(documentType);
-            _fields[IdMember.Name] = new IdField(IdMember);
 
-            IdStrategy = defineIdStrategy(documentType, storeOptions);
+		    if (IdMember != null)
+		    {
+                _fields[IdMember.Name] = new IdField(IdMember);
+                IdStrategy = defineIdStrategy(documentType, storeOptions);
+            }
 
             documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
 
@@ -74,28 +77,40 @@ namespace Marten.Schema
 
         private static MemberInfo determineId(Type documentType)
         {
-            var idMember = (MemberInfo) documentType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
-                           ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
+            return (MemberInfo) GetProperties(documentType).FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
+                   ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
+        }
 
-            if (idMember == null)
-            {
-                throw new InvalidDocumentException(
-                    $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
-            }
+        private static PropertyInfo[] GetProperties(Type type)
+        {
+            return type.IsInterface ? (new [] { type })
+                .Concat(type.GetInterfaces())
+                .SelectMany(i => i.GetProperties()).ToArray() : type.GetProperties();
+        }
 
-            return idMember;
+        public void AddSubClass(Type subclassType, IEnumerable<MappedType> otherSubclassTypes, string alias)
+        {
+            VerifyIsSubclass(subclassType);
+
+            var subclass = new SubClassMapping(subclassType, this, _storeOptions, otherSubclassTypes, alias);
+            _subClasses.Add(subclass);
         }
 
         public void AddSubClass(Type subclassType, string alias = null)
+        {
+            VerifyIsSubclass(subclassType);
+
+            var subclass = new SubClassMapping(subclassType, this, _storeOptions, alias);
+            _subClasses.Add(subclass);
+        }
+
+        private void VerifyIsSubclass(Type subclassType)
         {
             if (!subclassType.CanBeCastTo(DocumentType))
             {
                 throw new ArgumentOutOfRangeException(nameof(subclassType),
                     $"Type '{subclassType.GetFullName()}' cannot be cast to '{DocumentType.GetFullName()}'");
             }
-
-            var subclass = new SubClassMapping(subclassType, this, _storeOptions, alias);
-            _subClasses.Add(subclass);
         }
 
         public string Alias
@@ -187,7 +202,7 @@ namespace Marten.Schema
 
         private IIdGeneration defineIdStrategy(Type documentType, StoreOptions options)
         {
-            if (!CanSetIdMember())
+            if (!idMemberIsSettable())
             {
                 return new NoOpIdGeneration();
             }
@@ -216,7 +231,7 @@ namespace Marten.Schema
                 $"Marten cannot use the type {idType.FullName} as the Id for a persisted document. Use int, long, Guid, or string");
         }
 
-        private bool CanSetIdMember()
+        private bool idMemberIsSettable()
         {
             var field = IdMember as FieldInfo;
             if (field != null) return field.IsPublic;
@@ -328,6 +343,7 @@ namespace Marten.Schema
         public IIdGeneration IdStrategy { get; set; }
 
         public string QualifiedUpsertName => $"{DatabaseSchemaName}.{UpsertName}";
+
         public string UpsertName => $"{UpsertPrefix}{_alias}";
 
         public Type DocumentType { get; }
@@ -353,9 +369,10 @@ namespace Marten.Schema
 
         public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;
 
-        public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();        
+        public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();
 
         private static readonly Regex _aliasSanitizer = new Regex("<|>", RegexOptions.Compiled);
+
         private static string defaultDocumentAliasName(Type documentType)
         {
             var nameToAlias = documentType.Name;

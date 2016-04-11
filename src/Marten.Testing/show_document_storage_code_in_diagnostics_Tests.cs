@@ -11,14 +11,17 @@ namespace Marten.Testing
         [Fact]
         public void show_code()
         {
-            var container = Container.For<DevelopmentModeRegistry>();
-            container.GetInstance<IDocumentSchema>().Alter(_ =>
+            using (var store = DocumentStore.For(_ =>
             {
-                _.For<Target>().Searchable(x => x.Date);
-            });
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<Target>().Searchable(x => x.Date);
 
-            var code = container.GetInstance<IDocumentStore>().Diagnostics.DocumentStorageCodeFor<Target>();
-            Debug.WriteLine(code);
+            }))
+            {
+                var code = store.Diagnostics.DocumentStorageCodeFor<Target>();
+                Debug.WriteLine(code);
+            }
+
         } 
 
     }

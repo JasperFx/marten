@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Baseline;
 
 namespace Marten.Schema
 {
@@ -8,7 +9,7 @@ namespace Marten.Schema
         public static void WriteSql(string databaseSchemaName, StringWriter writer)
         {
             if (writer == null) throw new ArgumentNullException(nameof(writer));
-            if (String.IsNullOrWhiteSpace(databaseSchemaName)) throw new ArgumentException("Argument is null or whitespace", nameof(databaseSchemaName));
+            if (databaseSchemaName.IsEmpty()) throw new ArgumentException("Argument is null or whitespace", nameof(databaseSchemaName));
 
             writer.WriteLine($@"
 DO $$

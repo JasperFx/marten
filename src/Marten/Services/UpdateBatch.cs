@@ -8,7 +8,7 @@ using NpgsqlTypes;
 
 namespace Marten.Services
 {
-    public class UpdateBatch
+    public class UpdateBatch : IDisposable
     {
         private readonly StoreOptions _options;
         private readonly ISerializer _serializer;
@@ -66,6 +66,11 @@ namespace Marten.Services
         public void DeleteWhere(string tableName, IWhereFragment @where)
         {
             Current().DeleteWhere(tableName, @where);
+        }
+
+        public void Dispose()
+        {
+            Connection.Dispose();
         }
     }
 

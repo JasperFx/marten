@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using Baseline;
 
 namespace Marten.Testing.Fixtures
@@ -14,13 +13,19 @@ namespace Marten.Testing.Fixtures
 
     public class Target
     {
-        private static Random _random = new Random(67);
+        private static readonly Random _random = new Random(67);
 
-        private static string[] _strings = new[]
-        {"Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Violet", "Pink", "Gray", "Black"};
+        private static readonly string[] _strings =
+        {
+            "Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Violet",
+            "Pink", "Gray", "Black"
+        };
 
-        private static string[] _otherStrings = new[]
-            {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"};
+        private static readonly string[] _otherStrings =
+        {
+            "one", "two", "three", "four", "five", "six", "seven", "eight",
+            "nine", "ten"
+        };
 
         public static IEnumerable<Target> GenerateRandomData(int number)
         {
@@ -31,7 +36,7 @@ namespace Marten.Testing.Fixtures
 
                 i++;
             }
-        } 
+        }
 
         public static Target Random(bool deep = false)
         {
@@ -42,7 +47,7 @@ namespace Marten.Testing.Fixtures
 
             target.Float = float.Parse(_random.NextDouble().ToString());
 
-            target.NumberArray = new int[] {_random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) };
+            target.NumberArray = new[] {_random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10)};
 
             switch (_random.Next(0, 2))
             {
@@ -50,11 +55,11 @@ namespace Marten.Testing.Fixtures
                     target.Color = Colors.Blue;
                     break;
 
-                case 1: 
+                case 1:
                     target.Color = Colors.Green;
                     break;
 
-                default: 
+                default:
                     target.Color = Colors.Red;
                     break;
             }
@@ -109,14 +114,12 @@ namespace Marten.Testing.Fixtures
 
         public int[] NumberArray { get; set; }
 
-        
 
         public Target[] Children { get; set; }
 
         public int? NullableNumber { get; set; }
         public DateTime? NullableDateTime { get; set; }
         public bool? NullableBoolean { get; set; }
-
     }
 
     public class Address

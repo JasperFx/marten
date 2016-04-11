@@ -163,25 +163,6 @@ namespace Marten.Schema
             return findFunctionNames().ToArray();
         }
 
-        public void Alter(Action<MartenRegistry> configure)
-        {
-            var registry = new MartenRegistry();
-            configure(registry);
-
-            Alter(registry);
-        }
-
-        public void Alter<T>() where T : MartenRegistry, new()
-        {
-            Alter(new T());
-        }
-
-        public void Alter(MartenRegistry registry)
-        {
-            // TODO -- later, latch on MartenRegistry type? May not really matter
-            registry.Alter(StoreOptions);
-        }
-
         public ISequences Sequences { get; }
 
         public void WriteDDL(string filename)

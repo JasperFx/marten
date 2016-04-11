@@ -9,9 +9,12 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void save()
         {
-            theStore.Schema.Alter(_ => _.For<Issue>()
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Issue>()
                 .Searchable(x => x.AssigneeId)
-                .ForeignKey<User>(x => x.AssigneeId));
+                .ForeignKey<User>(x => x.AssigneeId);
+            });
 
             theSession.Store(new Issue());
             theSession.SaveChanges();

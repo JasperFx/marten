@@ -14,7 +14,7 @@ namespace Marten.Testing.Events
             var directory =
                 AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
-            var eventGraph = theContainer.GetInstance<IDocumentSchema>().Events;
+            var eventGraph = theStore.Schema.Events;
             eventGraph.AddEventType(typeof (MembersJoined));
 
             eventGraph.AddEventType(typeof (EventA));

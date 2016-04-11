@@ -14,7 +14,17 @@ namespace Marten
     /// </summary>
     public class MartenRegistry
     {
+        private readonly StoreOptions _options;
         private readonly IList<Action<StoreOptions>> _alterations = new List<Action<StoreOptions>>();
+
+        public MartenRegistry()
+        {
+        }
+
+        public MartenRegistry(StoreOptions options)
+        {
+            _options = options;
+        }
 
         /// <summary>
         /// Configure a single document type
@@ -28,12 +38,15 @@ namespace Marten
 
         private Action<StoreOptions> alter
         {
-            set { _alterations.Add(value); }
-        }
+            set
+            {
+                if (_options != null)
+                {
+                    value(_options);
+                }
 
-        internal void Alter(StoreOptions schema)
-        {
-            _alterations.Each(x => x(schema));
+                _alterations.Add(value);
+            }
         }
 
         /// <summary>
@@ -42,7 +55,11 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         public void Include<T>() where T : MartenRegistry, new()
         {
-            alter = x => new T().Alter(x);
+            alter = x =>
+            {
+                var registry = new T();
+                registry._alterations.Each(a => alter = a);
+            };
         }
 
         /// <summary>
@@ -51,7 +68,7 @@ namespace Marten
         /// <param name="registry"></param>
         public void Include(MartenRegistry registry)
         {
-            alter = registry.Alter;
+            registry._alterations.Each(a => alter = a);
         }
 
         /// <summary>
@@ -180,7 +197,9 @@ namespace Marten
                         value(o.MappingFor(typeof (T)));
                     };
 
-                    _parent._alterations.Add(alteration);
+
+                    _parent.alter = alteration;
+                   
                 }
             }
 
@@ -214,11 +233,45 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Programmatically directs Marten to map all the subclasses of <cref name="T"/> to a hierarchy of types
+            /// </summary>
+            /// <param name="allSubclassTypes">All the subclass types of <cref name="T"/> that you wish to map. 
+            /// You can use either params of <see cref="Type"/> or <see cref="MappedType"/> or a mix, since Type can implicitly convert to MappedType (without an alias)</param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> AddSubclassHierarchy(params MappedType[] allSubclassTypes)
+            {
+                alter = mapping => Array.ForEach(allSubclassTypes, subclassType => 
+                    mapping.AddSubClass(
+                        subclassType.Type, 
+                        allSubclassTypes.Except(new [] {subclassType}), 
+                        subclassType.Alias
+                    )
+                );
+                return this;
+            }
+
 
             public DocumentMappingExpression<T> AddSubclass<TSubclass>(string alias = null) where TSubclass : T
             {
                 return AddSubclass(typeof(TSubclass), alias);
             }    
+        }
+    }
+
+    public class MappedType
+    {
+        public MappedType(Type type, string alias = null)
+        {
+            Type = type;
+            Alias = alias;
+        }
+        public Type Type { get; set; }
+        public string Alias { get; set; }
+
+        public static implicit operator MappedType (Type type)
+        {
+            return new MappedType(type);
         }
     }
 }

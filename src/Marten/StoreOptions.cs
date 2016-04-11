@@ -40,11 +40,23 @@ namespace Marten
         public StoreOptions()
         {
             Events = new EventGraph(this);
+            Schema = new MartenRegistry(this);
         }
 
         public DocumentMapping MappingFor(Type documentType)
         {
-            return _documentMappings.GetOrAdd(documentType, type => new DocumentMapping(type, this));
+            return _documentMappings.GetOrAdd(documentType, type =>
+            {
+                var mapping = new DocumentMapping(type, this);
+
+                if (mapping.IdMember == null)
+                {
+                    throw new InvalidDocumentException(
+                        $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
+                }
+
+                return mapping;
+            });
         }
 
         /// <summary>
@@ -118,7 +130,7 @@ namespace Marten
         /// <summary>
         /// Modify the document and event store database mappings for indexes and searching options
         /// </summary>
-        public readonly MartenRegistry Schema = new MartenRegistry();
+        public readonly MartenRegistry Schema;
 
         /// <summary>
         /// Whether or Marten should attempt to create any missing database schema objects at runtime. This
@@ -197,6 +209,22 @@ namespace Marten
             PreBuiltStorage.AddRange(assembly.GetExportedTypes().Where(x => x.IsConcreteTypeOf<IDocumentStorage>()));
         }
 
+        /// <summary>
+        /// Load pre-compiled document storage types. Each type must be a concrete type of IDocumentStorage
+        /// </summary>
+        /// <param name="types"></param>
+        public void LoadPrecompiledStorage(IEnumerable<Type> types)
+        {
+            types.Each(x =>
+            {
+                if (!x.IsConcreteTypeOf<IDocumentStorage>())
+                {
+                    throw new ArgumentOutOfRangeException(nameof(types), $"Type {x.FullName} is not an {nameof(IDocumentStorage)} type");
+                }
+            });
+
+            PreBuiltStorage.AddRange(types);
+        }
 
         public IMartenLogger Logger()
         {
@@ -212,6 +240,7 @@ namespace Marten
         /// Extension point to add custom Linq query parsers
         /// </summary>
         public LinqCustomizations Linq { get; } = new LinqCustomizations();
+
     }
 
     public class LinqCustomizations

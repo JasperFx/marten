@@ -11,15 +11,15 @@ namespace Marten.Testing
         [Fact]
         public void load_with_small_batch_and_duplicated_fields()
         {
-            theContainer.GetInstance<IDocumentSchema>().Alter(_ =>
+            StoreOptions(_ =>
             {
-                _.For<Target>().Searchable(x => x.String)
+                _.Schema.For<Target>().Searchable(x => x.String)
                     .Searchable(x => x.AnotherString);
             });
 
             var data = Target.GenerateRandomData(1).First();
 
-            using (var session = CreateSession())
+            using (var session = theStore.OpenSession())
             {
                 session.Store(data);
                 session.SaveChanges();

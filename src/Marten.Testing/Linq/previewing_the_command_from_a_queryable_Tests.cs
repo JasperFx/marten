@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
+    [Collection("DefaultSchema")]
     public class previewing_the_command_from_a_queryable_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
@@ -57,9 +58,9 @@ namespace Marten.Testing.Linq
 
     public class previewing_the_command_from_a_queryable_inb_different_schema_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
-        protected override void StoreOptions(StoreOptions options)
+        public previewing_the_command_from_a_queryable_inb_different_schema_Tests()
         {
-            options.DatabaseSchemaName = "other";
+            StoreOptions(_ => _.DatabaseSchemaName = "other");
         }
 
         [Fact]

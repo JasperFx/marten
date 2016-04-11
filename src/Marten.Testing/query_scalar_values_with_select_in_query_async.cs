@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Marten.Testing
 {
+    [Collection("DefaultSchema")]
     public class query_scalar_values_with_select_in_query_async : DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]

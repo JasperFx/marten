@@ -16,9 +16,9 @@ namespace Marten.Testing.Schema
         public void duplicate_and_search_off_of_deep_accessor_by_number()
         {
             var targets = Target.GenerateRandomData(10).ToArray();
-            theContainer.GetInstance<IDocumentSchema>().Alter(_ =>
+            StoreOptions(_ =>
             {
-                _.For<Target>().Searchable(x => x.Inner.Number);
+                _.Schema.For<Target>().Searchable(x => x.Inner.Number);
             });
 
             targets.Each(x => theSession.Store(x));
@@ -37,9 +37,9 @@ namespace Marten.Testing.Schema
         public void duplicate_and_search_off_of_deep_accessor_by_date()
         {
             var targets = Target.GenerateRandomData(10).ToArray();
-            theContainer.GetInstance<IDocumentSchema>().Alter(_ =>
+            StoreOptions(_ =>
             {
-                _.For<Target>().Searchable(x => x.Inner.Date);
+                _.Schema.For<Target>().Searchable(x => x.Inner.Date);
             });
 
             targets.Each(x => theSession.Store(x));

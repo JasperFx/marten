@@ -13,7 +13,11 @@ namespace Marten.Testing.Schema
     {
         private void searchable(Expression<Func<Target, object>> expression)
         {
-            theStore.Schema.Alter(x => x.For<Target>().Searchable(expression));
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Target>().Searchable(expression);
+            });
+
             theStore.Schema.StorageFor(typeof(Target)).ShouldNotBeNull();
 
             var existing = theStore.Schema.TableSchema(typeof (Target));

@@ -18,7 +18,7 @@ namespace Marten.Testing.Schema
 
         public DocumentCleanerTests()
         {
-            theCleaner = theContainer.GetInstance<DocumentCleaner>();
+            theCleaner = theStore.Advanced.Clean.As<DocumentCleaner>();
         }
 
         [Fact]
@@ -77,13 +77,12 @@ namespace Marten.Testing.Schema
 
             var tableName = theStore.Schema.MappingFor(typeof(Target)).QualifiedTableName;
 
-            var schema = theContainer.GetInstance<DocumentSchema>();
-            schema.DocumentTables().Contains(tableName)
+            theStore.Schema.DocumentTables().Contains(tableName)
                 .ShouldBeTrue();
 
             theCleaner.CompletelyRemove(typeof(Target));
 
-            schema.DocumentTables().Contains(tableName)
+            theStore.Schema.DocumentTables().Contains(tableName)
                 .ShouldBeFalse();
         }
 
@@ -95,7 +94,7 @@ namespace Marten.Testing.Schema
 
             theSession.SaveChanges();
 
-            var schema = theContainer.GetInstance<DocumentSchema>();
+            var schema = theStore.Schema;
 
             var upsertName = schema.MappingFor(typeof(Target)).As<DocumentMapping>().QualifiedUpsertName;
 
@@ -122,7 +121,7 @@ namespace Marten.Testing.Schema
 
             theCleaner.CompletelyRemoveAll();
 
-            var schema = theContainer.GetInstance<DocumentSchema>();
+            var schema = theStore.Schema;
 
             ShouldBeEmpty(schema.DocumentTables());
             ShouldBeEmpty(schema.SchemaFunctionNames());

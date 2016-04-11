@@ -7,6 +7,8 @@ namespace Marten.Testing
 {
     public abstract class document_session_delete_a_single_document_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
     {
+
+
         [Fact]
         public void persist_and_delete_a_document_by_entity()
         {
@@ -14,13 +16,14 @@ namespace Marten.Testing
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
+
+            using (var session = theStore.OpenSession())
             {
                 session.Delete(user);
                 session.SaveChanges();
             }
-
-            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
+            
+            using (var session = theStore.OpenSession())
             {
                 session.Load<User>(user.Id).ShouldBeNull();
             }
@@ -33,13 +36,13 @@ namespace Marten.Testing
             theSession.Store(user);
             theSession.SaveChanges();
 
-            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
+            using (var session = theStore.OpenSession())
             {
                 session.Delete<User>(user.Id);
                 session.SaveChanges();
             }
 
-            using (var session = theContainer.GetInstance<IDocumentStore>().OpenSession())
+            using (var session = theStore.OpenSession())
             {
                 session.Load<User>(user.Id).ShouldBeNull();
             }
