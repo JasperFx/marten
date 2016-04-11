@@ -9,10 +9,10 @@ namespace Marten.Events
 
         void AppendEvents(Guid stream, params IEvent[] events);
 
-        Guid StartStream<T>(Guid id, params IEvent[] events) where T : IAggregate;
-        Guid StartStream<T>(params IEvent[] events) where T : IAggregate;
+        Guid StartStream<T>(Guid id, params IEvent[] events) where T : class, new();
+        Guid StartStream<T>(params IEvent[] events) where T : class, new();
 
-        T FetchSnapshot<T>(Guid streamId) where T : IAggregate;
+        T FetchSnapshot<T>(Guid streamId) where T : class, new();
 
         IEnumerable<IEvent> FetchStream(Guid streamId);
         IEnumerable<IEvent> FetchStream(Guid streamId, int version);
@@ -34,13 +34,13 @@ namespace Marten.Events
 
     public interface ITransforms
     {
-        TTarget TransformTo<TEvent, TTarget>(Guid stream, TEvent @event) where TEvent : IEvent;
-        string Transform(string projectionName, Guid stream, IEvent @event) ;
+        TTarget TransformTo<TEvent, TTarget>(Guid streamId, TEvent @event) where TEvent : IEvent;
+        string Transform(string projectionName, Guid streamId, IEvent @event) ;
 
-        TAggregate ApplySnapshot<TAggregate>(TAggregate aggregate, IEvent @event) where TAggregate : IAggregate;
+        TAggregate ApplySnapshot<TAggregate>(Guid streamId, TAggregate aggregate, IEvent @event) where TAggregate : class, new();
 
-        T ApplyProjection<T>(string projectionName, T aggregate, IEvent @event) where T : IAggregate;
-        TAggregate StartSnapshot<TAggregate>(IEvent @event) where TAggregate : IAggregate;
+        T ApplyProjection<T>(string projectionName, T aggregate, IEvent @event) where T : class, new();
+        TAggregate StartSnapshot<TAggregate>(Guid streamId, IEvent @event) where TAggregate : class, new();
     }
 
     public interface IEventStoreAdmin

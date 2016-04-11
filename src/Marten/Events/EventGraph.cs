@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Linq;
@@ -18,10 +17,9 @@ namespace Marten.Events
         string DatabaseSchemaName { get; set; }
 
         void AddEventType(Type eventType);
-        void AddAllTypesFromAssembly(Assembly assembly);
         void AddEventTypes(IEnumerable<Type> types);
         void AddAggregateTypes(IEnumerable<Type> types);
-        void AddAggregateType<T>() where T : IAggregate;
+        void AddAggregateType<T>() where T : class, new();
         void AddAggregateType(Type aggregateType);
 
 
@@ -31,7 +29,7 @@ namespace Marten.Events
         IEnumerable<AggregateModel> AllAggregates();
         EventMapping EventMappingFor(string eventType);
         bool IsActive { get; }
-        AggregateModel AggregateFor<T>() where T : IAggregate;
+        AggregateModel AggregateFor<T>() where T : class, new();
         AggregateModel AggregateFor(Type aggregateType);
         Type AggregateTypeFor(string aggregateTypeName);
     }
@@ -94,17 +92,7 @@ namespace Marten.Events
                 throw new ArgumentOutOfRangeException(nameof(eventType), "Event types must be concrete types implementing the IEvent interface");    
             }
 
-            
-
             _events.FillDefault(eventType);
-        }
-
-        public void AddAllTypesFromAssembly(Assembly assembly)
-        {
-            var allTypes = assembly.GetExportedTypes();
-
-            AddEventTypes(allTypes.Where(x => x.IsConcreteTypeOf<IEvent>()));
-            AddAggregateTypes(allTypes.Where(x => x.IsConcreteTypeOf<IAggregate>()));
         }
 
         public void AddEventTypes(IEnumerable<Type> types)
@@ -231,7 +219,7 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
-        public AggregateModel AggregateFor<T>() where T : IAggregate
+        public AggregateModel AggregateFor<T>() where T : class, new()
         {
             return AggregateFor(typeof (T));
         }
@@ -246,7 +234,7 @@ namespace Marten.Events
             return _aggregateByName[aggregateTypeName].AggregateType;
         }
 
-        public void AddAggregateType<T>() where T : IAggregate
+        public void AddAggregateType<T>() where T : class, new()
         {
             _aggregates.FillDefault(typeof(T));
         }
@@ -255,6 +243,7 @@ namespace Marten.Events
         {
             _aggregates.FillDefault(aggregateType);
         }
+
         
     }
 }

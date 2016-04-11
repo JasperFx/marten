@@ -146,7 +146,6 @@
     <Compile Include="Linq\IMartenQueryExecutor.cs" />
     <Compile Include="Events\EventGraph.cs" />
     <Compile Include="Events\EventMapping.cs" />
-    <Compile Include="Events\IAggregate.cs" />
     <Compile Include="Events\IEvent.cs" />
     <Compile Include="Events\IEventStore.cs" />
     <Compile Include="Events\ProjectionTiming.cs" />

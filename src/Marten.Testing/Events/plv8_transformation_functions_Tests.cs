@@ -11,22 +11,17 @@ namespace Marten.Testing.Events
     {
         public plv8_transformation_functions_Tests()
         {
-            var directory =
-                AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
+            var directory = AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().AppendPath("Events");
 
             var eventGraph = theStore.Schema.Events;
-            eventGraph.AddEventType(typeof (MembersJoined));
-
-            eventGraph.AddEventType(typeof (EventA));
-            
-
+            eventGraph.AddEventType(typeof(MembersJoined));
+            eventGraph.AddEventType(typeof(EventA));
 
             var theEvents = theStore.EventStore;
 
             theEvents.RebuildEventStoreSchema();
             theEvents.LoadProjections(directory);
             theEvents.InitializeEventStoreInDatabase(true);
-            
         }
 
         [Fact]
@@ -36,7 +31,7 @@ namespace Marten.Testing.Events
             {
                 Day = 3,
                 Location = "Baerlon",
-                Members = new[] {"Min"},
+                Members = new[] { "Min" },
                 Id = Guid.NewGuid()
             };
 
@@ -60,7 +55,7 @@ namespace Marten.Testing.Events
         {
             using (var session = theStore.OpenSession())
             {
-                var aggregate = session.Events.Transforms.StartSnapshot<FakeAggregate>(new EventA {Name = "Alex Smith"});
+                var aggregate = session.Events.Transforms.StartSnapshot<FakeAggregate>(Guid.NewGuid(), new EventA { Name = "Alex Smith" });
 
                 aggregate.ANames.Single().ShouldBe("Alex Smith");
             }
@@ -71,15 +66,14 @@ namespace Marten.Testing.Events
         {
             var aggregate = new FakeAggregate
             {
-                ANames = new[] {"Jamaal Charles", "Tamba Hali"},
+                ANames = new[] { "Jamaal Charles", "Tamba Hali" },
                 Id = Guid.NewGuid()
             };
 
             using (var session = theStore.OpenSession())
             {
-                var snapshotted = session.Events.Transforms.ApplySnapshot(aggregate, new EventA {Name = "Eric Fisher"});
+                var snapshotted = session.Events.Transforms.ApplySnapshot(aggregate.Id, aggregate, new EventA { Name = "Eric Fisher" });
 
-                snapshotted.Id.ShouldBe(aggregate.Id);
                 snapshotted.ANames.ShouldHaveTheSameElementsAs("Jamaal Charles", "Tamba Hali", "Eric Fisher");
             }
         }

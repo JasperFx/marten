@@ -3,9 +3,9 @@ using Marten.Events;
 
 namespace Marten.Testing.Events
 {
-    public class FakeAggregate : IAggregate
+    public class FakeAggregate
     {
-         public Guid Id { get; set; }
+        public Guid Id { get; set; }
 
         public string[] ANames;
         public string[] BNames;
