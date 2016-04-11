@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Baseline;
@@ -59,6 +60,11 @@ namespace Marten
         public UnitOfWork CreateUnitOfWork()
         {
             return new UnitOfWork(_schema, new MartenExpressionParser(_serializer, Options));
+        }
+
+        public IList<IDocumentStorage> PrecompileAllStorage()
+        {
+            return Options.AllDocumentMappings.Select(x => _schema.StorageFor(x.DocumentType)).ToList();
         }
     }
 }

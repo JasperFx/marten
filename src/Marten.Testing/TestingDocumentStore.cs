@@ -1,12 +1,54 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Baseline;
+using Marten.Schema;
+using Marten.Testing.Documents;
+using Marten.Testing.Fixtures;
 
 namespace Marten.Testing
 {
+    public static class StorageTypesCache
+    {
+        private static readonly Task<List<Type>> _loader; 
+
+        static StorageTypesCache()
+        {
+            _loader = Task.Factory.StartNew(() =>
+            {
+                using (var store = DocumentStore.For(_ =>
+                {
+                    _.Connection(ConnectionSource.ConnectionString);
+
+                    _.RegisterDocumentType<Target>();
+
+                    // TODO -- maybe add the other user types here later?
+                    _.RegisterDocumentType<User>();
+                    _.RegisterDocumentType<Issue>();
+                    _.RegisterDocumentType<Company>();
+                    _.RegisterDocumentType<IntDoc>();
+                    _.RegisterDocumentType<LongDoc>();
+
+                }))
+                {
+                    return store.Advanced.PrecompileAllStorage().Select(x => x.GetType()).ToList();
+                }
+            });
+        }
+
+        public static IList<Type> PrebuiltStorage()
+        {
+            _loader.Wait(10.Seconds());
+            return _loader.Result;
+        } 
+    }
+
     public class TestingDocumentStore : DocumentStore
     {
         public static int SchemaCount = 0;
-        private static object _locker = new object();
+        private static readonly object _locker = new object();
 
         public new static IDocumentStore For(Action<StoreOptions> configure)
         {
@@ -15,13 +57,11 @@ namespace Marten.Testing
 
             lock (_locker)
             {
-                options.DatabaseSchemaName = "Test_" + SchemaCount++;
+                //options.DatabaseSchemaName = "Test_" + SchemaCount++;
             }
             
 
             configure(options);
-
-            
 
             var store = new TestingDocumentStore(options);
             store.Advanced.Clean.CompletelyRemoveAll();
@@ -32,7 +72,11 @@ namespace Marten.Testing
 
         public static IDocumentStore Basic()
         {
-            return For(_ => { });
+            return For(_ =>
+            {
+                // TODO -- We can't do this until GH-271 is fixed
+                _.LoadPrecompiledStorage(StorageTypesCache.PrebuiltStorage());
+            });
         }
 
         public static IDocumentStore DefaultSchema()
@@ -40,6 +84,7 @@ namespace Marten.Testing
             var store = For(_ =>
             {
                 _.DatabaseSchemaName = StoreOptions.DefaultDatabaseSchemaName;
+                _.LoadPrecompiledStorage(StorageTypesCache.PrebuiltStorage());
             });
             return store;
         }

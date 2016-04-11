@@ -198,6 +198,22 @@ namespace Marten
             PreBuiltStorage.AddRange(assembly.GetExportedTypes().Where(x => x.IsConcreteTypeOf<IDocumentStorage>()));
         }
 
+        /// <summary>
+        /// Load pre-compiled document storage types. Each type must be a concrete type of IDocumentStorage
+        /// </summary>
+        /// <param name="types"></param>
+        public void LoadPrecompiledStorage(IEnumerable<Type> types)
+        {
+            types.Each(x =>
+            {
+                if (!x.IsConcreteTypeOf<IDocumentStorage>())
+                {
+                    throw new ArgumentOutOfRangeException(nameof(types), $"Type {x.FullName} is not an {nameof(IDocumentStorage)} type");
+                }
+            });
+
+            PreBuiltStorage.AddRange(types);
+        }
 
         public IMartenLogger Logger()
         {
@@ -213,6 +229,7 @@ namespace Marten
         /// Extension point to add custom Linq query parsers
         /// </summary>
         public LinqCustomizations Linq { get; } = new LinqCustomizations();
+
     }
 
     public class LinqCustomizations
