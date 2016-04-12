@@ -54,6 +54,7 @@
     <Compile Include="Bugs\Bug_187_not_assigning_id_in_BulkInsert_Tests.cs" />
     <Compile Include="Bugs\Bug_237_duplicate_indexing_Tests.cs" />
     <Compile Include="Bugs\Bug_261_double_take_or_skip.cs" />
+    <Compile Include="Bugs\Bug_276_Query_by_abstract_type_in_hierarchy.cs" />
     <Compile Include="IntegratedFixture.cs" />
     <Compile Include="Linq\Bug_260_Take_Skip_with_Select_Tests.cs" />
     <Compile Include="bulk_loading_Tests.cs" />

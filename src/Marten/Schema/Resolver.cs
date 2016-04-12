@@ -17,7 +17,7 @@ namespace Marten.Schema
             return map.Get <T> (id, json);
         }
 
-        public T Build(DbDataReader reader, ISerializer serializer)
+        public virtual T Build(DbDataReader reader, ISerializer serializer)
         {
             return serializer.FromJson <T> (reader.GetString(0));
         }
