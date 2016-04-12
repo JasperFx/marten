@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -10,6 +9,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Generation;
 using Marten.Schema.Sequences;
+using Marten.Util;
 
 namespace Marten.Schema
 {
@@ -111,26 +111,20 @@ namespace Marten.Schema
                 }
             };
 
-            buildSchemaObjectsIfNecessary(mapping, executeSql, new HashSet<Type>());
-        }
-
-        private void buildSchemaObjectsIfNecessary(IDocumentMapping mapping, Action<string> executeSql, ISet<Type> documentTypes)
-        {
-            var documentMapping = mapping as DocumentMapping;
-            documentMapping?.ForeignKeys
-                .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
-                .Each(documentType =>
+            var sortedMappings = new[] {mapping}.TopologicalSort(x =>
+            {
+                var documentMapping = x as DocumentMapping;
+                if (documentMapping == null)
                 {
-                    if (!documentTypes.Add(documentType))
-                    {
-                        throw new Exception("Cyclic dependency found");
-                    }
+                    return Enumerable.Empty<IDocumentMapping>();
+                }
 
-                    var mappingFor = MappingFor(documentType);
-                    buildSchemaObjectsIfNecessary(mappingFor, executeSql, documentTypes);
-                });
+                return documentMapping.ForeignKeys
+                    .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
+                    .Select(MappingFor);
+            });
 
-            mapping.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, executeSql);
+            sortedMappings.Each(x => x.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, executeSql));
         }
 
         private void assertNoDuplicateDocumentAliases()
