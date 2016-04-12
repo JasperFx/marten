@@ -41,5 +41,10 @@ Storyteller editor *after compiling the solution* by the command `packages\story
 
 The documentation website for Marten is authored with [Storyteller's documentation generation feature](http://storyteller.github.io/documentation/docs/). The actual content is the markdown files in the `/documentation` directory directly under the project root. To quickly run the documentation website locally with auto-refresh (it's not perfect since it does rely on .Net's FileSystemWatcher), either use the rake task `rake docs` or there is a new batch script named `run-docs.cmd`. 
 
+If you wish to insert code samples to a documentation page from the tests,
+you'll need to wrap the code you wish to insert with
+`// SAMPLE: name-of-sample` and `// ENDSAMPLE`.
+Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
+
 The content is kept in the main Marten GitHub repository, but the published documentation is done by running the `publish-docs.cmd` command and pushing the generated static HTML to the gh-pages branch of Marten.  
 
