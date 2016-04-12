@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
+    // SAMPLE: smurfs-hierarchy
     public interface ISmurf
     {
         string Ability { get; set; }
@@ -21,7 +22,8 @@ namespace Marten.Testing.Linq
     public interface IPapaSmurf : ISmurf{}
     public class PapaSmurf : Smurf, IPapaSmurf{}
     public class PapySmurf : Smurf, IPapaSmurf{}
-    public class BrainySmurf : PapaSmurf{}
+    public class BrainySmurf : PapaSmurf{ }
+    // ENDSAMPLE
 
     public class query_with_inheritance_and_aliases : DocumentSessionFixture<NulloIdentityMap>
     {
@@ -29,6 +31,7 @@ namespace Marten.Testing.Linq
         {
             StoreOptions(_ =>
             {
+                // SAMPLE: add-subclass-hierarchy-with-aliases
                 _.Schema.For<ISmurf>()
                     .AddSubclassHierarchy(
                         typeof(Smurf), 
@@ -37,6 +40,7 @@ namespace Marten.Testing.Linq
                         typeof(IPapaSmurf), 
                         typeof(BrainySmurf)
                     );
+                // ENDSAMPLE
 
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -62,12 +66,20 @@ namespace Marten.Testing.Linq
 
     public class query_with_inheritance : DocumentSessionFixture<NulloIdentityMap>
     {
+        // SAMPLE: add-subclass-hierarchy
         public query_with_inheritance()
         {
             StoreOptions(_ =>
             {
                 _.Schema.For<ISmurf>()
                     .AddSubclassHierarchy(typeof(Smurf), typeof(PapaSmurf), typeof(PapySmurf), typeof(IPapaSmurf), typeof(BrainySmurf));
+
+                // Alternatively, you can use the following:
+                // _.Schema.For<ISmurf>().AddSubclassHierarchy();
+                // this, however, will use the assembly
+                // of type ISmurf to get all its' subclasses/implementations. 
+                // In projects with many types, this approach will be undvisable.
+
 
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -76,7 +88,9 @@ namespace Marten.Testing.Linq
                 _.Schema.For<ISmurf>().GinIndexJsonData();
             });
         }
+        // ENDSAMPLE
 
+        // SAMPLE: query-subclass-hierarchy
         [Fact]
         public void get_all_subclasses_of_a_subclass()
         {
@@ -129,5 +143,6 @@ namespace Marten.Testing.Linq
 
             theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
         }
+        // ENDSAMPLE
     }
 }

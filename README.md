@@ -18,13 +18,13 @@ If you have any trouble with PLV8, please feel free to ask for help in the Gitte
 Once you have the codebase and the connection.txt file, either:
 
 * Run the rake script
-* From a command line at the root of the codebase, run `paket install` to fetch all the nuget dependencies
+* From a command line at the root of the codebase, run `paket restore` to fetch all the nuget dependencies
 
 From there, open Visual Studio.Net or whatever editor you prefer and go to town.
 
 ## Tooling
 
-We're using [Fixie](https://github.com/fixie/fixie) and [Shouldly](https://github.com/shouldly/shouldly) for unit testing and [paket](https://fsprojects.github.io/Paket/) for improved Nuget workflow. We're temporarily using rake for build automation.
+We're using [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly) for unit testing and [paket](https://fsprojects.github.io/Paket/) for improved Nuget workflow. We're temporarily using rake for build automation, but it's not mandatory for development.
 
 ## Mocha Specs
 
@@ -34,5 +34,17 @@ in a watched mode with growl turned on.
 
 ## Storyteller Specs
 
-We're also using [Storyteller](http://storyteller.github.io) for some of the very data intensive automated tests. To open the Storyteller editor, use the command `rake open_st` from the command line or `rake storyeller` to run the Storyteller specs.
+We're also using [Storyteller](http://storyteller.github.io) for some of the very data intensive automated tests. To open the Storyteller editor, use the command `rake open_st` from the command line or `rake storyeller` to run the Storyteller specs. If you don't want to use rake, you can launch the
+Storyteller editor *after compiling the solution* by the command `packages\storyteller\tools\st.exe open src/Marten.Testing`.
+
+## Documentation
+
+The documentation website for Marten is authored with [Storyteller's documentation generation feature](http://storyteller.github.io/documentation/docs/). The actual content is the markdown files in the `/documentation` directory directly under the project root. To quickly run the documentation website locally with auto-refresh (it's not perfect since it does rely on .Net's FileSystemWatcher), either use the rake task `rake docs` or there is a new batch script named `run-docs.cmd`. 
+
+If you wish to insert code samples to a documentation page from the tests,
+you'll need to wrap the code you wish to insert with
+`// SAMPLE: name-of-sample` and `// ENDSAMPLE`.
+Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
+
+The content is kept in the main Marten GitHub repository, but the published documentation is done by running the `publish-docs.cmd` command and pushing the generated static HTML to the gh-pages branch of Marten.  
 

@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
-using Microsoft.CodeAnalysis.CSharp;
 using Shouldly;
 using Xunit;
 
@@ -64,7 +63,6 @@ namespace Marten.Testing.Schema.Hierarchies
             theSession.SaveChanges();
 
             theSession.Load<User>(user1.Id).ShouldBeNull();
-
         }
 
         [Fact]
@@ -73,11 +71,10 @@ namespace Marten.Testing.Schema.Hierarchies
             theSession.Store(user1);
             theSession.SaveChanges();
 
-            theSession.Delete<User>(user1);
+            theSession.Delete(user1);
             theSession.SaveChanges();
 
             theSession.Load<User>(user1.Id).ShouldBeNull();
-
         }
 
 
@@ -126,7 +123,6 @@ namespace Marten.Testing.Schema.Hierarchies
             theSession.Load<User>(admin1.Id).ShouldBeNull();
             theSession.Load<AdminUser>(admin1.Id).ShouldBeNull();
         }
-
 
 
         [Fact]
@@ -188,8 +184,6 @@ namespace Marten.Testing.Schema.Hierarchies
                     .Select(x => x.Id)
                     .ShouldHaveTheSameElementsAs(admin1.Id, admin2.Id);
             }
-
-
         }
 
         [Fact]
@@ -198,7 +192,10 @@ namespace Marten.Testing.Schema.Hierarchies
             using (var session = theStore.QuerySession())
             {
                 session.LoadMany<User>().ById(admin1.Id, super1.Id, user1.Id)
-                    .ToArray().OrderBy(x => x.FirstName).Select(x => x.Id).ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
+                    .ToArray()
+                    .OrderBy(x => x.FirstName)
+                    .Select(x => x.Id)
+                    .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
             }
         }
 
@@ -209,7 +206,9 @@ namespace Marten.Testing.Schema.Hierarchies
             {
                 var users = await session.LoadMany<User>().ByIdAsync(admin1.Id, super1.Id, user1.Id);
 
-                users.OrderBy(x => x.FirstName).Select(x => x.Id).ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
+                users.OrderBy(x => x.FirstName)
+                    .Select(x => x.Id)
+                    .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
             }
         }
 
@@ -222,7 +221,8 @@ namespace Marten.Testing.Schema.Hierarchies
                 .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, admin2.Id, user1.Id, super2.Id, user2.Id);
 
             users.Select(x => x.GetType())
-                .ShouldHaveTheSameElementsAs(typeof(AdminUser), typeof(SuperUser), typeof(AdminUser), typeof(User), typeof(SuperUser), typeof(User));
+                .ShouldHaveTheSameElementsAs(typeof (AdminUser), typeof (SuperUser), typeof (AdminUser), typeof (User),
+                    typeof (SuperUser), typeof (User));
         }
 
 
@@ -260,7 +260,7 @@ namespace Marten.Testing.Schema.Hierarchies
         [Fact]
         public void clean_by_subclass_only_deletes_the_one_subclass()
         {
-            theStore.Advanced.Clean.DeleteDocumentsFor(typeof(AdminUser));
+            theStore.Advanced.Clean.DeleteDocumentsFor(typeof (AdminUser));
 
             theSession.Query<User>().Any().ShouldBeTrue();
             theSession.Query<SuperUser>().Any().ShouldBeTrue();
@@ -269,21 +269,51 @@ namespace Marten.Testing.Schema.Hierarchies
         }
     }
 
-public abstract class end_to_end_document_hierarchy_usage_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
+    public abstract class end_to_end_document_hierarchy_usage_Tests<T> : DocumentSessionFixture<T>
+        where T : IIdentityMap
     {
         protected User user1 = new User {UserName = "A1", FirstName = "Justin", LastName = "Houston"};
-        protected User user2 = new User { UserName = "B1", FirstName = "Tamba", LastName = "Hali" };
-        protected AdminUser admin1 = new AdminUser { UserName = "A2", FirstName = "Derrick", LastName = "Johnson", Region = "Midwest" };
-        protected AdminUser admin2 = new AdminUser { UserName = "B2", FirstName = "Eric", LastName = "Berry", Region = "West Coast" };
-        protected SuperUser super1 = new SuperUser { UserName = "A3", FirstName = "Dontari", LastName = "Poe", Role = "Expert" };
-        protected SuperUser super2 = new SuperUser { UserName = "B3", FirstName = "Sean", LastName = "Smith", Role = "Master" };
+        protected User user2 = new User {UserName = "B1", FirstName = "Tamba", LastName = "Hali"};
+
+        protected AdminUser admin1 = new AdminUser
+        {
+            UserName = "A2",
+            FirstName = "Derrick",
+            LastName = "Johnson",
+            Region = "Midwest"
+        };
+
+        protected AdminUser admin2 = new AdminUser
+        {
+            UserName = "B2",
+            FirstName = "Eric",
+            LastName = "Berry",
+            Region = "West Coast"
+        };
+
+        protected SuperUser super1 = new SuperUser
+        {
+            UserName = "A3",
+            FirstName = "Dontari",
+            LastName = "Poe",
+            Role = "Expert"
+        };
+
+        protected SuperUser super2 = new SuperUser
+        {
+            UserName = "B3",
+            FirstName = "Sean",
+            LastName = "Smith",
+            Role = "Master"
+        };
 
         protected end_to_end_document_hierarchy_usage_Tests()
         {
-            StoreOptions(_ =>
-            {
-                _.Schema.For<User>().AddSubclass<SuperUser>().AddSubclass<AdminUser>().Searchable(x => x.UserName);
-            });
+            StoreOptions(
+                _ =>
+                {
+                    _.Schema.For<User>().AddSubclass<SuperUser>().AddSubclass<AdminUser>().Searchable(x => x.UserName);
+                });
         }
 
         protected void loadData()
@@ -292,6 +322,5 @@ public abstract class end_to_end_document_hierarchy_usage_Tests<T> : DocumentSes
 
             theSession.SaveChanges();
         }
-
     }
 }
