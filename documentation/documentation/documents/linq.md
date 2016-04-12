@@ -52,7 +52,9 @@ Marten supports a subset of the common substring searches:
 
 <[sample:searching_within_string_fields]>
 
-Marten does not yet support case insensitive substring searches. We'd love pull requests!
+Marten also supports case insensitive substring searches:
+
+<[sample:searching_within_case_insensitive_string_fields]>
 
 ## Count()
 
