@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Npgsql;
@@ -8,6 +9,7 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
 {
+    [Obsolete("Remove as part of GUT")]
     internal interface IScalarCommandBuilder<TResult>
     {
         bool Match(QueryModel queryModel);
