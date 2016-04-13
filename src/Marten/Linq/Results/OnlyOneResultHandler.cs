@@ -11,17 +11,27 @@ namespace Marten.Linq.Results
         public DocumentQuery Query { get; set; }
         public ISelector<T> Selector { get; set; }
 
-        public OnlyOneResultHandler(DocumentQuery query, ISelector<T> selector)
+        public OnlyOneResultHandler(DocumentQuery query)
         {
             Query = query;
-            Selector = selector;
         }
 
         public Type SourceType => Query.SourceDocumentType;
-        public abstract void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command);
+
+        public void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command)
+        {
+            Selector = writeCommand(schema, command);
+        }
+
+        protected abstract ISelector<T> writeCommand(IDocumentSchema schema, NpgsqlCommand command);
 
         public T Handle(DbDataReader reader, IIdentityMap map)
         {
+            if (Selector == null)
+            {
+                throw new InvalidOperationException($"{nameof(ConfigureCommand)} needs to be called before {nameof(Handle)}");
+            }
+
             var hasResult = reader.Read();
             if (!hasResult) return defaultValue();
 

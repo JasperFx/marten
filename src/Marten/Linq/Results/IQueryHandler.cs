@@ -27,22 +27,26 @@ namespace Marten.Linq.Results
     public class ListQueryHandler<T> : IQueryHandler<IList<T>>
     {
         private readonly DocumentQuery _query;
-        private readonly ISelector<T> _selector;
+        private ISelector<T> _selector = null;
 
-        public ListQueryHandler(DocumentQuery query, ISelector<T> selector)
+        public ListQueryHandler(DocumentQuery query)
         {
             _query = query;
-            _selector = selector;
         }
 
         public Type SourceType => _query.SourceDocumentType;
         public void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command)
         {
-            _query.ConfigureCommand<T>(schema, command);
+            _selector = _query.ConfigureCommand<T>(schema, command);
         }
 
         public IList<T> Handle(DbDataReader reader, IIdentityMap map)
         {
+            if (_selector == null)
+            {
+                throw new InvalidOperationException($"{nameof(ConfigureCommand)} needs to be called before {nameof(Handle)}");
+            }
+
             var list = new List<T>();
 
             while (reader.Read())
@@ -115,11 +119,11 @@ namespace Marten.Linq.Results
 
     public class FirstHandler<T> : OnlyOneResultHandler<T>
     {
-        public FirstHandler(DocumentQuery query, ISelector<T> selector) : base(query, selector)
+        public FirstHandler(DocumentQuery query) : base(query)
         {
         }
 
-        public override void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command)
+        protected override ISelector<T> writeCommand(IDocumentSchema schema, NpgsqlCommand command)
         {
             throw new NotImplementedException();
         }
@@ -133,11 +137,11 @@ namespace Marten.Linq.Results
 
     public class FirstOrDefaultHandler<T> : OnlyOneResultHandler<T>
     {
-        public FirstOrDefaultHandler(DocumentQuery query, ISelector<T> selector) : base(query, selector)
+        public FirstOrDefaultHandler(DocumentQuery query) : base(query)
         {
         }
 
-        public override void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command)
+        protected override ISelector<T> writeCommand(IDocumentSchema schema, NpgsqlCommand command)
         {
             throw new NotImplementedException();
         }
@@ -145,11 +149,11 @@ namespace Marten.Linq.Results
 
     public class SingleHandler<T> : OnlyOneResultHandler<T>
     {
-        public SingleHandler(DocumentQuery query, ISelector<T> selector) : base(query, selector)
+        public SingleHandler(DocumentQuery query) : base(query)
         {
         }
 
-        public override void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command)
+        protected override ISelector<T> writeCommand(IDocumentSchema schema, NpgsqlCommand command)
         {
             throw new NotImplementedException();
         }
@@ -169,11 +173,11 @@ namespace Marten.Linq.Results
 
     public class SingleOrDefaultHandler<T> : OnlyOneResultHandler<T>
     {
-        public SingleOrDefaultHandler(DocumentQuery query, ISelector<T> selector) : base(query, selector)
+        public SingleOrDefaultHandler(DocumentQuery query) : base(query)
         {
         }
 
-        public override void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command)
+        protected override ISelector<T> writeCommand(IDocumentSchema schema, NpgsqlCommand command)
         {
             throw new NotImplementedException();
         }

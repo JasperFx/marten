@@ -79,22 +79,23 @@ namespace Marten.Services.BatchQuerying
 
         public Task<long> Count()
         {
-            return _parent.AddHandler<T, CountHandler, long>(_inner);
+            return _parent.Count(_inner);
         }
 
         public Task<long> Count(Expression<Func<T, bool>> filter)
         {
-            return _parent.AddHandler<T, CountHandler, long>(_inner.Where(filter).As<IMartenQueryable<T>>());
+            var queryable = _inner.Where(filter).As<IMartenQueryable<T>>();
+            return _parent.Count(queryable);
         }
 
         public Task<bool> Any()
         {
-            return _parent.AddHandler<T, AnyHandler, bool>(_inner);
+            return _parent.Any(_inner);
         }
 
         public Task<bool> Any(Expression<Func<T, bool>> filter)
         {
-            return _parent.AddHandler<T, AnyHandler, bool>(_inner.Where(filter).As<IMartenQueryable<T>>());
+            return _parent.Any(_inner.Where(filter).As<IMartenQueryable<T>>());
         }
 
         public Task<IList<T>> ToList()

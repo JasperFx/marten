@@ -20,6 +20,7 @@ namespace Marten.Services.BatchQuerying
         // TODO -- THIS REALLY, REALLY needs to be async all the way down
         void Read(DbDataReader reader, IIdentityMap map);
 
+
     }
 
     public class BatchQueryItem<T> : IBatchQueryItem
@@ -30,10 +31,12 @@ namespace Marten.Services.BatchQuerying
         {
             _handler = handler;
 
-            Result = new TaskCompletionSource<T>();
+            Completion = new TaskCompletionSource<T>();
         }
 
-        public TaskCompletionSource<T> Result { get; }
+
+        public TaskCompletionSource<T> Completion { get; }
+        public Task<T> Result => Completion.Task;
 
         public void Configure(IDocumentSchema schema, NpgsqlCommand command)
         {
@@ -44,7 +47,7 @@ namespace Marten.Services.BatchQuerying
         {
             // TODO -- do async, all the way through
             var result = _handler.Handle(reader, map);
-            Result.SetResult(result);
+            Completion.SetResult(result);
         }
     }
 
@@ -60,7 +63,7 @@ namespace Marten.Services.BatchQuerying
         private readonly ISerializer _serializer;
         private readonly MartenExpressionParser _parser;
         private readonly NpgsqlCommand _command = new NpgsqlCommand();
-        private readonly IList<IDataReaderHandler> _handlers = new List<IDataReaderHandler>();
+        private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
 
         public BatchedQuery(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap, QuerySession parent, ISerializer serializer, MartenExpressionParser parser)
         {
@@ -82,20 +85,20 @@ namespace Marten.Services.BatchQuerying
             return load<T>(id);
         }
 
-        public void AddHandler(IDataReaderHandler handler)
+        public Task<T> AddItem<T>(IQueryHandler<T> handler)
         {
-            if (_handlers.Any())
-            {
-                _handlers.Add(new DataReaderAdvancer(handler));
-            }
-            else
-            {
-                _handlers.Add(handler);
-            }
+            var item = new BatchQueryItem<T>(handler);
+            _items.Add(item);
+
+            item.Configure(_schema, _command);
+
+            return item.Result;
         }
 
         private Task<T> load<T>(object id) where T : class
         {
+            throw new NotImplementedException("NWO");
+            /*
             if (_identityMap.Has<T>(id))
             {
                 return Task.FromResult(_identityMap.Retrieve<T>(id));
@@ -110,9 +113,10 @@ namespace Marten.Services.BatchQuerying
                 $"select {mapping.SelectFields().Join(", ")} from {mapping.QualifiedTableName} as d where id = :{parameter.ParameterName}");
 
             var handler = new SingleResultReader<T>(source, _schema.StorageFor(typeof (T)), _identityMap);
-            AddHandler(handler);
+            AddItem(handler);
 
             return source.Task;
+            */
         }
 
 
@@ -132,6 +136,8 @@ namespace Marten.Services.BatchQuerying
 
             private Task<IList<TDoc>> load<TKey>(TKey[] keys)
             {
+                throw new NotImplementedException();
+                /*
                 var mapping = _parent._schema.MappingFor(typeof (TDoc));
                 var parameter = _parent._command.AddParameter(keys);
                 _parent._command.AppendQuery(
@@ -141,9 +147,10 @@ namespace Marten.Services.BatchQuerying
 
                 var handler = new MultipleResultsReader<TDoc>(new WholeDocumentSelector<TDoc>(mapping, resolver), _parent._identityMap);
 
-                _parent.AddHandler(handler);
+                _parent.AddItem(handler);
 
                 return handler.ReturnValue;
+                */
             }
 
             public Task<IList<TDoc>> ById<TKey>(params TKey[] keys)
@@ -159,12 +166,16 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IList<T>> Query<T>(string sql, params object[] parameters) where T : class
         {
+            throw new NotImplementedException();
+
+            /*
             _parent.ConfigureCommand<T>(_command, sql, parameters);
 
             var handler = new QueryResultsReader<T>(_serializer);
-            AddHandler(handler);
+            AddItem(handler);
 
             return handler.ReturnValue;
+            */
         }
 
         private DocumentQuery toDocumentQuery<TDoc>(IMartenQueryable<TDoc> queryable)
@@ -182,36 +193,22 @@ namespace Marten.Services.BatchQuerying
             return docQuery;
         }
 
-        public Task<TReturn> AddHandler<TDoc, THandler, TReturn>(IMartenQueryable<TDoc> queryable) where THandler : IDataReaderHandler<TReturn>, new()
-        {
-            var model = toDocumentQuery(queryable);
-            var handler = new THandler();
-            handler.Configure(_command, model);
-            AddHandler(handler);
-
-            return handler.ReturnValue;
-        }
 
         public Task<bool> Any<TDoc>(IMartenQueryable<TDoc> queryable)
         {
-            return AddHandler<TDoc, AnyHandler, bool>(queryable);
+            return AddItem(new AnyQueryHandler<TDoc>(toDocumentQuery(queryable)));
         }
 
 
         public Task<long> Count<TDoc>(IMartenQueryable<TDoc> queryable)
         {
-            return AddHandler<TDoc, CountHandler, long>(queryable);
+            return AddItem(new CountQueryHandler<long>(toDocumentQuery(queryable)));
         }
 
         internal Task<IList<T>> Query<T>(IMartenQueryable<T> queryable)
         {
             var documentQuery = toDocumentQuery(queryable);
-            var documentStorage = _schema.StorageFor(documentQuery.SourceDocumentType);
-            var reader = new QueryHandler<T>(_schema, documentStorage, documentQuery, _command, _identityMap);
-
-            AddHandler(reader);
-
-            return reader.ReturnValue;
+            return AddItem(new ListQueryHandler<T>(documentQuery));
         }
 
         public IBatchedQueryable<T> Query<T>() where T : class
@@ -222,57 +219,50 @@ namespace Marten.Services.BatchQuerying
 
         public Task<T> First<T>(IMartenQueryable<T> queryable)
         {
-            var documentQuery = toDocumentQuery<T>(queryable.Take(1).As<IMartenQueryable<T>>());
-            var reader = new QueryHandler<T>(_schema, _schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
-
-            AddHandler(reader);
-
-            return reader.ReturnValue.ContinueWith(r => r.Result.First());
+            return AddItem(new FirstHandler<T>(toDocumentQuery(queryable)));
         }
 
-        public Task<T> FirstOrDefault<T>(IMartenQueryable<T> queryable) 
+        public Task<T> FirstOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            var documentQuery = toDocumentQuery<T>(queryable.Take(1).As<IMartenQueryable<T>>());
-            var reader = new QueryHandler<T>(_schema, _schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
-
-
-            AddHandler(reader);
-
-            return reader.ReturnValue.ContinueWith(r => r.Result.FirstOrDefault());
+            return AddItem(new FirstOrDefaultHandler<T>(toDocumentQuery(queryable)));
         }
 
-        public Task<T> Single<T>(IMartenQueryable<T> queryable) 
+        public Task<T> Single<T>(IMartenQueryable<T> queryable)
         {
-            var documentQuery = toDocumentQuery<T>(queryable.Take(2).As<IMartenQueryable<T>>());
-            var reader = new QueryHandler<T>(_schema, _schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
-
-
-            AddHandler(reader);
-
-            return reader.ReturnValue.ContinueWith(r => r.Result.Single());
+            return AddItem(new SingleHandler<T>(toDocumentQuery(queryable)));
         }
 
         public Task<T> SingleOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            var documentQuery = toDocumentQuery<T>(queryable.Take(2).As<IMartenQueryable<T>>());
-            var reader = new QueryHandler<T>(_schema, _schema.StorageFor(documentQuery.SourceDocumentType), documentQuery, _command, _identityMap);
-
-
-            AddHandler(reader);
-
-            return reader.ReturnValue.ContinueWith(r => r.Result.SingleOrDefault());
+            return AddItem(new SingleOrDefaultHandler<T>(toDocumentQuery(queryable)));
         }
 
         public Task Execute(CancellationToken token = default(CancellationToken))
         {
+            var map = _identityMap.ForQuery();
+
             return _runner.ExecuteAsync(_command, async (cmd, tk) =>
             {
                 using (var reader = await _command.ExecuteReaderAsync(tk).ConfigureAwait(false))
                 {
-                    foreach (var handler in _handlers)
+                    // TODO -- this will be async later
+                    _items[0].Read(reader, map);
+
+                    var others = _items.Skip(1).ToArray();
+
+                    foreach (var item in others)
                     {
-                        await handler.Handle(reader, tk).ConfigureAwait(false);
+                        var hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
+
+                        if (!hasNext)
+                        {
+                            throw new InvalidOperationException("There is no next result to read over.");
+                        }
+
+                        // TODO -- needs to be purely async later
+                        item.Read(reader, map);
                     }
+
                 }
 
                 return 0;
