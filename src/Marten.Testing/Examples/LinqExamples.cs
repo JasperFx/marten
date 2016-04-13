@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using Marten.Testing.Fixtures;
 using Shouldly;
+using Marten.Util;
 
 namespace Marten.Testing.Examples
 {
@@ -58,6 +60,18 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.String.EndsWith("Suffix"));
 
             session.Query<Target>().Where(x => x.String.Contains("something"));
+            session.Query<Target>().Where(x => x.String.Equals("The same thing"));
+        }
+        // ENDSAMPLE
+
+        // SAMPLE: searching_within_case_insensitive_string_fields
+        public void case_insensitive_string_fields(IDocumentSession session)
+        {
+            session.Query<Target>().Where(x => x.String.StartsWith("A",true,CultureInfo.InvariantCulture));
+            session.Query<Target>().Where(x => x.String.EndsWith("SuFfiX", true, CultureInfo.InvariantCulture));
+
+            // using Marten.Util
+            session.Query<Target>().Where(x => x.String.Contains("soMeThiNg", StringComparison.OrdinalIgnoreCase));
         }
         // ENDSAMPLE
 

@@ -98,7 +98,7 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
 
-
+        // SAMPLE: query_any_string_array
         [Fact]
         public void query_against_number_list_with_any()
         {
@@ -116,6 +116,7 @@ namespace Marten.Testing.Linq
             theSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToArray()
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
+        // ENDSAMPLE
 
         [Fact]
         public void query_against_number_IList()

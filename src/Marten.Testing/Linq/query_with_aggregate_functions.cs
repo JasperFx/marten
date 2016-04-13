@@ -11,6 +11,7 @@ namespace Marten.Testing.Linq
 {
     public class query_with_aggregate_functions : DocumentSessionFixture<NulloIdentityMap>
     {
+        // SAMPLE: using_max
         [Fact]
         public void get_max()
         {
@@ -23,6 +24,7 @@ namespace Marten.Testing.Linq
             var maxNumber = theSession.Query<Target>().Max(t => t.Number);
             maxNumber.ShouldBe(42);
         }
+        // ENDSAMPLE
 
         [Fact]
         public async Task get_max_async()
@@ -37,6 +39,7 @@ namespace Marten.Testing.Linq
             maxNumber.ShouldBe(42);
         }
 
+        // SAMPLE: using_min
         [Fact]
         public void get_min()
         {
@@ -49,6 +52,7 @@ namespace Marten.Testing.Linq
             var minNumber = theSession.Query<Target>().Min(t => t.Number);
             minNumber.ShouldBe(-5);
         }
+        // ENDSAMPLE
 
         [Fact]
         public async Task get_min_async()
@@ -63,7 +67,7 @@ namespace Marten.Testing.Linq
             maxNumber.ShouldBe(-5);
         }
 
-        [Fact]
+        // SAMPLE: using_average
         public void get_average()
         {
             theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
@@ -75,6 +79,7 @@ namespace Marten.Testing.Linq
             var average = theSession.Query<Target>().Average(t => t.Number);
             average.ShouldBe(10);
         }
+        // ENDSAMPLE
 
         [Fact]
         public async Task get_average_async()

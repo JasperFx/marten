@@ -48,17 +48,43 @@ Marten's Linq support will allow you to make "deep" searches on properties of pr
 
 ## Searching on String Fields
 
-Marten supports a subset of the common substring searches:
+Marten supports a subset of the common sub/string searches:
 
 <[sample:searching_within_string_fields]>
 
-Marten does not yet support case insensitive substring searches. We'd love pull requests!
+Marten also supports case insensitive substring searches:
+
+<[sample:searching_within_case_insensitive_string_fields]>
 
 ## Count()
 
 Marten supports the `IQueryable.Count()` method:
 
 <[sample:using_count]>
+
+## Min()
+
+Marten supports the `IQueryable.Min()` method:
+
+<[sample:using_min]>
+
+## Max()
+
+Marten supports the `IQueryable.Max()` method:
+
+<[sample:using_max]>
+
+## Average()
+
+Marten supports the `IQueryable.Average()` method:
+
+<[sample:using_average]>
+
+## Sum()
+
+Marten supports the `IQueryable.Sum()` method:
+
+<[sample:using_sum]>
 
 ## Ordering Results
 
@@ -81,11 +107,15 @@ Marten supports the `IQueryable` methods for returning only a single document at
 <[sample:select_a_single_value]>
 
 
-## Querying withing Value Arrays
+## Querying within Value IEnumerables
 
-As of now, Marten allows you to do "contains" searches within arrays of primitive values like string or numbers:
+As of now, Marten allows you to do "contains" searches within Arrays, Lists & ILists of primitive values like string or numbers:
 
 <[sample:query_against_string_array]>
+
+Marten also allows you to query over IEnumerables using the Any method for equality (similar to Contains):
+
+<[sample:query_any_string_array]>
 
 ## Searching with Boolean Flags
 

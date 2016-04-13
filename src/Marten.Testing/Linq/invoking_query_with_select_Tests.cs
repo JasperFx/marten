@@ -13,6 +13,7 @@ namespace Marten.Testing.Linq
 {
     public class invoking_query_with_select_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        // SAMPLE: one_field_projection
         [Fact]
         public void use_select_in_query_for_one_field()
         {
@@ -27,6 +28,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
 
         }
+        // ENDSAMPLE
 
         [Fact]
         public void use_select_in_query_for_one_field_and_first()
@@ -74,7 +76,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
 
-
+        // SAMPLE: get_first_projection
         [Fact]
         public void use_select_to_another_type_with_first()
         {
@@ -89,7 +91,7 @@ namespace Marten.Testing.Linq
                 .FirstOrDefault()
                 .Name.ShouldBe("Bill");
         }
-
+        // ENDSAMPLE
 
 
         [Fact]
@@ -112,10 +114,8 @@ namespace Marten.Testing.Linq
             users.Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
-
-
-
-
+        
+        // SAMPLE: anonymous_type_projection
         [Fact]
         public void use_select_to_transform_to_an_anonymous_type()
         {
@@ -131,6 +131,7 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
+        // ENDSAMPLE
 
         [Fact]
         public void use_select_with_multiple_fields_in_anonymous()
@@ -153,7 +154,7 @@ namespace Marten.Testing.Linq
             });
         }
 
-
+        // SAMPLE: other_type_projection
         [Fact]
         public void use_select_with_multiple_fields_to_other_type()
         {
@@ -174,7 +175,7 @@ namespace Marten.Testing.Linq
                 x.Last.ShouldNotBeNull();
             });
         }
-
+        // ENDSAMPLE
 
         public class User2
         {
@@ -204,6 +205,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
 
+        // SAMPLE: deep_properties_projection
         [Fact]
         public void transform_with_deep_properties()
         {
@@ -216,11 +218,8 @@ namespace Marten.Testing.Linq
             var expected = targets.Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).Distinct();
 
             actual.ShouldHaveTheSameElementsAs(expected);
-
-
-
         }
-
+        // ENDSAMPLE
 
     }
 
