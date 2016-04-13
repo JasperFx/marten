@@ -30,7 +30,7 @@ namespace Marten.Linq.Results
             if (!sql.Contains("select", StringComparison.OrdinalIgnoreCase))
             {
                 var mapping = schema.MappingFor(typeof(T));
-                var tableName = mapping.QualifiedTableName;
+                var tableName = mapping.Table.QualifiedName;
                 sql = "select data from {0} {1}".ToFormat(tableName, sql);
             }
 

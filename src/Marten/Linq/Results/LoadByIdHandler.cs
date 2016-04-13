@@ -27,7 +27,7 @@ namespace Marten.Linq.Results
         {
             var parameter = command.AddParameter(_id);
             var sql =
-                $"select {_mapping.SelectFields().Join(", ")} from {_mapping.QualifiedTableName} as d where id = :{parameter.ParameterName}";
+                $"select {_mapping.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d where id = :{parameter.ParameterName}";
 
             command.AppendQuery(sql);
         }
