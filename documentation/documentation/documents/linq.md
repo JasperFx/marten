@@ -107,7 +107,7 @@ Marten supports the `IQueryable` methods for returning only a single document at
 <[sample:select_a_single_value]>
 
 
-## Querying withing Value IEnumerables
+## Querying within Value IEnumerables
 
 As of now, Marten allows you to do "contains" searches within Arrays, Lists & ILists of primitive values like string or numbers:
 
