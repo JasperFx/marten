@@ -62,6 +62,30 @@ Marten supports the `IQueryable.Count()` method:
 
 <[sample:using_count]>
 
+## Min()
+
+Marten supports the `IQueryable.Min()` method:
+
+<[sample:using_min]>
+
+## Max()
+
+Marten supports the `IQueryable.Max()` method:
+
+<[sample:using_max]>
+
+## Average()
+
+Marten supports the `IQueryable.Average()` method:
+
+<[sample:using_average]>
+
+## Sum()
+
+Marten supports the `IQueryable.Sum()` method:
+
+<[sample:using_sum]>
+
 ## Ordering Results
 
 Marten contains support for expressing ordering in both ascending and descending order in Linq queries:

@@ -34,6 +34,10 @@ Marten adds extension methods to `IQueryable` for the asynchronous invocation of
 
 * `AnyAsync()`
 * `CountAsync()`
+* `MinAsync()`
+* `MaxAsync()`
+* `AverageAsync()`
+* `SumAsync()`
 * `LongCountAsync()`
 * `FirstAsync()/FirstOrDefaultAsync()`
 * `SingleAsync()/SingleOrDefaultAsync()`

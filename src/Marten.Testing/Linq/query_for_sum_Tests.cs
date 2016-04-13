@@ -8,6 +8,7 @@ namespace Marten.Testing.Linq
 {
     public class query_for_sum_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        // SAMPLE: using_sum
         [Fact]
         public void get_sum_of_integers()
         {
@@ -20,6 +21,7 @@ namespace Marten.Testing.Linq
             theSession.Query<Target>().Sum(x => x.Number)
                 .ShouldBe(10);
         }
+        // ENDSAMPLE
 
         [Fact]
         public void get_sum_of_decimals()
