@@ -12,7 +12,7 @@ using Issue = Marten.Testing.Documents.Issue;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentSchemaOnOtherSchemaTests  : IntegratedFixture
+    public class DocumentSchemaOnOtherSchemaTests : IntegratedFixture
     {
         private IDocumentSchema theSchema => theStore.Schema;
 
@@ -198,6 +198,22 @@ namespace Marten.Testing.Schema
             var fileSystem = new FileSystem();
             fileSystem.FindFiles("allsql", FileSet.Shallow("*mt_streams.sql"))
                 .Any().ShouldBeTrue();
+        }
+
+        [Fact]
+        public void resolve_a_document_mapping_for_an_event_type()
+        {
+            theSchema.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+                .DocumentType.ShouldBe(typeof(RaceStarted));
+        }
+
+        [Fact]
+        public void resolve_storage_for_event_type()
+        {
+            theSchema.Events.AddEventType(typeof(RaceStarted));
+
+            theSchema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+                .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 
         [Fact]

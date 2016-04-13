@@ -69,7 +69,7 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
-        public IEnumerable<Event> FetchStream(Guid streamId)
+        public IEnumerable<object> FetchStream(Guid streamId)
         {
             return _connection.Execute(cmd =>
             {
@@ -82,7 +82,7 @@ namespace Marten.Events
             });
         }
 
-        public IEnumerable<Event> FetchStream(Guid streamId, int version)
+        public IEnumerable<object> FetchStream(Guid streamId, int version)
         {
             return _connection.Execute(cmd =>
             {
@@ -94,7 +94,7 @@ namespace Marten.Events
                 }
             });
         }
-        public IEnumerable<Event> FetchStream(Guid streamId, DateTime timestamp)
+        public IEnumerable<object> FetchStream(Guid streamId, DateTime timestamp)
         {
             if (timestamp.Kind != DateTimeKind.Utc)
             {
@@ -111,7 +111,7 @@ namespace Marten.Events
                 }
             });
         }
-        private IEnumerable<Event> fetchStream(IDataReader reader)
+        private IEnumerable<object> fetchStream(IDataReader reader)
         {
             while (reader.Read())
             {
@@ -120,7 +120,7 @@ namespace Marten.Events
 
                 var mapping = _schema.Events.EventMappingFor(eventTypeName);
 
-                yield return _serializer.FromJson(mapping.DocumentType, json).As<Event>();
+                yield return _serializer.FromJson(mapping.DocumentType, json).As<object>();
             }
         }
 
@@ -162,10 +162,10 @@ namespace Marten.Events
 
         public string Transform(string projectionName, Guid streamId, Event @event)
         {
-            var mapping = _schema.Events.EventMappingFor(@event.GetType());
+            var mapping = _schema.Events.EventMappingFor(@event.Body.GetType());
             var eventType = mapping.EventTypeName;
 
-            var eventJson = _serializer.ToJson(@event);
+            var eventJson = _serializer.ToJson(@event.Body);
 
             var json = _connection.Execute(cmd =>
             {
@@ -185,7 +185,7 @@ namespace Marten.Events
             var aggregateJson = _serializer.ToJson(aggregate);
             var projectionName = _schema.Events.AggregateFor<TAggregate>().Alias;
 
-            var eventType = _schema.Events.EventMappingFor(@event.GetType()).EventTypeName;
+            var eventType = _schema.Events.EventMappingFor(@event.Body.GetType()).EventTypeName;
 
             string json = _connection.Execute(cmd =>
             {
@@ -194,7 +194,7 @@ namespace Marten.Events
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)
                     .With("event_type", eventType)
-                    .With("event", _serializer.ToJson(@event), NpgsqlDbType.Json)
+                    .With("event", _serializer.ToJson(@event.Body), NpgsqlDbType.Json)
                     .With("aggregate", aggregateJson, NpgsqlDbType.Json).ExecuteScalar().As<string>();
             });
 
@@ -210,7 +210,7 @@ namespace Marten.Events
         {
             var projectionName = _schema.Events.AggregateFor<TAggregate>().Alias;
 
-            var eventType = _schema.Events.EventMappingFor(@event.GetType()).EventTypeName;
+            var eventType = _schema.Events.EventMappingFor(@event.Body.GetType()).EventTypeName;
 
             var json = _connection.Execute(cmd =>
             {
@@ -219,7 +219,7 @@ namespace Marten.Events
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)
                     .With("event_type", eventType)
-                    .With("event", _serializer.ToJson(@event), NpgsqlDbType.Json)
+                    .With("event", _serializer.ToJson(@event.Body), NpgsqlDbType.Json)
                     .ExecuteScalar().As<string>();
             });
 
