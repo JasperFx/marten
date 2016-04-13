@@ -13,7 +13,6 @@ namespace Marten.Services.BatchQuerying
     {
         private readonly BatchedQuery _parent;
         private IMartenQueryable<T> _inner;
-        private IEnumerable<IIncludeJoin> _includes = Enumerable.Empty<IIncludeJoin>(); 
 
         public BatchedQueryable(BatchedQuery parent, IMartenQueryable<T> inner)
         {

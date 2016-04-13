@@ -1,16 +1,55 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Linq.Results;
 using Marten.Schema;
 using Marten.Util;
 using Npgsql;
 
 namespace Marten.Services.BatchQuerying
 {
+    public interface IBatchQueryItem
+    {
+        void Configure(IDocumentSchema schema, NpgsqlCommand command);
+
+        // TODO -- THIS REALLY, REALLY needs to be async all the way down
+        void Read(DbDataReader reader, IIdentityMap map);
+
+    }
+
+    public class BatchQueryItem<T> : IBatchQueryItem
+    {
+        private readonly IQueryHandler<T> _handler;
+
+        public BatchQueryItem(IQueryHandler<T> handler)
+        {
+            _handler = handler;
+
+            Result = new TaskCompletionSource<T>();
+        }
+
+        public TaskCompletionSource<T> Result { get; }
+
+        public void Configure(IDocumentSchema schema, NpgsqlCommand command)
+        {
+            _handler.ConfigureCommand(schema, command);
+        }
+
+        public void Read(DbDataReader reader, IIdentityMap map)
+        {
+            // TODO -- do async, all the way through
+            var result = _handler.Handle(reader, map);
+            Result.SetResult(result);
+        }
+    }
+
+
+
     public class BatchedQuery : IBatchedQuery
     {
         private static readonly MartenQueryParser QueryParser = new MartenQueryParser();
