@@ -14,9 +14,9 @@ namespace Marten.Events
 
         TAggregate FetchSnapshot<TAggregate>(Guid streamId) where TAggregate : class, new();
 
-        IEnumerable<Event> FetchStream(Guid streamId);
-        IEnumerable<Event> FetchStream(Guid streamId, int version);
-        IEnumerable<Event> FetchStream(Guid streamId, DateTime timestamp);
+        IEnumerable<object> FetchStream(Guid streamId);
+        IEnumerable<object> FetchStream(Guid streamId, int version);
+        IEnumerable<object> FetchStream(Guid streamId, DateTime timestamp);
 
         
 
