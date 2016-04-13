@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,51 +7,10 @@ using Baseline;
 using Marten.Linq;
 using Marten.Linq.Results;
 using Marten.Schema;
-using Marten.Util;
 using Npgsql;
 
 namespace Marten.Services.BatchQuerying
 {
-    public interface IBatchQueryItem
-    {
-        void Configure(IDocumentSchema schema, NpgsqlCommand command);
-
-        // TODO -- THIS REALLY, REALLY needs to be async all the way down
-        void Read(DbDataReader reader, IIdentityMap map);
-
-
-    }
-
-    public class BatchQueryItem<T> : IBatchQueryItem
-    {
-        private readonly IQueryHandler<T> _handler;
-
-        public BatchQueryItem(IQueryHandler<T> handler)
-        {
-            _handler = handler;
-
-            Completion = new TaskCompletionSource<T>();
-        }
-
-
-        public TaskCompletionSource<T> Completion { get; }
-        public Task<T> Result => Completion.Task;
-
-        public void Configure(IDocumentSchema schema, NpgsqlCommand command)
-        {
-            _handler.ConfigureCommand(schema, command);
-        }
-
-        public void Read(DbDataReader reader, IIdentityMap map)
-        {
-            // TODO -- do async, all the way through
-            var result = _handler.Handle(reader, map);
-            Completion.SetResult(result);
-        }
-    }
-
-
-
     public class BatchedQuery : IBatchedQuery
     {
         private static readonly MartenQueryParser QueryParser = new MartenQueryParser();
@@ -65,7 +23,8 @@ namespace Marten.Services.BatchQuerying
         private readonly NpgsqlCommand _command = new NpgsqlCommand();
         private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
 
-        public BatchedQuery(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap, QuerySession parent, ISerializer serializer, MartenExpressionParser parser)
+        public BatchedQuery(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap,
+            QuerySession parent, ISerializer serializer, MartenExpressionParser parser)
         {
             _runner = runner;
             _schema = schema;
@@ -97,26 +56,12 @@ namespace Marten.Services.BatchQuerying
 
         private Task<T> load<T>(object id) where T : class
         {
-            throw new NotImplementedException("NWO");
-            /*
             if (_identityMap.Has<T>(id))
             {
                 return Task.FromResult(_identityMap.Retrieve<T>(id));
             }
 
-            var source = new TaskCompletionSource<T>();
-
-            var mapping = _schema.MappingFor(typeof (T));
-            var parameter = _command.AddParameter(id);
-
-            _command.AppendQuery(
-                $"select {mapping.SelectFields().Join(", ")} from {mapping.QualifiedTableName} as d where id = :{parameter.ParameterName}");
-
-            var handler = new SingleResultReader<T>(source, _schema.StorageFor(typeof (T)), _identityMap);
-            AddItem(handler);
-
-            return source.Task;
-            */
+            return AddItem(new LoadByIdHandler<T>(_schema.ResolverFor<T>(), _schema.MappingFor(typeof (T)), id));
         }
 
 
@@ -136,21 +81,9 @@ namespace Marten.Services.BatchQuerying
 
             private Task<IList<TDoc>> load<TKey>(TKey[] keys)
             {
-                throw new NotImplementedException();
-                /*
+                var resolver = _parent._schema.ResolverFor<TDoc>();
                 var mapping = _parent._schema.MappingFor(typeof (TDoc));
-                var parameter = _parent._command.AddParameter(keys);
-                _parent._command.AppendQuery(
-                    $"select {mapping.SelectFields().Join(", ")} from {mapping.QualifiedTableName} as d where d.id = ANY(:{parameter.ParameterName})");
-
-                var resolver = _parent._schema.StorageFor(typeof (TDoc)).As<IResolver<TDoc>>();
-
-                var handler = new MultipleResultsReader<TDoc>(new WholeDocumentSelector<TDoc>(mapping, resolver), _parent._identityMap);
-
-                _parent.AddItem(handler);
-
-                return handler.ReturnValue;
-                */
+                return _parent.AddItem(new LoadByIdArrayHandler<TDoc, TKey>(resolver, mapping, keys));
             }
 
             public Task<IList<TDoc>> ById<TKey>(params TKey[] keys)
@@ -166,16 +99,7 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IList<T>> Query<T>(string sql, params object[] parameters) where T : class
         {
-            throw new NotImplementedException();
-
-            /*
-            _parent.ConfigureCommand<T>(_command, sql, parameters);
-
-            var handler = new QueryResultsReader<T>(_serializer);
-            AddItem(handler);
-
-            return handler.ReturnValue;
-            */
+            return AddItem(new UserSuppliedQueryHandler<T>(_serializer, sql, parameters));
         }
 
         private DocumentQuery toDocumentQuery<TDoc>(IMartenQueryable<TDoc> queryable)
@@ -188,7 +112,7 @@ namespace Marten.Services.BatchQuerying
 
             var docQuery = new DocumentQuery(_schema.MappingFor(model.MainFromClause.ItemType), model, _parser);
             docQuery.Includes.AddRange(queryable.Includes);
-            
+
 
             return docQuery;
         }
@@ -241,6 +165,8 @@ namespace Marten.Services.BatchQuerying
         {
             var map = _identityMap.ForQuery();
 
+            if (!_items.Any()) return Task.CompletedTask;
+
             return _runner.ExecuteAsync(_command, async (cmd, tk) =>
             {
                 using (var reader = await _command.ExecuteReaderAsync(tk).ConfigureAwait(false))
@@ -262,7 +188,6 @@ namespace Marten.Services.BatchQuerying
                         // TODO -- needs to be purely async later
                         item.Read(reader, map);
                     }
-
                 }
 
                 return 0;

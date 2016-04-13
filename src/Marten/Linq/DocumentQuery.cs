@@ -116,7 +116,7 @@ namespace Marten.Linq
 
 
 
-        public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, NpgsqlCommand command)
+        public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, NpgsqlCommand command, int rowLimit = 0)
         {
             if (hasOperator<LastResultOperator>())
             {
@@ -124,12 +124,12 @@ namespace Marten.Linq
             }
 
             var documentStorage = schema.StorageFor(_mapping.DocumentType);
-            return ConfigureCommand<T>(schema, documentStorage, command);
+            return ConfigureCommand<T>(schema, documentStorage, command, rowLimit);
         }
 
         public IList<IIncludeJoin> Includes { get; } = new List<IIncludeJoin>(); 
 
-        public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, IDocumentStorage documentStorage, NpgsqlCommand command)
+        public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, IDocumentStorage documentStorage, NpgsqlCommand command, int rowLimit = 0)
         {
             var select = buildSelectClause<T>(schema, documentStorage);
             var sql = $"select {@select.SelectFields().Join(", ")} from {_mapping.QualifiedTableName} as d";
@@ -146,7 +146,15 @@ namespace Marten.Linq
 
             if (orderBy.IsNotEmpty()) sql += orderBy;
 
-            sql = appendLimit(sql);
+            if (rowLimit > 0)
+            {
+                sql = sql + " LIMIT " + rowLimit;
+            }
+            else
+            {
+                sql = appendLimit(sql);
+            }
+            
             sql = appendOffset(sql);
 
             command.AppendQuery(sql);

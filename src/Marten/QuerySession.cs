@@ -89,6 +89,7 @@ namespace Marten
             return cmd;
         }
 
+        [Obsolete("Get around to replacing this w/ the UserSuppliedQueryHandler<T> code")]
         public void ConfigureCommand<T>(NpgsqlCommand cmd, string sql, object[] parameters)
         {
             if (!sql.Contains("select", StringComparison.OrdinalIgnoreCase))

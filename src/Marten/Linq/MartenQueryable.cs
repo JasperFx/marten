@@ -147,7 +147,7 @@ namespace Marten.Linq
 
                 case FetchType.FetchOne:
                     model.ResultOperators.Add(new TakeResultOperator(Expression.Constant(1)));
-                    query.ConfigureCommand<T>(schema, cmd);
+                    query.ConfigureCommand<T>(schema, cmd, 1);
                     break;
             }
 
