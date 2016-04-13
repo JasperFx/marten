@@ -60,6 +60,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.String.EndsWith("Suffix"));
 
             session.Query<Target>().Where(x => x.String.Contains("something"));
+            session.Query<Target>().Where(x => x.String.Equals("The same thing"));
         }
         // ENDSAMPLE
 

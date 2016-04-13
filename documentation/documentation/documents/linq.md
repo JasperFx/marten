@@ -48,7 +48,7 @@ Marten's Linq support will allow you to make "deep" searches on properties of pr
 
 ## Searching on String Fields
 
-Marten supports a subset of the common substring searches:
+Marten supports a subset of the common sub/string searches:
 
 <[sample:searching_within_string_fields]>
 
