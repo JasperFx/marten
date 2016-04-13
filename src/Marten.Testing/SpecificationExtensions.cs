@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Schema;
 using Shouldly;
 
 namespace Marten.Testing
@@ -198,6 +199,22 @@ namespace Marten.Testing
 
 
             return exception;
+        }
+
+        public static void ShouldContain(this TableName[] tables, string qualifiedName)
+        {
+            if (tables == null) throw new ArgumentNullException(nameof(tables));
+
+            var table = TableName.Parse(qualifiedName);
+            tables.ShouldContain(table);
+        }
+
+        public static void ShouldContain(this FunctionName[] functions, string qualifiedName)
+        {
+            if (functions == null) throw new ArgumentNullException(nameof(functions));
+
+            var function = FunctionName.Parse(qualifiedName);
+            functions.ShouldContain(function);
         }
     }
 }

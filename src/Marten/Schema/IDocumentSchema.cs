@@ -11,9 +11,10 @@ namespace Marten.Schema
         StoreOptions StoreOptions { get; }
 
         IDocumentStorage StorageFor(Type documentType);
-        string[] SchemaTableNames();
-        string[] DocumentTables();
-        string[] SchemaFunctionNames();
+
+        TableName[] SchemaTables();
+        TableName[] DocumentTables();
+        FunctionName[] SchemaFunctionNames();
 
         IDocumentMapping MappingFor(Type documentType);
         void EnsureStorageExists(Type documentType);
@@ -50,7 +51,7 @@ namespace Marten.Schema
         TableDefinition TableSchema(Type documentType);
         IEnumerable<IDocumentMapping> AllDocumentMaps();
         IResolver<T> ResolverFor<T>();
-        bool TableExists(string tableName);
-        bool TableExists(string databaseSchemaName, string tableName);
+
+        bool TableExists(TableName table);
     }
 }

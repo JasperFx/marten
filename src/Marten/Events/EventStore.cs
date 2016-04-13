@@ -19,6 +19,10 @@ namespace Marten.Events
         private readonly ISerializer _serializer;
         private readonly IManagedConnection _connection;
 
+        private FunctionName ApplyTransformFunction => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_apply_transform");
+        private FunctionName ApplyAggregationFunction => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_apply_aggregation");
+        private FunctionName StartAggregationFunction => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_start_aggregation");
+        
         public EventStore(IDocumentSession session, IIdentityMap identityMap, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection)
         {
             _session = session;
@@ -174,7 +178,7 @@ namespace Marten.Events
 
             var json = _connection.Execute(cmd =>
             {
-                return cmd.CallsSproc(_schema.Events.DatabaseSchemaName + ".mt_apply_transform")
+                return cmd.CallsSproc(ApplyTransformFunction)
                     .With("stream_id", stream)
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)
@@ -196,7 +200,7 @@ namespace Marten.Events
 
             string json = _connection.Execute(cmd =>
             {
-                return cmd.CallsSproc(_schema.Events.DatabaseSchemaName + ".mt_apply_aggregation")
+                return cmd.CallsSproc(ApplyAggregationFunction)
                     .With("stream_id", aggregateId)
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)
@@ -227,7 +231,7 @@ namespace Marten.Events
 
             var json = _connection.Execute(cmd =>
             {
-                return cmd.CallsSproc(_schema.Events.DatabaseSchemaName + ".mt_start_aggregation")
+                return cmd.CallsSproc(StartAggregationFunction)
                     .With("stream_id", aggregateId)
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)

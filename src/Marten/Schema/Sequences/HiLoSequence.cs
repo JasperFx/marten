@@ -12,6 +12,8 @@ namespace Marten.Schema.Sequences
         private readonly string _entityName;
         private readonly object _lock = new object();
 
+        private FunctionName GetNextFunction => new FunctionName(_options.DatabaseSchemaName, "mt_get_next_hi");
+
         public HiloSequence(IConnectionFactory factory, StoreOptions options, string entityName, HiloSettings settings)
         {
             _factory = factory;
@@ -59,7 +61,7 @@ namespace Marten.Schema.Sequences
                 try
                 {
                     var tx = conn.BeginTransaction(IsolationLevel.Serializable);
-                    var raw = conn.CreateCommand().CallsSproc(_options.DatabaseSchemaName + ".mt_get_next_hi")
+                    var raw = conn.CreateCommand().CallsSproc(GetNextFunction)
                         .With("entity", _entityName)
                         .Returns("next", NpgsqlDbType.Bigint).ExecuteScalar();
 

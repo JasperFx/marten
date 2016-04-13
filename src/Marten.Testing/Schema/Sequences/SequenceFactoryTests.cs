@@ -45,7 +45,7 @@ namespace Marten.Testing.Schema.Sequences
         [Fact]
         public void can_create_table_on_fly_if_necessary()
         {
-            theStore.Schema.SchemaTableNames().ShouldContain("seq_other.mt_hilo");
+            theStore.Schema.SchemaTables().ShouldContain("seq_other.mt_hilo");
         }
 
         [Fact]

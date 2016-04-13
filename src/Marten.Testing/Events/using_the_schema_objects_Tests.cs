@@ -25,7 +25,7 @@ namespace Marten.Testing.Events
             schemaFunctionNames.ShouldContain("public.mt_append_event");
             schemaFunctionNames.ShouldContain("public.mt_version_stream");
 
-            var schemaTableNames = schema.SchemaTableNames();
+            var schemaTableNames = schema.SchemaTables();
             schemaTableNames.ShouldContain("public.mt_streams");
             schemaTableNames.ShouldContain("public.mt_events");
         }
@@ -46,7 +46,7 @@ namespace Marten.Testing.Events
             schemaFunctionNames.ShouldContain("other.mt_append_event");
             schemaFunctionNames.ShouldContain("other.mt_version_stream");
 
-            var schemaTableNames = schema.SchemaTableNames();
+            var schemaTableNames = schema.SchemaTables();
             schemaTableNames.ShouldContain("other.mt_streams");
             schemaTableNames.ShouldContain("other.mt_events");
         }
@@ -67,7 +67,7 @@ namespace Marten.Testing.Events
             schemaFunctionNames.ShouldContain("event_store.mt_append_event");
             schemaFunctionNames.ShouldContain("event_store.mt_version_stream");
 
-            var schemaTableNames = schema.SchemaTableNames();
+            var schemaTableNames = schema.SchemaTables();
             schemaTableNames.ShouldContain("event_store.mt_streams");
             schemaTableNames.ShouldContain("event_store.mt_events");
         }
