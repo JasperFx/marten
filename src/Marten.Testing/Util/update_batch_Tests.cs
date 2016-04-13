@@ -67,13 +67,10 @@ namespace Marten.Testing.Util
             var target2 = Target.Random();
             var target3 = Target.Random();
 
-            var upsertName = theMapping.QualifiedUpsertName;
-
-
-            batch.Sproc(upsertName).Param("docId", target1.Id).JsonEntity("doc", target1);
-            batch.Sproc(upsertName).Param("docId", target2.Id).JsonEntity("doc", target2);
-            batch.Sproc(upsertName).Param("docId", target3.Id).JsonEntity("doc", target3);
-            batch.Delete(theMapping.QualifiedTableName, initialTarget.Id, NpgsqlDbType.Uuid);
+            batch.Sproc(theMapping.UpsertFunction).Param("docId", target1.Id).JsonEntity("doc", target1);
+            batch.Sproc(theMapping.UpsertFunction).Param("docId", target2.Id).JsonEntity("doc", target2);
+            batch.Sproc(theMapping.UpsertFunction).Param("docId", target3.Id).JsonEntity("doc", target3);
+            batch.Delete(theMapping.Table, initialTarget.Id, NpgsqlDbType.Uuid);
 
             batch.Execute();
             batch.Connection.Dispose();
@@ -103,14 +100,14 @@ namespace Marten.Testing.Util
             var target2 = Target.Random();
             var target3 = Target.Random();
 
-            var upsertName = theMapping.QualifiedUpsertName;
+            var upsert = theMapping.UpsertFunction;
 
             var serializer = new JsonNetSerializer();
 
-            batch.Sproc(upsertName).Param("docId", target1.Id).JsonBody("doc", serializer.ToJson(target1));
-            batch.Sproc(upsertName).Param("docId", target2.Id).JsonBody("doc", serializer.ToJson(target2));
-            batch.Sproc(upsertName).Param("docId", target3.Id).JsonBody("doc", serializer.ToJson(target3));
-            batch.Delete(theMapping.QualifiedTableName, initialTarget.Id, NpgsqlDbType.Uuid);
+            batch.Sproc(upsert).Param("docId", target1.Id).JsonBody("doc", serializer.ToJson(target1));
+            batch.Sproc(upsert).Param("docId", target2.Id).JsonBody("doc", serializer.ToJson(target2));
+            batch.Sproc(upsert).Param("docId", target3.Id).JsonBody("doc", serializer.ToJson(target3));
+            batch.Delete(theMapping.Table, initialTarget.Id, NpgsqlDbType.Uuid);
 
             batch.Execute();
             batch.Connection.Dispose();

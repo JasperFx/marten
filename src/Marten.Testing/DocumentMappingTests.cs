@@ -38,42 +38,42 @@ namespace Marten.Testing
         public void default_table_name()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.TableName.ShouldBe("mt_doc_user");
+            mapping.Table.Name.ShouldBe("mt_doc_user");
         }
 
         [Fact]
         public void default_table_name_with_schema()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.QualifiedTableName.ShouldBe("public.mt_doc_user");
+            mapping.Table.QualifiedName.ShouldBe("public.mt_doc_user");
         }
 
         [Fact]
         public void default_table_name_with_different_shema()
         {
             var mapping = DocumentMapping.For<User>("other");
-            mapping.QualifiedTableName.ShouldBe("other.mt_doc_user");
+            mapping.Table.QualifiedName.ShouldBe("other.mt_doc_user");
         }
 
         [Fact]
         public void default_upsert_name()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.UpsertName.ShouldBe("mt_upsert_user");
+            mapping.UpsertFunction.Name.ShouldBe("mt_upsert_user");
         }
 
         [Fact]
         public void default_upsert_name_with_schema()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.QualifiedUpsertName.ShouldBe("public.mt_upsert_user");
+            mapping.UpsertFunction.QualifiedName.ShouldBe("public.mt_upsert_user");
         }
 
         [Fact]
         public void default_upsert_name_with_different_schema()
         {
             var mapping = DocumentMapping.For<User>("other");
-            mapping.QualifiedUpsertName.ShouldBe("other.mt_upsert_user");
+            mapping.UpsertFunction.QualifiedName.ShouldBe("other.mt_upsert_user");
         }
 
         [Fact]
@@ -82,8 +82,8 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<User>();
             mapping.Alias = "users";
 
-            mapping.TableName.ShouldBe("mt_doc_users");
-            mapping.UpsertName.ShouldBe("mt_upsert_users");
+            mapping.Table.Name.ShouldBe("mt_doc_users");
+            mapping.UpsertFunction.Name.ShouldBe("mt_upsert_users");
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<User>();
             mapping.Alias = "Users";
 
-            mapping.QualifiedTableName.ShouldBe("public.mt_doc_users");
+            mapping.Table.QualifiedName.ShouldBe("public.mt_doc_users");
         }
 
         [Fact]
@@ -101,7 +101,7 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<User>("OTHER");
             mapping.Alias = "Users";
 
-            mapping.QualifiedTableName.ShouldBe("other.mt_doc_users");
+            mapping.Table.QualifiedName.ShouldBe("other.mt_doc_users");
         }
 
         [Fact]
@@ -110,7 +110,7 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<User>();
             mapping.Alias = "Users";
 
-            mapping.QualifiedUpsertName.ShouldBe("public.mt_upsert_users");
+            mapping.UpsertFunction.QualifiedName.ShouldBe("public.mt_upsert_users");
         }
 
         [Fact]
@@ -119,7 +119,7 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<User>("OTHER");
             mapping.Alias = "Users";
 
-            mapping.QualifiedUpsertName.ShouldBe("other.mt_upsert_users");
+            mapping.UpsertFunction.QualifiedName.ShouldBe("other.mt_upsert_users");
         }
 
         [Fact]
@@ -128,7 +128,7 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<User>();
             mapping.Alias = "Users";
 
-            mapping.TableName.ShouldBe("mt_doc_users");
+            mapping.Table.Name.ShouldBe("mt_doc_users");
         }
 
         [Fact]
@@ -137,7 +137,7 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<User>();
             mapping.Alias = "Users";
 
-            mapping.UpsertName.ShouldBe("mt_upsert_users");
+            mapping.UpsertFunction.Name.ShouldBe("mt_upsert_users");
         }
 
         [Fact]

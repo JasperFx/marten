@@ -133,7 +133,7 @@ namespace Marten.Testing.Schema
             theSchema.StorageFor(typeof(Issue)).ShouldNotBeNull();
             theSchema.StorageFor(typeof(Company)).ShouldNotBeNull();
 
-            var tables = theSchema.SchemaTableNames();
+            var tables = theSchema.SchemaTables();
             tables.ShouldContain("public.mt_doc_user");
             tables.ShouldContain("public.mt_doc_issue");
             tables.ShouldContain("public.mt_doc_company");
@@ -289,8 +289,8 @@ namespace Marten.Testing.Schema
     public class DocumentSchemaWithOverridenSchemaTests : IntegratedFixture
     {
         private readonly string _sql;
-        private readonly string[] _tables;
-        private readonly string[] _functions;
+        private readonly TableName[] _tables;
+        private readonly FunctionName[] _functions;
         private readonly IDocumentSchema _schema;
 
         public DocumentSchemaWithOverridenSchemaTests()
@@ -315,7 +315,7 @@ namespace Marten.Testing.Schema
                 session.SaveChanges();
             }
 
-            _tables = _schema.SchemaTableNames();
+            _tables = _schema.SchemaTables();
             _functions = _schema.SchemaFunctionNames();
         }
 
@@ -445,8 +445,8 @@ namespace Marten.Testing.Schema
     public class DocumentSchemaWithOverridenDefaultSchemaAndEventsTests : IntegratedFixture
     {
         private readonly string _sql;
-        private readonly string[] _tables;
-        private readonly string[] _functions;
+        private readonly TableName[] _tables;
+        private readonly FunctionName[] _functions;
         private readonly IDocumentSchema _schema;
 
         public DocumentSchemaWithOverridenDefaultSchemaAndEventsTests()
@@ -472,7 +472,7 @@ namespace Marten.Testing.Schema
                 session.SaveChanges();
             }
 
-            _tables = _schema.SchemaTableNames();
+            _tables = _schema.SchemaTables();
             _functions = _schema.SchemaFunctionNames();
         }
 

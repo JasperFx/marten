@@ -145,22 +145,27 @@ namespace Marten.Schema
         public IEventStoreConfiguration Events => StoreOptions.Events;
         public PostgresUpsertType UpsertType => StoreOptions.UpsertType;
 
-        public string[] SchemaTableNames()
+        public TableName[] SchemaTables()
         {
-            var sql = "select table_schema || '.' || table_name from information_schema.tables where table_name like ?;";
+            Func<DbDataReader, TableName> transform = r => new TableName(r.GetString(0), r.GetString(1));
 
-            return _factory.GetStringList(sql, DocumentMapping.MartenPrefix + "%").ToArray();
+            var sql = "select table_schema, table_name from information_schema.tables where table_name like ?;";
+
+            return _factory.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%").ToArray();
         }
 
-        public string[] DocumentTables()
+        public TableName[] DocumentTables()
         {
-            var tablePrefix = StoreOptions.DatabaseSchemaName + "." + DocumentMapping.TablePrefix;
-            return SchemaTableNames().Where(x => x.StartsWith(tablePrefix)).ToArray();
+            return SchemaTables().Where(x => x.Name.StartsWith(DocumentMapping.TablePrefix)).ToArray();
         }
 
-        public string[] SchemaFunctionNames()
+        public FunctionName[] SchemaFunctionNames()
         {
-            return findFunctionNames().ToArray();
+            Func<DbDataReader, FunctionName> transform = r => new FunctionName(r.GetString(0), r.GetString(1));
+
+            var sql = "SELECT specific_schema, routine_name FROM information_schema.routines WHERE type_udt_name != 'trigger' and routine_name like ?;";
+
+            return _factory.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%").ToArray();
         }
 
         public ISequences Sequences { get; }
@@ -236,7 +241,7 @@ namespace Marten.Schema
 
             var pkName = primaryKeysFor(documentMapping).SingleOrDefault();
 
-            return new TableDefinition(documentMapping.QualifiedTableName, documentMapping.TableName, pkName,  columns);
+            return new TableDefinition(documentMapping.Table, pkName,  columns);
         }
 
         public TableDefinition TableSchema(Type documentType)
@@ -254,14 +259,9 @@ namespace Marten.Schema
             return StorageFor(typeof (T)).As<IResolver<T>>();
         }
 
-        public bool TableExists(string tableName)
+        public bool TableExists(TableName table)
         {
-            return SchemaTableNames().Contains($"{StoreOptions.DatabaseSchemaName}.{tableName}");
-        }
-
-        public bool TableExists(string databaseSchemaName, string tableName)
-        {
-            return SchemaTableNames().Contains($"{databaseSchemaName}.{tableName}");
+            return SchemaTables().Contains(table);
         }
 
         private string[] primaryKeysFor(IDocumentMapping documentMapping)
@@ -277,24 +277,16 @@ where attrelid = (select pg_class.oid
 and i.indisprimary; 
 ";
 
-            return _factory.GetStringList(sql, documentMapping.DatabaseSchemaName, documentMapping.TableName).ToArray();
+            return _factory.GetStringList(sql, documentMapping.Table.Schema, documentMapping.Table.Name).ToArray();
         }
 
         private IEnumerable<TableColumn> findTableColumns(IDocumentMapping documentMapping)
         {
             Func<DbDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));
 
-            var sql = "select column_name, data_type from information_schema.columns where table_name = ? and table_schema = ? order by ordinal_position";
+            var sql = "select column_name, data_type from information_schema.columns where table_schema = ? and table_name = ? order by ordinal_position";
 
-            return _factory.Fetch(sql, transform, documentMapping.TableName, documentMapping.DatabaseSchemaName);
-        }
-
-
-        private IEnumerable<string> findFunctionNames()
-        {
-            var sql = "SELECT specific_schema || '.' || routine_name FROM information_schema.routines WHERE type_udt_name != 'trigger' and routine_name like ?;";
-
-            return _factory.GetStringList(sql, DocumentMapping.MartenPrefix + "%");
+            return _factory.Fetch(sql, transform, documentMapping.Table.Schema, documentMapping.Table.Name);
         }
     }
 

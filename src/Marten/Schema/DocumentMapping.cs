@@ -121,8 +121,6 @@ namespace Marten.Schema
                 if (value.IsEmpty()) throw new ArgumentNullException(nameof(value));
 
                 _alias = value.ToLower();
-
-                TableName = $"{TablePrefix}{_alias}";
             }
         }
 
@@ -312,9 +310,9 @@ namespace Marten.Schema
         {
             _hasCheckedSchema = false;
 
-            connection.Execute($"DROP TABLE IF EXISTS {QualifiedTableName} CASCADE;");
+            connection.Execute($"DROP TABLE IF EXISTS {Table.QualifiedName} CASCADE;");
 
-            var dropTargets = DocumentCleaner.DropFunctionSql.ToFormat(UpsertName, DatabaseSchemaName);
+            var dropTargets = DocumentCleaner.DropFunctionSql.ToFormat(UpsertFunction.Name, UpsertFunction.Schema);
 
             var drops = connection.GetStringList(dropTargets);
             drops.Each(drop => connection.Execute(drop));
@@ -322,7 +320,7 @@ namespace Marten.Schema
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
-            var sql = "truncate {0} cascade".ToFormat(QualifiedTableName);
+            var sql = "truncate {0} cascade".ToFormat(Table.QualifiedName);
             factory.RunSql(sql);
         }
 
@@ -333,7 +331,7 @@ namespace Marten.Schema
             var tableAlias = members.ToTableAlias();
             var locator = FieldFor(members).SqlLocator;
 
-            var joinText = $"{joinOperator} {other.QualifiedTableName} as {tableAlias} ON {locator} = {tableAlias}.id";
+            var joinText = $"{joinOperator} {other.Table.QualifiedName} as {tableAlias} ON {locator} = {tableAlias}.id";
 
             return new IncludeJoin<TOther>(other, joinText, tableAlias, callback);
         }
@@ -342,9 +340,7 @@ namespace Marten.Schema
 
         public IIdGeneration IdStrategy { get; set; }
 
-        public string QualifiedUpsertName => $"{DatabaseSchemaName}.{UpsertName}";
-
-        public string UpsertName => $"{UpsertPrefix}{_alias}";
+        public FunctionName UpsertFunction => new FunctionName(DatabaseSchemaName, $"{UpsertPrefix}{_alias}");
 
         public Type DocumentType { get; }
 
@@ -354,11 +350,9 @@ namespace Marten.Schema
             set { _databaseSchemaName = value; }
         }
 
-        public string QualifiedTableName => $"{DatabaseSchemaName}.{TableName}";
+        public TableName Table => new TableName(DatabaseSchemaName, $"{TablePrefix}{_alias}");
 
-        public string TableName { get; private set; }
-
-        public MemberInfo IdMember { get; set; }
+        public MemberInfo IdMember { get; private set; }
 
         public virtual string[] SelectFields()
         {
@@ -416,7 +410,7 @@ namespace Marten.Schema
                                                                        // can do foreign keys
         {
             var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
-            var table = new TableDefinition(QualifiedTableName, TableName, new TableColumn("id", pgIdType));
+            var table = new TableDefinition(Table, new TableColumn("id", pgIdType));
             table.Columns.Add(new TableColumn("data", "jsonb") { Directive = "NOT NULL" });
 
             _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));

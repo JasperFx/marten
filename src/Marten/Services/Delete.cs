@@ -31,12 +31,12 @@ namespace Marten.Services
         {
             if (Query == null)
             {
-                batch.Delete(mapping.QualifiedTableName, Id, storage.IdType);
+                batch.Delete(mapping.Table, Id, storage.IdType);
             }
             else
             {
                 var where = Query.BuildWhereClause();
-                batch.DeleteWhere(mapping.QualifiedTableName, where);
+                batch.DeleteWhere(mapping.Table, where);
             }
             
         }
