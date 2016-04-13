@@ -30,10 +30,10 @@ namespace Marten.Testing.Schema
                 documentTables.ShouldContain("public.mt_doc_bar_document");
 
                 table1 = store.Schema.TableSchema(typeof (Foo.Document));
-                table1.Name.ShouldBe("mt_doc_foo_document");
+                table1.Table.Name.ShouldBe("mt_doc_foo_document");
 
                 table2 = store.Schema.TableSchema(typeof (Bar.Document));
-                table2.Name.ShouldBe("mt_doc_bar_document");
+                table2.Table.Name.ShouldBe("mt_doc_bar_document");
             }
 
             table2.ShouldNotBe(table1);
@@ -59,10 +59,10 @@ namespace Marten.Testing.Schema
                 documentTables.ShouldContain("other.mt_doc_bar_document");
 
                 table1 = store.Schema.TableSchema(typeof(Foo.Document));
-                table1.Name.ShouldBe("mt_doc_foo_document");
+                table1.Table.Name.ShouldBe("mt_doc_foo_document");
 
                 table2 = store.Schema.TableSchema(typeof(Bar.Document));
-                table2.Name.ShouldBe("mt_doc_bar_document");
+                table2.Table.Name.ShouldBe("mt_doc_bar_document");
             }
 
             table2.ShouldNotBe(table1);

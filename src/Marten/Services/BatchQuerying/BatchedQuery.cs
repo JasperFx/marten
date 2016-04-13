@@ -83,6 +83,7 @@ namespace Marten.Services.BatchQuerying
             {
                 var resolver = _parent._schema.ResolverFor<TDoc>();
                 var mapping = _parent._schema.MappingFor(typeof (TDoc));
+
                 return _parent.AddItem(new LoadByIdArrayHandler<TDoc, TKey>(resolver, mapping, keys));
             }
 

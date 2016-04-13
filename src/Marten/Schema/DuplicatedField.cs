@@ -69,14 +69,14 @@ namespace Marten.Schema
         // TODO -- think this one might have to change w/ FK's
         public void WritePatch(DocumentMapping mapping, Action<string> executeSql)
         {
-            executeSql($"ALTER TABLE {mapping.QualifiedTableName} ADD COLUMN {ColumnName} {PgType};");
+            executeSql($"ALTER TABLE {mapping.Table.QualifiedName} ADD COLUMN {ColumnName} {PgType};");
 
             var jsonField = new JsonLocatorField(Members);
 
             // HOKEY, but I'm letting it pass for now.
             var sqlLocator = jsonField.SqlLocator.Replace("d.", "");
 
-            executeSql($"update {mapping.QualifiedTableName} set {ColumnName} = {sqlLocator}");
+            executeSql($"update {mapping.Table.QualifiedName} set {ColumnName} = {sqlLocator}");
 
         }
 

@@ -20,9 +20,9 @@ namespace Marten.Schema
         {
             if (mapping == null) throw new ArgumentNullException(nameof(mapping));
 
-            _functionName = mapping.QualifiedUpsertName;
-            _tableName = mapping.QualifiedTableName;
-            _primaryKeyConstraintName = "pk_" + mapping.TableName;
+            _functionName = mapping.UpsertFunction.QualifiedName;
+            _tableName = mapping.Table.QualifiedName;
+            _primaryKeyConstraintName = "pk_" + mapping.Table.Name;
                 
             var idType = mapping.IdMember.GetMemberType();
             var pgIdType = TypeMappings.GetPgType(idType);

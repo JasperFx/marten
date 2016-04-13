@@ -75,7 +75,7 @@ namespace Marten.Testing.Schema
             theSession.SaveChanges();
             theSession.Dispose();
 
-            var tableName = theStore.Schema.MappingFor(typeof(Target)).QualifiedTableName;
+            var tableName = theStore.Schema.MappingFor(typeof(Target)).Table.QualifiedName;
 
             theStore.Schema.DocumentTables().Contains(tableName)
                 .ShouldBeTrue();
@@ -96,7 +96,7 @@ namespace Marten.Testing.Schema
 
             var schema = theStore.Schema;
 
-            var upsertName = schema.MappingFor(typeof(Target)).As<DocumentMapping>().QualifiedUpsertName;
+            var upsertName = schema.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction.QualifiedName;
 
             schema.SchemaFunctionNames().Contains(upsertName)
                 .ShouldBeTrue();

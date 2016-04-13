@@ -14,7 +14,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<Tractor>();
 
             mapping.Alias.ShouldBe("johndeere");
-            mapping.TableName.ShouldBe("mt_doc_johndeere");
+            mapping.Table.Name.ShouldBe("mt_doc_johndeere");
         }
 
         [Fact]
