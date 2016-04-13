@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
 using Shouldly;
@@ -18,6 +19,8 @@ namespace Marten.Testing.Events
         [Fact]
         public void can_query_against_event_type()
         {
+            throw new NotImplementedException("need to introduce IDocumentSession.Events.Query<T>()");
+
             theSession.Events.StartStream<Quest>(joined1, departed1);
             theSession.Events.StartStream<Quest>(joined2, departed2);
 
@@ -35,6 +38,8 @@ namespace Marten.Testing.Events
         [Fact]
         public void can_load_event_doc_by_id()
         {
+            throw new NotImplementedException("need to introduce IDocumentSession.Events.Query<T>()");
+
             theSession.Events.StartStream<Quest>(joined1, departed1);
             theSession.Events.StartStream<Quest>(joined2, departed2);
 
@@ -52,6 +57,8 @@ namespace Marten.Testing.Events
         [Fact]
         public async Task can_load_event_doc_by_id_async()
         {
+            throw new NotImplementedException("need to introduce IDocumentSession.Events.Query<T>()");
+
             theSession.Events.StartStream<Quest>(joined1, departed1);
             theSession.Events.StartStream<Quest>(joined2, departed2);
 

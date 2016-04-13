@@ -28,8 +28,6 @@ namespace Marten.Testing.Fixtures.EventStore
             _store = _container.GetInstance<IDocumentStore>();
             _store.Advanced.Clean.CompletelyRemoveAll();
 
-            _store.Schema.Events.AddAllTypesFromAssembly(GetType().Assembly);
-
             Context.State.Store(_store);
         }
 
@@ -37,7 +35,7 @@ namespace Marten.Testing.Fixtures.EventStore
         [FormatAs("For a new 'Quest' named {name} that started on {date}")]
         public void ForNewQuestStream(string name, DateTime date)
         {
-            var started = new QuestStarted {Name = name};
+            var started = new QuestStarted { Name = name };
             using (var session = _store.LightweightSession())
             {
                 _lastStream = session.Events.StartStream<Quest>(started);

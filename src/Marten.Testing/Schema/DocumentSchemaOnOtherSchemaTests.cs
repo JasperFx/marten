@@ -12,7 +12,7 @@ using Issue = Marten.Testing.Documents.Issue;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentSchemaOnOtherSchemaTests  : IntegratedFixture
+    public class DocumentSchemaOnOtherSchemaTests : IntegratedFixture
     {
         private IDocumentSchema theSchema => theStore.Schema;
 
@@ -210,6 +210,8 @@ namespace Marten.Testing.Schema
         [Fact]
         public void resolve_storage_for_event_type()
         {
+            theSchema.Events.AddEventType(typeof(RaceStarted));
+
             theSchema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }

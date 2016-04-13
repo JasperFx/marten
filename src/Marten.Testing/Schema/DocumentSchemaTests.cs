@@ -590,12 +590,12 @@ namespace Marten.Testing.Schema
         }
     }
 
-    public class Race : IAggregate
+    public class Race
     {
         public Guid Id { get; set; }
     }
 
-    public class RaceStarted : IEvent
+    public class RaceStarted
     {
         public Guid Id { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;

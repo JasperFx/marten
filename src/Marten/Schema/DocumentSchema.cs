@@ -53,11 +53,6 @@ namespace Marten.Schema
                     return StoreOptions.Events.As<IDocumentMapping>();
                 }
 
-                if (documentType.CanBeCastTo<IEvent>())
-                {
-                    return StoreOptions.Events.EventMappingFor(type);
-                }
-
                 return StoreOptions.AllDocumentMappings.SelectMany(x => x.SubClasses)
                     .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping
                        ?? StoreOptions.MappingFor(type);

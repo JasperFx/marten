@@ -15,20 +15,20 @@ namespace Marten.Events
         public Guid Id { get; }
         public Type AggregateType { get; set; } 
 
-        private readonly IList<IEvent> _events = new List<IEvent>();
+        private readonly IList<Event> _events = new List<Event>();
 
-        public EventStream(Guid stream, IEvent[] events)
+        public EventStream(Guid stream, Event[] events)
         {
             Id = stream;
             AddEvents(events);
         }
 
-        public void AddEvents(IEnumerable<IEvent> events)
+        public void AddEvents(IEnumerable<Event> events)
         {
             _events.AddRange(events);
             _events.Where(x => x.Id == Guid.Empty).Each(x => x.Id = Guid.NewGuid());
         }
 
-        public IEnumerable<IEvent> Events => _events;
+        public IEnumerable<Event> Events => _events;
     }
 }

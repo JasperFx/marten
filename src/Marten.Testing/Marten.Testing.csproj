@@ -78,7 +78,6 @@
     <Compile Include="document_session_persist_and_load_single_documents_Tests.cs" />
     <Compile Include="document_types_must_have_an_id_member_Tests.cs" />
     <Compile Include="duplicate_fields_in_table_and_upsert_Tests.cs" />
-    <Compile Include="Events\AggregateModelTests.cs" />
     <Compile Include="Events\end_to_end_event_capture_and_fetching_the_stream_Tests.cs" />
     <Compile Include="Events\EventGraphTests.cs" />
     <Compile Include="Events\EventMappingTests.cs" />
