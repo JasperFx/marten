@@ -11,6 +11,8 @@ namespace Marten.Events
     {
         private readonly EventGraph _graph;
 
+        private FunctionName AppendEventFunction => new FunctionName(_graph.DatabaseSchemaName, "mt_append_event");
+
         public EventStreamStorage(EventGraph graph)
         {
             _graph = graph;
@@ -54,7 +56,7 @@ namespace Marten.Events
             {
                 var mapping = _graph.EventMappingFor(@event.GetType());
 
-                batch.Sproc(new FunctionName(_graph.DatabaseSchemaName, "mt_append_event"))
+                batch.Sproc(AppendEventFunction)
                     .Param("stream", stream.Id)
                     .Param("stream_type", streamTypeName)
                     .Param("event_id", @event.Id)

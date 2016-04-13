@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using Baseline;
+using Marten.Schema;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -105,9 +106,12 @@ namespace Marten.Util
             return command;
         }
 
-        public static NpgsqlCommand CallsSproc(this NpgsqlCommand cmd, string command)
+        public static NpgsqlCommand CallsSproc(this NpgsqlCommand cmd, FunctionName function)
         {
-            cmd.CommandText = command;
+            if (cmd == null) throw new ArgumentNullException(nameof(cmd));
+            if (function == null) throw new ArgumentNullException(nameof(function));
+
+            cmd.CommandText = function.QualifiedName;
             cmd.CommandType = CommandType.StoredProcedure;
 
             return cmd;

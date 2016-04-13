@@ -75,7 +75,7 @@ AND    n.nspname = '{1}';";
         {
             using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
             {
-                _schema.SchemaTableNames()
+                _schema.SchemaTables()
                     .Each(tableName => { connection.Execute($"DROP TABLE IF EXISTS {tableName} CASCADE;"); });
 
                 var drops = connection.GetStringList(DropAllFunctionSql);
