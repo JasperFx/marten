@@ -205,4 +205,4 @@ paket.lock
 
 *.DotSettings
 
-results
+/results
