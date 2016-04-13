@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Schema;
 
 namespace Marten.Generation
 {
     public class TableDefinition
     {
-        private string primaryKeyDirective => $"CONSTRAINT pk_{Name} PRIMARY KEY";
+        private string primaryKeyDirective => $"CONSTRAINT pk_{Table.Name} PRIMARY KEY";
 
-        public string QualifiedName { get; }
-        public string Name { get; }
+        public TableName Table { get; }
 
         public IList<TableColumn> Columns { get; } = new List<TableColumn>();
 
@@ -26,23 +26,21 @@ namespace Marten.Generation
             }
         }
 
-        public TableDefinition(string qualifiedName, string name, TableColumn primaryKey)
+        public TableDefinition(TableName table, TableColumn primaryKey)
         {
-            if (string.IsNullOrEmpty(qualifiedName)) throw new ArgumentOutOfRangeException(nameof(qualifiedName));
+            if (table == null) throw new ArgumentNullException(nameof(table));
             if (primaryKey == null) throw new ArgumentNullException(nameof(primaryKey));
 
-            QualifiedName = qualifiedName.ToLower();
-            Name = name;
+            Table = table;
             PrimaryKey = primaryKey;
         }
 
-        public TableDefinition(string qualifiedName, string name, string pkName, IEnumerable<TableColumn> columns)
+        public TableDefinition(TableName table, string pkName, IEnumerable<TableColumn> columns)
         {
-            if (string.IsNullOrEmpty(qualifiedName)) throw new ArgumentOutOfRangeException(nameof(qualifiedName));
+            if (table == null) throw new ArgumentNullException(nameof(table));
             if (string.IsNullOrEmpty(pkName)) throw new ArgumentOutOfRangeException(nameof(pkName));
 
-            QualifiedName = qualifiedName;
-            Name = name;
+            Table = table;
             Columns.AddRange(columns);
 
             var primaryKey = Column(pkName);
@@ -52,8 +50,8 @@ namespace Marten.Generation
 
         public void Write(StringWriter writer)
         {
-            writer.WriteLine("DROP TABLE IF EXISTS {0} CASCADE;", QualifiedName);
-            writer.WriteLine("CREATE TABLE {0} (", QualifiedName);
+            writer.WriteLine("DROP TABLE IF EXISTS {0} CASCADE;", Table.QualifiedName);
+            writer.WriteLine("CREATE TABLE {0} (", Table.QualifiedName);
 
             var length = Columns.Select(x => x.Name.Length).Max() + 4;
 
@@ -91,7 +89,7 @@ namespace Marten.Generation
 
         protected bool Equals(TableDefinition other)
         {
-            return Columns.OrderBy(x => x.Name).SequenceEqual(other.Columns.OrderBy(x => x.Name)) && Equals(PrimaryKey, other.PrimaryKey) && string.Equals(QualifiedName, other.QualifiedName);
+            return Columns.OrderBy(x => x.Name).SequenceEqual(other.Columns.OrderBy(x => x.Name)) && Equals(PrimaryKey, other.PrimaryKey) && Table.Equals(other.Table);
         }
 
         public override bool Equals(object obj)
@@ -108,7 +106,7 @@ namespace Marten.Generation
             {
                 var hashCode = (Columns != null ? Columns.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (PrimaryKey != null ? PrimaryKey.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (QualifiedName != null ? QualifiedName.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (Table != null ? Table.GetHashCode() : 0);
                 return hashCode;
             }
         }

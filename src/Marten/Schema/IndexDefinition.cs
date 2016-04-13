@@ -27,7 +27,7 @@ namespace Marten.Schema
         {
             get
             {
-                return _indexName ?? $"{_parent.TableName}_idx_{_columns.Join("_")}";
+                return _indexName ?? $"{_parent.Table.Name}_idx_{_columns.Join("_")}";
             }
             set { _indexName = value; }
         }
@@ -46,7 +46,7 @@ namespace Marten.Schema
                 index += " CONCURRENTLY";
             }
 
-            index += $" {IndexName} ON {_parent.QualifiedTableName}";
+            index += $" {IndexName} ON {_parent.Table.QualifiedName}";
 
             if (Method != IndexMethod.btree)
             {

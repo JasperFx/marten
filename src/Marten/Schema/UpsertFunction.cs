@@ -11,8 +11,8 @@ namespace Marten.Schema
     public class UpsertFunction
     {
         private readonly string _primaryKeyConstraintName;
-        private readonly string _functionName;
-        private readonly string _tableName;
+        private readonly FunctionName _functionName;
+        private readonly TableName _tableName;
 
         public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
 
@@ -20,9 +20,9 @@ namespace Marten.Schema
         {
             if (mapping == null) throw new ArgumentNullException(nameof(mapping));
 
-            _functionName = mapping.QualifiedUpsertName;
-            _tableName = mapping.QualifiedTableName;
-            _primaryKeyConstraintName = "pk_" + mapping.TableName;
+            _functionName = mapping.UpsertFunction;
+            _tableName = mapping.Table;
+            _primaryKeyConstraintName = "pk_" + mapping.Table.Name;
                 
             var idType = mapping.IdMember.GetMemberType();
             var pgIdType = TypeMappings.GetPgType(idType);
@@ -59,22 +59,22 @@ namespace Marten.Schema
 
             if (upsertType == PostgresUpsertType.Legacy)
             {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName}({argList}) RETURNS VOID AS");
+                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS VOID AS");
                 writer.WriteLine("$$");
                 writer.WriteLine("BEGIN");
-                writer.WriteLine($"LOCK TABLE {_tableName} IN SHARE ROW EXCLUSIVE MODE;");
-                writer.WriteLine($"  WITH upsert AS (UPDATE {_tableName} SET {updates} WHERE id=docId RETURNING *) ");
-                writer.WriteLine($"  INSERT INTO {_tableName} ({inserts})");
+                writer.WriteLine($"LOCK TABLE {_tableName.QualifiedName} IN SHARE ROW EXCLUSIVE MODE;");
+                writer.WriteLine($"  WITH upsert AS (UPDATE {_tableName.QualifiedName} SET {updates} WHERE id=docId RETURNING *) ");
+                writer.WriteLine($"  INSERT INTO {_tableName.QualifiedName} ({inserts})");
                 writer.WriteLine($"  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);");
                 writer.WriteLine("END;");
                 writer.WriteLine("$$ LANGUAGE plpgsql;");
             }
             else
             {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName}({argList}) RETURNS VOID AS");
+                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS VOID AS");
                 writer.WriteLine("$$");
                 writer.WriteLine("BEGIN");
-                writer.WriteLine($"INSERT INTO {_tableName} ({inserts}) VALUES ({valueList})");
+                writer.WriteLine($"INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})");
                 writer.WriteLine($"  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}");
                 writer.WriteLine($"  DO UPDATE SET {updates};");
                 writer.WriteLine("END;");
@@ -94,12 +94,14 @@ namespace Marten.Schema
             return $@"
 BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity)
 var document = ({typeName})entity;
-batch.Sproc(`{_functionName}`){parameters.Replace("*", ".JsonEntity(`doc`, document)")};
+var function = new FunctionName(`{_functionName.Schema}`, `{_functionName.Name}`);
+batch.Sproc(function){parameters.Replace("*", ".JsonEntity(`doc`, document)")};
 END
 
 BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity, string json)
 var document = ({typeName})entity;
-batch.Sproc(`{_functionName}`){parameters.Replace("*", ".JsonBody(`doc`, json)")};
+var function = new FunctionName(`{_functionName.Schema}`, `{_functionName.Name}`);
+batch.Sproc(function){parameters.Replace("*", ".JsonBody(`doc`, json)")};
 END
 ";
         }

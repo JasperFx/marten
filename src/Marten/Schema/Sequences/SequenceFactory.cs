@@ -9,6 +9,8 @@ namespace Marten.Schema.Sequences
         private readonly StoreOptions _options;
         private readonly IMartenLogger _logger;
 
+        private TableName Table => new TableName(_options.DatabaseSchemaName, "mt_hilo");
+
         public SequenceFactory(IDocumentSchema schema, IConnectionFactory factory, StoreOptions options, IMartenLogger logger)
         {
             _schema = schema;
@@ -19,16 +21,14 @@ namespace Marten.Schema.Sequences
 
         public ISequence Hilo(Type documentType, HiloSettings settings)
         {
-            
-
-            if (!_schema.TableExists(_options.DatabaseSchemaName, "mt_hilo"))
+            if (!_schema.TableExists(Table))
             {
                 if (_options.AutoCreateSchemaObjects == AutoCreate.None)
                 {
                     throw new InvalidOperationException($"Hilo table is missing, but {nameof(StoreOptions.AutoCreateSchemaObjects)} is {_options.AutoCreateSchemaObjects}");
                 }
 
-                var sqlScript = SchemaBuilder.GetSqlScript(_options.DatabaseSchemaName, "mt_hilo");
+                var sqlScript = SchemaBuilder.GetSqlScript(Table.Schema, "mt_hilo");
                 _logger.SchemaChange(sqlScript);
 
                 _factory.RunSql(sqlScript);

@@ -30,9 +30,9 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
-        public void it_maps_the_name()
+        public void it_maps_the_table_name()
         {
-            theDerivedTable.QualifiedName.ShouldBe(theMapping.QualifiedTableName);
+            theDerivedTable.Table.ShouldBe(theMapping.Table);
         }
 
         [Fact]

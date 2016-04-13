@@ -22,7 +22,7 @@ namespace Marten.Testing.Events
         public void has_the_event_tables()
         {
             var schema = theStore.Schema;
-            var tableNames = schema.SchemaTableNames();
+            var tableNames = schema.SchemaTables();
             tableNames.ShouldContain("public.mt_streams");
             tableNames.ShouldContain("public.mt_events");
             tableNames.ShouldContain("public.mt_modules");
@@ -171,7 +171,7 @@ Projection party (snapshot) for Event quest_started executed inline
         public void has_the_event_tables()
         {
             var schema = theStore.Schema;
-            var tableNames = schema.SchemaTableNames();
+            var tableNames = schema.SchemaTables();
             tableNames.ShouldContain("other.mt_streams");
             tableNames.ShouldContain("other.mt_events");
             tableNames.ShouldContain("other.mt_modules");

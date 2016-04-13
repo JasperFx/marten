@@ -61,7 +61,7 @@ namespace Marten.Linq
 
         public void ConfigureForAny(NpgsqlCommand command)
         {
-            var sql = "select (count(*) > 0) as result from " + _mapping.QualifiedTableName + " as d";
+            var sql = "select (count(*) > 0) as result from " + _mapping.Table.QualifiedName + " as d";
 
             var where = BuildWhereClause();
 
@@ -72,7 +72,7 @@ namespace Marten.Linq
 
         public void ConfigureForCount(NpgsqlCommand command)
         {
-            var sql = "select count(*) as number from " + _mapping.QualifiedTableName + " as d";
+            var sql = "select count(*) as number from " + _mapping.Table.QualifiedName + " as d";
 
             var where = BuildWhereClause();
 
@@ -85,7 +85,7 @@ namespace Marten.Linq
         private void ConfigureAggregateCommand(NpgsqlCommand command, string selectFormat)
         {
             var propToSum = _mapping.JsonLocator(_query.SelectClause.Selector);
-            var sql = string.Format(selectFormat, propToSum, _mapping.QualifiedTableName);
+            var sql = string.Format(selectFormat, propToSum, _mapping.Table.QualifiedName);
 
             var where = BuildWhereClause();
 
@@ -132,7 +132,7 @@ namespace Marten.Linq
         public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, IDocumentStorage documentStorage, NpgsqlCommand command)
         {
             var select = buildSelectClause<T>(schema, documentStorage);
-            var sql = $"select {@select.SelectFields().Join(", ")} from {_mapping.QualifiedTableName} as d";
+            var sql = $"select {@select.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d";
 
             if (Includes.Any())
             {

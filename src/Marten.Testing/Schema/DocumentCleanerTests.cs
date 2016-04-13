@@ -75,7 +75,7 @@ namespace Marten.Testing.Schema
             theSession.SaveChanges();
             theSession.Dispose();
 
-            var tableName = theStore.Schema.MappingFor(typeof(Target)).QualifiedTableName;
+            var tableName = theStore.Schema.MappingFor(typeof(Target)).Table;
 
             theStore.Schema.DocumentTables().Contains(tableName)
                 .ShouldBeTrue();
@@ -96,10 +96,9 @@ namespace Marten.Testing.Schema
 
             var schema = theStore.Schema;
 
-            var upsertName = schema.MappingFor(typeof(Target)).As<DocumentMapping>().QualifiedUpsertName;
+            var upsertName = schema.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
 
-            schema.SchemaFunctionNames().Contains(upsertName)
-                .ShouldBeTrue();
+            schema.SchemaFunctionNames().ShouldContain(upsertName);
 
             theCleaner.CompletelyRemove(typeof(Target));
 
@@ -127,7 +126,7 @@ namespace Marten.Testing.Schema
             ShouldBeEmpty(schema.SchemaFunctionNames());
         }
 
-        private static void ShouldBeEmpty(string[] documentTables)
+        private static void ShouldBeEmpty<T>(T[] documentTables)
         {
             var stillInDatabase = string.Join(",", documentTables);
             documentTables.Any().ShouldBeFalse(stillInDatabase);

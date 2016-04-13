@@ -68,7 +68,7 @@ namespace Marten.Services.BatchQuerying
             var parameter = _command.AddParameter(id);
 
             _command.AppendQuery(
-                $"select {mapping.SelectFields().Join(", ")} from {mapping.QualifiedTableName} as d where id = :{parameter.ParameterName}");
+                $"select {mapping.SelectFields().Join(", ")} from {mapping.Table.QualifiedName} as d where id = :{parameter.ParameterName}");
 
             var handler = new SingleResultReader<T>(source, _schema.StorageFor(typeof (T)), _identityMap);
             AddHandler(handler);
@@ -96,7 +96,7 @@ namespace Marten.Services.BatchQuerying
                 var mapping = _parent._schema.MappingFor(typeof (TDoc));
                 var parameter = _parent._command.AddParameter(keys);
                 _parent._command.AppendQuery(
-                    $"select {mapping.SelectFields().Join(", ")} from {mapping.QualifiedTableName} as d where d.id = ANY(:{parameter.ParameterName})");
+                    $"select {mapping.SelectFields().Join(", ")} from {mapping.Table.QualifiedName} as d where d.id = ANY(:{parameter.ParameterName})");
 
                 var resolver = _parent._schema.StorageFor(typeof (TDoc)).As<IResolver<TDoc>>();
 

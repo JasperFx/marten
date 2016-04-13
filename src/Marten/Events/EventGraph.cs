@@ -122,8 +122,7 @@ namespace Marten.Events
         public string Alias { get; } = null;
         public Type DocumentType { get; } = typeof (EventStream);
 
-        public string QualifiedTableName => $"{DatabaseSchemaName}.{TableName}";
-        public string TableName { get; } = "mt_stream";
+        public TableName Table => new TableName(DatabaseSchemaName, "mt_stream");
 
         public string DatabaseSchemaName
         {
@@ -146,7 +145,7 @@ namespace Marten.Events
 
             _checkedSchema = true;
 
-            var schemaExists = schema.TableExists(DatabaseSchemaName, "mt_streams");
+            var schemaExists = schema.TableExists(Table);
             if (schemaExists) return;
 
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
@@ -156,7 +155,7 @@ namespace Marten.Events
 
             lock (_locker)
             {
-                if (!schema.TableExists(DatabaseSchemaName, "mt_streams"))
+                if (!schema.TableExists(Table))
                 {
                     var writer = new StringWriter();
 
