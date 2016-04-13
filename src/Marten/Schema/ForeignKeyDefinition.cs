@@ -19,7 +19,7 @@ namespace Marten.Schema
 
         public string KeyName
         {
-            get { return _keyName ?? $"{_parent.TableName}_{_columnName}_fkey"; }
+            get { return _keyName ?? $"{_parent.Table.Name}_{_columnName}_fkey"; }
             set { _keyName = value; }
         }
 
@@ -31,9 +31,9 @@ namespace Marten.Schema
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"ALTER TABLE {_parent.QualifiedTableName}");
+            sb.AppendLine($"ALTER TABLE {_parent.Table.QualifiedName}");
             sb.AppendLine($"ADD CONSTRAINT {KeyName} FOREIGN KEY ({_columnName})");
-            sb.Append($"REFERENCES {_reference.QualifiedTableName} ({_reference.IdMember.Name.ToLower()});");
+            sb.Append($"REFERENCES {_reference.Table.QualifiedName} ({_reference.IdMember.Name.ToLower()});");
 
             return sb.ToString();
         }

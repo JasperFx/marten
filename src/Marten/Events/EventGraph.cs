@@ -122,8 +122,7 @@ namespace Marten.Events
         public string Alias { get; } = null;
         public Type DocumentType { get; } = typeof (EventStream);
 
-        public string QualifiedTableName => $"{DatabaseSchemaName}.{TableName}";
-        public string TableName { get; } = "mt_stream";
+        public TableName Table => new TableName(DatabaseSchemaName, "mt_stream");
 
         public string DatabaseSchemaName
         {

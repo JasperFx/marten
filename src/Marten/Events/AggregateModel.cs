@@ -34,8 +34,7 @@ namespace Marten.Events
         }
 
         public Type DocumentType { get; }
-        public string QualifiedTableName { get; }
-        public string TableName { get; }
+        public TableName Table { get; }
         public PropertySearching PropertySearching { get; }
 
         public string DatabaseSchemaName

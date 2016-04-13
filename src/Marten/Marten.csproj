@@ -96,6 +96,7 @@
     <Compile Include="Linq\WhereClauseVisitor.cs" />
     <Compile Include="Linq\WholeDocumentSelector.cs" />
     <Compile Include="QuerySession.cs" />
+    <Compile Include="Schema\QualifiedDatabaseName.cs" />
     <Compile Include="Schema\ColumnValue.cs" />
     <Compile Include="Schema\CombGuidIdGeneration.cs" />
     <Compile Include="Schema\DocumentAliasAttribute.cs" />

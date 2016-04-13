@@ -19,14 +19,14 @@ namespace Marten.Testing.Schema
         public void default_table_name()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.QualifiedTableName.ShouldBe("public.mt_doc_user");
+            mapping.Table.QualifiedName.ShouldBe("public.mt_doc_user");
         }
 
         [Fact]
         public void default_table_name_on_other_schema()
         {
             var mapping = DocumentMapping.For<User>("other");
-            mapping.QualifiedTableName.ShouldBe("other.mt_doc_user");
+            mapping.Table.QualifiedName.ShouldBe("other.mt_doc_user");
         }
 
         [Fact]
@@ -34,7 +34,7 @@ namespace Marten.Testing.Schema
         {
             var mapping = DocumentMapping.For<User>("other");
             mapping.DatabaseSchemaName = "overriden";
-            mapping.QualifiedTableName.ShouldBe("overriden.mt_doc_user");
+            mapping.Table.QualifiedName.ShouldBe("overriden.mt_doc_user");
         }
 
         [Fact]
@@ -177,7 +177,7 @@ namespace Marten.Testing.Schema
 
                 var storage = schema.StorageFor(typeof (User));
 
-                schema.DocumentTables().ShouldContain(mapping.QualifiedTableName);
+                schema.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
             }
         }
 
@@ -228,14 +228,14 @@ namespace Marten.Testing.Schema
         [Fact]
         public void table_name_with_schema_for_document()
         {
-            DocumentMapping.For<MySpecialDocument>().QualifiedTableName
+            DocumentMapping.For<MySpecialDocument>().Table.QualifiedName
                 .ShouldBe("public.mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void table_name_with_schema_for_document_on_other_schema()
         {
-            DocumentMapping.For<MySpecialDocument>("other").QualifiedTableName
+            DocumentMapping.For<MySpecialDocument>("other").Table.QualifiedName
                 .ShouldBe("other.mt_doc_documentmappingtests_myspecialdocument");
         }
 
@@ -245,21 +245,21 @@ namespace Marten.Testing.Schema
             var documentMapping = DocumentMapping.For<MySpecialDocument>("other");
             documentMapping.DatabaseSchemaName = "overriden";
 
-            documentMapping.QualifiedTableName
+            documentMapping.Table.QualifiedName
                 .ShouldBe("overriden.mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void upsert_name_with_schema_for_document_type()
         {
-            DocumentMapping.For<MySpecialDocument>().QualifiedUpsertName
+            DocumentMapping.For<MySpecialDocument>().UpsertFunction.QualifiedName
                 .ShouldBe("public.mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void upsert_name_with_schema_for_document_type_on_other_schema()
         {
-            DocumentMapping.For<MySpecialDocument>("other").QualifiedUpsertName
+            DocumentMapping.For<MySpecialDocument>("other").UpsertFunction.QualifiedName
                 .ShouldBe("other.mt_upsert_documentmappingtests_myspecialdocument");
         }
 
@@ -269,21 +269,21 @@ namespace Marten.Testing.Schema
             var documentMapping = DocumentMapping.For<MySpecialDocument>("other");
             documentMapping.DatabaseSchemaName = "overriden";
 
-            documentMapping.QualifiedUpsertName
+            documentMapping.UpsertFunction.QualifiedName
                 .ShouldBe("overriden.mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void table_name_for_document()
         {
-            DocumentMapping.For<MySpecialDocument>().TableName
+            DocumentMapping.For<MySpecialDocument>().Table.Name
                 .ShouldBe("mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void upsert_name_for_document_type()
         {
-            DocumentMapping.For<MySpecialDocument>().UpsertName
+            DocumentMapping.For<MySpecialDocument>().UpsertFunction.Name
                 .ShouldBe("mt_upsert_documentmappingtests_myspecialdocument");
         }
 

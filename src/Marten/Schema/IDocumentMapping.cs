@@ -14,9 +14,7 @@ namespace Marten.Schema
         string Alias { get; }
         Type DocumentType { get; }
 
-        string QualifiedTableName { get; }
-        string TableName { get; }
-        string DatabaseSchemaName { get; set; }
+        TableName Table { get; }
 
         PropertySearching PropertySearching { get; }
         IIdGeneration IdStrategy { get; set; }

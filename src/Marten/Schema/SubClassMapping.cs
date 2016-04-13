@@ -51,11 +51,11 @@ namespace Marten.Schema
         public string[] Aliases { get; }
         public string Alias { get; set; }
 
-        public string UpsertName => _parent.QualifiedUpsertName;
+        public FunctionName UpsertName => _parent.UpsertFunction;
+
         public Type DocumentType { get; }
 
-        public string QualifiedTableName => _parent.QualifiedTableName;
-        public string TableName => _parent.TableName;
+        public TableName Table => _parent.Table;
 
         public string DatabaseSchemaName
         {
@@ -117,7 +117,7 @@ namespace Marten.Schema
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
-            factory.RunSql($"delete from {_parent.QualifiedTableName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
+            factory.RunSql($"delete from {_parent.Table.QualifiedName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
         }
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class

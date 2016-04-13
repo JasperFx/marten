@@ -236,7 +236,7 @@ namespace Marten.Schema
 
             var pkName = primaryKeysFor(documentMapping).SingleOrDefault();
 
-            return new TableDefinition(documentMapping.QualifiedTableName, documentMapping.TableName, pkName,  columns);
+            return new TableDefinition(documentMapping.Table, pkName,  columns);
         }
 
         public TableDefinition TableSchema(Type documentType)
@@ -277,16 +277,16 @@ where attrelid = (select pg_class.oid
 and i.indisprimary; 
 ";
 
-            return _factory.GetStringList(sql, documentMapping.DatabaseSchemaName, documentMapping.TableName).ToArray();
+            return _factory.GetStringList(sql, documentMapping.Table.Schema, documentMapping.Table.Name).ToArray();
         }
 
         private IEnumerable<TableColumn> findTableColumns(IDocumentMapping documentMapping)
         {
             Func<DbDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));
 
-            var sql = "select column_name, data_type from information_schema.columns where table_name = ? and table_schema = ? order by ordinal_position";
+            var sql = "select column_name, data_type from information_schema.columns where table_schema = ? and table_name = ? order by ordinal_position";
 
-            return _factory.Fetch(sql, transform, documentMapping.TableName, documentMapping.DatabaseSchemaName);
+            return _factory.Fetch(sql, transform, documentMapping.Table.Schema, documentMapping.Table.Name);
         }
 
 
