@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Baseline;
 using Marten.Linq;
+using Marten.Schema;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -54,11 +55,13 @@ namespace Marten.Services
 
         public class DeleteWhereCall : ICall
         {
-            private readonly string _table;
+            private readonly TableName _table;
             private readonly string _whereClause;
 
-            public DeleteWhereCall(string table, string whereClause)
+            public DeleteWhereCall(TableName table, string whereClause)
             {
+                if (table == null) throw new ArgumentNullException(nameof(table));
+
                 _table = table;
                 _whereClause = whereClause;
             }
@@ -71,11 +74,13 @@ namespace Marten.Services
 
         public class DeleteCall : ICall
         {
-            private readonly string _table;
+            private readonly TableName _table;
             private readonly string _idParam;
 
-            public DeleteCall(string table, string idParam)
+            public DeleteCall(TableName table, string idParam)
             {
+                if (table == null) throw new ArgumentNullException(nameof(table));
+
                 _table = table;
                 _idParam = idParam;
             }
@@ -83,27 +88,30 @@ namespace Marten.Services
 
             public void WriteToSql(StringBuilder builder)
             {
-                builder.AppendFormat("delete from {0} where id=:{1}", _table, _idParam);
+                builder.AppendFormat("delete from {0} where id=:{1}", _table.QualifiedName, _idParam);
             }
         }
 
         public class SprocCall : ICall
         {
             private readonly BatchCommand _parent;
-            private readonly string _sprocName;
+            private readonly FunctionName _function;
             private readonly IList<ParameterArg> _parameters = new List<ParameterArg>();
 
 
-            public SprocCall(BatchCommand parent, string sprocName)
+            public SprocCall(BatchCommand parent, FunctionName function)
             {
+                if (parent == null) throw new ArgumentNullException(nameof(parent));
+                if (function == null) throw new ArgumentNullException(nameof(function));
+
                 _parent = parent;
-                _sprocName = sprocName;
+                _function = function;
             }
 
             public void WriteToSql(StringBuilder builder)
             {
                 var parameters = _parameters.Select(x => x.Declaration()).Join(", ");
-                builder.AppendFormat("select {0}({1})", _sprocName, parameters);
+                builder.AppendFormat("select {0}({1})", _function.QualifiedName, parameters);
             }
 
             public SprocCall Param(string argName, Guid value)
@@ -155,26 +163,31 @@ namespace Marten.Services
 
         }
 
-        public SprocCall Sproc(string name)
+        public SprocCall Sproc(FunctionName function)
         {
-            var call = new SprocCall(this, name);
+            if (function == null) throw new ArgumentNullException(nameof(function));
+
+            var call = new SprocCall(this, function);
             _calls.Add(call);
 
             return call;
         }
 
-        public void Delete(string tableName, object id, NpgsqlDbType dbType)
+        public void Delete(TableName table, object id, NpgsqlDbType dbType)
         {
             var param = addParameter(id, dbType);
-            var call = new DeleteCall(tableName, param.ParameterName);
+            var call = new DeleteCall(table, param.ParameterName);
             _calls.Add(call);
         }
 
 
-        public void DeleteWhere(string tableName, IWhereFragment @where)
+        public void DeleteWhere(TableName table, IWhereFragment @where)
         {
+            if (table == null) throw new ArgumentNullException(nameof(table));
+            if (@where == null) throw new ArgumentNullException(nameof(@where));
+
             var whereClause = @where.ToSql(_command);
-            var call = new DeleteWhereCall(tableName, whereClause);
+            var call = new DeleteWhereCall(table, whereClause);
             _calls.Add(call);
         }
     }

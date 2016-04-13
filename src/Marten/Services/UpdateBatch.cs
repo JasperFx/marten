@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Schema;
 using NpgsqlTypes;
 
 namespace Marten.Services
@@ -34,9 +35,11 @@ namespace Marten.Services
             );
         }
 
-        public BatchCommand.SprocCall Sproc(string name)
+        public BatchCommand.SprocCall Sproc(FunctionName function)
         {
-            return Current().Sproc(name);
+            if (function == null) throw new ArgumentNullException(nameof(function));
+
+            return Current().Sproc(function);
         }
 
         public void Execute()
@@ -55,17 +58,22 @@ namespace Marten.Services
             }
         }
 
-        public void Delete(string tableName, object id, NpgsqlDbType dbType)
+        public void Delete(TableName table, object id, NpgsqlDbType dbType)
         {
-            Current().Delete(tableName, id, dbType);
+            if (table == null) throw new ArgumentNullException(nameof(table));
+
+            Current().Delete(table, id, dbType);
         }
 
 
         public IManagedConnection Connection { get; }
 
-        public void DeleteWhere(string tableName, IWhereFragment @where)
+        public void DeleteWhere(TableName table, IWhereFragment @where)
         {
-            Current().DeleteWhere(tableName, @where);
+            if (table == null) throw new ArgumentNullException(nameof(table));
+            if (@where == null) throw new ArgumentNullException(nameof(@where));
+
+            Current().DeleteWhere(table, @where);
         }
 
         public void Dispose()
@@ -73,6 +81,4 @@ namespace Marten.Services
             Connection.Dispose();
         }
     }
-
-
 }

@@ -54,7 +54,7 @@ namespace Marten.Events
             {
                 var mapping = _graph.EventMappingFor(@event.GetType());
 
-                batch.Sproc(_graph.DatabaseSchemaName + ".mt_append_event")
+                batch.Sproc(new FunctionName(_graph.DatabaseSchemaName, "mt_append_event"))
                     .Param("stream", stream.Id)
                     .Param("stream_type", streamTypeName)
                     .Param("event_id", @event.Id)

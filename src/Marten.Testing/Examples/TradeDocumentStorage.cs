@@ -117,14 +117,16 @@ namespace Marten.GeneratedCode
         public void RegisterUpdate(UpdateBatch batch, object entity)
         {
             var document = (Trade)entity;
-            batch.Sproc("public.mt_upsert_trade").Param("arg_value", document.Value, NpgsqlDbType.Double).JsonEntity("doc", document).Param("docId", document.Id, NpgsqlDbType.Integer);
+            var function = new FunctionName("public", "mt_upsert_trade");
+            batch.Sproc(function).Param("arg_value", document.Value, NpgsqlDbType.Double).JsonEntity("doc", document).Param("docId", document.Id, NpgsqlDbType.Integer);
         }
 
 
         public void RegisterUpdate(UpdateBatch batch, object entity, string json)
         {
             var document = (Trade)entity;
-            batch.Sproc("public.mt_upsert_trade").Param("arg_value", document.Value, NpgsqlDbType.Double).JsonBody("doc", json).Param("docId", document.Id, NpgsqlDbType.Integer);
+            var function = new FunctionName("public", "mt_upsert_trade");
+            batch.Sproc(function).Param("arg_value", document.Value, NpgsqlDbType.Double).JsonBody("doc", json).Param("docId", document.Id, NpgsqlDbType.Integer);
         }
 
 
