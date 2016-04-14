@@ -21,9 +21,11 @@ namespace Marten.Testing.Schema.Sequences
         [Fact]
         public void When_documents_are_stored_after_each_other_then_the_first_id_should_be_less_than_the_second()
         {
-            using (
-                var container =
-                    ContainerFactory.Configure(options => options.DefaultIdStrategy = (mapping, storeOptions) => new CombGuidIdGeneration()))
+            using (var container = ContainerFactory.Configure(
+				// SAMPLE: configuring-global-sequentialguid
+                options => options.DefaultIdStrategy = (mapping, storeOptions) => new CombGuidIdGeneration()
+				// ENDSAMPLE 
+                        ))
             {
                 container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
                 var store = container.GetInstance<IDocumentStore>();
@@ -45,6 +47,20 @@ namespace Marten.Testing.Schema.Sequences
             }
         }
 
+        [Fact]
+        public void When_CombGuid_is_defined_for_a_single_document_then_Guid_should_be_used_as_Default()
+        {
+            using (var container = ContainerFactory.Configure(
+				// SAMPLE: configuring-mapping-specific-sequentialguid
+				options => options.MappingFor<UserWithGuid>().IdStrategy = new CombGuidIdGeneration()
+				// ENDSAMPLE 
+                        ))
+            {
+                var store = container.GetInstance<IDocumentStore>();
+                store.Schema.MappingFor(typeof (UserWithGuid)).IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
+                store.Schema.MappingFor(typeof (UserWithGuid2)).IdStrategy.ShouldBeOfType<GuidIdGeneration>();
+            }
+        }
         private static string FormatIdAsByteArrayString(UserWithGuid[] users, string user1)
         {
             var id = users.Single(user => user.LastName == user1).Id;

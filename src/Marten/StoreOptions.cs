@@ -43,6 +43,11 @@ namespace Marten
             Schema = new MartenRegistry(this);
         }
 
+        public DocumentMapping MappingFor<T>()
+        {
+            return MappingFor(typeof(T));
+        }
+
         public DocumentMapping MappingFor(Type documentType)
         {
             return _documentMappings.GetOrAdd(documentType, type =>
