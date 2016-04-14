@@ -96,16 +96,11 @@ namespace Marten.Linq
                 throw new InvalidOperationException("Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
             }
 
-            var documentStorage = schema.StorageFor(_mapping.DocumentType);
-            return ConfigureCommand<T>(schema, documentStorage, command, rowLimit);
-        }
+            var selector = schema.ToSelectClause<T>(_mapping, _query);
 
-        public IList<IIncludeJoin> Includes { get; } = new List<IIncludeJoin>(); 
+            Includes.Each(x => selector = x.WrapSelector(schema, selector));
 
-        public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, IDocumentStorage documentStorage, NpgsqlCommand command, int rowLimit = 0)
-        {
-            var select = buildSelectClause<T>(schema, documentStorage);
-            var sql = $"select {@select.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d";
+            var sql = $"select {@selector.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d";
 
             if (Includes.Any())
             {
@@ -132,29 +127,10 @@ namespace Marten.Linq
 
             command.AppendQuery(sql);
 
-            return @select;
-        }
-
-        private ISelector<T> buildSelectClause<T>(IDocumentSchema schema, IDocumentStorage storage)
-        {
-            ISelector<T> selector = null;
-
-            if (_query.SelectClause.Selector.Type == _query.MainFromClause.ItemType)
-            {
-                selector = new WholeDocumentSelector<T>(_mapping, storage.As<IResolver<T>>());
-            }
-            else
-            {
-                var visitor = new SelectorParser();
-                visitor.Visit(_query.SelectClause.Selector);
-
-                selector = visitor.ToSelector<T>(_mapping);
-            }
-
-            Includes.Each(x => selector = x.WrapSelector(schema, selector));
-
             return selector;
         }
+
+        public IList<IIncludeJoin> Includes { get; } = new List<IIncludeJoin>(); 
 
         private string appendLimit(string sql)
         {

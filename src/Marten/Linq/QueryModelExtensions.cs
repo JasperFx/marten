@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Services.Includes;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
@@ -82,6 +83,32 @@ namespace Marten.Linq
             var take = query.FindOperators<SkipResultOperator>().LastOrDefault();
 
             return take == null ? sql : sql + " OFFSET " + take.Count + " ";
+        }
+
+        public static ISelector<T> ToSelectClause<T>(this IDocumentSchema schema, IDocumentMapping mapping, QueryModel query)
+        {
+            ISelector<T> selector = null;
+
+            if (query.SelectClause.Selector.Type == query.SourceType())
+            {
+                var resolver = schema.ResolverFor<T>();
+                selector = new WholeDocumentSelector<T>(mapping, resolver);
+            }
+            else
+            {
+                var visitor = new SelectorParser();
+                visitor.Visit(query.SelectClause.Selector);
+
+                selector = visitor.ToSelector<T>(mapping);
+            }
+
+            return selector;
+        }
+
+        public static ISelector<T> ToSelectClause<T>(this IDocumentSchema schema, QueryModel query)
+        {
+            var mapping = schema.MappingFor(query.SourceType());
+            return schema.ToSelectClause<T>(mapping, query);
         }
 
     }
