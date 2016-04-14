@@ -199,7 +199,7 @@ namespace Marten.Linq
         private NpgsqlCommand buildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
         {
             var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
-            var query = new DocumentQuery(mapping, queryModel, _schema.Parser);
+            var query = new DocumentQuery(_schema, queryModel);
             query.Includes.AddRange(Includes);
 
             _schema.EnsureStorageExists(mapping.DocumentType);

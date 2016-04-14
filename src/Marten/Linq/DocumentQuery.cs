@@ -16,14 +16,16 @@ namespace Marten.Linq
     public class DocumentQuery
     {
         private readonly IDocumentMapping _mapping;
+        private readonly IDocumentSchema _schema;
         private readonly QueryModel _query;
-        private readonly MartenExpressionParser _parser;
 
-        public DocumentQuery(IDocumentMapping mapping, QueryModel query, MartenExpressionParser parser)
+        public DocumentQuery(IDocumentSchema schema, QueryModel query)
         {
+            var rootType = query.MainFromClause.ItemType;
+            var mapping = schema.MappingFor(rootType);
             _mapping = mapping;
+            _schema = schema;
             _query = query;
-            _parser = parser;
         }
 
         private IEnumerable<ResultOperatorBase> allResultOperators()
@@ -235,8 +237,8 @@ namespace Marten.Linq
             if (wheres.Length == 0) return _mapping.DefaultWhereFragment();
 
             var where = wheres.Length == 1
-                ? _parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
-                : new CompoundWhereFragment(_parser, _mapping, "and", wheres);
+                ? _schema.Parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
+                : new CompoundWhereFragment(_schema.Parser, _mapping, "and", wheres);
 
             return _mapping.FilterDocuments(where);
         }

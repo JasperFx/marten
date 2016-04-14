@@ -109,10 +109,8 @@ namespace Marten.Linq
             var model = new MartenQueryParser().GetParsedQuery(Expression);
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var schema = executor.Schema;
-            var rootType = model.MainFromClause.ItemType;
-            var mapping = schema.MappingFor(rootType);
 
-            return new DocumentQuery(mapping, model, schema.Parser);
+            return new DocumentQuery(schema, model);
         }
 
         public NpgsqlCommand BuildCommand(FetchType fetchType)
@@ -121,10 +119,8 @@ namespace Marten.Linq
             var model = new MartenQueryParser().GetParsedQuery(Expression);
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var schema = executor.Schema;
-            var rootType = model.MainFromClause.ItemType;
-            var mapping = schema.MappingFor(rootType);
 
-            var query = new DocumentQuery(mapping, model, schema.Parser);
+            var query = new DocumentQuery(schema, model);
 
             var parser = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             query.Includes.AddRange(parser.Includes);

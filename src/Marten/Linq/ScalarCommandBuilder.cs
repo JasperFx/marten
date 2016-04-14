@@ -16,6 +16,7 @@ namespace Marten.Linq
         NpgsqlCommand BuildCommand(QueryModel queryModel, out ISelector<TResult> selector);
     }
 
+    [Obsolete("Will fold into the 'GUT' refactoring")]
     abstract class ScalarCommandBuilder<TOperator, TResult> : IScalarCommandBuilder<TResult> where TOperator : ResultOperatorBase
     {
         protected readonly IManagedConnection _runner;
@@ -51,7 +52,7 @@ namespace Marten.Linq
         private NpgsqlCommand GetCommand(QueryModel queryModel)
         {
             var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
-            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
+            var documentQuery = new DocumentQuery(_schema, queryModel);
 
             _schema.EnsureStorageExists(mapping.DocumentType);
             var sumCommand = new NpgsqlCommand();
@@ -121,7 +122,7 @@ namespace Marten.Linq
         private NpgsqlCommand GetAnyCommand(QueryModel queryModel)
         {
             var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
-            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
+            var documentQuery = new DocumentQuery(_schema, queryModel);
 
             _schema.EnsureStorageExists(mapping.DocumentType);
 
@@ -146,7 +147,7 @@ namespace Marten.Linq
         private NpgsqlCommand GetCountCommand(QueryModel queryModel)
         {
             var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
-            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
+            var documentQuery = new DocumentQuery(_schema, queryModel);
 
             _schema.EnsureStorageExists(mapping.DocumentType);
 
@@ -171,7 +172,7 @@ namespace Marten.Linq
         private NpgsqlCommand GetLongCountCommand(QueryModel queryModel)
         {
             var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
-            var documentQuery = new DocumentQuery(mapping, queryModel, _expressionParser);
+            var documentQuery = new DocumentQuery(_schema, queryModel);
 
             _schema.EnsureStorageExists(mapping.DocumentType);
 
