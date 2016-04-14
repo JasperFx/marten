@@ -111,5 +111,11 @@ namespace Marten.Linq
             return schema.ToSelectClause<T>(mapping, query);
         }
 
+        public static IDocumentMapping MappingFor(this IDocumentSchema schema, QueryModel model)
+        {
+            return schema.MappingFor(model.SourceType());
+        }
+
+
     }
 }

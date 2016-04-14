@@ -43,6 +43,8 @@ namespace Marten.Services.BatchQuerying
 
         public Task<T> AddItem<T>(IQueryHandler<T> handler)
         {
+            _schema.EnsureStorageExists(handler.SourceType);
+
             var item = new BatchQueryItem<T>(handler);
             _items.Add(item);
 
@@ -100,6 +102,7 @@ namespace Marten.Services.BatchQuerying
             return AddItem(new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters));
         }
 
+        [Obsolete("This is going to go away, but watch the includes")]
         private DocumentQuery toDocumentQuery<TDoc>(IMartenQueryable<TDoc> queryable)
         {
             var expression = queryable.Expression;
@@ -116,7 +119,11 @@ namespace Marten.Services.BatchQuerying
 
         public Task<bool> Any<TDoc>(IMartenQueryable<TDoc> queryable)
         {
-            return AddItem(new AnyQueryHandler<TDoc>(toDocumentQuery(queryable)));
+            var expression = queryable.Expression;
+
+            var query = QueryParser.GetParsedQuery(expression);
+
+            return AddItem(new AnyQueryHandler<TDoc>(query, _schema));
         }
 
 

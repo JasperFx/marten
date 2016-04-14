@@ -32,6 +32,7 @@ namespace Marten.Linq
 
         public Type SourceDocumentType => _query.SourceType();
 
+        [Obsolete("Will be superseeded by AnyQueryHandler<T>")]
         public void ConfigureForAny(NpgsqlCommand command)
         {
             var sql = "select (count(*) > 0) as result from " + _mapping.Table.QualifiedName + " as d";

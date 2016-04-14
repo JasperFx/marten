@@ -15,7 +15,7 @@ namespace Marten.Linq.Results
             _query = query;
         }
 
-        public Type SourceType => typeof(T);
+        public Type SourceType => _query.SourceDocumentType;
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
