@@ -25,6 +25,7 @@ namespace Marten.Services
             Query = query;
         }
 
+        [Obsolete("Try to use QueryModel here instead")]
         public DocumentQuery Query { get; set; }
 
         public void Configure(MartenExpressionParser parser, IDocumentStorage storage, IDocumentMapping mapping, UpdateBatch batch)

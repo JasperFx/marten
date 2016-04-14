@@ -1,23 +1,29 @@
 ﻿using System;
 using System.Data.Common;
 using System.Linq;
+using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 
 namespace Marten.Services.Includes
 {
-    public class IncludeSelector<TSearched, TIncluded> : ISelector<TSearched> where TIncluded : class
+    public class IncludeSelector<TSearched, TIncluded> : BasicSelector, ISelector<TSearched> where TIncluded : class
     {
-        private readonly string _tableAlias;
-        private readonly IDocumentMapping _includedMapping;
         private readonly Action<TIncluded> _callback;
         private readonly ISelector<TSearched> _inner;
         private readonly IResolver<TIncluded> _resolver;
 
-        public IncludeSelector(string tableAlias, IDocumentMapping includedMapping, Action<TIncluded> callback, ISelector<TSearched> inner, IResolver<TIncluded> resolver)
+        public static string[] ToSelectFields(string tableAlias, IDocumentMapping includedMapping, ISelector<TSearched> inner)
         {
-            _tableAlias = tableAlias;
-            _includedMapping = includedMapping;
+            var innerFields = inner.SelectFields();
+            var outerFields = includedMapping.SelectFields().Select(x => $"{tableAlias}.{x}");
+
+            return innerFields.Concat(outerFields).ToArray();
+        }
+
+        public IncludeSelector(string tableAlias, IDocumentMapping includedMapping, Action<TIncluded> callback, ISelector<TSearched> inner, IResolver<TIncluded> resolver)
+            : base(ToSelectFields(tableAlias, includedMapping, inner))
+        {
             _callback = callback;
             _inner = inner;
             _resolver = resolver;
@@ -35,12 +41,6 @@ namespace Marten.Services.Includes
             return _inner.Resolve(reader, map);
         }
 
-        public string[] SelectFields()
-        {
-            var innerFields = _inner.SelectFields();
-            var outerFields = _includedMapping.SelectFields().Select(x => $"{_tableAlias}.{x}");
 
-            return innerFields.Concat(outerFields).ToArray();
-        }
     }
 }

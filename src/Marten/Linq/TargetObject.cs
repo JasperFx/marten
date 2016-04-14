@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using Baseline;
 using Marten.Schema;
 
 namespace Marten.Linq
@@ -26,6 +28,12 @@ namespace Marten.Linq
         public ISelector<T> ToSelector<T>(IDocumentMapping mapping)
         {
             return new SelectTransformer<T>(mapping, this);
+        }
+
+        public string ToSelectField(IDocumentMapping mapping)
+        {
+            var jsonBuildObjectArgs = Setters.Select(x => x.ToJsonBuildObjectPair(mapping)).Join(", ");
+            return  $"json_build_object({jsonBuildObjectArgs}) as json";
         }
     }
 }

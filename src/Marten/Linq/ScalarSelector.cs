@@ -5,10 +5,9 @@ using Marten.Services;
 
 namespace Marten.Linq
 {
-    public class ScalarSelector<TResult> : ISelector<TResult>
+    [Obsolete("This is going to problem w/ the new select clause mechanisms")]
+    public class ScalarSelector<TResult> : BasicSelector, ISelector<TResult>
     {
-        private static string[] _empty = {};
-
         public TResult Resolve(DbDataReader reader, IIdentityMap map)
         {
             var type = typeof (TResult);
@@ -22,9 +21,5 @@ namespace Marten.Linq
             return Convert.ChangeType(reader.GetValue(0), typeof (TResult)).As<TResult>();
         }
 
-        public string[] SelectFields()
-        {
-            return _empty;
-        }
     }
 }

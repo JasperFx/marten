@@ -20,6 +20,7 @@ namespace Marten.Testing.Services.Includes
         private ISelector<Issue> inner = Substitute.For<ISelector<Issue>>();
         private IResolver<User> theResolver = Substitute.For<IResolver<User>>();
         private IncludeSelector<Issue, User> theSelector;
+        private IIncludeJoin theInclude = Substitute.For<IIncludeJoin>();
 
         public IncludeSelectorTests()
         {
