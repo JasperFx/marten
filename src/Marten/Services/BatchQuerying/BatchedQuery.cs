@@ -102,21 +102,6 @@ namespace Marten.Services.BatchQuerying
             return AddItem(new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters));
         }
 
-        [Obsolete("This is going to go away, but watch the includes")]
-        private DocumentQuery toDocumentQuery<TDoc>(IMartenQueryable<TDoc> queryable)
-        {
-            var expression = queryable.Expression;
-
-            var model = QueryParser.GetParsedQuery(expression);
-
-            var docQuery = _schema.ToDocumentQuery(model);
-            docQuery.Includes.AddRange(queryable.Includes);
-
-
-            return docQuery;
-        }
-
-
         public Task<bool> Any<TDoc>(IMartenQueryable<TDoc> queryable)
         {
             var expression = queryable.Expression;
