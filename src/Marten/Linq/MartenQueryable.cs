@@ -112,7 +112,7 @@ namespace Marten.Linq
             var rootType = model.MainFromClause.ItemType;
             var mapping = schema.MappingFor(rootType);
 
-            return new DocumentQuery(mapping, model, executor.ExpressionParser);
+            return new DocumentQuery(mapping, model, schema.Parser);
         }
 
         public NpgsqlCommand BuildCommand(FetchType fetchType)
@@ -124,7 +124,7 @@ namespace Marten.Linq
             var rootType = model.MainFromClause.ItemType;
             var mapping = schema.MappingFor(rootType);
 
-            var query = new DocumentQuery(mapping, model, executor.ExpressionParser);
+            var query = new DocumentQuery(mapping, model, schema.Parser);
 
             var parser = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             query.Includes.AddRange(parser.Includes);

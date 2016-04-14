@@ -8,6 +8,7 @@ using System.Runtime.Serialization;
 using Baseline;
 using Marten.Events;
 using Marten.Generation;
+using Marten.Linq;
 using Marten.Schema.Sequences;
 using Marten.Util;
 
@@ -35,7 +36,11 @@ namespace Marten.Schema
             options.AllDocumentMappings.Each(x => _mappings[x.DocumentType] = x);
 
             Sequences = new SequenceFactory(this, _factory, options, _logger);
+
+            Parser = new MartenExpressionParser(StoreOptions.Serializer(), StoreOptions);
         }
+
+        public MartenExpressionParser Parser { get; }
 
         public StoreOptions StoreOptions { get; }
 

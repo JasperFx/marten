@@ -16,17 +16,13 @@ namespace Marten.Linq
 {
     public class MartenQueryExecutor : IMartenQueryExecutor
     {
-        private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
         private readonly IManagedConnection _runner;
         private readonly IDocumentSchema _schema;
-        private readonly MartenExpressionParser _expressionParser;
 
-        public MartenQueryExecutor(IManagedConnection runner, IDocumentSchema schema, MartenExpressionParser expressionParser, IQueryParser parser, IIdentityMap identityMap)
+        public MartenQueryExecutor(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap)
         {
             _schema = schema;
-            _expressionParser = expressionParser;
-            _parser = parser;
             _identityMap = identityMap;
             _runner = runner;
         }
@@ -45,8 +41,6 @@ namespace Marten.Linq
         public IManagedConnection Connection => _runner;
 
         public IIdentityMap IdentityMap => _identityMap;
-
-        public MartenExpressionParser ExpressionParser => _expressionParser;
 
         public QueryPlan ExecuteExplain<T>(QueryModel queryModel)
         {
@@ -67,8 +61,8 @@ namespace Marten.Linq
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
             var executors = new List<IScalarCommandBuilder<T>> {
-                new MaxCommandBuilder<T>(_expressionParser, _schema),
-                new MinCommandBuilder<T>(_expressionParser, _schema)
+                new MaxCommandBuilder<T>(_schema.Parser, _schema),
+                new MinCommandBuilder<T>(_schema.Parser, _schema)
             };
             var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
             ISelector<T> selector;
@@ -89,11 +83,11 @@ namespace Marten.Linq
         private NpgsqlCommand ExecuteScalar<T>(QueryModel queryModel, out ISelector<T> selector)
         {
             var executors = new List<IScalarCommandBuilder<T>> {
-                new AnyCommandBuilder<T>(_expressionParser, _schema),
-                new CountCommandBuilder<T>(_expressionParser, _schema),
-                new LongCountCommandBuilder<T>(_expressionParser, _schema),
-                new SumCommandBuilder<T>(_expressionParser, _schema),
-                new AverageCommandBuilder<T>(_expressionParser, _schema)
+                new AnyCommandBuilder<T>(_schema.Parser, _schema),
+                new CountCommandBuilder<T>(_schema.Parser, _schema),
+                new LongCountCommandBuilder<T>(_schema.Parser, _schema),
+                new SumCommandBuilder<T>(_schema.Parser, _schema),
+                new AverageCommandBuilder<T>(_schema.Parser, _schema)
             };
             var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
             if (queryExecution == null) throw new NotSupportedException();
@@ -120,13 +114,13 @@ namespace Marten.Linq
         public async Task<T> ExecuteAsync<T>(QueryModel queryModel, CancellationToken token)
         {
             var scalarExecutions = new List<IScalarCommandBuilder<T>> {
-                new AnyCommandBuilder<T>(_expressionParser, _schema),
-                new CountCommandBuilder<T>(_expressionParser, _schema),
-                new LongCountCommandBuilder<T>(_expressionParser, _schema),
-                new SumCommandBuilder<T>(_expressionParser, _schema),
-                new AverageCommandBuilder<T>(_expressionParser, _schema),
-                new MaxCommandBuilder<T>(_expressionParser, _schema),
-                new MinCommandBuilder<T>(_expressionParser, _schema),
+                new AnyCommandBuilder<T>(_schema.Parser, _schema),
+                new CountCommandBuilder<T>(_schema.Parser, _schema),
+                new LongCountCommandBuilder<T>(_schema.Parser, _schema),
+                new SumCommandBuilder<T>(_schema.Parser, _schema),
+                new AverageCommandBuilder<T>(_schema.Parser, _schema),
+                new MaxCommandBuilder<T>(_schema.Parser, _schema),
+                new MinCommandBuilder<T>(_schema.Parser, _schema),
             };
 
             ISelector<T> selector;
@@ -182,13 +176,13 @@ namespace Marten.Linq
         public NpgsqlCommand BuildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
         {
             var scalarExecutions = new List<IScalarCommandBuilder<T>> {
-                new AnyCommandBuilder<T>(_expressionParser, _schema),
-                new CountCommandBuilder<T>(_expressionParser, _schema),
-                new LongCountCommandBuilder<T>(_expressionParser, _schema),
-                new SumCommandBuilder<T>(_expressionParser, _schema),
-                new AverageCommandBuilder<T>(_expressionParser, _schema),
-                new MaxCommandBuilder<T>(_expressionParser, _schema),
-                new MinCommandBuilder<T>(_expressionParser, _schema),
+                new AnyCommandBuilder<T>(_schema.Parser, _schema),
+                new CountCommandBuilder<T>(_schema.Parser, _schema),
+                new LongCountCommandBuilder<T>(_schema.Parser, _schema),
+                new SumCommandBuilder<T>(_schema.Parser, _schema),
+                new AverageCommandBuilder<T>(_schema.Parser, _schema),
+                new MaxCommandBuilder<T>(_schema.Parser, _schema),
+                new MinCommandBuilder<T>(_schema.Parser, _schema),
             };
 
             NpgsqlCommand cmd;
@@ -205,7 +199,7 @@ namespace Marten.Linq
         private NpgsqlCommand buildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
         {
             var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
-            var query = new DocumentQuery(mapping, queryModel, _expressionParser);
+            var query = new DocumentQuery(mapping, queryModel, _schema.Parser);
             query.Includes.AddRange(Includes);
 
             _schema.EnsureStorageExists(mapping.DocumentType);

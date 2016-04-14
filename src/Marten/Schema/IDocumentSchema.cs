@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Marten.Events;
 using Marten.Generation;
+using Marten.Linq;
 using Marten.Schema.Sequences;
 
 namespace Marten.Schema
@@ -24,6 +25,7 @@ namespace Marten.Schema
         IEventStoreConfiguration Events { get; }
 
         PostgresUpsertType UpsertType { get; }
+        MartenExpressionParser Parser { get; }
 
         /// <summary>
         /// Write the SQL script to build the database schema

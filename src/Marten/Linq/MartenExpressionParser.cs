@@ -94,7 +94,7 @@ namespace Marten.Linq
             }
             if (jsonLocatorExpression.NodeType == ExpressionType.Modulo)
             {
-                var moduloByValue = GetModuloByValue(binary);
+                var moduloByValue = MartenExpressionParser.moduloByValue(binary);
                 return new WhereFragment("{0} % {1} {2} ?".ToFormat(jsonLocator, moduloByValue, op), value);
             }
 
@@ -102,7 +102,7 @@ namespace Marten.Linq
             return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
         }
 
-        private static object GetModuloByValue(BinaryExpression binary)
+        private static object moduloByValue(BinaryExpression binary)
         {
             var moduloExpression = binary.Left as BinaryExpression;
             var moduloValueExpression = moduloExpression?.Right as ConstantExpression;

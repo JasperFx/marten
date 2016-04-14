@@ -32,7 +32,7 @@ namespace Marten
             _identityMap = identityMap;
 
 
-            _unitOfWork = new UnitOfWork(_schema, Parser);
+            _unitOfWork = new UnitOfWork(_schema);
 
             if (_identityMap is IDocumentTracker)
             {

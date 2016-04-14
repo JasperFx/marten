@@ -24,7 +24,6 @@ namespace Marten
 
     public class QuerySession : IQuerySession, ILoader
     {
-        private readonly IDocumentStore _store;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
         private readonly IManagedConnection _connection;
@@ -33,22 +32,20 @@ namespace Marten
 
         public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
         {
-            _store = store;
+            DocumentStore = store;
             _schema = schema;
             _serializer = serializer;
             _connection = connection;
             _parser = parser;
             _identityMap = identityMap;
 
-            Parser = new MartenExpressionParser(_serializer, options);
         }
 
-        internal MartenExpressionParser Parser { get; }
-        public IDocumentStore DocumentStore => _store;
+        public IDocumentStore DocumentStore { get; }
 
         public IMartenQueryable<T> Query<T>()
         {
-            var executor = new MartenQueryExecutor(_connection, _schema, Parser, _parser, _identityMap);
+            var executor = new MartenQueryExecutor(_connection, _schema, _identityMap);
 
             var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, executor);
             return new MartenQueryable<T>(queryProvider);
@@ -77,7 +74,7 @@ namespace Marten
 
         public IBatchedQuery CreateBatchQuery()
         {
-            return new BatchedQuery(_connection, _schema, _identityMap.ForQuery(), this, _serializer, Parser);
+            return new BatchedQuery(_connection, _schema, _identityMap.ForQuery(), this, _serializer);
         }
 
         public NpgsqlCommand BuildCommand<T>(string sql, params object[] parameters)

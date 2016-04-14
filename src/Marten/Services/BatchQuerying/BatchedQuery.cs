@@ -19,19 +19,16 @@ namespace Marten.Services.BatchQuerying
         private readonly IIdentityMap _identityMap;
         private readonly QuerySession _parent;
         private readonly ISerializer _serializer;
-        private readonly MartenExpressionParser _parser;
         private readonly NpgsqlCommand _command = new NpgsqlCommand();
         private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
 
-        public BatchedQuery(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap,
-            QuerySession parent, ISerializer serializer, MartenExpressionParser parser)
+        public BatchedQuery(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap, QuerySession parent, ISerializer serializer)
         {
             _runner = runner;
             _schema = schema;
             _identityMap = identityMap;
             _parent = parent;
             _serializer = serializer;
-            _parser = parser;
         }
 
         public Task<T> Load<T>(string id) where T : class
@@ -111,7 +108,7 @@ namespace Marten.Services.BatchQuerying
 
             _schema.EnsureStorageExists(model.MainFromClause.ItemType);
 
-            var docQuery = new DocumentQuery(_schema.MappingFor(model.MainFromClause.ItemType), model, _parser);
+            var docQuery = new DocumentQuery(_schema.MappingFor(model.MainFromClause.ItemType), model, _schema.Parser);
             docQuery.Includes.AddRange(queryable.Includes);
 
 

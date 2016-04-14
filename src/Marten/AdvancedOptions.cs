@@ -59,7 +59,7 @@ namespace Marten
 
         public UnitOfWork CreateUnitOfWork()
         {
-            return new UnitOfWork(_schema, new MartenExpressionParser(_serializer, Options));
+            return new UnitOfWork(_schema);
         }
 
         public IList<IDocumentStorage> PrecompileAllStorage()
