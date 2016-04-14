@@ -1,8 +1,10 @@
+using Marten.Schema;
+
 namespace Marten.Linq.Results
 {
     public class FirstOrDefaultHandler<T> : OnlyOneResultHandler<T>
     {
-        public FirstOrDefaultHandler(DocumentQuery query) : base(1, query)
+        public FirstOrDefaultHandler(DocumentQuery query, IDocumentSchema schema) : base(1, query, schema)
         {
         }
     }

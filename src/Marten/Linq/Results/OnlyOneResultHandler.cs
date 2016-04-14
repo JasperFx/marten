@@ -9,20 +9,26 @@ namespace Marten.Linq.Results
     public abstract class OnlyOneResultHandler<T> : IQueryHandler<T>
     {
         private readonly int _rowLimit;
+        private readonly IDocumentSchema _schema;
         public DocumentQuery Query { get; set; }
-        public ISelector<T> Selector { get; set; }
+        public ISelector<T> Selector { get;  }
 
-        public OnlyOneResultHandler(int rowLimit, DocumentQuery query)
+        public OnlyOneResultHandler(int rowLimit, DocumentQuery query, IDocumentSchema schema)
         {
             _rowLimit = rowLimit;
+            _schema = schema;
             Query = query;
+
+            // TODO -- TEMPORARY!!!
+            Selector = Query.ConfigureCommand<T>(schema, new NpgsqlCommand(), rowLimit);
+
         }
 
         public Type SourceType => Query.SourceDocumentType;
 
-        public void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command)
+        public void ConfigureCommand(NpgsqlCommand command)
         {
-            Selector = Query.ConfigureCommand<T>(schema, command, _rowLimit);
+            Query.ConfigureCommand<T>(_schema, command, _rowLimit);
         }
 
         public T Handle(DbDataReader reader, IIdentityMap map)

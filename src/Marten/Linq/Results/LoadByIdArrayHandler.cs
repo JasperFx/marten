@@ -25,7 +25,7 @@ namespace Marten.Linq.Results
         public Type SourceType => typeof(T);
 
 
-        public void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command)
+        public void ConfigureCommand(NpgsqlCommand command)
         {
             var parameter = command.AddParameter(_ids);
             var sql =

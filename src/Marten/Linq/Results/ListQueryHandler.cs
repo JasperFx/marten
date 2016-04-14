@@ -9,27 +9,26 @@ namespace Marten.Linq.Results
 {
     public class ListQueryHandler<T> : IQueryHandler<IList<T>>
     {
+        private readonly IDocumentSchema _schema;
         private readonly DocumentQuery _query;
-        private ISelector<T> _selector = null;
+        private readonly ISelector<T> _selector;
 
-        public ListQueryHandler(DocumentQuery query)
+        public ListQueryHandler(IDocumentSchema schema, DocumentQuery query)
         {
+            // TODO -- this is temporary until DocumentQuery starts to go away
+            _selector = query.ConfigureCommand<T>(schema, new NpgsqlCommand());
+            _schema = schema;
             _query = query;
         }
 
         public Type SourceType => _query.SourceDocumentType;
-        public void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command)
+        public void ConfigureCommand(NpgsqlCommand command)
         {
-            _selector = _query.ConfigureCommand<T>(schema, command);
+            _query.ConfigureCommand<T>(_schema, command);
         }
 
         public IList<T> Handle(DbDataReader reader, IIdentityMap map)
         {
-            if (_selector == null)
-            {
-                throw new InvalidOperationException($"{nameof(ConfigureCommand)} needs to be called before {nameof(Handle)}");
-            }
-
             return _selector.Read(reader, map);
         }
     }

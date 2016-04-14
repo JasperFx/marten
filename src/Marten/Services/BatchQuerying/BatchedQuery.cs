@@ -100,7 +100,7 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IList<T>> Query<T>(string sql, params object[] parameters) where T : class
         {
-            return AddItem(new UserSuppliedQueryHandler<T>(_serializer, sql, parameters));
+            return AddItem(new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters));
         }
 
         private DocumentQuery toDocumentQuery<TDoc>(IMartenQueryable<TDoc> queryable)
@@ -133,7 +133,8 @@ namespace Marten.Services.BatchQuerying
         internal Task<IList<T>> Query<T>(IMartenQueryable<T> queryable)
         {
             var documentQuery = toDocumentQuery(queryable);
-            return AddItem(new ListQueryHandler<T>(documentQuery));
+
+            return AddItem(new ListQueryHandler<T>(_schema, documentQuery));
         }
 
         public IBatchedQueryable<T> Query<T>() where T : class
@@ -144,22 +145,22 @@ namespace Marten.Services.BatchQuerying
 
         public Task<T> First<T>(IMartenQueryable<T> queryable)
         {
-            return AddItem(new FirstHandler<T>(toDocumentQuery(queryable)));
+            return AddItem(new FirstHandler<T>(toDocumentQuery(queryable), _schema));
         }
 
         public Task<T> FirstOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            return AddItem(new FirstOrDefaultHandler<T>(toDocumentQuery(queryable)));
+            return AddItem(new FirstOrDefaultHandler<T>(toDocumentQuery(queryable), _schema));
         }
 
         public Task<T> Single<T>(IMartenQueryable<T> queryable)
         {
-            return AddItem(new SingleHandler<T>(toDocumentQuery(queryable)));
+            return AddItem(new SingleHandler<T>(toDocumentQuery(queryable), _schema));
         }
 
         public Task<T> SingleOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            return AddItem(new SingleOrDefaultHandler<T>(toDocumentQuery(queryable)));
+            return AddItem(new SingleOrDefaultHandler<T>(toDocumentQuery(queryable), _schema));
         }
 
         public Task Execute(CancellationToken token = default(CancellationToken))

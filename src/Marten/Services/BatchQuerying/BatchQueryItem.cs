@@ -23,7 +23,7 @@ namespace Marten.Services.BatchQuerying
 
         public void Configure(IDocumentSchema schema, NpgsqlCommand command)
         {
-            _handler.ConfigureCommand(schema, command);
+            _handler.ConfigureCommand(command);
         }
 
         public void Read(DbDataReader reader, IIdentityMap map)

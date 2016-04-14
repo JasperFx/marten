@@ -11,12 +11,14 @@ namespace Marten.Linq.Results
 {
     public class UserSuppliedQueryHandler<T> : IQueryHandler<IList<T>>
     {
+        private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
         private readonly string _sql;
         private readonly object[] _parameters;
 
-        public UserSuppliedQueryHandler(ISerializer serializer, string sql, object[] parameters)
+        public UserSuppliedQueryHandler(IDocumentSchema schema, ISerializer serializer, string sql, object[] parameters)
         {
+            _schema = schema;
             _serializer = serializer;
             _sql = sql;
             _parameters = parameters;
@@ -24,12 +26,12 @@ namespace Marten.Linq.Results
 
         public Type SourceType => typeof(T);
 
-        public void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command)
+        public void ConfigureCommand(NpgsqlCommand command)
         {
             var sql = _sql;
             if (!sql.Contains("select", StringComparison.OrdinalIgnoreCase))
             {
-                var mapping = schema.MappingFor(typeof(T));
+                var mapping = _schema.MappingFor(typeof(T));
                 var tableName = mapping.Table.QualifiedName;
                 sql = "select data from {0} {1}".ToFormat(tableName, sql);
             }

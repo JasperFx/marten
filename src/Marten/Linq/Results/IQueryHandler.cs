@@ -14,7 +14,7 @@ namespace Marten.Linq.Results
 
         // It's done this way so that the same query handler can swing back
         // and forth between batched queries and standalone queries
-        void ConfigureCommand(IDocumentSchema schema, NpgsqlCommand command);
+        void ConfigureCommand(NpgsqlCommand command);
 
         // Sync
         T Handle(DbDataReader reader, IIdentityMap map);
@@ -23,15 +23,4 @@ namespace Marten.Linq.Results
         //Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token);
     }
 
-    /*
-    X Any
-    X Count, LongCount
-    X ToList
-    X Single
-    X SingleOrDefault
-    X First
-    X FirstOrDefault
-    Aggregate functions
-
-    */
 }
