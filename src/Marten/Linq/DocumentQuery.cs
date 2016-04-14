@@ -188,18 +188,7 @@ namespace Marten.Linq
 
         private string toOrderClause()
         {
-            var orders = _query.BodyClauses.OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
-            if (!orders.Any()) return string.Empty;
-
-            return " order by " + orders.Select(ToOrderClause).Join(", ");
-        }
-
-        public string ToOrderClause(Ordering clause)
-        {
-            var locator = _mapping.JsonLocator(clause.Expression);
-            return clause.OrderingDirection == OrderingDirection.Asc
-                ? locator
-                : locator + " desc";
+            return _query.ToOrderClause(_mapping);
         }
 
         public IWhereFragment BuildWhereClause()
