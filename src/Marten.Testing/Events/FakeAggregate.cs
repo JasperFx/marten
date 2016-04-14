@@ -1,11 +1,10 @@
 ﻿using System;
-using Marten.Events;
 
 namespace Marten.Testing.Events
 {
-    public class FakeAggregate : IAggregate
+    public class FakeAggregate
     {
-         public Guid Id { get; set; }
+        public Guid Id { get; set; }
 
         public string[] ANames;
         public string[] BNames;
@@ -13,34 +12,26 @@ namespace Marten.Testing.Events
         public string[] DNames;
     }
 
-    public class EventA : IEvent
+    public class EventA
+    {
+        public string Name { get; set; }
+    }
+
+    public class EventB
+    {
+        public string Name { get; set; }
+    }
+
+    public class EventC
+    {
+        public string Name { get; set; }
+    }
+
+
+    public class EventD
     {
         public Guid Id { get; set; }
 
         public string Name { get; set; }
     }
-
-    public class EventB : IEvent
-    {
-        public Guid Id { get; set; }
-
-        public string Name { get; set; }
-    }
-
-    public class EventC : IEvent
-    {
-        public Guid Id { get; set; }
-
-        public string Name { get; set; }
-    }
-
-
-    public class EventD : IEvent
-    {
-        public Guid Id { get; set; }
-
-        public string Name { get; set; }
-    }
-
-
 }
