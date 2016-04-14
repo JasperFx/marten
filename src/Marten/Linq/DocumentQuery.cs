@@ -13,6 +13,7 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
 {
+    [Obsolete("Everything here is going to move out for GH-280")]
     public class DocumentQuery
     {
         private readonly IDocumentMapping _mapping;
