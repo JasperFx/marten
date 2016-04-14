@@ -80,12 +80,19 @@ namespace Marten.Linq
 
         public static string AppendOffset(this QueryModel query, string sql)
         {
-            var take = query.FindOperators<SkipResultOperator>().LastOrDefault();
+            var skip = query.FindOperators<SkipResultOperator>().LastOrDefault();
+
+            return skip == null ? sql : sql + " OFFSET " + skip.Count + " ";
+        }
+
+        public static string AppendLimit(this QueryModel query, string sql)
+        {
+            var take = query.FindOperators<TakeResultOperator>().LastOrDefault();
 
             return take == null ? sql : sql + " OFFSET " + take.Count + " ";
         }
 
-        public static ISelector<T> ToSelectClause<T>(this IDocumentSchema schema, IDocumentMapping mapping, QueryModel query)
+        public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, IDocumentMapping mapping, QueryModel query)
         {
             ISelector<T> selector = null;
 
@@ -105,10 +112,10 @@ namespace Marten.Linq
             return selector;
         }
 
-        public static ISelector<T> ToSelectClause<T>(this IDocumentSchema schema, QueryModel query)
+        public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, QueryModel query)
         {
             var mapping = schema.MappingFor(query.SourceType());
-            return schema.ToSelectClause<T>(mapping, query);
+            return schema.BuildSelector<T>(mapping, query);
         }
 
         public static IDocumentMapping MappingFor(this IDocumentSchema schema, QueryModel model)

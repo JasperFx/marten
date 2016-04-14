@@ -138,9 +138,11 @@ namespace Marten.Services.BatchQuerying
 
         internal Task<IList<T>> Query<T>(IMartenQueryable<T> queryable)
         {
-            var documentQuery = toDocumentQuery(queryable);
+            var expression = queryable.Expression;
 
-            return AddItem(new ListQueryHandler<T>(_schema, documentQuery));
+            var query = QueryParser.GetParsedQuery(expression);
+
+            return AddItem(new ListQueryHandler<T>(_schema, query, queryable.Includes.ToArray()));
         }
 
         public IBatchedQueryable<T> Query<T>() where T : class

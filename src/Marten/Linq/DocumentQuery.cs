@@ -91,6 +91,7 @@ namespace Marten.Linq
 
 
 
+        [Obsolete("Will be replaced by ListQueryHandler<T>")]
         public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, NpgsqlCommand command, int rowLimit = 0)
         {
             if (_query.HasOperator<LastResultOperator>())
@@ -98,7 +99,7 @@ namespace Marten.Linq
                 throw new InvalidOperationException("Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
             }
 
-            var selector = schema.ToSelectClause<T>(_mapping, _query);
+            var selector = schema.BuildSelector<T>(_mapping, _query);
             if (Includes.Any())
             {
                 selector = new IncludeSelector<T>(schema, selector, Includes.ToArray());
