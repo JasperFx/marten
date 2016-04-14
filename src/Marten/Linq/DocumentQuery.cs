@@ -100,7 +100,7 @@ namespace Marten.Linq
 
             Includes.Each(x => selector = x.WrapSelector(schema, selector));
 
-            var sql = $"select {@selector.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d";
+            var sql = selector.ToSelectClause(_mapping);
 
             if (Includes.Any())
             {
