@@ -44,6 +44,7 @@ namespace Marten.Linq
             command.AppendQuery(sql);
         }
 
+        [Obsolete("Superseeded by CountQueryHandler<T>")]
         public void ConfigureForCount(NpgsqlCommand command)
         {
             var sql = "select count(*) as number from " + _mapping.Table.QualifiedName + " as d";

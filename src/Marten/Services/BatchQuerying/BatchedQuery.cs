@@ -129,7 +129,11 @@ namespace Marten.Services.BatchQuerying
 
         public Task<long> Count<TDoc>(IMartenQueryable<TDoc> queryable)
         {
-            return AddItem(new CountQueryHandler<long>(toDocumentQuery(queryable)));
+            var expression = queryable.Expression;
+
+            var query = QueryParser.GetParsedQuery(expression);
+
+            return AddItem(new CountQueryHandler<long>(query, _schema));
         }
 
         internal Task<IList<T>> Query<T>(IMartenQueryable<T> queryable)
