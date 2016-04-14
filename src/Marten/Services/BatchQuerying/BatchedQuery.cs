@@ -153,22 +153,38 @@ namespace Marten.Services.BatchQuerying
 
         public Task<T> First<T>(IMartenQueryable<T> queryable)
         {
-            return AddItem(new FirstHandler<T>(toDocumentQuery(queryable), _schema));
+            var expression = queryable.Expression;
+
+            var query = QueryParser.GetParsedQuery(expression);
+
+            return AddItem(OneResultHandler<T>.First(_schema, query, queryable.Includes.ToArray()));
         }
 
         public Task<T> FirstOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            return AddItem(new FirstOrDefaultHandler<T>(toDocumentQuery(queryable), _schema));
+            var expression = queryable.Expression;
+
+            var query = QueryParser.GetParsedQuery(expression);
+
+            return AddItem(OneResultHandler<T>.FirstOrDefault(_schema, query, queryable.Includes.ToArray()));
         }
 
         public Task<T> Single<T>(IMartenQueryable<T> queryable)
         {
-            return AddItem(new SingleHandler<T>(toDocumentQuery(queryable), _schema));
+            var expression = queryable.Expression;
+
+            var query = QueryParser.GetParsedQuery(expression);
+
+            return AddItem(OneResultHandler<T>.Single(_schema, query, queryable.Includes.ToArray()));
         }
 
         public Task<T> SingleOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            return AddItem(new SingleOrDefaultHandler<T>(toDocumentQuery(queryable), _schema));
+            var expression = queryable.Expression;
+
+            var query = QueryParser.GetParsedQuery(expression);
+
+            return AddItem(OneResultHandler<T>.SingleOrDefault(_schema, query, queryable.Includes.ToArray()));
         }
 
         public Task Execute(CancellationToken token = default(CancellationToken))
