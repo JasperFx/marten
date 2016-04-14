@@ -21,45 +21,16 @@ namespace Marten.Linq
 
         public DocumentQuery(IDocumentSchema schema, QueryModel query)
         {
-            var rootType = query.MainFromClause.ItemType;
+            var rootType = query.SourceType();
             var mapping = schema.MappingFor(rootType);
             _mapping = mapping;
             _schema = schema;
             _query = query;
         }
 
-        private IEnumerable<ResultOperatorBase> allResultOperators()
-        {
-            foreach (var @operator in _query.ResultOperators)
-            {
-                yield return @operator;
-            }
 
-            if (_query.MainFromClause.FromExpression is SubQueryExpression)
-            {
-                foreach (var @operator in _query.MainFromClause.FromExpression.As<SubQueryExpression>().QueryModel.ResultOperators)
-                {
-                    yield return @operator;
-                }
-            }
-        }
 
-        private T findOperator<T>() where T : ResultOperatorBase
-        {
-            return allResultOperators().OfType<T>().FirstOrDefault();
-        }
-
-        private IEnumerable<T> findOperators<T>() where T : ResultOperatorBase
-        {
-            return allResultOperators().OfType<T>();
-        }
-
-        private bool hasOperator<T>() where T : ResultOperatorBase
-        {
-            return allResultOperators().OfType<T>().Any();
-        }
-
-        public Type SourceDocumentType => _query.MainFromClause.ItemType;
+        public Type SourceDocumentType => _query.SourceType();
 
         public void ConfigureForAny(NpgsqlCommand command)
         {
@@ -120,7 +91,7 @@ namespace Marten.Linq
 
         public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, NpgsqlCommand command, int rowLimit = 0)
         {
-            if (hasOperator<LastResultOperator>())
+            if (_query.HasOperator<LastResultOperator>())
             {
                 throw new InvalidOperationException("Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
             }
@@ -187,7 +158,7 @@ namespace Marten.Linq
 
         private string appendOffset(string sql)
         {
-            var take = findOperators<SkipResultOperator>().LastOrDefault();
+            var take = _query.FindOperators<SkipResultOperator>().LastOrDefault();
 
             return take == null ? sql : sql + " OFFSET " + take.Count + " ";
         }
@@ -195,19 +166,19 @@ namespace Marten.Linq
         private string appendLimit(string sql)
         {
             var take =
-                findOperators<TakeResultOperator>().LastOrDefault();
+                _query.FindOperators<TakeResultOperator>().LastOrDefault();
 
             string limitNumber = null;
             if (take != null)
             {
                 limitNumber = take.Count.ToString();
             }
-            else if (hasOperator<FirstResultOperator>())
+            else if (_query.HasOperator<FirstResultOperator>())
             {
                 limitNumber = "1";
             }
             // Got to return more than 1 to make it fail if there is more than one in the db
-            else if (hasOperator<SingleResultOperator>())
+            else if (_query.HasOperator<SingleResultOperator>())
             {
                 limitNumber = "2";
             }

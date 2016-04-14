@@ -86,6 +86,7 @@
     <Compile Include="Linq\MartenQueryProvider.cs" />
     <Compile Include="Linq\Handlers\IsOneOf.cs" />
     <Compile Include="Linq\QueryableExtensions.cs" />
+    <Compile Include="Linq\QueryModelExtensions.cs" />
     <Compile Include="Linq\Results\AnyQueryHandler.cs" />
     <Compile Include="Linq\Results\CountQueryHandler.cs" />
     <Compile Include="Linq\Results\FirstHandler.cs" />
