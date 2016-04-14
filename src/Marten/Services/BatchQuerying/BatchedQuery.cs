@@ -106,9 +106,7 @@ namespace Marten.Services.BatchQuerying
 
             var model = QueryParser.GetParsedQuery(expression);
 
-            _schema.EnsureStorageExists(model.MainFromClause.ItemType);
-
-            var docQuery = new DocumentQuery(_schema, model);
+            var docQuery = _schema.ToDocumentQuery(model);
             docQuery.Includes.AddRange(queryable.Includes);
 
 

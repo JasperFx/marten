@@ -51,10 +51,8 @@ namespace Marten.Linq
 
         private NpgsqlCommand GetCommand(QueryModel queryModel)
         {
-            var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
-            var documentQuery = new DocumentQuery(_schema, queryModel);
+            var documentQuery = _schema.ToDocumentQuery(queryModel);
 
-            _schema.EnsureStorageExists(mapping.DocumentType);
             var sumCommand = new NpgsqlCommand();
             ConfigureCommand(documentQuery, sumCommand);
             return sumCommand;
@@ -121,10 +119,7 @@ namespace Marten.Linq
 
         private NpgsqlCommand GetAnyCommand(QueryModel queryModel)
         {
-            var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
-            var documentQuery = new DocumentQuery(_schema, queryModel);
-
-            _schema.EnsureStorageExists(mapping.DocumentType);
+            var documentQuery = _schema.ToDocumentQuery(queryModel);
 
             var anyCommand = new NpgsqlCommand();
             documentQuery.ConfigureForAny(anyCommand);
@@ -146,10 +141,7 @@ namespace Marten.Linq
 
         private NpgsqlCommand GetCountCommand(QueryModel queryModel)
         {
-            var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
-            var documentQuery = new DocumentQuery(_schema, queryModel);
-
-            _schema.EnsureStorageExists(mapping.DocumentType);
+            var documentQuery = _schema.ToDocumentQuery(queryModel);
 
             var countCommand = new NpgsqlCommand();
             documentQuery.ConfigureForCount(countCommand);
@@ -171,10 +163,7 @@ namespace Marten.Linq
 
         private NpgsqlCommand GetLongCountCommand(QueryModel queryModel)
         {
-            var mapping = _schema.MappingFor(queryModel.SelectClause.Selector.Type);
-            var documentQuery = new DocumentQuery(_schema, queryModel);
-
-            _schema.EnsureStorageExists(mapping.DocumentType);
+            var documentQuery = _schema.ToDocumentQuery(queryModel);
 
             var countCommand = new NpgsqlCommand();
             documentQuery.ConfigureForCount(countCommand);

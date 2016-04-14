@@ -11,6 +11,7 @@ using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema.Sequences;
 using Marten.Util;
+using Remotion.Linq;
 
 namespace Marten.Schema
 {
@@ -264,6 +265,14 @@ namespace Marten.Schema
         public bool TableExists(TableName table)
         {
             return SchemaTables().Contains(table);
+        }
+
+        public DocumentQuery ToDocumentQuery(QueryModel model)
+        {
+            var docQuery = new DocumentQuery(this, model);
+            EnsureStorageExists(docQuery.SourceDocumentType);
+
+            return docQuery;
         }
 
         private string[] primaryKeysFor(IDocumentMapping documentMapping)

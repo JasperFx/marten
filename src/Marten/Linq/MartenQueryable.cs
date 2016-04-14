@@ -110,7 +110,7 @@ namespace Marten.Linq
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var schema = executor.Schema;
 
-            return new DocumentQuery(schema, model);
+            return schema.ToDocumentQuery(model);
         }
 
         public NpgsqlCommand BuildCommand(FetchType fetchType)
@@ -120,7 +120,7 @@ namespace Marten.Linq
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var schema = executor.Schema;
 
-            var query = new DocumentQuery(schema, model);
+            var query = schema.ToDocumentQuery(model);
 
             var parser = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             query.Includes.AddRange(parser.Includes);

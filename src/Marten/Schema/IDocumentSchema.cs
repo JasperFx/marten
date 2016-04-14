@@ -4,6 +4,7 @@ using Marten.Events;
 using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema.Sequences;
+using Remotion.Linq;
 
 namespace Marten.Schema
 {
@@ -55,5 +56,8 @@ namespace Marten.Schema
         IResolver<T> ResolverFor<T>();
 
         bool TableExists(TableName table);
+
+
+        DocumentQuery ToDocumentQuery(QueryModel model);
     }
 }

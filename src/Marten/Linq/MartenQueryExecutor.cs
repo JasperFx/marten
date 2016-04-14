@@ -198,11 +198,8 @@ namespace Marten.Linq
 
         private NpgsqlCommand buildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
         {
-            var mapping = _schema.MappingFor(queryModel.MainFromClause.ItemType);
-            var query = new DocumentQuery(_schema, queryModel);
+            var query = _schema.ToDocumentQuery(queryModel);
             query.Includes.AddRange(Includes);
-
-            _schema.EnsureStorageExists(mapping.DocumentType);
 
             var command = new NpgsqlCommand();
             selector = query.ConfigureCommand<T>(_schema, command);
