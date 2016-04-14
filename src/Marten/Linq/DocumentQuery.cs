@@ -193,14 +193,7 @@ namespace Marten.Linq
 
         public IWhereFragment BuildWhereClause()
         {
-            var wheres = _query.BodyClauses.OfType<WhereClause>().ToArray();
-            if (wheres.Length == 0) return _mapping.DefaultWhereFragment();
-
-            var where = wheres.Length == 1
-                ? _schema.Parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
-                : new CompoundWhereFragment(_schema.Parser, _mapping, "and", wheres);
-
-            return _mapping.FilterDocuments(where);
+            return _schema.BuildWhereFragment(_mapping, _query);
         }
     }
 

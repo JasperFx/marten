@@ -57,5 +57,24 @@ namespace Marten.Linq
                 ? locator
                 : locator + " desc";
         }
+
+        public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, IDocumentMapping mapping, QueryModel query)
+        {
+            var wheres = query.BodyClauses.OfType<WhereClause>().ToArray();
+            if (wheres.Length == 0) return mapping.DefaultWhereFragment();
+
+            var where = wheres.Length == 1
+                ? schema.Parser.ParseWhereFragment(mapping, wheres.Single().Predicate)
+                : new CompoundWhereFragment(schema.Parser, mapping, "and", wheres);
+
+            return mapping.FilterDocuments(where);
+        }
+
+        public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, QueryModel query)
+        {
+            var mapping = schema.MappingFor(query.SourceType());
+            return schema.BuildWhereFragment(mapping, query);
+        }
+
     }
 }
