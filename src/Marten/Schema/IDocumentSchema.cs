@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Marten.Events;
 using Marten.Generation;
 using Marten.Linq;
+using Marten.Linq.Results;
 using Marten.Schema.Sequences;
 using Remotion.Linq;
 
@@ -57,7 +58,9 @@ namespace Marten.Schema
 
         bool TableExists(TableName table);
 
-
+        [Obsolete("Going to be superseeded by the one below")]
         DocumentQuery ToDocumentQuery(QueryModel model);
+
+
     }
 }
