@@ -6,6 +6,7 @@ using Marten.Schema;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
 {
@@ -74,6 +75,13 @@ namespace Marten.Linq
         {
             var mapping = schema.MappingFor(query.SourceType());
             return schema.BuildWhereFragment(mapping, query);
+        }
+
+        public static string AppendOffset(this QueryModel query, string sql)
+        {
+            var take = query.FindOperators<SkipResultOperator>().LastOrDefault();
+
+            return take == null ? sql : sql + " OFFSET " + take.Count + " ";
         }
 
     }

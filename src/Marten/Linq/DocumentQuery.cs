@@ -113,7 +113,7 @@ namespace Marten.Linq
             }
 
             var where = BuildWhereClause();
-            var orderBy = toOrderClause();
+            var orderBy = _query.ToOrderClause(_mapping);
 
             if (@where != null) sql += " where " + @where.ToSql(command);
 
@@ -127,8 +127,8 @@ namespace Marten.Linq
             {
                 sql = appendLimit(sql);
             }
-            
-            sql = appendOffset(sql);
+
+            sql = _query.AppendOffset(sql);
 
             command.AppendQuery(sql);
 
@@ -156,13 +156,6 @@ namespace Marten.Linq
             return selector;
         }
 
-        private string appendOffset(string sql)
-        {
-            var take = _query.FindOperators<SkipResultOperator>().LastOrDefault();
-
-            return take == null ? sql : sql + " OFFSET " + take.Count + " ";
-        }
-
         private string appendLimit(string sql)
         {
             var take =
@@ -184,11 +177,6 @@ namespace Marten.Linq
             }
 
             return limitNumber == null ? sql : sql + " LIMIT " + limitNumber + " ";
-        }
-
-        private string toOrderClause()
-        {
-            return _query.ToOrderClause(_mapping);
         }
 
         public IWhereFragment BuildWhereClause()
