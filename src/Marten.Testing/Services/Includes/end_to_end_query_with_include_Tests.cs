@@ -37,12 +37,14 @@ namespace Marten.Testing.Services.Includes
                 var list = new List<User>();
                 var dict = new Dictionary<Guid, User>();
 
+                // SAMPLE: batch_include
                 var batch = query.CreateBatchQuery();
 
                 var found = batch.Query<Issue>()
                     .Include<User>(x => x.AssigneeId, x => included = x)
                     .Where(x => x.Title == issue1.Title)
                     .Single();
+                // ENDSAMPLE
 
                 var toList = batch.Query<Issue>()
                     .Include<User>(x => x.AssigneeId, list).ToList();
@@ -73,6 +75,7 @@ namespace Marten.Testing.Services.Includes
             }
         }
 
+        // SAMPLE: simple_include
         [Fact]
         public void simple_include_for_a_single_document()
         {
@@ -96,6 +99,7 @@ namespace Marten.Testing.Services.Includes
                 issue2.ShouldNotBeNull();
             }
         }
+        // ENDSAMPLE
 
         [Fact]
         public void include_with_containment_where_for_a_single_document()
@@ -220,6 +224,7 @@ namespace Marten.Testing.Services.Includes
             }
         }
 
+        // SAMPLE: dictionary_include
         [Fact]
         public void include_to_dictionary()
         {
@@ -244,10 +249,8 @@ namespace Marten.Testing.Services.Includes
                 dict.ContainsKey(user1.Id).ShouldBeTrue();
                 dict.ContainsKey(user2.Id).ShouldBeTrue();
             }
-
-
         }
-
+        // ENDSAMPLE
 
         [Fact]
         public async Task simple_include_for_a_single_document_async()
@@ -386,7 +389,7 @@ namespace Marten.Testing.Services.Includes
 
         }
 
-
+        // SAMPLE: multiple_include
         [Fact]
         public void multiple_includes()
         {
@@ -416,7 +419,7 @@ namespace Marten.Testing.Services.Includes
 
             }
         }
-
+        // ENDSAMPLE
 
     }
 }
