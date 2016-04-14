@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Marten.Linq;
 
 namespace Marten.Events
 {
@@ -29,7 +31,10 @@ namespace Marten.Events
         ITransforms Transforms { get; }
 
         StreamState FetchStreamState(Guid streamId);
-        
+
+        IMartenQueryable<T> Query<T>();
+        T Load<T>(Guid id) where T : class;
+        Task<T> LoadAsync<T>(Guid id) where T : class;
     }
 
     public interface ITransforms

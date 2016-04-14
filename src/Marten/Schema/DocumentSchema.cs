@@ -53,9 +53,11 @@ namespace Marten.Schema
                     return StoreOptions.Events.As<IDocumentMapping>();
                 }
 
-                return StoreOptions.AllDocumentMappings.SelectMany(x => x.SubClasses)
-                    .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping
-                       ?? StoreOptions.MappingFor(type);
+                return
+                    StoreOptions.Events.AllEvents().FirstOrDefault(x => x.DocumentType == type)
+                    ?? StoreOptions.AllDocumentMappings.SelectMany(x => x.SubClasses)
+                        .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping
+                    ?? StoreOptions.MappingFor(type);
             });
         }
 

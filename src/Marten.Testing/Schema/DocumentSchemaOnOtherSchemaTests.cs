@@ -203,6 +203,11 @@ namespace Marten.Testing.Schema
         [Fact]
         public void resolve_a_document_mapping_for_an_event_type()
         {
+            StoreOptions(_ =>
+            {
+                _.Events.AddEventType(typeof(RaceStarted));
+            });
+
             theSchema.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }

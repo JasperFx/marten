@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
@@ -157,6 +159,25 @@ namespace Marten.Events
 
                 return cmd.Fetch($"select version, type from {_schema.Events.DatabaseSchemaName}.mt_streams where id = ?", converter, streamId).SingleOrDefault();
             });
+        }
+
+        public IMartenQueryable<T> Query<T>()
+        {
+            _schema.Events.AddEventType(typeof (T));
+
+            return _session.Query<T>();
+        }
+
+        public T Load<T>(Guid id) where T : class
+        {
+            _schema.Events.AddEventType(typeof(T));
+            return _session.Load<T>(id);
+        }
+
+        public Task<T> LoadAsync<T>(Guid id) where T : class
+        {
+            _schema.Events.AddEventType(typeof(T));
+            return _session.LoadAsync<T>(id);
         }
 
         public TAggregate TransformTo<TAggregate>(Guid streamId, Event @event)

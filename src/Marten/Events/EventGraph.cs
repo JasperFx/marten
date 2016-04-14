@@ -87,11 +87,6 @@ namespace Marten.Events
 
         public void AddEventType(Type eventType)
         {
-            //if (!eventType.IsConcreteTypeOf<IEvent>())
-            //{
-            //    throw new ArgumentOutOfRangeException(nameof(eventType), "Event types must be concrete types implementing the IEvent interface");    
-            //}
-
             _events.FillDefault(eventType);
         }
 
