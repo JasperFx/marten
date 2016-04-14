@@ -82,6 +82,7 @@
     <Compile Include="Linq\ICompiledQuery.cs" />
     <Compile Include="Linq\IMartenQueryable.cs" />
     <Compile Include="Linq\IMartenQueryProvider.cs" />
+    <Compile Include="Linq\IncludeSelector.cs" />
     <Compile Include="Linq\ISelector.cs" />
     <Compile Include="Linq\MartenQueryProvider.cs" />
     <Compile Include="Linq\Handlers\IsOneOf.cs" />

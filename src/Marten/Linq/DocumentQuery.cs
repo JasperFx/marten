@@ -97,15 +97,12 @@ namespace Marten.Linq
             }
 
             var selector = schema.ToSelectClause<T>(_mapping, _query);
-
-            Includes.Each(x => selector = x.WrapSelector(schema, selector));
-
-            var sql = selector.ToSelectClause(_mapping);
-
             if (Includes.Any())
             {
-                sql = $"{sql} {Includes.Select(x => x.JoinText).Join(" ")}";
+                selector = new IncludeSelector<T>(schema, selector, Includes.ToArray());
             }
+
+            var sql = selector.ToSelectClause(_mapping);
 
             var where = BuildWhereClause();
             var orderBy = _query.ToOrderClause(_mapping);
