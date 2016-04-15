@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
@@ -203,6 +204,42 @@ namespace Marten.Services.BatchQuerying
 
                 return 0;
             }, token);
+        }
+
+        public Task<TResult> Min<TResult>(IQueryable<TResult> queryable)
+        {
+            var expression = queryable.Expression;
+
+            var query = QueryParser.GetParsedQuery(expression);
+
+            return AddItem(AggregateQueryHandler<TResult>.Min(_schema, query));
+        }
+
+        public Task<TResult> Max<TResult>(IQueryable<TResult> queryable)
+        {
+            var expression = queryable.Expression;
+
+            var query = QueryParser.GetParsedQuery(expression);
+
+            return AddItem(AggregateQueryHandler<TResult>.Max(_schema, query));
+        }
+
+        public Task<TResult> Sum<TResult>(IQueryable<TResult> queryable)
+        {
+            var expression = queryable.Expression;
+
+            var query = QueryParser.GetParsedQuery(expression);
+
+            return AddItem(AggregateQueryHandler<TResult>.Sum(_schema, query));
+        }
+
+        public Task<double> Average<T>(IQueryable<T> queryable)
+        {
+            var expression = queryable.Expression;
+
+            var query = QueryParser.GetParsedQuery(expression);
+
+            return AddItem(AggregateQueryHandler<double>.Average(_schema, query));
         }
     }
 }

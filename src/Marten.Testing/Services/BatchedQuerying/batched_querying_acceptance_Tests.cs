@@ -34,7 +34,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             (await min).ShouldBe(1);
             (await max).ShouldBe(6);
             (await sum).ShouldBe(1 + 3 + 5 + 6);
-            (await average).ShouldBe((1 + 3 + 5 + 6) / 4);
+            (await average).ShouldBe(3.75);
         }
     }
 

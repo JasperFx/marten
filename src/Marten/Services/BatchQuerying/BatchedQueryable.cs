@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Services.Includes;
 
 namespace Marten.Services.BatchQuerying
@@ -145,22 +146,22 @@ namespace Marten.Services.BatchQuerying
 
         public Task<TResult> Min<TResult>(Expression<Func<T, TResult>> expression)
         {
-            throw new NotImplementedException();
+            return _parent.Min(_inner.Select(expression));
         }
 
         public Task<TResult> Max<TResult>(Expression<Func<T, TResult>> expression)
         {
-            throw new NotImplementedException();
+            return _parent.Max(_inner.Select(expression));
         }
 
         public Task<TResult> Sum<TResult>(Expression<Func<T, TResult>> expression)
         {
-            throw new NotImplementedException();
+            return _parent.Sum(_inner.Select(expression));
         }
 
         public Task<double> Average(Expression<Func<T, object>> expression)
         {
-            throw new NotImplementedException();
+            return _parent.Average(_inner.Select(expression));
         }
     }
 }

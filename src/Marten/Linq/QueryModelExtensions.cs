@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
-using Marten.Services.Includes;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
