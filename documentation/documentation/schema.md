@@ -21,6 +21,18 @@ To prevent unnecessary loss of data, even in development, on the first usage of 
 
 Our thought is that in development you probably run in the "All" mode, but in production use one of the more restrictive auto creation modes.
 
+## Overriding Schema Name
+
+By default marten will create a schema named `public`. You may, however, choose to set a different schema name, like so:
+
+<[sample:override_schema_name]>
+
+If you wish to assign certain document tables to different (new or existing) schemas, you can do so like that:
+
+<[sample:override_schema_per_table]>
+
+This will create the following tables in your database: `other.mt_doc_user`, `overriden.mt_doc_issue` and `public.mt_doc_company`.
+
 ## Exporting DDL
 
 In production, you
