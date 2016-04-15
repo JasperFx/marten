@@ -1,5 +1,7 @@
 ﻿using System.Data.Common;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
@@ -25,6 +27,11 @@ namespace Marten.Linq
         public T Resolve(DbDataReader reader, IIdentityMap map)
         {
             return _inner.Resolve(reader, map);
+        }
+
+        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            return _inner.ResolveAsync(reader, map, token);
         }
 
         public string[] SelectFields()

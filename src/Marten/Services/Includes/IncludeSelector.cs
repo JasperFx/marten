@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
@@ -42,5 +44,13 @@ namespace Marten.Services.Includes
         }
 
 
+        public async Task<TSearched> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            var included = await _resolver.ResolveAsync(StartingIndex, reader, map, token).ConfigureAwait(false);
+
+            _callback(included);
+
+            return await _inner.ResolveAsync(reader, map, token).ConfigureAwait(false);
+        }
     }
 }

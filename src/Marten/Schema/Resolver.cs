@@ -17,6 +17,17 @@ namespace Marten.Schema
             return map.Get <T> (id, json);
         }
 
+        public async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false)) return null;
+
+            var json = await reader.GetFieldValueAsync<string>(startingIndex, token).ConfigureAwait(false);
+
+            var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
+
+            return map.Get<T>(id, json);
+        }
+
         public virtual T Build(DbDataReader reader, ISerializer serializer)
         {
             return serializer.FromJson <T> (reader.GetString(0));

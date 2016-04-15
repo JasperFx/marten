@@ -71,6 +71,14 @@ namespace Marten.Schema.Hierarchies
             return map.Get<TBase>(id, typeof(T), json) as T;
         }
 
+        public async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            var json = await reader.GetFieldValueAsync<string>(startingIndex, token).ConfigureAwait(false);
+            var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
+
+            return map.Get<TBase>(id, typeof(T), json) as T;
+        }
+
         public T Build(DbDataReader reader, ISerializer serializer)
         {
             // TODO -- watch this, will need to validate that it's the right type first
@@ -84,6 +92,8 @@ namespace Marten.Schema.Hierarchies
             // TODO -- what if it's not the right type?
             return serializer.FromJson<T>(json);
         }
+
+
 
         public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
         {
@@ -121,5 +131,7 @@ namespace Marten.Schema.Hierarchies
             return map.GetAsync(id, (tk => loader.LoadDocumentAsync<TBase>(id, tk)), token)
                 .ContinueWith(x => x.Result as T, token);
         }
+
+
     }
 }

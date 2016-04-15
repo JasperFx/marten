@@ -1,4 +1,6 @@
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
 
@@ -14,6 +16,12 @@ namespace Marten.Linq
         public T Resolve(DbDataReader reader, IIdentityMap map)
         {
             var json = reader.GetString(0);
+            return map.Serializer.FromJson<T>(json);
+        }
+
+        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
             return map.Serializer.FromJson<T>(json);
         }
     }
