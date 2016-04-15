@@ -3,7 +3,7 @@ using System.Reflection;
 using Baseline.Reflection;
 using Marten.Util;
 
-namespace Marten.Linq.Handlers
+namespace Marten.Linq.Parsing
 {
     public class StringContains : StringComparisonParser
     {

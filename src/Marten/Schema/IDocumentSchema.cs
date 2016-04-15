@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Marten.Events;
 using Marten.Generation;
 using Marten.Linq;
-using Marten.Linq.Results;
 using Marten.Schema.Sequences;
 using Remotion.Linq;
 

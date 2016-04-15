@@ -4,7 +4,7 @@ using System.Reflection;
 using Baseline.Reflection;
 using Marten.Schema;
 
-namespace Marten.Linq.Handlers
+namespace Marten.Linq.Parsing
 {
     public abstract class MethodCallParser<T> : IMethodCallParser
     {

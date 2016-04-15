@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline.Reflection;
 
-namespace Marten.Linq.Handlers
+namespace Marten.Linq.Parsing
 {
     public class StringEndsWith : StringComparisonParser
     {

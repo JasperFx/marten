@@ -5,7 +5,7 @@ using System.Reflection;
 using Baseline;
 using Marten.Schema;
 
-namespace Marten.Linq.Handlers
+namespace Marten.Linq.Parsing
 {
     public abstract class StringComparisonParser : IMethodCallParser
     {

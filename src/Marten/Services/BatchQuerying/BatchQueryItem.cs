@@ -1,6 +1,6 @@
 using System.Data.Common;
 using System.Threading.Tasks;
-using Marten.Linq.Results;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Npgsql;
 

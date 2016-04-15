@@ -1,12 +1,9 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Data.Common;
-using Marten.Schema;
 using Marten.Services;
-using Marten.Services.BatchQuerying;
 using Npgsql;
 
-namespace Marten.Linq.Results
+namespace Marten.Linq.QueryHandlers
 {
     public interface IQueryHandler<T>
     {
@@ -22,5 +19,4 @@ namespace Marten.Linq.Results
         // Async
         //Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token);
     }
-
 }

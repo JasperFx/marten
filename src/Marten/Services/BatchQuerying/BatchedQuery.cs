@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Linq;
-using Marten.Linq.Results;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Npgsql;
 
@@ -24,7 +21,8 @@ namespace Marten.Services.BatchQuerying
         private readonly NpgsqlCommand _command = new NpgsqlCommand();
         private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
 
-        public BatchedQuery(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap, QuerySession parent, ISerializer serializer)
+        public BatchedQuery(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap,
+            QuerySession parent, ISerializer serializer)
         {
             _runner = runner;
             _schema = schema;
@@ -206,6 +204,5 @@ namespace Marten.Services.BatchQuerying
                 return 0;
             }, token);
         }
-
     }
 }

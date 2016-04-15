@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 using Baseline;
 using Marten.Schema;
 
-namespace Marten.Linq.Handlers
+namespace Marten.Linq.Parsing
 {
     public class EnumerableContains : IMethodCallParser
     {

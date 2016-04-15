@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Events;
-using Marten.Linq.Handlers;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Schema.Sequences;
 using Marten.Services;

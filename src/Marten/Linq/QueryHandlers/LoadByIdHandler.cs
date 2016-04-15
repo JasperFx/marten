@@ -6,7 +6,7 @@ using Marten.Services;
 using Marten.Util;
 using Npgsql;
 
-namespace Marten.Linq.Results
+namespace Marten.Linq.QueryHandlers
 {
     public class LoadByIdHandler<T> : IQueryHandler<T>
     {

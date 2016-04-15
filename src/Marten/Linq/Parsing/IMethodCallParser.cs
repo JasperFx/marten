@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using Marten.Schema;
 
-namespace Marten.Linq.Handlers
+namespace Marten.Linq.Parsing
 {
     // SAMPLE: IMethodCallParser
     /// <summary>

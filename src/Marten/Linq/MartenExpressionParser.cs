@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using Baseline;
-using Marten.Linq.Handlers;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 
 namespace Marten.Linq

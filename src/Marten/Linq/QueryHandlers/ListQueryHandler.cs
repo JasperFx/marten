@@ -10,7 +10,7 @@ using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 
-namespace Marten.Linq.Results
+namespace Marten.Linq.QueryHandlers
 {
     public class ListQueryHandler<T> : IQueryHandler<IList<T>>
     {
