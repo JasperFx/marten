@@ -142,5 +142,25 @@ namespace Marten.Services.BatchQuerying
         {
             return _parent.SingleOrDefault<T>(_inner.Where(filter).As<IMartenQueryable<T>>());
         }
+
+        public Task<TResult> Min<TResult>(Expression<Func<T, TResult>> expression)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TResult> Max<TResult>(Expression<Func<T, TResult>> expression)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TResult> Sum<TResult>(Expression<Func<T, TResult>> expression)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<double> Average(Expression<Func<T, object>> expression)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

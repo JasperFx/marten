@@ -5,7 +5,6 @@ using Marten.Services;
 
 namespace Marten.Linq
 {
-    [Obsolete("This is going to problem w/ the new select clause mechanisms")]
     public class ScalarSelector<TResult> : BasicSelector, ISelector<TResult>
     {
         public TResult Resolve(DbDataReader reader, IIdentityMap map)

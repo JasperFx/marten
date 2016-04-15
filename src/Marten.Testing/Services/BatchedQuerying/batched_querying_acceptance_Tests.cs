@@ -12,6 +12,33 @@ using Xunit;
 
 namespace Marten.Testing.Services.BatchedQuerying
 {
+
+
+    public class batched_querying_with_aggregate_functions : DocumentSessionFixture<NulloIdentityMap>
+    {
+        [Fact]
+        public async Task can_run_aggregate_functions()
+        {
+            theSession.Store(new IntDoc(1), new IntDoc(3), new IntDoc(5), new IntDoc(6));
+            await theSession.SaveChangesAsync();
+
+            var batch = theSession.CreateBatchQuery();
+
+            var min = batch.Query<IntDoc>().Min(x => x.Id);
+            var max = batch.Query<IntDoc>().Max(x => x.Id);
+            var sum = batch.Query<IntDoc>().Sum(x => x.Id);
+            var average = batch.Query<IntDoc>().Average(x => x.Id);
+
+            await batch.Execute();
+
+            (await min).ShouldBe(1);
+            (await max).ShouldBe(6);
+            (await sum).ShouldBe(1 + 3 + 5 + 6);
+            (await average).ShouldBe((1 + 3 + 5 + 6) / 4);
+        }
+    }
+
+
     // TODO -- I vote to move this to ST specs for perf reasons
     public class batched_querying_acceptance_Tests : DocumentSessionFixture<IdentityMap>
     {

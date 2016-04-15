@@ -5,11 +5,6 @@ using Xunit;
 
 namespace Marten.Testing
 {
-    public class IntDoc
-    {
-        public int Id { get; set; }
-    }
-
     public class persist_and_load_documents_with_int_ids_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
