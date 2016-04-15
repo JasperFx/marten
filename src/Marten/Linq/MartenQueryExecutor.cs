@@ -51,7 +51,12 @@ namespace Marten.Linq
         {
             var handler = Schema.HandlerFactory.HandlerForScalarQuery<T>(queryModel);
 
-            return Connection.Execute(handler, IdentityMap.ForQuery());
+            if (handler == null)
+            {
+                throw new NotSupportedException("Not yet supporting these results: " + queryModel.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
+            }
+
+            return Connection.Fetch(handler, IdentityMap.ForQuery());
         }
 
 
@@ -60,7 +65,12 @@ namespace Marten.Linq
             var handler = Schema.HandlerFactory.HandlerForSingleQuery<T>(queryModel, _includes.ToArray(),
                 returnDefaultWhenEmpty);
 
-            return Connection.Execute(handler, IdentityMap.ForQuery());
+            if (handler == null)
+            {
+                throw new NotSupportedException("Not yet supporting these results: " + queryModel.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
+            }
+
+            return Connection.Fetch(handler, IdentityMap.ForQuery());
         }
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
@@ -69,15 +79,16 @@ namespace Marten.Linq
 
             var handler = new ListQueryHandler<T>(Schema, queryModel, _includes.ToArray());
 
-            return Connection.Execute(handler, IdentityMap.ForQuery());
+            return Connection.Fetch(handler, IdentityMap.ForQuery());
         }
 
         Task<IList<T>> IMartenQueryExecutor.ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token)
         {
-            ISelector<T> selector;
-            var cmd = buildCommand(queryModel, out selector);
+            Schema.EnsureStorageExists(queryModel.SourceType());
 
-            return Connection.ResolveAsync(cmd, selector, IdentityMap, token);
+            var handler = new ListQueryHandler<T>(Schema, queryModel, _includes.ToArray());
+
+            return Connection.FetchAsync(handler, IdentityMap.ForQuery(), token);
         }
 
         public async Task<T> ExecuteAsync<T>(QueryModel queryModel, CancellationToken token)

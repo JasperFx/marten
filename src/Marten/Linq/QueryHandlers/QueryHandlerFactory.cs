@@ -42,7 +42,7 @@ namespace Marten.Linq.QueryHandlers
                 return new AnyQueryHandler(model, _schema).As<IQueryHandler<T>>();
             }
 
-            throw new NotSupportedException("Not yet supporting these results: " + model.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
+            return null;
         }
 
         public IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, bool returnDefaultWhenEmpty)
@@ -79,7 +79,7 @@ namespace Marten.Linq.QueryHandlers
                     "Marten does not support Last()/LastOrDefault(). Use reverse ordering and First()/FirstOrDefault() instead");
             }
 
-            throw new NotSupportedException("Not yet supporting these results: " + model.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
+            return null;
         } 
     }
 }

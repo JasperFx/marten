@@ -31,7 +31,7 @@ namespace Marten.Services
             });
         }
 
-        public static T Execute<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map)
+        public static T Fetch<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map)
         {
             var command = new NpgsqlCommand();
             handler.ConfigureCommand(command);
@@ -43,6 +43,20 @@ namespace Marten.Services
                     return handler.Handle(reader, map);
                 }
             });
+        }
+
+        public static async Task<T> FetchAsync<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, CancellationToken token)
+        {
+            var command = new NpgsqlCommand();
+            handler.ConfigureCommand(command);
+
+            return await runner.ExecuteAsync(command, async (c, tkn) =>
+            {
+                using (var reader = await command.ExecuteReaderAsync(tkn).ConfigureAwait(false))
+                {
+                    return await handler.HandleAsync(reader, map, tkn).ConfigureAwait(false);
+                }
+            }, token);
         }
 
         public static IList<T> Resolve<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map)
