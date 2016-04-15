@@ -109,7 +109,7 @@ namespace Marten.Services.BatchQuerying
 
             var query = QueryParser.GetParsedQuery(expression);
 
-            return AddItem(new AnyQueryHandler<TDoc>(query, _schema));
+            return AddItem(new AnyQueryHandler(query, _schema));
         }
 
 

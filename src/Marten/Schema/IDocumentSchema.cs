@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Marten.Events;
 using Marten.Generation;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema.Sequences;
 using Remotion.Linq;
 
@@ -61,5 +62,6 @@ namespace Marten.Schema
         DocumentQuery ToDocumentQuery(QueryModel model);
 
 
+        IQueryHandlerFactory HandlerFactory { get; }
     }
 }

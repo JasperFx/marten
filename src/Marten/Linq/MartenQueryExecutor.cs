@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Includes;
@@ -52,11 +53,11 @@ namespace Marten.Linq
 
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
-            ISelector<T> selector;
-            var cmd = ExecuteScalar(queryModel, out selector);
-            var enumerable = _runner.Resolve(cmd, selector, _identityMap);
-            return enumerable.FirstOrDefault();
+            var handler = _schema.HandlerFactory.HandlerForScalarQuery<T>(queryModel);
+            return _runner.Execute(handler, _identityMap);
         }
+
+
 
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {

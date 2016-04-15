@@ -8,7 +8,7 @@ using Remotion.Linq;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class AnyQueryHandler<T> : IQueryHandler<bool>
+    public class AnyQueryHandler : IQueryHandler<bool>
     {
         private readonly QueryModel _query;
         private readonly IDocumentSchema _schema;

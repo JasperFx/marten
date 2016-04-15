@@ -9,6 +9,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Generation;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema.Sequences;
 using Marten.Util;
 using Remotion.Linq;
@@ -39,6 +40,8 @@ namespace Marten.Schema
             Sequences = new SequenceFactory(this, _factory, options, _logger);
 
             Parser = new MartenExpressionParser(StoreOptions.Serializer(), StoreOptions);
+
+            HandlerFactory = new QueryHandlerFactory(this);
         }
 
         public MartenExpressionParser Parser { get; }
@@ -274,6 +277,8 @@ namespace Marten.Schema
 
             return docQuery;
         }
+
+        public IQueryHandlerFactory HandlerFactory { get; }
 
         private string[] primaryKeysFor(IDocumentMapping documentMapping)
         {

@@ -87,8 +87,8 @@
     <Compile Include="Linq\MartenQueryProvider.cs" />
     <Compile Include="Linq\Parsing\IsOneOf.cs" />
     <Compile Include="Linq\QueryableExtensions.cs" />
-    <Compile Include="Linq\QueryHandlerFactory.cs" />
     <Compile Include="Linq\QueryHandlers\AggregateQueryHandler.cs" />
+    <Compile Include="Linq\QueryHandlers\QueryHandlerFactory.cs" />
     <Compile Include="Linq\QueryModelExtensions.cs" />
     <Compile Include="Linq\QueryHandlers\AnyQueryHandler.cs" />
     <Compile Include="Linq\QueryHandlers\CountQueryHandler.cs" />

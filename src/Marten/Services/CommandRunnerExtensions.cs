@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Util;
 using Npgsql;
 
@@ -26,6 +27,20 @@ namespace Marten.Services
                 {
                     var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetString(0)) : null;
                     return queryPlans?[0].Plan;
+                }
+            });
+        }
+
+        public static T Execute<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map)
+        {
+            var command = new NpgsqlCommand();
+            handler.ConfigureCommand(command);
+
+            return runner.Execute(command, c =>
+            {
+                using (var reader = command.ExecuteReader())
+                {
+                    return handler.Handle(reader, map);
                 }
             });
         }

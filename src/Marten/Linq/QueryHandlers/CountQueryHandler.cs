@@ -8,7 +8,7 @@ using Remotion.Linq;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class CountQueryHandler<T> : IQueryHandler<long>
+    public class CountQueryHandler<T> : IQueryHandler<T>
     {
         private readonly QueryModel _query;
         private readonly IDocumentSchema _schema;
@@ -34,10 +34,12 @@ namespace Marten.Linq.QueryHandlers
             command.AppendQuery(sql);
         }
 
-        public long Handle(DbDataReader reader, IIdentityMap map)
+        public T Handle(DbDataReader reader, IIdentityMap map)
         {
             var hasNext = reader.Read();
-            return hasNext ? reader.GetInt64(0) : 0;
+            var value = hasNext ? reader.GetInt64(0) : 0;
+
+            return (T) Convert.ChangeType(value, typeof(T));
         }
     }
 }
