@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Includes;
@@ -48,7 +50,8 @@ namespace Marten.Linq
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
             var handler = Schema.HandlerFactory.HandlerForScalarQuery<T>(queryModel);
-            return Connection.Execute(handler, IdentityMap);
+
+            return Connection.Execute(handler, IdentityMap.ForQuery());
         }
 
 
@@ -56,52 +59,17 @@ namespace Marten.Linq
         {
             var handler = Schema.HandlerFactory.HandlerForSingleQuery<T>(queryModel, _includes.ToArray(),
                 returnDefaultWhenEmpty);
-            return Connection.Execute(handler, IdentityMap);
 
-            /*
-            var executors = new List<IScalarCommandBuilder<T>> {
-                new MaxCommandBuilder<T>(_schema.Parser, _schema),
-                new MinCommandBuilder<T>(_schema.Parser, _schema)
-            };
-            var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
-            ISelector<T> selector;
-            if (queryExecution != null)
-            {
-                var command = queryExecution.BuildCommand(queryModel, out selector);
-                var resultSet = _runner.Resolve(command, selector, _identityMap);
-                return resultSet.FirstOrDefault();
-            }
-
-            var cmd = buildCommand(queryModel, out selector);
-
-            var enumerable = _runner.Resolve(cmd, selector, _identityMap);
-
-            return GetResult(enumerable, queryModel);
-            */
-        }
-
-        private NpgsqlCommand ExecuteScalar<T>(QueryModel queryModel, out ISelector<T> selector)
-        {
-            var executors = new List<IScalarCommandBuilder<T>>
-            {
-                new AnyCommandBuilder<T>(Schema.Parser, Schema),
-                new CountCommandBuilder<T>(Schema.Parser, Schema),
-                new LongCountCommandBuilder<T>(Schema.Parser, Schema),
-                new SumCommandBuilder<T>(Schema.Parser, Schema),
-                new AverageCommandBuilder<T>(Schema.Parser, Schema)
-            };
-            var queryExecution = executors.FirstOrDefault(_ => _.Match(queryModel));
-            if (queryExecution == null) throw new NotSupportedException();
-            var cmd = queryExecution.BuildCommand(queryModel, out selector);
-            return cmd;
+            return Connection.Execute(handler, IdentityMap.ForQuery());
         }
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
         {
-            ISelector<T> selector;
-            var cmd = buildCommand(queryModel, out selector);
+            Schema.EnsureStorageExists(queryModel.SourceType());
 
-            return Connection.Resolve(cmd, selector, IdentityMap);
+            var handler = new ListQueryHandler<T>(Schema, queryModel, _includes.ToArray());
+
+            return Connection.Execute(handler, IdentityMap.ForQuery());
         }
 
         Task<IList<T>> IMartenQueryExecutor.ExecuteCollectionAsync<T>(QueryModel queryModel, CancellationToken token)

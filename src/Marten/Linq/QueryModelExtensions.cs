@@ -88,7 +88,7 @@ namespace Marten.Linq
         {
             var take = query.FindOperators<TakeResultOperator>().LastOrDefault();
 
-            return take == null ? sql : sql + " OFFSET " + take.Count + " ";
+            return take == null ? sql : sql + " LIMIT " + take.Count + " ";
         }
 
         public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, IDocumentMapping mapping, QueryModel query)
