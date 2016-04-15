@@ -49,5 +49,17 @@ namespace Marten.Linq
 
             return list;
         }
+
+        public static async Task<IList<T>> ReadAsync<T>(this ISelector<T> selector, DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            var list = new List<T>();
+
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                list.Add(await selector.ResolveAsync(reader, map, token).ConfigureAwait(false));
+            }
+
+            return list;
+        }
     }
 }

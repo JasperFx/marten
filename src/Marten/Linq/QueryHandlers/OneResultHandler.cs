@@ -1,6 +1,8 @@
 using System;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
@@ -92,6 +94,26 @@ namespace Marten.Linq.QueryHandlers
             var result = _selector.Resolve(reader, map);
 
             if (!_canBeMultiples && reader.Read())
+            {
+                throw new InvalidOperationException("Sequence has multiple elements");
+            }
+
+            return result;
+        }
+
+        public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            var hasResult = await reader.ReadAsync(token);
+            if (!hasResult)
+            {
+                if (_canBeNull) return default(T);
+
+                throw new InvalidOperationException("Sequence has no elements");
+            }
+
+            var result = await _selector.ResolveAsync(reader, map, token).ConfigureAwait(false);
+
+            if (!_canBeMultiples && await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 throw new InvalidOperationException("Sequence has multiple elements");
             }

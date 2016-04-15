@@ -1,5 +1,7 @@
 using System;
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
@@ -37,9 +39,13 @@ namespace Marten.Linq.QueryHandlers
         public T Handle(DbDataReader reader, IIdentityMap map)
         {
             var hasNext = reader.Read();
-            var value = hasNext ? reader.GetInt64(0) : 0;
+            return hasNext ? reader.GetFieldValue<T>(0) : default(T);
+        }
 
-            return (T) Convert.ChangeType(value, typeof(T));
+        public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            var hasNext = await reader.ReadAsync().ConfigureAwait(false);
+            return hasNext ? await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false) : default(T);
         }
     }
 }

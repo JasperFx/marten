@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
@@ -60,6 +62,11 @@ namespace Marten.Linq.QueryHandlers
         public IList<T> Handle(DbDataReader reader, IIdentityMap map)
         {
             return _selector.Read(reader, map);
+        }
+
+        public async Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            return await _selector.ReadAsync(reader, map, token).ConfigureAwait(false);
         }
     }
 }

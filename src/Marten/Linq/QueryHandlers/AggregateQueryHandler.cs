@@ -1,5 +1,7 @@
 using System;
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
@@ -66,6 +68,17 @@ namespace Marten.Linq.QueryHandlers
             var selector = new ScalarSelector<T>();
 
             return reader.Read() ? selector.Resolve(reader, map) : default(T);
+        }
+
+        public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            var selector = new ScalarSelector<T>();
+
+            var hasValue = await reader.ReadAsync(token).ConfigureAwait(false);
+
+            return hasValue 
+                ? await selector.ResolveAsync(reader, map, token).ConfigureAwait(false) 
+                : default(T);
         }
     }
 }

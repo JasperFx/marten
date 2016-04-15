@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
@@ -41,6 +43,18 @@ namespace Marten.Linq.QueryHandlers
             while (reader.Read())
             {
                 list.Add(_resolver.Resolve(0, reader, map));
+            }
+
+            return list;
+        }
+
+        public async Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            var list = new List<T>();
+
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                list.Add(await _resolver.ResolveAsync(0, reader, map, token).ConfigureAwait(false));
             }
 
             return list;
