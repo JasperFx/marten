@@ -1,4 +1,6 @@
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Npgsql;
 
@@ -8,8 +10,7 @@ namespace Marten.Services.BatchQuerying
     {
         void Configure(IDocumentSchema schema, NpgsqlCommand command);
 
-        // TODO -- THIS REALLY, REALLY needs to be async all the way down
-        void Read(DbDataReader reader, IIdentityMap map);
+        Task Read(DbDataReader reader, IIdentityMap map, CancellationToken token);
 
 
     }

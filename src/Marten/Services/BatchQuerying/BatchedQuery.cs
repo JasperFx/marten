@@ -173,18 +173,17 @@ namespace Marten.Services.BatchQuerying
             return AddItem(OneResultHandler<T>.SingleOrDefault(_schema, query, queryable.Includes.ToArray()));
         }
 
-        public Task Execute(CancellationToken token = default(CancellationToken))
+        public async Task Execute(CancellationToken token = default(CancellationToken))
         {
             var map = _identityMap.ForQuery();
 
-            if (!_items.Any()) return Task.CompletedTask;
+            if (!_items.Any()) return;
 
-            return _runner.ExecuteAsync(_command, async (cmd, tk) =>
+            await _runner.ExecuteAsync(_command, async (cmd, tk) =>
             {
                 using (var reader = await _command.ExecuteReaderAsync(tk).ConfigureAwait(false))
                 {
-                    // TODO -- this will be async later
-                    _items[0].Read(reader, map);
+                    await _items[0].Read(reader, map, token).ConfigureAwait(false);
 
                     var others = _items.Skip(1).ToArray();
 
@@ -198,12 +197,12 @@ namespace Marten.Services.BatchQuerying
                         }
 
                         // TODO -- needs to be purely async later
-                        item.Read(reader, map);
+                        await item.Read(reader, map, token).ConfigureAwait(false);
                     }
                 }
 
                 return 0;
-            }, token);
+            }, token).ConfigureAwait(false);
         }
 
         public Task<TResult> Min<TResult>(IQueryable<TResult> queryable)

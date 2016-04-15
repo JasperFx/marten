@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
@@ -26,11 +27,11 @@ namespace Marten.Services.BatchQuerying
             _handler.ConfigureCommand(command);
         }
 
-        public void Read(DbDataReader reader, IIdentityMap map)
+        public async Task Read(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            // TODO -- do async, all the way through
-            var result = _handler.Handle(reader, map);
+            var result = await _handler.HandleAsync(reader, map, token).ConfigureAwait(false);
             Completion.SetResult(result);
         }
+
     }
 }
