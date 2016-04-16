@@ -42,7 +42,7 @@ namespace Marten.Testing.Events
             {
                 var eventId = Guid.NewGuid();
 
-                var json = session.Events.Transforms.Transform("location", stream, new Event { Id = eventId, Body = joined });
+                var json = session.Events.Transforms.Transform("location", stream, new Event { Id = eventId, Data = joined });
                 var expectation = "{'Day':3,'Location':'Baerlon','Id':'EVENT','Quest':'STREAM'}"
                     .Replace("EVENT", eventId.ToString())
                     .Replace("STREAM", stream.ToString())
@@ -57,7 +57,7 @@ namespace Marten.Testing.Events
         {
             using (var session = theStore.OpenSession())
             {
-                var @event = new Event { Id = Guid.NewGuid(), Body = new EventA { Name = "Alex Smith" } };
+                var @event = new Event { Id = Guid.NewGuid(), Data = new EventA { Name = "Alex Smith" } };
 
                 var aggregate = session.Events.Transforms.StartSnapshot<FakeAggregate>(Guid.NewGuid(), @event);
 
@@ -76,7 +76,7 @@ namespace Marten.Testing.Events
 
             using (var session = theStore.OpenSession())
             {
-                var @event = new Event { Body = new EventA { Name = "Eric Fisher" } };
+                var @event = new Event { Data = new EventA { Name = "Eric Fisher" } };
 
                 var snapshotted = session.Events.Transforms.ApplySnapshot(aggregate.Id, aggregate, @event);
 

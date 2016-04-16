@@ -89,7 +89,7 @@ namespace Marten.Testing.Fixtures.EventStore
         {
             using (var session = _store.LightweightSession())
             {
-                return session.Events.FetchStream(_lastStream).Select(x => x.ToString()).ToArray();
+                return session.Events.FetchStream(_lastStream).Select(x => x.Data.ToString()).ToArray();
             }
         }
 
@@ -121,7 +121,7 @@ namespace Marten.Testing.Fixtures.EventStore
         {
             using (var session = _store.LightweightSession())
             {
-                return session.Events.FetchStream(_lastStream, time.ToUniversalTime()).Select(x => x.ToString()).ToArray();
+                return session.Events.FetchStream(_lastStream, time.ToUniversalTime()).Select(x => x.Data.ToString()).ToArray();
             }
         }
 
@@ -156,14 +156,9 @@ namespace Marten.Testing.Fixtures.EventStore
             using (var session = _store.LightweightSession())
             {
                 // TODO -- eliminate the aggregate type here
-                return session.Events.FetchStream(_lastStream, version).Select(x => x.ToString()).ToArray();
+                return session.Events.FetchStream(_lastStream, version).Select(x => x.Data.ToString()).ToArray();
             }
         }
-
-
-
-
-
 
         public IGrammar HasAdditionalEvents()
         {
