@@ -13,6 +13,7 @@ namespace Marten.Linq
 
     public interface IMartenQueryable
     {
+        Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token);
         Task<bool> AnyAsync(CancellationToken token);
         Task<int> CountAsync(CancellationToken token);
         Task<long> CountLongAsync(CancellationToken token);
@@ -25,15 +26,12 @@ namespace Marten.Linq
         Task<TResult> MinAsync<TResult>(CancellationToken token);
         Task<TResult> MaxAsync<TResult>(CancellationToken token);
         Task<double> AverageAsync(CancellationToken token);
+        QueryPlan Explain();
     }
 
 
     public interface IMartenQueryable<T> : IQueryable<T>, IMartenQueryable
     {
-        Task<IList<T>> ExecuteCollectionAsync(CancellationToken token);
-        Task<IEnumerable<string>> ExecuteCollectionToJsonAsync(CancellationToken token);
-        IEnumerable<string> ExecuteCollectionToJson();
-        QueryPlan Explain();
         IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, JoinType joinType = JoinType.Inner) where TInclude : class;
         IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list, JoinType joinType = JoinType.Inner) where TInclude : class;
         IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource, IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner) where TInclude : class;

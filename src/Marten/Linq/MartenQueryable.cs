@@ -34,23 +34,6 @@ namespace Marten.Linq
             return executor.ExecuteExplain<T>(model);
         }
 
-        public Task<IList<T>> ExecuteCollectionAsync(CancellationToken token)
-        {
-            var queryProvider = (IMartenQueryProvider) Provider;
-            return queryProvider.ExecuteCollectionAsync<T>(Expression, token);
-        }
-
-        public Task<IEnumerable<string>> ExecuteCollectionToJsonAsync(CancellationToken token)
-        {
-            var queryProvider = (IMartenQueryProvider) Provider;
-            return queryProvider.ExecuteJsonCollectionAsync<T>(Expression, token);
-        }
-
-        public IEnumerable<string> ExecuteCollectionToJson()
-        {
-            var queryProvider = (IMartenQueryProvider) Provider;
-            return queryProvider.ExecuteJsonCollection<T>(Expression);
-        }
 
         public IEnumerable<IIncludeJoin> Includes
         {
@@ -172,7 +155,12 @@ namespace Marten.Linq
 
             var handler = source(query);
 
-            return Executor.Connection.FetchAsync(handler, Executor.IdentityMap, token);
+            return Executor.Connection.FetchAsync(handler, Executor.IdentityMap.ForQuery(), token);
+        }
+
+        public Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token)
+        {
+            return executeAsync(q => new ListQueryHandler<TResult>(Schema, q, Includes.ToArray()), token);
         }
 
         public Task<bool> AnyAsync(CancellationToken token)

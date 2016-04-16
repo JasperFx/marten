@@ -23,9 +23,9 @@ namespace Marten.Util
         public static async Task<string> ToListJsonAsync<T>(this IQueryable<T> queryable,
             CancellationToken token = default(CancellationToken))
         {
-            var martenQueryable = CastToMartenQueryable(queryable);
-            var enumerable = await martenQueryable.ExecuteCollectionToJsonAsync(token).ConfigureAwait(false);
-            return $"[{string.Join(",", enumerable)}]";
+            var raw = await queryable.Json().ToListAsync(token);
+
+            return raw.ToJsonArray();
         }
 
         public static string ToListJson<T>(this IQueryable<T> queryable)
@@ -37,17 +37,10 @@ namespace Marten.Util
 
         #region ToList
 
-        public static async Task<List<T>> ToListAsync<T>(this IQueryable<T> queryable,
+        public static Task<IList<T>> ToListAsync<T>(this IQueryable<T> queryable,
             CancellationToken token = default(CancellationToken))
         {
-            var martenQueryable = queryable as IMartenQueryable<T>;
-            if (martenQueryable == null)
-            {
-                throw new InvalidOperationException($"{typeof (T)} is not IMartenQueryable<>");
-            }
-
-            var enumerable = await martenQueryable.ExecuteCollectionAsync(token).ConfigureAwait(false);
-            return enumerable.ToList();
+            return queryable.As<IMartenQueryable>().ToListAsync<T>(token);
         }
 
         #endregion
