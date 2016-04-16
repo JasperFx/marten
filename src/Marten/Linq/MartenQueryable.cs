@@ -229,7 +229,5 @@ namespace Marten.Linq
         {
             return executeAsync(q => AggregateQueryHandler<double>.Average(Schema, q), token);
         }
-
-
     }
 }

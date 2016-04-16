@@ -93,22 +93,21 @@ namespace Marten.Linq
 
         public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, IDocumentMapping mapping, QueryModel query)
         {
-            ISelector<T> selector = null;
-
             if (query.SelectClause.Selector.Type == query.SourceType())
             {
+                if (typeof (T) == typeof (string))
+                {
+                    return (ISelector<T>) new JsonSelector();
+                }
+
                 var resolver = schema.ResolverFor<T>();
-                selector = new WholeDocumentSelector<T>(mapping, resolver);
-            }
-            else
-            {
-                var visitor = new SelectorParser();
-                visitor.Visit(query.SelectClause.Selector);
-
-                selector = visitor.ToSelector<T>(mapping);
+                return new WholeDocumentSelector<T>(mapping, resolver);
             }
 
-            return selector;
+            var visitor = new SelectorParser();
+            visitor.Visit(query.SelectClause.Selector);
+
+            return visitor.ToSelector<T>(mapping);
         }
 
         public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, QueryModel query)

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Baseline;
 using Baseline.Reflection;
 using Marten.Schema;
 using Remotion.Linq.Parsing;
@@ -56,9 +57,25 @@ namespace Marten.Linq
 
         public ISelector<T> ToSelector<T>(IDocumentMapping mapping)
         {
+            if (_selector != null) return _selector.As<ISelector<T>>();
+
             return _target == null 
                 ? new SingleFieldSelector<T>(mapping, _currentField.Members.Reverse().ToArray()) 
                 : _target.ToSelector<T>(mapping);
+        }
+
+        private static string _methodName = nameof(JsonExtensions.Json);
+        private JsonSelector _selector;
+
+        protected override Expression VisitMethodCall(MethodCallExpression node)
+        {
+            if (node.Method.Name == _methodName && node.Method.DeclaringType.Equals(typeof (JsonExtensions)))
+            {
+                _selector = new JsonSelector();
+                return null;
+            }
+
+            return base.VisitMethodCall(node);
         }
     }
 

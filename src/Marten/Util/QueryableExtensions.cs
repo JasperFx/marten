@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -36,10 +37,7 @@ namespace Marten.Util
 
         public static string ToListJson<T>(this IQueryable<T> queryable)
         {
-            var martenQueryable = CastToMartenQueryable(queryable);
-
-            var enumerable = martenQueryable.ExecuteCollectionToJson();
-            return $"[{string.Join(",", enumerable)}]";
+            return queryable.Select(x => x.Json()).ToList().ToJsonArray();
         }
 
         #endregion
@@ -194,7 +192,7 @@ namespace Marten.Util
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 
-            return ExecuteJsonAsync(_first, source, token);
+            return source.Select(x => x.Json()).FirstAsync(token);
         }
 
         public static string FirstJson<TSource>(
@@ -202,7 +200,7 @@ namespace Marten.Util
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 
-            return ExecuteJson(_first, source);
+            return source.Select(x => x.Json()).First();
         }
 
         private static readonly MethodInfo _firstPredicate = GetMethod(nameof(Queryable.First), 1);
@@ -256,7 +254,7 @@ namespace Marten.Util
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 
-            return ExecuteJsonAsync(_firstOrDefault, source, token);
+            return source.Select(x => x.Json()).FirstOrDefaultAsync(token);
         }
 
 
@@ -265,7 +263,7 @@ namespace Marten.Util
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 
-            return ExecuteJson(_firstOrDefault, source);
+            return source.Select(x => x.Json()).FirstOrDefault();
         }
 
         private static readonly MethodInfo _firstOrDefaultPredicate = GetMethod(nameof(Queryable.FirstOrDefault), 1);
@@ -323,7 +321,7 @@ namespace Marten.Util
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 
-            return ExecuteJsonAsync(_single, source, token);
+            return source.Select(x => x.Json()).SingleAsync(token);
         }
 
         public static string SingleJson<TSource>(
@@ -331,7 +329,7 @@ namespace Marten.Util
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 
-            return ExecuteJson(_single, source);
+            return source.Select(x => x.Json()).Single();
         }
 
         private static readonly MethodInfo _singlePredicate = GetMethod(nameof(Queryable.Single), 1);
@@ -385,7 +383,7 @@ namespace Marten.Util
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 
-            return ExecuteJsonAsync(_singleOrDefault, source, token);
+            return source.Select(x => x.Json()).SingleOrDefaultAsync(token);
         }
 
         public static string SingleOrDefaultJson<TSource>(
@@ -393,7 +391,7 @@ namespace Marten.Util
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 
-            return ExecuteJson(_singleOrDefault, source);
+            return source.Select(x => x.Json()).SingleOrDefault();
         }
 
         private static readonly MethodInfo _singleOrDefaultPredicate = GetMethod(nameof(Queryable.SingleOrDefault), 1);
@@ -494,44 +492,6 @@ namespace Marten.Util
                 token);
         }
 
-        private static Task<string> ExecuteJsonAsync<TSource>(
-            MethodInfo operatorMethodInfo,
-            IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
-        {
-            var provider = source.Provider as IMartenQueryProvider;
-            if (provider == null)
-            {
-                throw new InvalidOperationException($"{source.Provider.GetType()} is not IMartenQueryProvider");
-            }
-
-            if (operatorMethodInfo.IsGenericMethod)
-            {
-                operatorMethodInfo = operatorMethodInfo.MakeGenericMethod(typeof (TSource));
-            }
-
-            return provider.ExecuteJsonAsync<TSource>(
-                Expression.Call(null, operatorMethodInfo, source.Expression),
-                token);
-        }
-
-        private static string ExecuteJson<TSource>(
-            MethodInfo operatorMethodInfo,
-            IQueryable<TSource> source)
-        {
-            var provider = source.Provider as IMartenQueryProvider;
-            if (provider == null)
-            {
-                throw new InvalidOperationException($"{source.Provider.GetType()} is not IMartenQueryProvider");
-            }
-
-            if (operatorMethodInfo.IsGenericMethod)
-            {
-                operatorMethodInfo = operatorMethodInfo.MakeGenericMethod(typeof (TSource));
-            }
-
-            return provider.ExecuteJson<TSource>(Expression.Call(null, operatorMethodInfo, source.Expression));
-        }
 
         private static Task<TResult> ExecuteAsync<TSource, TResult>(
             MethodInfo operatorMethodInfo,
@@ -542,22 +502,7 @@ namespace Marten.Util
             return ExecuteAsync<TSource, TResult>(operatorMethodInfo, source, Expression.Quote(expression), token);
         }
 
-        private static Task<string> ExecuteJsonAsync<TSource>(
-            MethodInfo operatorMethodInfo,
-            IQueryable<TSource> source,
-            LambdaExpression expression,
-            CancellationToken token = default(CancellationToken))
-        {
-            return ExecuteJsonAsync(operatorMethodInfo, source, Expression.Quote(expression), token);
-        }
 
-        private static string ExecuteJson<TSource>(
-            MethodInfo operatorMethodInfo,
-            IQueryable<TSource> source,
-            LambdaExpression expression)
-        {
-            return ExecuteJson(operatorMethodInfo, source, Expression.Quote(expression));
-        }
 
         private static Task<TResult> ExecuteAsync<TSource, TResult>(
             MethodInfo operatorMethodInfo,

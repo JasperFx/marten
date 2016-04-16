@@ -58,6 +58,7 @@
     <Compile Include="IDiagnostics.cs" />
     <Compile Include="IDocumentSessionListener.cs" />
     <Compile Include="IMartenLogger.cs" />
+    <Compile Include="JsonExtensions.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="LinqExtensions.cs" />
     <Compile Include="Linq\BadLinqExpressionException.cs" />
@@ -71,6 +72,8 @@
     <Compile Include="Linq\ExpressionExtensions.cs" />
     <Compile Include="Linq\FetchType.cs" />
     <Compile Include="Linq\FindMembers.cs" />
+    <Compile Include="Linq\JsonSelector.cs" />
+    <Compile Include="Linq\NullableScalarSelector.cs" />
     <Compile Include="Linq\Parsing\EnumerableContains.cs" />
     <Compile Include="Linq\Parsing\IMethodCallParser.cs" />
     <Compile Include="Linq\Parsing\StringComparisonParser.cs" />
