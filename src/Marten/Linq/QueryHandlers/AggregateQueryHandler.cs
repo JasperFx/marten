@@ -16,6 +16,7 @@ namespace Marten.Linq.QueryHandlers
         private readonly string _operator;
         private readonly IDocumentSchema _schema;
         private readonly QueryModel _query;
+        private ISelector<T> _selector;
 
         public static AggregateQueryHandler<T> Min(IDocumentSchema schema, QueryModel query)
         {
@@ -42,6 +43,17 @@ namespace Marten.Linq.QueryHandlers
             _operator = @operator;
             _schema = schema;
             _query = query;
+
+
+            if (typeof (T).Closes(typeof (Nullable<>)))
+            {
+                var inner = typeof (T).GetGenericArguments()[0];
+                _selector = typeof (NullableScalarSelector<>).CloseAndBuildAs<ISelector<T>>(inner);
+            }
+            else
+            {
+                _selector = new ScalarSelector<T>();
+            }
         }
 
         public Type SourceType => _query.SourceType();
@@ -65,19 +77,15 @@ namespace Marten.Linq.QueryHandlers
 
         public T Handle(DbDataReader reader, IIdentityMap map)
         {
-            var selector = new ScalarSelector<T>();
-
-            return reader.Read() ? selector.Resolve(reader, map) : default(T);
+            return reader.Read() ? _selector.Resolve(reader, map) : default(T);
         }
 
         public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            var selector = new ScalarSelector<T>();
-
             var hasValue = await reader.ReadAsync(token).ConfigureAwait(false);
 
             return hasValue 
-                ? await selector.ResolveAsync(reader, map, token).ConfigureAwait(false) 
+                ? await _selector.ResolveAsync(reader, map, token).ConfigureAwait(false) 
                 : default(T);
         }
     }

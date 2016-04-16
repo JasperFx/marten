@@ -2,9 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq.QueryHandlers;
+using Marten.Schema;
+using Marten.Services;
 using Marten.Services.Includes;
 using Npgsql;
 using Remotion.Linq;
@@ -104,15 +108,25 @@ namespace Marten.Linq
             });
         }
 
+        
+
         public DocumentQuery ToDocumentQuery()
         {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-            var schema = executor.Schema;
+            var model = ToQueryModel();
 
-            return schema.ToDocumentQuery(model);
+            return Schema.ToDocumentQuery(model);
         }
 
+        public IDocumentSchema Schema => Executor.Schema;
+
+        public MartenQueryExecutor Executor => Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+
+        public QueryModel ToQueryModel()
+        {
+            return MartenQueryParser.Flyweight.GetParsedQuery(Expression);
+        }
+
+        // TODO -- maybe move this out
         public NpgsqlCommand BuildCommand(FetchType fetchType)
         {
             // Need to do each fetch type
@@ -149,31 +163,73 @@ namespace Marten.Linq
 
             return cmd;
         }
-    }
 
-    /// <summary>
-    /// In basic terms, how is the IQueryable going to be executed?
-    /// </summary>
-    public enum FetchType
-    {
-        /// <summary>
-        /// First/FirstOrDefault/Single/SingleOrDefault
-        /// </summary>
-        FetchOne,
 
-        /// <summary>
-        /// Any execution that returns an IEnumerable (ToArray()/ToList()/etc.)
-        /// </summary>
-        FetchMany,
+        private Task<TResult> executeAsync<TResult>(Func<QueryModel, IQueryHandler<TResult>> source, CancellationToken token)
+        {
+            var query = ToQueryModel();
+            Schema.EnsureStorageExists(query.SourceType());
 
-        /// <summary>
-        /// Using IQueryable.Count()
-        /// </summary>
-        Count,
+            var handler = source(query);
 
-        /// <summary>
-        /// Using IQueryable.Any()
-        /// </summary>
-        Any
+            return Executor.Connection.FetchAsync(handler, Executor.IdentityMap, token);
+        }
+
+        public Task<bool> AnyAsync(CancellationToken token)
+        {
+            return executeAsync(q => new AnyQueryHandler(q, Schema), token);
+        }
+
+        public Task<int> CountAsync(CancellationToken token)
+        {
+            return executeAsync(q => new CountQueryHandler<int>(q, Schema), token);
+        }
+
+        public Task<long> CountLongAsync(CancellationToken token)
+        {
+            return executeAsync(q => new CountQueryHandler<long>(q, Schema), token);
+        }
+
+        public Task<TResult> FirstAsync<TResult>(CancellationToken token)
+        {
+            return executeAsync(q => OneResultHandler<TResult>.First(Schema, q, Includes.ToArray()), token);
+        }
+
+        public Task<TResult> FirstOrDefaultAsync<TResult>(CancellationToken token)
+        {
+            return executeAsync(q => OneResultHandler<TResult>.FirstOrDefault(Schema, q, Includes.ToArray()), token);
+        }
+
+        public Task<TResult> SingleAsync<TResult>(CancellationToken token)
+        {
+            return executeAsync(q => OneResultHandler<TResult>.Single(Schema, q, Includes.ToArray()), token);
+        }
+
+        public Task<TResult> SingleOrDefaultAsync<TResult>(CancellationToken token)
+        {
+            return executeAsync(q => OneResultHandler<TResult>.SingleOrDefault(Schema, q, Includes.ToArray()), token);
+        }
+
+        public Task<TResult> SumAsync<TResult>(CancellationToken token)
+        {
+            return executeAsync(q => AggregateQueryHandler<TResult>.Sum(Schema, q), token);
+        }
+
+        public Task<TResult> MinAsync<TResult>(CancellationToken token)
+        {
+            return executeAsync(q => AggregateQueryHandler<TResult>.Min(Schema, q), token);
+        }
+
+        public Task<TResult> MaxAsync<TResult>(CancellationToken token)
+        {
+            return executeAsync(q => AggregateQueryHandler<TResult>.Max(Schema, q), token);
+        }
+
+        public Task<double> AverageAsync(CancellationToken token)
+        {
+            return executeAsync(q => AggregateQueryHandler<double>.Average(Schema, q), token);
+        }
+
+
     }
 }

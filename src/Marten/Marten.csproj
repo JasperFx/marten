@@ -69,6 +69,7 @@
     <Compile Include="Linq\DbParameterSetter.cs" />
     <Compile Include="Linq\DeserializeSelector.cs" />
     <Compile Include="Linq\ExpressionExtensions.cs" />
+    <Compile Include="Linq\FetchType.cs" />
     <Compile Include="Linq\FindMembers.cs" />
     <Compile Include="Linq\Parsing\EnumerableContains.cs" />
     <Compile Include="Linq\Parsing\IMethodCallParser.cs" />

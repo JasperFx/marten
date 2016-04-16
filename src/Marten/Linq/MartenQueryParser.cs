@@ -8,6 +8,8 @@ namespace Marten.Linq
 {
     public class MartenQueryParser : IQueryParser
     {
+        public static readonly MartenQueryParser Flyweight = new MartenQueryParser();
+
         private readonly QueryParser _parser;
 
         public MartenQueryParser()

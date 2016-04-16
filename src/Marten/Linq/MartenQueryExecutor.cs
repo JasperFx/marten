@@ -93,6 +93,11 @@ namespace Marten.Linq
 
         public async Task<T> ExecuteAsync<T>(QueryModel queryModel, CancellationToken token)
         {
+
+
+            throw new NotImplementedException(queryModel.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
+
+
             var scalarExecutions = new List<IScalarCommandBuilder<T>>
             {
                 new AnyCommandBuilder<T>(Schema.Parser, Schema),
@@ -125,7 +130,6 @@ namespace Marten.Linq
             ISelector<T> selector;
             var cmd = buildCommand(queryModel, out selector);
             return await Connection.ResolveAsync(cmd, new StringSelector(), IdentityMap, token).ConfigureAwait(false);
-            //return await _runner.QueryJsonAsync(cmd, token).ConfigureAwait(false);
         }
 
         public IEnumerable<string> ExecuteCollectionToJson<T>(QueryModel queryModel)
@@ -134,7 +138,6 @@ namespace Marten.Linq
             var cmd = buildCommand(queryModel, out selector);
             var results = Connection.Resolve(cmd, new StringSelector(), IdentityMap);
             return results;
-            //return _runner.QueryJson(cmd);
         }
 
         public async Task<string> ExecuteJsonAsync<T>(QueryModel queryModel, CancellationToken token)

@@ -64,5 +64,6 @@ namespace Marten.Linq
             var queryExecutor = (IMartenQueryExecutor)Executor;
             return queryExecutor.ExecuteJson<T>(queryModel);
         }
+
     }
 }

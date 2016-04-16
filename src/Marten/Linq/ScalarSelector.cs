@@ -11,25 +11,27 @@ namespace Marten.Linq
     {
         public TResult Resolve(DbDataReader reader, IIdentityMap map)
         {
-            var type = typeof (TResult);
-            var result = default(TResult);
-            if (reader.FieldCount == 0) return result;
-
-            var value = reader.GetValue(0);
-            return convertType(reader, type, value);
+            return reader.GetFieldValue<TResult>(0);
         }
 
         public async Task<TResult> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             return await reader.GetFieldValueAsync<TResult>(0, token).ConfigureAwait(false);
         }
+    }
 
-        private static TResult convertType(DbDataReader reader, Type type, object value)
+    public class NullableScalarSelector<T> : BasicSelector, ISelector<T?> where T : struct
+    {
+        public T? Resolve(DbDataReader reader, IIdentityMap map)
         {
-            if (type.IsNullable())
-                return Convert.ChangeType(value, typeof (TResult).GetInnerTypeFromNullable()).As<TResult>();
+            return reader.IsDBNull(0) ? null : (T?)reader.GetFieldValue<T>(0);
+        }
 
-            return Convert.ChangeType(reader.GetValue(0), typeof (TResult)).As<TResult>();
+        public async Task<T?> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            return await reader.IsDBNullAsync(0, token).ConfigureAwait(false) 
+                ? null :
+                (T?)(await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false));
         }
     }
 }
