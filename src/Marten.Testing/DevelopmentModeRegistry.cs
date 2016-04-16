@@ -45,8 +45,6 @@ namespace Marten.Testing
 
             For<IQuerySession>().Use<QuerySession>().Ctor<IIdentityMap>().Is<NulloIdentityMap>();
 
-            For<IMartenQueryExecutor>().Use<MartenQueryExecutor>();
-
             For<StoreOptions>().Use(c => c.GetInstance<IDocumentStore>().Advanced.Options);
 
         }
