@@ -15,6 +15,8 @@ namespace Marten.Linq.QueryHandlers
 {
     public class OneResultHandler<T> : IQueryHandler<T>
     {
+        private const string NoElementsMessage = "Sequence contains no elements";
+        private const string MoreThanOneElementMessage = "Sequence contains more than one element";
         private readonly int _rowLimit;
         private readonly IDocumentMapping _mapping;
         private readonly IDocumentSchema _schema;
@@ -88,14 +90,14 @@ namespace Marten.Linq.QueryHandlers
             {
                 if (_canBeNull) return default(T);
 
-                throw new InvalidOperationException("Sequence has no elements");
+                throw new InvalidOperationException(NoElementsMessage);
             }
             
             var result = _selector.Resolve(reader, map);
 
             if (!_canBeMultiples && reader.Read())
             {
-                throw new InvalidOperationException("Sequence has multiple elements");
+                throw new InvalidOperationException(MoreThanOneElementMessage);
             }
 
             return result;
@@ -108,14 +110,14 @@ namespace Marten.Linq.QueryHandlers
             {
                 if (_canBeNull) return default(T);
 
-                throw new InvalidOperationException("Sequence has no elements");
+                throw new InvalidOperationException(NoElementsMessage);
             }
 
             var result = await _selector.ResolveAsync(reader, map, token).ConfigureAwait(false);
 
             if (!_canBeMultiples && await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                throw new InvalidOperationException("Sequence has multiple elements");
+                throw new InvalidOperationException(MoreThanOneElementMessage);
             }
 
             return result;

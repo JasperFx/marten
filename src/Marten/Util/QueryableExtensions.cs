@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -224,7 +225,8 @@ namespace Marten.Util
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
-            return ExecuteJsonAsync(_firstPredicate, source, predicate, token);
+            return source.Where(predicate).Select(x => x.Json()).FirstAsync(token);
+
         }
 
         public static string FirstJson<TSource>(
@@ -234,10 +236,10 @@ namespace Marten.Util
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
-            return ExecuteJson(_firstPredicate, source, predicate);
+            return source.Where(predicate).Json().First();
+
         }
 
-        private static readonly MethodInfo _firstOrDefault = GetMethod(nameof(Queryable.FirstOrDefault));
 
         public static Task<TSource> FirstOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
@@ -287,7 +289,7 @@ namespace Marten.Util
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
-            return ExecuteJsonAsync(_firstOrDefaultPredicate, source, predicate, token);
+            return source.Where(predicate).Json().FirstOrDefaultAsync(token);
         }
 
         public static string FirstOrDefaultJson<TSource>(
@@ -297,14 +299,13 @@ namespace Marten.Util
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
-            return ExecuteJson(_firstOrDefaultPredicate, source, predicate);
+            return source.Where(predicate).Json().FirstOrDefault();
         }
 
         #endregion
 
         #region Single/SingleOrDefault
 
-        private static readonly MethodInfo _single = GetMethod(nameof(Queryable.Single));
 
         public static Task<TSource> SingleAsync<TSource>(
             this IQueryable<TSource> source,
@@ -353,7 +354,7 @@ namespace Marten.Util
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
-            return ExecuteJsonAsync(_singlePredicate, source, predicate, token);
+            return source.Where(predicate).Json().SingleAsync(token);
         }
 
         public static string SingleJson<TSource>(
@@ -363,10 +364,9 @@ namespace Marten.Util
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
-            return ExecuteJson(_singlePredicate, source, predicate);
+            return source.Where(predicate).Json().Single();
         }
 
-        private static readonly MethodInfo _singleOrDefault = GetMethod(nameof(Queryable.SingleOrDefault));
 
         public static Task<TSource> SingleOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
@@ -394,8 +394,6 @@ namespace Marten.Util
             return source.Select(x => x.Json()).SingleOrDefault();
         }
 
-        private static readonly MethodInfo _singleOrDefaultPredicate = GetMethod(nameof(Queryable.SingleOrDefault), 1);
-
         public static Task<TSource> SingleOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
@@ -415,7 +413,7 @@ namespace Marten.Util
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
-            return ExecuteJsonAsync(_singleOrDefaultPredicate, source, predicate, token);
+            return source.Where(predicate).Json().SingleOrDefaultAsync(token);
         }
 
         public static string SingleOrDefaultJson<TSource>(
@@ -425,7 +423,8 @@ namespace Marten.Util
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
-            return ExecuteJson(_singleOrDefaultPredicate, source, predicate);
+
+            return source.Where(predicate).Json().SingleOrDefault();
         }
 
         #endregion
@@ -527,54 +526,6 @@ namespace Marten.Util
                     operatorMethodInfo,
                     new[] {source.Expression, expression}),
                 token);
-        }
-
-        private static Task<string> ExecuteJsonAsync<TSource>(
-            MethodInfo operatorMethodInfo,
-            IQueryable<TSource> source,
-            Expression expression,
-            CancellationToken token = default(CancellationToken))
-        {
-            var provider = source.Provider as IMartenQueryProvider;
-            if (provider == null)
-            {
-                throw new InvalidOperationException($"{source.Provider.GetType()} is not IMartenQueryProvider");
-            }
-
-            operatorMethodInfo
-                = operatorMethodInfo.GetGenericArguments().Length == 2
-                    ? operatorMethodInfo.MakeGenericMethod(typeof (TSource), typeof (string))
-                    : operatorMethodInfo.MakeGenericMethod(typeof (TSource));
-
-            return provider.ExecuteJsonAsync<TSource>(
-                Expression.Call(
-                    null,
-                    operatorMethodInfo,
-                    new[] {source.Expression, expression}),
-                token);
-        }
-
-        private static string ExecuteJson<TSource>(
-            MethodInfo operatorMethodInfo,
-            IQueryable<TSource> source,
-            Expression expression)
-        {
-            var provider = source.Provider as IMartenQueryProvider;
-            if (provider == null)
-            {
-                throw new InvalidOperationException($"{source.Provider.GetType()} is not IMartenQueryProvider");
-            }
-
-            operatorMethodInfo
-                = operatorMethodInfo.GetGenericArguments().Length == 2
-                    ? operatorMethodInfo.MakeGenericMethod(typeof (TSource), typeof (string))
-                    : operatorMethodInfo.MakeGenericMethod(typeof (TSource));
-
-            return provider.ExecuteJson<TSource>(
-                Expression.Call(
-                    null,
-                    operatorMethodInfo,
-                    new[] {source.Expression, expression}));
         }
 
         private static MethodInfo GetMethod(
