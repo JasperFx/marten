@@ -31,8 +31,10 @@ namespace Marten.Testing.Events
                 var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
-                streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(1).ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(0).Version.ShouldBe(1);
+                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(1).Version.ShouldBe(2);
             }
         }
 
@@ -54,8 +56,10 @@ namespace Marten.Testing.Events
                 var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
-                streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(1).ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(0).Version.ShouldBe(1);
+                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(1).Version.ShouldBe(2);
             }
         }
 
@@ -79,8 +83,10 @@ namespace Marten.Testing.Events
                 var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
-                streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(1).ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(0).Version.ShouldBe(1);
+                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(1).Version.ShouldBe(2);
             }
         }
 
@@ -112,9 +118,12 @@ namespace Marten.Testing.Events
                 var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(3);
-                streamEvents.ElementAt(0).ShouldBeOfType<QuestStarted>();
-                streamEvents.ElementAt(1).ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(2).ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
+                streamEvents.ElementAt(0).Version.ShouldBe(1);
+                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(1).Version.ShouldBe(2);
+                streamEvents.ElementAt(2).Data.ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(2).Version.ShouldBe(3);
             }
         }
 
@@ -135,8 +144,10 @@ namespace Marten.Testing.Events
                 var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
-                streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(1).ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(0).Version.ShouldBe(1);
+                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(1).Version.ShouldBe(2);
             }
         }
 
@@ -158,8 +169,10 @@ namespace Marten.Testing.Events
                 var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
-                streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(1).ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(0).Version.ShouldBe(1);
+                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(1).Version.ShouldBe(2);
             }
         }
 
@@ -183,8 +196,10 @@ namespace Marten.Testing.Events
                 var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(2);
-                streamEvents.ElementAt(0).ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(1).ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(0).Version.ShouldBe(1);
+                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(1).Version.ShouldBe(2);
             }
         }
 
@@ -216,10 +231,13 @@ namespace Marten.Testing.Events
                 var streamEvents = session.Events.FetchStream(id);
 
                 streamEvents.Count().ShouldBe(3);
-                streamEvents.ElementAt(0).ShouldBeOfType<QuestStarted>();
-                streamEvents.ElementAt(1).ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(2).ShouldBeOfType<MembersDeparted>();
-           }
+                streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
+                streamEvents.ElementAt(0).Version.ShouldBe(1);
+                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(1).Version.ShouldBe(2);
+                streamEvents.ElementAt(2).Data.ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(2).Version.ShouldBe(3);
+            }
         }
 
         private static  DocumentStore InitStore(string databascSchema = null)

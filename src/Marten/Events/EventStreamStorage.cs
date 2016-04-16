@@ -54,14 +54,14 @@ namespace Marten.Events
 
             stream.Events.Each(@event =>
             {
-                var mapping = _graph.EventMappingFor(@event.Body.GetType());
+                var mapping = _graph.EventMappingFor(@event.Data.GetType());
 
                 batch.Sproc(AppendEventFunction)
                     .Param("stream", stream.Id)
                     .Param("stream_type", streamTypeName)
                     .Param("event_id", @event.Id)
                     .Param("event_type", mapping.EventTypeName)
-                    .JsonEntity("body", @event.Body);
+                    .JsonEntity("body", @event.Data);
             });
         }
 
