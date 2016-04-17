@@ -35,13 +35,6 @@ namespace Marten.Linq
 
         public IIdentityMap IdentityMap { get; }
 
-        public QueryPlan ExecuteExplain<T>(QueryModel queryModel)
-        {
-            ISelector<T> selector = null;
-            var cmd = BuildCommand(queryModel, out selector);
-
-            return Connection.ExplainQuery(cmd);
-        }
 
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
@@ -80,6 +73,7 @@ namespace Marten.Linq
             return Connection.Fetch(handler, IdentityMap.ForQuery());
         }
 
+        [Obsolete]
         public NpgsqlCommand BuildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
         {
             var scalarExecutions = new List<IScalarCommandBuilder<T>>

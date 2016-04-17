@@ -26,7 +26,7 @@ namespace Marten.Linq
         Task<TResult> MinAsync<TResult>(CancellationToken token);
         Task<TResult> MaxAsync<TResult>(CancellationToken token);
         Task<double> AverageAsync(CancellationToken token);
-        QueryPlan Explain();
+        QueryPlan Explain(FetchType fetchType = FetchType.FetchMany);
     }
 
 

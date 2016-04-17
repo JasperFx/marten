@@ -26,12 +26,15 @@ namespace Marten.Linq
         {
         }
 
-        public QueryPlan Explain()
+        public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany)
         {
             var model = MartenQueryParser.Flyweight.GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+            var handler = toDiagnosticHandler(model, fetchType);
 
-            return executor.ExecuteExplain<T>(model);
+            var cmd = new NpgsqlCommand();
+            handler.ConfigureCommand(cmd);
+
+            return Executor.As<MartenQueryExecutor>().Connection.ExplainQuery(cmd);
         }
 
 
@@ -109,40 +112,34 @@ namespace Marten.Linq
             return MartenQueryParser.Flyweight.GetParsedQuery(Expression);
         }
 
-        // TODO -- maybe move this out
+        private IQueryHandler toDiagnosticHandler(QueryModel model, FetchType fetchType)
+        {
+            switch (fetchType)
+            {
+                case FetchType.Count:
+                    return new CountQueryHandler<int>(model, Schema);
+
+                case FetchType.Any:
+                    return new AnyQueryHandler(model, Schema);
+
+                case FetchType.FetchMany:
+                    return new ListQueryHandler<T>(Schema, model, Includes.ToArray());
+
+                case FetchType.FetchOne:
+                    return OneResultHandler<T>.First(Schema, model, Includes.ToArray());
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(fetchType));
+        }
+
         public NpgsqlCommand BuildCommand(FetchType fetchType)
         {
             // Need to do each fetch type
             var model = new MartenQueryParser().GetParsedQuery(Expression);
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-            var schema = executor.Schema;
 
-            var query = schema.ToDocumentQuery(model);
-
-            var parser = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-            query.Includes.AddRange(parser.Includes);
-
+            var handler = toDiagnosticHandler(model, fetchType);
             var cmd = new NpgsqlCommand();
-
-            switch (fetchType)
-            {
-                case FetchType.Count:
-                    query.ConfigureForCount(cmd);
-                    break;
-
-                case FetchType.Any:
-                    query.ConfigureForAny(cmd);
-                    break;
-
-                case FetchType.FetchMany:
-                    query.ConfigureCommand<T>(schema, cmd);
-                    break;
-
-                case FetchType.FetchOne:
-                    model.ResultOperators.Add(new TakeResultOperator(Expression.Constant(1)));
-                    query.ConfigureCommand<T>(schema, cmd, 1);
-                    break;
-            }
+            handler.ConfigureCommand(cmd);
 
             return cmd;
         }

@@ -6,7 +6,7 @@ namespace Marten.Linq
 {
     public static class QueryableExtensions
     {
-        public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType)
+        public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType = FetchType.FetchMany)
         {
             var q = queryable as MartenQueryable<T>;
 

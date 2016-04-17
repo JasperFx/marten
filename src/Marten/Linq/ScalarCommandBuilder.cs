@@ -35,7 +35,8 @@ namespace Marten.Linq
         }
         public abstract NpgsqlCommand BuildCommand(QueryModel queryModel, out ISelector<TResult> selector);
     }
-
+    
+    [Obsolete]
     abstract class AggregateCommandBuilder<TResultOperator, TResult> : ScalarCommandBuilder<TResultOperator, TResult> where TResultOperator : ResultOperatorBase
     {
         protected AggregateCommandBuilder(MartenExpressionParser expressionParser, IDocumentSchema schema)

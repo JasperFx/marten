@@ -7,13 +7,14 @@ using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public interface IQueryHandler<T>
+    public interface IQueryHandler
+    {
+        void ConfigureCommand(NpgsqlCommand command);
+    }
+
+    public interface IQueryHandler<T> : IQueryHandler
     {
         Type SourceType { get; }
-
-        // It's done this way so that the same query handler can swing back
-        // and forth between batched queries and standalone queries
-        void ConfigureCommand(NpgsqlCommand command);
 
         T Handle(DbDataReader reader, IIdentityMap map);
 

@@ -7,8 +7,6 @@ using Marten.Services.Includes;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
-using Remotion.Linq.Clauses;
-using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
@@ -28,7 +26,6 @@ namespace Marten.Linq
             _schema = schema;
             _query = query;
         }
-
 
 
         public Type SourceDocumentType => _query.SourceType();
@@ -55,7 +52,6 @@ namespace Marten.Linq
             if (@where != null) sql += " where " + @where.ToSql(command);
 
             command.AppendQuery(sql);
-
         }
 
         private void ConfigureAggregateCommand(NpgsqlCommand command, string selectFormat)
@@ -91,13 +87,13 @@ namespace Marten.Linq
         }
 
 
-
         [Obsolete("Will be replaced by ListQueryHandler<T>")]
         public ISelector<T> ConfigureCommand<T>(IDocumentSchema schema, NpgsqlCommand command, int rowLimit = 0)
         {
             if (_query.HasOperator<LastResultOperator>())
             {
-                throw new InvalidOperationException("Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
+                throw new InvalidOperationException(
+                    "Marten does not support the Last() or LastOrDefault() operations. Use a combination of ordering and First/FirstOrDefault() instead");
             }
 
             var selector = schema.BuildSelector<T>(_mapping, _query);
@@ -131,7 +127,7 @@ namespace Marten.Linq
             return selector;
         }
 
-        public IList<IIncludeJoin> Includes { get; } = new List<IIncludeJoin>(); 
+        public IList<IIncludeJoin> Includes { get; } = new List<IIncludeJoin>();
 
         private string appendLimit(string sql)
         {
@@ -161,6 +157,4 @@ namespace Marten.Linq
             return _schema.BuildWhereFragment(_mapping, _query);
         }
     }
-
-    
 }
