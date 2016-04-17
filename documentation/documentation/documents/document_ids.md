@@ -9,7 +9,7 @@ Besides being serializable, Marten's only other requirement for a .Net type to b
    _And for the record, it's pronounced "gwid"_.
 1. `CombGuid` is a [sequential Guid algorithm](https://en.wikipedia.org/wiki/Globally_unique_identifier#Sequential_algorithms). It can improve performance over the default Guid as it reduces fragmentation of the PK index. (More info soon)
 1. `Int` or `Long`. As of right now, Marten uses a [HiLo generator](http://stackoverflow.com/questions/282099/whats-the-hi-lo-algorithm) approach to assigning numeric identifiers by document type. 
-   Marten may support Postgresql sequences or star-based algorithms as later alternatives.   
+1. A `Custom` ID generator strategy is used to implement the ID generation strategy yourself.
 
 You can see some example id usages below:
 
@@ -41,6 +41,24 @@ To use _CombGuid_ generation you should enabled it when configuring the document
 It is also possible use the SequentialGuid id generation algorithm for a specific document type.
 
 <[sample:configuring-mapping-specific-sequentialguid]>
+
+## Custom
+
+A custom ID generator strategy should implement [IIdGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/IIdGeneration.cs).
+
+<[sample:custom-id-generation]>
+
+The AssignmentBodyCode method should return the C# code that assigns the value of the Id member.
+
+For more advances examples you can have a look at existing ID generator: [HiloIdGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Sequences/HiloIdGeneration.cs), [CombGuidGenerator](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/CombGuidIdGeneration.cs) and the [IdentityKeyGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Sequences/IdentityKeyGeneration.cs), 
+
+To use custom id generation you should enabled it when configuring the document store. This defines that the strategy will be used for all the documents types.
+
+<[sample:configuring-global-custom]>
+
+It is also possible define a custom id generation algorithm for a specific document type.
+
+<[sample:configuring-mapping-specific-custom]>
 
 
 

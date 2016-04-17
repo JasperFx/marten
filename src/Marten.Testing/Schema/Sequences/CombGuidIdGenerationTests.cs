@@ -52,7 +52,7 @@ namespace Marten.Testing.Schema.Sequences
         {
             using (var container = ContainerFactory.Configure(
 				// SAMPLE: configuring-mapping-specific-sequentialguid
-				options => options.MappingFor<UserWithGuid>().IdStrategy = new CombGuidIdGeneration()
+				options => options.Schema.For<UserWithGuid>().IdStrategy(new CombGuidIdGeneration())
 				// ENDSAMPLE 
                         ))
             {
@@ -61,6 +61,7 @@ namespace Marten.Testing.Schema.Sequences
                 store.Schema.MappingFor(typeof (UserWithGuid2)).IdStrategy.ShouldBeOfType<GuidIdGeneration>();
             }
         }
+
         private static string FormatIdAsByteArrayString(UserWithGuid[] users, string user1)
         {
             var id = users.Single(user => user.LastName == user1).Id;
