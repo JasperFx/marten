@@ -187,6 +187,7 @@
     <Compile Include="Schema\Hierarchies\HierarchyArgumentTests.cs" />
     <Compile Include="Schema\IndexDefinitionTests.cs" />
     <Compile Include="Schema\Sequences\Bug_255_Hilo_table_being_erroneously_recreated.cs" />
+    <Compile Include="Schema\Sequences\CustomKeyGenerationTests.cs" />
     <Compile Include="Schema\Sequences\Users.cs" />
     <Compile Include="Schema\Sequences\DocumentIdStrategyTests.cs" />
     <Compile Include="Schema\Sequences\CombGuidIdGenerationTests.cs" />

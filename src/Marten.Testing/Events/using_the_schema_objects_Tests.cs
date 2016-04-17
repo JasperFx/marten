@@ -54,7 +54,11 @@ namespace Marten.Testing.Events
         [Fact]
         public void can_build_the_event_schema_objects_in_a_separted_schema()
         {
-            var container = ContainerFactory.Configure(options => options.Events.DatabaseSchemaName = "event_store");
+            var container = ContainerFactory.Configure(_ =>
+                // SAMPLE: override_schema_name_event_store
+                _.Events.DatabaseSchemaName = "event_store"
+                // ENDSAMPLE
+            );
             container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
             var schema = container.GetInstance<IDocumentSchema>();

@@ -23,15 +23,25 @@ Our thought is that in development you probably run in the "All" mode, but in pr
 
 ## Overriding Schema Name
 
-By default marten will create a schema named `public`. You may, however, choose to set a different schema name, like so:
+### Document Database
+By default marten will use the default `public` database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:
 
 <[sample:override_schema_name]>
+
+The `Hilo` sequence table is always created in this document store database schema.
 
 If you wish to assign certain document tables to different (new or existing) schemas, you can do so like that:
 
 <[sample:override_schema_per_table]>
 
-This will create the following tables in your database: `other.mt_doc_user`, `overriden.mt_doc_issue` and `public.mt_doc_company`.
+This will create the following tables in your database: `other.mt_doc_user`, `overriden.mt_doc_issue` and `public.mt_doc_company`. When a schema doesn't exist it will be generated in the database.
+
+### Event Store
+The EventStore database object are by default created in the document store DatabaseSchemaName. This can be overridden by setting the DatabaseSchemaName property of the event store options.
+
+<[sample:override_schema_name_event_store]>
+
+This will ensure that all EventStore tables (mt_stream, mt_events, ...) and functions (mt_apply_transform, mt_apply_aggregation, ...) are created in the `event_store` schema.
 
 ## Exporting DDL
 
