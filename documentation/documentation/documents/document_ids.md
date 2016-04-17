@@ -9,6 +9,8 @@ Besides being serializable, Marten's only other requirement for a .Net type to b
    _And for the record, it's pronounced "gwid"_.
 1. `CombGuid` is a [sequential Guid algorithm](https://en.wikipedia.org/wiki/Globally_unique_identifier#Sequential_algorithms). It can improve performance over the default Guid as it reduces fragmentation of the PK index. (More info soon)
 1. `Int` or `Long`. As of right now, Marten uses a [HiLo generator](http://stackoverflow.com/questions/282099/whats-the-hi-lo-algorithm) approach to assigning numeric identifiers by document type. 
+   Marten may support Postgresql sequences or star-based algorithms as later alternatives.
+1. When the ID member of a document is not settable or not-public a `NoOpIdGeneration` strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.
 1. A `Custom` ID generator strategy is used to implement the ID generation strategy yourself.
 
 You can see some example id usages below:
