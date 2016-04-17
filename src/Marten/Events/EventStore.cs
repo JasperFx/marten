@@ -24,7 +24,7 @@ namespace Marten.Events
         private FunctionName ApplyTransformFunction => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_apply_transform");
         private FunctionName ApplyAggregationFunction => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_apply_aggregation");
         private FunctionName StartAggregationFunction => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_start_aggregation");
-        
+
         public EventStore(IDocumentSession session, IIdentityMap identityMap, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection)
         {
             _session = session;
@@ -43,11 +43,11 @@ namespace Marten.Events
         {
             if (_identityMap.Has<EventStream>(stream))
             {
-                _identityMap.Retrieve<EventStream>(stream).AddEvents(events.Select(x => new Event { Body = x }));
+                _identityMap.Retrieve<EventStream>(stream).AddEvents(events.Select(x => new Event { Data = x }));
             }
             else
             {
-                var eventStream = new EventStream(stream, events.Select(x => new Event { Body = x }).ToArray());
+                var eventStream = new EventStream(stream, events.Select(x => new Event { Data = x }).ToArray());
 
                 _session.Store(eventStream);
             }
@@ -55,7 +55,7 @@ namespace Marten.Events
 
         public Guid StartStream<T>(Guid id, params object[] events) where T : class, new()
         {
-            var stream = new EventStream(id, events.Select(x => new Event { Body = x }).ToArray())
+            var stream = new EventStream(id, events.Select(x => new Event { Data = x }).ToArray())
             {
                 AggregateType = typeof(T)
             };
@@ -75,32 +75,32 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
-        public IEnumerable<object> FetchStream(Guid streamId)
+        public IEnumerable<Event> FetchStream(Guid streamId)
         {
             return _connection.Execute(cmd =>
             {
                 using (var reader = cmd
-                    .WithText($"select type, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :id order by version")
-                    .With("id", streamId).ExecuteReader())
+                    .WithText($"select id, type, version, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :stream_id order by version")
+                    .With("stream_id", streamId).ExecuteReader())
                 {
                     return fetchStream(reader).ToArray();
                 }
             });
         }
 
-        public IEnumerable<object> FetchStream(Guid streamId, int version)
+        public IEnumerable<Event> FetchStream(Guid streamId, int version)
         {
             return _connection.Execute(cmd =>
             {
                 using (var reader = cmd
-                    .WithText($"select type, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :id and version <= :version order by version")
-                    .With("id", streamId).With("version", version).ExecuteReader())
+                    .WithText($"select id, type, version, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :stream_id and version <= :version order by version")
+                    .With("stream_id", streamId).With("version", version).ExecuteReader())
                 {
                     return fetchStream(reader).ToArray();
                 }
             });
         }
-        public IEnumerable<object> FetchStream(Guid streamId, DateTime timestamp)
+        public IEnumerable<Event> FetchStream(Guid streamId, DateTime timestamp)
         {
             if (timestamp.Kind != DateTimeKind.Utc)
             {
@@ -110,23 +110,27 @@ namespace Marten.Events
             return _connection.Execute(cmd =>
             {
                 using (var reader = cmd
-                    .WithText($"select type, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :id and timestamp <= :timestamp order by version")
-                    .With("id", streamId).With("timestamp", timestamp).ExecuteReader())
+                    .WithText($"select id, type, version, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :stream_id and timestamp <= :timestamp order by version")
+                    .With("stream_id", streamId).With("timestamp", timestamp).ExecuteReader())
                 {
                     return fetchStream(reader).ToArray();
                 }
             });
         }
-        private IEnumerable<object> fetchStream(IDataReader reader)
+        private IEnumerable<Event> fetchStream(IDataReader reader)
         {
             while (reader.Read())
             {
-                var eventTypeName = reader.GetString(0);
-                var json = reader.GetString(1);
+                var id = reader.GetGuid(0);
+                var eventTypeName = reader.GetString(1);
+                var version = reader.GetInt32(2);
+                var dataJson = reader.GetString(3);
 
                 var mapping = _schema.Events.EventMappingFor(eventTypeName);
 
-                yield return _serializer.FromJson(mapping.DocumentType, json).As<object>();
+                var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
+
+                yield return new Event { Id = id, Version = version, Data = data };
             }
         }
 
@@ -163,7 +167,7 @@ namespace Marten.Events
 
         public IMartenQueryable<T> Query<T>()
         {
-            _schema.Events.AddEventType(typeof (T));
+            _schema.Events.AddEventType(typeof(T));
 
             return _session.Query<T>();
         }
@@ -187,10 +191,10 @@ namespace Marten.Events
 
         public string Transform(string projectionName, Guid streamId, Event @event)
         {
-            var mapping = _schema.Events.EventMappingFor(@event.Body.GetType());
+            var mapping = _schema.Events.EventMappingFor(@event.Data.GetType());
             var eventType = mapping.EventTypeName;
 
-            var eventJson = _serializer.ToJson(@event.Body);
+            var eventJson = _serializer.ToJson(@event.Data);
 
             var json = _connection.Execute(cmd =>
             {
@@ -210,7 +214,7 @@ namespace Marten.Events
             var aggregateJson = _serializer.ToJson(aggregate);
             var projectionName = _schema.Events.AggregateFor<TAggregate>().Alias;
 
-            var eventType = _schema.Events.EventMappingFor(@event.Body.GetType()).EventTypeName;
+            var eventType = _schema.Events.EventMappingFor(@event.Data.GetType()).EventTypeName;
 
             string json = _connection.Execute(cmd =>
             {
@@ -219,7 +223,7 @@ namespace Marten.Events
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)
                     .With("event_type", eventType)
-                    .With("event", _serializer.ToJson(@event.Body), NpgsqlDbType.Json)
+                    .With("event", _serializer.ToJson(@event.Data), NpgsqlDbType.Json)
                     .With("aggregate", aggregateJson, NpgsqlDbType.Json).ExecuteScalar().As<string>();
             });
 
@@ -235,7 +239,7 @@ namespace Marten.Events
         {
             var projectionName = _schema.Events.AggregateFor<TAggregate>().Alias;
 
-            var eventType = _schema.Events.EventMappingFor(@event.Body.GetType()).EventTypeName;
+            var eventType = _schema.Events.EventMappingFor(@event.Data.GetType()).EventTypeName;
 
             var json = _connection.Execute(cmd =>
             {
@@ -244,7 +248,7 @@ namespace Marten.Events
                     .With("event_id", @event.Id)
                     .With("projection", projectionName)
                     .With("event_type", eventType)
-                    .With("event", _serializer.ToJson(@event.Body), NpgsqlDbType.Json)
+                    .With("event", _serializer.ToJson(@event.Data), NpgsqlDbType.Json)
                     .ExecuteScalar().As<string>();
             });
 
