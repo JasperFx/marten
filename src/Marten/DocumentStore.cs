@@ -83,7 +83,7 @@ namespace Marten
 
             EventStore = new EventStoreAdmin(_connectionFactory, _options, _serializer);
 
-            CompiledQueryExecutor = new CompiledQueryExecutor(_parser);
+            CompiledQueryExecutor = new CompiledQueryExecutor(_parser, Schema);
 
             if (Schema.Events.IsActive && options.AutoCreateSchemaObjects != AutoCreate.None)
             {

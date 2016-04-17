@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
@@ -11,7 +8,6 @@ using Marten.Services;
 using Marten.Services.Includes;
 using Npgsql;
 using Remotion.Linq;
-using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
 {
@@ -53,7 +49,8 @@ namespace Marten.Linq
 
             if (handler == null)
             {
-                throw new NotSupportedException("Not yet supporting these results: " + queryModel.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
+                throw new NotSupportedException("Not yet supporting these results: " +
+                                                queryModel.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
             }
 
             return Connection.Fetch(handler, IdentityMap.ForQuery());
@@ -67,7 +64,8 @@ namespace Marten.Linq
 
             if (handler == null)
             {
-                throw new NotSupportedException("Not yet supporting these results: " + queryModel.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
+                throw new NotSupportedException("Not yet supporting these results: " +
+                                                queryModel.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
             }
 
             return Connection.Fetch(handler, IdentityMap.ForQuery());
@@ -116,6 +114,5 @@ namespace Marten.Linq
 
             return command;
         }
-
     }
 }

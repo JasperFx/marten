@@ -63,7 +63,6 @@
     <Compile Include="LinqExtensions.cs" />
     <Compile Include="Linq\BadLinqExpressionException.cs" />
     <Compile Include="Linq\CollectionAnyContainmentWhereFragment.cs" />
-    <Compile Include="Linq\CompiledQueryExtensions.cs" />
     <Compile Include="Linq\CompiledQueryExecutor.cs" />
     <Compile Include="Linq\CompiledQueryMemberExpressionVisitor.cs" />
     <Compile Include="Linq\ContainmentWhereFragment.cs" />

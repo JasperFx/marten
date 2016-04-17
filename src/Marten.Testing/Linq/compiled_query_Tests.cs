@@ -162,7 +162,7 @@ namespace Marten.Testing.Linq
         }
     }
 
-    public class UsersByFirstName : IEnumerableCompiledQuery<User>
+    public class UsersByFirstName : IListCompiledQuery<User>
     {
         public static int Count;
         public string FirstName { get; set; }

@@ -28,7 +28,7 @@ namespace Marten.Linq
 
         public QueryPlan Explain()
         {
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
+            var model = MartenQueryParser.Flyweight.GetParsedQuery(Expression);
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
 
             return executor.ExecuteExplain<T>(model);

@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -30,7 +28,8 @@ namespace Marten
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
 
-        public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
+        public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer,
+            IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
         {
             DocumentStore = store;
             _schema = schema;
@@ -38,7 +37,6 @@ namespace Marten
             _connection = connection;
             _parser = parser;
             _identityMap = identityMap;
-
         }
 
         public IDocumentStore DocumentStore { get; }
@@ -47,7 +45,7 @@ namespace Marten
         {
             var executor = new MartenQueryExecutor(_connection, _schema, _identityMap);
 
-            var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, executor);
+            var queryProvider = new MartenQueryProvider(typeof (MartenQueryable<>), _parser, executor);
             return new MartenQueryable<T>(queryProvider);
         }
 
@@ -65,7 +63,8 @@ namespace Marten
         {
             using (var cmd = BuildCommand<T>(sql, parameters))
             {
-                var result = await _connection.ResolveAsync(cmd, new StringSelector(), _identityMap, token).ConfigureAwait(false);
+                var result =
+                    await _connection.ResolveAsync(cmd, new StringSelector(), _identityMap, token).ConfigureAwait(false);
                 return result
                     .Select(json => _serializer.FromJson<T>(json))
                     .ToArray();
@@ -91,7 +90,7 @@ namespace Marten
         {
             if (!sql.Contains("select", StringComparison.OrdinalIgnoreCase))
             {
-                var mapping = _schema.MappingFor(typeof(T));
+                var mapping = _schema.MappingFor(typeof (T));
                 var tableName = mapping.Table.QualifiedName;
                 sql = "select data from {0} {1}".ToFormat(tableName, sql);
             }
@@ -140,10 +139,9 @@ namespace Marten
                     var found = await reader.ReadAsync(tkn).ConfigureAwait(false);
                     return found ? new FetchResult<T>(resolver.Build(reader, _serializer), reader.GetString(0)) : null;
                 }
-
             }, token);
         }
-        
+
         public T Load<T>(string id) where T : class
         {
             return load<T>(id);
@@ -201,7 +199,7 @@ namespace Marten
 
         private string findJsonById<T>(object id)
         {
-            var storage = _schema.StorageFor(typeof(T));
+            var storage = _schema.StorageFor(typeof (T));
 
             var loader = storage.LoaderCommand(id);
             return _connection.Execute(loader, c => loader.ExecuteScalar() as string);
@@ -209,7 +207,7 @@ namespace Marten
 
         private Task<string> findJsonByIdAsync<T>(object id, CancellationToken token)
         {
-            var storage = _schema.StorageFor(typeof(T));
+            var storage = _schema.StorageFor(typeof (T));
 
             var loader = storage.LoaderCommand(id);
             return _connection.ExecuteAsync(loader, async (conn, executeAsyncToken) =>
@@ -248,7 +246,8 @@ namespace Marten
                 return ById(keys.ToArray());
             }
 
-            public async Task<IList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys, CancellationToken token = default(CancellationToken))
+            public async Task<IList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys,
+                CancellationToken token = default(CancellationToken))
             {
                 var hitsAndMisses = GetHitsAndMisses(keys.ToArray());
                 var hits = hitsAndMisses.Item1;
@@ -275,7 +274,7 @@ namespace Marten
 
             private IEnumerable<TDoc> fetchDocuments<TKey>(TKey[] keys)
             {
-                var storage = _parent._schema.StorageFor(typeof(TDoc));
+                var storage = _parent._schema.StorageFor(typeof (TDoc));
                 var resolver = storage.As<IResolver<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
@@ -298,7 +297,7 @@ namespace Marten
 
             private async Task<IEnumerable<TDoc>> fetchDocumentsAsync<TKey>(TKey[] keys, CancellationToken token)
             {
-                var storage = _parent._schema.StorageFor(typeof(TDoc));
+                var storage = _parent._schema.StorageFor(typeof (TDoc));
                 var resolver = storage.As<IResolver<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
@@ -318,7 +317,19 @@ namespace Marten
 
                 return list;
             }
+        }
 
+        public TOut Query<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
+        {
+            var handler = DocumentStore.CompiledQueryExecutor.HandlerFor(query);
+            return _connection.Fetch(handler, _identityMap.ForQuery());
+        }
+
+        public Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
+            CancellationToken token = new CancellationToken())
+        {
+            var handler = DocumentStore.CompiledQueryExecutor.HandlerFor(query);
+            return _connection.FetchAsync(handler, _identityMap.ForQuery(), token);
         }
 
         public NpgsqlConnection Connection => _connection.Connection;

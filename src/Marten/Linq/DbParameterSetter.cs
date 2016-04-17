@@ -1,4 +1,5 @@
 ﻿using System;
+using Marten.Util;
 using Npgsql;
 
 namespace Marten.Linq
@@ -6,6 +7,7 @@ namespace Marten.Linq
     internal interface IDbParameterSetter
     {
         void SetParameter(object query, NpgsqlParameter parameter);
+        NpgsqlParameter AddParameter(object query, NpgsqlCommand command);
     }
 
     internal class DbParameterSetter<TObject, TProperty> : IDbParameterSetter
@@ -21,6 +23,14 @@ namespace Marten.Linq
         {
             var newValue = _getter((TObject) query);
             parameter.Value = newValue;
+        }
+
+        public NpgsqlParameter AddParameter(object query, NpgsqlCommand command)
+        {
+            var newValue = _getter((TObject)query);
+            var param = command.AddParameter(newValue);
+
+            return param;
         }
     }
 }

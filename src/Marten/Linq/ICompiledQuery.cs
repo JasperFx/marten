@@ -20,7 +20,7 @@ namespace Marten.Linq
     /// Once the concept of a result transformer is introduced we can remove the need for this extra interface
     /// </summary>
     /// <typeparam name="TDoc">The document</typeparam>
-    public interface IEnumerableCompiledQuery<TDoc> : IEnumerableCompiledQuery<TDoc, TDoc>
+    public interface IListCompiledQuery<TDoc> : IListCompiledQuery<TDoc, TDoc>
     {
     }
 
@@ -29,7 +29,7 @@ namespace Marten.Linq
     /// </summary>
     /// <typeparam name="TDoc">The document</typeparam>
     /// <typeparam name="TOut">The output type</typeparam>
-    public interface IEnumerableCompiledQuery<TDoc, TOut> : ICompiledQuery<TDoc, IEnumerable<TOut>>
+    public interface IListCompiledQuery<TDoc, TOut> : ICompiledQuery<TDoc, IEnumerable<TOut>>
     {
     }
 

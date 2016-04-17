@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Npgsql;
@@ -146,6 +147,26 @@ namespace Marten
         /// The document store that created this session
         /// </summary>
         IDocumentStore DocumentStore { get; }
+
+
+        /// <summary>
+        /// A query that is compiled so a copy of the DbCommand can be used directly in subsequent requests.
+        /// </summary>
+        /// <typeparam name="TDoc">The document</typeparam>
+        /// <typeparam name="TOut">The output</typeparam>
+        /// <param name="query">The instance of a compiled query</param>
+        /// <returns>A single item query result</returns>
+        TOut Query<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query);
+
+        /// <summary>
+        /// An async query that is compiled so a copy of the DbCommand can be used directly in subsequent requests.
+        /// </summary>
+        /// <typeparam name="TDoc">The document</typeparam>
+        /// <typeparam name="TOut">The output</typeparam>
+        /// <param name="query">The instance of a compiled query</param>
+        /// <param name="token">A cancellation token</param>
+        /// <returns>A task for a single item query result</returns>
+        Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default(CancellationToken));
     }
 
     /// <summary>
