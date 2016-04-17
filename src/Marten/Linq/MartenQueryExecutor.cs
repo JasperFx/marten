@@ -73,40 +73,5 @@ namespace Marten.Linq
             return Connection.Fetch(handler, IdentityMap.ForQuery());
         }
 
-        [Obsolete]
-        public NpgsqlCommand BuildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
-        {
-            var scalarExecutions = new List<IScalarCommandBuilder<T>>
-            {
-                new AnyCommandBuilder<T>(Schema.Parser, Schema),
-                new CountCommandBuilder<T>(Schema.Parser, Schema),
-                new LongCountCommandBuilder<T>(Schema.Parser, Schema),
-                new SumCommandBuilder<T>(Schema.Parser, Schema),
-                new AverageCommandBuilder<T>(Schema.Parser, Schema),
-                new MaxCommandBuilder<T>(Schema.Parser, Schema),
-                new MinCommandBuilder<T>(Schema.Parser, Schema)
-            };
-
-            NpgsqlCommand cmd;
-            var queryExecution = scalarExecutions.FirstOrDefault(x => x.Match(queryModel));
-            if (queryExecution != null)
-            {
-                cmd = queryExecution.BuildCommand(queryModel, out selector);
-                return cmd;
-            }
-            cmd = buildCommand(queryModel, out selector);
-            return cmd;
-        }
-
-        private NpgsqlCommand buildCommand<T>(QueryModel queryModel, out ISelector<T> selector)
-        {
-            var query = Schema.ToDocumentQuery(queryModel);
-            query.Includes.AddRange(Includes);
-
-            var command = new NpgsqlCommand();
-            selector = query.ConfigureCommand<T>(Schema, command);
-
-            return command;
-        }
     }
 }

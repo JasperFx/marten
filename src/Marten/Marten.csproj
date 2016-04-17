@@ -100,7 +100,6 @@
     <Compile Include="Linq\QueryHandlers\LoadByIdHandler.cs" />
     <Compile Include="Linq\QueryHandlers\OneResultHandler.cs" />
     <Compile Include="Linq\QueryHandlers\UserSuppliedQueryHandler.cs" />
-    <Compile Include="Linq\ScalarCommandBuilder.cs" />
     <Compile Include="Linq\ScalarSelector.cs" />
     <Compile Include="Linq\QueryPlan.cs" />
     <Compile Include="Linq\SelectorParser.cs" />
@@ -176,7 +175,6 @@
     <Compile Include="Services\IIdentityMap.cs" />
     <Compile Include="Services\JsonNetSerializer.cs" />
     <Compile Include="Linq\CompoundWhereFragment.cs" />
-    <Compile Include="Linq\DocumentQuery.cs" />
     <Compile Include="Linq\IWhereFragment.cs" />
     <Compile Include="Linq\MartenQueryable.cs" />
     <Compile Include="Linq\MartenQueryParser.cs" />

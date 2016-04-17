@@ -94,15 +94,6 @@ namespace Marten.Linq
             });
         }
 
-        
-
-        public DocumentQuery ToDocumentQuery()
-        {
-            var model = ToQueryModel();
-
-            return Schema.ToDocumentQuery(model);
-        }
-
         public IDocumentSchema Schema => Executor.Schema;
 
         public MartenQueryExecutor Executor => Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();

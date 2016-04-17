@@ -270,14 +270,6 @@ namespace Marten.Schema
             return SchemaTables().Contains(table);
         }
 
-        public DocumentQuery ToDocumentQuery(QueryModel model)
-        {
-            var docQuery = new DocumentQuery(this, model);
-            EnsureStorageExists(docQuery.SourceDocumentType);
-
-            return docQuery;
-        }
-
         public IQueryHandlerFactory HandlerFactory { get; }
 
         private string[] primaryKeysFor(IDocumentMapping documentMapping)

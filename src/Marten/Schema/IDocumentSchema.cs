@@ -58,9 +58,6 @@ namespace Marten.Schema
 
         bool TableExists(TableName table);
 
-        [Obsolete("Going to be superseeded by the one below")]
-        DocumentQuery ToDocumentQuery(QueryModel model);
-
 
         IQueryHandlerFactory HandlerFactory { get; }
     }
