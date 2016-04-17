@@ -50,7 +50,7 @@ namespace Marten.Services.BatchQuerying
 
 
         /// <summary>
-        /// Query for documents of type "T" by Linq expression
+        /// Where for documents of type "T" by Linq expression
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>

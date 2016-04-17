@@ -19,32 +19,30 @@ namespace Marten.Services
             Document = document;
         }
 
-        public Delete(Type documentType, DocumentQuery query)
+        public Delete(Type documentType, IWhereFragment @where)
         {
             DocumentType = documentType;
-            Query = query;
+            Where = @where;
         }
 
-        [Obsolete("Try to use QueryModel here instead")]
-        public DocumentQuery Query { get; set; }
+        public IWhereFragment Where { get; set; }
 
         public void Configure(MartenExpressionParser parser, IDocumentStorage storage, IDocumentMapping mapping, UpdateBatch batch)
         {
-            if (Query == null)
+            if (Where == null)
             {
                 batch.Delete(mapping.Table, Id, storage.IdType);
             }
             else
             {
-                var where = Query.BuildWhereClause();
-                batch.DeleteWhere(mapping.Table, where);
+                batch.DeleteWhere(mapping.Table, Where);
             }
             
         }
 
         public override string ToString()
         {
-            if (Query != null) return $"Delete {DocumentType} matching {Query}";
+            if (Where != null) return $"Delete {DocumentType} matching {Where}";
 
             return $"Delete {DocumentType} with Id {Id}";
         }

@@ -214,9 +214,9 @@ namespace Marten.Services
             return InsertsFor<T>().Union(UpdatesFor<T>());
         }
 
-        public void Delete<T>(DocumentQuery query)
+        public void Delete<T>(IWhereFragment where)
         {
-            var delete = new Delete(typeof(T), query);
+            var delete = new Delete(typeof(T), where);
             var list = _deletes.GetOrAdd(typeof(T), _ => new List<Delete>());
             list.Add(delete);
         }

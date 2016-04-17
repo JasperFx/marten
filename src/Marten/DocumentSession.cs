@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Includes;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
@@ -71,10 +73,10 @@ namespace Marten
 
         public void DeleteWhere<T>(Expression<Func<T, bool>> expression)
         {
-            var queryable = Query<T>().Where(expression).As<MartenQueryable<T>>();
-            var query = queryable.ToDocumentQuery();
+            var model = Query<T>().Where(expression).As<MartenQueryable<T>>().ToQueryModel();
 
-            _unitOfWork.Delete<T>(query);
+            var where = _schema.BuildWhereFragment(model);
+            _unitOfWork.Delete<T>(where);
         }
 
         public void Store<T>(params T[] entities) 

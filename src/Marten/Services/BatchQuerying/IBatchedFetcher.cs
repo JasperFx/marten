@@ -22,14 +22,14 @@ namespace Marten.Services.BatchQuerying
         Task<long> Count(Expression<Func<T, bool>> filter);
 
         /// <summary>
-        /// Query for the existence of any documents of type "T" matching the query
+        /// Where for the existence of any documents of type "T" matching the query
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         Task<bool> Any();
 
         /// <summary>
-        /// Query for the existence of any documents of type "T"
+        /// Where for the existence of any documents of type "T"
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>

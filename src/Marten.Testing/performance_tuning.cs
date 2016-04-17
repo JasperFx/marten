@@ -197,7 +197,7 @@ namespace Marten.Testing
             //create_timings(1000000);
 
             var document = new HtmlDocument();
-            document.Add("h1").Text("Marten Query Timings");
+            document.Add("h1").Text("Marten Where Timings");
 
             document.Add(reportForSerializer(typeof (JsonNetSerializer)));
             document.Add(reportForSerializer(typeof (JilSerializer)));
@@ -218,7 +218,7 @@ namespace Marten.Testing
 
             table.AddHeaderRow(tr =>
             {
-                tr.Header("Query Type");
+                tr.Header("Where Type");
                 tr.Header("1K");
                 tr.Header("10K");
                 tr.Header("100K");

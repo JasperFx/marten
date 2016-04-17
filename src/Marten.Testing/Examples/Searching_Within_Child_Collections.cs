@@ -26,19 +26,19 @@ namespace Marten.Testing.Examples
             using (var session = store.QuerySession())
             {
                 session.Query<ClassWithChildCollections>()
-                    // Query collections of deep objects
+                    // Where collections of deep objects
                     .Where(x => x.Companies.Any(_ => _.Name == "Jeremy"))
 
-                    // Query for Contains() on array of simple types
+                    // Where for Contains() on array of simple types
                     .Where(x => x.Names.Contains("Corey"))
 
-                    // Query for Contains() on List<T> of simple types
+                    // Where for Contains() on List<T> of simple types
                     .Where(x => x.NameList.Contains("Phillip"))
 
-                    // Query for Contains() on IList<T> of simple types
+                    // Where for Contains() on IList<T> of simple types
                     .Where(x => x.NameList2.Contains("Jens"))
 
-                    // Query for Any(element == value) on simple types
+                    // Where for Any(element == value) on simple types
                     .Where(x => x.Names.Any(_ => _ == "Phillip"));
 
 

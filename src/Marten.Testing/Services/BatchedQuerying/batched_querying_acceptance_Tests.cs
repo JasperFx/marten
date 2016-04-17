@@ -455,7 +455,7 @@ namespace Marten.Testing.Services.BatchedQuerying
 // User-supplied sql
             var toms = batch.Query<User>("where first_name == ?", "Tom");
 
-// Query with Linq
+// Where with Linq
             var jills = batch.Query<User>().Where(x => x.FirstName == "Jill").ToList();
 
 // Any() queries
