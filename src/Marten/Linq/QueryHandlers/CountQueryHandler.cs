@@ -31,7 +31,7 @@ namespace Marten.Linq.QueryHandlers
 
             var where = _schema.BuildWhereFragment(mapping, _query);
 
-            if (@where != null) sql += " where " + @where.ToSql(command);
+            sql = sql.AppendWhere(@where, command);
 
             command.AppendQuery(sql);
         }

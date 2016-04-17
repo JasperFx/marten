@@ -70,10 +70,8 @@ namespace Marten.Linq.QueryHandlers
             var sql = _selector.ToSelectClause(_mapping);
             var @where = _schema.BuildWhereFragment(_mapping, _query);
 
-            // TODO -- this pattern is duplicated a lot
-            if (@where != null) sql += " where " + @where.ToSql(command);
+            sql = sql.AppendWhere(@where, command);
 
-            // TODO -- these lines of code are duplicated a lot
             var orderBy = _query.ToOrderClause(_mapping);
             if (orderBy.IsNotEmpty()) sql += orderBy;
 

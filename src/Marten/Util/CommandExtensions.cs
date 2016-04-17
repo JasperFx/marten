@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using Baseline;
+using Marten.Linq;
 using Marten.Schema;
 using Npgsql;
 using NpgsqlTypes;
@@ -33,6 +34,13 @@ namespace Marten.Util
             }
 
             return list;
+        }
+
+        public static string AppendWhere(this string sql, IWhereFragment where, NpgsqlCommand command)
+        {
+            if (where == null) return sql;
+
+            return sql + " where " + where.ToSql(command);
         }
 
         public static NpgsqlCommand AppendQuery(this NpgsqlCommand command, string sql)

@@ -66,10 +66,9 @@ namespace Marten.Linq.QueryHandlers
 
             var sql = $"select {field} from {mapping.Table.QualifiedName} as d";
 
-
             var @where = _schema.BuildWhereFragment(mapping, _query);
-            // TODO -- this pattern is duplicated a lot
-            if (@where != null) sql += " where " + @where.ToSql(command);
+
+            sql = sql.AppendWhere(@where, command);
 
             command.AppendQuery(sql);
 

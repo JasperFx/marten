@@ -44,12 +44,10 @@ namespace Marten.Linq.QueryHandlers
             var sql = _selector.ToSelectClause(_mapping);
             var @where = _schema.BuildWhereFragment(_mapping, _query);
 
-            
 
-            // TODO -- this pattern is duplicated a lot
-            if (@where != null) sql += " where " + @where.ToSql(command);
 
-            // TODO -- these lines of code are duplicated a lot
+            sql = sql.AppendWhere(@where, command);
+
             var orderBy = _query.ToOrderClause(_mapping);
             if (orderBy.IsNotEmpty()) sql += orderBy;
 
@@ -67,32 +65,6 @@ namespace Marten.Linq.QueryHandlers
         public async Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             return await _selector.ReadAsync(reader, map, token).ConfigureAwait(false);
-        }
-    }
-
-    public class EnumerableQueryHandler<T> : IQueryHandler<IEnumerable<T>>
-    {
-        private readonly ListQueryHandler<T> _inner;
-
-        public EnumerableQueryHandler(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins)
-        {
-            _inner = new ListQueryHandler<T>(schema, query, joins);
-        }
-
-        public Type SourceType => typeof (IEnumerable<T>);
-        public void ConfigureCommand(NpgsqlCommand command)
-        {
-            _inner.ConfigureCommand(command);
-        }
-
-        public IEnumerable<T> Handle(DbDataReader reader, IIdentityMap map)
-        {
-            return _inner.Handle(reader, map);
-        }
-
-        public async Task<IEnumerable<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
-        {
-            return (await _inner.HandleAsync(reader, map, token).ConfigureAwait(false));
         }
     }
 }

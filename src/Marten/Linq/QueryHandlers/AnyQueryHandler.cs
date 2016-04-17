@@ -29,7 +29,7 @@ namespace Marten.Linq.QueryHandlers
             var sql = "select (count(*) > 0) as result from " + mapping.Table.QualifiedName + " as d";
 
             var where = _schema.BuildWhereFragment(mapping, _query);
-            if (@where != null) sql += " where " + @where.ToSql(command);
+            sql = sql.AppendWhere(@where, command);
 
             command.AppendQuery(sql);
         }
