@@ -143,6 +143,7 @@ namespace Marten.Testing.Linq
         }
     }
 
+    // SAMPLE: FindUserByAllTheThings
     public class FindUserByAllTheThings : ICompiledQuery<User>
     {
         public string Username { get; set; }
@@ -157,6 +158,7 @@ namespace Marten.Testing.Linq
 
         }
     }
+    // ENDSAMPLE
 
     public class UserProjectionToLoginPayload : ICompiledQuery<User, LoginPayload>
     {
@@ -209,15 +211,33 @@ namespace Marten.Testing.Linq
         }
     }
 
-    public class UsersByFirstName : IListCompiledQuery<User>
+    // SAMPLE: UsersByFirstName-Query
+    public class UsersByFirstName : ICompiledListQuery<User>
     {
         public static int Count;
         public string FirstName { get; set; }
 
         public Expression<Func<IQueryable<User>, IEnumerable<User>>> QueryIs()
         {
+            // Ignore this line, it's from a unit test;)
             Count++;
             return query => query.Where(x => x.FirstName == FirstName);
         }
     }
+    // ENDSAMPLE
+
+
+    // SAMPLE: UserNamesForFirstName
+    public class UserNamesForFirstName : ICompiledListQuery<User, string>
+    {
+        public Expression<Func<IQueryable<User>, IEnumerable<string>>> QueryIs()
+        {
+            return q => q
+                .Where(x => x.FirstName == FirstName)
+                .Select(x => x.UserName);
+        }
+
+        public string FirstName { get; set; }
+    }
+    // ENDSAMPLE
 }

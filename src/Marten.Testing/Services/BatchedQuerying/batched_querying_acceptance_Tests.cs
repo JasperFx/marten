@@ -125,28 +125,42 @@ namespace Marten.Testing.Services.BatchedQuerying
             // ENDSAMPLE
         }
 
-        public class FindByFirstName : ICompiledQuery<User, User>
-        {
-            public string FirstName { get; set; }
+        // SAMPLE: FindByFirstName
+public class FindByFirstName : ICompiledQuery<User, User>
+{
+    public string FirstName { get; set; }
 
-            public Expression<Func<IQueryable<User>, User>> QueryIs()
-            {
-                return q => q.FirstOrDefault(x => x.FirstName == FirstName);
-            }
-        }
+    public Expression<Func<IQueryable<User>, User>> QueryIs()
+    {
+        return q => q.FirstOrDefault(x => x.FirstName == FirstName);
+    }
+}
+        // ENDSAMPLE
 
         [Fact]
         public async Task can_query_with_compiled_queries()
         {
-            var batch = theSession.CreateBatchQuery();
+// SAMPLE: batch-query-with-compiled-queries
+var batch = theSession.CreateBatchQuery();
 
-            var justin = batch.Query(new FindByFirstName {FirstName = "Justin"});
-            var tamba = batch.Query(new FindByFirstName {FirstName = "Tamba"});
+var justin = batch.Query(new FindByFirstName {FirstName = "Justin"});
+var tamba = batch.Query(new FindByFirstName {FirstName = "Tamba"});
 
-            await batch.Execute();
+await batch.Execute();
 
-            (await justin).Id.ShouldBe(user1.Id);
-            (await tamba).Id.ShouldBe(user2.Id);
+(await justin).Id.ShouldBe(user1.Id);
+(await tamba).Id.ShouldBe(user2.Id);
+// ENDSAMPLE
+        }
+
+
+        public async Task sample_usage_of_compiled_query()
+        {
+            // SAMPLE: using-compiled-query
+            var justin = theSession.Query(new FindByFirstName {FirstName = "Justin"});
+
+            var tamba = await theSession.QueryAsync(new FindByFirstName {FirstName = "Tamba"});
+            // ENDSAMPLE
         }
 
         [Fact]
@@ -472,36 +486,36 @@ namespace Marten.Testing.Services.BatchedQuerying
         {
             // SAMPLE: using-batch-query
 // Start a new IBatchQuery from an active session
-            var batch = theSession.CreateBatchQuery();
+var batch = theSession.CreateBatchQuery();
 
 // Fetch a single document by its Id
-            var user1 = batch.Load<User>("username");
+var user1 = batch.Load<User>("username");
 
 // Fetch multiple documents by their id's
-            var admins = batch.LoadMany<User>().ById("user2", "user3");
+var admins = batch.LoadMany<User>().ById("user2", "user3");
 
 // User-supplied sql
-            var toms = batch.Query<User>("where first_name == ?", "Tom");
+var toms = batch.Query<User>("where first_name == ?", "Tom");
 
 // Where with Linq
-            var jills = batch.Query<User>().Where(x => x.FirstName == "Jill").ToList();
+var jills = batch.Query<User>().Where(x => x.FirstName == "Jill").ToList();
 
 // Any() queries
-            var anyBills = batch.Query<User>().Any(x => x.FirstName == "Bill");
+var anyBills = batch.Query<User>().Any(x => x.FirstName == "Bill");
 
 // Count() queries
-            var countJims = batch.Query<User>().Count(x => x.FirstName == "Jim");
+var countJims = batch.Query<User>().Count(x => x.FirstName == "Jim");
 
 // The Batch querying supports First/FirstOrDefault/Single/SingleOrDefault() selectors:
-            var firstInternal = batch.Query<User>().OrderBy(x => x.LastName).First(x => x.Internal);
+var firstInternal = batch.Query<User>().OrderBy(x => x.LastName).First(x => x.Internal);
 
 // Kick off the batch query
-            await batch.Execute();
+await batch.Execute();
 
 // All of the query mechanisms of the BatchQuery return
 // Task's that are completed by the Execute() method above
-            var internalUser = await firstInternal;
-            Debug.WriteLine($"The first internal user is {internalUser.FirstName} {internalUser.LastName}");
+var internalUser = await firstInternal;
+Debug.WriteLine($"The first internal user is {internalUser.FirstName} {internalUser.LastName}");
             // ENDSAMPLE
         }
     }
