@@ -69,6 +69,11 @@ namespace Marten.Linq.QueryHandlers
                 return AggregateQueryHandler<T>.Sum(_schema, model);
             }
 
+            if (model.HasOperator<AverageResultOperator>())
+            {
+                return AggregateQueryHandler<T>.Average(_schema, model);
+            }
+
             if (model.HasOperator<AnyResultOperator>())
             {
                 return new AnyQueryHandler(model, _schema).As<IQueryHandler<T>>();
