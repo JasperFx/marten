@@ -26,6 +26,26 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
+        public void can_preview_command_for_a_compiled_query()
+        {
+            var cmd = theStore.Diagnostics.PreviewCommand(new UserByUsername {UserName = "hank"});
+
+            cmd.CommandText.ShouldBe("select d.data, d.id from public.mt_doc_user as d where d.data ->> 'UserName' = :arg0 LIMIT 1");
+
+            cmd.Parameters.Single().Value.ShouldBe("hank");
+        }
+
+        [Fact]
+        public void can_explain_the_plan_for_a_compiled_query()
+        {
+            var query = new UserByUsername {UserName = "hank"};
+
+            var plan = theStore.Diagnostics.ExplainPlan(query);
+
+            plan.ShouldNotBeNull();
+        }
+
+        [Fact]
         public void a_single_item_compiled_query()
         {
             UserByUsername.Count = 0;

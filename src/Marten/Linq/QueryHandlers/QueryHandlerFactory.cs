@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using Baseline;
 using Marten.Schema;
 using Marten.Services.Includes;
+using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.ResultOperators;
 
@@ -17,11 +18,14 @@ namespace Marten.Linq.QueryHandlers
 
 
         IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins);
+
+        IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query);
     }
 
     public class QueryHandlerFactory : IQueryHandlerFactory
     {
         private readonly IDocumentSchema _schema;
+        private readonly ConcurrentCache<Type, CachedQuery> _cache = new ConcurrentCache<Type, CachedQuery>();
 
         public QueryHandlerFactory(IDocumentSchema schema)
         {
@@ -121,6 +125,55 @@ namespace Marten.Linq.QueryHandlers
             }
 
             return null;
+        }
+
+        public IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
+        {
+            var queryType = query.GetType();
+            CachedQuery cachedQuery;
+            if (!_cache.Has(queryType))
+            {
+                cachedQuery = buildCachedQuery<TDoc, TOut>(queryType, query.QueryIs());
+
+                _cache[queryType] = cachedQuery;
+            }
+            else
+            {
+                cachedQuery = _cache[queryType];
+            }
+
+            return cachedQuery.CreateHandler<TOut>(query);
+        }
+
+
+        private CachedQuery buildCachedQuery<TDoc, TOut>(Type queryType, Expression expression)
+        {
+            var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
+
+            var setters = findSetters(queryType, expression);
+
+            var model = MartenQueryParser.Flyweight.GetParsedQuery(invocation);
+            _schema.EnsureStorageExists(typeof(TDoc));
+
+            // TODO -- someday we'll add Include()'s to compiled queries
+            var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, new IIncludeJoin[0]);
+            var cmd = new NpgsqlCommand();
+            handler.ConfigureCommand(cmd);
+
+            return new CachedQuery
+            {
+                Command = cmd,
+                ParameterSetters = setters,
+                Handler = handler
+            };
+        }
+
+        private static IList<IDbParameterSetter> findSetters(Type queryType, Expression expression)
+        {
+            var visitor = new CompiledQueryMemberExpressionVisitor(queryType);
+            visitor.Visit(expression);
+            var parameterSetters = visitor.ParameterSetters;
+            return parameterSetters;
         }
     }
 }

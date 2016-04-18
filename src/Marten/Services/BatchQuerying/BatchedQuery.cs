@@ -243,9 +243,8 @@ namespace Marten.Services.BatchQuerying
 
         public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query)
         {
-            var handler = _parent.DocumentStore.CompiledQueryExecutor.HandlerFor(query);
+            var handler = _schema.HandlerFactory.HandlerFor(query);
             return AddItem(handler);
-
         }
     }
 }

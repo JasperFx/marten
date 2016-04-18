@@ -288,7 +288,7 @@ namespace Marten.Schema
             writer.WriteLine();
             writer.WriteLine();
 
-            ToUpsertFunction().WriteFunctionSql(schema?.UpsertType ?? PostgresUpsertType.Legacy, writer);
+            ToUpsertFunction().WriteFunctionSql(schema?.StoreOptions?.UpsertType ?? PostgresUpsertType.Legacy, writer);
 
             ForeignKeys.Each(x =>
             {

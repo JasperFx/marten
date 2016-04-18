@@ -14,7 +14,7 @@ namespace Marten
         private readonly IDocumentSchema _schema;
 
         /// <summary>
-        /// The original StoreOptions used to configure the current DocumentStore
+        /// The original StoreOptions used to configure the current Store
         /// </summary>
         public StoreOptions Options { get; }
 
@@ -52,16 +52,29 @@ namespace Marten
             return new ManagedConnection(Options.ConnectionFactory(), mode, isolationLevel);
         }
 
+        /// <summary>
+        /// Creates an UpdateBatch object for low level batch updates
+        /// </summary>
+        /// <returns></returns>
         public UpdateBatch CreateUpdateBatch()
         {
             return new UpdateBatch(Options, _serializer, OpenConnection());
         }
 
+        /// <summary>
+        /// Creates a new Marten UnitOfWork that could be used to express
+        /// a transaction
+        /// </summary>
+        /// <returns></returns>
         public UnitOfWork CreateUnitOfWork()
         {
             return new UnitOfWork(_schema);
         }
 
+        /// <summary>
+        /// Compiles all of the IDocumentStorage classes upfront for all known document types
+        /// </summary>
+        /// <returns></returns>
         public IList<IDocumentStorage> PrecompileAllStorage()
         {
             return Options.AllDocumentMappings.Select(x => _schema.StorageFor(x.DocumentType)).ToList();
