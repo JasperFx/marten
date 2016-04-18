@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+        <meta charset="utf-8">
+        <meta name="generator" content="Bootply" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<title>Marten - Persisting Documents and Unit Of Work</title>
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+        
+
+        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+
+        <!-- CSS code from Bootply.com editor -->
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    </head>
+    
+    <!-- HTML code from Bootply.com editor -->
+    
+    <body  >
+
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+        
+        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <a href="/marten" class="navbar-brand">Marten</a>
+		    </div>
+		    <nav class="collapse navbar-collapse" role="navigation">
+		      <ul class="nav navbar-nav pull-right">
+            <li>
+              <a href="/marten/getting_started">Getting Started</a>
+            </li>
+		        <li>
+		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+		        </li>
+		      	<li><a href="/marten/documentation/documents/compiled_queries" title="Compiled Queries">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/partial_updates" title="Partial Document Updates">Next</a></li>
+		      </ul>
+      <div class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input id="search" type="search" class="form-control" placeholder="Search">
+        </div>
+      </div>
+
+		    </nav>
+
+		  </div>
+		</nav>
+
+		  <div class="container">
+		  	<nav class="navbar-inverse">
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Persisting Documents and Unit Of Work</li></ol>
+		  	</nav>
+		  </div>
+
+		<!--main-->
+		<div class="container">
+			<div class="row">
+		      <!--left-->
+		      
+		      <div class="col-md-3" id="leftCol">
+		      	<h3>Marten 0.9.0</h3>
+		      	<br />
+
+				<ul class="nav nav-stacked affix" id="sidebar">
+
+		        </ul>
+
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/partial_updates">Partial Document Updates</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/compiled_queries">Compiled Queries</a></p>
+
+		        </ul>
+		      </div><!--/left-->
+		      
+		      <!--right-->
+		      <div class="col-md-9">
+			      	<h1>Persisting Documents and Unit Of Work <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/persisting.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      
+			      	<hr />
+
+			      	<div id="main-pane">
+			      		<!--Title:Persisting Documents and Unit Of Work-->
+<!--Url:persisting-->
+<p>At this point, the <code>IDocumentSession</code> is the sole <a href="http://martinfowler.com/eaaCatalog/unitOfWork.html">unit of work</a> for transactional updates -- but that may change later as Marten outgrows its origin as a replacement for RavenDb. As <a href="/marten/documentation/documents">shown before</a>, document sessions come in three flavors (lightweight, identity map tracking, and identity map + dirty checking), but there are only two modes of change tracking:</p>
+<ol>
+<li>Lightweight and the standard &quot;identity map&quot; sessions require users to do all the change tracking manually and tell the <code>IDocumentSession</code>
+what documents have changed</li>
+<li>The &quot;dirty checking&quot; session tries to determine which documents loaded from that <code>IDocumentSession</code> has any changes when <code>IDocumentSession.SaveChanges()</code> is called</li>
+</ol>
+<h2>Storing Multiple Documents</h2>
+<p>The signature of <code>IDocumentSession.Store()</code> changed in v0.8 to allow you to specify a params array of one or more documents:</p>
+<pre><code class="language-csharp">
+            user1 = new User {FirstName = &quot;Jeremy&quot;};
+            user2 = new User {FirstName = &quot;Jens&quot;};
+            user3 = new User {FirstName = &quot;Jeff&quot;};
+            user4 = new User {FirstName = &quot;Corey&quot;};
+
+            theSession.Store(user1, user2, user3, user4);
+</code></pre>
+<p>You can also store a mixed array of different types by using either the <code>IDocumentSession.StoreObjects()</code> method or by calling <code>IDocumentSession.Store&lt;object&gt;(object[])</code>.</p>
+<pre><code class="language-csharp">
+            var user1 = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};
+            var issue1 = new Issue {Title = &quot;TV won&#39;t turn on&quot;}; // unfortunately true as I write this...
+            var company1 = new Company{Name = &quot;Widgets, inc.&quot;};
+            var company2 = new Company{Name = &quot;BigCo&quot;};
+            var company3 = new Company{Name = &quot;SmallCo&quot;};
+
+            theSession.Store&lt;object&gt;(user1, issue1, company1, company2, company3);
+</code></pre>
+<h2>Manual Change Tracking</h2>
+<p>The first step is to create a new <code>DocumentSession</code> with the <code>IDocumentStore.LightweightSession()</code> (or <code>IDocumentStore.OpenSession()</code>):</p>
+<pre><code class="language-csharp">
+        public void lightweight_document_session(IDocumentStore store)
+        {
+            using (var session = store.LightweightSession())
+            {
+                var user = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};
+                
+                // Manually adding the new user to the session
+                session.Store(user);
+
+                var existing = session.Query&lt;User&gt;().Single(x =&gt; x.FirstName == &quot;Max&quot;);
+                existing.Internal = false;
+
+                // Manually marking an existing user as changed
+                session.Store(existing);
+
+                // Marking another existing User document as deleted
+                session.Delete&lt;User&gt;(Guid.NewGuid());
+
+                // Persisting the changes to the database
+                session.SaveChanges();
+            }
+        }
+</code></pre>
+<p>Do note that Marten's .Net API makes no distinctions between inserts and updates. The Postgresql functions generated by Marten to update the document storage tables perform &quot;upserts&quot; for you. Anytime a document is registered through <code>IDocumentSession.Store(document)</code>, Marten runs the &quot;auto-assignment&quot; policy for the id type of that document. See <a href="/marten/documentation/documents/document_ids">Document Id's</a> for more information on document id's.</p>
+<h2>Automatic Dirty Tracking Session</h2>
+<p>In the case an <code>IDocumentSession</code> opened with the dirty checking enabled, the session will try to detect changes to any of the documents loaded by that
+session. The dirty checking is done by keeping the original JSON fetched from Postgresql and using Newtonsoft.Json to do a node by node comparison of the
+JSON representation of the document at the time that <code>IDocumentSession</code> is called.</p>
+<pre><code class="language-csharp">
+        public void tracking_document_session(IDocumentStore store)
+        {
+            using (var session = store.DirtyTrackedSession())
+            {
+                var user = new User { FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot; };
+
+                // Manually adding the new user to the session
+                session.Store(user);
+
+                var existing = session.Query&lt;User&gt;().Single(x =&gt; x.FirstName == &quot;Max&quot;);
+                existing.Internal = false;
+
+                // Marking another existing User document as deleted
+                session.Delete&lt;User&gt;(Guid.NewGuid());
+
+                // Persisting the changes to the database
+                session.SaveChanges();
+            }
+        }
+</code></pre>
+<p>Do be aware that the automated dirty checking comes with some mechanical cost in memory and runtime performance.</p>
+<h2>Transaction Isolation Level</h2>
+<p>New in v0.7 is the ability to configure the transaction isolation level when opening a new <code>IDocumentSession</code> by
+supplying the optional <code>isolationLevel</code> argument.</p>
+<p>As one of the use cases that spawned this feature, say
+that you are using the <a href="https://lostechies.com/jimmybogard/2013/03/21/saga-implementation-patterns-variations/">Saga pattern</a> in a service bus architecture. When handling a message with this pattern, you typically want to load some kind of persisted state for the long running saga, do some work, then persist the updated saga state. If you need to worry about serializing the messages
+for a single saga, you might want to use <a href="https://en.wikipedia.org/wiki/Serializability">serializable transactions</a> like this:</p>
+<pre><code class="language-csharp">
+public class MySagaState
+{
+    public Guid Id;
+}
+
+public void execute_saga(IDocumentStore store, Guid sagaId)
+{
+    // The session below will open its connection and start a 
+    // serializable transaction
+    using (var session = store.DirtyTrackedSession(IsolationLevel.Serializable))
+    {
+        var state = session.Load&lt;MySagaState&gt;(sagaId);
+
+        // do some work against the saga
+
+        session.SaveChanges();
+    }
+}
+</code></pre>
+<h2>SaveChanges() Optimization</h2>
+<p>The call to <code>IDocumentSession.SaveChanges()</code> tries to batch all the queued updates and deletes into a single ADO.Net call to Postgresql. Our testing has
+shown that this technique is much faster than issuing one ADO.Net call at a time.</p>
+<h2>Bulk Inserts</h2>
+<p>See also <a href="/marten/documentation/documents/bulk_insert">Bulk Insert</a> for an alternative for inserting a large number of one kind of document at a time. Also see the section on <a href="/marten/documentation/documents/identitymap">Identity Map Mechanics</a>.</p>
+
+
+			      	</div>
+
+			      	<hr />
+
+			      	<nav>
+				        <span>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/compiled_queries">Compiled Queries</a>
+
+				        </span>
+				        <span class="pull-right">
+
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/partial_updates">Partial Document Updates</a>
+
+				        </span>
+			      	</nav>
+
+		      </div><!--/right-->
+		  	</div><!--/row-->
+		</div><!--/container-->
+
+
+    </body>
+
+
+    <foot>
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+    </foot>
+</html>
+

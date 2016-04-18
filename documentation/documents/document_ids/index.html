@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+        <meta charset="utf-8">
+        <meta name="generator" content="Bootply" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<title>Marten - Document Id's</title>
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+        
+
+        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+
+        <!-- CSS code from Bootply.com editor -->
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    </head>
+    
+    <!-- HTML code from Bootply.com editor -->
+    
+    <body  >
+
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+        
+        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <a href="/marten" class="navbar-brand">Marten</a>
+		    </div>
+		    <nav class="collapse navbar-collapse" role="navigation">
+		      <ul class="nav navbar-nav pull-right">
+            <li>
+              <a href="/marten/getting_started">Getting Started</a>
+            </li>
+		        <li>
+		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+		        </li>
+		      	<li><a href="/marten/documentation/documents" title="Marten as Document Db">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/json" title="Json Serialization">Next</a></li>
+		      </ul>
+      <div class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input id="search" type="search" class="form-control" placeholder="Search">
+        </div>
+      </div>
+
+		    </nav>
+
+		  </div>
+		</nav>
+
+		  <div class="container">
+		  	<nav class="navbar-inverse">
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Document Id&#39;s</li></ol>
+		  	</nav>
+		  </div>
+
+		<!--main-->
+		<div class="container">
+			<div class="row">
+		      <!--left-->
+		      
+		      <div class="col-md-3" id="leftCol">
+		      	<h3>Marten 0.9.0</h3>
+		      	<br />
+
+				<ul class="nav nav-stacked affix" id="sidebar">
+
+		        </ul>
+
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/json">Json Serialization</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents">Marten as Document Db</a></p>
+
+		        </ul>
+		      </div><!--/left-->
+		      
+		      <!--right-->
+		      <div class="col-md-9">
+			      	<h1>Document Id's <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/document_ids.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      
+			      	<hr />
+
+			      	<div id="main-pane">
+			      		<!--title:Document Id's-->
+<p>Besides being serializable, Marten's only other requirement for a .Net type to be a document is the existence of an identifier field or property that Marten can use as the primary key for the document type. The <code>Id</code> can be either a public field or property, and the name must be either <code>id</code> or <code>Id</code>. As of this time, Marten supports these <code>Id</code> types:</p>
+<ol>
+<li><code>String</code>. It might be valuable to use a <a href="https://en.wikipedia.org/wiki/Natural_key">natural key</a> as the identifier, especially if it is valuable within the
+<a href="/marten/documentation/documents/identitymap">Identity Map</a> feature of Marten Db. In this case, the user will
+be responsible for supplying the identifier.</li>
+<li><code>Guid</code>. If the id is a Guid, Marten will assign a new value for you when you persist the document for the first time if the id is empty.
+<em>And for the record, it's pronounced &quot;gwid&quot;</em>.</li>
+<li><code>CombGuid</code> is a <a href="https://en.wikipedia.org/wiki/Globally_unique_identifier#Sequential_algorithms">sequential Guid algorithm</a>. It can improve performance over the default Guid as it reduces fragmentation of the PK index. (More info soon)</li>
+<li><code>Int</code> or <code>Long</code>. As of right now, Marten uses a <a href="http://stackoverflow.com/questions/282099/whats-the-hi-lo-algorithm">HiLo generator</a> approach to assigning numeric identifiers by document type.
+Marten may support Postgresql sequences or star-based algorithms as later alternatives.</li>
+<li>When the ID member of a document is not settable or not-public a <code>NoOpIdGeneration</code> strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.</li>
+<li>A <code>Custom</code> ID generator strategy is used to implement the ID generation strategy yourself.</li>
+</ol>
+<p>You can see some example id usages below:</p>
+<pre><code class="language-csharp">
+    public class Division
+    {
+        // String property as Id
+        public string Id { get; set; }
+    }
+
+    public class Category
+    {
+        // Guid&#39;s work, fields too
+        public Guid Id;
+    }
+
+    public class Invoide
+    {
+        // int&#39;s and long&#39;s can be the Id
+        // &quot;id&quot; is accepted
+        public int id { get; set; }
+    }
+</code></pre>
+<h2>Hilo Sequences</h2>
+<p>The <em>Hilo</em> sequence generation can be customized with either global defaults or document type specific overrides. By default, the Hilo sequence generation in Marten increments by 1 and uses a &quot;maximum lo&quot; number of 1000.</p>
+<p>To set different global defaults, use the <code>StoreOptions.HiloSequenceDefaults</code> property like this sample:</p>
+<pre><code class="language-csharp">
+            var store = DocumentStore.For(_ =&gt;
+            {
+                _.HiloSequenceDefaults.Increment = 2;
+                _.HiloSequenceDefaults.MaxLo = 55;
+                _.Connection(&quot;something&quot;);
+            });
+</code></pre>
+<p>To override the Hilo configuration for a specific document type, you can decorate the document type with the <code>[HiloSequence]</code> attribute
+as in this example:</p>
+<pre><code class="language-csharp">
+    [HiloSequence(Increment = 3, MaxLo = 33)]
+    public class OverriddenHiloDoc
+    {
+        public int Id { get; set; }
+    }
+</code></pre>
+<p>You can also use the <code>MartenRegistry</code> fluent interface to override the Hilo configuration for a document type as in this example:</p>
+<pre><code class="language-csharp">
+            var store = DocumentStore.For(_ =&gt;
+            {
+                // Overriding the Hilo settings for the document type &quot;IntDoc&quot;
+                _.Schema.For&lt;IntDoc&gt;()
+                    .HiloSettings(new HiloSettings {Increment = 6, MaxLo = 66});
+
+                _.Connection(&quot;something&quot;);
+            });
+</code></pre>
+<h2>CombGuid</h2>
+<p>To use <em>CombGuid</em> generation you should enabled it when configuring the document store. This defines that the <em>CombGuid</em> generation strategy will be used for all the documents types.</p>
+<pre><code class="language-csharp">
+                options =&gt; options.DefaultIdStrategy = (mapping, storeOptions) =&gt; new CombGuidIdGeneration()
+</code></pre>
+<p>It is also possible use the SequentialGuid id generation algorithm for a specific document type.</p>
+<pre><code class="language-csharp">
+				options =&gt; options.Schema.For&lt;UserWithGuid&gt;().IdStrategy(new CombGuidIdGeneration())
+</code></pre>
+<h2>Custom</h2>
+<p>A custom ID generator strategy should implement <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/IIdGeneration.cs">IIdGeneration</a>.</p>
+<pre><code class="language-csharp">
+    public class CustomdIdGeneration : IIdGeneration
+    {
+        public IEnumerable&lt;StorageArgument&gt; ToArguments()
+        {
+            return Enumerable.Empty&lt;StorageArgument&gt;();
+        }
+
+        public string AssignmentBodyCode(MemberInfo idMember)
+        {
+            return $@&quot;
+document.{idMember.Name} = &quot;&quot;newId&quot;&quot;; //your id generation algorithm here
+assigned = true;
+&quot;;
+        }
+    }
+</code></pre>
+<p>The AssignmentBodyCode method should return the C# code that assigns the value of the Id member.</p>
+<p>For more advances examples you can have a look at existing ID generator: <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Sequences/HiloIdGeneration.cs">HiloIdGeneration</a>, <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/CombGuidIdGeneration.cs">CombGuidGenerator</a> and the <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Sequences/IdentityKeyGeneration.cs">IdentityKeyGeneration</a>,</p>
+<p>To use custom id generation you should enabled it when configuring the document store. This defines that the strategy will be used for all the documents types.</p>
+<pre><code class="language-csharp">
+                options =&gt; options.DefaultIdStrategy = (mapping, storeOptions) =&gt; new CustomdIdGeneration()))
+</code></pre>
+<p>It is also possible define a custom id generation algorithm for a specific document type.</p>
+<pre><code class="language-csharp">
+                options =&gt; options.Schema.For&lt;UserWithString&gt;().IdStrategy(new CustomdIdGeneration())
+</code></pre>
+
+
+			      	</div>
+
+			      	<hr />
+
+			      	<nav>
+				        <span>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents">Marten as Document Db</a>
+
+				        </span>
+				        <span class="pull-right">
+
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/json">Json Serialization</a>
+
+				        </span>
+			      	</nav>
+
+		      </div><!--/right-->
+		  	</div><!--/row-->
+		</div><!--/container-->
+
+
+    </body>
+
+
+    <foot>
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+    </foot>
+</html>
+

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+        <meta charset="utf-8">
+        <meta name="generator" content="Bootply" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<title>Marten - Compiled Queries</title>
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+        
+
+        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+
+        <!-- CSS code from Bootply.com editor -->
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    </head>
+    
+    <!-- HTML code from Bootply.com editor -->
+    
+    <body  >
+
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+        
+        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <a href="/marten" class="navbar-brand">Marten</a>
+		    </div>
+		    <nav class="collapse navbar-collapse" role="navigation">
+		      <ul class="nav navbar-nav pull-right">
+            <li>
+              <a href="/marten/getting_started">Getting Started</a>
+            </li>
+		        <li>
+		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+		        </li>
+		      	<li><a href="/marten/documentation/documents/sql" title="Querying Documents with Postgresql SQL">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/persisting" title="Persisting Documents and Unit Of Work">Next</a></li>
+		      </ul>
+      <div class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input id="search" type="search" class="form-control" placeholder="Search">
+        </div>
+      </div>
+
+		    </nav>
+
+		  </div>
+		</nav>
+
+		  <div class="container">
+		  	<nav class="navbar-inverse">
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Compiled Queries</li></ol>
+		  	</nav>
+		  </div>
+
+		<!--main-->
+		<div class="container">
+			<div class="row">
+		      <!--left-->
+		      
+		      <div class="col-md-3" id="leftCol">
+		      	<h3>Marten 0.9.0</h3>
+		      	<br />
+
+				<ul class="nav nav-stacked affix" id="sidebar">
+
+		        </ul>
+
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/persisting">Persisting Documents and Unit Of Work</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/sql">Querying Documents with Postgresql SQL</a></p>
+
+		        </ul>
+		      </div><!--/left-->
+		      
+		      <!--right-->
+		      <div class="col-md-9">
+			      	<h1>Compiled Queries <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/compiled_queries.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      
+			      	<hr />
+
+			      	<div id="main-pane">
+			      		<!--Title:Compiled Queries-->
+<p>Linq is easily one of the most popular features in .Net and arguably the one thing that other platforms strive to copy. We generally like being able
+to express document queries in compiler-safe manner, but there is a non-trivial cost in parsing the resulting <a href="https://msdn.microsoft.com/en-us/library/bb397951.aspx">Expression trees</a> and then using plenty of string concatenation to build up the matching SQL query. Fortunately, as of v0.8.10, Marten supports the concept of a <em>Compiled Query</em> that you can use to reuse the SQL template for a given Linq query and bypass the performance cost of continuously parsing Linq expressions.</p>
+<p>All compiled queries are classes that implement the <code>ICompiledQuery&lt;TDoc, TResult&gt;</code> interface shown below:</p>
+<pre><code class="language-csharp">
+    public interface ICompiledQuery&lt;TDoc, TOut&gt;
+    {
+        Expression&lt;Func&lt;IQueryable&lt;TDoc&gt;, TOut&gt;&gt; QueryIs();
+    }
+</code></pre>
+<p>In its simplest usage, let's say that we want to find the first user document with a certain first name. That class would look like this:</p>
+<pre><code class="language-csharp">
+public class FindByFirstName : ICompiledQuery&lt;User, User&gt;
+{
+    public string FirstName { get; set; }
+
+    public Expression&lt;Func&lt;IQueryable&lt;User&gt;, User&gt;&gt; QueryIs()
+    {
+        return q =&gt; q.FirstOrDefault(x =&gt; x.FirstName == FirstName);
+    }
+}
+</code></pre>
+<p>So a couple things to note in the class above:</p>
+<ol>
+<li>The <code>QueryIs()</code> method returns an Expression representing a Linq query</li>
+<li><code>FindByFirstName</code> has a property (it could also be just a public field) called <code>FirstName</code> that is used to express the filter of the query</li>
+</ol>
+<p>To use the <code>FindByFirstName</code> query, just use the code below:</p>
+<pre><code class="language-csharp">
+            var justin = theSession.Query(new FindByFirstName {FirstName = &quot;Justin&quot;});
+
+            var tamba = await theSession.QueryAsync(new FindByFirstName {FirstName = &quot;Tamba&quot;});
+</code></pre>
+<p>Or to use it as part of a batched query, this syntax:</p>
+<pre><code class="language-csharp">
+var batch = theSession.CreateBatchQuery();
+
+var justin = batch.Query(new FindByFirstName {FirstName = &quot;Justin&quot;});
+var tamba = batch.Query(new FindByFirstName {FirstName = &quot;Tamba&quot;});
+
+await batch.Execute();
+
+(await justin).Id.ShouldBe(user1.Id);
+(await tamba).Id.ShouldBe(user2.Id);
+</code></pre>
+<h2>How does it work?</h2>
+<p>The first time that Marten encounters a new type of <code>ICompiledQuery</code>, it executes the <code>QueryIs()</code> method and:</p>
+<ol>
+<li>Parses the Expression just to find which property getters or fields are used within the expression as input parameters</li>
+<li>Parses the Expression with our standard Linq support and to create a template database command and the internal query handler</li>
+<li>Builds up an object with compiled Func's that &quot;knows&quot; how to read a query model object and set the command parameters for the query</li>
+<li>Caches the resulting &quot;plan&quot; for how to execute a compiled query</li>
+</ol>
+<p>On subsequent usages, Marten will just reuse the existing SQL command and remembered handlers to execute the query.</p>
+<h2>What is supported?</h2>
+<p>To the best of our knowledge and testing, you may use any <a href="/marten/documentation/documents/linq">Linq feature that Marten supports</a> within a compiled query. So any combination of:</p>
+<ul>
+<li><code>Select()</code> transforms</li>
+<li><code>First/FirstOrDefault()</code></li>
+<li><code>Single/SingleOrDefault()</code></li>
+<li><code>Where()</code></li>
+<li><code>OrderBy/OrderByDescending</code> etc.</li>
+<li><code>Count()</code></li>
+<li><code>Any()</code></li>
+</ul>
+<p>At this point (v0.9), the only limitations are:</p>
+<ol>
+<li>You cannot yet incorporate the <a href="/marten/documentation/documents/include">Include's</a> feature with compiled queries, but there is an open
+<a href="https://github.com/JasperFx/marten/issues/309">GitHub issue</a> you can use to track progress on adding this feature.</li>
+<li>You cannot use the Linq <code>ToArray()</code> or <code>ToList()</code> operators. See the next section for an explanation of how to query for multiple results</li>
+</ol>
+<h2>Querying for multiple results</h2>
+<p>To query for multiple results, you need to just return the raw <code>IQueryable&lt;T&gt;</code> as <code>IEnumerable&lt;T&gt;</code> as the result type. You cannot use the <code>ToArray()</code> or <code>ToList()</code> operators (it'll throw exceptions from the Relinq library if you try). As a convenience mechanism, Marten supplies these helper interfaces:</p>
+<p>If you are selecting the whole document without any kind of <code>Select()</code> transform, you can use this interface:</p>
+<pre><code class="language-csharp">
+    public interface ICompiledListQuery&lt;TDoc&gt; : ICompiledListQuery&lt;TDoc, TDoc&gt;
+    {
+    }
+</code></pre>
+<p>A sample usage of this type of query is shown below:</p>
+<pre><code class="language-csharp">
+    public class UsersByFirstName : ICompiledListQuery&lt;User&gt;
+    {
+        public static int Count;
+        public string FirstName { get; set; }
+
+        public Expression&lt;Func&lt;IQueryable&lt;User&gt;, IEnumerable&lt;User&gt;&gt;&gt; QueryIs()
+        {
+            // Ignore this line, it&#39;s from a unit test;)
+            Count++;
+            return query =&gt; query.Where(x =&gt; x.FirstName == FirstName);
+        }
+    }
+</code></pre>
+<p>If you do want to use a <code>Select()</code> transform, use this interface:</p>
+<pre><code class="language-csharp">
+    public interface ICompiledListQuery&lt;TDoc, TOut&gt; : ICompiledQuery&lt;TDoc, IEnumerable&lt;TOut&gt;&gt;
+    {
+    }
+</code></pre>
+<p>A sample usage of this type of query is shown below:</p>
+<pre><code class="language-csharp">
+    public class UserNamesForFirstName : ICompiledListQuery&lt;User, string&gt;
+    {
+        public Expression&lt;Func&lt;IQueryable&lt;User&gt;, IEnumerable&lt;string&gt;&gt;&gt; QueryIs()
+        {
+            return q =&gt; q
+                .Where(x =&gt; x.FirstName == FirstName)
+                .Select(x =&gt; x.UserName);
+        }
+
+        public string FirstName { get; set; }
+    }
+</code></pre>
+<h2>Querying for a single document</h2>
+<p>Finally, if you are querying for a single document with no transformation, you can use this interface as a convenience:</p>
+<pre><code class="language-csharp">
+    public interface ICompiledQuery&lt;TDoc&gt; : ICompiledQuery&lt;TDoc, TDoc&gt;
+    {
+    }
+</code></pre>
+<p>And an example:</p>
+<pre><code class="language-csharp">
+    public class FindUserByAllTheThings : ICompiledQuery&lt;User&gt;
+    {
+        public string Username { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public Expression&lt;Func&lt;IQueryable&lt;User&gt;, User&gt;&gt; QueryIs()
+        {
+            return query =&gt;
+                    query.Where(x =&gt; x.FirstName == FirstName &amp;&amp; Username == x.UserName)
+                        .Where(x =&gt; x.LastName == LastName)
+                        .Single();
+
+        }
+    }
+</code></pre>
+
+
+			      	</div>
+
+			      	<hr />
+
+			      	<nav>
+				        <span>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/sql">Querying Documents with Postgresql SQL</a>
+
+				        </span>
+				        <span class="pull-right">
+
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/persisting">Persisting Documents and Unit Of Work</a>
+
+				        </span>
+			      	</nav>
+
+		      </div><!--/right-->
+		  	</div><!--/row-->
+		</div><!--/container-->
+
+
+    </body>
+
+
+    <foot>
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+    </foot>
+</html>
+
