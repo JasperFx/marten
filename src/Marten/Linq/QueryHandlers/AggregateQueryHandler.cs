@@ -30,12 +30,12 @@ namespace Marten.Linq.QueryHandlers
 
         public static AggregateQueryHandler<T> Sum(IDocumentSchema schema, QueryModel query)
         {
-            return new AggregateQueryHandler<T>("sum({0})", schema, query);
+            return new AggregateQueryHandler<T>("coalesce(sum({0}),0)", schema, query);
         }
 
-        public static AggregateQueryHandler<double> Average(IDocumentSchema schema, QueryModel query)
+        public static AggregateQueryHandler<T> Average(IDocumentSchema schema, QueryModel query)
         {
-            return new AggregateQueryHandler<double>("avg({0})", schema, query);
+            return new AggregateQueryHandler<T>("avg({0})", schema, query);
         }
 
         public AggregateQueryHandler(string @operator, IDocumentSchema schema, QueryModel query)
