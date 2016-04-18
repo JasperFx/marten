@@ -240,5 +240,12 @@ namespace Marten.Services.BatchQuerying
 
             return AddItem(AggregateQueryHandler<double>.Average(_schema, query));
         }
+
+        public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query)
+        {
+            var handler = _parent.DocumentStore.CompiledQueryExecutor.HandlerFor(query);
+            return AddItem(handler);
+
+        }
     }
 }

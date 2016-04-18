@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
@@ -95,6 +97,8 @@ namespace Marten.Testing.Services.BatchedQuerying
             theSession.SaveChanges();
         }
 
+        
+
         public void sample_config()
         {
             // SAMPLE: configure-hierarchy-of-types
@@ -119,6 +123,30 @@ namespace Marten.Testing.Services.BatchedQuerying
                 session.Query<SuperUser>().ToList();
             }
             // ENDSAMPLE
+        }
+
+        public class FindByFirstName : ICompiledQuery<User, User>
+        {
+            public string FirstName { get; set; }
+
+            public Expression<Func<IQueryable<User>, User>> QueryIs()
+            {
+                return q => q.FirstOrDefault(x => x.FirstName == FirstName);
+            }
+        }
+
+        [Fact]
+        public async Task can_query_with_compiled_queries()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var justin = batch.Query(new FindByFirstName {FirstName = "Justin"});
+            var tamba = batch.Query(new FindByFirstName {FirstName = "Tamba"});
+
+            await batch.Execute();
+
+            (await justin).Id.ShouldBe(user1.Id);
+            (await tamba).Id.ShouldBe(user2.Id);
         }
 
         [Fact]
