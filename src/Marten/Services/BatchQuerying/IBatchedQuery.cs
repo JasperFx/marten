@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Linq;
 
 namespace Marten.Services.BatchQuerying
 {
@@ -56,5 +57,6 @@ namespace Marten.Services.BatchQuerying
         /// <returns></returns>
         IBatchedQueryable<T> Query<T>() where T : class;
 
+        Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query);
     }
 }
