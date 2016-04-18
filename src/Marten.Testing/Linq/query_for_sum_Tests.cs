@@ -36,6 +36,13 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
+        public void get_sum_of_empty_table()
+        {
+            theSession.Query<Target>().Sum(x => x.Number)
+                .ShouldBe(0);
+        }
+
+        [Fact]
         public void get_sum_of_integers_with_where()
         {
             theSession.Store(new Target { Color = Colors.Blue, Number = 1 });

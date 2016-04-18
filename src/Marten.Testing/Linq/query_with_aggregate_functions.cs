@@ -68,6 +68,7 @@ namespace Marten.Testing.Linq
         }
 
         // SAMPLE: using_average
+        [Fact]
         public void get_average()
         {
             theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
