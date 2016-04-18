@@ -94,9 +94,8 @@ namespace Marten
 
                 foreach (var entity in entities)
                 {
-                    bool assigned = false;
+                    var assigned = false;
                     var id = idAssignment.Assign(entity, out assigned);
-                    // TODO -- categorize as insert or update on UnitOfWork
 
                     storage.Store(_identityMap, id, entity);
                     if (assigned)

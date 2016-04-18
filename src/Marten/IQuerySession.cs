@@ -134,7 +134,7 @@ namespace Marten
         /// <summary>
         /// The document store that created this session
         /// </summary>
-        IDocumentStore Store { get; }
+        IDocumentStore DocumentStore { get; }
 
 
         /// <summary>

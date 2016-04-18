@@ -47,6 +47,7 @@ namespace Marten.Testing
 
             var schema = container.GetInstance<IDocumentSchema>();
 throw new NotImplementedException("No longer have an Alter() mechanism to add the MartenRegistry");
+            /*
             schema.EnsureStorageExists(typeof(Target));
 
             var strategy = new TStrategy();
@@ -60,7 +61,7 @@ throw new NotImplementedException("No longer have an Alter() mechanism to add th
             store<TSerializer, TRegistry, TStrategy>(time);
 
             Debug.WriteLine(key<TSerializer, TRegistry, TStrategy>() + ": " + time);
-
+            */
         }
 
 

@@ -57,7 +57,7 @@ namespace Marten.Testing
     {
         public MartenServices()
         {
-            ForSingletonOf<IDocumentStore>().Use("Build the Store", () =>
+            ForSingletonOf<IDocumentStore>().Use("Build the DocumentStore", () =>
             {
                 return DocumentStore.For(_ =>
                 {

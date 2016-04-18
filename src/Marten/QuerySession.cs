@@ -31,7 +31,7 @@ namespace Marten
         public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer,
             IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
         {
-            Store = store;
+            DocumentStore = store;
             _schema = schema;
             _serializer = serializer;
             _connection = connection;
@@ -39,7 +39,7 @@ namespace Marten
             _identityMap = identityMap;
         }
 
-        public IDocumentStore Store { get; }
+        public IDocumentStore DocumentStore { get; }
 
         public IMartenQueryable<T> Query<T>()
         {
@@ -76,6 +76,7 @@ namespace Marten
             return new BatchedQuery(_connection, _schema, _identityMap.ForQuery(), this, _serializer);
         }
 
+        [Obsolete]
         public NpgsqlCommand BuildCommand<T>(string sql, params object[] parameters)
         {
             var cmd = new NpgsqlCommand();

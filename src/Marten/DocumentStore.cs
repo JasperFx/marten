@@ -22,7 +22,7 @@ namespace Marten
         private readonly IQueryParser _parser = new MartenQueryParser();
 
         /// <summary>
-        /// Quick way to stand up a Store to the given database connection
+        /// Quick way to stand up a DocumentStore to the given database connection
         /// in the "development" mode for auto-creating schema objects as needed
         /// with the default behaviors
         /// </summary>
@@ -38,7 +38,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Configures a Store for an existing StoreOptions type
+        /// Configures a DocumentStore for an existing StoreOptions type
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
@@ -48,7 +48,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Configures a Store by defining the StoreOptions settings first
+        /// Configures a DocumentStore by defining the StoreOptions settings first
         /// </summary>
         /// <param name="configure"></param>
         /// <returns></returns>
@@ -61,7 +61,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Creates a new Store with the supplied StoreOptions
+        /// Creates a new DocumentStore with the supplied StoreOptions
         /// </summary>
         /// <param name="options"></param>
         public DocumentStore(StoreOptions options)

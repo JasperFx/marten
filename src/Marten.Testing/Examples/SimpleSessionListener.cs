@@ -17,7 +17,7 @@ namespace Marten.Testing.Examples
             var pending = session.PendingChanges;
 
             // Careful here, Marten can only sort documents into "inserts" or "updates" based
-            // on whether or not Marten had to assign a new Id to that document upon Store()
+            // on whether or not Marten had to assign a new Id to that document upon DocumentStore()
             pending.InsertsFor<User>()
                 .Each(user => Debug.WriteLine($"New user: {user.UserName}"));
 

@@ -11,7 +11,7 @@ namespace Marten.Schema
     public interface IDocumentSchema
     {
         /// <summary>
-        /// The original StoreOptions used to configure this Store
+        /// The original StoreOptions used to configure this DocumentStore
         /// </summary>
         StoreOptions StoreOptions { get; }
 

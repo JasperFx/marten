@@ -11,7 +11,6 @@ namespace Marten.Testing.Fixtures.EventStore
     public class QuestEventFixture : Fixture
     {
         private List<object> _events;
-        private DateTime _time;
 
         public override void SetUp()
         {

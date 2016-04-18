@@ -56,7 +56,7 @@ namespace Marten
         /// <returns></returns>
         Task SaveChangesAsync(CancellationToken token = default(CancellationToken));
 
-        // TODO -- Store by etag? Version strategy?
+        // TODO -- DocumentStore by etag? Version strategy?
 
         /// <summary>
         /// Explicitly marks a document as needing to be inserted or updated upon the next call to SaveChanges()
@@ -72,7 +72,7 @@ namespace Marten
         IUnitOfWork PendingChanges { get; }
 
         /// <summary>
-        /// Store an enumerable of potentially mixed documents
+        /// DocumentStore an enumerable of potentially mixed documents
         /// </summary>
         /// <param name="documents"></param>
         void StoreObjects(IEnumerable<object> documents);
