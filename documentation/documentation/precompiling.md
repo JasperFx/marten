@@ -26,3 +26,9 @@ The other half of pre-compiling storage objects is to direct Marten to try to us
 <[sample:import-document-storage-from-an-assembly]>
 
 Behind the scenes, the helper method shown above for importing storage types is just finding and adding storage types to the `StoreOptions.PreBuiltStorage` list. You can also add storage types directly to the `StoreOptions` object. This may end up being a standard extension mechanism for Marten.
+
+## Forcing Marten to Generate Code Upfront
+
+You can also force Marten to generate the dynamic code for each registered document type upfront with this call:
+
+<[sample:pregenerate_storage_code]>

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Testing.Documents;
 using Marten.Util;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Shouldly;
@@ -57,6 +58,23 @@ namespace Marten.Testing.Examples
             Console.WriteLine($"TotalCost: {plan.TotalCost}");
             Console.WriteLine($"PlanRows: {plan.PlanRows}");
             Console.WriteLine($"PlanWidth: {plan.PlanWidth}");
+            // ENDSAMPLE
+        }
+
+        public void pregenerate_storage_code()
+        {
+            // SAMPLE: pregenerate_storage_code
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection("something");
+
+                // Document types that are known upfront
+                _.Schema.For<User>();
+                _.Schema.For<Issue>();
+            }))
+            {
+                store.Advanced.PrecompileAllStorage();
+            }
             // ENDSAMPLE
         }
 
