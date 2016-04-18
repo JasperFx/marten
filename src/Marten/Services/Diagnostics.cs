@@ -1,5 +1,7 @@
 using Baseline;
+using Marten.Linq;
 using Marten.Schema;
+using Npgsql;
 
 namespace Marten.Services
 {
@@ -12,6 +14,12 @@ namespace Marten.Services
             _schema = schema;
         }
 
+        /// <summary>
+        /// Preview the dynamic code that Marten will generate to store and retrieve the 
+        /// document type
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public string DocumentStorageCodeFor<T>()
         {
             var documentMapping = _schema.MappingFor(typeof (T));

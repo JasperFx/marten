@@ -31,7 +31,7 @@ namespace Marten
         public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer,
             IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
         {
-            DocumentStore = store;
+            Store = store;
             _schema = schema;
             _serializer = serializer;
             _connection = connection;
@@ -39,7 +39,7 @@ namespace Marten
             _identityMap = identityMap;
         }
 
-        public IDocumentStore DocumentStore { get; }
+        public IDocumentStore Store { get; }
 
         public IMartenQueryable<T> Query<T>()
         {
@@ -383,14 +383,14 @@ namespace Marten
 
         public TOut Query<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
         {
-            var handler = DocumentStore.CompiledQueryExecutor.HandlerFor(query);
+            var handler = _schema.HandlerFactory.HandlerFor(query);
             return _connection.Fetch(handler, _identityMap.ForQuery());
         }
 
         public Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
             CancellationToken token = new CancellationToken())
         {
-            var handler = DocumentStore.CompiledQueryExecutor.HandlerFor(query);
+            var handler = _schema.HandlerFactory.HandlerFor(query);
             return _connection.FetchAsync(handler, _identityMap.ForQuery(), token);
         }
 

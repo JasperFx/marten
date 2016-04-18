@@ -1,0 +1,49 @@
+using System;
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
+using Marten.Services;
+using Marten.Util;
+using Npgsql;
+
+namespace Marten.Linq.QueryHandlers
+{
+    internal class CachedQueryHandler<T> : IQueryHandler<T>
+    {
+        private readonly object _model;
+        private readonly NpgsqlCommand _template;
+        private readonly IQueryHandler<T> _handler;
+        private readonly IDbParameterSetter[] _setters;
+
+        public CachedQueryHandler(object model, NpgsqlCommand template, IQueryHandler<T> handler, IDbParameterSetter[] setters)
+        {
+            _model = model;
+            _template = template;
+            _handler = handler;
+            _setters = setters;
+        }
+
+        public Type SourceType => _handler.SourceType;
+        public void ConfigureCommand(NpgsqlCommand command)
+        {
+            var sql = _template.CommandText;
+            for (var i = 0; i < _template.Parameters.Count; i++)
+            {
+                var param = _setters[i].AddParameter(_model, command);
+                sql = sql.Replace(":" + _template.Parameters[i].ParameterName, ":" + param.ParameterName);
+            }
+
+            command.AppendQuery(sql);
+        }
+
+        public T Handle(DbDataReader reader, IIdentityMap map)
+        {
+            return _handler.Handle(reader, map);
+        }
+
+        public Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            return _handler.HandleAsync(reader, map, token);
+        }
+    }
+}

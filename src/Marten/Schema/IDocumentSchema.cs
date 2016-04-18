@@ -5,14 +5,13 @@ using Marten.Generation;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.Sequences;
-using Remotion.Linq;
 
 namespace Marten.Schema
 {
     public interface IDocumentSchema
     {
         /// <summary>
-        /// The original StoreOptions used to configure this DocumentStore
+        /// The original StoreOptions used to configure this Store
         /// </summary>
         StoreOptions StoreOptions { get; }
 

@@ -14,7 +14,7 @@ namespace Marten
         private readonly IDocumentSchema _schema;
 
         /// <summary>
-        /// The original StoreOptions used to configure the current DocumentStore
+        /// The original StoreOptions used to configure the current Store
         /// </summary>
         public StoreOptions Options { get; }
 

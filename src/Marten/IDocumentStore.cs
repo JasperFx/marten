@@ -14,8 +14,6 @@ namespace Marten
         /// </summary>
         IDocumentSchema Schema { get; }
 
-        ICompiledQueryExecutor CompiledQueryExecutor { get; }
-
         /// <summary>
         /// Infrequently used operations like document cleaning and the initial store configuration
         /// </summary>
