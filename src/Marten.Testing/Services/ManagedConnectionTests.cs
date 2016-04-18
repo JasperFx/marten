@@ -34,16 +34,24 @@ namespace Marten.Testing.Services
 
 
 
-                await connection.ExecuteAsync(async (c, t) => { });
+                await connection.ExecuteAsync(async (c, t) => { await Task.CompletedTask; });
                 connection.RequestCount.ShouldBe(5);
 
-                await connection.ExecuteAsync(new NpgsqlCommand(), async (c, t) => { });
+                await connection.ExecuteAsync(new NpgsqlCommand(), async (c, t) => { await Task.CompletedTask; });
                 connection.RequestCount.ShouldBe(6);
 
-                await connection.ExecuteAsync(async (c, t) => "");
+                await connection.ExecuteAsync(async (c, t) =>
+                {
+                    await Task.CompletedTask;
+                    return "";
+                });
                 connection.RequestCount.ShouldBe(7);
 
-                await connection.ExecuteAsync(new NpgsqlCommand(), async (c, t) => "");
+                await connection.ExecuteAsync(new NpgsqlCommand(), async (c, t) =>
+                {
+                    await Task.CompletedTask;
+                    return "";
+                });
                 connection.RequestCount.ShouldBe(8);
 
             }
@@ -213,7 +221,11 @@ namespace Marten.Testing.Services
             var logger = new RecordingLogger();
             using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
             {
-                connection.ExecuteAsync(async (c, tkn) => c.CommandText = "do something");
+                await connection.ExecuteAsync(async (c, tkn) =>
+                {
+                    await Task.CompletedTask;
+                    c.CommandText = "do something";
+                });
 
                 logger.LastCommand.CommandText.ShouldBe("do something");
             }
@@ -226,10 +238,11 @@ namespace Marten.Testing.Services
             var logger = new RecordingLogger();
             using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
             {
-                Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
+                await Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
                 {
-                    await connection.ExecuteAsync((c, tkn) =>
+                    await connection.ExecuteAsync(async (c, tkn) =>
                     {
+                        await Task.CompletedTask;
                         c.CommandText = "do something";
                         throw ex;
                     });
@@ -250,7 +263,11 @@ namespace Marten.Testing.Services
             using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
             {
                 var cmd = new NpgsqlCommand();
-                await connection.ExecuteAsync(cmd, async (c, tkn) => c.CommandText = "do something");
+                await connection.ExecuteAsync(cmd, async (c, tkn) =>
+                {
+                    await Task.CompletedTask;
+                    c.CommandText = "do something";
+                });
 
                 logger.LastCommand.ShouldBeSameAs(cmd);
             }
@@ -266,10 +283,11 @@ namespace Marten.Testing.Services
             {
                 var cmd = new NpgsqlCommand();
 
-                Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
+                await Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
                 {
-                    await connection.ExecuteAsync(cmd, (c, tkn) =>
+                    await connection.ExecuteAsync(cmd, async (c, tkn) =>
                     {
+                        await Task.CompletedTask;
                         throw ex;
                     });
                 });
@@ -290,8 +308,9 @@ namespace Marten.Testing.Services
             var logger = new RecordingLogger();
             using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
             {
-                connection.Execute(async c =>
+                await connection.Execute(async c =>
                 {
+                    await Task.CompletedTask;
                     c.CommandText = "do something";
                     return "something";
                 });
@@ -307,10 +326,11 @@ namespace Marten.Testing.Services
             var logger = new RecordingLogger();
             using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
             {
-                Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
+                await Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
                 {
-                    connection.ExecuteAsync<string>((c, tkn) =>
+                    await connection.ExecuteAsync<string>(async (c, tkn) =>
                     {
+                        await Task.CompletedTask;
                         c.CommandText = "do something";
                         throw ex;
                     });
@@ -331,7 +351,11 @@ namespace Marten.Testing.Services
             using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
             {
                 var cmd = new NpgsqlCommand();
-                await connection.ExecuteAsync(cmd, async (c, tkn) => "something");
+                await connection.ExecuteAsync(cmd, async (c, tkn) =>
+                {
+                    await Task.CompletedTask;
+                    return "something";
+                });
 
                 logger.LastCommand.ShouldBeSameAs(cmd);
             }
@@ -347,10 +371,11 @@ namespace Marten.Testing.Services
             {
                 var cmd = new NpgsqlCommand();
 
-                Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
+                await Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
                 {
-                    connection.ExecuteAsync<string>(cmd, (c, tkn) =>
+                    await connection.ExecuteAsync<string>(cmd, async (c, tkn) =>
                     {
+                        await Task.CompletedTask;
                         throw ex;
                     }
                 )

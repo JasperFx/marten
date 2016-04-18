@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
@@ -31,7 +32,7 @@ namespace Marten
         public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer,
             IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
         {
-            Store = store;
+            DocumentStore = store;
             _schema = schema;
             _serializer = serializer;
             _connection = connection;
@@ -39,7 +40,7 @@ namespace Marten
             _identityMap = identityMap;
         }
 
-        public IDocumentStore Store { get; }
+        public IDocumentStore DocumentStore { get; }
 
         public IMartenQueryable<T> Query<T>()
         {
@@ -49,59 +50,21 @@ namespace Marten
             return new MartenQueryable<T>(queryProvider);
         }
 
-        public IEnumerable<T> Query<T>(string sql, params object[] parameters)
+        public IList<T> Query<T>(string sql, params object[] parameters)
         {
-            using (var cmd = BuildCommand<T>(sql, parameters))
-            {
-                return _connection.Resolve(cmd, new StringSelector(), _identityMap)
-                    .Select(json => _serializer.FromJson<T>(json))
-                    .ToArray();
-            }
+            var handler = new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters);
+            return _connection.Fetch(handler, _identityMap.ForQuery());
         }
 
-        public async Task<IEnumerable<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
+        public Task<IList<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
         {
-            using (var cmd = BuildCommand<T>(sql, parameters))
-            {
-                var result =
-                    await _connection.ResolveAsync(cmd, new StringSelector(), _identityMap, token).ConfigureAwait(false);
-                return result
-                    .Select(json => _serializer.FromJson<T>(json))
-                    .ToArray();
-            }
+            var handler = new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters);
+            return _connection.FetchAsync(handler, _identityMap.ForQuery(), token);
         }
 
         public IBatchedQuery CreateBatchQuery()
         {
             return new BatchedQuery(_connection, _schema, _identityMap.ForQuery(), this, _serializer);
-        }
-
-        public NpgsqlCommand BuildCommand<T>(string sql, params object[] parameters)
-        {
-            var cmd = new NpgsqlCommand();
-
-            ConfigureCommand<T>(cmd, sql, parameters);
-
-            return cmd;
-        }
-
-        [Obsolete("Get around to replacing this w/ the UserSuppliedQueryHandler<T> code")]
-        public void ConfigureCommand<T>(NpgsqlCommand cmd, string sql, object[] parameters)
-        {
-            if (!sql.Contains("select", StringComparison.OrdinalIgnoreCase))
-            {
-                var mapping = _schema.MappingFor(typeof (T));
-                var tableName = mapping.Table.QualifiedName;
-                sql = "select data from {0} {1}".ToFormat(tableName, sql);
-            }
-
-            parameters.Each(x =>
-            {
-                var param = cmd.AddParameter(x);
-                sql = sql.UseParameter(param);
-            });
-
-            cmd.AppendQuery(sql);
         }
 
         private IDocumentStorage storage<T>()

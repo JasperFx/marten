@@ -103,7 +103,7 @@ namespace Marten.Testing
             // Apply the schema customizations
             //container.GetInstance<IDocumentSchema>().Alter<TRegistry>();
             throw new NotImplementedException("See line of code above, no longer valid");
-
+            /*
             using (var session = container.GetInstance<IDocumentStore>().OpenSession())
             {
                 var store = container.GetInstance<IDocumentStore>();
@@ -134,6 +134,7 @@ namespace Marten.Testing
 
                 _timings[typeof (TSerializer)].Record<TRegistry>(data.Length, average);
             }
+            */
         }
 
         public void time_inserts<TSerializer, TRegistry>(Target[] data)
@@ -152,6 +153,7 @@ namespace Marten.Testing
             //container.GetInstance<IDocumentSchema>().Alter<TRegistry>();
             throw new NotImplementedException("See above line of code");
 
+            /*
             using (var session = container.GetInstance<IDocumentStore>().OpenSession())
             {
                 var store = container.GetInstance<IDocumentStore>();
@@ -166,6 +168,7 @@ namespace Marten.Testing
 
                 _timings[typeof(TSerializer)].Record<TRegistry>(data.Length, time);
             }
+            */
         }
 
 

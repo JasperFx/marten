@@ -17,7 +17,7 @@ namespace Marten.Testing.Examples
                 _.Schema.Include<MyMartenRegistry>();
 
                 // If you are depending upon attributes for customization,
-                // you have to help Store "know" what the document types
+                // you have to help DocumentStore "know" what the document types
                 // are
                 _.Schema.For<User>();
                 _.Schema.For<Company>();

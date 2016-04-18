@@ -16,7 +16,7 @@ namespace Marten
     /// <summary>
     /// StoreOptions supplies all the necessary configuration
     /// necessary to customize and bootstrap a working
-    /// Store
+    /// DocumentStore
     /// </summary>
     public class StoreOptions
     {
@@ -139,7 +139,7 @@ namespace Marten
         public AutoCreate AutoCreateSchemaObjects = AutoCreate.All;
 
         /// <summary>
-        /// Global default parameters for Hilo sequences within the Store. Can be overridden per document
+        /// Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
         /// type as well
         /// </summary>
         public HiloSettings HiloSequenceDefaults { get; } = new HiloSettings();

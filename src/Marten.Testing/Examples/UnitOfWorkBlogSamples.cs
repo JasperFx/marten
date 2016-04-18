@@ -15,7 +15,7 @@ namespace Marten.Testing.Examples
         {
             
             
-// theStore is a Store
+// theStore is a DocumentStore
 using (var session = theStore.OpenSession())
 {
     // All I'm doing here is recording references
