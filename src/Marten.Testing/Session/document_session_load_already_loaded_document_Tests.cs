@@ -39,8 +39,7 @@ namespace Marten.Testing.Session
             using (var session = theStore.OpenSession())
             {
                 var first = session.Load<User>(user.Id);
-                var second = session.LoadMany<User>()
-                    .ById(user.Id)
+                var second = session.LoadMany<User>(user.Id)
                     .SingleOrDefault();
 
                 first.ShouldBeSameAs(second);

@@ -23,12 +23,12 @@ namespace Marten.Testing.Examples
 
 
             // Load multiple documents by a group of id's
-            var users = session.LoadMany<User>().ById(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+            var users = session.LoadMany<User>(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
             var ids = new Guid[] {Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()};
 
-            // If you already have an enumerable of id values
-            var users2 = session.LoadMany<User>().ById(ids);
+            // If you already have an array of id values
+            var users2 = session.LoadMany<User>(ids);
         } 
         // ENDSAMPLE
     }

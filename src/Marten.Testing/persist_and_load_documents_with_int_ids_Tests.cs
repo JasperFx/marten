@@ -76,7 +76,7 @@ namespace Marten.Testing
 
             using (var session = theStore.OpenSession())
             {
-                session.LoadMany<IntDoc>().ById(4, 5, 6).Count().ShouldBe(3);
+                session.LoadMany<IntDoc>(4, 5, 6).Count().ShouldBe(3);
             }
         }
     }
