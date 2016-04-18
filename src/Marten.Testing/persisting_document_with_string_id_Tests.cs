@@ -112,7 +112,7 @@ namespace Marten.Testing
 
             using (var session = theStore.OpenSession())
             {
-                session.LoadMany<Account>().ById("A", "B", "E").Count().ShouldBe(3);
+                session.LoadMany<Account>("A", "B", "E").Count().ShouldBe(3);
             }
         }
     }

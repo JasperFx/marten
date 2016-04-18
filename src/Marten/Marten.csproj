@@ -58,6 +58,7 @@
     <Compile Include="IDiagnostics.cs" />
     <Compile Include="IDocumentSessionListener.cs" />
     <Compile Include="IMartenLogger.cs" />
+    <Compile Include="IQuerySession.cs" />
     <Compile Include="JsonExtensions.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="LinqExtensions.cs" />

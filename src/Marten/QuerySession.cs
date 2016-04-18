@@ -217,6 +217,68 @@ namespace Marten
             }, token);
         }
 
+
+        public IList<T> LoadMany<T>(params string[] ids) where T : class
+        {
+            return LoadMany<T>().ById(ids);
+        }
+
+        public IList<T> LoadMany<T>(params Guid[] ids) where T : class
+        {
+            return LoadMany<T>().ById(ids);
+        }
+
+        public IList<T> LoadMany<T>(params int[] ids) where T : class
+        {
+            return LoadMany<T>().ById(ids);
+        }
+
+        public IList<T> LoadMany<T>(params long[] ids) where T : class
+        {
+            return LoadMany<T>().ById(ids);
+        }
+
+        public Task<IList<T>> LoadManyAsync<T>(params string[] ids) where T : class
+        {
+            return LoadMany<T>().ByIdAsync(ids);
+        }
+
+        public Task<IList<T>> LoadManyAsync<T>(params Guid[] ids) where T : class
+        {
+            return LoadMany<T>().ByIdAsync(ids);
+        }
+
+        public Task<IList<T>> LoadManyAsync<T>(params int[] ids) where T : class
+        {
+            return LoadMany<T>().ByIdAsync(ids);
+        }
+
+        public Task<IList<T>> LoadManyAsync<T>(params long[] ids) where T : class
+        {
+            return LoadMany<T>().ByIdAsync(ids);
+        }
+
+        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids) where T : class
+        {
+            return LoadMany<T>().ByIdAsync(ids, token);
+        }
+
+        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params Guid[] ids) where T : class
+        {
+            return LoadMany<T>().ByIdAsync(ids, token);
+        }
+
+        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params int[] ids) where T : class
+        {
+            return LoadMany<T>().ByIdAsync(ids, token);
+        }
+
+        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids) where T : class
+        {
+            return LoadMany<T>().ByIdAsync(ids, token);
+        }
+
+
         private class LoadByKeys<TDoc> : ILoadByKeys<TDoc> where TDoc : class
         {
             private readonly QuerySession _parent;
@@ -228,12 +290,12 @@ namespace Marten
 
             public IList<TDoc> ById<TKey>(params TKey[] keys)
             {
-                var hitsAndMisses = GetHitsAndMisses(keys);
+                var hitsAndMisses = this.hitsAndMisses(keys);
                 var hits = hitsAndMisses.Item1;
                 var misses = hitsAndMisses.Item2;
                 var documents = fetchDocuments(misses);
 
-                return ConcatDocuments(hits, documents);
+                return concatDocuments(hits, documents);
             }
 
             public Task<IList<TDoc>> ByIdAsync<TKey>(params TKey[] keys)
@@ -249,15 +311,15 @@ namespace Marten
             public async Task<IList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys,
                 CancellationToken token = default(CancellationToken))
             {
-                var hitsAndMisses = GetHitsAndMisses(keys.ToArray());
+                var hitsAndMisses = this.hitsAndMisses(keys.ToArray());
                 var hits = hitsAndMisses.Item1;
                 var misses = hitsAndMisses.Item2;
                 var documents = await fetchDocumentsAsync(misses, token).ConfigureAwait(false);
 
-                return ConcatDocuments(hits, documents);
+                return concatDocuments(hits, documents);
             }
 
-            private IList<TDoc> ConcatDocuments<TKey>(TKey[] hits, IEnumerable<TDoc> documents)
+            private IList<TDoc> concatDocuments<TKey>(TKey[] hits, IEnumerable<TDoc> documents)
             {
                 return
                     hits.Select(key => _parent._identityMap.Retrieve<TDoc>(key))
@@ -265,7 +327,7 @@ namespace Marten
                         .ToList();
             }
 
-            private Tuple<TKey[], TKey[]> GetHitsAndMisses<TKey>(TKey[] keys)
+            private Tuple<TKey[], TKey[]> hitsAndMisses<TKey>(TKey[] keys)
             {
                 var hits = keys.Where(key => _parent._identityMap.Has<TDoc>(key)).ToArray();
                 var misses = keys.Where(x => !hits.Contains(x)).ToArray();
