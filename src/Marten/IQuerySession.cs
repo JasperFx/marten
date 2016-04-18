@@ -95,7 +95,7 @@ namespace Marten
         /// <param name="sql"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        IEnumerable<T> Query<T>(string sql, params object[] parameters);
+        IList<T> Query<T>(string sql, params object[] parameters);
 
         /// <summary>
         /// Asynchronously queries the document storage table for the document type T by supplied SQL. See http://jasperfx.github.io/marten/documentation/documents/sql/ for more information on usage.
@@ -105,7 +105,7 @@ namespace Marten
         /// <param name="token"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        Task<IEnumerable<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters);
+        Task<IList<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters);
 
         /// <summary>
         /// Define a batch of deferred queries and load operations to be conducted in one asynchronous request to the 
