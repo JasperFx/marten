@@ -37,6 +37,20 @@ namespace Marten.Testing.Linq
             UserByUsername.Count.ShouldBe(1);
         }
 
+
+        [Fact]
+        public void a_single_item_compiled_query_SingleOrDefault()
+        {
+            UserByUsername.Count = 0;
+
+            var user = theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "myusername" });
+            user.ShouldNotBeNull();
+
+
+            theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "nonexistent" })
+                .ShouldBeNull();
+        }
+
         [Fact]
         public void several_parameters_for_compiled_query()
         {
@@ -159,6 +173,19 @@ namespace Marten.Testing.Linq
             Count++;
             return query => query.Where(x => x.UserName == UserName)
                 .FirstOrDefault();
+        }
+    }
+
+    public class UserByUsernameSingleOrDefault : ICompiledQuery<User>
+    {
+        public static int Count;
+        public string UserName { get; set; }
+
+        public Expression<Func<IQueryable<User>, User>> QueryIs()
+        {
+            Count++;
+            return query => query.Where(x => x.UserName == UserName)
+                .SingleOrDefault();
         }
     }
 
