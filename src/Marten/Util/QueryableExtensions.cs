@@ -17,24 +17,6 @@ namespace Marten.Util
             return queryable.As<IMartenQueryable<T>>().Explain();
         }
 
-
-        #region ToListJson
-
-        public static async Task<string> ToListJsonAsync<T>(this IQueryable<T> queryable,
-            CancellationToken token = default(CancellationToken))
-        {
-            var raw = await queryable.Json().ToListAsync(token);
-
-            return raw.ToJsonArray();
-        }
-
-        public static string ToListJson<T>(this IQueryable<T> queryable)
-        {
-            return queryable.Select(x => x.Json()).ToList().ToJsonArray();
-        }
-
-        #endregion
-
         #region ToList
 
         public static Task<IList<T>> ToListAsync<T>(this IQueryable<T> queryable,
@@ -169,24 +151,6 @@ namespace Marten.Util
             return source.As<IMartenQueryable>().FirstAsync<TSource>(token);
         }
 
-        public static Task<string> FirstJsonAsync<TSource>(
-            this IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-
-            return source.Select(x => x.Json()).FirstAsync(token);
-        }
-
-        public static string FirstJson<TSource>(
-            this IQueryable<TSource> source)
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-
-            return source.Select(x => x.Json()).First();
-        }
-
-
         public static Task<TSource> FirstAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
@@ -198,28 +162,6 @@ namespace Marten.Util
             return source.Where(predicate).FirstAsync(token);
         }
 
-        public static Task<string> FirstJsonAsync<TSource>(
-            this IQueryable<TSource> source,
-            Expression<Func<TSource, bool>> predicate,
-            CancellationToken token = default(CancellationToken))
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
-
-            return source.Where(predicate).Select(x => x.Json()).FirstAsync(token);
-        }
-
-        public static string FirstJson<TSource>(
-            this IQueryable<TSource> source,
-            Expression<Func<TSource, bool>> predicate)
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
-
-            return source.Where(predicate).Json().First();
-        }
-
-
         public static Task<TSource> FirstOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
             CancellationToken token = default(CancellationToken))
@@ -228,25 +170,6 @@ namespace Marten.Util
 
             return source.As<IMartenQueryable>().FirstOrDefaultAsync<TSource>(token);
         }
-
-        public static Task<string> FirstOrDefaultJsonAsync<TSource>(
-            this IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-
-            return source.Select(x => x.Json()).FirstOrDefaultAsync(token);
-        }
-
-
-        public static string FirstOrDefaultJson<TSource>(
-            this IQueryable<TSource> source)
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-
-            return source.Select(x => x.Json()).FirstOrDefault();
-        }
-
 
         public static Task<TSource> FirstOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
@@ -257,27 +180,6 @@ namespace Marten.Util
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
             return source.Where(predicate).FirstOrDefaultAsync(token);
-        }
-
-        public static Task<string> FirstOrDefaultJsonAsync<TSource>(
-            this IQueryable<TSource> source,
-            Expression<Func<TSource, bool>> predicate,
-            CancellationToken token = default(CancellationToken))
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
-
-            return source.Where(predicate).Json().FirstOrDefaultAsync(token);
-        }
-
-        public static string FirstOrDefaultJson<TSource>(
-            this IQueryable<TSource> source,
-            Expression<Func<TSource, bool>> predicate)
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
-
-            return source.Where(predicate).Json().FirstOrDefault();
         }
 
         #endregion
@@ -293,23 +195,6 @@ namespace Marten.Util
             return source.As<IMartenQueryable>().SingleAsync<TSource>(token);
         }
 
-        public static Task<string> SingleJsonAsync<TSource>(
-            this IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-
-            return source.Select(x => x.Json()).SingleAsync(token);
-        }
-
-        public static string SingleJson<TSource>(
-            this IQueryable<TSource> source)
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-
-            return source.Select(x => x.Json()).Single();
-        }
-
         public static Task<TSource> SingleAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
@@ -321,28 +206,6 @@ namespace Marten.Util
             return source.Where(predicate).SingleAsync(token);
         }
 
-        public static Task<string> SingleJsonAsync<TSource>(
-            this IQueryable<TSource> source,
-            Expression<Func<TSource, bool>> predicate,
-            CancellationToken token = default(CancellationToken))
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
-
-            return source.Where(predicate).Json().SingleAsync(token);
-        }
-
-        public static string SingleJson<TSource>(
-            this IQueryable<TSource> source,
-            Expression<Func<TSource, bool>> predicate)
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
-
-            return source.Where(predicate).Json().Single();
-        }
-
-
         public static Task<TSource> SingleOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
             CancellationToken token = default(CancellationToken))
@@ -350,23 +213,6 @@ namespace Marten.Util
             if (source == null) throw new ArgumentNullException(nameof(source));
 
             return source.As<IMartenQueryable>().SingleOrDefaultAsync<TSource>(token);
-        }
-
-        public static Task<string> SingleOrDefaultJsonAsync<TSource>(
-            this IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-
-            return source.Select(x => x.Json()).SingleOrDefaultAsync(token);
-        }
-
-        public static string SingleOrDefaultJson<TSource>(
-            this IQueryable<TSource> source)
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-
-            return source.Select(x => x.Json()).SingleOrDefault();
         }
 
         public static Task<TSource> SingleOrDefaultAsync<TSource>(
@@ -378,28 +224,6 @@ namespace Marten.Util
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
             return source.Where(predicate).SingleOrDefaultAsync(token);
-        }
-
-        public static Task<string> SingleOrDefaultJsonAsync<TSource>(
-            this IQueryable<TSource> source,
-            Expression<Func<TSource, bool>> predicate,
-            CancellationToken token = default(CancellationToken))
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
-
-            return source.Where(predicate).Json().SingleOrDefaultAsync(token);
-        }
-
-        public static string SingleOrDefaultJson<TSource>(
-            this IQueryable<TSource> source,
-            Expression<Func<TSource, bool>> predicate)
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
-
-
-            return source.Where(predicate).Json().SingleOrDefault();
         }
 
         #endregion

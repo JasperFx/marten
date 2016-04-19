@@ -11,7 +11,7 @@ There is also an asynchronous version:
 
 <[sample:find-json-by-id-async]>
 
-As of v0.8.3, Marten supplies the following functionality to retrieve the raw JSON strings:
+As of v0.9, Marten supplies the following functionality to retrieve the raw JSON strings:
 
 <[sample:get-raw-json]>
 
