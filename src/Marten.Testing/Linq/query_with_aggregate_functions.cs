@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
@@ -93,6 +94,25 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
             var maxNumber = await theSession.Query<Target>().AverageAsync(t => t.Number);
             maxNumber.ShouldBe(10);
+        }
+
+        [Fact]
+        public void min_on_empty_table_should_throw()
+        {
+            Exception<InvalidOperationException>.ShouldBeThrownBy(()=> theSession.Query<Target>().Min(t => t.Number));
+        }
+
+        [Fact]
+        public void max_on_empty_table_should_throw()
+        {
+            Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<Target>().Max(t => t.Number));
+        }
+
+        [Fact]
+        public void average_on_empty_table_should_throw()
+        {
+            var e = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<Target>().Average(t => t.Number));
+            e.Message.ShouldBe("The cast to value type 'System.Double' failed because the materialized value is null. Either the result type's generic parameter or the query must use a nullable type.");
         }
     }
 }
