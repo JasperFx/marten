@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Util;
@@ -30,7 +31,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0, user1);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().SingleJson(x => x.Number == 5);
+            var userJson = theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().Single();
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
@@ -47,7 +48,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().SingleJson();
+            var userJson = theSession.Query<SimpleUser>().AsJson().Single();
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
@@ -71,7 +72,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
 
-            var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().SingleJson(x => x.Number != 5));
+            var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().Single());
             ex.Message.ShouldBe("Sequence contains no elements");
         }
 
@@ -95,7 +96,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
             
-            var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().SingleJson(x => x.Number == 5));
+            var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().Single());
             ex.Message.ShouldBe("Sequence contains more than one element"); 
         }
 
@@ -119,7 +120,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0, user1);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().SingleJsonAsync(x => x.Number == 5);
+            var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().SingleAsync();
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
@@ -137,7 +138,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().SingleJsonAsync();
+            var userJson = await theSession.Query<SimpleUser>().AsJson().SingleAsync();
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
@@ -161,7 +162,8 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
             
-            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => theSession.Query<SimpleUser>().SingleJsonAsync(x => x.Number != 5));
+            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => 
+                theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().SingleAsync());
             ex.Message.ShouldBe("Sequence contains no elements"); 
         }
 
@@ -185,7 +187,8 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
             
-            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => theSession.Query<SimpleUser>().SingleJsonAsync(x => x.Number == 5));
+            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => 
+                theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().SingleAsync());
             ex.Message.ShouldBe("Sequence contains more than one element"); 
         }
 
@@ -209,7 +212,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0, user1);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().SingleOrDefaultJson(x => x.Number == 5);
+            var userJson = theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().SingleOrDefault();
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
@@ -226,7 +229,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().SingleOrDefaultJson();
+            var userJson = theSession.Query<SimpleUser>().AsJson().SingleOrDefault();
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
@@ -257,7 +260,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0, user1, user2);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().SingleOrDefaultJsonAsync(x => x.Number == 5);
+            var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().SingleOrDefaultAsync();
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
@@ -274,7 +277,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().SingleOrDefaultJsonAsync();
+            var userJson = await theSession.Query<SimpleUser>().AsJson().SingleOrDefaultAsync();
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
@@ -298,7 +301,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
 
-            var userJson = theSession.Query<SimpleUser>().SingleOrDefaultJson(x => x.Number != 5);
+            var userJson = theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().SingleOrDefault();
             userJson.ShouldBeNull();
         }
 
@@ -322,7 +325,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
             
-            var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().SingleOrDefaultJson(x => x.Number == 5));
+            var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().SingleOrDefault());
             ex.Message.ShouldBe("Sequence contains more than one element");
         }
 
@@ -346,7 +349,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().SingleOrDefaultJsonAsync(x => x.Number != 5);
+            var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().SingleOrDefaultAsync();
             userJson.ShouldBeNull();
         }
     }
