@@ -54,6 +54,7 @@
     <Compile Include="Events\EventStore.cs" />
     <Compile Include="Events\EventStoreAdmin.cs" />
     <Compile Include="Events\EventStream.cs" />
+    <Compile Include="Events\Projections\ProjectionClasses.cs" />
     <Compile Include="Generation\TableDiff.cs" />
     <Compile Include="IDiagnostics.cs" />
     <Compile Include="IDocumentSessionListener.cs" />
