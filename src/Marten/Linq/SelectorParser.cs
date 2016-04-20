@@ -64,7 +64,7 @@ namespace Marten.Linq
                 : _target.ToSelector<T>(mapping);
         }
 
-        private static string _methodName = nameof(JsonExtensions.Json);
+        private static string _methodName = nameof(JsonExtensions.AsJson);
         private JsonSelector _selector;
 
         protected override Expression VisitMethodCall(MethodCallExpression node)

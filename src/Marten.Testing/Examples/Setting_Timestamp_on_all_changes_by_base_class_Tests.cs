@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Xunit;
@@ -46,7 +47,7 @@ namespace Marten.Testing.Examples
             entities.Each(x => x.Timestamp = DateTimeOffset.UtcNow);
         }
 
-        public override Task BeforeSaveChangesAsync(IDocumentSession session)
+        public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
         {
             return Task.Factory.StartNew(() => BeforeSaveChanges(session));
         }
