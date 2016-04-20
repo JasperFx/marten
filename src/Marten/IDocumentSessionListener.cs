@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace Marten
 {
@@ -17,8 +18,9 @@ namespace Marten
         /// but before any database calls are made
         /// </summary>
         /// <param name="session"></param>
+        /// <param name="token"></param>
         /// <returns></returns>
-        Task BeforeSaveChangesAsync(IDocumentSession session);
+        Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token);
 
 
         /// <summary>
@@ -31,8 +33,9 @@ namespace Marten
         /// After an IDocumentSession is committed
         /// </summary>
         /// <param name="session"></param>
+        /// <param name="token"></param>
         /// <returns></returns>
-        Task AfterCommitAsync(IDocumentSession session);
+        Task AfterCommitAsync(IDocumentSession session, CancellationToken token);
 
 
         /// <summary>
@@ -55,7 +58,7 @@ namespace Marten
             // Nothing
         }
 
-        public virtual Task BeforeSaveChangesAsync(IDocumentSession session)
+        public virtual Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
         {
             // Nothing
             return Task.CompletedTask;
@@ -66,7 +69,7 @@ namespace Marten
             // Nothing
         }
 
-        public virtual Task AfterCommitAsync(IDocumentSession session)
+        public virtual Task AfterCommitAsync(IDocumentSession session, CancellationToken token)
         {
             // Nothing
             return Task.CompletedTask;

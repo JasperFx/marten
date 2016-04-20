@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -383,13 +384,13 @@ namespace Marten.Testing
             SaveChangesSession = session;
         }
 
-        public override Task BeforeSaveChangesAsync(IDocumentSession session)
+        public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
         {
             SaveChangesSession = session;
             return Task.CompletedTask;
         }
 
-        public override Task AfterCommitAsync(IDocumentSession session)
+        public override Task AfterCommitAsync(IDocumentSession session, CancellationToken token)
         {
             AfterCommitSession = session;
             return Task.CompletedTask;
