@@ -18,10 +18,6 @@ namespace Marten.Events
 
         void AddEventType(Type eventType);
         void AddEventTypes(IEnumerable<Type> types);
-        void AddAggregateTypes(IEnumerable<Type> types);
-        void AddAggregateType<T>() where T : class, new();
-        void AddAggregateType(Type aggregateType);
-
 
         EventMapping EventMappingFor(Type eventType);
         EventMapping EventMappingFor<T>() where T : class, new();
@@ -34,6 +30,8 @@ namespace Marten.Events
         Type AggregateTypeFor(string aggregateTypeName);
     }
 
+    // TODO -- try to eliminate the IDocumentMapping implementation here
+    // just making things ugly
     public class EventGraph : IDocumentMapping, IEventStoreConfiguration
     {
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
@@ -95,10 +93,6 @@ namespace Marten.Events
             types.Each(AddEventType);
         }
 
-        public void AddAggregateTypes(IEnumerable<Type> types)
-        {
-            types.Each(AddAggregateType);
-        }
 
         public bool IsActive => _events.Any() || _aggregates.Any();
 
@@ -117,9 +111,9 @@ namespace Marten.Events
         public IIdGeneration IdStrategy { get; set; } = new GuidIdGeneration();
         public MemberInfo IdMember { get; } = ReflectionHelper.GetProperty<EventStream>(x => x.Id);
 
-        public string[] SelectFields()
+        string[] IDocumentMapping.SelectFields()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
@@ -173,17 +167,17 @@ namespace Marten.Events
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IWhereFragment FilterDocuments(IWhereFragment query)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IWhereFragment DefaultWhereFragment()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IDocumentStorage BuildStorage(IDocumentSchema schema)
@@ -198,19 +192,19 @@ namespace Marten.Events
             // TODO -- need to load the projection and initialize
         }
 
-        public void RemoveSchemaObjects(IManagedConnection connection)
+        void IDocumentMapping.RemoveSchemaObjects(IManagedConnection connection)
         {
             throw new NotImplementedException();
         }
 
-        public void DeleteAllDocuments(IConnectionFactory factory)
+        void IDocumentMapping.DeleteAllDocuments(IConnectionFactory factory)
         {
             throw new NotImplementedException();
         }
 
-        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class
+        IncludeJoin<TOther> IDocumentMapping.JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public AggregateModel AggregateFor<T>() where T : class, new()
@@ -223,21 +217,12 @@ namespace Marten.Events
             return _aggregates[aggregateType];
         }
 
+
         public Type AggregateTypeFor(string aggregateTypeName)
         {
             return _aggregateByName[aggregateTypeName].AggregateType;
         }
 
-        public void AddAggregateType<T>() where T : class, new()
-        {
-            _aggregates.FillDefault(typeof(T));
-        }
 
-        public void AddAggregateType(Type aggregateType)
-        {
-            _aggregates.FillDefault(aggregateType);
-        }
-
-        
     }
 }

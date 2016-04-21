@@ -14,38 +14,44 @@ namespace Marten.Events
         Guid StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class, new();
         Guid StartStream<TAggregate>(params object[] events) where TAggregate : class, new();
 
-        TAggregate FetchSnapshot<TAggregate>(Guid streamId) where TAggregate : class, new();
-
         IEnumerable<IEvent> FetchStream(Guid streamId);
         IEnumerable<IEvent> FetchStream(Guid streamId, int version);
         IEnumerable<IEvent> FetchStream(Guid streamId, DateTime timestamp);
 
-        
-
-        void DeleteEvent(Guid id);
-        void DeleteEvent(IEvent @event);
-
-
-        void ReplaceEvent<T>(T @event);
-
         ITransforms Transforms { get; }
 
-        StreamState FetchStreamState(Guid streamId);
 
         IMartenQueryable<T> Query<T>();
         T Load<T>(Guid id) where T : class;
         Task<T> LoadAsync<T>(Guid id) where T : class;
+        StreamState FetchStreamState(Guid streamId);
     }
 
     public interface ITransforms
     {
-        TAggregate TransformTo<TAggregate>(Guid streamId, IEvent @event);
         string Transform(string projectionName, Guid streamId, IEvent @event) ;
 
         TAggregate ApplySnapshot<TAggregate>(Guid streamId, TAggregate aggregate, IEvent @event) where TAggregate : class, new();
 
-        TAggregate ApplyProjection<TAggregate>(string projectionName, TAggregate aggregate, IEvent @event) where TAggregate : class, new();
         TAggregate StartSnapshot<TAggregate>(Guid streamId, IEvent @event) where TAggregate : class, new();
+
+
+        StreamState FetchStreamState(Guid streamId);
+    }
+
+    [Obsolete("Replace this with just EventStream")]
+    public class StreamState
+    {
+        public Guid Id { get; }
+        public int Version { get; }
+        public Type AggregateType { get; }
+
+        public StreamState(Guid id, int version, Type aggregateType)
+        {
+            Id = id;
+            Version = version;
+            AggregateType = aggregateType;
+        }
     }
 
     public interface IEventStoreAdmin
@@ -64,17 +70,5 @@ namespace Marten.Events
 
     }
 
-    public class StreamState
-    {
-        public Guid Id { get; }
-        public int Version { get; }
-        public Type AggregateType { get; }
 
-        public StreamState(Guid id, int version, Type aggregateType)
-        {
-            Id = id;
-            Version = version;
-            AggregateType = aggregateType;
-        }
-    }
 }

@@ -22,7 +22,7 @@ namespace Marten.Events
             Alias = aggregateType.Name.ToTableAlias();
         }
 
-        public Type DocumentType { get; }
+        public Type DocumentType => AggregateType;
         public TableName Table { get; }
         public PropertySearching PropertySearching { get; }
 

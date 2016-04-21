@@ -68,12 +68,6 @@ namespace Marten.Testing.Events
             theGraph.IsActive.ShouldBeTrue();
         }
 
-        [Fact]
-        public void has_any_is_true_with_any_aggregates()
-        {
-            theGraph.AddAggregateType<Quest>();
-            theGraph.IsActive.ShouldBeTrue();
-        }
 
         public class HouseRemodeling
         {

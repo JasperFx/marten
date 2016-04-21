@@ -141,36 +141,8 @@ namespace Marten.Events
             }
         }
 
-        public void DeleteEvent(Guid id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DeleteEvent(IEvent @event)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ReplaceEvent<T>(T @event)
-        {
-            throw new NotImplementedException();
-        }
-
         public ITransforms Transforms => this;
-        public StreamState FetchStreamState(Guid streamId)
-        {
-            return _connection.Execute(cmd =>
-            {
-                Func<DbDataReader, StreamState> converter = r =>
-                {
-                    var typeName = r.GetString(1);
-                    var aggregateType = _schema.Events.AggregateTypeFor(typeName);
-                    return new StreamState(streamId, r.GetInt32(0), aggregateType);
-                };
-
-                return cmd.Fetch($"select version, type from {_schema.Events.DatabaseSchemaName}.mt_streams where id = ?", converter, streamId).SingleOrDefault();
-            });
-        }
+ 
 
         public IMartenQueryable<T> Query<T>()
         {
@@ -191,10 +163,6 @@ namespace Marten.Events
             return _session.LoadAsync<T>(id);
         }
 
-        public TAggregate TransformTo<TAggregate>(Guid streamId, IEvent @event)
-        {
-            throw new NotImplementedException();
-        }
 
         public string Transform(string projectionName, Guid streamId, IEvent @event)
         {
@@ -237,11 +205,6 @@ namespace Marten.Events
             return _serializer.FromJson<TAggregate>(json);
         }
 
-        public TAggregate ApplyProjection<TAggregate>(string projectionName, TAggregate aggregate, IEvent @event) where TAggregate : class, new()
-        {
-            throw new NotImplementedException();
-        }
-
         public TAggregate StartSnapshot<TAggregate>(Guid streamId, IEvent @event) where TAggregate : class, new()
         {
             var projectionName = _schema.Events.AggregateFor<TAggregate>().Alias;
@@ -260,6 +223,21 @@ namespace Marten.Events
             });
 
             return _serializer.FromJson<TAggregate>(json);
+        }
+
+        public StreamState FetchStreamState(Guid streamId)
+        {
+            return _connection.Execute(cmd =>
+            {
+                Func<DbDataReader, StreamState> converter = r =>
+                {
+                    var typeName = r.GetString(1);
+                    var aggregateType = _schema.Events.AggregateTypeFor(typeName);
+                    return new StreamState(streamId, r.GetInt32(0), aggregateType);
+                };
+
+                return cmd.Fetch($"select version, type from {_schema.Events.DatabaseSchemaName}.mt_streams where id = ?", converter, streamId).SingleOrDefault();
+            });
         }
     }
 }

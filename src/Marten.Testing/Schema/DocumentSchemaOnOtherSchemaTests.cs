@@ -186,7 +186,7 @@ namespace Marten.Testing.Schema
                 _.RegisterDocumentType<Company>();
                 _.RegisterDocumentType<Issue>();
 
-                _.Events.AddAggregateType<Quest>();
+                _.Events.AddEventType(typeof(MembersJoined));
 
                 _.Connection(ConnectionSource.ConnectionString);
             }))
