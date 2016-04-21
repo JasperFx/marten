@@ -5,20 +5,9 @@ using Baseline;
 
 namespace Marten.Events.Projections
 {
-    public interface IProjection
-    {
-        void Apply(IDocumentSession session);
-        Task ApplyAsync(IDocumentSession session, CancellationToken token);
-    }
-
     public interface ITransform<TInput, TOutput>
     {
         TOutput Transform(TInput input);
-    }
-
-    public interface IAggregation<TAggregate, TEvent>
-    {
-        void Apply(TAggregate aggregate, TEvent @event);
     }
 
     public interface IAggregationFinder<T>
@@ -27,6 +16,19 @@ namespace Marten.Events.Projections
 
         // TODO -- make this use the batch query later
         Task<T> FindAsync(EventStream stream, IDocumentSession session, CancellationToken token);
+    }
+
+    public class SimpleAggregationFinder<T> : IAggregationFinder<T>
+    {
+        public T Find(EventStream stream, IDocumentSession session)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<T> FindAsync(EventStream stream, IDocumentSession session, CancellationToken token)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
     public class AggregationProjection<T> : IProjection where T : class, new()

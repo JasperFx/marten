@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Marten.Events;
 
 namespace Marten.Services
 {
@@ -61,5 +62,12 @@ namespace Marten.Services
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         IEnumerable<T> AllChangedFor<T>();
+
+        /// <summary>
+        /// All of the event streams with pending events to be appended when this
+        /// session is saved
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<EventStream> Streams();
     }
 }

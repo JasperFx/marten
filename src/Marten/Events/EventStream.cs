@@ -14,20 +14,25 @@ namespace Marten.Events
             return typeof(Event<>).CloseAndBuildAs<IEvent>(@event, @event.GetType());
         }
 
-        public EventStream(Guid id)
+        public EventStream(Guid id, bool isNew)
         {
             Id = id;
+            IsNew = isNew;
         }
 
         public Guid Id { get; }
+
+        public bool IsNew { get; }
+
         public Type AggregateType { get; set; } 
 
         private readonly IList<IEvent> _events = new List<IEvent>();
 
-        public EventStream(Guid stream, IEvent[] events)
+        public EventStream(Guid stream, IEvent[] events, bool isNew)
         {
             Id = stream;
             AddEvents(events);
+            IsNew = isNew;
         }
 
         public EventStream AddEvents(IEnumerable<IEvent> events)

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Util;
@@ -212,6 +213,11 @@ namespace Marten.Services
         public IEnumerable<T> AllChangedFor<T>()
         {
             return InsertsFor<T>().Union(UpdatesFor<T>());
+        }
+
+        public IEnumerable<EventStream> Streams()
+        {
+            return AllChangedFor<EventStream>();
         }
 
         public void Delete<T>(IWhereFragment where)

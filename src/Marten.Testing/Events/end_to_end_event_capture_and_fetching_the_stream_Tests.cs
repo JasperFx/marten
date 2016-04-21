@@ -38,6 +38,9 @@ namespace Marten.Testing.Events
             }
         }
 
+
+
+
         [Theory]
         [MemberData("SessionTypes")]
         public void capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided(DocumentTracking sessionType)

@@ -47,7 +47,7 @@ namespace Marten.Events
             }
             else
             {
-                var eventStream = new EventStream(stream, events.Select(EventStream.ToEvent).ToArray());
+                var eventStream = new EventStream(stream, events.Select(EventStream.ToEvent).ToArray(), false);
 
                 _session.Store(eventStream);
             }
@@ -55,7 +55,7 @@ namespace Marten.Events
 
         public Guid StartStream<T>(Guid id, params object[] events) where T : class, new()
         {
-            var stream = new EventStream(id, events.Select(EventStream.ToEvent).ToArray())
+            var stream = new EventStream(id, events.Select(EventStream.ToEvent).ToArray(), true)
             {
                 AggregateType = typeof(T)
             };

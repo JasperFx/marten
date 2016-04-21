@@ -55,6 +55,7 @@
     <Compile Include="Bugs\Bug_237_duplicate_indexing_Tests.cs" />
     <Compile Include="Bugs\Bug_261_double_take_or_skip.cs" />
     <Compile Include="Bugs\Bug_276_Query_by_abstract_type_in_hierarchy.cs" />
+    <Compile Include="Events\marking_stream_as_isnew_on_capture.cs" />
     <Compile Include="Events\Projections\AggregationStepTests.cs" />
     <Compile Include="Events\Projections\AggregatorTests.cs" />
     <Compile Include="Events\Projections\QuestParty.cs" />
