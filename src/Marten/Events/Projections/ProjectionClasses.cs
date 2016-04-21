@@ -106,7 +106,7 @@ namespace Marten.Events.Projections
             Data = data;
         }
 
-        public override void Apply<TAggregate>(TAggregate state, Aggregator<TAggregate> aggregator) where TAggregate : class, new()
+        public override void Apply<TAggregate>(TAggregate state, Aggregator<TAggregate> aggregator) 
         {
             aggregator.AggregatorFor<T>()?.Apply(state, Data.As<T>());
         }
