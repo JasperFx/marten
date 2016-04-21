@@ -77,21 +77,6 @@ namespace Marten.Events.Projections
 
     }
 
-    public class Event<T> : Event
-    {
-        public Event(T data)
-        {
-            Data = data;
-        }
-
-        public override void Apply<TAggregate>(TAggregate state, Aggregator<TAggregate> aggregator) 
-        {
-            aggregator.AggregatorFor<T>()?.Apply(state, Data.As<T>());
-        }
-    }
-
-
-
     public class OneForOneProjection<TInput, TOutput> : IProjection
     {
         private readonly ITransform<TInput, TOutput> _transform;

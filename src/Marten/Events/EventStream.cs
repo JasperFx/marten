@@ -7,6 +7,13 @@ namespace Marten.Events
 {
     public class EventStream
     {
+        public static IEvent ToEvent(object @event)
+        {
+            if (@event == null) throw new ArgumentNullException(nameof(@event));
+
+            return typeof(Event<>).CloseAndBuildAs<IEvent>(@event, @event.GetType());
+        }
+
         public EventStream(Guid id)
         {
             Id = id;
@@ -15,15 +22,15 @@ namespace Marten.Events
         public Guid Id { get; }
         public Type AggregateType { get; set; } 
 
-        private readonly IList<Event> _events = new List<Event>();
+        private readonly IList<IEvent> _events = new List<IEvent>();
 
-        public EventStream(Guid stream, Event[] events)
+        public EventStream(Guid stream, IEvent[] events)
         {
             Id = stream;
             AddEvents(events);
         }
 
-        public EventStream AddEvents(IEnumerable<Event> events)
+        public EventStream AddEvents(IEnumerable<IEvent> events)
         {
             _events.AddRange(events);
             _events.Where(x => x.Id == Guid.Empty).Each(x => x.Id = Guid.NewGuid());
@@ -31,11 +38,17 @@ namespace Marten.Events
             return this;
         }
 
-        public IEnumerable<Event> Events => _events;
+        public IEnumerable<IEvent> Events => _events;
 
+        /// <summary>
+        /// Strictly for testing
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="@event"></param>
+        /// <returns></returns>
         public EventStream Add<T>(T @event)
         {
-            _events.Add(new Event {Data = @event, Id = Guid.NewGuid()});
+            _events.Add(new Event<T>(@event) {Id = Guid.NewGuid()});
             return this;
         }
     }

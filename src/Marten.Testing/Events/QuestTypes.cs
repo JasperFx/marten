@@ -12,7 +12,6 @@ namespace Marten.Testing.Events
 
     public class ArrivedAtLocation
     {
-        public Guid Id { get; set; }
 
         public int Day { get; set; }
 
@@ -26,7 +25,6 @@ namespace Marten.Testing.Events
 
     public class MembersJoined
     {
-        public Guid Id { get; set; }
 
         public int Day { get; set; }
 

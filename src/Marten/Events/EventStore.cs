@@ -43,11 +43,11 @@ namespace Marten.Events
         {
             if (_identityMap.Has<EventStream>(stream))
             {
-                _identityMap.Retrieve<EventStream>(stream).AddEvents(events.Select(x => new Event { Data = x }));
+                _identityMap.Retrieve<EventStream>(stream).AddEvents(events.Select(EventStream.ToEvent));
             }
             else
             {
-                var eventStream = new EventStream(stream, events.Select(x => new Event { Data = x }).ToArray());
+                var eventStream = new EventStream(stream, events.Select(EventStream.ToEvent).ToArray());
 
                 _session.Store(eventStream);
             }
@@ -55,7 +55,7 @@ namespace Marten.Events
 
         public Guid StartStream<T>(Guid id, params object[] events) where T : class, new()
         {
-            var stream = new EventStream(id, events.Select(x => new Event { Data = x }).ToArray())
+            var stream = new EventStream(id, events.Select(EventStream.ToEvent).ToArray())
             {
                 AggregateType = typeof(T)
             };
@@ -75,7 +75,7 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
-        public IEnumerable<Event> FetchStream(Guid streamId)
+        public IEnumerable<IEvent> FetchStream(Guid streamId)
         {
             return _connection.Execute(cmd =>
             {
@@ -88,7 +88,7 @@ namespace Marten.Events
             });
         }
 
-        public IEnumerable<Event> FetchStream(Guid streamId, int version)
+        public IEnumerable<IEvent> FetchStream(Guid streamId, int version)
         {
             return _connection.Execute(cmd =>
             {
@@ -100,7 +100,7 @@ namespace Marten.Events
                 }
             });
         }
-        public IEnumerable<Event> FetchStream(Guid streamId, DateTime timestamp)
+        public IEnumerable<IEvent> FetchStream(Guid streamId, DateTime timestamp)
         {
             if (timestamp.Kind != DateTimeKind.Utc)
             {
@@ -117,8 +117,9 @@ namespace Marten.Events
                 }
             });
         }
-        private IEnumerable<Event> fetchStream(IDataReader reader)
+        private IEnumerable<IEvent> fetchStream(IDataReader reader)
         {
+            // TODO -- turn this into an ISelector to standardize
             while (reader.Read())
             {
                 var id = reader.GetGuid(0);
@@ -130,7 +131,13 @@ namespace Marten.Events
 
                 var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
 
-                yield return new Event { Id = id, Version = version, Data = data };
+
+                var @event = EventStream.ToEvent(data);
+                @event.Version = version;
+                @event.Id = id;
+
+
+                yield return @event;
             }
         }
 
@@ -139,7 +146,7 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
-        public void DeleteEvent(Event @event)
+        public void DeleteEvent(IEvent @event)
         {
             throw new NotImplementedException();
         }
@@ -184,12 +191,12 @@ namespace Marten.Events
             return _session.LoadAsync<T>(id);
         }
 
-        public TAggregate TransformTo<TAggregate>(Guid streamId, Event @event)
+        public TAggregate TransformTo<TAggregate>(Guid streamId, IEvent @event)
         {
             throw new NotImplementedException();
         }
 
-        public string Transform(string projectionName, Guid streamId, Event @event)
+        public string Transform(string projectionName, Guid streamId, IEvent @event)
         {
             var mapping = _schema.Events.EventMappingFor(@event.Data.GetType());
             var eventType = mapping.EventTypeName;
@@ -209,7 +216,7 @@ namespace Marten.Events
             return json.ToString();
         }
 
-        public TAggregate ApplySnapshot<TAggregate>(Guid streamId, TAggregate aggregate, Event @event) where TAggregate : class, new()
+        public TAggregate ApplySnapshot<TAggregate>(Guid streamId, TAggregate aggregate, IEvent @event) where TAggregate : class, new()
         {
             var aggregateJson = _serializer.ToJson(aggregate);
             var projectionName = _schema.Events.AggregateFor<TAggregate>().Alias;
@@ -230,12 +237,12 @@ namespace Marten.Events
             return _serializer.FromJson<TAggregate>(json);
         }
 
-        public TAggregate ApplyProjection<TAggregate>(string projectionName, TAggregate aggregate, Event @event) where TAggregate : class, new()
+        public TAggregate ApplyProjection<TAggregate>(string projectionName, TAggregate aggregate, IEvent @event) where TAggregate : class, new()
         {
             throw new NotImplementedException();
         }
 
-        public TAggregate StartSnapshot<TAggregate>(Guid streamId, Event @event) where TAggregate : class, new()
+        public TAggregate StartSnapshot<TAggregate>(Guid streamId, IEvent @event) where TAggregate : class, new()
         {
             var projectionName = _schema.Events.AggregateFor<TAggregate>().Alias;
 

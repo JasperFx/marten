@@ -35,7 +35,7 @@ namespace Marten.Events
             DocumentType = eventType;
 
             EventTypeName = Alias = ToEventTypeName(DocumentType);
-            IdMember = DocumentType.GetProperty(nameof(Event.Id));
+            IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
 
             _inner = new DocumentMapping(eventType, parent.Options);
         }
@@ -142,7 +142,7 @@ namespace Marten.Events
 
         public object Identity(object document)
         {
-            return document.As<Event>().Id;
+            return document.As<IEvent>().Id;
         }
 
         public void RegisterUpdate(UpdateBatch batch, object entity)
