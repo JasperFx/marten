@@ -50,7 +50,7 @@ namespace Marten.Events
         {
             var stream = entity.As<EventStream>();
 
-            var streamTypeName = stream.AggregateType == null ? null : _graph.AggregateFor(stream.AggregateType).Alias;
+            var streamTypeName = stream.AggregateType == null ? null : _graph.AggregateAliasFor(stream.AggregateType);
 
             stream.Events.Each(@event =>
             {

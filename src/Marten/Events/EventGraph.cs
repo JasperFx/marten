@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using Baseline;
 using Baseline.Reflection;
+using Marten.Events.Projections;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
@@ -22,11 +24,10 @@ namespace Marten.Events
         EventMapping EventMappingFor(Type eventType);
         EventMapping EventMappingFor<T>() where T : class, new();
         IEnumerable<EventMapping> AllEvents();
-        IEnumerable<AggregateModel> AllAggregates();
+        IEnumerable<IAggregator> AllAggregates();
         EventMapping EventMappingFor(string eventType);
         bool IsActive { get; }
-        AggregateModel AggregateFor<T>() where T : class, new();
-        AggregateModel AggregateFor(Type aggregateType);
+        Aggregator<T> AggregateFor<T>() where T : class, new();
         Type AggregateTypeFor(string aggregateTypeName);
     }
 
@@ -36,8 +37,8 @@ namespace Marten.Events
     {
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
-        private readonly Cache<Type, AggregateModel> _aggregates = new Cache<Type, AggregateModel>(type => new AggregateModel(type));
-        private readonly Cache<string, AggregateModel> _aggregateByName = new Cache<string, AggregateModel>();
+        private readonly ConcurrentDictionary<Type, IAggregator> _aggregates = new ConcurrentDictionary<Type, IAggregator>();
+        private readonly ConcurrentDictionary<string, IAggregator> _aggregateByName = new ConcurrentDictionary<string, IAggregator>();
 
         private bool _checkedSchema = false;
         private readonly object _locker = new object();
@@ -51,11 +52,6 @@ namespace Marten.Events
             _events.OnMissing = eventType => typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
-
-            _aggregateByName.OnMissing = name =>
-            {
-                return AllAggregates().FirstOrDefault(x => x.Alias == name);
-            };
         }
 
         public EventMapping EventMappingFor(Type eventType)
@@ -73,9 +69,9 @@ namespace Marten.Events
             return _events;
         }
 
-        public IEnumerable<AggregateModel> AllAggregates()
+        public IEnumerable<IAggregator> AllAggregates()
         {
-            return _aggregates;
+            return _aggregates.Values;
         } 
 
         public EventMapping EventMappingFor(string eventType)
@@ -207,22 +203,27 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        public AggregateModel AggregateFor<T>() where T : class, new()
+        public Aggregator<T> AggregateFor<T>() where T : class, new()
         {
-            return AggregateFor(typeof (T));
-        }
-
-        public AggregateModel AggregateFor(Type aggregateType)
-        {
-            return _aggregates[aggregateType];
+            return _aggregates
+                .GetOrAdd(typeof (T), type => new Aggregator<T>())
+                .As<Aggregator<T>>();
         }
 
 
         public Type AggregateTypeFor(string aggregateTypeName)
         {
-            return _aggregateByName[aggregateTypeName].AggregateType;
+            return _aggregateByName.GetOrAdd(aggregateTypeName, name =>
+            {
+                return AllAggregates().FirstOrDefault(x => x.Alias == name);
+            }).AggregateType;
         }
 
 
+        public string AggregateAliasFor(Type aggregateType)
+        {
+            return _aggregates
+                .GetOrAdd(aggregateType, type => typeof (Aggregator<>).CloseAndBuildAs<IAggregator>(aggregateType)).Alias;
+        }
     }
 }

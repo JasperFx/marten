@@ -182,6 +182,7 @@ namespace Marten.Schema
             return AddForeignKey(field.Members, referenceType);
         }
 
+        
         public ForeignKeyDefinition AddForeignKey(MemberInfo[] members, Type referenceType)
         {
             var referenceMapping = _storeOptions.MappingFor(referenceType);
@@ -574,25 +575,6 @@ namespace Marten.Schema
         public IEnumerable<IndexDefinition> IndexesFor(string column)
         {
             return Indexes.Where(x => x.Columns.Contains(column));
-        }
-    }
-
-    public class IdField : IField
-    {
-        private readonly MemberInfo _idMember;
-
-        public IdField(MemberInfo idMember)
-        {
-            _idMember = idMember;
-        }
-
-        public MemberInfo[] Members => new[] {_idMember};
-        public string MemberName => _idMember.Name;
-        public string SqlLocator { get; } = "d.id";
-        public string ColumnName { get; } = "id";
-        public void WritePatch(DocumentMapping mapping, Action<string> writer)
-        {
-            // Nothing
         }
     }
 }
