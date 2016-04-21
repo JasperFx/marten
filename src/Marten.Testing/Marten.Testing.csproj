@@ -59,6 +59,7 @@
     <Compile Include="Events\Projections\AggregationStepTests.cs" />
     <Compile Include="Events\Projections\AggregatorTests.cs" />
     <Compile Include="Events\Projections\QuestParty.cs" />
+    <Compile Include="Events\Projections\SimpleAggregationFinderTests.cs" />
     <Compile Include="IntDoc.cs" />
     <Compile Include="IntegratedFixture.cs" />
     <Compile Include="Bugs\Bug_274_cyclic_dependency_found_Tests.cs" />

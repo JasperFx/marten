@@ -10,27 +10,6 @@ namespace Marten.Events.Projections
         TOutput Transform(TInput input);
     }
 
-    public interface IAggregationFinder<T>
-    {
-        T Find(EventStream stream, IDocumentSession session);
-
-        // TODO -- make this use the batch query later
-        Task<T> FindAsync(EventStream stream, IDocumentSession session, CancellationToken token);
-    }
-
-    public class SimpleAggregationFinder<T> : IAggregationFinder<T>
-    {
-        public T Find(EventStream stream, IDocumentSession session)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<T> FindAsync(EventStream stream, IDocumentSession session, CancellationToken token)
-        {
-            throw new System.NotImplementedException();
-        }
-    }
-
     public class AggregationProjection<T> : IProjection where T : class, new()
     {
         private readonly IAggregationFinder<T> _finder;

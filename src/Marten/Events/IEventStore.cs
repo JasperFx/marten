@@ -35,8 +35,6 @@ namespace Marten.Events
 
         TAggregate StartSnapshot<TAggregate>(Guid streamId, IEvent @event) where TAggregate : class, new();
 
-
-        StreamState FetchStreamState(Guid streamId);
     }
 
     [Obsolete("Replace this with just EventStream")]

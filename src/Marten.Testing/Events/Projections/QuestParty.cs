@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 
@@ -25,5 +26,6 @@ namespace Marten.Testing.Events.Projections
         }
 
         public string Name { get; set; }
+        public Guid Id { get; set; }
     }
 }
