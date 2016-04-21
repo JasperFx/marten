@@ -7,12 +7,6 @@ using Marten.Util;
 
 namespace Marten.Events.Projections
 {
-    public interface IAggregator 
-    {
-        Type AggregateType { get; }
-        string Alias { get; }
-    }
-
     public class Aggregator<T> : IAggregator where T : class, new()
     {
         public static readonly string ApplyMethod = "Apply";
@@ -49,7 +43,7 @@ namespace Marten.Events.Projections
             return state;
         }
 
-        public void Add<TEvent>(IAggregation<T, TEvent> aggregation)
+        public Aggregator<T> Add<TEvent>(IAggregation<T, TEvent> aggregation)
         {
             if (_aggregations.ContainsKey(typeof (TEvent)))
             {
@@ -59,11 +53,13 @@ namespace Marten.Events.Projections
             {
                 _aggregations.Add(typeof(TEvent), aggregation);
             }
+
+            return this;
         }
 
-        public void Add<TEvent>(Action<T, TEvent> application)
+        public Aggregator<T> Add<TEvent>(Action<T, TEvent> application)
         {
-            Add(new AggregationStep<T, TEvent>(application));
+            return Add(new AggregationStep<T, TEvent>(application));
         }
 
         public IAggregation<T, TEvent> AggregatorFor<TEvent>()

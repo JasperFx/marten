@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Marten.Testing.Events;
+using Marten.Testing.Events.Projections;
 using Marten.Util;
 using NpgsqlTypes;
 using StoryTeller;
@@ -19,6 +21,7 @@ namespace Marten.Testing.Fixtures.EventStore
         private Guid _lastStream;
         private int _version;
         private DateTime _time;
+        private Guid _streamId;
 
         public override void SetUp()
         {
@@ -175,5 +178,17 @@ namespace Marten.Testing.Fixtures.EventStore
 
             session.SaveChanges();
         }
+
+        [FormatAs("Live aggregating to QuestParty should be {returnValue}")]
+        public string LiveAggregationToQueryPartyShouldBe()
+        {
+            using (var session = _store.OpenSession())
+            {
+                var party = session.Events.AggregateStream<QuestParty>(_lastStream);
+                return party.ToString();
+            }
+
+        }
+
     }
 }

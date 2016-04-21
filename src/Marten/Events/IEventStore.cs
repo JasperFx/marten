@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
 
@@ -7,9 +8,7 @@ namespace Marten.Events
 {
     public interface IEventStore
     {
-        void Append(Guid stream, object @event);
-
-        void AppendEvents(Guid stream, params object[] events);
+        void Append(Guid stream, params object[] events);
 
         Guid StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class, new();
         Guid StartStream<TAggregate>(params object[] events) where TAggregate : class, new();
@@ -18,6 +17,8 @@ namespace Marten.Events
         IEnumerable<IEvent> FetchStream(Guid streamId, int version);
         IEnumerable<IEvent> FetchStream(Guid streamId, DateTime timestamp);
 
+        T AggregateStream<T>(Guid streamId) where T : class, new();
+
         ITransforms Transforms { get; }
 
 
@@ -25,6 +26,7 @@ namespace Marten.Events
         T Load<T>(Guid id) where T : class;
         Task<T> LoadAsync<T>(Guid id) where T : class;
         StreamState FetchStreamState(Guid streamId);
+        
     }
 
     public interface ITransforms

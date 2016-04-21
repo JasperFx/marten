@@ -79,7 +79,7 @@ namespace Marten.Testing.Events
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined);
-                session.Events.AppendEvents(id, departed);
+                session.Events.Append(id, departed);
 
                 session.SaveChanges();
 
@@ -113,8 +113,8 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                session.Events.AppendEvents(id, joined);
-                session.Events.AppendEvents(id, departed);
+                session.Events.Append(id, joined);
+                session.Events.Append(id, departed);
 
                 session.SaveChanges();
 
@@ -192,7 +192,7 @@ namespace Marten.Testing.Events
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined);
-                session.Events.AppendEvents(id, departed);
+                session.Events.Append(id, departed);
 
                 session.SaveChanges();
 
@@ -226,8 +226,8 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                session.Events.AppendEvents(id, joined);
-                session.Events.AppendEvents(id, departed);
+                session.Events.Append(id, joined);
+                session.Events.Append(id, departed);
 
                 session.SaveChanges();
 

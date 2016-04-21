@@ -1,0 +1,15 @@
+<Spec id="3c10209f-347b-4534-a2e2-35505a5796d6" maxRetries="0" tags="" lifecycle="Regression" name="Live Aggregation by Stream" lastUpdated="Thursday, April 21, 2016" expirationPeriod="0">
+  <EventStore id="a415924b-a172-46a1-b2e9-0b240d96f95a">
+    <ForNewQuestStream name="TheOneRing" date="TODAY" />
+    <HasAdditionalEvents>
+      <QuestEvent id="57dad4d2-8e74-4df4-838c-592433ae0c8b">
+        <MembersJoinedAt names="Frodo, Sam" day="1" location="The Shire" />
+        <MembersJoinedAt names="Merry, Pippin" day="2" location="Merry's House" />
+        <MembersJoinedAt names="Strider" day="5" location="Bree" />
+        <MembersJoinedAt names="Gandalf, Legolas, Gimli, Boromir" day="10" location="Rivendell" />
+        <MembersDepartedAt names="Frodo, Sam" day="15" location="The Lake" />
+      </QuestEvent>
+    </HasAdditionalEvents>
+    <LiveAggregationToQueryPartyShouldBe returnValue="Quest party 'TheOneRing' is Merry, Pippin, Strider, Gandalf, Legolas, Gimli, Boromir" />
+  </EventStore>
+</Spec>

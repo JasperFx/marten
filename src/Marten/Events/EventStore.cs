@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
@@ -34,12 +35,7 @@ namespace Marten.Events
             _connection = connection;
         }
 
-        public void Append(Guid stream, object @event)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AppendEvents(Guid stream, params object[] events)
+        public void Append(Guid stream, params object[] events)
         {
             if (_identityMap.Has<EventStream>(stream))
             {
@@ -117,6 +113,21 @@ namespace Marten.Events
                 }
             });
         }
+
+        public T AggregateStream<T>(Guid streamId) where T : class, new()
+        {
+            var aggregator = _schema.Events.AggregateFor<T>();
+            var events = FetchStream(streamId);
+
+            if (!events.Any()) Debug.WriteLine("FOUND NO EVENTS!");
+
+            events.Each(x => Debug.WriteLine(x));
+
+            return aggregator.Build(events);
+        }
+
+
+
         private IEnumerable<IEvent> fetchStream(IDataReader reader)
         {
             // TODO -- turn this into an ISelector to standardize

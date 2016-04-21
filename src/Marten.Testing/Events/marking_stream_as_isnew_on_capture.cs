@@ -36,7 +36,7 @@ namespace Marten.Testing.Events
             var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-            theSession.Events.AppendEvents(Guid.NewGuid(), joined, departed);
+            theSession.Events.Append(Guid.NewGuid(), joined, departed);
 
             theSession.PendingChanges.Streams().Single().IsNew
                 .ShouldBeFalse();

@@ -7,17 +7,20 @@ namespace Marten.Testing.Events.Projections
 {
     public class QuestParty
     {
-        public readonly IList<string> Members = new List<string>();
-        public readonly IList<string> Slayed = new List<string>();
+        private readonly IList<string> _members = new List<string>();
+
+        public string[] Members => _members.ToArray();
+
+        public IList<string> Slayed { get; } = new List<string>();
 
         public void Apply(MembersJoined joined)
         {
-            Members.Fill(joined.Members);
+            _members.Fill(joined.Members);
         }
 
         public void Apply(MembersDeparted departed)
         {
-            Members.RemoveAll(x => departed.Members.Contains(x));
+            _members.RemoveAll(x => departed.Members.Contains(x));
         }
 
         public void Apply(QuestStarted started)
@@ -27,5 +30,10 @@ namespace Marten.Testing.Events.Projections
 
         public string Name { get; set; }
         public Guid Id { get; set; }
+
+        public override string ToString()
+        {
+            return $"Quest party '{Name}' is {Members.Join(", ")}";
+        }
     }
 }

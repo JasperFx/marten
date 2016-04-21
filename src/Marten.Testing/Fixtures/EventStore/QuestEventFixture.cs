@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Marten.Events;
 using Marten.Testing.Events;
-using Marten.Util;
 using StoryTeller;
 
 namespace Marten.Testing.Fixtures.EventStore
@@ -27,7 +25,7 @@ namespace Marten.Testing.Fixtures.EventStore
         [FormatAs("Members {names} departed the quest on day {day} at {location}")]
         public void MembersDepartedAt(string[] names, int day, string location)
         {
-            var @event = new MembersDeparted { Day = day, Members = names, Location = location };
+            var @event = new MembersDeparted {Day = day, Members = names, Location = location};
             _events.Add(@event);
         }
 
@@ -46,7 +44,7 @@ namespace Marten.Testing.Fixtures.EventStore
             using (var session = store.LightweightSession())
             {
                 // TODO -- see if we need to put in DateTime here
-                session.Events.AppendEvents(streamId, _events.ToArray());
+                session.Events.Append(streamId, _events.ToArray());
                 session.SaveChanges();
             }
         }

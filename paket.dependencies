@@ -10,7 +10,7 @@ nuget NSubstitute
 nuget Octokit
 nuget Remotion.Linq
 nuget Shouldly
-nuget Storyteller 3.0.0.325-rc
+nuget Storyteller 3.0.0.329-rc
 nuget structuremap
 nuget Microsoft.CodeAnalysis.CSharp prerelease
 nuget xunit

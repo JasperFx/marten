@@ -14,22 +14,22 @@ using Marten.Services.Includes;
 
 namespace Marten.Events
 {
-    public interface IEventStoreConfiguration
-    {
-        string DatabaseSchemaName { get; set; }
 
-        void AddEventType(Type eventType);
-        void AddEventTypes(IEnumerable<Type> types);
+    /*
+    1. Event to Event mapping -->
+    TransformInline(ITransformer<TEvent, TView>)
+    // won't need a live transform, just do that w/ TransformTo()
 
-        EventMapping EventMappingFor(Type eventType);
-        EventMapping EventMappingFor<T>() where T : class, new();
-        IEnumerable<EventMapping> AllEvents();
-        IEnumerable<IAggregator> AllAggregates();
-        EventMapping EventMappingFor(string eventType);
-        bool IsActive { get; }
-        Aggregator<T> AggregateFor<T>() where T : class, new();
-        Type AggregateTypeFor(string aggregateTypeName);
-    }
+    AggregateStreamsInlineWith<T>()--> and return the Aggregator<T> with chaining to edit it
+    --> live ones could be done simpler
+    AggregateStreamsAsyncWith<T>() --> and return the Aggregator<T>
+    ProjectAcrossStreams<T>(IAggregateFinder<T> finder) --> and return the Aggregator<T>
+
+
+    */
+
+
+
 
     // TODO -- try to eliminate the IDocumentMapping implementation here
     // just making things ugly
