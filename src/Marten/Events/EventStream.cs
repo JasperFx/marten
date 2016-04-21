@@ -23,12 +23,20 @@ namespace Marten.Events
             AddEvents(events);
         }
 
-        public void AddEvents(IEnumerable<Event> events)
+        public EventStream AddEvents(IEnumerable<Event> events)
         {
             _events.AddRange(events);
             _events.Where(x => x.Id == Guid.Empty).Each(x => x.Id = Guid.NewGuid());
+
+            return this;
         }
 
         public IEnumerable<Event> Events => _events;
+
+        public EventStream Add<T>(T @event)
+        {
+            _events.Add(new Event {Data = @event, Id = Guid.NewGuid()});
+            return this;
+        }
     }
 }

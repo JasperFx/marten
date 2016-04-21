@@ -30,18 +30,5 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    public class QuestParty
-    {
-        public readonly IList<string> Members = new List<string>();
 
-        public void Apply(MembersJoined joined)
-        {
-            Members.Fill(joined.Members);
-        }
-
-        public void Apply(MembersDeparted departed)
-        {
-            Members.RemoveAll(x => departed.Members.Contains(x));
-        }
-    }
 }

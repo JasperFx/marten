@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -31,49 +29,15 @@ namespace Marten.Events.Projections
         Task<T> FindAsync(EventStream stream, IDocumentSession session, CancellationToken token);
     }
 
-    public class Aggregator<T> : IProjection where T : class, new()
+    public class AggregationProjection<T> : IProjection where T : class, new()
     {
         private readonly IAggregationFinder<T> _finder;
-        private readonly IDictionary<Type, object> _aggregations = new Dictionary<Type, object>(); 
+        private readonly Aggregator<T> _aggregator;
 
-        public Aggregator(IAggregationFinder<T> finder)
+        public AggregationProjection(IAggregationFinder<T> finder, Aggregator<T> aggregator)
         {
             _finder = finder;
-        }
-
-        public void Add<TEvent>(IAggregation<T, TEvent> aggregation)
-        {
-            if (_aggregations.ContainsKey(typeof (TEvent)))
-            {
-                _aggregations[typeof (TEvent)] = aggregation;
-            }
-            else
-            {
-                _aggregations.Add(typeof(TEvent), aggregation);
-            }
-        }
-
-        public IAggregation<T, TEvent> AggregatorFor<TEvent>()
-        {
-            return _aggregations.ContainsKey(typeof (TEvent))
-                ? _aggregations[typeof (TEvent)].As<IAggregation<T, TEvent>>()
-                : null;
-        }
-
-        public bool AppliesTo(EventStream stream)
-        {
-            return stream.Events.Any(x => _aggregations.ContainsKey(x.Data.GetType()));
-        }
-
-        public EventStream[] MatchingStreams(IDocumentSession session)
-        {
-            return session.PendingChanges.AllChangedFor<EventStream>()
-                .Where(AppliesTo).ToArray();
-        }
-
-        public void Update(T state, EventStream stream)
-        {
-            stream.Events.Each(x => x.Apply(state, this));
+            _aggregator = aggregator;
         }
 
         public void Apply(IDocumentSession session)
@@ -87,6 +51,11 @@ namespace Marten.Events.Projections
             });
         }
 
+        private void Update(T state, EventStream stream)
+        {
+            stream.Events.Each(x => x.Apply(state, _aggregator));
+        }
+
         public async Task ApplyAsync(IDocumentSession session, CancellationToken token)
         {
             foreach (var stream in MatchingStreams(session))
@@ -97,6 +66,15 @@ namespace Marten.Events.Projections
                 session.Store(state);
             }
         }
+
+
+
+        public EventStream[] MatchingStreams(IDocumentSession session)
+        {
+            return session.PendingChanges.AllChangedFor<EventStream>()
+                .Where(_aggregator.AppliesTo).ToArray();
+        }
+
     }
 
     public class Event<T> : Event

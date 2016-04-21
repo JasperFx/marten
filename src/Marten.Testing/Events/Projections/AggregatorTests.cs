@@ -1,0 +1,74 @@
+﻿using System;
+using Baseline;
+using Marten.Events;
+using Marten.Events.Projections;
+using Shouldly;
+using Xunit;
+
+namespace Marten.Testing.Events.Projections
+{
+    public class AggregatorTests
+    {
+        private readonly Aggregator<QuestParty> theAggregator = new Aggregator<QuestParty>();
+
+        [Fact]
+        public void can_derive_steps_for_apply_methods()
+        {
+            theAggregator.AggregatorFor<MembersJoined>().ShouldNotBeNull();
+            theAggregator.AggregatorFor<MembersDeparted>().ShouldNotBeNull();
+            theAggregator.AggregatorFor<QuestStarted>().ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void applies_to()
+        {
+            var stream = new EventStream(Guid.NewGuid());
+
+            theAggregator.AppliesTo(stream).ShouldBeFalse();
+
+            stream.Add(new MonsterSlayed());
+
+            theAggregator.AppliesTo(stream).ShouldBeFalse();
+
+            stream.Add(new MembersJoined());
+
+            theAggregator.AppliesTo(stream).ShouldBeTrue();
+        }
+
+        [Fact]
+        public void explicitly_added_step_as_action()
+        {
+            theAggregator.Add<MonsterSlayed>((party, slayed) =>
+            {
+                party.Slayed.Fill(slayed.Name);
+            });
+
+            theAggregator.AppliesTo(new EventStream(Guid.NewGuid()).Add(new MonsterSlayed()))
+                .ShouldBeTrue();
+
+        }
+
+
+        [Fact]
+        public void add_special_step()
+        {
+            theAggregator.Add(new MonsterSlayer());
+
+            theAggregator.AggregatorFor<MonsterSlayed>()
+                .ShouldBeOfType<MonsterSlayer>();
+        }
+
+        public class MonsterSlayed
+        {
+            public string Name { get; set; }
+        }
+
+        public class MonsterSlayer : IAggregation<QuestParty, MonsterSlayed>
+        {
+            public void Apply(QuestParty aggregate, MonsterSlayed @event)
+            {
+                throw new NotImplementedException();
+            }
+        }
+    }
+}

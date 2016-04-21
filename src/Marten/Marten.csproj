@@ -55,6 +55,7 @@
     <Compile Include="Events\EventStoreAdmin.cs" />
     <Compile Include="Events\EventStream.cs" />
     <Compile Include="Events\Projections\AggregationStep.cs" />
+    <Compile Include="Events\Projections\Aggregator.cs" />
     <Compile Include="Events\Projections\ProjectionClasses.cs" />
     <Compile Include="Generation\TableDiff.cs" />
     <Compile Include="IDiagnostics.cs" />
