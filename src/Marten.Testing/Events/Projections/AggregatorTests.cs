@@ -58,6 +58,24 @@ namespace Marten.Testing.Events.Projections
                 .ShouldBeOfType<MonsterSlayer>();
         }
 
+        [Fact]
+        public void build_a_series_of_events()
+        {
+            var stream = new EventStream(Guid.NewGuid())
+                .Add(new QuestStarted {Name = "Destroy the Ring"})
+                .Add(new MembersJoined {Members = new string[] {"Frodo", "Sam"}})
+                .Add(new MembersJoined {Members = new string[] {"Merry", "Pippin"}})
+                .Add(new MembersJoined {Members = new string[] {"Strider"}})
+                .Add(new MembersJoined {Members = new string[] {"Gandalf", "Boromir", "Gimli", "Legolas"}})
+                .Add(new MembersDeparted() {Members = new string[] {"Frodo", "Sam"}});
+
+            var party = theAggregator.Build(stream.Events);
+
+            party.Name.ShouldBe("Destroy the Ring");
+
+            party.Members.ShouldHaveTheSameElementsAs("Merry", "Pippin", "Strider", "Gandalf", "Boromir", "Gimli", "Legolas");
+        }
+
         public class MonsterSlayed
         {
             public string Name { get; set; }

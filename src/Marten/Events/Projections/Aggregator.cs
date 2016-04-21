@@ -27,6 +27,15 @@ namespace Marten.Events.Projections
                 });
         }
 
+        public T Build(IEnumerable<IEvent> events)
+        {
+            var state = new T();
+
+            events.Each(x => x.Apply(state, this));
+
+            return state;
+        }
+
         public void Add<TEvent>(IAggregation<T, TEvent> aggregation)
         {
             if (_aggregations.ContainsKey(typeof (TEvent)))
