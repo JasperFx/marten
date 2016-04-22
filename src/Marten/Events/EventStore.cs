@@ -69,32 +69,15 @@ namespace Marten.Events
             return StartStream<TAggregate>(Guid.NewGuid(), events);
         }
 
-        public IEnumerable<IEvent> FetchStream(Guid streamId)
+        public IEnumerable<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
         {
-            var handler = new EventQueryHandler(_selector, streamId);
+            var handler = new EventQueryHandler(_selector, streamId, version, timestamp);
             return _connection.Fetch(handler, null);
         }
 
-        public IEnumerable<IEvent> FetchStream(Guid streamId, int version)
+        public T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new()
         {
-            var handler = new EventQueryHandler(_selector, streamId, version);
-            return _connection.Fetch(handler, null);
-        }
-
-        public IEnumerable<IEvent> FetchStream(Guid streamId, DateTime timestamp)
-        {
-            if (timestamp.Kind != DateTimeKind.Utc)
-            {
-                throw new ArgumentOutOfRangeException(nameof(timestamp), "This method only accepts UTC dates");
-            }
-
-            var handler = new EventQueryHandler(_selector, streamId, timestamp: timestamp);
-            return _connection.Fetch(handler, null);
-        }
-
-        public T AggregateStream<T>(Guid streamId) where T : class, new()
-        {
-            var inner = new EventQueryHandler(_selector, streamId);
+            var inner = new EventQueryHandler(_selector, streamId, version, timestamp);
             var aggregator = _schema.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner);
 

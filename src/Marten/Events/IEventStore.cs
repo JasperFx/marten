@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
 
@@ -13,11 +12,9 @@ namespace Marten.Events
         Guid StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class, new();
         Guid StartStream<TAggregate>(params object[] events) where TAggregate : class, new();
 
-        IEnumerable<IEvent> FetchStream(Guid streamId);
-        IEnumerable<IEvent> FetchStream(Guid streamId, int version);
-        IEnumerable<IEvent> FetchStream(Guid streamId, DateTime timestamp);
+        IEnumerable<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null);
 
-        T AggregateStream<T>(Guid streamId) where T : class, new();
+        T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new();
 
         ITransforms Transforms { get; }
 
@@ -26,17 +23,16 @@ namespace Marten.Events
         T Load<T>(Guid id) where T : class;
         Task<T> LoadAsync<T>(Guid id) where T : class;
         StreamState FetchStreamState(Guid streamId);
-        
     }
 
     public interface ITransforms
     {
-        string Transform(string projectionName, Guid streamId, IEvent @event) ;
+        string Transform(string projectionName, Guid streamId, IEvent @event);
 
-        TAggregate ApplySnapshot<TAggregate>(Guid streamId, TAggregate aggregate, IEvent @event) where TAggregate : class, new();
+        TAggregate ApplySnapshot<TAggregate>(Guid streamId, TAggregate aggregate, IEvent @event)
+            where TAggregate : class, new();
 
         TAggregate StartSnapshot<TAggregate>(Guid streamId, IEvent @event) where TAggregate : class, new();
-
     }
 
     [Obsolete("Replace this with just EventStream")]
@@ -64,11 +60,8 @@ namespace Marten.Events
 
         IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase(bool overwrite = false);
 
-        IEnumerable<ProjectionUsage> ProjectionUsages(); 
+        IEnumerable<ProjectionUsage> ProjectionUsages();
 
         void RebuildEventStoreSchema();
-
     }
-
-
 }

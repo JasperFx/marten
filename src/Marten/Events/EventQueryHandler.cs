@@ -20,6 +20,11 @@ namespace Marten.Events
 
         public EventQueryHandler(EventSelector selector, Guid streamId, int version = 0, DateTime? timestamp = null)
         {
+            if (timestamp != null && timestamp.Value.Kind != DateTimeKind.Utc)
+            {
+                throw new ArgumentOutOfRangeException(nameof(timestamp), "This method only accepts UTC dates");
+            }
+
             _selector = selector;
             _streamId = streamId;
             _version = version;

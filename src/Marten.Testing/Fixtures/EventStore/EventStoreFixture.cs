@@ -124,7 +124,7 @@ namespace Marten.Testing.Fixtures.EventStore
         {
             using (var session = _store.LightweightSession())
             {
-                return session.Events.FetchStream(_lastStream, time.ToUniversalTime()).Select(x => x.Data.ToString()).ToArray();
+                return session.Events.FetchStream(_lastStream, timestamp: time.ToUniversalTime()).Select(x => x.Data.ToString()).ToArray();
             }
         }
 
@@ -185,6 +185,17 @@ namespace Marten.Testing.Fixtures.EventStore
             using (var session = _store.OpenSession())
             {
                 var party = session.Events.AggregateStream<QuestParty>(_lastStream);
+                return party.ToString();
+            }
+
+        }
+
+        [FormatAs("Live aggregating to QuestParty at version {version} should be {returnValue}")]
+        public string LiveAggregationToQueryPartyVersionShouldBe(int version)
+        {
+            using (var session = _store.OpenSession())
+            {
+                var party = session.Events.AggregateStream<QuestParty>(_lastStream, version);
                 return party.ToString();
             }
 
