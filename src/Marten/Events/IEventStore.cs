@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
 
@@ -22,7 +23,9 @@ namespace Marten.Events
         IMartenQueryable<T> Query<T>();
         T Load<T>(Guid id) where T : class;
         Task<T> LoadAsync<T>(Guid id) where T : class;
+
         StreamState FetchStreamState(Guid streamId);
+        Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = default(CancellationToken));
     }
 
     public interface ITransforms
@@ -35,7 +38,6 @@ namespace Marten.Events
         TAggregate StartSnapshot<TAggregate>(Guid streamId, IEvent @event) where TAggregate : class, new();
     }
 
-    [Obsolete("Replace this with just EventStream")]
     public class StreamState
     {
         public Guid Id { get; }

@@ -65,6 +65,7 @@
     <Compile Include="Events\Projections\IProjection.cs" />
     <Compile Include="Events\Projections\ProjectionClasses.cs" />
     <Compile Include="Events\Projections\SimpleAggregationFinder.cs" />
+    <Compile Include="Events\StreamStateHandler.cs" />
     <Compile Include="Generation\TableDiff.cs" />
     <Compile Include="IDiagnostics.cs" />
     <Compile Include="IDocumentSessionListener.cs" />

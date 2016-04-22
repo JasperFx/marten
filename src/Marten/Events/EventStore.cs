@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
@@ -23,11 +21,17 @@ namespace Marten.Events
         private readonly IManagedConnection _connection;
         private readonly EventSelector _selector;
 
-        private FunctionName ApplyTransformFunction => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_apply_transform");
-        private FunctionName ApplyAggregationFunction => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_apply_aggregation");
-        private FunctionName StartAggregationFunction => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_start_aggregation");
+        private FunctionName ApplyTransformFunction
+            => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_apply_transform");
 
-        public EventStore(IDocumentSession session, IIdentityMap identityMap, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection)
+        private FunctionName ApplyAggregationFunction
+            => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_apply_aggregation");
+
+        private FunctionName StartAggregationFunction
+            => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_start_aggregation");
+
+        public EventStore(IDocumentSession session, IIdentityMap identityMap, IDocumentSchema schema,
+            ISerializer serializer, IManagedConnection connection)
         {
             _session = session;
             _identityMap = identityMap;
@@ -56,7 +60,7 @@ namespace Marten.Events
         {
             var stream = new EventStream(id, events.Select(EventStream.ToEvent).ToArray(), true)
             {
-                AggregateType = typeof(T)
+                AggregateType = typeof (T)
             };
 
             _session.Store(stream);
@@ -86,24 +90,24 @@ namespace Marten.Events
 
 
         public ITransforms Transforms => this;
- 
+
 
         public IMartenQueryable<T> Query<T>()
         {
-            _schema.Events.AddEventType(typeof(T));
+            _schema.Events.AddEventType(typeof (T));
 
             return _session.Query<T>();
         }
 
         public T Load<T>(Guid id) where T : class
         {
-            _schema.Events.AddEventType(typeof(T));
+            _schema.Events.AddEventType(typeof (T));
             return _session.Load<T>(id);
         }
 
         public Task<T> LoadAsync<T>(Guid id) where T : class
         {
-            _schema.Events.AddEventType(typeof(T));
+            _schema.Events.AddEventType(typeof (T));
             return _session.LoadAsync<T>(id);
         }
 
@@ -128,7 +132,8 @@ namespace Marten.Events
             return json.ToString();
         }
 
-        public TAggregate ApplySnapshot<TAggregate>(Guid streamId, TAggregate aggregate, IEvent @event) where TAggregate : class, new()
+        public TAggregate ApplySnapshot<TAggregate>(Guid streamId, TAggregate aggregate, IEvent @event)
+            where TAggregate : class, new()
         {
             var aggregateJson = _serializer.ToJson(aggregate);
             var projectionName = _schema.Events.AggregateFor<TAggregate>().Alias;
@@ -171,17 +176,14 @@ namespace Marten.Events
 
         public StreamState FetchStreamState(Guid streamId)
         {
-            return _connection.Execute(cmd =>
-            {
-                Func<DbDataReader, StreamState> converter = r =>
-                {
-                    var typeName = r.GetString(1);
-                    var aggregateType = _schema.Events.AggregateTypeFor(typeName);
-                    return new StreamState(streamId, r.GetInt32(0), aggregateType);
-                };
+            var handler = new StreamStateHandler(_schema.Events.As<EventGraph>(), streamId);
+            return _connection.Fetch(handler, null);
+        }
 
-                return cmd.Fetch($"select version, type from {_schema.Events.DatabaseSchemaName}.mt_streams where id = ?", converter, streamId).SingleOrDefault();
-            });
+        public Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = new CancellationToken())
+        {
+            var handler = new StreamStateHandler(_schema.Events.As<EventGraph>(), streamId);
+            return _connection.FetchAsync(handler, null, token);
         }
     }
 }
