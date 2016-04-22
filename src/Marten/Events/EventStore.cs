@@ -94,14 +94,11 @@ namespace Marten.Events
 
         public T AggregateStream<T>(Guid streamId) where T : class, new()
         {
+            var inner = new EventQueryHandler(_selector, streamId);
             var aggregator = _schema.Events.AggregateFor<T>();
-            var events = FetchStream(streamId);
+            var handler = new AggregationQueryHandler<T>(aggregator, inner);
 
-            if (!events.Any()) Debug.WriteLine("FOUND NO EVENTS!");
-
-            events.Each(x => Debug.WriteLine(x));
-
-            return aggregator.Build(events);
+            return _connection.Fetch(handler, null);
         }
 
 

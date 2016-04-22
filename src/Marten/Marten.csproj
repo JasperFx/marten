@@ -49,6 +49,7 @@
     <Compile Include="ConnectionFactory.cs" />
     <Compile Include="DocumentStore.cs" />
     <Compile Include="DocumentTracking.cs" />
+    <Compile Include="Events\AggregationQueryHandler.cs" />
     <Compile Include="Events\Event.cs" />
     <Compile Include="Events\EventQueryHandler.cs" />
     <Compile Include="Events\EventSelector.cs" />
