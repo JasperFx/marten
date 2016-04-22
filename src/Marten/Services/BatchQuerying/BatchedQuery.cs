@@ -4,6 +4,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
+using Marten.Events;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
@@ -11,7 +13,7 @@ using Npgsql;
 
 namespace Marten.Services.BatchQuerying
 {
-    public class BatchedQuery : IBatchedQuery
+    public class BatchedQuery : IBatchedQuery, IBatchEvents
     {
         private static readonly MartenQueryParser QueryParser = new MartenQueryParser();
         private readonly IManagedConnection _runner;
@@ -31,6 +33,8 @@ namespace Marten.Services.BatchQuerying
             _parent = parent;
             _serializer = serializer;
         }
+
+        public IBatchEvents Events => this;
 
         public Task<T> Load<T>(string id) where T : class
         {
@@ -244,6 +248,15 @@ namespace Marten.Services.BatchQuerying
         public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query)
         {
             var handler = _schema.HandlerFactory.HandlerFor(query);
+            return AddItem(handler);
+        }
+
+        public Task<T> AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new()
+        {
+            var inner = new EventQueryHandler(new EventSelector(_schema.Events.As<EventGraph>(), _serializer), streamId, version, timestamp);
+            var aggregator = _schema.Events.AggregateFor<T>();
+            var handler = new AggregationQueryHandler<T>(aggregator, inner);
+
             return AddItem(handler);
         }
     }

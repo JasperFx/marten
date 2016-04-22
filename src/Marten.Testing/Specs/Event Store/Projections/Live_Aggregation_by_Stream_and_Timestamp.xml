@@ -26,5 +26,7 @@
     <LiveAggregationToQueryPartyByTimestampShouldBe timestamp="TODAY-3" returnValue="Quest party 'Destroy the Ring' is Frodo, Sam, Merry, Pippin, Strider" />
     <FetchMode mode="Asynchronously" />
     <LiveAggregationToQueryPartyByTimestampShouldBe timestamp="TODAY-3" returnValue="Quest party 'Destroy the Ring' is Frodo, Sam, Merry, Pippin, Strider" />
+    <FetchMode mode="In a batch" />
+    <LiveAggregationToQueryPartyByTimestampShouldBe timestamp="TODAY-3" returnValue="Quest party 'Destroy the Ring' is Frodo, Sam, Merry, Pippin, Strider" />
   </EventStore>
 </Spec>

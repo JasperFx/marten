@@ -7,8 +7,26 @@ using Marten.Linq;
 
 namespace Marten.Services.BatchQuerying
 {
+    public interface IBatchEvents
+    {
+        /// <summary>
+        /// Fetch a live aggregation of a single event stream
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="streamId"></param>
+        /// <param name="version"></param>
+        /// <param name="timestamp"></param>
+        /// <returns></returns>
+        Task<T> AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new();
+    }
+
     public interface IBatchedQuery
     {
+        /// <summary>
+        /// Access to event store specific query mechanisms
+        /// </summary>
+        IBatchEvents Events { get; }
+
         /// <summary>
         /// Load a single document of Type "T" by id
         /// </summary>
@@ -57,6 +75,16 @@ namespace Marten.Services.BatchQuerying
         /// <returns></returns>
         IBatchedQueryable<T> Query<T>() where T : class;
 
+        /// <summary>
+        /// Execute a compiled query as part of the batch query
+        /// </summary>
+        /// <typeparam name="TDoc"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="query"></param>
+        /// <returns></returns>
         Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query);
+
+
+
     }
 }

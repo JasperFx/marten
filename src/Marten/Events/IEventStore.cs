@@ -23,6 +23,7 @@ namespace Marten.Events
 
 
         IMartenQueryable<T> Query<T>();
+
         T Load<T>(Guid id) where T : class;
         Task<T> LoadAsync<T>(Guid id) where T : class;
 

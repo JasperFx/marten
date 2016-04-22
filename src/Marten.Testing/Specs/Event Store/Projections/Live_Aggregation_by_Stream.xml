@@ -14,5 +14,7 @@
     <LiveAggregationToQueryPartyShouldBe returnValue="Quest party 'TheOneRing' is Merry, Pippin, Strider, Gandalf, Legolas, Gimli, Boromir" />
     <FetchMode mode="Asynchronously" />
     <LiveAggregationToQueryPartyShouldBe returnValue="Quest party 'TheOneRing' is Merry, Pippin, Strider, Gandalf, Legolas, Gimli, Boromir" />
+    <FetchMode mode="In a batch" />
+    <LiveAggregationToQueryPartyShouldBe returnValue="Quest party 'TheOneRing' is Merry, Pippin, Strider, Gandalf, Legolas, Gimli, Boromir" />
   </EventStore>
 </Spec>

@@ -226,7 +226,11 @@ namespace Marten.Testing.Fixtures.EventStore
                         return session.Events.AggregateStreamAsync<QuestParty>(_lastStream).GetAwaiter().GetResult().ToString();
 
                     case "In a batch":
-                        throw new NotImplementedException("Not ready yet");
+                        var batch = session.CreateBatchQuery();
+                        var value = batch.Events.AggregateStream<QuestParty>(_lastStream);
+                        batch.Execute().Wait();
+
+                        return value.Result.ToString();
                 }
 
 
@@ -251,7 +255,11 @@ namespace Marten.Testing.Fixtures.EventStore
                         return session.Events.AggregateStreamAsync<QuestParty>(_lastStream, timestamp: timestamp.ToUniversalTime()).GetAwaiter().GetResult().ToString();
 
                     case "In a batch":
-                        throw new NotImplementedException("Not ready yet");
+                        var batch = session.CreateBatchQuery();
+                        var value = batch.Events.AggregateStream<QuestParty>(_lastStream, timestamp: timestamp.ToUniversalTime());
+                        batch.Execute().Wait();
+
+                        return value.Result.ToString();
                 }
 
 
@@ -266,9 +274,24 @@ namespace Marten.Testing.Fixtures.EventStore
         {
             using (var session = _store.OpenSession())
             {
-                var party = session.Events.AggregateStream<QuestParty>(_lastStream, version);
-                return party.ToString();
+                switch (_mode)
+                {
+                    case "Synchronously":
+                        return session.Events.AggregateStream<QuestParty>(_lastStream, version).ToString();
+
+                    case "Asynchronously":
+                        return session.Events.AggregateStreamAsync<QuestParty>(_lastStream, version).GetAwaiter().GetResult().ToString();
+
+                    case "In a batch":
+                        var batch = session.CreateBatchQuery();
+                        var value = batch.Events.AggregateStream<QuestParty>(_lastStream, version);
+                        batch.Execute().Wait();
+
+                        return value.Result.ToString();
+                }
             }
+
+            throw new NotImplementedException();
 
         }
 
