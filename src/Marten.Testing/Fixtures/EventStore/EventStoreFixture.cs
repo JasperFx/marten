@@ -142,7 +142,7 @@ namespace Marten.Testing.Fixtures.EventStore
             }
         }
 
-        [FormatAs("Fetched {mode}")]
+        [FormatAs("Fetching {mode}")]
         public void FetchMode([SelectionValues("Synchronously", "Asynchronously", "In a batch"), Default("Synchronously")]string mode)
         {
             _mode = mode;
@@ -217,8 +217,46 @@ namespace Marten.Testing.Fixtures.EventStore
         {
             using (var session = _store.OpenSession())
             {
-                var party = session.Events.AggregateStream<QuestParty>(_lastStream);
-                return party.ToString();
+                switch (_mode)
+                {
+                    case "Synchronously":
+                        return session.Events.AggregateStream<QuestParty>(_lastStream).ToString();
+
+                    case "Asynchronously":
+                        return session.Events.AggregateStreamAsync<QuestParty>(_lastStream).GetAwaiter().GetResult().ToString();
+
+                    case "In a batch":
+                        throw new NotImplementedException("Not ready yet");
+                }
+
+
+
+                throw new NotImplementedException();
+            }
+
+        }
+
+
+        [FormatAs("Live aggregating to QuestParty at time {timestamp} should be {returnValue}")]
+        public string LiveAggregationToQueryPartyByTimestampShouldBe(DateTime timestamp)
+        {
+            using (var session = _store.OpenSession())
+            {
+                switch (_mode)
+                {
+                    case "Synchronously":
+                        return session.Events.AggregateStream<QuestParty>(_lastStream, timestamp:timestamp.ToUniversalTime()).ToString();
+
+                    case "Asynchronously":
+                        return session.Events.AggregateStreamAsync<QuestParty>(_lastStream, timestamp: timestamp.ToUniversalTime()).GetAwaiter().GetResult().ToString();
+
+                    case "In a batch":
+                        throw new NotImplementedException("Not ready yet");
+                }
+
+
+
+                throw new NotImplementedException();
             }
 
         }

@@ -1,0 +1,30 @@
+<Spec id="0b5a8153-e963-461b-b7d7-8fc53bf4143d" maxRetries="0" tags="" lifecycle="Regression" name="Live Aggregation by Stream and Timestamp" lastUpdated="Friday, April 22, 2016" expirationPeriod="0">
+  <EventStore id="1526fbc5-7d6e-4a16-b453-5defa59818a4">
+    <ForNewQuestStream name="Destroy the Ring" date="6/1/2015" />
+    <HasAdditionalEvents>
+      <QuestEvent id="62943124-62aa-4917-ab2c-56833228cb2e">
+        <MembersJoinedAt names="Frodo, Sam, Merry, Pippin" day="1" location="Hobbiton" />
+        <Arrived location="Bree" day="3" />
+        <MembersJoinedAt names="Strider" day="4" location="Bree" />
+        <Arrived location="Rivendell" day="10" />
+        <MembersJoinedAt names="Gimli, Gandalf, Boromir, Legolas" day="15" location="Rivendell" />
+        <Arrived location="Moria" day="25" />
+      </QuestEvent>
+    </HasAdditionalEvents>
+    <OverwriteTimestamps>
+      <table id="c76306e6-7b12-4698-9560-cbe423a859b9">
+        <OverwriteTimestamps-row version="1" time="TODAY-8" />
+        <OverwriteTimestamps-row version="2" time="TODAY-7" />
+        <OverwriteTimestamps-row version="3" time="TODAY-7" />
+        <OverwriteTimestamps-row version="4" time="TODAY-5" />
+        <OverwriteTimestamps-row version="5" time="TODAY-5" />
+        <OverwriteTimestamps-row version="6" time="TODAY" />
+        <OverwriteTimestamps-row version="7" time="TODAY" />
+      </table>
+    </OverwriteTimestamps>
+    <FetchMode mode="Synchronously" />
+    <LiveAggregationToQueryPartyByTimestampShouldBe timestamp="TODAY-3" returnValue="Quest party 'Destroy the Ring' is Frodo, Sam, Merry, Pippin, Strider" />
+    <FetchMode mode="Asynchronously" />
+    <LiveAggregationToQueryPartyByTimestampShouldBe timestamp="TODAY-3" returnValue="Quest party 'Destroy the Ring' is Frodo, Sam, Merry, Pippin, Strider" />
+  </EventStore>
+</Spec>

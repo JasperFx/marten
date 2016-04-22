@@ -17,6 +17,7 @@ namespace Marten.Events
         Task<IList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken));
 
         T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new();
+        Task<T> AggregateStreamAsync<T>(Guid streamId, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken)) where T : class, new();
 
         ITransforms Transforms { get; }
 
