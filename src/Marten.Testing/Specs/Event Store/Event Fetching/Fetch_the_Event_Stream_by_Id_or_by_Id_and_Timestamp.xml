@@ -38,5 +38,23 @@
         <null-row expected="Arrived at Bree on Day 3" />
       </Rows>
     </FetchEventsByTimestamp>
+
+
+    <FetchEventsByTimestamp time="TODAY-3" mode="Asynchronously">
+      <Rows>
+        <null-row expected="Quest Destroy the Ring started" />
+        <null-row expected="Members Frodo, Sam, Merry, Pippin joined at Hobbiton on Day 1" />
+        <null-row expected="Arrived at Bree on Day 3" />
+        <null-row expected="Members Strider joined at Bree on Day 4" />
+        <null-row expected="Arrived at Rivendell on Day 10" />
+      </Rows>
+    </FetchEventsByTimestamp>
+    <FetchEventsByTimestamp time="TODAY-6" mode="Asynchronously">
+      <Rows>
+        <null-row expected="Quest Destroy the Ring started" />
+        <null-row expected="Members Frodo, Sam, Merry, Pippin joined at Hobbiton on Day 1" />
+        <null-row expected="Arrived at Bree on Day 3" />
+      </Rows>
+    </FetchEventsByTimestamp>
   </EventStore>
 </Spec>

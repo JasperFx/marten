@@ -29,8 +29,17 @@
         <null-row expected="Arrived at Bree on Day 3" />
       </Rows>
     </FetchEventsByVersion>
-    <FetchEventsByVersion version="5">
+    <FetchEventsByVersion version="5" mode="Synchronously">
       <Rows id="285b4c65-5cfa-48b0-b93a-131da5479981">
+        <null-row expected="Quest Destroy the Ring started" />
+        <null-row expected="Members Frodo, Sam, Merry, Pippin joined at Hobbiton on Day 1" />
+        <null-row expected="Arrived at Bree on Day 3" />
+        <null-row expected="Members Strider joined at Bree on Day 4" />
+        <null-row expected="Arrived at Rivendell on Day 10" />
+      </Rows>
+    </FetchEventsByVersion>
+    <FetchEventsByVersion version="5" mode="Asynchronously">
+      <Rows>
         <null-row expected="Quest Destroy the Ring started" />
         <null-row expected="Members Frodo, Sam, Merry, Pippin joined at Hobbiton on Day 1" />
         <null-row expected="Arrived at Bree on Day 3" />

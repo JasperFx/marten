@@ -13,7 +13,8 @@ namespace Marten.Events
         Guid StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class, new();
         Guid StartStream<TAggregate>(params object[] events) where TAggregate : class, new();
 
-        IEnumerable<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null);
+        IList<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null);
+        Task<IList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken));
 
         T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new();
 

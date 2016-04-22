@@ -22,6 +22,7 @@ namespace Marten.Testing.Fixtures.EventStore
         private int _version;
         private DateTime _time;
         private Guid _streamId;
+        private string _mode;
 
         public override void SetUp()
         {
@@ -116,6 +117,7 @@ namespace Marten.Testing.Fixtures.EventStore
             return Paragraph("Fetch the events by time", _ =>
             {
                 _ += this["Time"];
+                _ += this["FetchMode"];
                 _ += this["EventsAtTimeShouldBe"];
             });
         }
@@ -124,12 +126,27 @@ namespace Marten.Testing.Fixtures.EventStore
         {
             using (var session = _store.LightweightSession())
             {
-                return session.Events.FetchStream(_lastStream, timestamp: time.ToUniversalTime()).Select(x => x.Data.ToString()).ToArray();
+                switch (_mode)
+                {
+                    case "Synchronously":
+                        return session.Events.FetchStream(_lastStream, timestamp:time.ToUniversalTime()).Select(x => x.Data.ToString()).ToArray();
+
+                    case "Asynchronously":
+                        return session.Events.FetchStreamAsync(_lastStream, timestamp: time.ToUniversalTime()).GetAwaiter().GetResult().Select(x => x.Data.ToString()).ToArray();
+
+                    case "In a batch":
+                        throw new NotImplementedException("Not ready yet");
+                }
+
+                throw new NotSupportedException();
             }
         }
 
-
-
+        [FormatAs("Fetched {mode}")]
+        public void FetchMode([SelectionValues("Synchronously", "Asynchronously", "In a batch"), Default("Synchronously")]string mode)
+        {
+            _mode = mode;
+        }
 
         [Hidden, FormatAs("For time # {time}")]
         public void Time(DateTime time)
@@ -149,6 +166,7 @@ namespace Marten.Testing.Fixtures.EventStore
         {
             return Paragraph("Fetch the events by version", _ =>
             {
+                _ += this["FetchMode"];
                 _ += this["Version"];
                 _ += this["EventsAtVersionShouldBe"];
             });
@@ -156,6 +174,21 @@ namespace Marten.Testing.Fixtures.EventStore
 
         private IEnumerable<string> allEvents(int version)
         {
+            using (var session = _store.LightweightSession())
+            {
+                switch (_mode)
+                {
+                    case "Synchronously":
+                        return session.Events.FetchStream(_lastStream, version).Select(x => x.Data.ToString()).ToArray();
+
+                    case "Asynchronously":
+                        return session.Events.FetchStreamAsync(_lastStream, version).GetAwaiter().GetResult().Select(x => x.Data.ToString()).ToArray();
+
+                    case "In a batch":
+                        throw new NotImplementedException("Not ready yet");
+                }
+            }
+
             using (var session = _store.LightweightSession())
             {
                 // TODO -- eliminate the aggregate type here
