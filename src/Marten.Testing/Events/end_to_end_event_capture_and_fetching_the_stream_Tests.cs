@@ -1,18 +1,27 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using Baseline;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Events
 {
     public class end_to_end_event_capture_and_fetching_the_stream_Tests
     {
+        private readonly ITestOutputHelper _output;
+
         public static TheoryData<DocumentTracking> SessionTypes = new TheoryData<DocumentTracking>
         {
             DocumentTracking.IdentityOnly,
             DocumentTracking.DirtyTracking
         };
+
+        public end_to_end_event_capture_and_fetching_the_stream_Tests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
 
         [Theory]
         [MemberData("SessionTypes")]
@@ -20,13 +29,16 @@ namespace Marten.Testing.Events
         {
             var store = InitStore();
 
+
             using (var session = store.OpenSession(sessionType))
             {
+
                 var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 var id = session.Events.StartStream<Quest>(joined, departed);
                 session.SaveChanges();
+
 
                 var streamEvents = session.Events.FetchStream(id);
 
@@ -35,6 +47,7 @@ namespace Marten.Testing.Events
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
+
             }
         }
 

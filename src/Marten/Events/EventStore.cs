@@ -21,6 +21,7 @@ namespace Marten.Events
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
         private readonly IManagedConnection _connection;
+        private readonly EventSelector _selector;
 
         private FunctionName ApplyTransformFunction => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_apply_transform");
         private FunctionName ApplyAggregationFunction => new FunctionName(_schema.Events.DatabaseSchemaName, "mt_apply_aggregation");
@@ -33,6 +34,8 @@ namespace Marten.Events
             _schema = schema;
             _serializer = serializer;
             _connection = connection;
+
+            _selector = new EventSelector(_schema.Events.As<EventGraph>(), _serializer);
         }
 
         public void Append(Guid stream, params object[] events)
@@ -66,36 +69,18 @@ namespace Marten.Events
             return StartStream<TAggregate>(Guid.NewGuid(), events);
         }
 
-        public TAggregate FetchSnapshot<TAggregate>(Guid streamId) where TAggregate : class, new()
-        {
-            throw new NotImplementedException();
-        }
-
         public IEnumerable<IEvent> FetchStream(Guid streamId)
         {
-            return _connection.Execute(cmd =>
-            {
-                using (var reader = cmd
-                    .WithText($"select id, type, version, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :stream_id order by version")
-                    .With("stream_id", streamId).ExecuteReader())
-                {
-                    return fetchStream(reader).ToArray();
-                }
-            });
+            var handler = new EventQueryHandler(_selector, streamId);
+            return _connection.Fetch(handler, null);
         }
 
         public IEnumerable<IEvent> FetchStream(Guid streamId, int version)
         {
-            return _connection.Execute(cmd =>
-            {
-                using (var reader = cmd
-                    .WithText($"select id, type, version, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :stream_id and version <= :version order by version")
-                    .With("stream_id", streamId).With("version", version).ExecuteReader())
-                {
-                    return fetchStream(reader).ToArray();
-                }
-            });
+            var handler = new EventQueryHandler(_selector, streamId, version);
+            return _connection.Fetch(handler, null);
         }
+
         public IEnumerable<IEvent> FetchStream(Guid streamId, DateTime timestamp)
         {
             if (timestamp.Kind != DateTimeKind.Utc)
@@ -103,15 +88,8 @@ namespace Marten.Events
                 throw new ArgumentOutOfRangeException(nameof(timestamp), "This method only accepts UTC dates");
             }
 
-            return _connection.Execute(cmd =>
-            {
-                using (var reader = cmd
-                    .WithText($"select id, type, version, data from {_schema.Events.DatabaseSchemaName}.mt_events where stream_id = :stream_id and timestamp <= :timestamp order by version")
-                    .With("stream_id", streamId).With("timestamp", timestamp).ExecuteReader())
-                {
-                    return fetchStream(reader).ToArray();
-                }
-            });
+            var handler = new EventQueryHandler(_selector, streamId, timestamp: timestamp);
+            return _connection.Fetch(handler, null);
         }
 
         public T AggregateStream<T>(Guid streamId) where T : class, new()
@@ -126,31 +104,6 @@ namespace Marten.Events
             return aggregator.Build(events);
         }
 
-
-
-        private IEnumerable<IEvent> fetchStream(IDataReader reader)
-        {
-            // TODO -- turn this into an ISelector to standardize
-            while (reader.Read())
-            {
-                var id = reader.GetGuid(0);
-                var eventTypeName = reader.GetString(1);
-                var version = reader.GetInt32(2);
-                var dataJson = reader.GetString(3);
-
-                var mapping = _schema.Events.EventMappingFor(eventTypeName);
-
-                var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
-
-
-                var @event = EventStream.ToEvent(data);
-                @event.Version = version;
-                @event.Id = id;
-
-
-                yield return @event;
-            }
-        }
 
         public ITransforms Transforms => this;
  

@@ -50,6 +50,8 @@
     <Compile Include="DocumentStore.cs" />
     <Compile Include="DocumentTracking.cs" />
     <Compile Include="Events\Event.cs" />
+    <Compile Include="Events\EventQueryHandler.cs" />
+    <Compile Include="Events\EventSelector.cs" />
     <Compile Include="Events\EventStore.cs" />
     <Compile Include="Events\EventStoreAdmin.cs" />
     <Compile Include="Events\EventStream.cs" />
