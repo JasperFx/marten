@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Util;
 using Shouldly;
 using Xunit;
 
@@ -13,15 +14,18 @@ namespace Marten.Testing.Linq
 {
     public class compiled_query_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        private readonly User _user1;
+        private readonly User _user5;
+
         public compiled_query_Tests()
         {
-            var user1 = new User {FirstName = "Jeremy", UserName = "jdm", LastName = "Miller"};
+            _user1 = new User {FirstName = "Jeremy", UserName = "jdm", LastName = "Miller"};
             var user2 = new User {FirstName = "Jens"};
             var user3 = new User {FirstName = "Jeff"};
             var user4 = new User {FirstName = "Corey", UserName = "myusername", LastName = "Kaylor"};
-            var user5 = new User {FirstName = "Jeremy", UserName = "shadetreedev", LastName = "Miller"};
+            _user5 = new User {FirstName = "Jeremy", UserName = "shadetreedev", LastName = "Miller"};
 
-            theSession.Store(user1, user2, user3, user4, user5);
+            theSession.Store(_user1, user2, user3, user4, _user5);
             theSession.SaveChanges();
         }
 
@@ -69,6 +73,15 @@ namespace Marten.Testing.Linq
 
             theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "nonexistent" })
                 .ShouldBeNull();
+        }
+
+        [Fact]
+        public void a_single_item_compiled_query_AsJson()
+        {
+            var user = theSession.Query(new FindJsonUserByUsername() {Username = "jdm"});
+
+            user.ShouldNotBeNull();
+            user.ShouldBe(_user1.ToJson());
         }
 
         [Fact]
@@ -159,6 +172,18 @@ namespace Marten.Testing.Linq
         }
     }
     // ENDSAMPLE
+
+    public class FindJsonUserByUsername : ICompiledQuery<User, string>
+    {
+        public string Username { get; set; }
+        public Expression<Func<IQueryable<User>, string>> QueryIs()
+        {
+            return query =>
+                    query.Where(x => Username == x.UserName)
+                        .AsJson().Single();
+
+        }
+    }
 
     public class UserProjectionToLoginPayload : ICompiledQuery<User, LoginPayload>
     {

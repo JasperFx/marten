@@ -23,6 +23,11 @@ namespace Marten.Testing.Documents
         public string FullName => "{0} {1}".ToFormat(FirstName, LastName);
         
         public int Age { get; set; }
+
+        public string ToJson()
+        {
+            return $"{{\"Id\": \"{Id}\", \"Age\": {Age}, \"FullName\": \"{FullName}\", \"Internal\": {Internal.ToString().ToLowerInvariant()}, \"LastName\": \"{LastName}\", \"UserName\": \"{UserName}\", \"FirstName\": \"{FirstName}\"}}";
+        }
     }
 
     public class SuperUser : User

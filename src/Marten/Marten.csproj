@@ -78,6 +78,8 @@
     <Compile Include="JsonExtensions.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="LinqExtensions.cs" />
+    <Compile Include="Linq\AsJsonExpressionNode.cs" />
+    <Compile Include="Linq\AsJsonResultOperator.cs" />
     <Compile Include="Linq\BadLinqExpressionException.cs" />
     <Compile Include="Linq\CollectionAnyContainmentWhereFragment.cs" />
     <Compile Include="Linq\CompiledQueryMemberExpressionVisitor.cs" />
