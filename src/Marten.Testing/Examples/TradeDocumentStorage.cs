@@ -97,6 +97,11 @@ namespace Marten.GeneratedCode
             return document.Id;
         }
 
+        public void Assign(Trade document, object id)
+        {
+            document.Id = (int) id;
+        }
+
 
         public object Retrieve(Trade document)
         {

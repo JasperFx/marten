@@ -54,7 +54,7 @@ namespace Marten.Schema
             DocumentType = documentType;
             Alias = defaultDocumentAliasName(documentType);
 
-            IdMember = determineId(documentType);
+            IdMember = FindIdMember(documentType);
 
 		    if (IdMember != null)
 		    {
@@ -75,7 +75,7 @@ namespace Marten.Schema
             });
         }
 
-        private static MemberInfo determineId(Type documentType)
+        public static MemberInfo FindIdMember(Type documentType)
         {
             return (MemberInfo) GetProperties(documentType).FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
                    ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));

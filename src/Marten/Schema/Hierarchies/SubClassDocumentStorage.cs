@@ -105,6 +105,11 @@ namespace Marten.Schema.Hierarchies
             return _parentIdAssignment.Assign(document, out assigned);
         }
 
+        public void Assign(T document, object id)
+        {
+            throw new NotSupportedException();
+        }
+
         public void Remove(IIdentityMap map, object entity)
         {
             _parent.Remove(map, entity);

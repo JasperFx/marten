@@ -28,17 +28,22 @@ namespace Marten.Events
 
     */
 
-
+    public interface IProjections
+    {
+        IList<IProjection> Inlines { get; }
+    }
 
 
     // TODO -- try to eliminate the IDocumentMapping implementation here
     // just making things ugly
-    public class EventGraph : IDocumentMapping, IEventStoreConfiguration
+    public class EventGraph : IDocumentMapping, IEventStoreConfiguration, IProjections
     {
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
         private readonly ConcurrentDictionary<Type, IAggregator> _aggregates = new ConcurrentDictionary<Type, IAggregator>();
         private readonly ConcurrentDictionary<string, IAggregator> _aggregateByName = new ConcurrentDictionary<string, IAggregator>();
+
+        private readonly IList<IProjection> _inlineProjections = new List<IProjection>(); 
 
         private bool _checkedSchema = false;
         private readonly object _locker = new object();
@@ -219,11 +224,24 @@ namespace Marten.Events
             }).AggregateType;
         }
 
+        public Aggregator<T> AggregateStreamsInlineWith<T>() where T : class, new()
+        {
+            var aggregator = AggregateFor<T>();
+            var finder = new SimpleAggregationFinder<T>();
+            var projection = new AggregationProjection<T>(finder, aggregator);
+
+            _inlineProjections.Add(projection);
+
+            return aggregator;
+        }
+
 
         public string AggregateAliasFor(Type aggregateType)
         {
             return _aggregates
                 .GetOrAdd(aggregateType, type => typeof (Aggregator<>).CloseAndBuildAs<IAggregator>(aggregateType)).Alias;
         }
+
+        public IList<IProjection> Inlines => _inlineProjections;
     }
 }

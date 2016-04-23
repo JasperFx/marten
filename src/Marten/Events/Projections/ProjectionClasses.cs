@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Schema;
 
 namespace Marten.Events.Projections
 {
@@ -25,14 +27,15 @@ namespace Marten.Events.Projections
         {
             MatchingStreams(session).Each(stream =>
             {
-                var state = _finder.Find(stream, session) ?? new T();
-                Update(state, stream);
+                var state = _finder.Find(stream, session);
+
+                update(state, stream);
 
                 session.Store(state);
             });
         }
 
-        private void Update(T state, EventStream stream)
+        private void update(T state, EventStream stream)
         {
             stream.Events.Each(x => x.Apply(state, _aggregator));
         }
@@ -42,7 +45,7 @@ namespace Marten.Events.Projections
             foreach (var stream in MatchingStreams(session))
             {
                 var state = await _finder.FindAsync(stream, session, token) ?? new T();
-                Update(state, stream);
+                update(state, stream);
 
                 session.Store(state);
             }

@@ -8,8 +8,20 @@ namespace Marten.Testing.Events.Projections
     public class QuestParty
     {
         private readonly IList<string> _members = new List<string>();
+        private Guid _id;
 
-        public string[] Members => _members.ToArray();
+        public string[] Members
+        {
+            get
+            {
+                return _members.OrderBy(x => x).ToArray();
+            }
+            set
+            {
+                _members.Clear();
+                _members.AddRange(value);
+            }
+        }
 
         public IList<string> Slayed { get; } = new List<string>();
 
@@ -29,7 +41,12 @@ namespace Marten.Testing.Events.Projections
         }
 
         public string Name { get; set; }
-        public Guid Id { get; set; }
+
+        public Guid Id
+        {
+            get { return _id; }
+            set { _id = value; }
+        }
 
         public override string ToString()
         {

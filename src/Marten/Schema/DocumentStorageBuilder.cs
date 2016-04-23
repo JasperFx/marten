@@ -190,6 +190,10 @@ BLOCK:public object Assign({typeName} document, out bool assigned)
 return document.{mapping.IdMember.Name};
 END
 
+BLOCK:public void Assign({typeName} document, object id)
+document.{mapping.IdMember.Name} = ({mapping.IdMember.GetMemberType().FullName})id;
+END
+
 BLOCK:public object Retrieve({typeName} document)
 return document.{mapping.IdMember.Name};
 END

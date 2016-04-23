@@ -126,6 +126,8 @@ namespace Marten
 
         public void SaveChanges()
         {
+            applyProjections();
+
             _options.Listeners.Each(x => x.BeforeSaveChanges(this));
 
             var batch = new UpdateBatch(_options, _serializer, _connection);
@@ -140,8 +142,17 @@ namespace Marten
             _options.Listeners.Each(x => x.AfterCommit(this));
         }
 
+        private void applyProjections()
+        {
+            var projections = _schema.Events.As<IProjections>();
+
+            projections.Inlines.Each(x => x.Apply(this));
+        }
+
         public async Task SaveChangesAsync(CancellationToken token)
         {
+            await applyProjectionsAsync(token).ConfigureAwait(false);
+
             foreach (var listener in _options.Listeners)
             {
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
@@ -159,6 +170,16 @@ namespace Marten
             foreach (var listener in _options.Listeners)
             {
                 await listener.AfterCommitAsync(this, token).ConfigureAwait(false);
+            }
+        }
+
+        private async Task applyProjectionsAsync(CancellationToken token)
+        {
+            var projections = _schema.Events.As<IProjections>();
+
+            foreach (var projection in projections.Inlines)
+            {
+                await projection.ApplyAsync(this, token).ConfigureAwait(false);
             }
         }
 

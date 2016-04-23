@@ -144,6 +144,11 @@ namespace Marten.Testing
             {
                 throw new NotImplementedException();
             }
+
+            public void Assign(User document, object id)
+            {
+                document.Id = (Guid) id;
+            }
         }
 
         public class FakeCompanyStorage : IDocumentStorage, IdAssignment<Company>
@@ -203,6 +208,11 @@ namespace Marten.Testing
             public object Assign(Company document, out bool assigned)
             {
                 throw new NotImplementedException();
+            }
+
+            public void Assign(Company document, object id)
+            {
+                document.Id = (Guid) id;
             }
         }
     }

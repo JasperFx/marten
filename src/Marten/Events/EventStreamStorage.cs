@@ -90,5 +90,10 @@ namespace Marten.Events
             assigned = false;
             return document.Id;
         }
+
+        public void Assign(EventStream document, object id)
+        {
+            // nothing
+        }
     }
 }

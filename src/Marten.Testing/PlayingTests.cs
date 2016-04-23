@@ -1,5 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
+using Marten.Testing.Events.Projections;
 using Marten.Testing.Fixtures;
 using StoryTeller;
 using StoryTeller.Engine;
@@ -10,11 +13,12 @@ namespace Marten.Testing
 {
     public class PlayingTests
     {
+
         public void run_st_spec()
         {
             using (var runner = new SpecRunner<NulloSystem>())
             {
-                var results = runner.Run("Event DocumentStore/Event Capture/Version a stream as part of event capture");
+                var results = runner.Run("Event Store/Projections/Inline Aggregation by Stream");
 
 
                 runner.OpenResultsInBrowser();

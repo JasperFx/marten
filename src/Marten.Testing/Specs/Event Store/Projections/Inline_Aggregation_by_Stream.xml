@@ -1,0 +1,24 @@
+<Spec id="870c1c7c-b2bf-441f-92ad-c8e94b390f7d" maxRetries="0" tags="" lifecycle="Regression" name="Inline Aggregation by Stream" lastUpdated="Friday, April 22, 2016" expirationPeriod="0">
+  <InlineAggregation id="ea3f509f-6d6a-46d2-9717-2090043c61b3">
+    <ForNewQuestStream name="Destroy the Ring" date="TODAY-25" />
+    <HasAdditionalEvents>
+      <QuestEvent id="ca3a9cb5-35c8-4ed8-9b5c-7534fe5fe110">
+        <MembersJoinedAt names="Frodo, Sam" day="1" location="Hobbiton" />
+        <MembersJoinedAt names="Merry, Pippin" day="3" location="Shire" />
+        <MembersJoinedAt names="Strider" day="5" location="Bree" />
+      </QuestEvent>
+    </HasAdditionalEvents>
+    <ForNewQuestStream name="Find the Orb" date="TODAY-10" />
+    <HasAdditionalEvents>
+      <QuestEvent id="b99422a6-d29c-4b58-86d3-252019bfa1e3">
+        <MembersJoinedAt names="Garion, Belgarath, Polgara" day="1" location="Faldor's Farm" />
+        <MembersJoinedAt names="Silk, Barak" day="3" location="Sendaria" />
+        <MembersJoinedAt names="Hettar" day="10" location="Algaria" />
+      </QuestEvent>
+    </HasAdditionalEvents>
+    <ForStream streamName="Destroy the Ring" />
+    <QuestPartyShouldBe Name="Destroy the Ring" Members="Frodo, Merry, Pippin, Sam, Strider" />
+    <ForStream streamName="Find the Orb" />
+    <QuestPartyShouldBe Name="Find the Orb" Members="Barak, Belgarath, Garion, Hettar, Polgara, Silk" />
+  </InlineAggregation>
+</Spec>

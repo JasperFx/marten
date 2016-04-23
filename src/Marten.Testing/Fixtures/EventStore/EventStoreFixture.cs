@@ -21,7 +21,6 @@ namespace Marten.Testing.Fixtures.EventStore
         private Guid _lastStream;
         private int _version;
         private DateTime _time;
-        private Guid _streamId;
         private string _mode;
 
         public override void SetUp()

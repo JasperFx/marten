@@ -20,7 +20,7 @@ namespace Marten.Events.Projections
                 .Where(x => x.Name == ApplyMethod && x.GetParameters().Length == 1)
                 .Each(method =>
                 {
-                    var eventType = Enumerable.Single<ParameterInfo>(method.GetParameters()).ParameterType;
+                    var eventType = method.GetParameters().Single<ParameterInfo>().ParameterType;
                     var step = typeof (AggregationStep<,>)
                         .CloseAndBuildAs<object>(method, typeof (T), eventType);
 

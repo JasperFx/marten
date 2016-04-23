@@ -19,5 +19,6 @@ namespace Marten.Events
         bool IsActive { get; }
         Aggregator<T> AggregateFor<T>() where T : class, new();
         Type AggregateTypeFor(string aggregateTypeName);
+        Aggregator<T> AggregateStreamsInlineWith<T>() where T : class, new();
     }
 }
