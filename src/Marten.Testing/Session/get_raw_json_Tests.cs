@@ -19,7 +19,7 @@ namespace Marten.Testing.Session
             theSession.Store(issue);
             theSession.SaveChanges();
 
-            var json = theSession.Query<Issue>().Where(x => x.Title == "Issue 1").AsJson().ToJsonArray();
+            var json = theSession.Query<Issue>().Where(x => x.Title == "Issue 1").ToJsonArray();
             json.ShouldBe($"[{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"AssigneeId\": null, \"ReporterId\": null}}]");
             json = theSession.Query<Issue>().AsJson().First();
             json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"AssigneeId\": null, \"ReporterId\": null}}");
@@ -38,7 +38,7 @@ namespace Marten.Testing.Session
             theSession.Store(issue);
             theSession.SaveChanges();
 
-            var json = await theSession.Query<Issue>().Where(x => x.Title == "Issue 1").AsJson().ToJsonArrayAsync();
+            var json = await theSession.Query<Issue>().Where(x => x.Title == "Issue 1").ToJsonArrayAsync();
             json.ShouldBe($"[{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"AssigneeId\": null, \"ReporterId\": null}}]");
             json = await theSession.Query<Issue>().AsJson().FirstAsync();
             json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"AssigneeId\": null, \"ReporterId\": null}}");

@@ -10,7 +10,10 @@ namespace Marten.Linq
     public class MartenQueryParser : IQueryParser
     {
         public static readonly MartenQueryParser Flyweight = new MartenQueryParser();
-        public static readonly MartenQueryParser ForCachedQuery = new MartenQueryParser(r=>r.Register(AsJsonExpressionNode.SupportedMethods, typeof(AsJsonExpressionNode)));
+        public static readonly MartenQueryParser ForCachedQuery = new MartenQueryParser(r=> {
+            r.Register(AsJsonExpressionNode.SupportedMethods, typeof (AsJsonExpressionNode));
+            r.Register(ToJsonArrayExpressionNode.SupportedMethods, typeof (ToJsonArrayExpressionNode));
+        });
 
         private readonly QueryParser _parser;
 

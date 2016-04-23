@@ -39,6 +39,11 @@ namespace Marten.Linq.QueryHandlers
 
         private IQueryHandler<T> listHandlerFor<T>(QueryModel model, IIncludeJoin[] joins)
         {
+            if (model.HasOperator<ToJsonArrayResultOperator>())
+            {
+                return new JsonQueryHandler(_schema, model).As<IQueryHandler<T>>();
+            }
+
             if (!typeof (T).IsGenericEnumerable())
             {
                 return null;

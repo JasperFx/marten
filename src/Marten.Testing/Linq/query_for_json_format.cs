@@ -69,7 +69,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var listJson = theSession.Query<SimpleUser>().Where(x=>x.Number>=5).AsJson().ToJsonArray();
+            var listJson = theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToJsonArray();
             listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
         }
 
@@ -100,7 +100,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var listJson = await theSession.Query<SimpleUser>().Where(x=>x.Number>=5).AsJson().ToJsonArrayAsync();
+            var listJson = await theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToJsonArrayAsync();
             listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using System.Web.UI.WebControls;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -82,6 +83,33 @@ namespace Marten.Testing.Linq
 
             user.ShouldNotBeNull();
             user.ShouldBe(_user1.ToJson());
+        }
+
+        [Fact]
+        public void a_sorted_list_compiled_query_AsJson()
+        {
+            var user = theSession.Query(new FindJsonOrderedUsersByUsername() {FirstName = "Jeremy" });
+
+            user.ShouldNotBeNull();
+            user.ShouldBe($"[{_user1.ToJson()},{_user5.ToJson()}]");
+        }
+
+        [Fact]
+        public void a_filtered_list_compiled_query_AsJson()
+        {
+            var user = theSession.Query(new FindJsonUsersByUsername() {FirstName = "Jeremy" });
+
+            user.ShouldNotBeNull();
+            user.ShouldNotBeEmpty();
+        }
+
+        [Fact]
+        public async Task a_filtered_list_compiled_query_AsJson_async()
+        {
+            var user = await theSession.QueryAsync(new FindJsonUsersByUsername() {FirstName = "Jeremy" });
+
+            user.ShouldNotBeNull();
+            user.ShouldNotBeEmpty();
         }
 
         [Fact]
@@ -181,6 +209,31 @@ namespace Marten.Testing.Linq
             return query =>
                     query.Where(x => Username == x.UserName)
                         .AsJson().Single();
+
+        }
+    }
+
+    public class FindJsonOrderedUsersByUsername : ICompiledQuery<User, string>
+    {
+        public string FirstName { get; set; }
+        public Expression<Func<IQueryable<User>, string>> QueryIs()
+        {
+            return query =>
+                    query.Where(x => FirstName == x.FirstName)
+                        .OrderBy(x => x.UserName)
+                        .ToJsonArray();
+
+        }
+    }
+
+    public class FindJsonUsersByUsername : ICompiledQuery<User, string>
+    {
+        public string FirstName { get; set; }
+        public Expression<Func<IQueryable<User>, string>> QueryIs()
+        {
+            return query =>
+                    query.Where(x => FirstName == x.FirstName)
+                        .ToJsonArray();
 
         }
     }

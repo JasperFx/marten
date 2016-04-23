@@ -25,14 +25,24 @@ namespace Marten
             return queryable.Select(x => x.AsJson());
         }
 
-        public static string ToJsonArray(this IEnumerable<string> strings)
+        public static IQueryable<string> AsJson<T>(this IOrderedQueryable<T> queryable)
         {
-            return $"[{strings.Join(",")}]";
+            return queryable.Select(x => x.AsJson());
         }
 
-        public async static Task<string> ToJsonArrayAsync(this IQueryable<string> strings)
+        public static string ToJsonArray<T>(this IQueryable<T> queryable)
         {
-            var jsonStrings = await strings.ToListAsync();
+            return $"[{queryable.Select(x=>x.AsJson()).ToArray().Join(",")}]";
+        }
+
+        public static string ToJsonArray<T>(this IOrderedQueryable<T> queryable)
+        {
+            return $"[{queryable.Select(x => x.AsJson()).ToArray().Join(",")}]";
+        }
+
+        public async static Task<string> ToJsonArrayAsync<T>(this IQueryable<T> queryable)
+        {
+            var jsonStrings = await queryable.Select(x=>x.AsJson()).ToListAsync();
             return $"[{jsonStrings.Join(",")}]";
         }
     }
