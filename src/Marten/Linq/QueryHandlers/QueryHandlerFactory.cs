@@ -162,7 +162,7 @@ namespace Marten.Linq.QueryHandlers
 
             var setters = findSetters(queryType, expression);
 
-            var model = MartenQueryParser.ForCachedQuery.GetParsedQuery(invocation);
+            var model = MartenQueryParser.TransformQueryFlyweight.GetParsedQuery(invocation);
             _schema.EnsureStorageExists(typeof(TDoc));
 
             // TODO -- someday we'll add Include()'s to compiled queries
