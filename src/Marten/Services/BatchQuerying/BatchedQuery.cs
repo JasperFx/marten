@@ -259,5 +259,12 @@ namespace Marten.Services.BatchQuerying
 
             return AddItem(handler);
         }
+
+
+        public Task<IEvent> Load(Guid id)
+        {
+            var handler = new SingleEventQueryHandler(id, _schema.Events.As<EventGraph>(), _serializer);
+            return AddItem(handler);
+        }
     }
 }

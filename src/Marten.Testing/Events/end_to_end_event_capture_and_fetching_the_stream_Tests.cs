@@ -256,6 +256,8 @@ namespace Marten.Testing.Events
             }
         }
 
+        
+
         private static  DocumentStore InitStore(string databascSchema = null)
         {
             DocumentStore.For(ConnectionSource.ConnectionString)

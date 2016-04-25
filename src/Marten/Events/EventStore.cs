@@ -17,6 +17,7 @@ namespace Marten.Events
         private readonly IDocumentSchema _schema;
         private readonly IManagedConnection _connection;
         private readonly EventSelector _selector;
+        private readonly ISerializer _serializer;
 
 
         public EventStore(IDocumentSession session, IIdentityMap identityMap, IDocumentSchema schema,
@@ -25,6 +26,7 @@ namespace Marten.Events
             _session = session;
             _identityMap = identityMap;
             _schema = schema;
+            _serializer = serializer;
             
             _connection = connection;
 
@@ -107,16 +109,31 @@ namespace Marten.Events
             return _session.Query<T>();
         }
 
-        public T Load<T>(Guid id) where T : class
+        public Event<T> Load<T>(Guid id) where T : class
         {
             _schema.Events.AddEventType(typeof (T));
-            return _session.Load<T>(id);
+
+
+            return Load(id).As<Event<T>>();
         }
 
-        public Task<T> LoadAsync<T>(Guid id) where T : class
+        public async Task<Event<T>> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class
         {
             _schema.Events.AddEventType(typeof (T));
-            return _session.LoadAsync<T>(id);
+
+            return (await LoadAsync(id, token)).As<Event<T>>();
+        }
+
+        public IEvent Load(Guid id)
+        {
+            var handler = new SingleEventQueryHandler(id, _schema.Events.As<EventGraph>(), _serializer);
+            return _connection.Fetch(handler, _identityMap);
+        }
+
+        public Task<IEvent> LoadAsync(Guid id, CancellationToken token = default(CancellationToken))
+        {
+            var handler = new SingleEventQueryHandler(id, _schema.Events.As<EventGraph>(), _serializer);
+            return _connection.FetchAsync(handler, _identityMap, token);
         }
 
         public StreamState FetchStreamState(Guid streamId)

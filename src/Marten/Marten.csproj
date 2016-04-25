@@ -67,6 +67,7 @@
     <Compile Include="Events\Projections\ITransform.cs" />
     <Compile Include="Events\Projections\OneForOneProjection.cs" />
     <Compile Include="Events\Projections\AggregateFinder.cs" />
+    <Compile Include="Events\SingleEventQueryHandler.cs" />
     <Compile Include="Events\StreamStateHandler.cs" />
     <Compile Include="Events\Transforms.cs" />
     <Compile Include="Generation\TableDiff.cs" />

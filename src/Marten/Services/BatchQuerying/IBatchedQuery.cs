@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Linq;
 
 namespace Marten.Services.BatchQuerying
@@ -18,6 +19,14 @@ namespace Marten.Services.BatchQuerying
         /// <param name="timestamp"></param>
         /// <returns></returns>
         Task<T> AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new();
+
+
+        /// <summary>
+        /// Load a single event with all of its metadata
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        Task<IEvent> Load(Guid id);
     }
 
     public interface IBatchedQuery

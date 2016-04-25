@@ -24,8 +24,11 @@ namespace Marten.Events
 
         IMartenQueryable<T> Query<T>();
 
-        T Load<T>(Guid id) where T : class;
-        Task<T> LoadAsync<T>(Guid id) where T : class;
+        Event<T> Load<T>(Guid id) where T : class;
+        Task<Event<T>> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class;
+
+        IEvent Load(Guid id);
+        Task<IEvent> LoadAsync(Guid id, CancellationToken token = default(CancellationToken));
 
         StreamState FetchStreamState(Guid streamId);
         Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = default(CancellationToken));
