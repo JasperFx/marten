@@ -39,6 +39,11 @@ namespace Marten.Linq.QueryHandlers
 
         private IQueryHandler<T> listHandlerFor<T>(QueryModel model, IIncludeJoin[] joins)
         {
+            if (model.HasOperator<ToJsonArrayResultOperator>())
+            {
+                return new JsonQueryHandler(_schema, model).As<IQueryHandler<T>>();
+            }
+
             if (!typeof (T).IsGenericEnumerable())
             {
                 return null;
@@ -157,7 +162,7 @@ namespace Marten.Linq.QueryHandlers
 
             var setters = findSetters(queryType, expression);
 
-            var model = MartenQueryParser.Flyweight.GetParsedQuery(invocation);
+            var model = MartenQueryParser.TransformQueryFlyweight.GetParsedQuery(invocation);
             _schema.EnsureStorageExists(typeof(TDoc));
 
             // TODO -- someday we'll add Include()'s to compiled queries

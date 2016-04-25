@@ -78,6 +78,8 @@
     <Compile Include="JsonExtensions.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="LinqExtensions.cs" />
+    <Compile Include="Linq\AsJsonExpressionNode.cs" />
+    <Compile Include="Linq\AsJsonResultOperator.cs" />
     <Compile Include="Linq\BadLinqExpressionException.cs" />
     <Compile Include="Linq\CollectionAnyContainmentWhereFragment.cs" />
     <Compile Include="Linq\CompiledQueryMemberExpressionVisitor.cs" />
@@ -109,6 +111,7 @@
     <Compile Include="Linq\QueryHandlers\CachedQuery.cs" />
     <Compile Include="Linq\QueryHandlers\CachedQueryHandler.cs" />
     <Compile Include="Linq\QueryHandlers\EnumerableQueryHandler.cs" />
+    <Compile Include="Linq\QueryHandlers\JsonQueryHandler.cs" />
     <Compile Include="Linq\QueryHandlers\QueryHandlerFactory.cs" />
     <Compile Include="Linq\QueryModelExtensions.cs" />
     <Compile Include="Linq\QueryHandlers\AnyQueryHandler.cs" />
@@ -126,6 +129,8 @@
     <Compile Include="Linq\SingleFieldSelector.cs" />
     <Compile Include="Linq\StringSelector.cs" />
     <Compile Include="Linq\TargetObject.cs" />
+    <Compile Include="Linq\ToJsonArrayExpressionNode.cs" />
+    <Compile Include="Linq\ToJsonArrayResultOperator.cs" />
     <Compile Include="Linq\WhereClauseVisitor.cs" />
     <Compile Include="Linq\WholeDocumentSelector.cs" />
     <Compile Include="QuerySession.cs" />
