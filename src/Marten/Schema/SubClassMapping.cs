@@ -124,6 +124,11 @@ namespace Marten.Schema
         {
             return _parent.JoinToInclude<TOther>(joinType, other, members, callback);
         }
+
+        public void ResetSchemaExistenceChecks()
+        {
+            _parent.ResetSchemaExistenceChecks();
+        }
     }
 
 

@@ -271,6 +271,13 @@ namespace Marten.Schema
         }
 
         public IQueryHandlerFactory HandlerFactory { get; }
+        public void ResetSchemaExistenceChecks()
+        {
+            AllDocumentMaps().Each(x => x.ResetSchemaExistenceChecks());
+            Events.As<EventGraph>().ResetSchemaExistenceChecks();
+
+            _documentTypes.Clear();
+        }
 
         private string[] primaryKeysFor(IDocumentMapping documentMapping)
         {

@@ -103,6 +103,11 @@ namespace Marten.Events
         {
             return _inner.JoinToInclude<TOther>(joinType, other, members, callback);
         }
+
+        public void ResetSchemaExistenceChecks()
+        {
+            _parent.ResetSchemaExistenceChecks();
+        }
     }
 
     public class EventMapping<T> : EventMapping, IDocumentStorage, IResolver<T> where T : class, new()

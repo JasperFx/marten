@@ -8,6 +8,10 @@ using Marten.Schema;
 
 namespace Marten.Events.Projections
 {
+    /// <summary>
+    /// Simple aggregation finder that looks for an aggregate document based on the stream id
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class AggregateFinder<T> : IAggregationFinder<T> where T : class, new()
     {
         private readonly Action<T, Guid> _setId;

@@ -37,6 +37,7 @@ namespace Marten.Schema
         void DeleteAllDocuments(IConnectionFactory factory);
 
         IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class;
+        void ResetSchemaExistenceChecks();
     }
 
     public static class DocumentMappingExtensions

@@ -337,6 +337,11 @@ namespace Marten.Schema
             return new IncludeJoin<TOther>(other, joinText, tableAlias, callback);
         }
 
+        public void ResetSchemaExistenceChecks()
+        {
+            _hasCheckedSchema = false;
+        }
+
         public IEnumerable<SubClassMapping> SubClasses => _subClasses;
 
         public IIdGeneration IdStrategy { get; set; }

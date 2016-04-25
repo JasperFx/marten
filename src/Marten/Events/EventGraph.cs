@@ -243,5 +243,10 @@ namespace Marten.Events
         }
 
         public IList<IProjection> Inlines => _inlineProjections;
+
+        public void ResetSchemaExistenceChecks()
+        {
+            _checkedSchema = false;
+        }
     }
 }

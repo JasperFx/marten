@@ -122,5 +122,11 @@ namespace Marten.Schema
         /// Used to create IQueryHandler's for Linq queries
         /// </summary>
         IQueryHandlerFactory HandlerFactory { get; }
+
+        /// <summary>
+        /// Directs Marten to disregard any previous schema checks. Useful
+        /// if you change the underlying schema without shutting down the document store
+        /// </summary>
+        void ResetSchemaExistenceChecks();
     }
 }

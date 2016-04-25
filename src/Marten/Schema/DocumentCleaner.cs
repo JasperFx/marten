@@ -80,6 +80,8 @@ AND    n.nspname = '{1}';";
 
                 var drops = connection.GetStringList(DropAllFunctionSql);
                 drops.Each(drop => connection.Execute(drop));
+
+                _schema.ResetSchemaExistenceChecks();
             }
         }
 

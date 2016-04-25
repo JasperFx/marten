@@ -58,6 +58,7 @@
     <Compile Include="Events\marking_stream_as_isnew_on_capture.cs" />
     <Compile Include="Events\Projections\AggregationStepTests.cs" />
     <Compile Include="Events\Projections\AggregatorTests.cs" />
+    <Compile Include="Events\Projections\inline_aggregation_by_stream_with_multiples.cs" />
     <Compile Include="Events\Projections\QuestParty.cs" />
     <Compile Include="Events\Projections\AggregateFinderTests.cs" />
     <Compile Include="fetching_stream_state.cs" />

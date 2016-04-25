@@ -7,65 +7,16 @@ using Marten.Schema;
 
 namespace Marten.Events.Projections
 {
-    public interface ITransform<TInput, TOutput>
+    public interface ITransform<TEvent, TView>
     {
-        TOutput Transform(TInput input);
+        TView Transform(Event<TEvent> input);
     }
 
-    public class AggregationProjection<T> : IProjection where T : class, new()
+    public class OneForOneProjection<TEvent, TView> : IProjection
     {
-        private readonly IAggregationFinder<T> _finder;
-        private readonly Aggregator<T> _aggregator;
+        private readonly ITransform<TEvent, TView> _transform;
 
-        public AggregationProjection(IAggregationFinder<T> finder, Aggregator<T> aggregator)
-        {
-            _finder = finder;
-            _aggregator = aggregator;
-        }
-
-        public void Apply(IDocumentSession session)
-        {
-            MatchingStreams(session).Each(stream =>
-            {
-                var state = _finder.Find(stream, session);
-
-                update(state, stream);
-
-                session.Store(state);
-            });
-        }
-
-        private void update(T state, EventStream stream)
-        {
-            stream.Events.Each(x => x.Apply(state, _aggregator));
-        }
-
-        public async Task ApplyAsync(IDocumentSession session, CancellationToken token)
-        {
-            foreach (var stream in MatchingStreams(session))
-            {
-                var state = await _finder.FindAsync(stream, session, token) ?? new T();
-                update(state, stream);
-
-                session.Store(state);
-            }
-        }
-
-
-
-        public EventStream[] MatchingStreams(IDocumentSession session)
-        {
-            return session.PendingChanges.AllChangedFor<EventStream>()
-                .Where(_aggregator.AppliesTo).ToArray();
-        }
-
-    }
-
-    public class OneForOneProjection<TInput, TOutput> : IProjection
-    {
-        private readonly ITransform<TInput, TOutput> _transform;
-
-        public OneForOneProjection(ITransform<TInput, TOutput> transform)
+        public OneForOneProjection(ITransform<TEvent, TView> transform)
         {
             _transform = transform;
         }
@@ -75,8 +26,7 @@ namespace Marten.Events.Projections
             session
                 .PendingChanges.AllChangedFor<EventStream>()
                 .SelectMany(x => x.Events)
-                .Select(x => x.Data)
-                .OfType<TInput>()
+                .OfType<Event<TEvent>>()
                 .Select(x => _transform.Transform(x))
                 .Each(x => session.Store(x));
         }
@@ -86,8 +36,7 @@ namespace Marten.Events.Projections
             session
                 .PendingChanges.AllChangedFor<EventStream>()
                 .SelectMany(x => x.Events)
-                .Select(x => x.Data)
-                .OfType<TInput>()
+                .OfType<Event<TEvent>>()
                 .Select(x => _transform.Transform(x))
                 .Each(x => session.Store(x));
 
