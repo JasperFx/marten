@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
@@ -57,7 +58,8 @@ namespace Marten.Linq.QueryHandlers
 
         public async Task<string> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            return await _selector.ReadAsync(reader, map, token).ContinueWith(t=> $"[{t.Result.Join(",")}]", token).ConfigureAwait(false);
+            var result = await _selector.ReadAsync(reader, map, token);
+            return $"[{result}]";
         }
     }
 }
