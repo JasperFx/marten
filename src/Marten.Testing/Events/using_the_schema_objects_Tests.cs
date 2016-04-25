@@ -75,5 +75,29 @@ namespace Marten.Testing.Events
             schemaTableNames.ShouldContain("event_store.mt_streams");
             schemaTableNames.ShouldContain("event_store.mt_events");
         }
+
+        [Fact]
+        public void can_build_schema_with_auto_create_none()
+        {
+            var container1 = ContainerFactory.Configure(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+            });
+
+            var schema1 = container1.GetInstance<IDocumentSchema>();
+            var eventStorage1 = schema1.StorageFor(typeof (EventStream));
+
+            eventStorage1.ShouldNotBeNull();
+
+            var container2 = ContainerFactory.Configure(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.None;
+            });
+
+            var schema2 = container2.GetInstance<IDocumentSchema>();
+            var eventStorage2 = schema2.StorageFor(typeof (EventStream));
+
+            eventStorage2.ShouldNotBeNull();
+        }
     }
 }
