@@ -100,7 +100,7 @@ namespace Marten.Events
         public string Alias { get; } = null;
         public Type DocumentType { get; } = typeof (EventStream);
 
-        public TableName Table => new TableName(DatabaseSchemaName, "mt_stream");
+        public TableName Table => new TableName(DatabaseSchemaName, "mt_streams");
 
         public string DatabaseSchemaName
         {
