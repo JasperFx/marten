@@ -9,14 +9,14 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class SimpleAggregationFinderTests
+    public class AggregateFinderTests
     {
         [Fact]
         public void find_when_stream_is_new()
         {
             var session = Substitute.For<IDocumentSession>();
 
-            var finder = new SimpleAggregationFinder<QuestParty>();
+            var finder = new AggregateFinder<QuestParty>();
 
             var id = Guid.NewGuid();
             finder.Find(new EventStream(id, true), session)
@@ -34,7 +34,7 @@ namespace Marten.Testing.Events.Projections
 
             var persisted = new QuestParty {Id = id};
 
-            var finder = new SimpleAggregationFinder<QuestParty>();
+            var finder = new AggregateFinder<QuestParty>();
 
             session.Load<QuestParty>(id).Returns(persisted);
 
@@ -48,7 +48,7 @@ namespace Marten.Testing.Events.Projections
             var session = Substitute.For<IDocumentSession>();
             var id = Guid.NewGuid();
 
-            var finder = new SimpleAggregationFinder<QuestParty>();
+            var finder = new AggregateFinder<QuestParty>();
 
 
             finder.Find(new EventStream(id, false), session)
@@ -59,13 +59,13 @@ namespace Marten.Testing.Events.Projections
 
     }
 
-    public class SimpleAggregationFinder_Async : DocumentSessionFixture<IdentityMap>
+    public class AggregateFinder_Async : DocumentSessionFixture<IdentityMap>
     {
         [Fact]
         public async Task find_when_stream_is_new_async()
         {
 
-            var finder = new SimpleAggregationFinder<QuestParty>();
+            var finder = new AggregateFinder<QuestParty>();
 
             var id = Guid.NewGuid();
             (await finder.FindAsync(new EventStream(id, true), theSession, new CancellationToken()))
@@ -83,7 +83,7 @@ namespace Marten.Testing.Events.Projections
             theSession.Store(persisted);
             theSession.SaveChanges();
 
-            var finder = new SimpleAggregationFinder<QuestParty>();
+            var finder = new AggregateFinder<QuestParty>();
 
 
             (await finder.FindAsync(new EventStream(id, false), theSession, new CancellationToken()))
@@ -95,7 +95,7 @@ namespace Marten.Testing.Events.Projections
         {
             var id = Guid.NewGuid();
 
-            var finder = new SimpleAggregationFinder<QuestParty>();
+            var finder = new AggregateFinder<QuestParty>();
 
 
             (await finder.FindAsync(new EventStream(id, false), theSession, new CancellationToken()))

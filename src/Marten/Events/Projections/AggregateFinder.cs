@@ -8,11 +8,11 @@ using Marten.Schema;
 
 namespace Marten.Events.Projections
 {
-    public class SimpleAggregationFinder<T> : IAggregationFinder<T> where T : class, new()
+    public class AggregateFinder<T> : IAggregationFinder<T> where T : class, new()
     {
         private readonly Action<T, Guid> _setId;
 
-        public SimpleAggregationFinder()
+        public AggregateFinder()
         {
             var idMember = DocumentMapping.FindIdMember(typeof (T));
 

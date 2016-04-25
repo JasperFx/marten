@@ -59,7 +59,7 @@
     <Compile Include="Events\Projections\AggregationStepTests.cs" />
     <Compile Include="Events\Projections\AggregatorTests.cs" />
     <Compile Include="Events\Projections\QuestParty.cs" />
-    <Compile Include="Events\Projections\SimpleAggregationFinderTests.cs" />
+    <Compile Include="Events\Projections\AggregateFinderTests.cs" />
     <Compile Include="fetching_stream_state.cs" />
     <Compile Include="Fixtures\EventStore\InlineAggregationFixture.cs" />
     <Compile Include="IntDoc.cs" />

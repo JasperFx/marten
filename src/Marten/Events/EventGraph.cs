@@ -227,7 +227,7 @@ namespace Marten.Events
         public Aggregator<T> AggregateStreamsInlineWith<T>() where T : class, new()
         {
             var aggregator = AggregateFor<T>();
-            var finder = new SimpleAggregationFinder<T>();
+            var finder = new AggregateFinder<T>();
             var projection = new AggregationProjection<T>(finder, aggregator);
 
             _inlineProjections.Add(projection);
