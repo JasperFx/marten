@@ -8,13 +8,12 @@ namespace Marten.Testing.Events.Projections
     public class QuestParty
     {
         private readonly IList<string> _members = new List<string>();
-        private Guid _id;
 
         public string[] Members
         {
             get
             {
-                return _members.OrderBy(x => x).ToArray();
+                return _members.ToArray();
             }
             set
             {
@@ -42,11 +41,7 @@ namespace Marten.Testing.Events.Projections
 
         public string Name { get; set; }
 
-        public Guid Id
-        {
-            get { return _id; }
-            set { _id = value; }
-        }
+        public Guid Id { get; set; }
 
         public override string ToString()
         {
