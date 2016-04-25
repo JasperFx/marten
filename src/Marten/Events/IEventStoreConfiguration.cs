@@ -20,5 +20,8 @@ namespace Marten.Events
         Aggregator<T> AggregateFor<T>() where T : class, new();
         Type AggregateTypeFor(string aggregateTypeName);
         Aggregator<T> AggregateStreamsInlineWith<T>() where T : class, new();
+
+        void TransformEventsInlineWith<TEvent, TView>(ITransform<TEvent, TView> transform);
+        void InlineTransformation(IProjection projection);
     }
 }

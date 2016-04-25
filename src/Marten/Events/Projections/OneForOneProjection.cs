@@ -7,11 +7,6 @@ using Marten.Schema;
 
 namespace Marten.Events.Projections
 {
-    public interface ITransform<TEvent, TView>
-    {
-        TView Transform(Event<TEvent> input);
-    }
-
     public class OneForOneProjection<TEvent, TView> : IProjection
     {
         private readonly ITransform<TEvent, TView> _transform;

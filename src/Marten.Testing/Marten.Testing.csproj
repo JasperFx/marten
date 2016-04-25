@@ -59,6 +59,8 @@
     <Compile Include="Events\Projections\AggregationStepTests.cs" />
     <Compile Include="Events\Projections\AggregatorTests.cs" />
     <Compile Include="Events\Projections\inline_aggregation_by_stream_with_multiples.cs" />
+    <Compile Include="Events\Projections\inline_transformation_of_events.cs" />
+    <Compile Include="Events\Projections\MonsterSlayed.cs" />
     <Compile Include="Events\Projections\QuestParty.cs" />
     <Compile Include="Events\Projections\AggregateFinderTests.cs" />
     <Compile Include="fetching_stream_state.cs" />

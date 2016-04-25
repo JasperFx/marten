@@ -235,6 +235,17 @@ namespace Marten.Events
             return aggregator;
         }
 
+        public void TransformEventsInlineWith<TEvent, TView>(ITransform<TEvent, TView> transform)
+        {
+            var projection = new OneForOneProjection<TEvent, TView>(transform);
+            _inlineProjections.Add(projection);
+        }
+
+        public void InlineTransformation(IProjection projection)
+        {
+            _inlineProjections.Add(projection);
+        }
+
 
         public string AggregateAliasFor(Type aggregateType)
         {

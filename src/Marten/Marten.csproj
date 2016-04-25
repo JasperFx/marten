@@ -64,7 +64,8 @@
     <Compile Include="Events\Projections\IAggregationFinder.cs" />
     <Compile Include="Events\Projections\IAggregator.cs" />
     <Compile Include="Events\Projections\IProjection.cs" />
-    <Compile Include="Events\Projections\ProjectionClasses.cs" />
+    <Compile Include="Events\Projections\ITransform.cs" />
+    <Compile Include="Events\Projections\OneForOneProjection.cs" />
     <Compile Include="Events\Projections\AggregateFinder.cs" />
     <Compile Include="Events\StreamStateHandler.cs" />
     <Compile Include="Events\Transforms.cs" />

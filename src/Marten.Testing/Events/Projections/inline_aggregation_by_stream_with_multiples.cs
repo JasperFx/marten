@@ -12,8 +12,8 @@ namespace Marten.Testing.Events.Projections
     {
         QuestStarted started = new QuestStarted {Name = "Find the Orb"};
         MembersJoined joined = new MembersJoined {Day = 2, Location = "Faldor's Farm", Members = new string[] {"Garion", "Polgara", "Belgarath"}};
-        AggregatorTests.MonsterSlayed slayed1 = new AggregatorTests.MonsterSlayed {Name = "Troll"};        
-        AggregatorTests.MonsterSlayed slayed2 = new AggregatorTests.MonsterSlayed {Name = "Dragon"};  
+        MonsterSlayed slayed1 = new MonsterSlayed {Name = "Troll"};        
+        MonsterSlayed slayed2 = new MonsterSlayed {Name = "Dragon"};  
         
         MembersJoined joined2 = new MembersJoined {Day = 5, Location = "Sendaria", Members = new string[] {"Silk", "Barak"}};
 
@@ -67,7 +67,7 @@ namespace Marten.Testing.Events.Projections
 
         private readonly IList<string> _monsters = new List<string>();
 
-        public void Apply(AggregatorTests.MonsterSlayed slayed)
+        public void Apply(MonsterSlayed slayed)
         {
             _monsters.Fill(slayed.Name);
         }

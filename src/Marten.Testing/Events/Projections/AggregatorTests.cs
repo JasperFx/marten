@@ -76,11 +76,6 @@ namespace Marten.Testing.Events.Projections
             party.Members.ShouldHaveTheSameElementsAs("Merry", "Pippin", "Strider", "Gandalf", "Boromir", "Gimli", "Legolas");
         }
 
-        public class MonsterSlayed
-        {
-            public string Name { get; set; }
-        }
-
         public class MonsterSlayer : IAggregation<QuestParty, MonsterSlayed>
         {
             public void Apply(QuestParty aggregate, MonsterSlayed @event)
