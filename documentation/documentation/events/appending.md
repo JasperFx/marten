@@ -12,6 +12,12 @@ The only requirement that Marten makes on types used as events is that they are:
 1. Public, concrete types
 1. Can be bidirectionally serialized and deserialized with a tool like Newtonsoft.Json
 
+Marten does need to know what the event types are before you issue queries against the event data (it's just to handle the deserialization from JSON). The event registration will happen automatically when you append events,
+but for production usage when you may be querying event data before you append anything, you just need to register the event types upfront like this:
+
+<[sample:registering-event-types]>
+
+
 ## Stream or Aggregate Types
 
 At this point there is no specific requirements about stream aggregate types as they are purely marker types for now. In the future we will probably support

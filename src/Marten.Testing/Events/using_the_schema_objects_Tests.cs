@@ -1,6 +1,8 @@
-﻿using Marten.Events;
+﻿using System;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Testing.Events.Projections;
 using Shouldly;
 using StructureMap;
 using Xunit;
@@ -79,25 +81,34 @@ namespace Marten.Testing.Events
         [Fact]
         public void can_build_schema_with_auto_create_none()
         {
-            var container1 = ContainerFactory.Configure(_ =>
+            var id = Guid.NewGuid();
+
+            using (var store1 = DocumentStore.For(ConnectionSource.ConnectionString))
             {
-                _.AutoCreateSchemaObjects = AutoCreate.All;
-            });
+                using (var session = store1.OpenSession())
+                {
+                    session.Events.StartStream<Quest>(id, new QuestStarted {Name = "Destroy the Orb"}, new MonsterSlayed {Name = "Troll"}, new MonsterSlayed {Name = "Dragon"});
+                    session.SaveChanges();
+                }
+            }
 
-            var schema1 = container1.GetInstance<IDocumentSchema>();
-            var eventStorage1 = schema1.StorageFor(typeof (EventStream));
-
-            eventStorage1.ShouldNotBeNull();
-
-            var container2 = ContainerFactory.Configure(_ =>
+            // SAMPLE: registering-event-types
+            var store2 = DocumentStore.For(_ =>
             {
+                _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.None;
+
+                _.Events.AddEventType(typeof(QuestStarted));
+                _.Events.AddEventType(typeof(MonsterSlayed));
             });
+            // ENDSAMPLE
 
-            var schema2 = container2.GetInstance<IDocumentSchema>();
-            var eventStorage2 = schema2.StorageFor(typeof (EventStream));
+            using (var session = store2.OpenSession())
+            {
+                session.Events.FetchStream(id).Count.ShouldBe(3);
+            }
 
-            eventStorage2.ShouldNotBeNull();
+            store2.Dispose();
         }
     }
 }
