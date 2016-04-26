@@ -44,7 +44,7 @@
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
 		      	<li><a href="/marten/documentation/documents" title="Marten as Document Db">Previous</a></li>
-		      	<li><a href="/marten/documentation/events/configuration" title="Configuring Streams">Next</a></li>
+		      	<li><a href="/marten/documentation/events/appending" title="Appending Events">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -76,7 +76,7 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/configuration">Configuring Streams</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/appending">Appending Events</a></p>
 		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents">Marten as Document Db</a></p>
 
 		        </ul>
@@ -91,8 +91,109 @@
 			      	<div id="main-pane">
 			      		<!--Title:Marten as Event Store-->
 <!--Url:events-->
-<p>Marten's EventStore capability is forthcoming, as the document db feature is more important to my employer at the moment;-)</p>
-<p>The general idea is to take an earlier <a href="http://jeremydmiller.com/2014/10/22/building-an-eventstore-with-user-defined-projections-on-top-of-postgresql-and-node-js/">Event Store implementation on Postgresql</a> and adapt the ideas for a .Net client.</p>
+<p>Marten's Event Store functionality is a powerful way to utilize Postgresql in the <a href="http://martinfowler.com/eaaDev/EventSourcing.html">event sourcing</a> style of persistence in your application. Beyond simple event capture and access to the raw event
+stream data, Marten also helps you create &quot;read side&quot; views of the raw event data through its support for projections.</p>
+<h2>Event Store Documentation</h2>
+<ul class="table-of-contents"><li><a href="/marten/documentation/events/appending">Appending Events</a></li><li><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a></li><li><a href="/marten/documentation/events/projections">Projections</a></li></ul>
+<h2>Event Store Quickstart</h2>
+<p>There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in <a href="/marten/documentation/schema">Marten and the Postgresql Schema</a>. Marten is just a client library,
+and there's nothing to install other than the Marten nuget.</p>
+<p>Because I’ve read way too much epic fantasy series, my sample problem domain is an application that records, analyses, and visualizes the status of quests. During a quest,  you may want to record events like:</p>
+<pre><code class="language-csharp">
+    public class ArrivedAtLocation
+    {
+
+        public int Day { get; set; }
+
+        public string Location { get; set; }
+
+        public override string ToString()
+        {
+            return $&quot;Arrived at {Location} on Day {Day}&quot;;
+        }
+    }
+
+    public class MembersJoined
+    {
+        public MembersJoined()
+        {
+        }
+
+        public MembersJoined(int day, string location, params string[] members)
+        {
+            Day = day;
+            Location = location;
+            Members = members;
+        }
+
+        public int Day { get; set; }
+
+        public string Location { get; set; }
+
+        public string[] Members { get; set; }
+
+        public override string ToString()
+        {
+            return $&quot;Members {Members.Join(&quot;, &quot;)} joined at {Location} on Day {Day}&quot;;
+        }
+    }
+
+
+    public class QuestStarted
+    {
+        public string Name { get; set; }
+        public Guid Id { get; set; }
+
+        public override string ToString()
+        {
+            return $&quot;Quest {Name} started&quot;;
+        }
+    }
+
+    public class MembersDeparted
+    {
+        public Guid Id { get; set; }
+
+        public int Day { get; set; }
+
+        public string Location { get; set; }
+
+        public string[] Members { get; set; }
+
+        public override string ToString()
+        {
+            return $&quot;Members {Members.Join(&quot;, &quot;)} departed at {Location} on Day {Day}&quot;;
+        }
+    }
+</code></pre>
+<p>Now, let's say that we're starting a new &quot;quest&quot; with the first couple events, then appending a couple more as other quest party members join up:</p>
+<pre><code class="language-csharp">
+var store = DocumentStore.For(_ =&gt;
+{
+    _.Connection(ConnectionSource.ConnectionString);
+    _.Events.AggregateStreamsInlineWith&lt;QuestParty&gt;();
+});
+
+var questId = Guid.NewGuid();
+
+using (var session = store.OpenSession())
+{
+    var started = new QuestStarted {Name = &quot;Destroy the One Ring&quot;};
+    var joined1 = new MembersJoined(1, &quot;Hobbiton&quot;, &quot;Frodo&quot;, &quot;Merry&quot;);
+
+    // Start a brand new stream and commit the new events as 
+    // part of a transaction
+    session.Events.StartStream&lt;Quest&gt;(questId, started, joined1);
+    session.SaveChanges();
+
+    // Append more events to the same stream
+    var joined2 = new MembersJoined(3, &quot;Buckland&quot;, &quot;Merry&quot;, &quot;Pippen&quot;);
+    var joined3 = new MembersJoined(10, &quot;Bree&quot;, &quot;Aragorn&quot;);
+    var arrived = new ArrivedAtLocation { Day = 15, Location = &quot;Rivendell&quot; };
+    session.Events.Append(questId, joined2, joined3, arrived);
+    session.SaveChanges();
+}
+</code></pre>
 
 
 			      	</div>
@@ -106,7 +207,7 @@
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/events/configuration">Configuring Streams</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/events/appending">Appending Events</a>
 
 				        </span>
 			      	</nav>

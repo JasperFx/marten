@@ -131,6 +131,21 @@ your system, and call the <code>IDocumentStore.Advanced.WriteStorageCode()</code
             }
 </code></pre>
 <p>Behind the scenes, the helper method shown above for importing storage types is just finding and adding storage types to the <code>StoreOptions.PreBuiltStorage</code> list. You can also add storage types directly to the <code>StoreOptions</code> object. This may end up being a standard extension mechanism for Marten.</p>
+<h2>Forcing Marten to Generate Code Upfront</h2>
+<p>You can also force Marten to generate the dynamic code for each registered document type upfront with this call:</p>
+<pre><code class="language-csharp">
+            using (var store = DocumentStore.For(_ =&gt;
+            {
+                _.Connection(&quot;something&quot;);
+
+                // Document types that are known upfront
+                _.Schema.For&lt;User&gt;();
+                _.Schema.For&lt;Issue&gt;();
+            }))
+            {
+                store.Advanced.PrecompileAllStorage();
+            }
+</code></pre>
 
 
 			      	</div>

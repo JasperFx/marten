@@ -278,6 +278,7 @@ equality of members of the child collection elements (this feature uses the <a h
 <h2>Average()</h2>
 <p>Marten supports the <code>IQueryable.Average()</code> method:</p>
 <pre><code class="language-csharp">
+        [Fact]
         public void get_average()
         {
             theSession.Store(new Target { Color = Colors.Blue, Number = 1 });

@@ -120,7 +120,7 @@
             json.ShouldBe($&quot;{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 2\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}&quot;);
         }
 </code></pre>
-<p>As of v0.8.3, Marten supplies the following functionality to retrieve the raw JSON strings:</p>
+<p>As of v0.9, Marten supplies the following functionality to retrieve the raw JSON strings:</p>
 <pre><code class="language-csharp">
         [Fact]
         public void when_get_json_then_raw_json_should_be_returned()
@@ -130,13 +130,13 @@
             theSession.Store(issue);
             theSession.SaveChanges();
 
-            var json = theSession.Query&lt;Issue&gt;().Where(x =&gt; x.Title == &quot;Issue 1&quot;).ToListJson();
+            var json = theSession.Query&lt;Issue&gt;().Where(x =&gt; x.Title == &quot;Issue 1&quot;).ToJsonArray();
             json.ShouldBe($&quot;[{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}]&quot;);
-            json = theSession.Query&lt;Issue&gt;().FirstJson();
+            json = theSession.Query&lt;Issue&gt;().AsJson().First();
             json.ShouldBe($&quot;{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}&quot;);
-            json = theSession.Query&lt;Issue&gt;().FirstOrDefaultJson();
-            json = theSession.Query&lt;Issue&gt;().SingleJson();
-            json = theSession.Query&lt;Issue&gt;().SingleOrDefaultJson();
+            json = theSession.Query&lt;Issue&gt;().AsJson().FirstOrDefault();
+            json = theSession.Query&lt;Issue&gt;().AsJson().Single();
+            json = theSession.Query&lt;Issue&gt;().AsJson().SingleOrDefault();
         }
 </code></pre>
 <p>And the asynchronous version:</p>
@@ -149,13 +149,13 @@
             theSession.Store(issue);
             theSession.SaveChanges();
 
-            var json = await theSession.Query&lt;Issue&gt;().Where(x =&gt; x.Title == &quot;Issue 1&quot;).ToListJsonAsync();
+            var json = await theSession.Query&lt;Issue&gt;().Where(x =&gt; x.Title == &quot;Issue 1&quot;).ToJsonArrayAsync();
             json.ShouldBe($&quot;[{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}]&quot;);
-            json = await theSession.Query&lt;Issue&gt;().FirstJsonAsync();
+            json = await theSession.Query&lt;Issue&gt;().AsJson().FirstAsync();
             json.ShouldBe($&quot;{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}&quot;);
-            json = await theSession.Query&lt;Issue&gt;().FirstOrDefaultJsonAsync();
-            json = await theSession.Query&lt;Issue&gt;().SingleJsonAsync();
-            json = await theSession.Query&lt;Issue&gt;().SingleOrDefaultJsonAsync();
+            json = await theSession.Query&lt;Issue&gt;().AsJson().FirstOrDefaultAsync();
+            json = await theSession.Query&lt;Issue&gt;().AsJson().SingleAsync();
+            json = await theSession.Query&lt;Issue&gt;().AsJson().SingleOrDefaultAsync();
         }
 </code></pre>
 

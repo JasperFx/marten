@@ -111,8 +111,9 @@
         /// but before any database calls are made
         /// &lt;/summary&gt;
         /// &lt;param name=&quot;session&quot;&gt;&lt;/param&gt;
+        /// &lt;param name=&quot;token&quot;&gt;&lt;/param&gt;
         /// &lt;returns&gt;&lt;/returns&gt;
-        Task BeforeSaveChangesAsync(IDocumentSession session);
+        Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token);
 
 
         /// &lt;summary&gt;
@@ -125,8 +126,9 @@
         /// After an IDocumentSession is committed
         /// &lt;/summary&gt;
         /// &lt;param name=&quot;session&quot;&gt;&lt;/param&gt;
+        /// &lt;param name=&quot;token&quot;&gt;&lt;/param&gt;
         /// &lt;returns&gt;&lt;/returns&gt;
-        Task AfterCommitAsync(IDocumentSession session);
+        Task AfterCommitAsync(IDocumentSession session, CancellationToken token);
 
 
         /// &lt;summary&gt;
@@ -455,6 +457,11 @@ namespace Marten.GeneratedCode
 
 
             return document.Id;
+        }
+
+        public void Assign(Trade document, object id)
+        {
+            document.Id = (int) id;
         }
 
 

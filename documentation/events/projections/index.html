@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/events/streams" title="Working with Event Streams">Previous</a></li>
-		      	<li><a href="/marten/documentation/events/projections/javascript" title="Javascript Projections">Next</a></li>
+		      	<li><a href="/marten/documentation/events/streams" title="Querying Event and Stream Data">Previous</a></li>
+		      	<li><a href="/marten/documentation/precompiling" title="Precompiling Marten Code for Faster Initialization">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -76,8 +76,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/projections/javascript">Javascript Projections</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/streams">Working with Event Streams</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/precompiling">Precompiling Marten Code for Faster Initialization</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -91,7 +91,162 @@
 			      	<div id="main-pane">
 			      		<!--Title:Projections-->
 <!--Url:projections-->
-<p>Forthcoming....</p>
+<p>Projections are very new in Marten, but we plan on much more support and new use cases in the near future.</p>
+<h2>The Vision</h2>
+<p>A couple years ago, I got to do what turned into a proof of concept project for building out an event store on top of Postgresql’s JSON support. My thought for Marten’s projection support is
+largely taken from <a href="https://jeremydmiller.com/2014/10/22/building-an-eventstore-with-user-defined-projections-on-top-of-postgresql-and-node-js/">this blog post I wrote on the earlier attempt at writing an event store on Postgresql</a>.</p>
+<p>Today the projection ability is very limited. So far you can use the live or “inline” aggregation of a single stream shown above or a simple pattern that allows you to create a single readside document for a given event type.</p>
+<p>The end state we envision is to be able to allow users to:</p>
+<ul>
+<li>Express projections in either .Net code or by using Javascript functions running inside of Postgresql itself</li>
+<li>To execute the projection building either “inline” with event capture for pure ACID, asynchronously for complicated aggregations or better performance (and there comes eventual consistency back into our lives), or do aggregations “live” on demand. We think that this break down of projection     timings will give users the ability to handle systems with many writes, but few reads with on demand projections, or to handle systems with few writes, but many reads with inline projections.</li>
+<li>To provide and out of the box “async daemon” that you would host as a stateful process within your applications to continuously calculate projections in the background. We want to at least experiment with using Postgresql’s NOTIFY/LISTEN functionality to avoid making this a purely polling process.</li>
+<li>Support hooks to perform your own form of event stream processing using the existing IDocumentSessionListener mechanism and maybe some way to plug more processors into the queue reading in the async daemon described above</li>
+<li>Add some “snapshotting” functionality that allows you to perform aggregated views on top of occasional snapshots every X times an event is captured on an aggregate</li>
+<li>Aggregate data across streams</li>
+<li>Support arbitrary categorization of events across streams</li>
+</ul>
+<h2>Projecting from One Event to One Document</h2>
+<p>If you want to have certain events projected to a readside document and the relationship is one to one, Marten supports this pattern today with the .Net <code>ITransform</code> interface:</p>
+<pre><code class="language-csharp">
+    public interface ITransform&lt;TEvent, TView&gt;
+    {
+        TView Transform(Event&lt;TEvent&gt; input);
+    }
+</code></pre>
+<p>As a sample problem, let's say that we're constantly capturing <code>MonsterSlayed</code> events and our system needs to query just this data. You could query directly against the big ol' <code>mt_events</code> table with
+<code>IEventStore.Query&lt;MonsterSlayed&gt;()</code>, but it would be more efficient to keep a separate &quot;read side&quot; copy of this data in a new data collection. We could build a new transform class and readside document like this:</p>
+<pre><code class="language-csharp">
+    public class MonsterDefeatedTransform : ITransform&lt;MonsterSlayed, MonsterDefeated&gt;
+    {
+        public MonsterDefeated Transform(Event&lt;MonsterSlayed&gt; input)
+        {
+            return new MonsterDefeated
+            {
+                Id = input.Id,
+                Monster = input.Data.Name
+            };
+        }
+    }
+
+    public class MonsterDefeated
+    {
+        public Guid Id { get; set; }
+        public string Monster { get; set; }
+    }
+</code></pre>
+<p>Now, we can plug our new transform type above as a projection when we configure our document store like this:</p>
+<pre><code class="language-csharp">
+            var store = DocumentStore.For(_ =&gt;
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                _.Events.TransformEventsInlineWith(new MonsterDefeatedTransform());
+            });
+</code></pre>
+<pre><code class="language-csharp">
+        public void using_live_transformed_events(IDocumentSession session)
+        {
+            var started = new QuestStarted { Name = &quot;Find the Orb&quot; };
+            var joined = new MembersJoined { Day = 2, Location = &quot;Faldor&#39;s Farm&quot;, Members = new string[] { &quot;Garion&quot;, &quot;Polgara&quot;, &quot;Belgarath&quot; } };
+            var slayed1 = new MonsterSlayed { Name = &quot;Troll&quot; };
+            var slayed2 = new MonsterSlayed { Name = &quot;Dragon&quot; };
+
+            MembersJoined joined2 = new MembersJoined { Day = 5, Location = &quot;Sendaria&quot;, Members = new string[] { &quot;Silk&quot;, &quot;Barak&quot; } };
+
+
+            session.Events.StartStream&lt;Quest&gt;(started, joined, slayed1, slayed2);
+            session.SaveChanges();
+
+            // Our MonsterDefeated documents are created inline
+            // with the SaveChanges() call above and are available
+            // for querying
+            session.Query&lt;MonsterDefeated&gt;().Count()
+                .ShouldBe(2);
+        }
+</code></pre>
+<h2>Aggregated Views Across a Single Stream</h2>
+<p>As of now (v0.9), Marten is only supporting aggregation via .Net classes. The out of the box convention is to expose <code>Apply([Event Type])</code> methods
+on your aggregate class to do all incremental updates to an aggregate object. Sticking with the fantasy theme, the <code>QuestParty</code> class shown below
+could be used to aggregate streams of quest data:</p>
+<pre><code class="language-csharp">
+public class QuestParty
+{
+    private readonly IList&lt;string&gt; _members = new List&lt;string&gt;();
+
+    public string[] Members
+    {
+        get
+        {
+            return _members.ToArray();
+        }
+        set
+        {
+            _members.Clear();
+            _members.AddRange(value);
+        }
+    }
+
+    public IList&lt;string&gt; Slayed { get; } = new List&lt;string&gt;();
+
+    public void Apply(MembersJoined joined)
+    {
+        _members.Fill(joined.Members);
+    }
+
+    public void Apply(MembersDeparted departed)
+    {
+        _members.RemoveAll(x =&gt; departed.Members.Contains(x));
+    }
+
+    public void Apply(QuestStarted started)
+    {
+        Name = started.Name;
+    }
+
+    public string Name { get; set; }
+
+    public Guid Id { get; set; }
+
+    public override string ToString()
+    {
+        return $&quot;Quest party &#39;{Name}&#39; is {Members.Join(&quot;, &quot;)}&quot;;
+    }
+}
+</code></pre>
+<h2>Live Aggregation via .Net</h2>
+<p>You can always fetch a stream of events and build an aggregate completely live from the current event data by using this syntax:</p>
+<pre><code class="language-csharp">
+using (var session = store.OpenSession())
+{
+    // questId is the id of the stream
+    var party = session.Events.AggregateStream&lt;QuestParty&gt;(questId);
+    Console.WriteLine(party);
+
+    var party_at_version_3 = session.Events
+        .AggregateStream&lt;QuestParty&gt;(questId, 3);
+
+
+    var party_yesterday = session.Events
+        .AggregateStream&lt;QuestParty&gt;(questId, timestamp: DateTime.UtcNow.AddDays(-1));
+}
+</code></pre>
+<p>There is also a matching asynchronous <code>AggregateStreamAsync()</code> mechanism as well. Additionally, you can do stream aggregations in batch queries with
+<code>IBatchQuery.Events.AggregateStream&lt;T&gt;(streamId)</code>.</p>
+<h2>Inline Aggregation</h2>
+<p>If you would prefer that the projected aggregate document be updated <em>inline</em> with the events being appended, you simply need to register
+the aggregation type in the <code>StoreOptions</code> upfront when you build up your document store like this:</p>
+<pre><code class="language-csharp">
+            var store = DocumentStore.For(_ =&gt;
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                // This is all you need to create the QuestParty projected
+                // view
+                _.Events.AggregateStreamsInlineWith&lt;QuestParty&gt;();
+            });
+</code></pre>
+<p>At this point, you would be able to query against <code>QuestParty</code> as just another document type.</p>
 
 
 			      	</div>
@@ -100,12 +255,12 @@
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/events/streams">Working with Event Streams</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/events/projections/javascript">Javascript Projections</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/precompiling">Precompiling Marten Code for Faster Initialization</a>
 
 				        </span>
 			      	</nav>

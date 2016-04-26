@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/events/configuration" title="Configuring Streams">Previous</a></li>
-		      	<li><a href="/marten/documentation/events/snapshots" title="Aggregate Snapshots">Next</a></li>
+		      	<li><a href="/marten/documentation/events" title="Marten as Event Store">Previous</a></li>
+		      	<li><a href="/marten/documentation/events/streams" title="Querying Event and Stream Data">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -76,8 +76,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/snapshots">Aggregate Snapshots</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/configuration">Configuring Streams</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events">Marten as Event Store</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -91,7 +91,64 @@
 			      	<div id="main-pane">
 			      		<!--Title:Appending Events-->
 <!--Url:appending-->
-<p>Forthcoming....</p>
+<p>Marten's event sourcing support &quot;appends&quot; event data documents to a single table <code>mt_events.</code> Events must be captured against a stream id, with a second table called <code>mt_streams</code> that Marten uses to
+keep metadata describing the state of an individual stream. Appending events to either a new or existing stream is done within the same Marten transaction as any other document updates or deletions. See</p>
+<p class="bg-warning" style="padding:5px"><b>Unknown topic key &#39;documents/persisting&#39;</b><small> -- CTRL+SHIFT+R to force refresh the topic tree</small></p> for more information on Marten transactions.
+<h2>Event Types</h2>
+<p>The only requirement that Marten makes on types used as events is that they are:</p>
+<ol>
+<li>Public, concrete types</li>
+<li>Can be bidirectionally serialized and deserialized with a tool like Newtonsoft.Json</li>
+</ol>
+<p>Marten does need to know what the event types are before you issue queries against the event data (it's just to handle the deserialization from JSON). The event registration will happen automatically when you append events,
+but for production usage when you may be querying event data before you append anything, you just need to register the event types upfront like this:</p>
+<pre><code class="language-csharp">
+            var store2 = DocumentStore.For(_ =&gt;
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = AutoCreate.None;
+
+                _.Events.AddEventType(typeof(QuestStarted));
+                _.Events.AddEventType(typeof(MonsterSlayed));
+            });
+</code></pre>
+<h2>Stream or Aggregate Types</h2>
+<p>At this point there is no specific requirements about stream aggregate types as they are purely marker types for now. In the future we will probably support
+aggregating events via snapshot caching using the aggregate type.</p>
+<h2>Starting a new Stream</h2>
+<p>As of Marten v0.9, you need to start a new event stream against some kind of .Net type that theoretically marks the type of stream your capturing.
+Marten does not yet use this type as anything more than metadata, but our thought is that some projections would key off this information and that in a
+future version use that aggregate type to perform versioned snapshots of the entire stream. We may also make the aggregate type optional so that
+you could just supply either a string to mark the &quot;stream type&quot; or work without a stream type.</p>
+<p>As usual, our sample problem domain is the Lord of the Rings style &quot;Quest.&quot; For now, you can either start a new stream and let Marten assign the Guid
+id for the stream:</p>
+<pre><code class="language-csharp">
+                var joined = new MembersJoined { Members = new string[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };
+                var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };
+
+                var id = session.Events.StartStream&lt;Quest&gt;(joined, departed);
+                session.SaveChanges();
+</code></pre>
+<p>Or have Marten use a Guid value that you provide yourself:</p>
+<pre><code class="language-csharp">
+                var joined = new MembersJoined { Members = new string[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };
+                var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };
+
+                var id = Guid.NewGuid();
+                session.Events.StartStream&lt;Quest&gt;(id, joined, departed);
+                session.SaveChanges();
+</code></pre>
+<p><strong>At this point, Marten forces you to use <code>System.Guid</code> as the id type of both events or streams</strong></p>
+<h2>Appending Events</h2>
+<p>If you have an existing stream, you can later append additional events with <code>IEventStore.Append()</code> as shown below:</p>
+<pre><code class="language-csharp">
+                var joined = new MembersJoined { Members = new string[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };
+                var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };
+
+                session.Events.Append(id, joined, departed);
+
+                session.SaveChanges();
+</code></pre>
 
 
 			      	</div>
@@ -100,12 +157,12 @@
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/events/configuration">Configuring Streams</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/events">Marten as Event Store</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/events/snapshots">Aggregate Snapshots</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a>
 
 				        </span>
 			      	</nav>
