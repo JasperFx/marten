@@ -25,6 +25,17 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void run_multiple_aggregates_sync()
         {
+            // SAMPLE: registering-quest-party
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                // This is all you need to create the QuestParty projected
+                // view
+                _.Events.AggregateStreamsInlineWith<QuestParty>();
+            });
+            // ENDSAMPLE
+
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;

@@ -5,6 +5,7 @@ using Baseline;
 
 namespace Marten.Testing.Events.Projections
 {
+    // SAMPLE: QuestParty
 public class QuestParty
 {
     private readonly IList<string> _members = new List<string>();
@@ -48,4 +49,5 @@ public class QuestParty
         return $"Quest party '{Name}' is {Members.Join(", ")}";
     }
 }
+    // ENDSAMPLE
 }

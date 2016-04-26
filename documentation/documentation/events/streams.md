@@ -20,6 +20,13 @@ If you just need to check on the state of an event stream - what version it is a
 <[sample:fetching_stream_state]>
 
 
+## Fetch a Single Event
+
+You can fetch the information for a single event by id, including its version number within the stream, by using `IEventStore.Load()` as shown below:
+
+<[sample:load-a-single-event]>
+
+
 ## Querying Directly Against Event Data
 
 We have to urge some caution about this functionality because it requires a search against the entire `mt_events` table. To issue Linq queries against

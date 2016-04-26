@@ -71,6 +71,19 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public async Task async_projection_of_events()
         {
+            // SAMPLE: applying-monster-defeated
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                _.Events.TransformEventsInlineWith(new MonsterDefeatedTransform());
+            });
+            // ENDSAMPLE
+
+
+
+            // The code below is just customizing the document store
+            // used in the tests
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -94,7 +107,7 @@ namespace Marten.Testing.Events.Projections
 
     }
 
-
+    // SAMPLE: MonsterDefeatedTransform
     public class MonsterDefeatedTransform : ITransform<MonsterSlayed, MonsterDefeated>
     {
         public MonsterDefeated Transform(Event<MonsterSlayed> input)
@@ -112,4 +125,5 @@ namespace Marten.Testing.Events.Projections
         public Guid Id { get; set; }
         public string Monster { get; set; }
     }
+    // ENDSAMPLE
 }

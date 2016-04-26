@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Testing.Events;
 using Marten.Testing.Events.Projections;
+using Shouldly;
 
 namespace Marten.Testing.Examples
 {
@@ -52,8 +54,16 @@ using (var session = store.OpenSession())
 // SAMPLE: events-aggregate-on-the-fly
 using (var session = store.OpenSession())
 {
+    // questId is the id of the stream
     var party = session.Events.AggregateStream<QuestParty>(questId);
     Console.WriteLine(party);
+
+    var party_at_version_3 = session.Events
+        .AggregateStream<QuestParty>(questId, 3);
+
+
+    var party_yesterday = session.Events
+        .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 // ENDSAMPLE
 
@@ -95,5 +105,49 @@ using (var session = store.OpenSession())
         }
 // ENDSAMPLE
 
+            // SAMPLE: load-a-single-event
+public void load_a_single_event_synchronously(IDocumentSession session, Guid eventId)
+{
+    // If you know what the event type is already
+    var event1 = session.Events.Load<MembersJoined>(eventId);
+
+    // If you do not know what the event type is
+    var event2 = session.Events.Load(eventId);
+}
+
+public async Task load_a_single_event_asynchronously(IDocumentSession session, Guid eventId)
+{
+    // If you know what the event type is already
+    var event1 = await session.Events.LoadAsync<MembersJoined>(eventId)
+        .ConfigureAwait(false);
+
+    // If you do not know what the event type is
+    var event2 = await session.Events.LoadAsync(eventId)
+        .ConfigureAwait(false);
+}
+
+        // ENDSAMPLE
+
+        // SAMPLE: using_live_transformed_events
+        public void using_live_transformed_events(IDocumentSession session)
+        {
+            var started = new QuestStarted { Name = "Find the Orb" };
+            var joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
+            var slayed1 = new MonsterSlayed { Name = "Troll" };
+            var slayed2 = new MonsterSlayed { Name = "Dragon" };
+
+            MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
+
+
+            session.Events.StartStream<Quest>(started, joined, slayed1, slayed2);
+            session.SaveChanges();
+
+            // Our MonsterDefeated documents are created inline
+            // with the SaveChanges() call above and are available
+            // for querying
+            session.Query<MonsterDefeated>().Count()
+                .ShouldBe(2);
+        }
+        // ENDSAMPLE
     }
 }
