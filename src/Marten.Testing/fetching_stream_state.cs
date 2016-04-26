@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Marten.Testing
 {
+    // SAMPLE: fetching_stream_state
     public class fetching_stream_state : DocumentSessionFixture<NulloIdentityMap>
     {
         private Guid theStreamId;
@@ -40,4 +41,5 @@ namespace Marten.Testing
             state.AggregateType.ShouldBe(typeof(Quest));
         }
     }
+    // ENDSAMPLE
 }

@@ -32,13 +32,13 @@ namespace Marten.Testing.Events
 
             using (var session = store.OpenSession(sessionType))
             {
-
+                // SAMPLE: start-stream-with-aggregate-type
                 var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 var id = session.Events.StartStream<Quest>(joined, departed);
                 session.SaveChanges();
-
+                // ENDSAMPLE
 
                 var streamEvents = session.Events.FetchStream(id);
 
@@ -62,12 +62,14 @@ namespace Marten.Testing.Events
 
             using (var session = store.OpenSession(sessionType))
             {
+                // SAMPLE: start-stream-with-existing-guid
                 var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
+                // ENDSAMPLE
 
                 var streamEvents = session.Events.FetchStream(id);
 
@@ -236,13 +238,14 @@ namespace Marten.Testing.Events
 
             using (var session = store.OpenSession(sessionType))
             {
+                // SAMPLE: append-events
                 var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                session.Events.Append(id, joined);
-                session.Events.Append(id, departed);
+                session.Events.Append(id, joined, departed);
 
                 session.SaveChanges();
+                // ENDSAMPLE
 
                 var streamEvents = session.Events.FetchStream(id);
 

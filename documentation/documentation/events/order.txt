@@ -1,5 +1,4 @@
-configuration
 appending
-snapshots
 streams
+snapshots
 projections

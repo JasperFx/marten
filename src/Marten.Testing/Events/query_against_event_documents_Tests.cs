@@ -15,7 +15,7 @@ namespace Marten.Testing.Events
         private MembersJoined joined2 = new MembersJoined { Members = new string[] { "Nynaeve", "Egwene" } };
         private MembersDeparted departed2 = new MembersDeparted { Members = new[] { "Matt" } };
 
-
+        // SAMPLE: query-against-event-data
         [Fact]
         public void can_query_against_event_type()
         {
@@ -32,6 +32,7 @@ namespace Marten.Testing.Events
             theSession.Events.Query<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
                 .Single().Id.ShouldBe(departed2.Id);
         }
+        // ENDSAMPLE
 
         [Fact]
         public void will_not_blow_up_if_searching_for_events_before_event_store_is_warmed_up()

@@ -1,6 +1,25 @@
 <!--Title:Marten as Event Store-->
 <!--Url:events-->
 
-Marten's EventStore capability is forthcoming, as the document db feature is more important to my employer at the moment;-)
+Marten's Event Store functionality is a powerful way to utilize Postgresql in the [event sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) style of persistence in your application. Beyond simple event capture and access to the raw event
+stream data, Marten also helps you create "read side" views of the raw event data through its support for projections. 
 
-The general idea is to take an earlier [Event Store implementation on Postgresql](http://jeremydmiller.com/2014/10/22/building-an-eventstore-with-user-defined-projections-on-top-of-postgresql-and-node-js/) and adapt the ideas for a .Net client. 
+## Event Store Documentation
+
+<[TableOfContents]>
+
+## Event Store Quickstart
+
+There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in <[linkto:documentation/schema]>. Marten is just a client library,
+and there's nothing to install other than the Marten nuget.
+
+Because I’ve read way too much epic fantasy series, my sample problem domain is an application that records, analyses, and visualizes the status of quests. During a quest,  you may want to record events like:
+
+<[sample:sample-events]>
+
+Now, let's say that we're starting a new "quest" with the first couple events, then appending a couple more as other quest party members join up:
+
+<[sample:event-store-quickstart]>
+
+
+

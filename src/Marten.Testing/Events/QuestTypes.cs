@@ -9,7 +9,7 @@ namespace Marten.Testing.Events
         public Guid Id { get; set; }
     }
 
-
+    // SAMPLE: sample-events
     public class ArrivedAtLocation
     {
 
@@ -25,6 +25,16 @@ namespace Marten.Testing.Events
 
     public class MembersJoined
     {
+        public MembersJoined()
+        {
+        }
+
+        public MembersJoined(int day, string location, params string[] members)
+        {
+            Day = day;
+            Location = location;
+            Members = members;
+        }
 
         public int Day { get; set; }
 
@@ -65,6 +75,7 @@ namespace Marten.Testing.Events
             return $"Members {Members.Join(", ")} departed at {Location} on Day {Day}";
         }
     }
+    // ENDSAMPLE
 
     public class Issue
     {

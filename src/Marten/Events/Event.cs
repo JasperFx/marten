@@ -3,10 +3,15 @@ using Marten.Events.Projections;
 
 namespace Marten.Events
 {
+    // SAMPLE: IEvent
     public interface IEvent
     {
         Guid Id { get; set; }
         int Version { get; set; }
+
+        /// <summary>
+        /// The actual event data body
+        /// </summary>
         object Data { get; }
 
         void Apply<TAggregate>(TAggregate state, Aggregator<TAggregate> aggregator)
@@ -32,4 +37,5 @@ namespace Marten.Events
             aggregator.AggregatorFor<T>()?.Apply(state, Data);
         }
     }
+    // ENDSAMPLE
 }
