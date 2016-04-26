@@ -208,11 +208,16 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        public Aggregator<T> AggregateFor<T>() where T : class, new()
+        public void AggregateFor<T>(IAggregator<T> aggregator) where T : class, new()
+        {
+            _aggregates.AddOrUpdate(typeof (T), aggregator, (type, previous) => aggregator);
+        }
+
+        public IAggregator<T> AggregateFor<T>() where T : class, new()
         {
             return _aggregates
                 .GetOrAdd(typeof (T), type => new Aggregator<T>())
-                .As<Aggregator<T>>();
+                .As<IAggregator<T>>();
         }
 
 
@@ -224,7 +229,7 @@ namespace Marten.Events
             }).AggregateType;
         }
 
-        public Aggregator<T> AggregateStreamsInlineWith<T>() where T : class, new()
+        public IAggregator<T> AggregateStreamsInlineWith<T>() where T : class, new()
         {
             var aggregator = AggregateFor<T>();
             var finder = new AggregateFinder<T>();

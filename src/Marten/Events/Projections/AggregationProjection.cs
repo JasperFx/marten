@@ -9,9 +9,9 @@ namespace Marten.Events.Projections
     public class AggregationProjection<T> : IProjection where T : class, new()
     {
         private readonly IAggregationFinder<T> _finder;
-        private readonly Aggregator<T> _aggregator;
+        private readonly IAggregator<T> _aggregator;
 
-        public AggregationProjection(IAggregationFinder<T> finder, Aggregator<T> aggregator)
+        public AggregationProjection(IAggregationFinder<T> finder, IAggregator<T> aggregator)
         {
             _finder = finder;
             _aggregator = aggregator;
@@ -52,6 +52,5 @@ namespace Marten.Events.Projections
             return session.PendingChanges.AllChangedFor<EventStream>()
                 .Where(_aggregator.AppliesTo).ToArray();
         }
-
     }
 }
