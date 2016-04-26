@@ -9,7 +9,6 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
-using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Parsing.Structure;
 

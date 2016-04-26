@@ -69,7 +69,7 @@ namespace Marten.Testing.Events.Projections
                 .Add(new MembersJoined {Members = new string[] {"Gandalf", "Boromir", "Gimli", "Legolas"}})
                 .Add(new MembersDeparted() {Members = new string[] {"Frodo", "Sam"}});
 
-            var party = theAggregator.Build(stream.Events);
+            var party = theAggregator.Build(stream.Events, null);
 
             party.Name.ShouldBe("Destroy the Ring");
 

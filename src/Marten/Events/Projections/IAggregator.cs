@@ -13,6 +13,6 @@ namespace Marten.Events.Projections
     public interface IAggregator<T> : IAggregator
     {
         IAggregation<T, TEvent> AggregatorFor<TEvent>();
-        T Build(IEnumerable<IEvent> events);
+        T Build(IEnumerable<IEvent> events, IDocumentSession session);
     }
 }

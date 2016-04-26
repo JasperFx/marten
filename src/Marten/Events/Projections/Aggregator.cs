@@ -34,7 +34,7 @@ namespace Marten.Events.Projections
 
         public string Alias { get; }
 
-        public T Build(IEnumerable<IEvent> events)
+        public T Build(IEnumerable<IEvent> events, IDocumentSession session)
         {
             var state = new T();
 
