@@ -76,6 +76,7 @@ namespace Marten.Testing.Linq
                 .ShouldBeNull();
         }
 
+        // SAMPLE: FindJsonUserByUsername
         [Fact]
         public void a_single_item_compiled_query_AsJson()
         {
@@ -84,7 +85,9 @@ namespace Marten.Testing.Linq
             user.ShouldNotBeNull();
             user.ShouldBe(_user1.ToJson());
         }
+        // ENDSAMPLE
 
+        // SAMPLE: FindJsonOrderedUsersByUsername
         [Fact]
         public void a_sorted_list_compiled_query_AsJson()
         {
@@ -93,6 +96,7 @@ namespace Marten.Testing.Linq
             user.ShouldNotBeNull();
             user.ShouldBe($"[{_user1.ToJson()},{_user5.ToJson()}]");
         }
+        // ENDSAMPLE
 
         [Fact]
         public void a_filtered_list_compiled_query_AsJson()
@@ -201,6 +205,7 @@ namespace Marten.Testing.Linq
     }
     // ENDSAMPLE
 
+    // SAMPLE: CompiledAsJson
     public class FindJsonUserByUsername : ICompiledQuery<User, string>
     {
         public string Username { get; set; }
@@ -212,7 +217,9 @@ namespace Marten.Testing.Linq
 
         }
     }
+    // ENDSAMPLE
 
+    // SAMPLE: CompiledToJsonArray
     public class FindJsonOrderedUsersByUsername : ICompiledQuery<User, string>
     {
         public string FirstName { get; set; }
@@ -225,6 +232,7 @@ namespace Marten.Testing.Linq
 
         }
     }
+    // ENDSAMPLE
 
     public class FindJsonUsersByUsername : ICompiledQuery<User, string>
     {

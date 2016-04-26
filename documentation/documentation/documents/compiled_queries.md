@@ -48,6 +48,9 @@ To the best of our knowledge and testing, you may use any <[linkto:documentation
 * `OrderBy/OrderByDescending` etc.
 * `Count()`
 * `Any()`
+* `AsJson()`
+* `ToJsonArray()`
+* `ToJsonArrayAsync()`
 
 At this point (v0.9), the only limitations are:
 
@@ -81,10 +84,40 @@ A sample usage of this type of query is shown below:
 
 ## Querying for a single document
 
-Finally, if you are querying for a single document with no transformation, you can use this interface as a convenience:
+If you are querying for a single document with no transformation, you can use this interface as a convenience:
 
 <[sample:ICompiledQuery-for-single-doc]>
 
 And an example:
 
 <[sample:FindUserByAllTheThings]>
+
+
+
+## Querying for multiple results as Json
+
+To query for multiple results and have them returned as a Json string, you may run any query on your `IQueryable<T>` (be it ordering or filtering) and then simply finalize the query with `ToJsonArray();` like so:
+
+<[sample:CompiledToJsonArray]>
+
+If you wish to do it asynchronously, you can use the `ToJsonArrayAsync()` method.
+
+A sample usage of this type of query is shown below:
+
+<[sample:FindJsonOrderedUsersByUsername]>
+
+Note that the result has the documents comma separated and wrapped in angle brackets (as per the Json notation).
+
+
+
+## Querying for a single document
+
+Finally, if you are querying for a single document as json, you will need to prepend your call to `Single()`, `First()` and so on with a call to `AsJson()`:
+
+<[sample:CompiledAsJson]>
+
+And an example:
+
+<[sample:FindJsonUserByUsername]>
+
+(our ToJson method simply reuturns a string representation of the `User` instance in Json notation)
