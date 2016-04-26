@@ -93,6 +93,12 @@ namespace Marten
         /// The last set of changes committed, if any
         /// </summary>
         IChangeSet LastCommit { get; }
+
+        /// <summary>
+        /// Gets the last IEvents committed to the EventStore, if any
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<IEvent> GetLastCommitEvents();
     }
 
     public interface ILoadByKeys<TDoc>
