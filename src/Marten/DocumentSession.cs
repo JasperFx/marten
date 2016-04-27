@@ -188,13 +188,6 @@ namespace Marten
         public IEnumerable<IChangeSet> Commits => _changes;
         public IChangeSet LastCommit => _changes.LastOrDefault();
 
-        public IEnumerable<IEvent> GetLastCommitEvents()
-        {
-            return LastCommit == null ? Enumerable.Empty<IEvent>() : LastCommit.Updated
-                .OfType<EventStream>()
-                .SelectMany(s => s.Events);
-        }
-
         internal interface IHandler
         {
             void Store(IDocumentSession session, IEnumerable<object> objects);

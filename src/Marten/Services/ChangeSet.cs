@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 
 namespace Marten.Services
 {
@@ -22,6 +23,13 @@ namespace Marten.Services
         {
             Changes = documentChanges;
             Updated.AddRange(documentChanges.Select(x => x.Document));
+        }
+
+        public IEnumerable<IEvent> GetEvents()
+        {
+            return Updated
+                .OfType<EventStream>()
+                .SelectMany(s => s.Events);
         }
     }
 }
