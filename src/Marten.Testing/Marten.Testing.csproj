@@ -173,7 +173,7 @@
     <Compile Include="Linq\query_with_enums_Tests.cs" />
     <Compile Include="Linq\query_with_nested_boolean_logic_Tests.cs" />
     <Compile Include="Linq\query_with_nullable_types_Tests.cs" />
-    <Compile Include="Linq\SelectTransformerTests.cs" />
+    <Compile Include="Services\SelectTransformerTests.cs" />
     <Compile Include="Linq\select_transformations_Tests.cs" />
     <Compile Include="Linq\SingleFieldSelectorTests.cs" />
     <Compile Include="Linq\using_containment_operator_in_linq_Tests.cs" />

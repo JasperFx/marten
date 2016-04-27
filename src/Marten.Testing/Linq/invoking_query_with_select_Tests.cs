@@ -76,6 +76,28 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
 
+        [Fact]
+        public void use_select_to_another_type_as_json()
+        {
+            theSession.Store(new User { FirstName = "Hank" });
+            theSession.Store(new User { FirstName = "Bill" });
+            theSession.Store(new User { FirstName = "Sam" });
+            theSession.Store(new User { FirstName = "Tom" });
+
+            theSession.SaveChanges();
+
+            // Postgres sticks some extra spaces into the JSON string
+            theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
+                .AsJson()
+                .First()
+                .ShouldBe("{\"Name\" : \"Bill\"}");
+        }
+
+        // TODO
+        // 1. Test the AsJsonArray() functionality with a select
+        // 2. Test AsJson() to an anonymous type
+        // 3. Test fetching a list
+
         // SAMPLE: get_first_projection
         [Fact]
         public void use_select_to_another_type_with_first()
@@ -92,6 +114,37 @@ namespace Marten.Testing.Linq
                 .Name.ShouldBe("Bill");
         }
         // ENDSAMPLE
+
+        [Fact]
+        public void use_select_to_anonymous_type_with_first_as_json()
+        {
+            theSession.Store(new User { FirstName = "Hank" });
+            theSession.Store(new User { FirstName = "Bill" });
+            theSession.Store(new User { FirstName = "Sam" });
+            theSession.Store(new User { FirstName = "Tom" });
+
+            theSession.SaveChanges();
+
+            theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
+                .AsJson()
+                .FirstOrDefault()
+                .ShouldBe("{\"Name\" : \"Bill\"}");
+        }
+
+        [Fact]
+        public void use_select_to_anonymous_type_with_to_json_array()
+        {
+            theSession.Store(new User { FirstName = "Hank" });
+            theSession.Store(new User { FirstName = "Bill" });
+            theSession.Store(new User { FirstName = "Sam" });
+            theSession.Store(new User { FirstName = "Tom" });
+
+            theSession.SaveChanges();
+
+            theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
+                .ToJsonArray()
+                .ShouldBe("[{\"Name\" : \"Bill\"},{\"Name\" : \"Hank\"},{\"Name\" : \"Sam\"},{\"Name\" : \"Tom\"}]");
+        }
 
 
         [Fact]
@@ -113,6 +166,25 @@ namespace Marten.Testing.Linq
 
             users.Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
+        }
+
+        [Fact]
+        public void use_select_to_another_type_as_to_json_array()
+        {
+            theSession.Store(new User { FirstName = "Hank" });
+            theSession.Store(new User { FirstName = "Bill" });
+            theSession.Store(new User { FirstName = "Sam" });
+            theSession.Store(new User { FirstName = "Tom" });
+
+            theSession.SaveChanges();
+
+            var users = theSession
+                .Query<User>()
+                .OrderBy(x => x.FirstName)
+                .Select(x => new UserName { Name = x.FirstName })
+                .ToJsonArray();
+
+            users.ShouldBe("[{\"Name\" : \"Bill\"},{\"Name\" : \"Hank\"},{\"Name\" : \"Sam\"},{\"Name\" : \"Tom\"}]");
         }
         
         // SAMPLE: anonymous_type_projection

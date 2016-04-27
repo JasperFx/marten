@@ -11,6 +11,11 @@ namespace Marten.Linq
         {
         }
 
+        public JsonSelector(string field) : base(field)
+        {
+            
+        }
+
         public string Resolve(DbDataReader reader, IIdentityMap map)
         {
             return reader.GetString(0);

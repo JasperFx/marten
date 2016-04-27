@@ -35,5 +35,11 @@ namespace Marten.Linq
             var jsonBuildObjectArgs = Setters.Select(x => x.ToJsonBuildObjectPair(mapping)).Join(", ");
             return  $"json_build_object({jsonBuildObjectArgs}) as json";
         }
+
+        public ISelector<T> ToJsonSelector<T>(IDocumentMapping mapping)
+        {
+            var field = ToSelectField(mapping);
+            return new JsonSelector(field).As<ISelector<T>>();
+        }
     }
 }

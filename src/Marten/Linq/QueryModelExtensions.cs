@@ -104,7 +104,7 @@ namespace Marten.Linq
                 return new WholeDocumentSelector<T>(mapping, resolver);
             }
 
-            var visitor = new SelectorParser();
+            var visitor = new SelectorParser(query);
             visitor.Visit(query.SelectClause.Selector);
 
             return visitor.ToSelector<T>(mapping);

@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Schema;
+using Remotion.Linq;
 using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
@@ -35,7 +36,6 @@ namespace Marten.Linq
                     }
 
                     return null;
-
                 }
             }
 
@@ -57,25 +57,48 @@ namespace Marten.Linq
 
         public ISelector<T> ToSelector<T>(IDocumentMapping mapping)
         {
-            if (_selector != null) return _selector.As<ISelector<T>>();
+            if (_isJson && _target == null) return new JsonSelector().As<ISelector<T>>();
 
-            return _target == null 
-                ? new SingleFieldSelector<T>(mapping, _currentField.Members.Reverse().ToArray()) 
-                : _target.ToSelector<T>(mapping);
+            if (_isJson && _target != null) return _target.ToJsonSelector<T>(mapping);
+
+
+            if (_target == null || _target.Type != typeof(T)) return new SingleFieldSelector<T>(mapping, _currentField.Members.Reverse().ToArray());
+
+            return _target.ToSelector<T>(mapping);
         }
 
         private static string _methodName = nameof(JsonExtensions.AsJson);
-        private JsonSelector _selector;
+        private bool _isJson;
+
+        public SelectorParser(QueryModel query)
+        {
+            _isJson = query.HasOperator<AsJsonResultOperator>();
+
+            if (query.SelectClause.Selector is MethodCallExpression)
+            {
+                _isJson = isAsJson(query.SelectClause.Selector.As<MethodCallExpression>().Method);
+            }
+            
+        }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            if (node.Method.Name == _methodName && node.Method.DeclaringType.Equals(typeof (JsonExtensions)))
+            var method = node.Method;
+            if (isAsJson(method))
             {
-                _selector = new JsonSelector();
+                _isJson = true;
+
+                node.Arguments.Each(arg => Visit(arg));
+
                 return null;
             }
 
             return base.VisitMethodCall(node);
+        }
+
+        private static bool isAsJson(MethodInfo method)
+        {
+            return method.Name == _methodName && method.DeclaringType.Equals(typeof (JsonExtensions));
         }
     }
 
