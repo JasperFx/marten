@@ -15,7 +15,7 @@ The data returned is a list of `IEvent` objects, where each is a strong typed `E
 ## Stream State
 
 If you just need to check on the state of an event stream - what version it is and what if any aggregate type it represents - you can use the 
-`IEventStore.FetchStreamState()/FetchStreamStateAsync()` methods shown below:
+`IEventStore.FetchStreamState()/FetchStreamStateAsync()` methods or through `IBatchQuery.Events.FetchStreamState()` shown below:
 
 <[sample:fetching_stream_state]>
 

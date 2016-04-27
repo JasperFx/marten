@@ -72,6 +72,9 @@ namespace Marten.Schema
 
         public void EnsureStorageExists(Type documentType)
         {
+            // TODO -- HACK! Do something later that's more systematic
+            if (documentType == typeof(StreamState)) return;
+
             StorageFor(documentType);
         }
 

@@ -266,5 +266,11 @@ namespace Marten.Services.BatchQuerying
             var handler = new SingleEventQueryHandler(id, _schema.Events.As<EventGraph>(), _serializer);
             return AddItem(handler);
         }
+
+        public Task<StreamState> FetchStreamState(Guid streamId)
+        {
+            var handler = new StreamStateHandler(_schema.Events.As<EventGraph>(), streamId);
+            return AddItem(handler);
+        }
     }
 }

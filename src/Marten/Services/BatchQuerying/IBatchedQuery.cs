@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
@@ -27,6 +26,14 @@ namespace Marten.Services.BatchQuerying
         /// <param name="id"></param>
         /// <returns></returns>
         Task<IEvent> Load(Guid id);
+
+
+        /// <summary>
+        /// Load the high level metadata about a single event stream
+        /// </summary>
+        /// <param name="streamId"></param>
+        /// <returns></returns>
+        Task<StreamState> FetchStreamState(Guid streamId);
     }
 
     public interface IBatchedQuery

@@ -40,6 +40,22 @@ namespace Marten.Testing
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
         }
+
+        [Fact]
+        public async Task can_fetch_the_stream_version_through_batch_query()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var stateTask = batch.Events.FetchStreamState(theStreamId);
+
+            await batch.Execute();
+
+            var state = await stateTask;
+
+            state.Id.ShouldBe(theStreamId);
+            state.Version.ShouldBe(2);
+            state.AggregateType.ShouldBe(typeof(Quest));
+        }
     }
     // ENDSAMPLE
 }
