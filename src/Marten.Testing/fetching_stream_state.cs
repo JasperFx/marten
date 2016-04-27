@@ -29,6 +29,7 @@ namespace Marten.Testing
             state.Id.ShouldBe(theStreamId);
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
+            state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
         }
 
         [Fact]
@@ -39,6 +40,7 @@ namespace Marten.Testing
             state.Id.ShouldBe(theStreamId);
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
+            state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
         }
 
         [Fact]
@@ -55,6 +57,8 @@ namespace Marten.Testing
             state.Id.ShouldBe(theStreamId);
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
+            state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
+
         }
     }
     // ENDSAMPLE

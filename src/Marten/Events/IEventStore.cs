@@ -145,11 +145,14 @@ namespace Marten.Events
         public int Version { get; }
         public Type AggregateType { get; }
 
-        public StreamState(Guid id, int version, Type aggregateType)
+        public DateTime LastTimestamp { get; }
+
+        public StreamState(Guid id, int version, Type aggregateType, DateTime lastTimestamp)
         {
             Id = id;
             Version = version;
             AggregateType = aggregateType;
+            LastTimestamp = lastTimestamp;
         }
     }
 

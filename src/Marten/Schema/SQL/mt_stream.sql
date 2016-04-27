@@ -3,6 +3,7 @@ CREATE TABLE {databaseSchema}.mt_streams (
 	id					uuid CONSTRAINT pk_mt_streams PRIMARY KEY,
 	type				varchar(100) NULL,
 	version				integer NOT NULL,
+	timestamp           timestamp without time zone default (now() at time zone 'utc') NOT NULL,
 	snapshot			jsonb,
 	snapshot_version	integer	
 );
@@ -40,10 +41,10 @@ BEGIN
   
   IF v_now IS NULL THEN
 	v_next := 1;
-	insert into {databaseSchema}.mt_streams (id, type, version) values (stream, stream_type, v_next);
+	insert into {databaseSchema}.mt_streams (id, type, version, timestamp) values (stream, stream_type, v_next, now());
   ELSE
 	v_next := v_now + 1;
-	update {databaseSchema}.mt_streams set version = v_next where id = stream;
+	update {databaseSchema}.mt_streams set version = v_next, timestamp = now() where id = stream;
   END IF; 
 
   RETURN v_next;

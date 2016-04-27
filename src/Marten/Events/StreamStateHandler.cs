@@ -52,6 +52,7 @@ namespace Marten.Events
             var id = reader.GetFieldValue<Guid>(0);
             var version = reader.GetFieldValue<int>(1);
             var typeName = reader.GetFieldValue<string>(2);
+            var timestamp = reader.GetFieldValue<DateTime>(3);
 
             Type aggregateType = null;
             if (typeName.IsNotEmpty())
@@ -59,7 +60,7 @@ namespace Marten.Events
                 aggregateType = _events.AggregateTypeFor(typeName);
             }
 
-            return new StreamState(id, version, aggregateType);
+            return new StreamState(id, version, aggregateType, timestamp.ToUniversalTime());
         }
 
         public async Task<StreamState> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
@@ -67,6 +68,7 @@ namespace Marten.Events
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(1, token).ConfigureAwait(false);
             var typeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
+            var timestamp = await reader.GetFieldValueAsync<DateTime>(3, token).ConfigureAwait(false);
 
             Type aggregateType = null;
             if (typeName.IsNotEmpty())
@@ -74,17 +76,17 @@ namespace Marten.Events
                 aggregateType = _events.AggregateTypeFor(typeName);
             }
 
-            return new StreamState(id, version, aggregateType);
+            return new StreamState(id, version, aggregateType, timestamp.ToUniversalTime());
         }
 
         public string[] SelectFields()
         {
-            return new string[] { "id", "version", "type" };
+            return new string[] { "id", "version", "type", "timestamp" };
         }
 
         public string ToSelectClause(IDocumentMapping mapping)
         {
-            return $"select id, version, type from {_events.DatabaseSchemaName}.mt_streams";
+            return $"select id, version, type, timestamp as timestamp from {_events.DatabaseSchemaName}.mt_streams";
         }
     }
 }
