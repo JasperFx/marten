@@ -25,3 +25,4 @@ Say you have a compiled query that finds the first user with a given first name:
 To use that compiled query class in a batch query, you simply use the `IBatchedQuery.Query(ICompiledQuery)` syntax shown below:
 
 <[sample:batch-query-with-compiled-queries]>
+

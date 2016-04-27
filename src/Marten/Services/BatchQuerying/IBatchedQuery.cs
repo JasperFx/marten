@@ -101,6 +101,6 @@ namespace Marten.Services.BatchQuerying
         Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query);
 
 
-
+        void ExecuteSynchronously();
     }
 }

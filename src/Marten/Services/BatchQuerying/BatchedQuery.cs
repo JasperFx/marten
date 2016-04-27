@@ -200,13 +200,40 @@ namespace Marten.Services.BatchQuerying
                             throw new InvalidOperationException("There is no next result to read over.");
                         }
 
-                        // TODO -- needs to be purely async later
                         await item.Read(reader, map, token).ConfigureAwait(false);
                     }
                 }
 
                 return 0;
             }, token).ConfigureAwait(false);
+        }
+
+        public void ExecuteSynchronously()
+        {
+            var map = _identityMap.ForQuery();
+
+            if (!_items.Any()) return;
+
+            _runner.Execute(_command, cmd =>
+            {
+                using (var reader = _command.ExecuteReader())
+                {
+                    _items[0].Read(reader, map);
+
+                    _items.Skip(1).Each(item =>
+                    {
+                        var hasNext = reader.NextResult();
+
+                        if (!hasNext)
+                        {
+                            throw new InvalidOperationException("There is no next result to read over.");
+                        }
+
+                        item.Read(reader, map);
+                    });
+
+                }
+            });
         }
 
         public Task<TResult> Min<TResult>(IQueryable<TResult> queryable)

@@ -33,5 +33,11 @@ namespace Marten.Services.BatchQuerying
             Completion.SetResult(result);
         }
 
+        public void Read(DbDataReader reader, IIdentityMap map)
+        {
+            var result = _handler.Handle(reader, map);
+            Completion.SetResult(result);
+        }
+
     }
 }

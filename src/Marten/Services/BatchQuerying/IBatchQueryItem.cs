@@ -12,6 +12,7 @@ namespace Marten.Services.BatchQuerying
 
         Task Read(DbDataReader reader, IIdentityMap map, CancellationToken token);
 
+        void Read(DbDataReader reader, IIdentityMap map);
 
     }
 }

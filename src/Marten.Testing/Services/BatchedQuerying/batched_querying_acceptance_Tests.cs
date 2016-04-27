@@ -253,6 +253,34 @@ await batch.Execute();
         }
 
         [Fact]
+        public void can_query_documents_synchronously()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var anyUsers = batch.Query<User>().ToList();
+            var anyAdmins = batch.Query<AdminUser>().ToList();
+            var anyIntDocs = batch.Query<IntDoc>().ToList();
+            var aUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("A")).ToList();
+            var cUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("C")).ToList();
+
+            batch.Execute();
+
+            anyUsers.Result.OrderBy(x => x.FirstName).Select(x => x.Id)
+                .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, admin2.Id, user1.Id, super2.Id, user2.Id);
+
+
+            anyAdmins.Result.OrderBy(x => x.FirstName)
+                .Select(x => x.Id)
+                .ShouldHaveTheSameElementsAs(admin1.Id, admin2.Id);
+            anyIntDocs.Result.Any().ShouldBeFalse();
+            aUsers.Result.OrderBy(x => x.FirstName)
+                .Select(x => x.Id)
+                .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
+            cUsers.Result.Any().ShouldBeFalse();
+        }
+
+
+        [Fact]
         public async Task can_query_for_any()
         {
             var batch = theSession.CreateBatchQuery();
