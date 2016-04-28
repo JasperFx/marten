@@ -22,6 +22,9 @@ namespace Marten.Linq
         Task<TResult> SingleAsync<TResult>(CancellationToken token);
         Task<TResult> SingleOrDefaultAsync<TResult>(CancellationToken token);
         IEnumerable<IIncludeJoin> Includes { get; }
+
+        QueryStatistics Statistics { get; }
+
         Task<TResult> SumAsync<TResult>(CancellationToken token);
         Task<TResult> MinAsync<TResult>(CancellationToken token);
         Task<TResult> MaxAsync<TResult>(CancellationToken token);
@@ -35,5 +38,13 @@ namespace Marten.Linq
         IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, JoinType joinType = JoinType.Inner) where TInclude : class;
         IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list, JoinType joinType = JoinType.Inner) where TInclude : class;
         IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource, IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner) where TInclude : class;
+
+
+        IMartenQueryable<T> Stats(out QueryStatistics stats);
+    }
+
+    public class QueryStatistics
+    {
+        public long TotalResults { get; set; }
     }
 }

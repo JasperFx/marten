@@ -5,7 +5,6 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
-using Marten.Linq.QueryHandlers;
 using Marten.Services.Includes;
 
 namespace Marten.Services.BatchQuerying
@@ -19,6 +18,12 @@ namespace Marten.Services.BatchQuerying
         {
             _parent = parent;
             _inner = inner;
+        }
+
+        public IBatchedQueryable<T> Stats(out QueryStatistics stats)
+        {
+            _inner = _inner.Stats(out stats);
+            return this;
         }
 
         public IBatchedQueryable<T> Where(Expression<Func<T, bool>> predicate)

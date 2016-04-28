@@ -47,6 +47,15 @@ namespace Marten.Linq
             }
         }
 
+        public QueryStatistics Statistics
+        {
+            get
+            {
+                var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+                return executor.Statistics;
+            }
+        }
+
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback,
             JoinType joinType = JoinType.Inner) where TInclude : class
         {
@@ -94,6 +103,15 @@ namespace Marten.Linq
             });
         }
 
+        public IMartenQueryable<T> Stats(out QueryStatistics stats)
+        {
+            stats = new QueryStatistics();
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+            executor.Statistics = stats;
+
+            return this;
+        }
+
         public IDocumentSchema Schema => Executor.Schema;
 
         public MartenQueryExecutor Executor => Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
@@ -114,7 +132,7 @@ namespace Marten.Linq
                     return new AnyQueryHandler(model, Schema);
 
                 case FetchType.FetchMany:
-                    return new ListQueryHandler<T>(Schema, model, Includes.ToArray());
+                    return new ListQueryHandler<T>(Schema, model, Includes.ToArray(), Statistics);
 
                 case FetchType.FetchOne:
                     return OneResultHandler<T>.First(Schema, model, Includes.ToArray());
@@ -148,7 +166,7 @@ namespace Marten.Linq
 
         public Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => new ListQueryHandler<TResult>(Schema, q, Includes.ToArray()), token);
+            return executeAsync(q => new ListQueryHandler<TResult>(Schema, q, Includes.ToArray(), Statistics), token);
         }
 
         public Task<bool> AnyAsync(CancellationToken token)

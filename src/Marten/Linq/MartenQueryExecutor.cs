@@ -34,6 +34,7 @@ namespace Marten.Linq
         public IManagedConnection Connection { get; }
 
         public IIdentityMap IdentityMap { get; }
+        public QueryStatistics Statistics { get; set; }
 
 
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
@@ -68,7 +69,7 @@ namespace Marten.Linq
         {
             Schema.EnsureStorageExists(queryModel.SourceType());
 
-            var handler = new ListQueryHandler<T>(Schema, queryModel, _includes.ToArray());
+            var handler = new ListQueryHandler<T>(Schema, queryModel, _includes.ToArray(), Statistics);
 
             return Connection.Fetch(handler, IdentityMap.ForQuery());
         }

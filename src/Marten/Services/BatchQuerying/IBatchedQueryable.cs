@@ -9,6 +9,8 @@ namespace Marten.Services.BatchQuerying
 {
     public interface IBatchedQueryable<T> : IBatchedFetcher<T>
     {
+        IBatchedQueryable<T> Stats(out QueryStatistics stats);
+
         IBatchedQueryable<T> Where(Expression<Func<T, bool>> predicate);
         IBatchedQueryable<T> Skip(int count);
         IBatchedQueryable<T> Take(int count);
@@ -24,5 +26,7 @@ namespace Marten.Services.BatchQuerying
         Task<TResult> Max<TResult>(Expression<Func<T, TResult>> expression);
         Task<TResult> Sum<TResult>(Expression<Func<T, TResult>> expression);
         Task<double> Average(Expression<Func<T, object>> expression);
+
+
     }
 }

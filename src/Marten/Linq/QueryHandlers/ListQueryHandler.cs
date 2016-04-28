@@ -21,13 +21,18 @@ namespace Marten.Linq.QueryHandlers
         private readonly ISelector<T> _selector;
         private readonly IDocumentMapping _mapping;
 
-        public ListQueryHandler(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins)
+        public ListQueryHandler(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins, QueryStatistics stats)
         {
             _mapping = schema.MappingFor(query);
             _schema = schema;
             _query = query;
 
             var selector = _schema.BuildSelector<T>(_mapping, _query);
+
+            if (stats != null)
+            {
+                selector = new StatsSelector<T>(stats, selector);
+            }
 
             if (joins.Any())
             {
@@ -65,6 +70,36 @@ namespace Marten.Linq.QueryHandlers
         public async Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             return await _selector.ReadAsync(reader, map, token).ConfigureAwait(false);
+        }
+    }
+
+    internal class StatsSelector<T> : BasicSelector, ISelector<T>
+    {
+        private readonly QueryStatistics _stats;
+        private readonly ISelector<T> _inner;
+
+        public StatsSelector(QueryStatistics stats, ISelector<T> inner) : base(inner.SelectFields().Concat(new[] { "count(1) OVER() as total_rows" }).ToArray())
+        {
+            _stats = stats;
+            _inner = inner;
+
+            StartingIndex = _inner.SelectFields().Length;
+        }
+
+        public int StartingIndex { get; }
+
+        public T Resolve(DbDataReader reader, IIdentityMap map)
+        {
+            _stats.TotalResults = reader.GetInt64(StartingIndex);
+
+            return _inner.Resolve(reader, map);
+        }
+
+        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            _stats.TotalResults = await reader.GetFieldValueAsync<long>(StartingIndex, token).ConfigureAwait(false);
+
+            return _inner.Resolve(reader, map);
         }
     }
 }
