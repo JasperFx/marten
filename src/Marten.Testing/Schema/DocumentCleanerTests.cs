@@ -1,24 +1,26 @@
-﻿using System.Diagnostics;
+﻿using System;
 using System.Linq;
 using Baseline;
-using Marten.Generation;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Events;
 using Marten.Testing.Fixtures;
 using Shouldly;
-using StructureMap;
 using Xunit;
+using Issue = Marten.Testing.Documents.Issue;
 
 namespace Marten.Testing.Schema
 {
     public class DocumentCleanerTests : DocumentSessionFixture<NulloIdentityMap>
     {
-        private readonly DocumentCleaner theCleaner;
+        private readonly Lazy<DocumentCleaner> _theCleaner;
+        private DocumentCleaner theCleaner => _theCleaner.Value;
 
         public DocumentCleanerTests()
         {
-            theCleaner = theStore.Advanced.Clean.As<DocumentCleaner>();
+            _theCleaner = new Lazy<DocumentCleaner>(() => theStore.Advanced.Clean.As<DocumentCleaner>());
         }
 
         [Fact]
@@ -124,6 +126,43 @@ namespace Marten.Testing.Schema
 
             ShouldBeEmpty(schema.DocumentTables());
             ShouldBeEmpty(schema.SchemaFunctionNames());
+        }
+
+        [Fact]
+        public void delete_all_event_data()
+        {
+            var streamId = Guid.NewGuid();
+            theSession.Events.StartStream<Quest>(streamId, new QuestStarted());
+
+            theSession.SaveChanges();
+
+            theCleaner.DeleteAllEventData();
+
+            theSession.Events.Query<QuestStarted>().ShouldBeEmpty();
+            theSession.Events.FetchStream(streamId).ShouldBeEmpty();
+
+        }
+
+        [Fact]
+        public void delete_all_event_data_with_different_schema_names()
+        {
+            StoreOptions(_ =>
+            {
+                _.DatabaseSchemaName = "test";
+                _.Events.DatabaseSchemaName = "events";
+            });
+
+            var streamId = Guid.NewGuid();
+
+            theSession.Events.StartStream<Quest>(streamId, new QuestStarted());
+
+            theSession.SaveChanges();
+
+            theCleaner.DeleteAllEventData();
+
+            // Todo: theSession.Events.Query<>() uses the wrong schema name when using Event type.
+            //theSession.Events.Query<QuestStarted>().ShouldBeEmpty();
+            theSession.Events.FetchStream(streamId).ShouldBeEmpty();
         }
 
         private static void ShouldBeEmpty<T>(T[] documentTables)

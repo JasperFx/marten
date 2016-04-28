@@ -39,5 +39,33 @@ namespace Marten.Testing.Events
         {
             theSession.Events.Query<MembersJoined>().Any().ShouldBeFalse();
         }
+
+        [Fact]
+        public void can_query_against_event_type_with_different_schema_name()
+        {
+            StoreOptions(_ =>
+            {
+                _.DatabaseSchemaName = "test";
+                _.Events.DatabaseSchemaName = "events";
+
+                _.Events.AddEventType(typeof(MembersDeparted));
+            });
+
+            theStore.Schema.MappingFor(typeof(MembersDeparted))
+                .Table.Schema.ShouldBe("events");
+
+            theSession.Events.StartStream<Quest>(joined1, departed1);
+            theSession.Events.StartStream<Quest>(joined2, departed2);
+
+            theSession.SaveChanges();
+
+            theSession.Events.Query<MembersJoined>().Count().ShouldBe(2);
+            theSession.Events.Query<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+                .OrderBy(x => x)
+                .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
+
+            theSession.Events.Query<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
+                .Single().Id.ShouldBe(departed2.Id);
+        }
     }
 }

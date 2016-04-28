@@ -4,6 +4,7 @@ nuget Fixie
 nuget HtmlTags
 nuget ilrepack
 nuget Jil
+nuget Marten
 nuget Newtonsoft.Json
 nuget Npgsql
 nuget NSubstitute

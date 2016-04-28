@@ -89,8 +89,8 @@ AND    n.nspname = '{1}';";
         {
             using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
             {
-                connection.Execute($"truncate table {_schema.StoreOptions.DatabaseSchemaName}.mt_events cascade;" +
-                                   $"truncate table {_schema.StoreOptions.DatabaseSchemaName}.mt_streams cascade");
+                connection.Execute($"truncate table {_schema.Events.DatabaseSchemaName}.mt_events cascade;" +
+                                   $"truncate table {_schema.Events.DatabaseSchemaName}.mt_streams cascade");
             }
         }
     }
