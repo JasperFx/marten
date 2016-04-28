@@ -47,7 +47,12 @@ namespace Marten.Testing.Events
             {
                 _.DatabaseSchemaName = "test";
                 _.Events.DatabaseSchemaName = "events";
+
+                _.Events.AddEventType(typeof(MembersDeparted));
             });
+
+            theStore.Schema.MappingFor(typeof(MembersDeparted))
+                .Table.Schema.ShouldBe("events");
 
             theSession.Events.StartStream<Quest>(joined1, departed1);
             theSession.Events.StartStream<Quest>(joined2, departed2);

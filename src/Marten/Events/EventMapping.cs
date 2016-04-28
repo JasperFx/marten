@@ -47,11 +47,11 @@ namespace Marten.Events
         public IIdGeneration IdStrategy { get; set; } = new GuidIdGeneration();
         public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
 
-        public TableName Table =>  new TableName(_options.DatabaseSchemaName, "mt_events");
+        public TableName Table =>  new TableName(_options.Events.DatabaseSchemaName, "mt_events");
 
         public string DatabaseSchemaName
         {
-            get { return _options.DatabaseSchemaName; }
+            get { return _options.Events.DatabaseSchemaName; }
             set { throw new NotSupportedException("The DatabaseSchemaName of Event can't be set."); }
         }
 
