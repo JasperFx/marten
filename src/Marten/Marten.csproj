@@ -133,6 +133,7 @@
     <Compile Include="Linq\ToJsonArrayResultOperator.cs" />
     <Compile Include="Linq\WhereClauseVisitor.cs" />
     <Compile Include="Linq\WholeDocumentSelector.cs" />
+    <Compile Include="Projections\ProjectionClasses.cs" />
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\IdField.cs" />
     <Compile Include="Schema\QualifiedDatabaseName.cs" />
