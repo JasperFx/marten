@@ -171,7 +171,7 @@ namespace Marten.Schema
 
         }
 
-        internal string[] AllSchemaNames()
+        public string[] AllSchemaNames()
         {
             var schemas =
                 AllDocumentMaps().OfType<DocumentMapping>().Select(x => x.DatabaseSchemaName).Distinct().ToList();
@@ -237,19 +237,12 @@ namespace Marten.Schema
 
         private string getHiloScript()
         {
-            var writer = new StringWriter();
-
-            EnsureDatabaseSchema.WriteSql(StoreOptions.DatabaseSchemaName, writer);
-            writer.WriteLine(SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo"));
-
-            return writer.ToString();
+            return SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo");
         }
 
         public string ToDDL()
         {
             var writer = new StringWriter();
-
-            EnsureDatabaseSchema.WriteSql(StoreOptions.DatabaseSchemaName, writer);
 
             StoreOptions.AllDocumentMappings.Each(x => x.WriteSchemaObjects(this, writer));
 

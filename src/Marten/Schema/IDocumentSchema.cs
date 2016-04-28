@@ -112,7 +112,7 @@ namespace Marten.Schema
 
 
         IEnumerable<IDocumentMapping> AllDocumentMaps();
-
+        string[] AllSchemaNames();
 
         IResolver<T> ResolverFor<T>();
 
