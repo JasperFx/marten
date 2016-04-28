@@ -48,7 +48,7 @@ namespace Marten.Schema
 
         protected bool Equals(QualifiedDatabaseName other)
         {
-            return GetType() == other.GetType() && string.Equals(QualifiedName, other.QualifiedName);
+            return GetType() == other.GetType() && string.Equals(QualifiedName, other.QualifiedName, StringComparison.OrdinalIgnoreCase);
         }
 
         public override bool Equals(object obj)

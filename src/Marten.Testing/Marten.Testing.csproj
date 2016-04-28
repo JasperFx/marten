@@ -55,6 +55,7 @@
     <Compile Include="Bugs\Bug_237_duplicate_indexing_Tests.cs" />
     <Compile Include="Bugs\Bug_261_double_take_or_skip.cs" />
     <Compile Include="Bugs\Bug_276_Query_by_abstract_type_in_hierarchy.cs" />
+    <Compile Include="Bugs\Bug_336_completely_remove_crosses_schema_lines.cs" />
     <Compile Include="Events\fetch_a_single_event_with_metadata.cs" />
     <Compile Include="Events\get_committed_events_from_listener_Tests.cs" />
     <Compile Include="Events\marking_stream_as_isnew_on_capture.cs" />

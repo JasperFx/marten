@@ -10,6 +10,7 @@ namespace Marten.Events
 {
     public class EventStoreAdmin : IEventStoreAdmin
     {
+        private readonly IDocumentSchema _schema;
         private readonly IConnectionFactory _connectionFactory;
         private readonly StoreOptions _options;
         private readonly ISerializer _serializer;
@@ -20,8 +21,9 @@ namespace Marten.Events
         private FunctionName InitializeProjectionsFunction => new FunctionName(_options.Events.DatabaseSchemaName, "mt_initialize_projections");
         private FunctionName GetProjectionUsageFunction => new FunctionName(_options.Events.DatabaseSchemaName, "mt_get_projection_usage");
 
-        public EventStoreAdmin(IConnectionFactory connectionFactory, StoreOptions options, ISerializer serializer)
+        public EventStoreAdmin(IDocumentSchema schema, IConnectionFactory connectionFactory, StoreOptions options, ISerializer serializer)
         {
+            _schema = schema;
             _connectionFactory = connectionFactory;
             _options = options;
             _serializer = serializer;
@@ -29,6 +31,8 @@ namespace Marten.Events
 
         public void LoadProjections(string directory)
         {
+            _schema.EnsureStorageExists(typeof(EventStream));
+
             var files = new FileSystem();
 
             using (var connection = new ManagedConnection(_connectionFactory))
@@ -62,6 +66,8 @@ namespace Marten.Events
 
         public IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase(bool overwrite = false)
         {
+            _schema.EnsureStorageExists(typeof(EventStream));
+
             var js = SchemaBuilder.GetJavascript(_options, "mt_transforms");
 
             using (var connection = new ManagedConnection(_connectionFactory))

@@ -76,16 +76,15 @@ namespace Marten
 
             _serializer = options.Serializer();
 
-            var cleaner = new DocumentCleaner(_connectionFactory, Schema);
+            var cleaner = new DocumentCleaner(_connectionFactory, Schema.As<DocumentSchema>());
             Advanced = new AdvancedOptions(cleaner, options, _serializer, Schema);
 
             Diagnostics = new Diagnostics(Schema);
 
-            EventStore = new EventStoreAdmin(_connectionFactory, _options, _serializer);
+            EventStore = new EventStoreAdmin(Schema, _connectionFactory, _options, _serializer);
 
             if (Schema.Events.IsActive && options.AutoCreateSchemaObjects != AutoCreate.None)
             {
-                Schema.EnsureStorageExists(typeof (EventStream));
                 EventStore.InitializeEventStoreInDatabase();
             }
 

@@ -263,9 +263,6 @@ namespace Marten.Testing.Events
 
         private static  DocumentStore InitStore(string databascSchema = null)
         {
-            DocumentStore.For(ConnectionSource.ConnectionString)
-                .Advanced.Clean.CompletelyRemoveAll();
-
             var store = DocumentStore.For(_ =>
             {
                 if (databascSchema != null)
@@ -281,6 +278,8 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersDeparted));
             });
             
+            store.Advanced.Clean.CompletelyRemoveAll();
+
             return store;
         }
     }

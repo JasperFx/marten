@@ -14,7 +14,7 @@ SELECT format('DROP FUNCTION %s.%s(%s);'
              ,pg_get_function_identity_arguments(p.oid))
 FROM   pg_proc p
 LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
-WHERE  p.proname like 'mt_%'";
+WHERE  p.proname like 'mt_%' and n.nspname = ANY(?)";
 
         public static readonly string DropFunctionSql = @"
 SELECT format('DROP FUNCTION %s.%s(%s);'
@@ -27,9 +27,9 @@ WHERE  p.proname = '{0}'
 AND    n.nspname = '{1}';";
 
         private readonly IConnectionFactory _factory;
-        private readonly IDocumentSchema _schema;
+        private readonly DocumentSchema _schema;
 
-        public DocumentCleaner(IConnectionFactory factory, IDocumentSchema schema)
+        public DocumentCleaner(IConnectionFactory factory, DocumentSchema schema)
         {
             _factory = factory;
             _schema = schema;
@@ -75,10 +75,11 @@ AND    n.nspname = '{1}';";
         {
             using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
             {
-                _schema.SchemaTables()
+                var schemaTables = _schema.SchemaTables();
+                schemaTables
                     .Each(tableName => { connection.Execute($"DROP TABLE IF EXISTS {tableName} CASCADE;"); });
 
-                var drops = connection.GetStringList(DropAllFunctionSql);
+                var drops = connection.GetStringList(DropAllFunctionSql, new object[] { _schema.AllSchemaNames() });
                 drops.Each(drop => connection.Execute(drop));
 
                 _schema.ResetSchemaExistenceChecks();

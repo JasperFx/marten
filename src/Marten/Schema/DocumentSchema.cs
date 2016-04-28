@@ -158,9 +158,29 @@ namespace Marten.Schema
         {
             Func<DbDataReader, TableName> transform = r => new TableName(r.GetString(0), r.GetString(1));
 
-            var sql = "select table_schema, table_name from information_schema.tables where table_name like ?;";
+            var sql = "select table_schema, table_name from information_schema.tables where table_name like ? and table_schema = ANY(?);";
 
-            return _factory.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%").ToArray();
+            var schemaNames = AllSchemaNames();
+
+            var tablePattern = DocumentMapping.MartenPrefix + "%";
+            var tables = _factory.Fetch(sql, transform, tablePattern, schemaNames).ToArray();
+
+
+            return tables;
+
+
+        }
+
+        internal string[] AllSchemaNames()
+        {
+            var schemas =
+                AllDocumentMaps().OfType<DocumentMapping>().Select(x => x.DatabaseSchemaName).Distinct().ToList();
+
+            schemas.Fill(StoreOptions.DatabaseSchemaName);
+            schemas.Fill(StoreOptions.Events.DatabaseSchemaName);
+
+            var schemaNames = schemas.Select(x => x.ToLowerInvariant()).ToArray();
+            return schemaNames;
         }
 
         public TableName[] DocumentTables()
@@ -172,9 +192,9 @@ namespace Marten.Schema
         {
             Func<DbDataReader, FunctionName> transform = r => new FunctionName(r.GetString(0), r.GetString(1));
 
-            var sql = "SELECT specific_schema, routine_name FROM information_schema.routines WHERE type_udt_name != 'trigger' and routine_name like ?;";
+            var sql = "SELECT specific_schema, routine_name FROM information_schema.routines WHERE type_udt_name != 'trigger' and routine_name like ? and specific_schema = ANY(?);";
 
-            return _factory.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%").ToArray();
+            return _factory.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%", AllSchemaNames()).ToArray();
         }
 
         public ISequences Sequences { get; }
@@ -270,7 +290,8 @@ namespace Marten.Schema
 
         public bool TableExists(TableName table)
         {
-            return SchemaTables().Contains(table);
+            var schemaTables = SchemaTables();
+            return schemaTables.Contains(table);
         }
 
         public IQueryHandlerFactory HandlerFactory { get; }
