@@ -83,7 +83,7 @@ namespace Marten
 
             EventStore = new EventStoreAdmin(Schema, _connectionFactory, _options, _serializer);
 
-            CreateSchemaObjects();
+            CreateDatabaseObjects();
         }
 
         private readonly StoreOptions _options;
@@ -99,12 +99,11 @@ namespace Marten
         public IDocumentSchema Schema { get; }
         public AdvancedOptions Advanced { get; }
 
-        private void CreateSchemaObjects()
+        private void CreateDatabaseObjects()
         {
             if (_options.AutoCreateSchemaObjects == AutoCreate.None) return;
 
             var allSchemaNames = Schema.AllSchemaNames();
-
             var generator = new DatabaseSchemaGenerator(Advanced);
             generator.Generate(allSchemaNames);
 

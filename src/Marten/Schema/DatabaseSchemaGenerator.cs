@@ -34,19 +34,18 @@ $$;";
             if (!names.Any()) return;
 
             var sql = GenerateScript(names);
-
             using (var runner = _advanced.OpenConnection())
             {
                 runner.Execute(sql);
             }
         }
 
-        private static string GenerateScript(IEnumerable<string> enumerable)
+        private static string GenerateScript(IEnumerable<string> schemaNames)
         {
             using (var writer = new StringWriter())
             {
                 writer.Write(BeginScript);
-                enumerable.Each(name => WriteSql(name, writer));
+                schemaNames.Each(name => WriteSql(name, writer));
                 writer.Write(EndScript);
 
                 return writer.ToString();
