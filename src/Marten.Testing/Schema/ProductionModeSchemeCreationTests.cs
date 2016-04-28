@@ -14,6 +14,8 @@ namespace Marten.Testing.Schema
         {
             using (var c1 = Container.For<DevelopmentModeRegistry>())
             {
+                c1.GetInstance<IDocumentStore>().Advanced.Clean.CompletelyRemoveAll();
+
                 using (var session = c1.GetInstance<IDocumentStore>().OpenSession())
                 {
                     session.Store(new User());
