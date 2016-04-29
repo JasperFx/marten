@@ -117,5 +117,24 @@ namespace Marten.Testing.Schema
             objects.Indices.OrderBy(x => x.Name).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("mt_doc_user_idx_internal", "mt_doc_user_idx_user_name");
         }
+
+        [Fact]
+        public void fetch_schema_objects_for_a_document_type_that_has_not_been_created_yet()
+        {
+            var store1 = TestingDocumentStore.For(_ =>
+            {
+                _.DatabaseSchemaName = "public";
+                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+            });
+
+
+            var objects = store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
+
+            objects.HasNone().ShouldBeTrue();
+            objects.Table.ShouldBeNull();
+            objects.Indices.Any().ShouldBeFalse();
+            objects.UpsertFunction.ShouldBeNull();
+
+        }
     }
 }

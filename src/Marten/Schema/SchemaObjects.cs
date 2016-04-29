@@ -17,5 +17,17 @@ namespace Marten.Schema
             Indices = indices;
             UpsertFunction = upsertFunction;
         }
+
+        public bool HasNone()
+        {
+            return Table == null;
+        }
+    }
+
+    public class SchemaDiff
+    {
+        public SchemaDiff(SchemaObjects existing, DocumentMapping mapping)
+        {
+        }
     }
 }
