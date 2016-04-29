@@ -313,11 +313,21 @@ namespace Marten.Schema
 
             connection.Execute($"DROP TABLE IF EXISTS {Table.QualifiedName} CASCADE;");
 
+            RemoveUpsertFunction(connection);
+        }
+
+        /// <summary>
+        /// Only for testing scenarios
+        /// </summary>
+        /// <param name="connection"></param>
+        public void RemoveUpsertFunction(IManagedConnection connection)
+        {
             var dropTargets = DocumentCleaner.DropFunctionSql.ToFormat(UpsertFunction.Name, UpsertFunction.Schema);
 
             var drops = connection.GetStringList(dropTargets);
             drops.Each(drop => connection.Execute(drop));
         }
+
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {

@@ -31,7 +31,7 @@ namespace Marten.Schema
         public bool HasDifferences()
         {
             // TODO -- need to check indices and functions too
-            return AllMissing || !TableDiff.Matches;
+            return AllMissing || !TableDiff.Matches || HasFunctionChanged();
         }
 
         public bool CanPatch()
@@ -40,12 +40,20 @@ namespace Marten.Schema
             return TableDiff.CanPatch();
         }
 
-        public bool HasFunctionChanged()
+        private string expectedUpsertFunction()
         {
             var writer = new StringWriter();
-            
+
             _mapping.ToUpsertFunction().WriteFunctionSql(_schema.StoreOptions.UpsertType, writer);
-            var expected = writer.ToString().CanonicizeSql();
+
+            return writer.ToString();
+        }
+
+        public bool HasFunctionChanged()
+        {
+            if (_existing.UpsertFunction.IsEmpty()) return true;
+
+            var expected = expectedUpsertFunction().CanonicizeSql();
 
             return !expected.Equals(_existing.UpsertFunction, StringComparison.OrdinalIgnoreCase);
         }
@@ -58,6 +66,12 @@ namespace Marten.Schema
         public void CreatePatch(Action<string> executeSql)
         {
             TableDiff.CreatePatch(_mapping, executeSql);
+
+            if (HasFunctionChanged())
+            {
+                // TODO -- need to drop the existing function somehow?
+                executeSql(expectedUpsertFunction());
+            }
         }
 
 
