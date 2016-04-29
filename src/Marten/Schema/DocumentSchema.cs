@@ -212,6 +212,8 @@ namespace Marten.Schema
             system.DeleteDirectory(directory);
             system.CreateDirectory(directory);
 
+            WriteDatabaseSchemaGenerationScript(directory, system);
+
             _mappings.Values.Where(x => !(x is SubClassMapping)).Each(mapping =>
             {
                 var writer = new StringWriter();
@@ -235,6 +237,18 @@ namespace Marten.Schema
             }
         }
 
+        private void WriteDatabaseSchemaGenerationScript(string directory, FileSystem system)
+        {
+            var allSchemaNames = AllSchemaNames();
+            var script = DatabaseSchemaGenerator.GenerateScript(allSchemaNames);
+
+            if (script.IsNotEmpty())
+            {
+                var filename = directory.AppendPath("database_schemas.sql");
+                system.WriteStringToFile(filename, script);
+            }
+        }
+
         private string getHiloScript()
         {
             return SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo");
@@ -243,6 +257,9 @@ namespace Marten.Schema
         public string ToDDL()
         {
             var writer = new StringWriter();
+
+            var allSchemaNames = AllSchemaNames();
+            DatabaseSchemaGenerator.WriteSql(allSchemaNames, writer);
 
             StoreOptions.AllDocumentMappings.Each(x => x.WriteSchemaObjects(this, writer));
 

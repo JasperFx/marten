@@ -27,29 +27,39 @@ $$;";
         {
             if (schemaNames == null) throw new ArgumentNullException(nameof(schemaNames));
 
-            var names = schemaNames
-                .Distinct()
-                .Where(name => name != StoreOptions.DefaultDatabaseSchemaName).ToList();
-
-            if (!names.Any()) return;
-
-            var sql = GenerateScript(names);
-            using (var runner = _advanced.OpenConnection())
+            var sql = GenerateScript(schemaNames);
+            if (sql != null)
             {
-                runner.Execute(sql);
+                using (var runner = _advanced.OpenConnection())
+                {
+                    runner.Execute(sql);
+                }
             }
         }
 
-        private static string GenerateScript(IEnumerable<string> schemaNames)
+        public static string GenerateScript(IEnumerable<string> schemaNames)
         {
+            if (schemaNames == null) throw new ArgumentNullException(nameof(schemaNames));
+
+            var names = schemaNames
+                 .Distinct()
+                 .Where(name => name != StoreOptions.DefaultDatabaseSchemaName).ToList();
+
+            if (!names.Any()) return null ;
+
             using (var writer = new StringWriter())
             {
-                writer.Write(BeginScript);
-                schemaNames.Each(name => WriteSql(name, writer));
-                writer.Write(EndScript);
+                WriteSql(names, writer);
 
                 return writer.ToString();
             }
+        }
+
+        public static void WriteSql(IEnumerable<string> schemaNames, StringWriter writer)
+        {
+            writer.Write(BeginScript);
+            schemaNames.Each(name => WriteSql(name, writer));
+            writer.Write(EndScript);
         }
 
         private static void WriteSql(string databaseSchemaName, StringWriter writer)
