@@ -23,29 +23,4 @@ namespace Marten.Schema
             return Table == null;
         }
     }
-
-    public class SchemaDiff
-    {
-        public SchemaDiff(IDocumentSchema schema, SchemaObjects existing, DocumentMapping mapping)
-        {
-            if (existing.HasNone())
-            {
-                AllMissing = true;
-            }
-            else
-            {
-                TableDiff = new TableDiff(mapping.ToTable(schema), existing.Table);
-            }
-        }
-
-        public bool HasDifferences()
-        {
-            // TODO -- need to check indices and functions too
-            return AllMissing || !TableDiff.Matches;
-        }
-
-        public TableDiff TableDiff { get; }
-
-        public bool AllMissing { get; }
-    }
 }

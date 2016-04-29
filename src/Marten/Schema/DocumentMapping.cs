@@ -506,9 +506,9 @@ namespace Marten.Schema
                 throw new InvalidOperationException($"The table for document type {DocumentType.FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{nameof(AutoCreate.CreateOnly)}'");
             }
 
-            if (diff.TableDiff.CanPatch())
+            if (diff.CanPatch())
             {
-                diff.TableDiff.CreatePatch(this, executeSql);
+                diff.CreatePatch(executeSql);
             }
             else if (autoCreateSchemaObjectsMode == AutoCreate.All)
             {
