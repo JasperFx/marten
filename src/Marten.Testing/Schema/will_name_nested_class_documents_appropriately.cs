@@ -25,7 +25,7 @@ namespace Marten.Testing.Schema
                 store.Schema.StorageFor(typeof (Foo.Document));
                 store.Schema.StorageFor(typeof (Bar.Document));
 
-                var documentTables = store.Schema.DocumentTables();
+                var documentTables = store.Schema.DbObjects.DocumentTables();
                 documentTables.ShouldContain("public.mt_doc_foo_document");
                 documentTables.ShouldContain("public.mt_doc_bar_document");
 
@@ -54,7 +54,7 @@ namespace Marten.Testing.Schema
                 store.Schema.StorageFor(typeof(Foo.Document));
                 store.Schema.StorageFor(typeof(Bar.Document));
 
-                var documentTables = store.Schema.DocumentTables();
+                var documentTables = store.Schema.DbObjects.DocumentTables();
                 documentTables.ShouldContain("other.mt_doc_foo_document");
                 documentTables.ShouldContain("other.mt_doc_bar_document");
 

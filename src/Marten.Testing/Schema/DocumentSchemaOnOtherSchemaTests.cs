@@ -75,12 +75,12 @@ namespace Marten.Testing.Schema
             theSchema.StorageFor(typeof(Issue)).ShouldNotBeNull();
             theSchema.StorageFor(typeof(Company)).ShouldNotBeNull();
 
-            var tables = theSchema.SchemaTables();
+            var tables = theSchema.DbObjects.SchemaTables();
             tables.ShouldContain("other.mt_doc_user");
             tables.ShouldContain("other.mt_doc_issue");
             tables.ShouldContain("other.mt_doc_company");
 
-            var functions = theSchema.SchemaFunctionNames();
+            var functions = theSchema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("other.mt_upsert_user");
             functions.ShouldContain("other.mt_upsert_issue");
             functions.ShouldContain("other.mt_upsert_company");

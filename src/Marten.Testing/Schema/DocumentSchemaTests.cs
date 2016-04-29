@@ -133,12 +133,12 @@ namespace Marten.Testing.Schema
             theSchema.StorageFor(typeof(Issue)).ShouldNotBeNull();
             theSchema.StorageFor(typeof(Company)).ShouldNotBeNull();
 
-            var tables = theSchema.SchemaTables();
+            var tables = theSchema.DbObjects.SchemaTables();
             tables.ShouldContain("public.mt_doc_user");
             tables.ShouldContain("public.mt_doc_issue");
             tables.ShouldContain("public.mt_doc_company");
 
-            var functions = theSchema.SchemaFunctionNames();
+            var functions = theSchema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("public.mt_upsert_user");
             functions.ShouldContain("public.mt_upsert_issue");
             functions.ShouldContain("public.mt_upsert_company");
@@ -322,8 +322,8 @@ namespace Marten.Testing.Schema
                 session.SaveChanges();
             }
 
-            _tables = _schema.SchemaTables();
-            _functions = _schema.SchemaFunctionNames();
+            _tables = _schema.DbObjects.SchemaTables();
+            _functions = _schema.DbObjects.SchemaFunctionNames();
         }
 
 
@@ -481,8 +481,8 @@ namespace Marten.Testing.Schema
                 session.SaveChanges();
             }
 
-            _tables = _schema.SchemaTables();
-            _functions = _schema.SchemaFunctionNames();
+            _tables = _schema.DbObjects.SchemaTables();
+            _functions = _schema.DbObjects.SchemaFunctionNames();
         }
 
 

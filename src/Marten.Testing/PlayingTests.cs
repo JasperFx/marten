@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using Marten.Testing.Documents;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Fixtures;
 using StoryTeller;
@@ -22,6 +23,18 @@ namespace Marten.Testing
 
 
                 runner.OpenResultsInBrowser();
+            }
+        }
+
+        [Fact]
+        public void fetch_index_definitions()
+        {
+            using (var store = TestingDocumentStore.For(_ =>
+            {
+                _.Schema.For<User>().Searchable(x => x.UserName);
+            }))
+            {
+                store.BulkInsert(new User[] {new User {UserName = "foo"}, new User { UserName = "bar" }, });
             }
         }
 

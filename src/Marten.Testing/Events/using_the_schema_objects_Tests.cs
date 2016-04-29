@@ -23,11 +23,11 @@ namespace Marten.Testing.Events
             var store = container.GetInstance<IDocumentStore>();
             store.EventStore.InitializeEventStoreInDatabase(true);
 
-            var schemaFunctionNames = schema.SchemaFunctionNames();
+            var schemaFunctionNames = schema.DbObjects.SchemaFunctionNames();
             schemaFunctionNames.ShouldContain("public.mt_append_event");
             schemaFunctionNames.ShouldContain("public.mt_version_stream");
 
-            var schemaTableNames = schema.SchemaTables();
+            var schemaTableNames = schema.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain("public.mt_streams");
             schemaTableNames.ShouldContain("public.mt_events");
         }
@@ -44,11 +44,11 @@ namespace Marten.Testing.Events
             var store = container.GetInstance<IDocumentStore>();
             store.EventStore.InitializeEventStoreInDatabase(true);
 
-            var schemaFunctionNames = schema.SchemaFunctionNames();
+            var schemaFunctionNames = schema.DbObjects.SchemaFunctionNames();
             schemaFunctionNames.ShouldContain("other.mt_append_event");
             schemaFunctionNames.ShouldContain("other.mt_version_stream");
 
-            var schemaTableNames = schema.SchemaTables();
+            var schemaTableNames = schema.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain("other.mt_streams");
             schemaTableNames.ShouldContain("other.mt_events");
         }
@@ -69,11 +69,11 @@ namespace Marten.Testing.Events
             var store = container.GetInstance<IDocumentStore>();
             store.EventStore.InitializeEventStoreInDatabase(true);
 
-            var schemaFunctionNames = schema.SchemaFunctionNames();
+            var schemaFunctionNames = schema.DbObjects.SchemaFunctionNames();
             schemaFunctionNames.ShouldContain("event_store.mt_append_event");
             schemaFunctionNames.ShouldContain("event_store.mt_version_stream");
 
-            var schemaTableNames = schema.SchemaTables();
+            var schemaTableNames = schema.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain("event_store.mt_streams");
             schemaTableNames.ShouldContain("event_store.mt_events");
         }

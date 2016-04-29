@@ -22,7 +22,7 @@ namespace Marten.Testing.Events
         public void has_the_event_tables()
         {
             var schema = theStore.Schema;
-            var tableNames = schema.SchemaTables();
+            var tableNames = schema.DbObjects.SchemaTables();
             tableNames.ShouldContain("public.mt_streams");
             tableNames.ShouldContain("public.mt_events");
             tableNames.ShouldContain("public.mt_modules");
@@ -34,7 +34,7 @@ namespace Marten.Testing.Events
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("public.mt_append_event");
             functions.ShouldContain("public.mt_load_projection_body");
         }
@@ -45,7 +45,7 @@ namespace Marten.Testing.Events
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("public.mt_apply_transform");
         }
 
@@ -54,7 +54,7 @@ namespace Marten.Testing.Events
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("public.mt_apply_aggregation");
         }
 
@@ -63,7 +63,7 @@ namespace Marten.Testing.Events
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("public.mt_start_aggregation");
         }
 
@@ -82,7 +82,7 @@ namespace Marten.Testing.Events
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("public.mt_initialize_projections");
         }
 
@@ -91,7 +91,7 @@ namespace Marten.Testing.Events
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("public.mt_get_projection_usage");
         }
 
@@ -171,7 +171,7 @@ Projection party (snapshot) for Event quest_started executed inline
         public void has_the_event_tables()
         {
             var schema = theStore.Schema;
-            var tableNames = schema.SchemaTables();
+            var tableNames = schema.DbObjects.SchemaTables();
             tableNames.ShouldContain("other.mt_streams");
             tableNames.ShouldContain("other.mt_events");
             tableNames.ShouldContain("other.mt_modules");
@@ -183,7 +183,7 @@ Projection party (snapshot) for Event quest_started executed inline
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("other.mt_append_event");
             functions.ShouldContain("other.mt_load_projection_body");
         }
@@ -194,7 +194,7 @@ Projection party (snapshot) for Event quest_started executed inline
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("other.mt_apply_transform");
         }
 
@@ -203,7 +203,7 @@ Projection party (snapshot) for Event quest_started executed inline
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("other.mt_apply_aggregation");
         }
 
@@ -212,7 +212,7 @@ Projection party (snapshot) for Event quest_started executed inline
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("other.mt_start_aggregation");
         }
 
@@ -231,7 +231,7 @@ Projection party (snapshot) for Event quest_started executed inline
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("other.mt_initialize_projections");
         }
 
@@ -240,7 +240,7 @@ Projection party (snapshot) for Event quest_started executed inline
         {
             var schema = theStore.Schema;
 
-            var functions = schema.SchemaFunctionNames();
+            var functions = schema.DbObjects.SchemaFunctionNames();
             functions.ShouldContain("other.mt_get_projection_usage");
         }
 
@@ -280,17 +280,6 @@ Projection party (snapshot) for Event quest_started executed inline
                 .ShouldHaveTheSameElementsAs("event_a", "event_b", "event_c", "event_d");
 
 
-            /*
-
-            Projection fake_aggregate (snapshot) for Event a_name executed inline
-Projection fake_aggregate (snapshot) for Event b_name executed inline
-Projection fake_aggregate (snapshot) for Event c_name executed inline
-Projection fake_aggregate (snapshot) for Event d_name executed inline
-Projection location (transform) for Event members_joined executed inline
-Projection location (transform) for Event members_departed executed inline
-Projection party (snapshot) for Event members_joined executed inline
-Projection party (snapshot) for Event quest_started executed inline
-    */
         }
 
         [Fact]

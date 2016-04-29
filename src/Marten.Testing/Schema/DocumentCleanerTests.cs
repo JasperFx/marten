@@ -79,12 +79,12 @@ namespace Marten.Testing.Schema
 
             var tableName = theStore.Schema.MappingFor(typeof(Target)).Table;
 
-            theStore.Schema.DocumentTables().Contains(tableName)
+            theStore.Schema.DbObjects.DocumentTables().Contains(tableName)
                 .ShouldBeTrue();
 
             theCleaner.CompletelyRemove(typeof(Target));
 
-            theStore.Schema.DocumentTables().Contains(tableName)
+            theStore.Schema.DbObjects.DocumentTables().Contains(tableName)
                 .ShouldBeFalse();
         }
 
@@ -100,11 +100,11 @@ namespace Marten.Testing.Schema
 
             var upsertName = schema.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
 
-            schema.SchemaFunctionNames().ShouldContain(upsertName);
+            schema.DbObjects.SchemaFunctionNames().ShouldContain(upsertName);
 
             theCleaner.CompletelyRemove(typeof(Target));
 
-            schema.SchemaFunctionNames().Contains(upsertName)
+            schema.DbObjects.SchemaFunctionNames().Contains(upsertName)
                 .ShouldBeFalse();
         }
 
@@ -124,8 +124,8 @@ namespace Marten.Testing.Schema
 
             var schema = theStore.Schema;
 
-            ShouldBeEmpty(schema.DocumentTables());
-            ShouldBeEmpty(schema.SchemaFunctionNames());
+            ShouldBeEmpty(schema.DbObjects.DocumentTables());
+            ShouldBeEmpty(schema.DbObjects.SchemaFunctionNames());
         }
 
         [Fact]

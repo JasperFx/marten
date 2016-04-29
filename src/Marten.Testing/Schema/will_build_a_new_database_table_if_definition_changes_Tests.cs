@@ -26,7 +26,7 @@ namespace Marten.Testing.Schema
 
                 store.Schema.StorageFor(typeof (User));
 
-                store.Schema.DocumentTables().ShouldContain("public.mt_doc_user");
+                store.Schema.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
 
                 table1 = store.Schema.TableSchema(typeof(User));
                 table1.Columns.ShouldNotContain(x => x.Name == "user_name");
@@ -40,7 +40,7 @@ namespace Marten.Testing.Schema
 
                 store.Schema.StorageFor(typeof(User));
 
-                store.Schema.DocumentTables().ShouldContain("public.mt_doc_user");
+                store.Schema.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
 
                 table2 = store.Schema.TableSchema(typeof (User));
             }
@@ -64,7 +64,7 @@ namespace Marten.Testing.Schema
 
                 store.Schema.StorageFor(typeof(User));
 
-                store.Schema.DocumentTables().ShouldContain("other.mt_doc_user");
+                store.Schema.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
 
                 table1 = store.Schema.TableSchema(typeof(User));
                 table1.Columns.ShouldNotContain(x => x.Name == "user_name");
@@ -78,7 +78,7 @@ namespace Marten.Testing.Schema
 
                 store.Schema.StorageFor(typeof(User));
 
-                store.Schema.DocumentTables().ShouldContain("other.mt_doc_user");
+                store.Schema.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
 
                 table2 = store.Schema.TableSchema(typeof(User));
             }

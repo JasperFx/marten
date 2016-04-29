@@ -39,7 +39,7 @@ AND    n.nspname = '{1}';";
         {
             using (var conn = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
             {
-                _schema.DocumentTables().Each(tableName =>
+                _schema.DbObjects.DocumentTables().Each(tableName =>
                 {
                     var sql = "truncate {0} cascade".ToFormat(tableName);
                     conn.Execute(sql);
@@ -75,7 +75,7 @@ AND    n.nspname = '{1}';";
         {
             using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
             {
-                var schemaTables = _schema.SchemaTables();
+                var schemaTables = _schema.DbObjects.SchemaTables();
                 schemaTables
                     .Each(tableName => { connection.Execute($"DROP TABLE IF EXISTS {tableName} CASCADE;"); });
 

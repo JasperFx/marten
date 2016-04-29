@@ -133,6 +133,8 @@
     <Compile Include="Linq\WhereClauseVisitor.cs" />
     <Compile Include="Linq\WholeDocumentSelector.cs" />
     <Compile Include="QuerySession.cs" />
+    <Compile Include="Schema\DbObjects.cs" />
+    <Compile Include="Schema\IDbObjects.cs" />
     <Compile Include="Schema\IdField.cs" />
     <Compile Include="Schema\QualifiedDatabaseName.cs" />
     <Compile Include="Schema\ColumnValue.cs" />

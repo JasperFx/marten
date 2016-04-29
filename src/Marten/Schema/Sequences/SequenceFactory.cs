@@ -21,7 +21,7 @@ namespace Marten.Schema.Sequences
 
         public ISequence Hilo(Type documentType, HiloSettings settings)
         {
-            if (!_schema.TableExists(Table))
+            if (!_schema.DbObjects.TableExists(Table))
             {
                 if (_options.AutoCreateSchemaObjects == AutoCreate.None)
                 {

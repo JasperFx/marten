@@ -123,7 +123,7 @@ namespace Marten.Events
 
             _checkedSchema = true;
 
-            var schemaExists = schema.TableExists(Table);
+            var schemaExists = schema.DbObjects.TableExists(Table);
             if (schemaExists) return;
 
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
@@ -133,7 +133,7 @@ namespace Marten.Events
 
             lock (_locker)
             {
-                if (!schema.TableExists(Table))
+                if (!schema.DbObjects.TableExists(Table))
                 {
                     var writer = new StringWriter();
 

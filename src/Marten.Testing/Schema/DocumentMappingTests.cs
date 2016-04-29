@@ -177,7 +177,7 @@ namespace Marten.Testing.Schema
 
                 var storage = schema.StorageFor(typeof (User));
 
-                schema.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
+                schema.DbObjects.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
             }
         }
 
