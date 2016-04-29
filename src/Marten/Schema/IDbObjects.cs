@@ -1,4 +1,6 @@
-﻿namespace Marten.Schema
+﻿using System.Collections.Generic;
+
+namespace Marten.Schema
 {
     public interface IDbObjects
     {
@@ -24,5 +26,21 @@
         FunctionName[] SchemaFunctionNames();
 
         bool TableExists(TableName table);
+
+
+        IEnumerable<IndexDef> IndexesFor(TableName table);
+
+    }
+
+    public class IndexDef
+    {
+        public string Name { get; }
+        public string DDL { get; }
+
+        public IndexDef(string name, string ddl)
+        {
+            Name = name;
+            DDL = ddl;
+        }
     }
 }

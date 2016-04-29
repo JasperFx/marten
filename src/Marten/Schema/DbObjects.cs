@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 
@@ -51,6 +52,11 @@ namespace Marten.Schema
         {
             var schemaTables = SchemaTables();
             return schemaTables.Contains(table);
+        }
+
+        public IEnumerable<IndexDef> IndexesFor(TableName table)
+        {
+            throw new NotImplementedException();
         }
     }
 }
