@@ -56,6 +56,17 @@ namespace Marten.Util
             return type;
         }
 
+        public static string CanonicizeSql(this string sql)
+        {
+            return sql
+                .Replace('\n', ' ')
+                .Replace('\r', ' ')
+                .Replace("  ", " ")
+                .Replace("character varying", "varchar")
+                .Replace("Boolean", "boolean")
+                .Replace("numeric", "decimal").TrimEnd().TrimEnd(';');
+        }
+
         public static NpgsqlDbType ToDbType(Type type)
         {
             if (type.IsNullable()) return ToDbType(type.GetInnerTypeFromNullable());

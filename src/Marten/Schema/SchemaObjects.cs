@@ -1,5 +1,7 @@
 using System;
+using Baseline;
 using Marten.Generation;
+using Marten.Util;
 
 namespace Marten.Schema
 {
@@ -15,7 +17,7 @@ namespace Marten.Schema
             DocumentType = documentType;
             Table = table;
             Indices = indices;
-            UpsertFunction = upsertFunction;
+            UpsertFunction = upsertFunction?.CanonicizeSql();
         }
 
         public bool HasNone()

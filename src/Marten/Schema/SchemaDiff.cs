@@ -1,11 +1,16 @@
 using System;
+using System.IO;
+using Baseline;
 using Marten.Generation;
+using Marten.Util;
 
 namespace Marten.Schema
 {
     public class SchemaDiff
     {
         private readonly DocumentMapping _mapping;
+        private readonly IDocumentSchema _schema;
+        private readonly SchemaObjects _existing;
 
         public SchemaDiff(IDocumentSchema schema, SchemaObjects existing, DocumentMapping mapping)
         {
@@ -18,7 +23,9 @@ namespace Marten.Schema
                 TableDiff = new TableDiff(mapping.ToTable(schema), existing.Table);
             }
 
+            _existing = existing;
             _mapping = mapping;
+            _schema = schema;
         }
 
         public bool HasDifferences()
@@ -31,6 +38,16 @@ namespace Marten.Schema
         {
             // TODO -- need to check indices and functions too
             return TableDiff.CanPatch();
+        }
+
+        public bool HasFunctionChanged()
+        {
+            var writer = new StringWriter();
+            
+            _mapping.ToUpsertFunction().WriteFunctionSql(_schema.StoreOptions.UpsertType, writer);
+            var expected = writer.ToString().CanonicizeSql();
+
+            return !expected.Equals(_existing.UpsertFunction, StringComparison.OrdinalIgnoreCase);
         }
 
 

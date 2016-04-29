@@ -57,28 +57,29 @@ namespace Marten.Schema
             var inserts = ordered.Select(x => $"\"{x.Column}\"").Join(", ");
             var valueList = ordered.Select(x => x.Arg).Join(", ");
 
+            // CREATE OR REPLACE FUNCTION public.mt_upsert_user(arg_internal boolean, arg_user_name varchar, doc jsonb, docid uuid) RETURNS void LANGUAGE plpgsql AS $function$ BEGIN LOCK TABLE public.mt_doc_user IN SHARE ROW EXCLUSIVE MODE;  WITH upsert AS (UPDATE public.mt_doc_user SET \"internal\" = arg_internal, \"user_name\" = arg_user_name, \"data\" = doc WHERE id=docId RETURNING *)   INSERT INTO public.mt_doc_user (\"internal\", \"user_name\", \"data\", \"id\")  SELECT arg_internal, arg_user_name, doc, docId WHERE NOT EXISTS (SELECT * FROM upsert); END; $function$
+
             if (upsertType == PostgresUpsertType.Legacy)
             {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS VOID AS");
-                writer.WriteLine("$$");
+                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS void LANGUAGE plpgsql AS $function$");
                 writer.WriteLine("BEGIN");
                 writer.WriteLine($"LOCK TABLE {_tableName.QualifiedName} IN SHARE ROW EXCLUSIVE MODE;");
                 writer.WriteLine($"  WITH upsert AS (UPDATE {_tableName.QualifiedName} SET {updates} WHERE id=docId RETURNING *) ");
                 writer.WriteLine($"  INSERT INTO {_tableName.QualifiedName} ({inserts})");
                 writer.WriteLine($"  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);");
                 writer.WriteLine("END;");
-                writer.WriteLine("$$ LANGUAGE plpgsql;");
+                writer.WriteLine("$function$;");
+                
             }
             else
             {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS VOID AS");
-                writer.WriteLine("$$");
+                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS void LANGUAGE plpgsql AS $function$");
                 writer.WriteLine("BEGIN");
                 writer.WriteLine($"INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})");
                 writer.WriteLine($"  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}");
                 writer.WriteLine($"  DO UPDATE SET {updates};");
                 writer.WriteLine("END;");
-                writer.WriteLine("$$ LANGUAGE plpgsql;");
+                writer.WriteLine("$function$;");
             }
         }
 

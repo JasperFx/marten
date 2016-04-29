@@ -25,7 +25,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS VOID AS");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS void LANGUAGE plpgsql AS $function$");
             sql.ShouldContain("DO UPDATE SET \"data\" = doc, \"mt_doc_type\" = docType;");
         }
 
@@ -38,7 +38,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS VOID AS");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS void LANGUAGE plpgsql AS $function$");
             sql.ShouldContain("WITH upsert AS (UPDATE public.mt_doc_squad SET \"data\" = doc, \"mt_doc_type\" = docType WHERE id=docId RETURNING *)");
         }
 
@@ -70,7 +70,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS VOID AS");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docId varchar, docType varchar)");
             sql.ShouldContain("DO UPDATE SET \"data\" = doc, \"mt_doc_type\" = docType;");
         }
 
@@ -83,7 +83,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS VOID AS");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docId varchar, docType varchar)");
             sql.ShouldContain("WITH upsert AS (UPDATE other.mt_doc_squad SET \"data\" = doc, \"mt_doc_type\" = docType WHERE id=docId RETURNING *)");
         }
 
