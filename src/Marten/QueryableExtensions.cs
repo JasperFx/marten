@@ -6,8 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Npgsql;
 
-namespace Marten.Util
+namespace Marten
 {
     public static class QueryableExtensions
     {
@@ -242,5 +243,17 @@ namespace Marten.Util
         }
 
         #endregion
+
+        public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType = FetchType.FetchMany)
+        {
+            var q = queryable as MartenQueryable<T>;
+
+            if (q == null)
+            {
+                throw new InvalidOperationException($"{nameof(ToCommand)} is only valid on Marten IQueryable objects");
+            }
+
+            return q.BuildCommand(fetchType);
+        }
     }
 }

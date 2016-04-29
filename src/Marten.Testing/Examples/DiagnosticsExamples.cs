@@ -42,7 +42,7 @@ namespace Marten.Testing.Examples
             // SAMPLE: preview_linq_command
             // store is the active IDocumentStore
             var queryable = store.QuerySession().Query<Trade>().Where(x => x.Value > 2000);
-            var cmd = queryable.ToCommand(FetchType.FetchMany);
+            var cmd = QueryableExtensions.ToCommand<Trade>(queryable, FetchType.FetchMany);
 
             Debug.WriteLine(cmd.CommandText);
             // ENDSAMPLE
@@ -50,7 +50,7 @@ namespace Marten.Testing.Examples
 
             // SAMPLE: preview_linq_explain_plan
             // Explain() is an extension method off of IQueryable<T>
-            var plan = queryable.Explain();
+            var plan = QueryableExtensions.Explain<Trade>(queryable);
             Console.WriteLine($"NodeType: {plan.NodeType}");
             Console.WriteLine($"RelationName: {plan.RelationName}");
             Console.WriteLine($"Alias: {plan.Alias}");
