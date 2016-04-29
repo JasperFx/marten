@@ -39,11 +39,11 @@ namespace Marten.Services
 
         public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class
         {
-            var dict = Cache[typeof(T)];
+            var dictionary = Cache[typeof(T)];
 
-            if (dict.ContainsKey(id))
+            if (dictionary.ContainsKey(id))
             {
-                return dict[id].As<T>();
+                return FromCache<T>(dictionary[id]);
             }
 
             var fetchResult = await result(token).ConfigureAwait(false);
@@ -51,7 +51,7 @@ namespace Marten.Services
 
             var document = fetchResult.Document;
 
-            dict[id] = ToCache(id, typeof(T), document, fetchResult.Json);
+            dictionary[id] = ToCache(id, typeof(T), document, fetchResult.Json);
 
             _listeners.Each(listener => listener.DocumentLoaded(id, document));
 
