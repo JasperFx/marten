@@ -460,7 +460,7 @@ namespace Marten.Schema
             {
                 var expected = ToTable(schema);
 
-                var existing = schema.TableSchema(this);
+                var existing = schema.DbObjects.TableSchema(this);
                 if (existing != null && expected.Equals(existing))
                 {
                     _hasCheckedSchema = true;
@@ -469,7 +469,7 @@ namespace Marten.Schema
 
                 lock (_lock)
                 {
-                    existing = schema.TableSchema(this);
+                    existing = schema.DbObjects.TableSchema(this);
                     if (existing == null || !expected.Equals(existing))
                     {
                         buildOrModifySchemaObjects(existing, expected, autoCreateSchemaObjectsMode, schema, executeSql);

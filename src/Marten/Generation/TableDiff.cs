@@ -1,7 +1,5 @@
 using System;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using Baseline;
 using Marten.Schema;
 
@@ -14,7 +12,8 @@ namespace Marten.Generation
             Missing = expected.Columns.Where(x => actual.Columns.All(_ => _.Name != x.Name)).ToArray();
             Extras = actual.Columns.Where(x => expected.Columns.All(_ => _.Name != x.Name)).ToArray();
             Matched = expected.Columns.Intersect(actual.Columns).ToArray();
-            Different = expected.Columns.Where(x => actual.HasColumn(x.Name) && !x.Equals(actual.Column(x.Name))).ToArray();
+            Different =
+                expected.Columns.Where(x => actual.HasColumn(x.Name) && !x.Equals(actual.Column(x.Name))).ToArray();
         }
 
         public TableColumn[] Different { get; set; }
@@ -25,7 +24,7 @@ namespace Marten.Generation
 
         public TableColumn[] Missing { get; set; }
 
-        public bool Matches => (Missing.Count() + Extras.Count() + Different.Count()) == 0;
+        public bool Matches => Missing.Count() + Extras.Count() + Different.Count() == 0;
 
         public bool CanPatch()
         {

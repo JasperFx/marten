@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using Marten.Generation;
 
 namespace Marten.Schema
 {
@@ -104,6 +105,42 @@ FROM pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid WHERE ns.n
 ";
 
             return _factory.Fetch(sql, r => r.GetString(0), function.Schema, function.Name).FirstOrDefault();
+        }
+
+        public TableDefinition TableSchema(IDocumentMapping documentMapping)
+        {
+            var columns = findTableColumns(documentMapping);
+            if (!columns.Any()) return null;
+
+            var pkName = primaryKeysFor(documentMapping).SingleOrDefault();
+
+            return new TableDefinition(documentMapping.Table, pkName, columns);
+        }
+
+        private IEnumerable<TableColumn> findTableColumns(IDocumentMapping documentMapping)
+        {
+            Func<DbDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));
+
+            var sql =
+                "select column_name, data_type from information_schema.columns where table_schema = ? and table_name = ? order by ordinal_position";
+
+            return _factory.Fetch(sql, transform, documentMapping.Table.Schema, documentMapping.Table.Name);
+        }
+
+        private string[] primaryKeysFor(IDocumentMapping documentMapping)
+        {
+            var sql = @"
+select a.attname, format_type(a.atttypid, a.atttypmod) as data_type
+from pg_index i
+join   pg_attribute a on a.attrelid = i.indrelid and a.attnum = ANY(i.indkey)
+where attrelid = (select pg_class.oid 
+                  from pg_class 
+                  join pg_catalog.pg_namespace n ON n.oid = pg_class.relnamespace
+                  where n.nspname = ? and relname = ?)
+and i.indisprimary; 
+";
+
+            return _factory.GetStringList(sql, documentMapping.Table.Schema, documentMapping.Table.Name).ToArray();
         }
     }
 }

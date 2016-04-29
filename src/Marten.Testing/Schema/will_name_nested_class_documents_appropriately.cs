@@ -5,6 +5,7 @@ using Shouldly;
 using StructureMap;
 using Xunit;
 using System;
+using Marten.Schema;
 
 namespace Marten.Testing.Schema
 {

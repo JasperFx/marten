@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Marten.Events;
-using Marten.Generation;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.Sequences;
@@ -74,20 +73,6 @@ namespace Marten.Schema
         /// </summary>
         /// <returns></returns>
         string ToDDL();
-
-        /// <summary>
-        /// Fetch the actual table model for a document type
-        /// </summary>
-        /// <param name="documentMapping"></param>
-        /// <returns></returns>
-        TableDefinition TableSchema(IDocumentMapping documentMapping);
-
-        /// <summary>
-        /// Fetch the actual table model for a document type
-        /// </summary>
-        /// <param name="documentType"></param>
-        /// <returns></returns>
-        TableDefinition TableSchema(Type documentType);
 
 
         IEnumerable<IDocumentMapping> AllDocumentMaps();

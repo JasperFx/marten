@@ -26,7 +26,7 @@ namespace Marten.Testing.Schema
 
             _storage = _schema.StorageFor(typeof(User));
 
-            theDerivedTable = _schema.TableSchema(theMapping);
+            theDerivedTable = _schema.DbObjects.TableSchema(theMapping);
         }
 
         [Fact]
