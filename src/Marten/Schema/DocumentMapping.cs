@@ -452,16 +452,20 @@ namespace Marten.Schema
             return function;
         }
 
+        public SchemaDiff CreateSchemaDiff(IDocumentSchema schema)
+        {
+            var objects = schema.DbObjects.FindSchemaObjects(this);
+            return new SchemaDiff(schema, objects, this);
+        }
+
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
             if (_hasCheckedSchema) return;
 
-            try
-            {
-                var schemaObjects = schema.DbObjects.FindSchemaObjects(this);
-                var expected = ToTable(schema);
 
-                if (schemaObjects.Table != null && expected.Equals(schemaObjects.Table))
+                var diff = CreateSchemaDiff(schema); 
+
+                if (!diff.HasDifferences())
                 {
                     _hasCheckedSchema = true;
                     return;
@@ -469,22 +473,18 @@ namespace Marten.Schema
 
                 lock (_lock)
                 {
-                    schemaObjects = schema.DbObjects.FindSchemaObjects(this);
-                    if (schemaObjects.Table == null || !expected.Equals(schemaObjects.Table))
-                    {
-                        buildOrModifySchemaObjects(schemaObjects.Table, expected, autoCreateSchemaObjectsMode, schema, executeSql);
-                    }
+                    if (_hasCheckedSchema) return;
+
+                    buildOrModifySchemaObjects(diff, autoCreateSchemaObjectsMode, schema, executeSql);
+
+                    _hasCheckedSchema = true;
                 }
-            }
-            finally
-            {
-                _hasCheckedSchema = true;
-            }
+
 
 
         }
 
-        private void buildOrModifySchemaObjects(TableDefinition existing, TableDefinition expected, AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        private void buildOrModifySchemaObjects(SchemaDiff diff, AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
             {
@@ -495,7 +495,7 @@ namespace Marten.Schema
                 throw new InvalidOperationException(message);
             }
 
-            if (existing == null)
+            if (diff.AllMissing)
             {
                 rebuildTableAndUpsertFunction(schema, executeSql);
                 return;
@@ -506,10 +506,9 @@ namespace Marten.Schema
                 throw new InvalidOperationException($"The table for document type {DocumentType.FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{nameof(AutoCreate.CreateOnly)}'");
             }
 
-            var diff = new TableDiff(expected, existing);
-            if (diff.CanPatch())
+            if (diff.TableDiff.CanPatch())
             {
-                diff.CreatePatch(this, executeSql);
+                diff.TableDiff.CreatePatch(this, executeSql);
             }
             else if (autoCreateSchemaObjectsMode == AutoCreate.All)
             {
