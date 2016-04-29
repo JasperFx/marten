@@ -2,7 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Reflection;
+using Baseline;
 using Marten.Generation;
+using Marten.Services;
+using Marten.Util;
+using NpgsqlTypes;
 
 namespace Marten.Schema
 {
@@ -10,6 +15,13 @@ namespace Marten.Schema
     {
         private readonly IConnectionFactory _factory;
         private readonly DocumentSchema _schema;
+        private static readonly string SchemaObjectsSQL;
+        static DbObjects()
+        {
+            SchemaObjectsSQL =
+                Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(DbObjects), "SchemaObjects.sql")
+                    .ReadAllText();
+        }
 
         public DbObjects(IConnectionFactory factory, DocumentSchema schema)
         {
@@ -141,6 +153,57 @@ and i.indisprimary;
 ";
 
             return _factory.GetStringList(sql, documentMapping.Table.Schema, documentMapping.Table.Name).ToArray();
+        }
+
+
+        // TODO -- Really need to add some QueryHandlers for all this stuff to eliminate the duplication
+        public SchemaObjects FindSchemaObjects(DocumentMapping mapping)
+        {
+
+            using (var connection = new ManagedConnection(_factory))
+            {
+                return connection.Execute(cmd =>
+                {
+                    cmd.CommandText = SchemaObjectsSQL;
+                    cmd.AddParameter("schema", mapping.Table.Schema);
+                    cmd.AddParameter("table_name", mapping.Table.Name);
+                    cmd.AddParameter("function", mapping.UpsertFunction.Name);
+                    cmd.AddParameter("qualified_name", mapping.Table.OwnerName);
+
+                    var reader = cmd.ExecuteReader();
+
+                    var columns = new List<TableColumn>();
+                    while (reader.Read())
+                    {
+                        var column = new TableColumn(reader.GetString(0), reader.GetString(1));
+                        columns.Add(column);
+                    }
+
+                    var pks = new List<string>();
+                    reader.NextResult();
+                    while (reader.Read())
+                    {
+                        pks.Add(reader.GetString(0));
+                    }
+
+                    reader.NextResult();
+                    var upsertDefinition = reader.Read() ? reader.GetString(0) : null;
+
+                    var indices = new List<IndexDef>();
+                    reader.NextResult();
+                    while (reader.Read())
+                    {
+                        var index = new IndexDef(mapping.Table, reader.GetString(3),
+                            reader.GetString(4));
+
+                        indices.Add(index);
+                    }
+
+                    var table = columns.Any() ? new TableDefinition(mapping.Table, pks.FirstOrDefault(), columns) : null;
+
+                    return new SchemaObjects(mapping.DocumentType, table, indices.ToArray(), upsertDefinition);
+                });
+            }
         }
     }
 }

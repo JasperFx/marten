@@ -3,6 +3,7 @@ using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -64,6 +65,57 @@ namespace Marten.Testing.Schema
             var ddl = store1.Schema.DbObjects.DefinitionForFunction(upsert);
 
             ddl.ShouldContain("mt_doc_user");
+        }
+
+        [Fact]
+        public void can_fetch_schema_objects_for_a_document_type_in_another_schema()
+        {
+            var store1 = TestingDocumentStore.For(_ =>
+            {
+                _.DatabaseSchemaName = "other";
+                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+            });
+
+            store1.Schema.EnsureStorageExists(typeof(User));
+
+
+            var objects = store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
+
+
+
+            objects.Table.Columns.OrderBy(x => x.Name).Select(x => x.Name)
+                .ShouldHaveTheSameElementsAs("data", "id", "internal", "user_name");
+
+            objects.UpsertFunction.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
+
+
+            objects.Indices.OrderBy(x => x.Name).Select(x => x.Name)
+                .ShouldHaveTheSameElementsAs("mt_doc_user_idx_internal", "mt_doc_user_idx_user_name");
+        }
+
+        [Fact]
+        public void can_fetch_schema_objects_for_a_document_type_in_the_default_schema()
+        {
+            var store1 = TestingDocumentStore.For(_ =>
+            {
+                _.DatabaseSchemaName = "public";
+                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+            });
+
+            store1.Schema.EnsureStorageExists(typeof(User));
+
+
+            var objects = store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
+
+
+            objects.Table.Columns.OrderBy(x => x.Name).Select(x => x.Name)
+                .ShouldHaveTheSameElementsAs("data", "id", "internal", "user_name");
+
+            objects.UpsertFunction.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
+
+
+            objects.Indices.OrderBy(x => x.Name).Select(x => x.Name)
+                .ShouldHaveTheSameElementsAs("mt_doc_user_idx_internal", "mt_doc_user_idx_user_name");
         }
     }
 }

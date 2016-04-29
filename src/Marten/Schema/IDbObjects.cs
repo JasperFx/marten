@@ -43,5 +43,7 @@ namespace Marten.Schema
         /// <param name="documentMapping"></param>
         /// <returns></returns>
         TableDefinition TableSchema(IDocumentMapping documentMapping);
+
+        SchemaObjects FindSchemaObjects(DocumentMapping mapping);
     }
 }

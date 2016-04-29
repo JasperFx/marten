@@ -155,6 +155,7 @@
     <Compile Include="Schema\IResolver.cs" />
     <Compile Include="Schema\MartenSchemaException.cs" />
     <Compile Include="Schema\Resolver.cs" />
+    <Compile Include="Schema\SchemaObjects.cs" />
     <Compile Include="Schema\Sequences\IdentityKeyGeneration.cs" />
     <Compile Include="Schema\Sequences\NoOpIdGeneration.cs" />
     <Compile Include="Schema\SubClassMapping.cs" />
@@ -290,6 +291,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Schema\SQL\mt_apply_aggregation.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Schema\SchemaObjects.sql" />
   </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
