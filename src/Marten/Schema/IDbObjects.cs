@@ -30,5 +30,9 @@ namespace Marten.Schema
 
         IEnumerable<IndexDef> AllIndexes();
 
+
+        IEnumerable<IndexDef> IndexesFor(TableName table);
+
+        string DefinitionForFunction(FunctionName function);
     }
 }

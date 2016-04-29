@@ -90,5 +90,20 @@ WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system tabl
 
             return _factory.Fetch(sql, transform);
         }
+
+        public IEnumerable<IndexDef> IndexesFor(TableName table)
+        {
+            return AllIndexes().Where(x => x.Table.Equals(table)).ToArray();
+        }
+
+        public string DefinitionForFunction(FunctionName function)
+        {
+            var sql = @"
+SELECT pg_get_functiondef(pg_proc.oid) 
+FROM pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid WHERE ns.nspname = ? and proname = ?;
+";
+
+            return _factory.Fetch(sql, r => r.GetString(0), function.Schema, function.Name).FirstOrDefault();
+        }
     }
 }

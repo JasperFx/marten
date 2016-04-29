@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using Baseline;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Xunit;
 using Xunit.Abstractions;
@@ -37,8 +39,31 @@ namespace Marten.Testing.Schema
 
             var indices = store2.Schema.DbObjects.AllIndexes();
 
-            indices.Each(x => _output.WriteLine(x.ToString()));
+            indices.Any(x => Equals(x.Table, store1.Schema.MappingFor(typeof(User)).Table))
+                .ShouldBeTrue();
 
+            indices.Any(x => Equals(x.Table, store2.Schema.MappingFor(typeof(User)).Table))
+                .ShouldBeTrue();
+
+
+        }
+
+        [Fact]
+        public void can_fetch_the_function_ddl()
+        {
+            var store1 = TestingDocumentStore.For(_ =>
+            {
+                _.DatabaseSchemaName = "other";
+                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+            });
+
+            store1.Schema.EnsureStorageExists(typeof(User));
+
+            var upsert = store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>().UpsertFunction;
+
+            var ddl = store1.Schema.DbObjects.DefinitionForFunction(upsert);
+
+            ddl.ShouldContain("mt_doc_user");
         }
     }
 }
