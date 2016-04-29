@@ -458,10 +458,10 @@ namespace Marten.Schema
 
             try
             {
+                var schemaObjects = schema.DbObjects.FindSchemaObjects(this);
                 var expected = ToTable(schema);
 
-                var existing = schema.DbObjects.TableSchema(this);
-                if (existing != null && expected.Equals(existing))
+                if (schemaObjects.Table != null && expected.Equals(schemaObjects.Table))
                 {
                     _hasCheckedSchema = true;
                     return;
@@ -469,10 +469,10 @@ namespace Marten.Schema
 
                 lock (_lock)
                 {
-                    existing = schema.DbObjects.TableSchema(this);
-                    if (existing == null || !expected.Equals(existing))
+                    schemaObjects = schema.DbObjects.FindSchemaObjects(this);
+                    if (schemaObjects.Table == null || !expected.Equals(schemaObjects.Table))
                     {
-                        buildOrModifySchemaObjects(existing, expected, autoCreateSchemaObjectsMode, schema, executeSql);
+                        buildOrModifySchemaObjects(schemaObjects.Table, expected, autoCreateSchemaObjectsMode, schema, executeSql);
                     }
                 }
             }
