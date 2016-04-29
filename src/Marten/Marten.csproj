@@ -136,6 +136,7 @@
     <Compile Include="Schema\DbObjects.cs" />
     <Compile Include="Schema\IDbObjects.cs" />
     <Compile Include="Schema\IdField.cs" />
+    <Compile Include="Schema\IndexDef.cs" />
     <Compile Include="Schema\QualifiedDatabaseName.cs" />
     <Compile Include="Schema\ColumnValue.cs" />
     <Compile Include="Schema\CombGuidIdGeneration.cs" />

@@ -19,5 +19,14 @@ namespace Marten.Testing.Schema
             var table = new TableName("other", "mt_doc_user");
             table.OwnerName.ShouldBe("other.mt_doc_user");
         }
+
+        [Fact]
+        public void can_parse_without_schema()
+        {
+            var table = TableName.Parse("mt_doc_user");
+            table.Name.ShouldBe("mt_doc_user");
+            table.Schema.ShouldBe("public");
+            table.QualifiedName.ShouldBe("public.mt_doc_user");
+        }
     }
 }

@@ -75,6 +75,11 @@ namespace Marten.Schema
         protected static string[] ParseQualifiedName(string qualifiedName)
         {
             var parts = qualifiedName.Split('.');
+            if (parts.Length == 1)
+            {
+                return new string[] {StoreOptions.DefaultDatabaseSchemaName, qualifiedName};
+            }
+
             if (parts.Length != 2)
             {
                 throw new InvalidOperationException(

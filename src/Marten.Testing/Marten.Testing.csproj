@@ -177,6 +177,7 @@
     <Compile Include="Linq\query_with_enums_Tests.cs" />
     <Compile Include="Linq\query_with_nested_boolean_logic_Tests.cs" />
     <Compile Include="Linq\query_with_nullable_types_Tests.cs" />
+    <Compile Include="Schema\DbObjectsTests.cs" />
     <Compile Include="Schema\TableNameTests.cs" />
     <Compile Include="Services\SelectTransformerTests.cs" />
     <Compile Include="Linq\select_transformations_Tests.cs" />

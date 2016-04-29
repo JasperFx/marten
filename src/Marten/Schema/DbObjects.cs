@@ -54,9 +54,41 @@ namespace Marten.Schema
             return schemaTables.Contains(table);
         }
 
-        public IEnumerable<IndexDef> IndexesFor(TableName table)
+        public IEnumerable<IndexDef> AllIndexes()
         {
-            throw new NotImplementedException();
+            var sql = @"
+SELECT
+  U.usename                AS user_name,
+  ns.nspname               AS schema_name,
+  pg_catalog.textin(pg_catalog.regclassout(idx.indrelid :: REGCLASS)) AS table_name,
+  i.relname                AS index_name,
+  pg_get_indexdef(i.oid) as ddl,
+  idx.indisunique          AS is_unique,
+  idx.indisprimary         AS is_primary,
+  am.amname                AS index_type,
+  idx.indkey,
+       ARRAY(
+           SELECT pg_get_indexdef(idx.indexrelid, k + 1, TRUE)
+           FROM
+             generate_subscripts(idx.indkey, 1) AS k
+           ORDER BY k
+       ) AS index_keys,
+  (idx.indexprs IS NOT NULL) OR (idx.indkey::int[] @> array[0]) AS is_functional,
+  idx.indpred IS NOT NULL AS is_partial
+FROM pg_index AS idx
+  JOIN pg_class AS i
+    ON i.oid = idx.indexrelid
+  JOIN pg_am AS am
+    ON i.relam = am.oid
+  JOIN pg_namespace AS NS ON i.relnamespace = NS.OID
+  JOIN pg_user AS U ON i.relowner = U.usesysid
+WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system table
+
+";
+
+            Func<DbDataReader, IndexDef> transform = r => new IndexDef(TableName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
+
+            return _factory.Fetch(sql, transform);
         }
     }
 }

@@ -28,19 +28,7 @@ namespace Marten.Schema
         bool TableExists(TableName table);
 
 
-        IEnumerable<IndexDef> IndexesFor(TableName table);
+        IEnumerable<IndexDef> AllIndexes();
 
-    }
-
-    public class IndexDef
-    {
-        public string Name { get; }
-        public string DDL { get; }
-
-        public IndexDef(string name, string ddl)
-        {
-            Name = name;
-            DDL = ddl;
-        }
     }
 }
