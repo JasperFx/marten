@@ -158,8 +158,6 @@ namespace Marten.Events
 
         private void writeBasicTables(IDocumentSchema schema, StringWriter writer)
         {
-            EnsureDatabaseSchema.WriteSql(DatabaseSchemaName, writer);
-
             writer.WriteSql(DatabaseSchemaName, "mt_stream");
             writer.WriteSql(DatabaseSchemaName, "mt_initialize_projections");
             writer.WriteSql(DatabaseSchemaName, "mt_apply_transform");

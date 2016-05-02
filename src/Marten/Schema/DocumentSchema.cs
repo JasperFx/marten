@@ -115,6 +115,19 @@ namespace Marten.Schema
         public IEventStoreConfiguration Events => StoreOptions.Events;
 
 
+
+        public string[] AllSchemaNames()
+        {
+            var schemas =
+                AllDocumentMaps().OfType<DocumentMapping>().Select(x => x.DatabaseSchemaName).Distinct().ToList();
+
+            schemas.Fill(StoreOptions.DatabaseSchemaName);
+            schemas.Fill(StoreOptions.Events.DatabaseSchemaName);
+
+            var schemaNames = schemas.Select(x => x.ToLowerInvariant()).ToArray();
+            return schemaNames;
+        }
+
         public ISequences Sequences { get; }
 
         public void WriteDDL(string filename)
@@ -129,6 +142,8 @@ namespace Marten.Schema
 
             system.DeleteDirectory(directory);
             system.CreateDirectory(directory);
+
+            WriteDatabaseSchemaGenerationScript(directory, system);
 
             _mappings.Values.Where(x => !(x is SubClassMapping)).Each(mapping =>
             {
@@ -153,11 +168,31 @@ namespace Marten.Schema
             }
         }
 
+
+        private void WriteDatabaseSchemaGenerationScript(string directory, FileSystem system)
+        {
+            var allSchemaNames = AllSchemaNames();
+            var script = DatabaseSchemaGenerator.GenerateScript(allSchemaNames);
+
+            if (script.IsNotEmpty())
+            {
+                var filename = directory.AppendPath("database_schemas.sql");
+                system.WriteStringToFile(filename, script);
+            }
+        }
+
+        private string getHiloScript()
+        {
+            return SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo");
+        }
+
+
         public string ToDDL()
         {
             var writer = new StringWriter();
 
-            EnsureDatabaseSchema.WriteSql(StoreOptions.DatabaseSchemaName, writer);
+            var allSchemaNames = AllSchemaNames();
+            DatabaseSchemaGenerator.WriteSql(allSchemaNames, writer);
 
             StoreOptions.AllDocumentMappings.Each(x => x.WriteSchemaObjects(this, writer));
 
@@ -240,28 +275,6 @@ namespace Marten.Schema
             }
         }
 
-
-        internal string[] AllSchemaNames()
-        {
-            var schemas =
-                AllDocumentMaps().OfType<DocumentMapping>().Select(x => x.DatabaseSchemaName).Distinct().ToList();
-
-            schemas.Fill(StoreOptions.DatabaseSchemaName);
-            schemas.Fill(StoreOptions.Events.DatabaseSchemaName);
-
-            var schemaNames = schemas.Select(x => x.ToLowerInvariant()).ToArray();
-            return schemaNames;
-        }
-
-        private string getHiloScript()
-        {
-            var writer = new StringWriter();
-
-            EnsureDatabaseSchema.WriteSql(StoreOptions.DatabaseSchemaName, writer);
-            writer.WriteLine(SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo"));
-
-            return writer.ToString();
-        }
 
 
 
