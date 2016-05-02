@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Baseline;
 using Marten.Generation;
 using Marten.Util;
@@ -20,23 +22,38 @@ namespace Marten.Schema
             }
             else
             {
-                TableDiff = new TableDiff(mapping.ToTable(schema), existing.Table);
+                var expectedTable = mapping.ToTable(schema);
+                TableDiff = new TableDiff(expectedTable, existing.Table);
+
+                // TODO -- drop obsolete indices
+                // START HERE.
+
+                var missingIndices = mapping.Indexes
+                    .Where(x => !existing.ActualIndices.ContainsKey(x.IndexName))
+                    .Select(x => x.ToDDL());
+
+                IndexChanges.AddRange(missingIndices);
+
             }
 
             _existing = existing;
             _mapping = mapping;
             _schema = schema;
+
+
         }
 
         public bool HasDifferences()
         {
-            // TODO -- need to check indices and functions too
-            return AllMissing || !TableDiff.Matches || HasFunctionChanged();
+            if (AllMissing) return true;
+            if (!TableDiff.Matches) return true;
+            if (HasFunctionChanged()) return true;
+
+            return IndexChanges.Any();
         }
 
         public bool CanPatch()
         {
-            // TODO -- need to check indices and functions too
             return TableDiff.CanPatch();
         }
 
@@ -63,17 +80,23 @@ namespace Marten.Schema
 
         public bool AllMissing { get; }
 
+        public readonly IList<string> IndexChanges = new List<string>();
+
         public void CreatePatch(Action<string> executeSql)
         {
             TableDiff.CreatePatch(_mapping, executeSql);
 
             if (HasFunctionChanged())
             {
+                _existing.FunctionDropStatements.Each(executeSql);
+
                 // TODO -- need to drop the existing function somehow?
                 executeSql(expectedUpsertFunction());
             }
+
+            IndexChanges.Each(executeSql);
         }
 
-
+        
     }
 }

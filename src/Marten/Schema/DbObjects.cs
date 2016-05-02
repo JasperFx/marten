@@ -67,7 +67,7 @@ namespace Marten.Schema
             return schemaTables.Contains(table);
         }
 
-        public IEnumerable<IndexDef> AllIndexes()
+        public IEnumerable<ActualIndex> AllIndexes()
         {
             var sql = @"
 SELECT
@@ -99,12 +99,12 @@ WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system tabl
 
 ";
 
-            Func<DbDataReader, IndexDef> transform = r => new IndexDef(TableName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
+            Func<DbDataReader, ActualIndex> transform = r => new ActualIndex(TableName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
 
             return _factory.Fetch(sql, transform);
         }
 
-        public IEnumerable<IndexDef> IndexesFor(TableName table)
+        public IEnumerable<ActualIndex> IndexesFor(TableName table)
         {
             return AllIndexes().Where(x => x.Table.Equals(table)).ToArray();
         }
@@ -189,11 +189,11 @@ and i.indisprimary;
                     reader.NextResult();
                     var upsertDefinition = reader.Read() ? reader.GetString(0) : null;
 
-                    var indices = new List<IndexDef>();
+                    var indices = new List<ActualIndex>();
                     reader.NextResult();
                     while (reader.Read())
                     {
-                        var index = new IndexDef(mapping.Table, reader.GetString(3),
+                        var index = new ActualIndex(mapping.Table, reader.GetString(3),
                             reader.GetString(4));
 
                         indices.Add(index);
@@ -201,7 +201,14 @@ and i.indisprimary;
 
                     var table = columns.Any() ? new TableDefinition(mapping.Table, pks.FirstOrDefault(), columns) : null;
 
-                    return new SchemaObjects(mapping.DocumentType, table, indices.ToArray(), upsertDefinition);
+                    reader.NextResult();
+                    var drops = new List<string>();
+                    while (reader.Read())
+                    {
+                        drops.Add(reader.GetString(0));
+                    }
+
+                    return new SchemaObjects(mapping.DocumentType, table, indices.ToArray(), upsertDefinition, drops);
                 });
             }
         }

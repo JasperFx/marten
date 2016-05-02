@@ -70,6 +70,24 @@ namespace Marten.Schema
 
             return index + ";";
         }
+
+        public bool Matches(ActualIndex index)
+        {
+            if (!index.Name.EqualsIgnoreCase(IndexName)) return false;
+
+            var actual = index.DDL;
+            if (Method == IndexMethod.btree)
+            {
+                actual = actual.Replace("USING btree", "");
+            }
+
+            _columns.Each(col =>
+            {
+                actual = actual.Replace($"({col})", $"(\"{col}\")");
+            });
+
+            return ToDDL().EqualsIgnoreCase(actual);
+        }
     }
 
     public enum IndexMethod

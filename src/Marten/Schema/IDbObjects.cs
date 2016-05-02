@@ -29,10 +29,10 @@ namespace Marten.Schema
         bool TableExists(TableName table);
 
 
-        IEnumerable<IndexDef> AllIndexes();
+        IEnumerable<ActualIndex> AllIndexes();
 
 
-        IEnumerable<IndexDef> IndexesFor(TableName table);
+        IEnumerable<ActualIndex> IndexesFor(TableName table);
 
         string DefinitionForFunction(FunctionName function);
 

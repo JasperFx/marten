@@ -67,6 +67,7 @@ namespace Marten.Testing.Schema
             ddl.ShouldContain("mt_doc_user");
         }
 
+
         [Fact]
         public void can_fetch_schema_objects_for_a_document_type_in_another_schema()
         {
@@ -89,7 +90,7 @@ namespace Marten.Testing.Schema
             objects.UpsertFunction.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
 
 
-            objects.Indices.OrderBy(x => x.Name).Select(x => x.Name)
+            objects.ActualIndices.Select(x => x.Value).OrderBy(x => x.Name).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("mt_doc_user_idx_internal", "mt_doc_user_idx_user_name");
         }
 
@@ -114,7 +115,7 @@ namespace Marten.Testing.Schema
             objects.UpsertFunction.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
 
 
-            objects.Indices.OrderBy(x => x.Name).Select(x => x.Name)
+            objects.ActualIndices.Select(x => x.Value).OrderBy(x => x.Name).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("mt_doc_user_idx_internal", "mt_doc_user_idx_user_name");
         }
 
@@ -132,7 +133,7 @@ namespace Marten.Testing.Schema
 
             objects.HasNone().ShouldBeTrue();
             objects.Table.ShouldBeNull();
-            objects.Indices.Any().ShouldBeFalse();
+            objects.ActualIndices.Any().ShouldBeFalse();
             objects.UpsertFunction.ShouldBeNull();
 
         }

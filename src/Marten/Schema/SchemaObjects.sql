@@ -40,3 +40,13 @@ FROM pg_index AS idx
   JOIN pg_namespace AS NS ON i.relnamespace = NS.OID
   JOIN pg_user AS U ON i.relowner = U.usesysid
 WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%' AND pg_catalog.textin(pg_catalog.regclassout(idx.indrelid :: REGCLASS)) = :qualified_name; -- Excluding system table
+
+SELECT format('DROP FUNCTION %s.%s(%s);'
+             ,n.nspname
+             ,p.proname
+             ,pg_get_function_identity_arguments(p.oid))
+FROM   pg_proc p
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
+WHERE  p.proname = :function
+AND    n.nspname = :schema;
+
