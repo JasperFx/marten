@@ -202,6 +202,8 @@ namespace Marten.Testing.Schema
             var fileSystem = new FileSystem();
             var files = fileSystem.FindFiles("allsql", FileSet.Shallow("*.sql")).ToArray();
 
+            files.ShouldNotContain("database_schemas.sql");
+
             files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x)
                 .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "user.sql");
 

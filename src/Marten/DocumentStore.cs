@@ -83,24 +83,7 @@ namespace Marten
 
             EventStore = new EventStoreAdmin(Schema, _connectionFactory, _options, _serializer);
 
-            if (Schema.Events.IsActive && options.AutoCreateSchemaObjects != AutoCreate.None)
-            {
-                EventStore.InitializeEventStoreInDatabase();
-            }
-
-            // TODO -- don't like the spread of responsibilities here
-            if (_options.AutoCreateSchemaObjects != AutoCreate.None &&
-                _options.DatabaseSchemaName != StoreOptions.DefaultDatabaseSchemaName)
-            {
-                var writer = new StringWriter();
-                EnsureDatabaseSchema.WriteSql(_options.DatabaseSchemaName, writer);
-                var sql = writer.ToString();
-
-                using (var runner = Advanced.OpenConnection())
-                {
-                    runner.Execute(sql);
-                }
-            }
+            CreateDatabaseObjects();
         }
 
         private readonly StoreOptions _options;
@@ -116,6 +99,19 @@ namespace Marten
         public IDocumentSchema Schema { get; }
         public AdvancedOptions Advanced { get; }
 
+        private void CreateDatabaseObjects()
+        {
+            if (_options.AutoCreateSchemaObjects == AutoCreate.None) return;
+
+            var allSchemaNames = Schema.AllSchemaNames();
+            var generator = new DatabaseSchemaGenerator(Advanced);
+            generator.Generate(allSchemaNames);
+
+            if (Schema.Events.IsActive)
+            {
+                EventStore.InitializeEventStoreInDatabase();
+            }
+        }
 
         public void BulkInsert<T>(T[] documents, int batchSize = 1000)
         {

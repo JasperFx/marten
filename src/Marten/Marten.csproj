@@ -160,7 +160,7 @@
     <Compile Include="Schema\Sequences\IdentityKeyGeneration.cs" />
     <Compile Include="Schema\Sequences\NoOpIdGeneration.cs" />
     <Compile Include="Schema\SubClassMapping.cs" />
-    <Compile Include="Schema\EnsureDatabaseSchema.cs" />
+    <Compile Include="Schema\DatabaseSchemaGenerator.cs" />
     <Compile Include="Schema\UpsertFunction.cs" />
     <Compile Include="Services\BatchCommand.cs" />
     <Compile Include="Services\BatchQuerying\BatchedQuery.cs" />
