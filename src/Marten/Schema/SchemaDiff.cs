@@ -25,14 +25,23 @@ namespace Marten.Schema
                 var expectedTable = mapping.ToTable(schema);
                 TableDiff = new TableDiff(expectedTable, existing.Table);
 
-                // TODO -- drop obsolete indices
-                // START HERE.
+                // TODO -- drop obsolete indices?
 
-                var missingIndices = mapping.Indexes
-                    .Where(x => !existing.ActualIndices.ContainsKey(x.IndexName))
-                    .Select(x => x.ToDDL());
-
-                IndexChanges.AddRange(missingIndices);
+                mapping.Indexes.Each(index =>
+                {
+                    if (existing.ActualIndices.ContainsKey(index.IndexName))
+                    {
+                        var actualIndex = existing.ActualIndices[index.IndexName];
+                        if (!index.Matches(actualIndex))
+                        {
+                            IndexChanges.Add($"drop index {expectedTable.Table.Schema}.{index.IndexName};{index.ToDDL()}");
+                        }
+                    }
+                    else
+                    {
+                        IndexChanges.Add(index.ToDDL());
+                    }
+                });
 
             }
 

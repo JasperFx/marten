@@ -86,6 +86,13 @@ namespace Marten.Schema
                 actual = actual.Replace($"({col})", $"(\"{col}\")");
             });
 
+            if (!actual.Contains(_parent.Table.QualifiedName))
+            {
+                actual = actual.Replace("ON " + _parent.Table.Name, "ON " + _parent.Table.QualifiedName);
+            }
+
+            actual = actual.Replace("  ", " ") + ";";
+
             return ToDDL().EqualsIgnoreCase(actual);
         }
     }

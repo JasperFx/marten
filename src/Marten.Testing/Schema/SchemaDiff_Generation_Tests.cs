@@ -368,5 +368,46 @@ namespace Marten.Testing.Schema
                 .ShouldHaveTheSameElementsAs("mt_doc_user_idx_internal", "mt_doc_user_idx_user_name");
 
         }
+
+
+        [Fact]
+        public void will_write_changed_indexes()
+        {
+            var store1 = DocumentStore.For(_ =>
+            {
+                _.UpsertType = PostgresUpsertType.Standard;
+                _.Connection(ConnectionSource.ConnectionString);
+                _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
+                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+            });
+
+            store1.Advanced.Clean.CompletelyRemoveAll();
+            store1.Schema.EnsureStorageExists(typeof(User));
+
+
+
+
+            // Don't use TestingDocumentStore because it cleans everything upfront.
+            var store2 = DocumentStore.For(_ =>
+            {
+                _.UpsertType = PostgresUpsertType.Standard;
+                _.Connection(ConnectionSource.ConnectionString);
+                _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
+                _.Schema.For<User>().Searchable(x => x.UserName)
+                    .Searchable(x => x.Internal, configure: i => i.Method = IndexMethod.hash);
+            });
+
+            var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
+            var schemaDiff = mapping.CreateSchemaDiff(store2.Schema);
+            schemaDiff.IndexChanges.Count.ShouldBe(1);
+
+            store2.Schema.EnsureStorageExists(typeof(User));
+
+            var schemaDiff2 = mapping.CreateSchemaDiff(store2.Schema);
+            schemaDiff2.HasDifferences().ShouldBeFalse();
+
+            schemaDiff2.IndexChanges.Any().ShouldBeFalse();
+
+        }
     }
 }
