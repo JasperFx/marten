@@ -27,7 +27,7 @@ namespace Marten.Services
 
         public IEnumerable<IEvent> GetEvents()
         {
-            return Updated
+            return Updated.Concat(Inserted)
                 .OfType<EventStream>()
                 .SelectMany(s => s.Events);
         }
