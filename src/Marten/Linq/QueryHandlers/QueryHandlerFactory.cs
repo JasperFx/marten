@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Baseline;
 using Marten.Schema;
 using Marten.Services.Includes;
@@ -165,8 +166,15 @@ namespace Marten.Linq.QueryHandlers
             var model = MartenQueryParser.TransformQueryFlyweight.GetParsedQuery(invocation);
             _schema.EnsureStorageExists(typeof(TDoc));
 
+            var includeJoins = new IIncludeJoin[0];
+
+            if (model.HasOperator<IncludeResultOperator>())
+            {
+                includeJoins = buildIncludeJoins<TDoc, TOut>(model);
+            }
+
             // TODO -- someday we'll add Include()'s to compiled queries
-            var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, new IIncludeJoin[0]);
+            var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins);
             var cmd = new NpgsqlCommand();
             handler.ConfigureCommand(cmd);
 
@@ -176,6 +184,48 @@ namespace Marten.Linq.QueryHandlers
                 ParameterSetters = setters,
                 Handler = handler
             };
+        }
+
+        private IIncludeJoin[] buildIncludeJoins<TDoc, TOut>(QueryModel model)
+        {
+            var includeOperator = model.FindOperators<IncludeResultOperator>().First();
+            var includeType = includeOperator.Callback.Parameters[0].Type;
+            var method = GetType().GetMethod(nameof(GetJoin), BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(typeof (TDoc), includeType);
+            var result = (IIncludeJoin) method.Invoke(this, new[] {model});
+            return new[] { result };
+        }
+
+        private static Action<TInclude> GetCallback<TInclude>(PropertyInfo property, IncludeResultOperator @operator)
+        {
+            var target = Expression.Parameter(property.ReflectedType, "target");
+            var method = property.GetGetMethod();
+
+            var callGetMethod = Expression.Call(target, method);
+
+            var lambda = Expression.Lambda<Func<IncludeResultOperator, LambdaExpression>>(callGetMethod, target);
+
+            var compiledLambda = lambda.Compile();
+            var callback = compiledLambda.Invoke(@operator);
+            return (Action<TInclude>)callback.Compile();
+        }
+
+        private IIncludeJoin GetJoin<TDoc, TInclude>(QueryModel model) where TInclude : class
+        {
+            var includeOperator = model.FindOperators<IncludeResultOperator>().First();
+            var idSource = includeOperator.IdSource as Expression<Func<TDoc, object>>;
+            var joinType = (JoinType)includeOperator.JoinType.Value;
+
+            var visitor = new FindMembers();
+            visitor.Visit(idSource);
+            var members = visitor.Members.ToArray();
+
+            var mapping = _schema.MappingFor(typeof(TDoc));
+            var includeType = includeOperator.Callback.Parameters[0].Type;
+            var included = _schema.MappingFor(includeType);
+
+            var property = typeof (IncludeResultOperator).GetProperty("Callback");
+
+            return mapping.JoinToInclude(joinType, included, members, GetCallback<TInclude>(property, includeOperator));
         }
 
         private static IList<IDbParameterSetter> findSetters(Type queryType, Expression expression)

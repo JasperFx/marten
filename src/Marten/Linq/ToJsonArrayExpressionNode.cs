@@ -9,7 +9,7 @@ namespace Marten.Linq
     public class ToJsonArrayExpressionNode : ResultOperatorExpressionNodeBase
     {
         public static MethodInfo[] SupportedMethods =
-            typeof (JsonExtensions).GetMethods().Where(m => m.Name == nameof(JsonExtensions.ToJsonArray)).ToArray();
+            typeof (CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.ToJsonArray)).ToArray();
 
         public ToJsonArrayExpressionNode(
             MethodCallExpressionParseInfo parseInfo, LambdaExpression parameter)
