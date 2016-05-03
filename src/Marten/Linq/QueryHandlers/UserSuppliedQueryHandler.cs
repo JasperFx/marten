@@ -53,11 +53,11 @@ namespace Marten.Linq.QueryHandlers
             return selector.Read(reader, map);
         }
 
-        public async Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             var selector = new DeserializeSelector<T>(_serializer);
 
-            return await selector.ReadAsync(reader, map, token).ConfigureAwait(false);
+            return selector.ReadAsync(reader, map, token);
         }
     }
 }

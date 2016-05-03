@@ -42,8 +42,8 @@ namespace Marten.Events
 
         public async Task<StreamState> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            return await reader.ReadAsync(token) 
-                ? await ResolveAsync(reader, map, token) 
+            return await reader.ReadAsync(token).ConfigureAwait(false) 
+                ? await ResolveAsync(reader, map, token).ConfigureAwait(false) 
                 : null;
         }
 

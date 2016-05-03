@@ -21,9 +21,9 @@ namespace Marten.Linq
             return reader.GetString(0);
         }
 
-        public async Task<string> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<string> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            return await reader.GetFieldValueAsync<string>(0, token);
+            return reader.GetFieldValueAsync<string>(0, token);
         }
     }
 }

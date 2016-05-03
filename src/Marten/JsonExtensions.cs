@@ -40,9 +40,9 @@ namespace Marten
             return $"[{queryable.Select(x => x.AsJson()).ToArray().Join(",")}]";
         }
 
-        public async static Task<string> ToJsonArrayAsync<T>(this IQueryable<T> queryable)
+        public static async Task<string> ToJsonArrayAsync<T>(this IQueryable<T> queryable)
         {
-            var jsonStrings = await queryable.Select(x=>x.AsJson()).ToListAsync();
+            var jsonStrings = await queryable.Select(x=>x.AsJson()).ToListAsync().ConfigureAwait(false);
             return $"[{jsonStrings.Join(",")}]";
         }
     }

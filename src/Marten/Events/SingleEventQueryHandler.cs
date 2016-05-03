@@ -42,7 +42,7 @@ namespace Marten.Events
         public async Task<IEvent> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             return await reader.ReadAsync(token).ConfigureAwait(false) 
-                ? await _selector.ResolveAsync(reader, map, token) 
+                ? await _selector.ResolveAsync(reader, map, token).ConfigureAwait(false) 
                 : null;
         }
     }

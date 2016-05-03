@@ -103,7 +103,7 @@ namespace Marten.Linq.QueryHandlers
 
         public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            var hasResult = await reader.ReadAsync(token);
+            var hasResult = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!hasResult)
             {
                 if (_canBeNull) return default(T);

@@ -22,9 +22,9 @@ namespace Marten.Linq
             return _resolver.Resolve(0, reader, map);
         }
 
-        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            return await _resolver.ResolveAsync(0, reader, map, token).ConfigureAwait(false);
+            return _resolver.ResolveAsync(0, reader, map, token);
         }
     }
 }

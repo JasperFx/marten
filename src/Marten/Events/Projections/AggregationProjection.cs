@@ -38,7 +38,7 @@ namespace Marten.Events.Projections
         {
             foreach (var stream in MatchingStreams(session))
             {
-                var state = await _finder.FindAsync(stream, session, token) ?? new T();
+                var state = await _finder.FindAsync(stream, session, token).ConfigureAwait(false) ?? new T();
                 update(state, stream);
 
                 session.Store(state);
