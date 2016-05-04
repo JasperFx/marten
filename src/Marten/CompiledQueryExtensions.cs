@@ -17,10 +17,11 @@ namespace Marten
             throw new NotImplementedException();
         }
 
-        public static IMartenQueryable<T> Include<TInclude, T>(this IQueryable<T> queryable, Expression<Func<T, object>> idSource, Action<TInclude> callback,
-            JoinType joinType = JoinType.Inner) where TInclude : class
+        public static IMartenQueryable<T> Include<T, TQuery>(this IQueryable<T> queryable, Expression<Func<T, object>> idSource, Func<TQuery,object> callback,
+            JoinType joinType = JoinType.Inner)
         {
-            return ((IMartenQueryable<T>)queryable).Include(idSource, callback);
+            throw new NotImplementedException();
+            //return ((IMartenQueryable<T>)queryable).Include(idSource, callback);
         }
 
         public static IQueryable<string> AsJson<T>(this IMartenQueryable<T> queryable)

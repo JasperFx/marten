@@ -144,7 +144,7 @@ namespace Marten.Linq.QueryHandlers
             CachedQuery cachedQuery;
             if (!_cache.Has(queryType))
             {
-                cachedQuery = buildCachedQuery<TDoc, TOut>(queryType, query.QueryIs());
+                cachedQuery = buildCachedQuery<TDoc, TOut>(queryType, query);
 
                 _cache[queryType] = cachedQuery;
             }
@@ -157,8 +157,9 @@ namespace Marten.Linq.QueryHandlers
         }
 
 
-        private CachedQuery buildCachedQuery<TDoc, TOut>(Type queryType, Expression expression)
+        private CachedQuery buildCachedQuery<TDoc, TOut>(Type queryType, ICompiledQuery<TDoc,TOut> query)
         {
+            Expression expression = query.QueryIs();
             var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
 
             var setters = findSetters(queryType, expression);
@@ -170,7 +171,7 @@ namespace Marten.Linq.QueryHandlers
 
             if (model.HasOperator<IncludeResultOperator>())
             {
-                includeJoins = buildIncludeJoins<TDoc, TOut>(model);
+                includeJoins = buildIncludeJoins<TDoc, TOut>(model, query);
             }
 
             // TODO -- someday we'll add Include()'s to compiled queries
@@ -186,16 +187,16 @@ namespace Marten.Linq.QueryHandlers
             };
         }
 
-        private IIncludeJoin[] buildIncludeJoins<TDoc, TOut>(QueryModel model)
+        private IIncludeJoin[] buildIncludeJoins<TDoc, TOut>(QueryModel model, ICompiledQuery<TDoc, TOut> query)
         {
             var includeOperator = model.FindOperators<IncludeResultOperator>().First();
-            var includeType = includeOperator.Callback.Parameters[0].Type;
+            var includeType = includeOperator.Callback.Body.Type;
             var method = GetType().GetMethod(nameof(GetJoin), BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(typeof (TDoc), includeType);
-            var result = (IIncludeJoin) method.Invoke(this, new[] {model});
+            var result = (IIncludeJoin) method.Invoke(this, new object[] {model, query});
             return new[] { result };
         }
 
-        private static Action<TInclude> GetCallback<TInclude>(PropertyInfo property, IncludeResultOperator @operator)
+        private static Action<TInclude> GetCallback<TDoc, TInclude>(PropertyInfo property, IncludeResultOperator @operator, ICompiledQuery<TDoc> query)
         {
             var target = Expression.Parameter(property.ReflectedType, "target");
             var method = property.GetGetMethod();
@@ -206,10 +207,12 @@ namespace Marten.Linq.QueryHandlers
 
             var compiledLambda = lambda.Compile();
             var callback = compiledLambda.Invoke(@operator);
-            return (Action<TInclude>)callback.Compile();
+            var mi = ((MemberExpression) callback.Body).Member;
+            
+            return x => ((PropertyInfo) mi).SetValue(query, x);
         }
 
-        private IIncludeJoin GetJoin<TDoc, TInclude>(QueryModel model) where TInclude : class
+        private IIncludeJoin GetJoin<TDoc, TInclude>(QueryModel model, ICompiledQuery<TDoc> query) where TInclude : class
         {
             var includeOperator = model.FindOperators<IncludeResultOperator>().First();
             var idSource = includeOperator.IdSource as Expression<Func<TDoc, object>>;
@@ -220,12 +223,12 @@ namespace Marten.Linq.QueryHandlers
             var members = visitor.Members.ToArray();
 
             var mapping = _schema.MappingFor(typeof(TDoc));
-            var includeType = includeOperator.Callback.Parameters[0].Type;
+            var includeType = includeOperator.Callback.Body.Type;
             var included = _schema.MappingFor(includeType);
 
             var property = typeof (IncludeResultOperator).GetProperty("Callback");
 
-            return mapping.JoinToInclude(joinType, included, members, GetCallback<TInclude>(property, includeOperator));
+            return mapping.JoinToInclude(joinType, included, members, GetCallback<TDoc,TInclude>(property, includeOperator, query));
         }
 
         private static IList<IDbParameterSetter> findSetters(Type queryType, Expression expression)

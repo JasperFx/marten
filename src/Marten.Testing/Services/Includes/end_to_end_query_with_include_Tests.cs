@@ -133,7 +133,7 @@ namespace Marten.Testing.Services.Includes
             public Expression<Func<IQueryable<Issue>, Issue>> QueryIs()
             {
                 return query => query
-                    .Include<User, Issue>(x => x.AssigneeId, x => Included.From(x), JoinType)
+                    .Include<Issue, IssueByTitleIncludingUser>(x => x.AssigneeId, x => x.Included, JoinType)
                     .Single(x => x.Title == Title);
             }
         }
