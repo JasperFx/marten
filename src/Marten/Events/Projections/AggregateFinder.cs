@@ -41,7 +41,7 @@ namespace Marten.Events.Projections
 
         public async Task<T> FindAsync(EventStream stream, IDocumentSession session, CancellationToken token)
         {
-            var returnValue = stream.IsNew ? new T() : await session.LoadAsync<T>(stream.Id, token) ?? new T();
+            var returnValue = stream.IsNew ? new T() : await session.LoadAsync<T>(stream.Id, token).ConfigureAwait(false) ?? new T();
 
             _setId(returnValue, stream.Id);
 

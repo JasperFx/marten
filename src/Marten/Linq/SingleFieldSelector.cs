@@ -21,9 +21,9 @@ namespace Marten.Linq
             return raw == DBNull.Value ? default(T) : (T) raw;
         }
 
-        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
+            return reader.GetFieldValueAsync<T>(0, token);
         }
     }
 }
