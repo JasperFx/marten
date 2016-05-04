@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Generation;
@@ -33,6 +35,7 @@ namespace Marten.Schema
         public const string UpsertPrefix = "mt_upsert_";
         public const string DocumentTypeColumn = "mt_doc_type";
         public const string MartenPrefix = "mt_";
+        private const string TruncateCascade = "truncate {0} cascade";
 
         private readonly StoreOptions _storeOptions;
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
@@ -73,6 +76,7 @@ namespace Marten.Schema
             {
                 fieldInfo.ForAttribute<MartenAttribute>(att => att.Modify(this, fieldInfo));
             });
+		    _dropTableStatement = $"DROP TABLE IF EXISTS {Table.QualifiedName} CASCADE;";
         }
 
         public static MemberInfo FindIdMember(Type documentType)
@@ -309,9 +313,18 @@ namespace Marten.Schema
         {
             _hasCheckedSchema = false;
 
-            connection.Execute($"DROP TABLE IF EXISTS {Table.QualifiedName} CASCADE;");
+            connection.Execute(_dropTableStatement);
 
             RemoveUpsertFunction(connection);
+        }
+
+        public async Task RemoveSchemaObjectsAsync(IManagedConnection connection, CancellationToken token)
+        {
+            _hasCheckedSchema = false;
+
+            await connection.ExecuteAsync(_dropTableStatement, token).ConfigureAwait(false);
+
+            await RemoveUpsertFunctionAsync(connection, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -326,11 +339,31 @@ namespace Marten.Schema
             drops.Each(drop => connection.Execute(drop));
         }
 
+        /// <summary>
+        /// Only for testing scenarios
+        /// </summary>
+        /// <param name="connection"></param>
+        public async Task RemoveUpsertFunctionAsync(IManagedConnection connection, CancellationToken token)
+        {
+            var dropTargets = DocumentCleaner.DropFunctionSql.ToFormat(UpsertFunction.Name, UpsertFunction.Schema);
+
+            var drops = await connection.GetStringListAsync(dropTargets, token).ConfigureAwait(false);
+            foreach (var drop in drops)
+            {
+                await connection.ExecuteAsync(drop, token).ConfigureAwait(false);
+            }
+        }
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
-            var sql = "truncate {0} cascade".ToFormat(Table.QualifiedName);
+            var sql = TruncateCascade.ToFormat(Table.QualifiedName);
             factory.RunSql(sql);
+        }
+
+        public Task DeleteAllDocumentsAsync(IConnectionFactory factory, CancellationToken token)
+        {
+            var sql = TruncateCascade.ToFormat(Table.QualifiedName);
+            return factory.RunSqlAsync(sql, token);
         }
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class
@@ -380,6 +413,7 @@ namespace Marten.Schema
         public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();
 
         private static readonly Regex _aliasSanitizer = new Regex("<|>", RegexOptions.Compiled);
+        private readonly string _dropTableStatement;
 
         private static string defaultDocumentAliasName(Type documentType)
         {

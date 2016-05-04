@@ -21,6 +21,8 @@ namespace Marten.Events
         private readonly StoreOptions _options;
         private readonly EventGraph _parent;
         protected readonly DocumentMapping _inner;
+        private readonly string _deleteStatement;
+        private readonly string _removeSchemaObjectsMessage;
 
         // TODO -- this logic is duplicated. Centralize in an ext method
         public static string ToEventTypeName(Type eventType)
@@ -38,6 +40,8 @@ namespace Marten.Events
             IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
 
             _inner = new DocumentMapping(eventType, parent.Options);
+            _deleteStatement = $"delete from mt_events where type = '{Alias}'";
+            _removeSchemaObjectsMessage = $"Invalid to remove schema objects for {DocumentType}";
         }
 
         public Type DocumentType { get; }
@@ -91,12 +95,22 @@ namespace Marten.Events
 
         public void RemoveSchemaObjects(IManagedConnection connection)
         {
-            throw new NotSupportedException($"Invalid to remove schema objects for {DocumentType}");
+            throw new NotSupportedException(_removeSchemaObjectsMessage);
+        }
+
+        public Task RemoveSchemaObjectsAsync(IManagedConnection connection, CancellationToken token = new CancellationToken())
+        {
+            throw new NotSupportedException(_removeSchemaObjectsMessage);
         }
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
-            factory.RunSql($"delete from mt_events where type = '{Alias}'");
+            factory.RunSql(_deleteStatement);
+        }
+
+        public Task DeleteAllDocumentsAsync(IConnectionFactory factory, CancellationToken token)
+        {
+            return factory.RunSqlAsync(_deleteStatement, token);
         }
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class

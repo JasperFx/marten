@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Schema;
@@ -45,6 +47,27 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public async Task clean_table_async()
+        {
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new Target { Number = 3 });
+            theSession.Store(new Target { Number = 4 });
+            theSession.Store(new Target { Number = 5 });
+            theSession.Store(new Target { Number = 6 });
+
+            theSession.SaveChanges();
+            theSession.Dispose();
+
+            await theCleaner.DeleteDocumentsForAsync(typeof(Target), CancellationToken.None);
+
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<Target>().Count().ShouldBe(0);
+            }
+        }
+
+        [Fact]
         public void delete_all_documents()
         {
             theSession.Store(new Target { Number = 1 });
@@ -65,7 +88,29 @@ namespace Marten.Testing.Schema
                 session.Query<Issue>().Count().ShouldBe(0);
                 session.Query<Company>().Count().ShouldBe(0);
             }
+        }
 
+        [Fact]
+        public async Task delete_all_documents_async()
+        {
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new User());
+            theSession.Store(new Company());
+            theSession.Store(new Issue());
+
+            theSession.SaveChanges();
+            theSession.Dispose();
+
+            await theCleaner.DeleteAllDocumentsAsync(CancellationToken.None);
+
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<Target>().Count().ShouldBe(0);
+                session.Query<User>().Count().ShouldBe(0);
+                session.Query<Issue>().Count().ShouldBe(0);
+                session.Query<Company>().Count().ShouldBe(0);
+            }
         }
 
         [Fact]
@@ -83,6 +128,26 @@ namespace Marten.Testing.Schema
                 .ShouldBeTrue();
 
             theCleaner.CompletelyRemove(typeof(Target));
+
+            theStore.Schema.DbObjects.DocumentTables().Contains(tableName)
+                .ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task completely_remove_document_type_async()
+        {
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+
+            theSession.SaveChanges();
+            theSession.Dispose();
+
+            var tableName = theStore.Schema.MappingFor(typeof(Target)).Table;
+
+            theStore.Schema.DbObjects.DocumentTables().Contains(tableName)
+                .ShouldBeTrue();
+
+            await theCleaner.CompletelyRemoveAsync(typeof(Target), CancellationToken.None);
 
             theStore.Schema.DbObjects.DocumentTables().Contains(tableName)
                 .ShouldBeFalse();
@@ -109,6 +174,26 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public async Task completely_remove_document_removes_the_upsert_command_too_async()
+        {
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+
+            theSession.SaveChanges();
+
+            var schema = theStore.Schema;
+
+            var upsertName = schema.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
+
+            schema.DbObjects.SchemaFunctionNames().ShouldContain(upsertName);
+
+            await theCleaner.CompletelyRemoveAsync(typeof(Target), CancellationToken.None);
+
+            schema.DbObjects.SchemaFunctionNames().Contains(upsertName)
+                .ShouldBeFalse();
+        }
+
+        [Fact]
         public void completely_remove_everything()
         {
             theSession.Store(new Target { Number = 1 });
@@ -129,6 +214,26 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public async Task completely_remove_everything_async()
+        {
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new User());
+            theSession.Store(new Company());
+            theSession.Store(new Issue());
+
+            theSession.SaveChanges();
+            theSession.Dispose();
+
+            await theCleaner.CompletelyRemoveAllAsync(CancellationToken.None);
+
+            var schema = theStore.Schema;
+
+            ShouldBeEmpty(schema.DbObjects.DocumentTables());
+            ShouldBeEmpty(schema.DbObjects.SchemaFunctionNames());
+        }
+
+        [Fact]
         public void delete_all_event_data()
         {
             var streamId = Guid.NewGuid();
@@ -140,7 +245,20 @@ namespace Marten.Testing.Schema
 
             theSession.Events.Query<QuestStarted>().ShouldBeEmpty();
             theSession.Events.FetchStream(streamId).ShouldBeEmpty();
+        }
 
+        [Fact]
+        public async Task delete_all_event_data_async()
+        {
+            var streamId = Guid.NewGuid();
+            theSession.Events.StartStream<Quest>(streamId, new QuestStarted());
+
+            theSession.SaveChanges();
+
+            await theCleaner.DeleteAllEventDataAsync(CancellationToken.None);
+
+            theSession.Events.Query<QuestStarted>().ShouldBeEmpty();
+            theSession.Events.FetchStream(streamId).ShouldBeEmpty();
         }
 
         [Fact]
@@ -183,10 +301,34 @@ namespace Marten.Testing.Schema
             theSession.SaveChanges();
             theSession.Dispose();
 
-
-
             theCleaner.DeleteDocumentsExcept(typeof(Target), typeof(User));
 
+
+            using (var session = theStore.OpenSession())
+            {
+                // Not cleaned off
+                session.Query<Target>().Count().ShouldBe(2);
+                session.Query<User>().Count().ShouldBe(1);
+
+                // Should be cleaned off
+                session.Query<Issue>().Count().ShouldBe(0);
+                session.Query<Company>().Count().ShouldBe(0);
+            }
+        }
+
+        [Fact]
+        public async Task delete_except_types_async()
+        {
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new User());
+            theSession.Store(new Company());
+            theSession.Store(new Issue());
+
+            theSession.SaveChanges();
+            theSession.Dispose();
+
+            await theCleaner.DeleteDocumentsExceptAsync(CancellationToken.None, typeof(Target), typeof(User));
 
             using (var session = theStore.OpenSession())
             {

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Events.Projections;
@@ -196,7 +198,17 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
+        public Task RemoveSchemaObjectsAsync(IManagedConnection connection, CancellationToken token = new CancellationToken())
+        {
+            throw new NotImplementedException();
+        }
+
         void IDocumentMapping.DeleteAllDocuments(IConnectionFactory factory)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task IDocumentMapping.DeleteAllDocumentsAsync(IConnectionFactory factory, CancellationToken token)
         {
             throw new NotImplementedException();
         }

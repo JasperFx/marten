@@ -17,6 +17,11 @@ namespace Marten.Services
             return runner.Execute(cmd => cmd.WithText(sql).ExecuteNonQuery());
         }
 
+        public static Task<int> ExecuteAsync(this IManagedConnection runner, string sql, CancellationToken token = default(CancellationToken))
+        {
+            return runner.ExecuteAsync((cmd, tkn) => cmd.WithText(sql).ExecuteNonQueryAsync(tkn), token);
+        }
+
         public static QueryPlan ExplainQuery(this IManagedConnection runner, NpgsqlCommand cmd)
         {
             var serializer = new JsonNetSerializer();
@@ -123,6 +128,33 @@ namespace Marten.Services
                     reader.Close();
                 }
             });
+
+            return list;
+        }
+
+        public static async Task<IList<string>> GetStringListAsync(this IManagedConnection runner, string sql, CancellationToken token = default(CancellationToken), params object[] parameters)
+        {
+            var list = new List<string>();
+
+            await runner.ExecuteAsync(async (cmd, tkn) =>
+            {
+                cmd.WithText(sql);
+                parameters.Each(x =>
+                {
+                    var param = cmd.AddParameter(x);
+                    cmd.CommandText = cmd.CommandText.UseParameter(param);
+                });
+
+                using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
+                {
+                    while (await reader.ReadAsync(tkn).ConfigureAwait(false))
+                    {
+                        list.Add(await reader.GetFieldValueAsync<string>(0, tkn).ConfigureAwait(false));
+                    }
+
+                    reader.Close();
+                }
+            }, token).ConfigureAwait(false);
 
             return list;
         }

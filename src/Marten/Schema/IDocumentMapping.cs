@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Services.Includes;
@@ -34,7 +36,11 @@ namespace Marten.Schema
         void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer);
 
         void RemoveSchemaObjects(IManagedConnection connection);
+        Task RemoveSchemaObjectsAsync(IManagedConnection connection, CancellationToken token = default(CancellationToken));
+
         void DeleteAllDocuments(IConnectionFactory factory);
+
+        Task DeleteAllDocumentsAsync(IConnectionFactory factory, CancellationToken token = default(CancellationToken));
 
         IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class;
         void ResetSchemaExistenceChecks();
