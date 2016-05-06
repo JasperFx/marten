@@ -105,6 +105,7 @@ namespace Marten.Events
             return _serializer.FromJson<ProjectionUsage[]>(json);
         }
 
+
         [Obsolete("This should be going away now that EventGraph puts things together itself")]
         public void RebuildEventStoreSchema()
         {
@@ -112,6 +113,7 @@ namespace Marten.Events
             runScript("mt_initialize_projections");
             runScript("mt_apply_transform");
             runScript("mt_apply_aggregation");
+            
 
             var js = SchemaBuilder.GetJavascript(_options, "mt_transforms");
 
@@ -137,6 +139,34 @@ namespace Marten.Events
             catch (Exception e)
             {
                 throw new MartenSchemaException(sql, e);
+            }
+        }
+
+        public void InitializeTheRollingBuffer()
+        {
+            runScript("mt_rolling_buffer");
+
+            var functionName = new FunctionName(_options.Events.DatabaseSchemaName, "mt_seed_rolling_buffer");
+
+            using (var conn = new ManagedConnection(_connectionFactory))
+            {
+                conn.Execute(cmd =>
+                {
+                    cmd.CallsSproc(functionName);
+                });
+            }
+        }
+
+        public void ResetTheRollingBufferSize(int size)
+        {
+            var functionName = new FunctionName(_options.Events.DatabaseSchemaName, "mt_reset_rolling_buffer_size");
+
+            using (var conn = new ManagedConnection(_connectionFactory))
+            {
+                conn.Execute(cmd =>
+                {
+                    cmd.CallsSproc(functionName).AddParameter("size", size);
+                });
             }
         }
     }

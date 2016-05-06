@@ -299,6 +299,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Schema\SchemaObjects.sql" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Schema\SQL\mt_rolling_buffer.sql" />
+  </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
       <ItemGroup>
