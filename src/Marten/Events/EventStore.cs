@@ -121,7 +121,7 @@ namespace Marten.Events
         {
             _schema.Events.AddEventType(typeof (T));
 
-            return (await LoadAsync(id, token)).As<Event<T>>();
+            return (await LoadAsync(id, token).ConfigureAwait(false)).As<Event<T>>();
         }
 
         public IEvent Load(Guid id)

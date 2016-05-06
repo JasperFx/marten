@@ -58,7 +58,7 @@ namespace Marten.Linq.QueryHandlers
 
         public async Task<string> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            var result = await _selector.ReadAsync(reader, map, token);
+            var result = await _selector.ReadAsync(reader, map, token).ConfigureAwait(false);
             return $"[{result}]";
         }
     }

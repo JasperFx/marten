@@ -56,7 +56,7 @@ namespace Marten.Services
                 {
                     return await handler.HandleAsync(reader, map, tkn).ConfigureAwait(false);
                 }
-            }, token);
+            }, token).ConfigureAwait(false);
         }
 
         public static IList<T> Resolve<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map)

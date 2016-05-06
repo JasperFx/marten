@@ -62,9 +62,9 @@ namespace Marten.Events
             return _selector.Read(reader, map);
         }
 
-        public async Task<IList<IEvent>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<IList<IEvent>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            return await _selector.ReadAsync(reader, map, token).ConfigureAwait(false);
+            return _selector.ReadAsync(reader, map, token);
         }
     }
 }
