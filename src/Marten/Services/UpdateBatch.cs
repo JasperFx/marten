@@ -26,6 +26,8 @@ namespace Marten.Services
             Connection = connection;
         }
 
+        public ISerializer Serializer => _serializer;
+
         public BatchCommand Current()
         {
             return _lock.MaybeWrite(

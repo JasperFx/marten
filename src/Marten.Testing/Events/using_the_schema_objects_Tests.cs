@@ -25,7 +25,6 @@ namespace Marten.Testing.Events
 
             var schemaFunctionNames = schema.DbObjects.SchemaFunctionNames();
             schemaFunctionNames.ShouldContain("public.mt_append_event");
-            schemaFunctionNames.ShouldContain("public.mt_version_stream");
 
             var schemaTableNames = schema.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain("public.mt_streams");
@@ -46,7 +45,6 @@ namespace Marten.Testing.Events
 
             var schemaFunctionNames = schema.DbObjects.SchemaFunctionNames();
             schemaFunctionNames.ShouldContain("other.mt_append_event");
-            schemaFunctionNames.ShouldContain("other.mt_version_stream");
 
             var schemaTableNames = schema.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain("other.mt_streams");
@@ -71,7 +69,6 @@ namespace Marten.Testing.Events
 
             var schemaFunctionNames = schema.DbObjects.SchemaFunctionNames();
             schemaFunctionNames.ShouldContain("event_store.mt_append_event");
-            schemaFunctionNames.ShouldContain("event_store.mt_version_stream");
 
             var schemaTableNames = schema.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain("event_store.mt_streams");

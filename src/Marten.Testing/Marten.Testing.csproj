@@ -68,7 +68,7 @@
     <Compile Include="Events\Projections\QuestParty.cs" />
     <Compile Include="Events\Projections\AggregateFinderTests.cs" />
     <Compile Include="Examples\event_store_quickstart.cs" />
-    <Compile Include="fetching_stream_state.cs" />
+    <Compile Include="Events\fetching_stream_state.cs" />
     <Compile Include="Fixtures\EventStore\InlineAggregationFixture.cs" />
     <Compile Include="IntDoc.cs" />
     <Compile Include="IntegratedFixture.cs" />

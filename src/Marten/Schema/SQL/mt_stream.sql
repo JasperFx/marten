@@ -32,32 +32,40 @@ CREATE TABLE {databaseSchema}.mt_modules (
 	definition		varchar(30000) NOT NULL
 );
 
-CREATE OR REPLACE FUNCTION {databaseSchema}.mt_version_stream(stream uuid, stream_type varchar) RETURNS int AS $$
-DECLARE
-  v_next int;
-  v_now int;
-BEGIN
-  select version into v_now from {databaseSchema}.mt_streams where id = stream;
-  
-  IF v_now IS NULL THEN
-	v_next := 1;
-	insert into {databaseSchema}.mt_streams (id, type, version, timestamp) values (stream, stream_type, v_next, now());
-  ELSE
-	v_next := v_now + 1;
-	update {databaseSchema}.mt_streams set version = v_next, timestamp = now() where id = stream;
-  END IF; 
 
-  RETURN v_next;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_event(stream uuid, stream_type varchar, event_id uuid, event_type varchar, body jsonb) RETURNS int AS $$
+CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_event(stream uuid, stream_type varchar, event_ids uuid[], event_types varchar[], bodies jsonb[]) RETURNS int AS $$
 DECLARE
 	event_version int;
+	event_type varchar;
+	event_id uuid;
+	body jsonb;
+	index int;
 BEGIN
-	select {databaseSchema}.mt_version_stream(stream, stream_type) into event_version;
+	select version into event_version from {databaseSchema}.mt_streams where id = stream;
+	if event_version IS NULL then
+		event_version = 0;
+		insert into {databaseSchema}.mt_streams (id, type, version, timestamp) values (stream, stream_type, 0, now());
+	end if;
 
-	insert into {databaseSchema}.mt_events (id, stream_id, version, data, type) values (event_id, stream, event_version, body, event_type);
+
+	index := 1;
+
+	foreach event_id in ARRAY event_ids
+	loop
+	    event_version := event_version + 1;
+		event_type = event_types[index];
+		body = bodies[index];
+
+		insert into {databaseSchema}.mt_events 
+			(id, stream_id, version, data, type) 
+		values 
+			(event_id, stream, event_version, body, event_type);
+
+		
+		index := index + 1;
+	end loop;
+
+	update {databaseSchema}.mt_streams set version = event_version, timestamp = now() where id = stream;
 
 	return event_version;
 END

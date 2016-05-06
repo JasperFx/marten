@@ -119,9 +119,19 @@ namespace Marten.Services
                 return Param(argName, value, NpgsqlDbType.Uuid);
             }
 
+            public SprocCall Param(string argName, Guid[] values)
+            {
+                return Param(argName, values, NpgsqlDbType.Uuid | NpgsqlDbType.Array);
+            }
+
             public SprocCall Param(string argName, string value)
             {
                 return Param(argName, value, NpgsqlDbType.Varchar);
+            }
+
+            public SprocCall Param(string argName, string[] values)
+            {
+                return Param(argName, values, NpgsqlDbType.Varchar | NpgsqlDbType.Array);
             }
 
             public SprocCall JsonEntity(string argName, object value)
@@ -133,6 +143,11 @@ namespace Marten.Services
             public SprocCall JsonBody(string argName, string json)
             {
                 return Param(argName, json, NpgsqlDbType.Jsonb);
+            }
+
+            public SprocCall JsonBodies(string argName, string[] bodies)
+            {
+                return Param(argName, bodies, NpgsqlDbType.Jsonb | NpgsqlDbType.Array);
             }
 
             public SprocCall Param(string argName, object value, NpgsqlDbType dbType)
@@ -160,6 +175,9 @@ namespace Marten.Services
                     return $"{ArgName} := :{ParameterName}";
                 }
             }
+
+
+
 
         }
 

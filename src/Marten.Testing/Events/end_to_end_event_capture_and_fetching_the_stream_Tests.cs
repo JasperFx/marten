@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
-using Baseline;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -10,13 +8,13 @@ namespace Marten.Testing.Events
 {
     public class end_to_end_event_capture_and_fetching_the_stream_Tests
     {
-        private readonly ITestOutputHelper _output;
-
         public static TheoryData<DocumentTracking> SessionTypes = new TheoryData<DocumentTracking>
         {
             DocumentTracking.IdentityOnly,
             DocumentTracking.DirtyTracking
         };
+
+        private readonly ITestOutputHelper _output;
 
         public end_to_end_event_capture_and_fetching_the_stream_Tests(ITestOutputHelper output)
         {
@@ -33,8 +31,8 @@ namespace Marten.Testing.Events
             using (var session = store.OpenSession(sessionType))
             {
                 // SAMPLE: start-stream-with-aggregate-type
-                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined {Members = new[] {"Rand", "Matt", "Perrin", "Thom"}};
+                var departed = new MembersDeparted {Members = new[] {"Thom"}};
 
                 var id = session.Events.StartStream<Quest>(joined, departed);
                 session.SaveChanges();
@@ -47,24 +45,22 @@ namespace Marten.Testing.Events
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
-
             }
         }
 
 
-
-
         [Theory]
         [MemberData("SessionTypes")]
-        public void capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided(DocumentTracking sessionType)
+        public void capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided(
+            DocumentTracking sessionType)
         {
             var store = InitStore();
 
             using (var session = store.OpenSession(sessionType))
             {
                 // SAMPLE: start-stream-with-existing-guid
-                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined {Members = new[] {"Rand", "Matt", "Perrin", "Thom"}};
+                var departed = new MembersDeparted {Members = new[] {"Thom"}};
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined, departed);
@@ -89,8 +85,8 @@ namespace Marten.Testing.Events
 
             using (var session = store.OpenSession(sessionType))
             {
-                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined {Members = new[] {"Rand", "Matt", "Perrin", "Thom"}};
+                var departed = new MembersDeparted {Members = new[] {"Thom"}};
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined);
@@ -125,8 +121,8 @@ namespace Marten.Testing.Events
 
             using (var session = store.OpenSession(sessionType))
             {
-                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined {Members = new[] {"Rand", "Matt", "Perrin", "Thom"}};
+                var departed = new MembersDeparted {Members = new[] {"Thom"}};
 
                 session.Events.Append(id, joined);
                 session.Events.Append(id, departed);
@@ -147,14 +143,15 @@ namespace Marten.Testing.Events
 
         [Theory]
         [MemberData("SessionTypes")]
-        public void capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema(DocumentTracking sessionType)
+        public void capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema(
+            DocumentTracking sessionType)
         {
             var store = InitStore("event_store");
 
             using (var session = store.OpenSession(sessionType))
             {
-                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined {Members = new[] {"Rand", "Matt", "Perrin", "Thom"}};
+                var departed = new MembersDeparted {Members = new[] {"Thom"}};
 
                 var id = session.Events.StartStream<Quest>(joined, departed);
                 session.SaveChanges();
@@ -171,14 +168,16 @@ namespace Marten.Testing.Events
 
         [Theory]
         [MemberData("SessionTypes")]
-        public void capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided_in_another_database_schema(DocumentTracking sessionType)
+        public void
+            capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided_in_another_database_schema(
+            DocumentTracking sessionType)
         {
             var store = InitStore("event_store");
 
             using (var session = store.OpenSession(sessionType))
             {
-                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined {Members = new[] {"Rand", "Matt", "Perrin", "Thom"}};
+                var departed = new MembersDeparted {Members = new[] {"Thom"}};
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined, departed);
@@ -196,14 +195,15 @@ namespace Marten.Testing.Events
 
         [Theory]
         [MemberData("SessionTypes")]
-        public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema(DocumentTracking sessionType)
+        public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema(
+            DocumentTracking sessionType)
         {
             var store = InitStore("event_store");
 
             using (var session = store.OpenSession(sessionType))
             {
-                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined {Members = new[] {"Rand", "Matt", "Perrin", "Thom"}};
+                var departed = new MembersDeparted {Members = new[] {"Thom"}};
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined);
@@ -223,7 +223,8 @@ namespace Marten.Testing.Events
 
         [Theory]
         [MemberData("SessionTypes")]
-        public void capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema(DocumentTracking sessionType)
+        public void capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema(
+            DocumentTracking sessionType)
         {
             var store = InitStore("event_store");
 
@@ -239,8 +240,8 @@ namespace Marten.Testing.Events
             using (var session = store.OpenSession(sessionType))
             {
                 // SAMPLE: append-events
-                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined {Members = new[] {"Rand", "Matt", "Perrin", "Thom"}};
+                var departed = new MembersDeparted {Members = new[] {"Thom"}};
 
                 session.Events.Append(id, joined, departed);
 
@@ -259,9 +260,8 @@ namespace Marten.Testing.Events
             }
         }
 
-        
 
-        private static  DocumentStore InitStore(string databascSchema = null)
+        private static DocumentStore InitStore(string databascSchema = null)
         {
             var store = DocumentStore.For(_ =>
             {
@@ -277,7 +277,7 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));
             });
-            
+
             store.Advanced.Clean.CompletelyRemoveAll();
 
             return store;

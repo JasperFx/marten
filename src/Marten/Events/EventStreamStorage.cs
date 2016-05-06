@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
@@ -52,17 +53,17 @@ namespace Marten.Events
 
             var streamTypeName = stream.AggregateType == null ? null : _graph.AggregateAliasFor(stream.AggregateType);
 
-            stream.Events.Each(@event =>
-            {
-                var mapping = _graph.EventMappingFor(@event.Data.GetType());
+            var eventTypes = stream.Events.Select(x => _graph.EventMappingFor(x.Data.GetType()).EventTypeName).ToArray();
+            var bodies = stream.Events.Select(x => batch.Serializer.ToJson(x.Data)).ToArray();
+            var ids = stream.Events.Select(x => x.Id).ToArray();
 
-                batch.Sproc(AppendEventFunction)
+            batch.Sproc(AppendEventFunction)
                     .Param("stream", stream.Id)
                     .Param("stream_type", streamTypeName)
-                    .Param("event_id", @event.Id)
-                    .Param("event_type", mapping.EventTypeName)
-                    .JsonEntity("body", @event.Data);
-            });
+                    .Param("event_ids", ids)
+                    .Param("event_types", eventTypes)
+                    .JsonBodies("bodies", bodies);
+
         }
 
         public void RegisterUpdate(UpdateBatch batch, object entity, string json)
