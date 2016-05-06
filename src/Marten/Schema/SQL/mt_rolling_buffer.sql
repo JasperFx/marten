@@ -6,7 +6,7 @@ CREATE TABLE {databaseSchema}.mt_rolling_buffer (
 	slot				integer CONSTRAINT pk_mt_rolling_buffer PRIMARY KEY,
 	message_id			integer NOT NULL,
 	timestamp			timestamp without time zone default (now() at time zone 'utc') NOT NULL,
-	events				UUID[] NOT NULL,
+	event_id			UUID NOT NULL,
 	stream_id			UUID NOT NULL,
 	reference_count		integer NOT NULL	
 );
@@ -63,9 +63,9 @@ BEGIN
 
 	WHILE i < size LOOP
 		insert into {databaseSchema}.mt_rolling_buffer 
-			(slot, message_id, timestamp, events, stream_id, reference_count)
+			(slot, message_id, timestamp, event_id, stream_id, reference_count)
 		values
-			(i + 1, 0, timestamp, ARRAY[0], empty, 0);
+			(i + 1, 0, timestamp, empty, empty, 0);
 
 		i := i + 1;
 	END LOOP;
@@ -75,7 +75,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_rolling_buffer(event_ids UUID[], stream UUID) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_rolling_buffer(event UUID, stream UUID) RETURNS integer AS $$
 DECLARE
 	id int := nextval('{databaseSchema}.mt_rolling_buffer_sequence');
 	next int;
@@ -89,7 +89,7 @@ BEGIN
 		SET
 			timestamp = current_timestamp,
 			message_id = id,
-			events = event_ids,
+			event_id = event,
 			stream_id = stream,
 			reference_count = reference_count + 1
 		WHERE
@@ -102,7 +102,7 @@ BEGIN
 				SET
 					timestamp = current_timestamp,
 					message_id = id,
-					events = event_ids,
+					event_id = event,
 					stream_id = stream,
 					reference_count = reference_count + 1
 				WHERE
@@ -115,7 +115,4 @@ BEGIN
 	RETURN id;
 END
 $$ LANGUAGE plpgsql;
-
-
-
 
