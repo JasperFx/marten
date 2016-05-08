@@ -111,6 +111,7 @@
     <Compile Include="Linq\QueryHandlers\AggregateQueryHandler.cs" />
     <Compile Include="Linq\QueryHandlers\CachedQuery.cs" />
     <Compile Include="Linq\QueryHandlers\CachedQueryHandler.cs" />
+    <Compile Include="Linq\QueryHandlers\CompiledIncludeJoinBuilder.cs" />
     <Compile Include="Linq\QueryHandlers\EnumerableQueryHandler.cs" />
     <Compile Include="Linq\QueryHandlers\JsonQueryHandler.cs" />
     <Compile Include="Linq\QueryHandlers\QueryHandlerFactory.cs" />
