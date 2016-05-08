@@ -116,3 +116,18 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+
+CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_event_with_buffering(stream uuid, stream_type varchar, event_ids uuid[], event_types varchar[], bodies jsonb[]) RETURNS int AS $$
+DECLARE
+	index int;
+	event_id uuid;
+BEGIN
+	foreach event_id in ARRAY event_ids
+	loop
+		perform {databaseSchema}.mt_append_rolling_buffer(event_id, stream);
+	end loop;
+
+
+	return {databaseSchema}.mt_append_event(stream, stream_type, event_ids, event_types, bodies);
+END
+$$ LANGUAGE plpgsql;
