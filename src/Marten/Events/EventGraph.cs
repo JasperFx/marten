@@ -244,6 +244,11 @@ namespace Marten.Events
             _inlineProjections.Add(projection);
         }
 
+        public bool AsyncProjectionsEnabled { get; set; }
+        public bool JavascriptProjectionsEnabled { get; set; }
+
+
+        public int AsyncProjectionBufferTableSize { get; set; } = 1000;
 
         public string AggregateAliasFor(Type aggregateType)
         {
