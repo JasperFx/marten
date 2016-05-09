@@ -23,7 +23,7 @@ NUGET
       Microsoft.Bcl (>= 1.1.10)
       Microsoft.Bcl.Build (>= 1.0.14)
     Newtonsoft.Json (8.0.2)
-    Npgsql (3.0.3)
+    Npgsql (3.0.4)
     NSubstitute (1.9.2.0)
     Octokit (0.16.0)
       Microsoft.Net.Http
