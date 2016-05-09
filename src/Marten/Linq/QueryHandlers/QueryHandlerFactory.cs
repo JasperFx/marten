@@ -143,7 +143,7 @@ namespace Marten.Linq.QueryHandlers
             CachedQuery cachedQuery;
             if (!_cache.Has(queryType))
             {
-                cachedQuery = buildCachedQuery<TDoc, TOut>(queryType, query.QueryIs());
+                cachedQuery = buildCachedQuery<TDoc, TOut>(queryType, query);
 
                 _cache[queryType] = cachedQuery;
             }
@@ -156,8 +156,9 @@ namespace Marten.Linq.QueryHandlers
         }
 
 
-        private CachedQuery buildCachedQuery<TDoc, TOut>(Type queryType, Expression expression)
+        private CachedQuery buildCachedQuery<TDoc, TOut>(Type queryType, ICompiledQuery<TDoc,TOut> query)
         {
+            Expression expression = query.QueryIs();
             var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
 
             var setters = findSetters(queryType, expression);
@@ -165,8 +166,16 @@ namespace Marten.Linq.QueryHandlers
             var model = MartenQueryParser.TransformQueryFlyweight.GetParsedQuery(invocation);
             _schema.EnsureStorageExists(typeof(TDoc));
 
+            var includeJoins = new IIncludeJoin[0];
+
+            if (model.HasOperator<IncludeResultOperator>())
+            {
+                var builder = new CompiledIncludeJoinBuilder<TDoc, TOut>(_schema);
+                includeJoins = builder.BuildIncludeJoins(model, query);
+            }
+
             // TODO -- someday we'll add Include()'s to compiled queries
-            var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, new IIncludeJoin[0]);
+            var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins);
             var cmd = new NpgsqlCommand();
             handler.ConfigureCommand(cmd);
 

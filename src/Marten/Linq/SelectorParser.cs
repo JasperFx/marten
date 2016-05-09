@@ -67,7 +67,7 @@ namespace Marten.Linq
             return _target.ToSelector<T>(mapping);
         }
 
-        private static string _methodName = nameof(JsonExtensions.AsJson);
+        private static string _methodName = nameof(CompiledQueryExtensions.AsJson);
         private bool _isJson;
 
         public SelectorParser(QueryModel query)
@@ -98,7 +98,7 @@ namespace Marten.Linq
 
         private static bool isAsJson(MethodInfo method)
         {
-            return method.Name == _methodName && method.DeclaringType.Equals(typeof (JsonExtensions));
+            return method.Name == _methodName && method.DeclaringType.Equals(typeof (CompiledQueryExtensions));
         }
     }
 

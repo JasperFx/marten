@@ -29,6 +29,12 @@ namespace Marten.Linq
             return base.VisitMember(node);
         }
 
+        protected override Expression VisitMethodCall(MethodCallExpression node)
+        {
+            // skip Visiting Include method members
+            return node.Method.Name.Contains("Include") ? node : base.VisitMethodCall(node);
+        }
+
         public static Func<TTarget, TProperty> CompileGetter<TTarget, TProperty>(PropertyInfo property)
         {
             ParameterExpression target = Expression.Parameter(property.ReflectedType, "target");
