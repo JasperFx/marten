@@ -219,7 +219,7 @@ namespace Marten
         public IDiagnostics Diagnostics { get; }
 
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
-            IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             var map = createMap(tracking);
             var session = new DocumentSession(this, _options, Schema, _serializer,
@@ -248,12 +248,12 @@ namespace Marten
             }
         }
 
-        public IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
+        public IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             return OpenSession(DocumentTracking.DirtyTracking, isolationLevel);
         }
 
-        public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
+        public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             return OpenSession(DocumentTracking.None, isolationLevel);
         }

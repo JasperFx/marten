@@ -39,21 +39,21 @@ namespace Marten
         /// </summary>
         /// <param name="tracking"></param>
         /// <returns></returns>
-        IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly, IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted);
+        IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
         /// <summary>
         /// Convenience method to create a new "lightweight" IDocumentSession with no IdentityMap
         /// or automatic dirty checking
         /// </summary>
         /// <returns></returns>
-        IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted);
+        IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
         /// <summary>
         /// Convenience method to create an IDocumentSession with both IdentityMap and automatic
         /// dirty checking
         /// </summary>
         /// <returns></returns>
-        IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted);
+        IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
         /// <summary>
         /// Opens a read-only IQuerySession to the current document store for efficient
