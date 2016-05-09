@@ -11,7 +11,7 @@ using Npgsql;
 
 namespace Marten.Events
 {
-    internal class EventQueryHandler : IQueryHandler<IList<IEvent>>
+    internal class EventQueryHandler : ListQueryHandler<IEvent>
     {
         private readonly EventSelector _selector;
         private readonly Guid _streamId;
@@ -19,6 +19,7 @@ namespace Marten.Events
         private readonly DateTime? _timestamp;
 
         public EventQueryHandler(EventSelector selector, Guid streamId, int version = 0, DateTime? timestamp = null)
+            : base(selector)
         {
             if (timestamp != null && timestamp.Value.Kind != DateTimeKind.Utc)
             {
@@ -31,7 +32,7 @@ namespace Marten.Events
             _timestamp = timestamp;
         }
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public override void ConfigureCommand(NpgsqlCommand command)
         {
             var sql = _selector.ToSelectClause(null);
 
@@ -55,16 +56,6 @@ namespace Marten.Events
             command.AppendQuery(sql);
         }
 
-        public Type SourceType => typeof (IEvent);
-
-        public IList<IEvent> Handle(DbDataReader reader, IIdentityMap map)
-        {
-            return _selector.Read(reader, map);
-        }
-
-        public Task<IList<IEvent>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
-        {
-            return _selector.ReadAsync(reader, map, token);
-        }
+        public override Type SourceType => typeof (IEvent);
     }
 }

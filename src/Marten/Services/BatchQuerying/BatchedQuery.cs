@@ -134,7 +134,7 @@ namespace Marten.Services.BatchQuerying
 
 
 
-            return AddItem(new ListQueryHandler<T>(_schema, query, queryable.Includes.ToArray(), queryable.Statistics));
+            return AddItem(new LinqQueryHandler<T>(_schema, query, queryable.Includes.ToArray(), queryable.Statistics));
         }
 
         public IBatchedQueryable<T> Query<T>() where T : class

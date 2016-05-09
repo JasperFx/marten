@@ -50,7 +50,7 @@ namespace Marten.Linq.QueryHandlers
             }
 
             var elementType = typeof (T).GetGenericArguments().First();
-            var handlerType = typeof(ListQueryHandler<>);
+            var handlerType = typeof(LinqQueryHandler<>);
 
             if (typeof (T).GetGenericTypeDefinition() == typeof (IEnumerable<>))
             {

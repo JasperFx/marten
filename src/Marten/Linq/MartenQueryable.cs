@@ -132,7 +132,7 @@ namespace Marten.Linq
                     return new AnyQueryHandler(model, Schema);
 
                 case FetchType.FetchMany:
-                    return new ListQueryHandler<T>(Schema, model, Includes.ToArray(), Statistics);
+                    return new LinqQueryHandler<T>(Schema, model, Includes.ToArray(), Statistics);
 
                 case FetchType.FetchOne:
                     return OneResultHandler<T>.First(Schema, model, Includes.ToArray());
@@ -166,7 +166,7 @@ namespace Marten.Linq
 
         public Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => new ListQueryHandler<TResult>(Schema, q, Includes.ToArray(), Statistics), token);
+            return executeAsync(q => new LinqQueryHandler<TResult>(Schema, q, Includes.ToArray(), Statistics), token);
         }
 
         public Task<bool> AnyAsync(CancellationToken token)

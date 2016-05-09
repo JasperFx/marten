@@ -13,7 +13,7 @@ namespace Marten.Linq.QueryHandlers
 {
     public class EnumerableQueryHandler<T> : IQueryHandler<IEnumerable<T>>
     {
-        private readonly ListQueryHandler<T> _inner;
+        private readonly LinqQueryHandler<T> _inner;
 
         public EnumerableQueryHandler(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins)
             : this(schema, query, joins, null)
@@ -23,7 +23,7 @@ namespace Marten.Linq.QueryHandlers
 
         public EnumerableQueryHandler(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins, QueryStatistics stats)
         {
-            _inner = new ListQueryHandler<T>(schema, query, joins, stats);
+            _inner = new LinqQueryHandler<T>(schema, query, joins, stats);
         }
 
         public Type SourceType => typeof (IEnumerable<T>);

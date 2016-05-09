@@ -61,6 +61,7 @@
     <Compile Include="Events\Projections\AggregationProjection.cs" />
     <Compile Include="Events\Projections\AggregationStep.cs" />
     <Compile Include="Events\Projections\Aggregator.cs" />
+    <Compile Include="Events\Projections\Async\AsyncProjectionClasses.cs" />
     <Compile Include="Events\Projections\IAggregation.cs" />
     <Compile Include="Events\Projections\IAggregationFinder.cs" />
     <Compile Include="Events\Projections\IAggregator.cs" />
@@ -114,12 +115,14 @@
     <Compile Include="Linq\QueryHandlers\CompiledIncludeJoinBuilder.cs" />
     <Compile Include="Linq\QueryHandlers\EnumerableQueryHandler.cs" />
     <Compile Include="Linq\QueryHandlers\JsonQueryHandler.cs" />
+    <Compile Include="Linq\QueryHandlers\ListQueryHandler.cs" />
     <Compile Include="Linq\QueryHandlers\QueryHandlerFactory.cs" />
+    <Compile Include="Linq\QueryHandlers\StatsSelector.cs" />
     <Compile Include="Linq\QueryModelExtensions.cs" />
     <Compile Include="Linq\QueryHandlers\AnyQueryHandler.cs" />
     <Compile Include="Linq\QueryHandlers\CountQueryHandler.cs" />
     <Compile Include="Linq\QueryHandlers\IQueryHandler.cs" />
-    <Compile Include="Linq\QueryHandlers\ListQueryHandler.cs" />
+    <Compile Include="Linq\QueryHandlers\LinqQueryHandler.cs" />
     <Compile Include="Linq\QueryHandlers\LoadByIdArrayHandler.cs" />
     <Compile Include="Linq\QueryHandlers\LoadByIdHandler.cs" />
     <Compile Include="Linq\QueryHandlers\OneResultHandler.cs" />
