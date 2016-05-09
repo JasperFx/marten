@@ -19,6 +19,7 @@ namespace Marten.Testing.Services.Includes
 {
     public class end_to_end_query_with_compiled_include_Tests : DocumentSessionFixture<IdentityMap>
     {
+        // SAMPLE: compiled_include
         [Fact]
         public void simple_compiled_include_for_a_single_document()
         {
@@ -30,7 +31,7 @@ namespace Marten.Testing.Services.Includes
 
             using (var query = theStore.QuerySession())
             {
-                var issueQuery = new IssueByTitleIncludingUser {Title = issue.Title};
+                var issueQuery = new IssueByTitleWithAssignee {Title = issue.Title};
                 var issue2 = query.Query(issueQuery);
 
                 issueQuery.Included.ShouldNotBeNull();
@@ -40,7 +41,7 @@ namespace Marten.Testing.Services.Includes
             }
         }
 
-        public class IssueByTitleIncludingUser : ICompiledQuery<Issue>
+        public class IssueByTitleWithAssignee : ICompiledQuery<Issue>
         {
             public string Title { get; set; }
             public User Included { get; private set; } = new User();
@@ -49,10 +50,11 @@ namespace Marten.Testing.Services.Includes
             public Expression<Func<IQueryable<Issue>, Issue>> QueryIs()
             {
                 return query => query
-                    .Include<Issue, IssueByTitleIncludingUser>(x => x.AssigneeId, x => x.Included, JoinType)
+                    .Include<Issue, IssueByTitleWithAssignee>(x => x.AssigneeId, x => x.Included, JoinType)
                     .Single(x => x.Title == Title);
             }
         }
+        // ENDSAMPLE
 
         [Fact]
         public void compiled_query_with_multi_includes()

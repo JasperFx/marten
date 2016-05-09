@@ -45,6 +45,7 @@ To the best of our knowledge and testing, you may use any <[linkto:documentation
 * `First/FirstOrDefault()`
 * `Single/SingleOrDefault()`
 * `Where()`
+* `Include()`
 * `OrderBy/OrderByDescending` etc.
 * `Count()`
 * `Any()`
@@ -52,11 +53,7 @@ To the best of our knowledge and testing, you may use any <[linkto:documentation
 * `ToJsonArray()`
 * `ToJsonArrayAsync()`
 
-At this point (v0.9), the only limitations are:
-
-1. You cannot yet incorporate the <[linkto:documentation/documents/include;title=Include's]> feature with compiled queries, but there is an open
-   [GitHub issue](https://github.com/JasperFx/marten/issues/309) you can use to track progress on adding this feature.
-1. You cannot use the Linq `ToArray()` or `ToList()` operators. See the next section for an explanation of how to query for multiple results
+At this point (v0.9), the only limitation is that you cannot use the Linq `ToArray()` or `ToList()` operators. See the next section for an explanation of how to query for multiple results.
 
 
 
@@ -80,6 +77,21 @@ A sample usage of this type of query is shown below:
 
 <[sample:UserNamesForFirstName]>
 
+
+
+## Querying for included documents
+
+If you wish to use a compiled query for a document, using a `JOIN` so that the query will include another document, just as the <[linkto:documentation/documents/include;title=Include()]> method does on a simple query, the compiled query would be constructed just like any other, using the `Include()` method
+on the query:
+
+<[sample:compiled_include]>
+
+In this example, the query has an `Included` property which will receive the included Assignee / `User`. The 'resulting' included property can only be
+a property of the query, so that Marten would know how to assign the included result of the postgres query.
+The `JoinType` property here is just an example for overriding the default `INNER JOIN`. If you wish to force an `INNER JOIN` within the query
+you can simply remove the `JoinType` parameter like so: `.Include<Issue, IssueByTitleWithAssignee>(x => x.AssigneeId, x => x.Included)`
+
+You can also chain `Include` methods if you need more than one `JOIN`s.
 
 
 ## Querying for a single document
