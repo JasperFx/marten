@@ -74,6 +74,7 @@
     <Compile Include="Events\working_with_the_rolling_buffer_objects.cs" />
     <Compile Include="Examples\event_store_quickstart.cs" />
     <Compile Include="Events\fetching_stream_state.cs" />
+    <Compile Include="Examples\ForeignKeyExamples.cs" />
     <Compile Include="Fixtures\EventStore\InlineAggregationFixture.cs" />
     <Compile Include="IntDoc.cs" />
     <Compile Include="IntegratedFixture.cs" />

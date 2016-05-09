@@ -31,6 +31,7 @@ namespace Marten.Testing.Schema
                 .ShouldContain(x => x.ColumnName == "other_user_id");
         }
 
+        // SAMPLE: issue-with-fk-attribute
         public class Issue
         {
             public Issue()
@@ -45,6 +46,7 @@ namespace Marten.Testing.Schema
 
             public Guid? OtherUserId { get; set; }
         }
+        // ENDSAMPLE
 
         public class User
         {

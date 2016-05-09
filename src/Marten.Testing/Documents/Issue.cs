@@ -2,6 +2,7 @@
 
 namespace Marten.Testing.Documents
 {
+    // SAMPLE: Issue
     public class Issue
     {
         public Issue()
@@ -21,4 +22,5 @@ namespace Marten.Testing.Documents
 
         public Guid? ReporterId { get; set; }
     }
+    // ENDSAMPLE
 }
