@@ -19,7 +19,7 @@ namespace Marten.Testing.Session
             await theSession.SaveChangesAsync();
 
             var json = await theSession.FindJsonByIdAsync<Issue>(issue.Id);
-            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 2\", \"AssigneeId\": null, \"ReporterId\": null}}");
+            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
         }
         // ENDSAMPLE
 
