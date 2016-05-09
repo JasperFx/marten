@@ -14,26 +14,6 @@ using Marten.Services.Includes;
 
 namespace Marten.Events
 {
-
-    /*
-    1. Event to Event mapping -->
-    TransformInline(ITransformer<TEvent, TView>)
-    // won't need a live transform, just do that w/ TransformTo()
-
-    AggregateStreamsInlineWith<T>()--> and return the Aggregator<T> with chaining to edit it
-    --> live ones could be done simpler
-    AggregateStreamsAsyncWith<T>() --> and return the Aggregator<T>
-    ProjectAcrossStreams<T>(IAggregateFinder<T> finder) --> and return the Aggregator<T>
-
-
-    */
-
-    public interface IProjections
-    {
-        IList<IProjection> Inlines { get; }
-    }
-
-
     // TODO -- try to eliminate the IDocumentMapping implementation here
     // just making things ugly
     public class EventGraph : IDocumentMapping, IEventStoreConfiguration, IProjections

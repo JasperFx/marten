@@ -28,6 +28,6 @@ namespace Marten.Events
         bool AsyncProjectionsEnabled { get; set; }
 
         bool JavascriptProjectionsEnabled { get; set; }
-
+        int AsyncProjectionBufferTableSize { get; set; }
     }
 }
