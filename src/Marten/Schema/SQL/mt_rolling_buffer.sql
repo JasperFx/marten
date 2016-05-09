@@ -6,8 +6,8 @@ CREATE TABLE {databaseSchema}.mt_rolling_buffer (
 	slot				integer CONSTRAINT pk_mt_rolling_buffer PRIMARY KEY,
 	message_id			integer NOT NULL,
 	timestamp			timestamp without time zone default (now() at time zone 'utc') NOT NULL,
-	event_id			UUID NOT NULL,
-	stream_id			UUID NOT NULL,
+	event_id			UUID NULL,
+	stream_id			UUID NULL,
 	reference_count		integer NOT NULL	
 );
 
@@ -53,7 +53,6 @@ CREATE OR REPLACE FUNCTION {databaseSchema}.mt_seed_rolling_buffer() RETURNS VOI
 DECLARE
 	size integer;
 	i integer := 0;
-	empty UUID := uuid_nil();
 	timestamp timestamp := current_timestamp;
 	current integer;
 BEGIN
@@ -65,7 +64,7 @@ BEGIN
 		insert into {databaseSchema}.mt_rolling_buffer 
 			(slot, message_id, timestamp, event_id, stream_id, reference_count)
 		values
-			(i + 1, 0, timestamp, empty, empty, 0);
+			(i + 1, 0, timestamp, NULL, NULL, 0);
 
 		i := i + 1;
 	END LOOP;
@@ -75,7 +74,7 @@ END
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_rolling_buffer(event UUID, stream UUID) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_rolling_buffer(event UUID, stream UUID) RETURNS int AS $$
 DECLARE
 	id int := nextval('{databaseSchema}.mt_rolling_buffer_sequence');
 	next int;
@@ -95,24 +94,25 @@ BEGIN
 		WHERE
 			slot = next;
 
-		-- Try again if it's filled up
-        IF NOT found THEN
-            select pg_sleep(.100);
-			update {databaseSchema}.mt_rolling_buffer
-				SET
-					timestamp = current_timestamp,
-					message_id = id,
-					event_id = event,
-					stream_id = stream,
-					reference_count = reference_count + 1
-				WHERE
-					slot = next AND reference_count = 0;
-		END IF;
+	-- Try again if it's filled up
+    IF NOT found THEN
+        perform pg_sleep(.100);
+		update {databaseSchema}.mt_rolling_buffer
+			SET
+				timestamp = current_timestamp,
+				message_id = id,
+				event_id = event,
+				stream_id = stream,
+				reference_count = reference_count + 1
+			WHERE
+				slot = next AND reference_count = 0;
+	END IF;
 
-		next_str = to_char(next, '999999999999');
+	--next_str = to_char(next, '999999999999');
 
 		--perform pg_notify('mt_event_queued', next_str);
-	RETURN id;
+
+	return id;
 END
 $$ LANGUAGE plpgsql;
 
@@ -121,13 +121,18 @@ CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_event_with_buffering(strea
 DECLARE
 	index int;
 	event_id uuid;
+	version int;
+	id int;
 BEGIN
+
 	foreach event_id in ARRAY event_ids
 	loop
-		perform {databaseSchema}.mt_append_rolling_buffer(event_id, stream);
+		select {databaseSchema}.mt_append_rolling_buffer(event_id, stream) into id;
 	end loop;
 
 
-	return {databaseSchema}.mt_append_event(stream, stream_type, event_ids, event_types, bodies);
+	SELECT {databaseSchema}.mt_append_event(stream, stream_type, event_ids, event_types, bodies) INTO version;
+
+	RETURN version;
 END
 $$ LANGUAGE plpgsql;

@@ -9,6 +9,56 @@ using Xunit;
 namespace Marten.Testing.Events
 {
     [Collection("DefaultSchema")]
+    public class event_administration_with_rolling_buffer_enabled : IntegratedFixture
+    {
+        public event_administration_with_rolling_buffer_enabled()
+        {
+            StoreOptions(_ => _.Events.AsyncProjectionsEnabled = true);
+            theStore.Schema.EnsureStorageExists(typeof(EventStream));
+
+            theStore.EventStore.InitializeEventStoreInDatabase(true);
+        }
+
+        [Fact]
+        public void has_the_rolling_buffer_table()
+        {
+            var schema = theStore.Schema;
+            var tableNames = schema.DbObjects.SchemaTables();
+            tableNames.ShouldContain("public.mt_rolling_buffer");
+            tableNames.ShouldContain("public.mt_options");
+        }
+
+        [Fact]
+        public void has_the_commands_for_the_rolling_buffer()
+        {
+            var schema = theStore.Schema;
+
+            var functions = schema.DbObjects.SchemaFunctionNames();
+            functions.ShouldContain("public.mt_buffer_size");
+            functions.ShouldContain("public.mt_reset_rolling_buffer_size");
+            functions.ShouldContain("public.mt_seed_rolling_buffer");
+            functions.ShouldContain("public.mt_append_rolling_buffer");
+            functions.ShouldContain("public.mt_append_event_with_buffering");
+        }
+
+        [Fact]
+        public void should_have_reset_the_buffer_size()
+        {
+            using (var conn = theStore.Advanced.OpenConnection())
+            {
+                var count = conn.Execute(cmd =>
+                {
+                    cmd.CommandText = "select count(*) from mt_rolling_buffer";
+                    return cmd.ExecuteScalar().As<long>();
+                });
+
+                count.ShouldBe(theStore.Schema.Events.AsyncProjectionBufferTableSize);
+            }
+        }
+    }
+
+
+    [Collection("DefaultSchema")]
     public class event_administration_Tests : IntegratedFixture
     {
         public event_administration_Tests()

@@ -81,6 +81,7 @@ namespace Marten.Events
         public Type DocumentType { get; } = typeof (EventStream);
 
         public TableName Table => new TableName(DatabaseSchemaName, "mt_streams");
+        public TableName RollingBufferTable => new TableName(DatabaseSchemaName, "mt_rolling_buffer");
 
         public string DatabaseSchemaName
         {
@@ -104,6 +105,7 @@ namespace Marten.Events
             _checkedSchema = true;
 
             var schemaExists = schema.DbObjects.TableExists(Table);
+
             if (schemaExists) return;
 
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
@@ -142,6 +144,7 @@ namespace Marten.Events
             writer.WriteSql(DatabaseSchemaName, "mt_initialize_projections");
             writer.WriteSql(DatabaseSchemaName, "mt_apply_transform");
             writer.WriteSql(DatabaseSchemaName, "mt_apply_aggregation");
+            writer.WriteSql(DatabaseSchemaName, "mt_rolling_buffer");
         }
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
