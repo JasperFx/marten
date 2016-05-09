@@ -67,10 +67,10 @@ namespace Marten
         public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Values; 
 
         /// <summary>
-        /// Upsert syntax options. Defaults to Postgresql <=9.4, but you can opt into
-        /// the more efficient Postgresql 9.5 style upserts
+        /// Upsert syntax options. Defaults to Postgresql >= 9.5, but you can opt into
+        /// the older upsert style for Postgresql 9.4
         /// </summary>
-        public PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;
+        public PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Standard;
 
         /// <summary>
         /// Sets the database default schema name used to store the documents.
