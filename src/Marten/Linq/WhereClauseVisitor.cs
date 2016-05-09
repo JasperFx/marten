@@ -113,7 +113,7 @@ namespace Marten.Linq
                     if (expression.Type == typeof (bool))
                     {
                         var locator = _parent._mapping.JsonLocator(expression);
-                        var @where = new WhereFragment($"({locator})::Boolean = False");
+                        var @where = new WhereFragment($"{locator} = False");
                         _callback(@where);
                     }
 
