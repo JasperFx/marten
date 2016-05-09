@@ -12,17 +12,22 @@ namespace Marten.Testing.Schema
         [Fact]
         public void work_with_existing_tables()
         {
-            using (var c1 = Container.For<DevelopmentModeRegistry>())
+            using (var store = DocumentStore.For(_ =>
             {
-                c1.GetInstance<IDocumentStore>().Advanced.Clean.CompletelyRemoveAll();
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+            }))
+            {
+                store.Advanced.Clean.CompletelyRemoveAll();
 
-                using (var session = c1.GetInstance<IDocumentStore>().OpenSession())
+                using (var session = store.OpenSession())
                 {
                     session.Store(new User());
                     session.Store(new User());
                     session.SaveChanges();
                 }
             }
+
 
             using (var store = DocumentStore.For(_ =>
             {
