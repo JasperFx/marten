@@ -230,6 +230,32 @@ namespace Marten.Testing.Schema
             var fileSystem = new FileSystem();
             fileSystem.FindFiles("allsql", FileSet.Shallow("*mt_streams.sql"))
                 .Any().ShouldBeTrue();
+
+            fileSystem.FindFiles("allsql", FileSet.Shallow(".sql"))
+                .Any().ShouldBeFalse();
+        }
+
+        [Fact]
+        public void fixing_bug_343_double_export_of_events()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.RegisterDocumentType<User>();
+                _.RegisterDocumentType<Company>();
+                _.RegisterDocumentType<Issue>();
+
+                _.Events.AddEventType(typeof(MembersJoined));
+
+                _.Connection(ConnectionSource.ConnectionString);
+            }))
+            {
+                store.Schema.Events.IsActive.ShouldBeTrue();
+                store.Schema.WriteDDLByType("allsql");
+            }
+
+            var fileSystem = new FileSystem();
+            fileSystem.FindFiles("allsql", FileSet.Shallow(".sql"))
+                .Any().ShouldBeFalse();
         }
 
         [Fact]

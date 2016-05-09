@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using Baseline;
 using Marten.Events;
-using Marten.Generation;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.Sequences;
@@ -115,7 +113,6 @@ namespace Marten.Schema
         public IEventStoreConfiguration Events => StoreOptions.Events;
 
 
-
         public string[] AllSchemaNames()
         {
             var schemas =
@@ -145,7 +142,7 @@ namespace Marten.Schema
 
             WriteDatabaseSchemaGenerationScript(directory, system);
 
-            _mappings.Values.Where(x => !(x is SubClassMapping)).Each(mapping =>
+            _mappings.Values.OfType<DocumentMapping>().Each(mapping =>
             {
                 var writer = new StringWriter();
                 mapping.WriteSchemaObjects(this, writer);
@@ -169,24 +166,6 @@ namespace Marten.Schema
         }
 
 
-        private void WriteDatabaseSchemaGenerationScript(string directory, FileSystem system)
-        {
-            var allSchemaNames = AllSchemaNames();
-            var script = DatabaseSchemaGenerator.GenerateScript(allSchemaNames);
-
-            if (script.IsNotEmpty())
-            {
-                var filename = directory.AppendPath("database_schemas.sql");
-                system.WriteStringToFile(filename, script);
-            }
-        }
-
-        private string getHiloScript()
-        {
-            return SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo");
-        }
-
-
         public string ToDDL()
         {
             var writer = new StringWriter();
@@ -196,7 +175,7 @@ namespace Marten.Schema
 
             StoreOptions.AllDocumentMappings.Each(x => x.WriteSchemaObjects(this, writer));
 
-            if (Events.IsActive)
+            if (Events.IsActive && !StoreOptions.AllDocumentMappings.Contains(Events.As<IDocumentMapping>()))
             {
                 Events.As<IDocumentMapping>().WriteSchemaObjects(this, writer);
             }
@@ -226,6 +205,24 @@ namespace Marten.Schema
             Events.As<EventGraph>().ResetSchemaExistenceChecks();
 
             _documentTypes.Clear();
+        }
+
+
+        private void WriteDatabaseSchemaGenerationScript(string directory, FileSystem system)
+        {
+            var allSchemaNames = AllSchemaNames();
+            var script = DatabaseSchemaGenerator.GenerateScript(allSchemaNames);
+
+            if (script.IsNotEmpty())
+            {
+                var filename = directory.AppendPath("database_schemas.sql");
+                system.WriteStringToFile(filename, script);
+            }
+        }
+
+        private string getHiloScript()
+        {
+            return SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo");
         }
 
         private void buildSchemaObjectsIfNecessary(IDocumentMapping mapping)
@@ -274,11 +271,6 @@ namespace Marten.Schema
                 throw new AmbiguousDocumentTypeAliasesException(message);
             }
         }
-
-
-
-
-
     }
 
     [Serializable]

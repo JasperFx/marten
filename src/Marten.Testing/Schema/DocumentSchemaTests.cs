@@ -99,6 +99,22 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void generate_the_ddl_with_the_event_store()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.AddEventType(typeof(MembersDeparted));
+            });
+
+            var sql = theSchema.ToDDL();
+
+            sql.ShouldContain("CREATE TABLE public.mt_streams");
+
+            // Crude way of checking that it should only be dumped once
+            sql.IndexOf("CREATE TABLE public.mt_streams").ShouldBe(sql.LastIndexOf("CREATE TABLE public.mt_streams"));
+        }
+
+        [Fact]
         public void include_the_hilo_table_by_default()
         {
             theSchema.StorageFor(typeof(User));
