@@ -28,6 +28,11 @@ namespace Marten.Testing.Documents
         {
             return $"{{\"Id\": \"{Id}\", \"Age\": {Age}, \"FullName\": \"{FullName}\", \"Internal\": {Internal.ToString().ToLowerInvariant()}, \"LastName\": \"{LastName}\", \"UserName\": \"{UserName}\", \"FirstName\": \"{FirstName}\"}}";
         }
+
+        public void From(User user)
+        {
+            Id = user.Id;
+        }
     }
 
     public class SuperUser : User
