@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.9.0</h3>
+		      	<h3>Marten 0.9.2</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -106,52 +106,12 @@ make sure that your user account has rights to execute <code>CREATE TABLE/FUNCTI
 <h2>Bootstrapping a Document Store</h2>
 <p>To start up Marten in a running application, you need to create a single <code>IDocumentStore</code> object. The quickest way is to start with
 all the default behavior and a connection string:</p>
-<pre><code class="language-csharp">
-            var store = DocumentStore
-                .For(&quot;host=localhost;database=marten_test;password=mypassword;username=someuser&quot;);
-</code></pre>
+<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;start_a_store&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
 <p>Now, for your first document type, let's represent the users in our system:</p>
-<pre><code class="language-csharp">
-    public class User
-    {
-        public Guid Id { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public bool Internal { get; set; }
-        public string UserName { get; set; }
-    }
-</code></pre>
+<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;user_document&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
 <p><em>For more information on document id's, see <a href="/marten/documentation/documents/document_ids">Document Id's</a>.</em></p>
 <p>And now that we've got a Postgresql schema and an <code>IDocumentStore</code>, let's start persisting and loading user documents:</p>
-<pre><code class="language-csharp">
-            // Open a session for querying, loading, and 
-            // updating documents 
-            using (var session = store.LightweightSession())
-            {
-                var user = new User {FirstName = &quot;Han&quot;, LastName = &quot;Solo&quot;};
-                session.Store(user);
-
-                session.SaveChanges();
-            }
-
-            // Open a session for querying, loading, and 
-            // updating documents with a backing &quot;Identity Map&quot;
-            using (var session = store.OpenSession())
-            {
-                var existing = session
-                    .Query&lt;User&gt;()
-                    .Where(x =&gt; x.FirstName == &quot;Han&quot; &amp;&amp; x.LastName == &quot;Solo&quot;)
-                    .Single();
-            }
-
-            // Open a session for querying, loading, and 
-            // updating documents that performas automated
-            // &quot;dirty&quot; checking of previously loaded documents
-            using (var session = store.DirtyTrackedSession())
-            {
-                
-            }
-</code></pre>
+<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;opening_sessions&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
 <h2>Integrating Marten with IoC Containers</h2>
 <p>The Marten team has striven to make the library perfectly usable without the usage of an IoC container, but you may still want to
 use an IoC container specifically to manage dependencies and the lifecyle of Marten objects.</p>

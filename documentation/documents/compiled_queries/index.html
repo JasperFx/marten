@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.9.0</h3>
+		      	<h3>Marten 0.9.2</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -150,6 +150,7 @@ await batch.Execute();
 <li><code>First/FirstOrDefault()</code></li>
 <li><code>Single/SingleOrDefault()</code></li>
 <li><code>Where()</code></li>
+<li><code>Include()</code></li>
 <li><code>OrderBy/OrderByDescending</code> etc.</li>
 <li><code>Count()</code></li>
 <li><code>Any()</code></li>
@@ -157,12 +158,7 @@ await batch.Execute();
 <li><code>ToJsonArray()</code></li>
 <li><code>ToJsonArrayAsync()</code></li>
 </ul>
-<p>At this point (v0.9), the only limitations are:</p>
-<ol>
-<li>You cannot yet incorporate the <a href="/marten/documentation/documents/include">Include's</a> feature with compiled queries, but there is an open
-<a href="https://github.com/JasperFx/marten/issues/309">GitHub issue</a> you can use to track progress on adding this feature.</li>
-<li>You cannot use the Linq <code>ToArray()</code> or <code>ToList()</code> operators. See the next section for an explanation of how to query for multiple results</li>
-</ol>
+<p>At this point (v0.9), the only limitation is that you cannot use the Linq <code>ToArray()</code> or <code>ToList()</code> operators. See the next section for an explanation of how to query for multiple results.</p>
 <h2>Querying for multiple results</h2>
 <p>To query for multiple results, you need to just return the raw <code>IQueryable&lt;T&gt;</code> as <code>IEnumerable&lt;T&gt;</code> as the result type. You cannot use the <code>ToArray()</code> or <code>ToList()</code> operators (it'll throw exceptions from the Relinq library if you try). As a convenience mechanism, Marten supplies these helper interfaces:</p>
 <p>If you are selecting the whole document without any kind of <code>Select()</code> transform, you can use this interface:</p>
@@ -206,6 +202,50 @@ await batch.Execute();
         public string FirstName { get; set; }
     }
 </code></pre>
+<h2>Querying for included documents</h2>
+<p>If you wish to use a compiled query for a document, using a <code>JOIN</code> so that the query will include another document, just as the <a href="/marten/documentation/documents/include">Include()</a> method does on a simple query, the compiled query would be constructed just like any other, using the <code>Include()</code> method
+on the query:</p>
+<pre><code class="language-csharp">
+        [Fact]
+        public void simple_compiled_include_for_a_single_document()
+        {
+            var user = new User();
+            var issue = new Issue { AssigneeId = user.Id, Title = &quot;Garage Door is busted&quot; };
+
+            theSession.Store&lt;object&gt;(user, issue);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var issueQuery = new IssueByTitleWithAssignee {Title = issue.Title};
+                var issue2 = query.Query(issueQuery);
+
+                issueQuery.Included.ShouldNotBeNull();
+                issueQuery.Included.Id.ShouldBe(user.Id);
+
+                issue2.ShouldNotBeNull();
+            }
+        }
+
+        public class IssueByTitleWithAssignee : ICompiledQuery&lt;Issue&gt;
+        {
+            public string Title { get; set; }
+            public User Included { get; private set; } = new User();
+            public JoinType JoinType { get; set; } = JoinType.Inner;
+
+            public Expression&lt;Func&lt;IQueryable&lt;Issue&gt;, Issue&gt;&gt; QueryIs()
+            {
+                return query =&gt; query
+                    .Include&lt;Issue, IssueByTitleWithAssignee&gt;(x =&gt; x.AssigneeId, x =&gt; x.Included, JoinType)
+                    .Single(x =&gt; x.Title == Title);
+            }
+        }
+</code></pre>
+<p>In this example, the query has an <code>Included</code> property which will receive the included Assignee / <code>User</code>. The 'resulting' included property can only be
+a property of the query, so that Marten would know how to assign the included result of the postgres query.
+The <code>JoinType</code> property here is just an example for overriding the default <code>INNER JOIN</code>. If you wish to force an <code>INNER JOIN</code> within the query
+you can simply remove the <code>JoinType</code> parameter like so: <code>.Include&lt;Issue, IssueByTitleWithAssignee&gt;(x =&gt; x.AssigneeId, x =&gt; x.Included)</code></p>
+<p>You can also chain <code>Include</code> methods if you need more than one <code>JOIN</code>s.</p>
 <h2>Querying for a single document</h2>
 <p>If you are querying for a single document with no transformation, you can use this interface as a convenience:</p>
 <pre><code class="language-csharp">

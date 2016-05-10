@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Precompiling Marten Code for Faster Initialization</title>
+		<title>Marten - Paging</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/events" title="Marten as Event Store">Previous</a></li>
-		      	
+		      	<li><a href="/marten/documentation/documents/include" title="Including Related Documents">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/table_storage" title="Table Storage">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li class="active">Precompiling Marten Code for Faster Initialization</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Paging</li></ol>
 		  	</nav>
 		  </div>
 
@@ -76,76 +76,64 @@
 
 		        </ul>
 
-		        	
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events">Marten as Event Store</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/table_storage">Table Storage</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/include">Including Related Documents</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Precompiling Marten Code for Faster Initialization <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/precompiling.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Paging <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/paging.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--title:Precompiling Marten Code for Faster Initialization-->
-<p>Marten is using code generation and <a href="http://jeremydmiller.com/2015/11/11/using-roslyn-for-runtime-code-generation-in-marten/">runtime compilation using Roslyn</a> for the dynamic elements of handling specific documents. That technique has been very effective and we would argue that it is
-much more approachable than the older techniques of building Expression trees to Func's or IL generation. Unfortunately, the first call to
-Roslyn incurs a pretty significant &quot;warm up&quot; cost of 3-6 seconds.</p>
-<p>In the case where your Marten configuration is not changing, but you'd really like your application to spin up faster than Roslyn allows, Marten can now
-export the dynamic code to a file and use the pre-compiled <code>IDocumentStorage</code> classes at runtime in place of the Roslyn compilation.</p>
-<h2>Exporting the Dynamic Storage Code</h2>
-<p>To dump the storage code that would normally be compiled at runtime by Roslyn, build an <code>IDocumentStore</code> exactly the way it should be configured for
-your system, and call the <code>IDocumentStore.Advanced.WriteStorageCode()</code> method like this:</p>
+			      		<!--title: Paging-->
+<p>For paged access to data in Marten, just use the <code>Take()</code> and <code>Skip()</code> Linq operators. To get the total number of
+documents matching a query without having to execute the query twice, use the new <code>Stats()</code> Linq operator to
+also capture the total as shown in this sample:</p>
 <pre><code class="language-csharp">
-            using (var store = DocumentStore.For(_ =&gt;
-            {
-                _.Connection(ConnectionSource.ConnectionString);
+        [Fact]
+        public void can_get_the_total_in_results()
+        {
+            var count = theSession.Query&lt;Target&gt;().Count(x =&gt; x.Number &gt; 10);
+            count.ShouldBeGreaterThan(0);
 
-                _.RegisterDocumentType&lt;User&gt;();
-                _.RegisterDocumentType&lt;Company&gt;();
-                _.RegisterDocumentType&lt;Issue&gt;();
-            }))
-            {
-                store.Advanced.WriteStorageCode(&quot;storage.cs&quot;);
-            }
-</code></pre>
-<p>Once that code is written to a file, you should be able to include it into your .Net project.</p>
-<p>Even outside of pre-compiling, you may find it valuable to export the dynamic code just to understand what Marten is doing internally.</p>
-<h2>Using Pre-built Storage Objects</h2>
-<p>The other half of pre-compiling storage objects is to direct Marten to try to use precompiled classes wherever possible:</p>
-<pre><code class="language-csharp">
-            using (var store = DocumentStore.For(_ =&gt;
-            {
-                _.Connection(ConnectionSource.ConnectionString);
+            // We&#39;re going to use stats as an output
+            // parameter to the call below, so we
+            // have to declare the &quot;stats&quot; object
+            // first
+            QueryStatistics stats = null;
 
-                // Use any precompiled IDocumentStorage classes from the 
-                // supplied Assembly
-                _.LoadPrecompiledStorageFrom(GetType().Assembly);
-                _.AutoCreateSchemaObjects = AutoCreate.All;
-            }))
-            {
-                store.Schema.StorageFor(typeof (User)).ShouldBeOfType&lt;FakeUserStorage&gt;();
-                store.Schema.StorageFor(typeof (Company)).ShouldBeOfType&lt;FakeCompanyStorage&gt;();
-            }
-</code></pre>
-<p>Behind the scenes, the helper method shown above for importing storage types is just finding and adding storage types to the <code>StoreOptions.PreBuiltStorage</code> list. You can also add storage types directly to the <code>StoreOptions</code> object. This may end up being a standard extension mechanism for Marten.</p>
-<h2>Forcing Marten to Generate Code Upfront</h2>
-<p>You can also force Marten to generate the dynamic code for each registered document type upfront with this call:</p>
-<pre><code class="language-csharp">
-            using (var store = DocumentStore.For(_ =&gt;
-            {
-                _.Connection(&quot;something&quot;);
+            var list = theSession
+                .Query&lt;Target&gt;()
+                .Stats(out stats)
+                .Where(x =&gt; x.Number &gt; 10).Take(5)
+                .ToList();
 
-                // Document types that are known upfront
-                _.Schema.For&lt;User&gt;();
-                _.Schema.For&lt;Issue&gt;();
-            }))
-            {
-                store.Advanced.PrecompileAllStorage();
-            }
+            list.Any().ShouldBeTrue();
+
+            // Now, the total results data should
+            // be available
+            stats.TotalResults.ShouldBe(count);
+
+
+            var cmd = theSession
+                .Query&lt;Target&gt;()
+                .Stats(out stats)
+                .Where(x =&gt; x.Number &gt; 10).Take(5)
+                .ToCommand();
+
+            _output.WriteLine(cmd.CommandText);
+        }
 </code></pre>
+<p>For the sake of completeness, the SQL generated in the operation above by Marten would be:</p>
+<pre>
+select d.data, d.id, count(1) OVER() as total_rows from public.mt_doc_target as d where CAST(d.data ->> 'Number' as integer) > :arg0 LIMIT 5
+</pre>
+<p>The <code>Stats()</code> Linq operator can be used in conjunction with <code>Include()</code> and within batch queries. Marten does not yet
+support using <code>Stats()</code> within the compiled query.</p>
 
 
 			      	</div>
@@ -154,12 +142,12 @@ your system, and call the <code>IDocumentStore.Advanced.WriteStorageCode()</code
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/events">Marten as Event Store</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/include">Including Related Documents</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/table_storage">Table Storage</a>
 
 				        </span>
 			      	</nav>

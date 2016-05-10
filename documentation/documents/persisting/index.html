@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.9.0</h3>
+		      	<h3>Marten 0.9.2</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -172,7 +172,7 @@ JSON representation of the document at the time that <code>IDocumentSession</cod
 <p>Do be aware that the automated dirty checking comes with some mechanical cost in memory and runtime performance.</p>
 <h2>Transaction Isolation Level</h2>
 <p>New in v0.7 is the ability to configure the transaction isolation level when opening a new <code>IDocumentSession</code> by
-supplying the optional <code>isolationLevel</code> argument.</p>
+supplying the optional <code>isolationLevel</code> argument. As of v0.9.2, the default level is <code>ReadCommitted</code>.</p>
 <p>As one of the use cases that spawned this feature, say
 that you are using the <a href="https://lostechies.com/jimmybogard/2013/03/21/saga-implementation-patterns-variations/">Saga pattern</a> in a service bus architecture. When handling a message with this pattern, you typically want to load some kind of persisted state for the long running saga, do some work, then persist the updated saga state. If you need to worry about serializing the messages
 for a single saga, you might want to use <a href="https://en.wikipedia.org/wiki/Serializability">serializable transactions</a> like this:</p>

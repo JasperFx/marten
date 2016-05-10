@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.9.0</h3>
+		      	<h3>Marten 0.9.2</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -130,25 +130,15 @@ information in the JsonB data field. Do note that this could be expensive for la
 by the auto create schema mode shown above.</li>
 </ol>
 <p>Our thought is that in development you probably run in the &quot;All&quot; mode, but in production use one of the more restrictive auto creation modes.</p>
+<p><strong>As of Marten v0.9.2, Marten will also check if the existing <em>upsert</em> function and any table indexes match
+what is configured in the document store, and attempts to update these objects if necessary based on the same
+All/None/CreateOnly/CreateOrUpdate rules as the table storage.</strong></p>
 <h2>Overriding Schema Name</h2>
-<h3>Document Database</h3>
 <p>By default marten will use the default <code>public</code> database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:</p>
-<pre><code class="language-csharp">
-                _.DatabaseSchemaName = &quot;other&quot;;
-</code></pre>
+<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;override_schema_name&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
 <p>The <code>Hilo</code> sequence table is always created in this document store database schema.</p>
 <p>If you wish to assign certain document tables to different (new or existing) schemas, you can do so like that:</p>
-<pre><code class="language-csharp">
-            StoreOptions(_ =&gt;
-            {
-                _.MappingFor(typeof(User)).DatabaseSchemaName = &quot;other&quot;;
-                _.MappingFor(typeof(Issue)).DatabaseSchemaName = &quot;overriden&quot;;
-                _.MappingFor(typeof(Company));
-
-                // this will tell marten to use the default &#39;public&#39; schema name.
-                _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-            });
-</code></pre>
+<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;override_schema_per_table&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
 <p>This will create the following tables in your database: <code>other.mt_doc_user</code>, <code>overriden.mt_doc_issue</code> and <code>public.mt_doc_company</code>. When a schema doesn't exist it will be generated in the database.</p>
 <h3>Event Store</h3>
 <p>The EventStore database object are by default created in the document store DatabaseSchemaName. This can be overridden by setting the DatabaseSchemaName property of the event store options.</p>

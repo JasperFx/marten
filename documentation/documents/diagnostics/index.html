@@ -44,7 +44,7 @@
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
 		      	<li><a href="/marten/documentation/documents/projections" title="Document Projections">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/include" title="Including Related Documents">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/foreign_keys" title="Foreign Keys">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -69,14 +69,14 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.9.0</h3>
+		      	<h3>Marten 0.9.2</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/include">Including Related Documents</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/foreign_keys">Foreign Keys</a></p>
 		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/projections">Document Projections</a></p>
 
 		        </ul>
@@ -183,7 +183,10 @@ query what was done after a commit is made:</p>
             pending.DeletionsFor&lt;User&gt;()
                 .Each(d =&gt; Debug.WriteLine(d));
 
-
+            // This is a convenience method to find all the pending events
+            // organized into streams that will be appended to the event store
+            pending.Streams()
+                .Each(s =&gt; Debug.WriteLine(s));
         }
 
         public override void AfterCommit(IDocumentSession session)
@@ -307,7 +310,7 @@ query what was done after a commit is made:</p>
 <pre><code class="language-csharp">
             // store is the active IDocumentStore
             var queryable = store.QuerySession().Query&lt;Trade&gt;().Where(x =&gt; x.Value &gt; 2000);
-            var cmd = queryable.ToCommand(FetchType.FetchMany);
+            var cmd = QueryableExtensions.ToCommand&lt;Trade&gt;(queryable, FetchType.FetchMany);
 
             Debug.WriteLine(cmd.CommandText);
 </code></pre>
@@ -319,7 +322,7 @@ select d.data from mt_doc_trade as d where d.value > :arg0
 <p>Marten has a helper to find and preview the <a href="http://www.postgresql.org/docs/9.5/static/using-explain.html">Postgresql EXPLAIN plan</a> for a Linq query. Our hope is that this will be a valuable aid to teams who need face performance problems while using Marten. The syntax for fetching the EXPLAIN plan for the Linq query from the previous section is shown below:</p>
 <pre><code class="language-csharp">
             // Explain() is an extension method off of IQueryable&lt;T&gt;
-            var plan = queryable.Explain();
+            var plan = QueryableExtensions.Explain&lt;Trade&gt;(queryable);
             Console.WriteLine($&quot;NodeType: {plan.NodeType}&quot;);
             Console.WriteLine($&quot;RelationName: {plan.RelationName}&quot;);
             Console.WriteLine($&quot;Alias: {plan.Alias}&quot;);
@@ -540,7 +543,7 @@ namespace Marten.GeneratedCode
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/include">Including Related Documents</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/foreign_keys">Foreign Keys</a>
 
 				        </span>
 			      	</nav>
