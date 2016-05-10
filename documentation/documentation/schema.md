@@ -21,9 +21,13 @@ To prevent unnecessary loss of data, even in development, on the first usage of 
 
 Our thought is that in development you probably run in the "All" mode, but in production use one of the more restrictive auto creation modes.
 
+**As of Marten v0.9.2, Marten will also check if the existing _upsert_ function and any table indexes match 
+what is configured in the document store, and attempts to update these objects if necessary based on the same
+All/None/CreateOnly/CreateOrUpdate rules as the table storage.**
+
+
 ## Overriding Schema Name
 
-### Document Database
 By default marten will use the default `public` database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:
 
 <[sample:override_schema_name]>
