@@ -18,3 +18,13 @@ As of v0.9, Marten supplies the following functionality to retrieve the raw JSON
 And the asynchronous version:
 
 <[sample:get-raw-json-async]>
+
+## Using AsJson() with Select() Transforms
+
+New for Marten v0.9.1 is the ability to combine the `AsJson()` mechanics to the result of a `Select()` transform:
+
+<[sample:AsJson-plus-Select-1]>
+
+And another example, but this time transforming to an anonymous type:
+
+<[sample:AsJson-plus-Select-2]>

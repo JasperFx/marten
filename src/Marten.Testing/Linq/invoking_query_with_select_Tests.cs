@@ -87,16 +87,21 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             // Postgres sticks some extra spaces into the JSON string
-            theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
+
+            // SAMPLE: AsJson-plus-Select-1
+            theSession
+                .Query<User>()
+                .OrderBy(x => x.FirstName)
+                
+                // Transform the User class to a different type
+                .Select(x => new UserName { Name = x.FirstName })
                 .AsJson()
                 .First()
                 .ShouldBe("{\"Name\" : \"Bill\"}");
+            // ENDSAMPLE
         }
 
-        // TODO
-        // 1. Test the AsJsonArray() functionality with a select
-        // 2. Test AsJson() to an anonymous type
-        // 3. Test fetching a list
+
 
         // SAMPLE: get_first_projection
         [Fact]
@@ -125,10 +130,20 @@ namespace Marten.Testing.Linq
 
             theSession.SaveChanges();
 
-            theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
+
+            // SAMPLE:AsJson-plus-Select-2
+            theSession
+                .Query<User>()
+                .OrderBy(x => x.FirstName)
+                
+                // Transform to an anonymous type
+                .Select(x => new { Name = x.FirstName })
+
+                // Select only the raw JSON
                 .AsJson()
                 .FirstOrDefault()
                 .ShouldBe("{\"Name\" : \"Bill\"}");
+            // ENDSAMPLE
         }
 
         [Fact]
