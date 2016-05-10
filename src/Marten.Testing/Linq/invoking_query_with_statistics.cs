@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
@@ -6,32 +7,55 @@ using Marten.Testing.Fixtures;
 using Marten.Util;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq
 {
     public class invoking_query_with_statistics : DocumentSessionFixture<NulloIdentityMap>
     {
-        public invoking_query_with_statistics()
+        private readonly ITestOutputHelper _output;
+
+        public invoking_query_with_statistics(ITestOutputHelper output)
         {
+            _output = output;
             theStore.BulkInsert(Target.GenerateRandomData(100).ToArray());
         }
 
+        // SAMPLE: using-query-statistics
         [Fact]
         public void can_get_the_total_in_results()
         {
             var count = theSession.Query<Target>().Count(x => x.Number > 10);
             count.ShouldBeGreaterThan(0);
 
-
+            // We're going to use stats as an output
+            // parameter to the call below, so we
+            // have to declare the "stats" object
+            // first
             QueryStatistics stats = null;
 
-            var list = theSession.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
+            var list = theSession
+                .Query<Target>()
+                .Stats(out stats)
+                .Where(x => x.Number > 10).Take(5)
                 .ToList();
 
             list.Any().ShouldBeTrue();
 
+            // Now, the total results data should
+            // be available
             stats.TotalResults.ShouldBe(count);
+
+
+            var cmd = theSession
+                .Query<Target>()
+                .Stats(out stats)
+                .Where(x => x.Number > 10).Take(5)
+                .ToCommand();
+
+            _output.WriteLine(cmd.CommandText);
         }
+        // ENDSAMPLE
 
         [Fact]
         public async Task can_get_the_total_in_results_async()
