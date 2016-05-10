@@ -153,6 +153,22 @@ await batch.Execute();
 // ENDSAMPLE
         }
 
+        [Fact]
+        public void can_query_synchronously_with_compiled_queries()
+        {
+            // SAMPLE: batch-query-with-compiled-queries-synchronously
+var batch = theSession.CreateBatchQuery();
+
+var justin = batch.Query(new FindByFirstName { FirstName = "Justin" });
+var tamba = batch.Query(new FindByFirstName { FirstName = "Tamba" });
+
+batch.ExecuteSynchronously();
+
+justin.Result.Id.ShouldBe(user1.Id);
+tamba.Result.Id.ShouldBe(user2.Id);
+            // ENDSAMPLE
+        }
+
 
         public async Task sample_usage_of_compiled_query()
         {

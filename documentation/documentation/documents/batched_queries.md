@@ -26,3 +26,11 @@ To use that compiled query class in a batch query, you simply use the `IBatchedQ
 
 <[sample:batch-query-with-compiled-queries]>
 
+## Running Synchronously
+
+As of v0.9.1, Marten also exposes the batch querying functionality with a synchronous option:
+
+<[sample:batch-query-with-compiled-queries-synchronously]>
+
+The mechanics of running synchronously are identical except for calling `IBatchedQuery.ExecuteSynchronously()`.
+
