@@ -11,11 +11,11 @@ namespace Marten.Services
     {
         private readonly Lazy<TransactionState> _connection; 
 
-        public ManagedConnection(IConnectionFactory factory) : this (factory, CommandRunnerMode.ReadOnly)
+        public ManagedConnection(IConnectionFactory factory) : this (factory, CommandRunnerMode.AutoCommit)
         {
         }
 
-        public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
+        public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             _connection = new Lazy<TransactionState>(() => new TransactionState(factory, mode, isolationLevel));
         }

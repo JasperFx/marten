@@ -21,19 +21,18 @@ namespace Marten.Services
 
         private void BeginTransaction()
         {
-            if (_mode == CommandRunnerMode.Transactional)
+            if (_mode == CommandRunnerMode.Transactional || _mode == CommandRunnerMode.ReadOnly)
             {
                 Transaction = Connection.BeginTransaction(_isolationLevel);
             }
-            //TODO come back to this, but LOTS of tests need to be fixed for this to work
-            //if (_mode == CommandRunnerMode.ReadOnly)
-            //{
-            //    using (var cmd = new NpgsqlCommand("SET TRANSACTION READ ONLY;"))
-            //    {
-            //        Apply(cmd);
-            //        cmd.ExecuteNonQuery();
-            //    }
-            //}
+            if (_mode == CommandRunnerMode.ReadOnly)
+            {
+                using (var cmd = new NpgsqlCommand("SET TRANSACTION READ ONLY;"))
+                {
+                    Apply(cmd);
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
 
         public void Apply(NpgsqlCommand cmd)

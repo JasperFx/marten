@@ -37,13 +37,14 @@ AND    n.nspname = '{1}';";
 
         public void DeleteAllDocuments()
         {
-            using (var conn = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
+            using (var conn = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
             {
                 _schema.DbObjects.DocumentTables().Each(tableName =>
                 {
                     var sql = "truncate {0} cascade".ToFormat(tableName);
                     conn.Execute(sql);
                 });
+                conn.Commit();
             }
         }
 
@@ -65,15 +66,16 @@ AND    n.nspname = '{1}';";
         {
             var mapping = _schema.MappingFor(documentType);
 
-            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
+            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
             {
                 mapping.RemoveSchemaObjects(connection);
+                connection.Commit();
             }
         }
 
         public void CompletelyRemoveAll()
         {
-            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
+            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
             {
                 var schemaTables = _schema.DbObjects.SchemaTables();
                 schemaTables
@@ -81,6 +83,7 @@ AND    n.nspname = '{1}';";
 
                 var drops = connection.GetStringList(DropAllFunctionSql, new object[] { _schema.AllSchemaNames() });
                 drops.Each(drop => connection.Execute(drop));
+                connection.Commit();
 
                 _schema.ResetSchemaExistenceChecks();
             }
@@ -88,10 +91,11 @@ AND    n.nspname = '{1}';";
 
         public void DeleteAllEventData()
         {
-            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.ReadOnly))
+            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
             {
                 connection.Execute($"truncate table {_schema.Events.DatabaseSchemaName}.mt_events cascade;" +
                                    $"truncate table {_schema.Events.DatabaseSchemaName}.mt_streams cascade");
+                connection.Commit();
             }
         }
     }

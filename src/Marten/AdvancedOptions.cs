@@ -47,7 +47,7 @@ namespace Marten
         /// <param name="mode"></param>
         /// <param name="isolationLevel"></param>
         /// <returns></returns>
-        public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.ReadOnly, IsolationLevel isolationLevel = IsolationLevel.ReadUncommitted)
+        public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             return new ManagedConnection(Options.ConnectionFactory(), mode, isolationLevel);
         }
