@@ -27,7 +27,10 @@ namespace Marten.Testing.Examples
             pending.DeletionsFor<User>()
                 .Each(d => Debug.WriteLine(d));
 
-
+            // This is a convenience method to find all the pending events
+            // organized into streams that will be appended to the event store
+            pending.Streams()
+                .Each(s => Debug.WriteLine(s));
         }
 
         public override void AfterCommit(IDocumentSession session)
