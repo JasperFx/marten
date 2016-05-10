@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema.Hierarchies;
@@ -16,6 +18,8 @@ namespace Marten.Schema
     {
         private readonly DocumentMapping _parent;
         private readonly DocumentMapping _inner;
+        private readonly string _deleteStatement;
+        private readonly string _removeSchemaNotSupportedMessage;
 
         public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions, string alias = null)
         {
@@ -24,6 +28,9 @@ namespace Marten.Schema
             _parent = parent;
             Alias = alias ?? GetTypeMartenAlias(documentType);
             Aliases = new[] {Alias};
+
+            _deleteStatement = $"delete from {_parent.Table.QualifiedName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'";
+            _removeSchemaNotSupportedMessage = $"Invalid to remove schema objects for {DocumentType}, Use the parent {_parent.DocumentType} instead";
         }
 
         public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions, IEnumerable<MappedType> otherSubclassTypes, string alias = null)
@@ -112,12 +119,22 @@ namespace Marten.Schema
 
         public void RemoveSchemaObjects(IManagedConnection connection)
         {
-            throw new NotSupportedException($"Invalid to remove schema objects for {DocumentType}, Use the parent {_parent.DocumentType} instead");
+            throw new NotSupportedException(_removeSchemaNotSupportedMessage);
+        }
+
+        public Task RemoveSchemaObjectsAsync(IManagedConnection connection, CancellationToken token)
+        {
+            throw new NotSupportedException(_removeSchemaNotSupportedMessage);
         }
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
-            factory.RunSql($"delete from {_parent.Table.QualifiedName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
+            factory.RunSql(_deleteStatement);
+        }
+
+        public Task DeleteAllDocumentsAsync(IConnectionFactory factory, CancellationToken token)
+        {
+            return factory.RunSqlAsync(_deleteStatement, token);
         }
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class

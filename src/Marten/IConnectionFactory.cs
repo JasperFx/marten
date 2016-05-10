@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
 using Marten.Util;
@@ -32,6 +34,24 @@ namespace Marten
                 try
                 {
                     conn.CreateCommand().WithText(sql).ExecuteNonQuery();
+                }
+                finally
+                {
+                    conn.Close();
+                    conn.Dispose();
+                }
+            }
+        }
+
+        public static async Task RunSqlAsync(this IConnectionFactory factory, string sql, CancellationToken token = default(CancellationToken))
+        {
+            using (var conn = factory.Create())
+            {
+                await conn.OpenAsync(token).ConfigureAwait(false);
+
+                try
+                {
+                    await conn.CreateCommand().WithText(sql).ExecuteNonQueryAsync(token).ConfigureAwait(false);
                 }
                 finally
                 {
