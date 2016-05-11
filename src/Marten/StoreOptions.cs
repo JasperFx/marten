@@ -184,7 +184,7 @@ namespace Marten
         /// </summary>
         public IEventStoreConfiguration Events { get; }
 
-        internal ISerializer Serializer()
+        public ISerializer Serializer()
         {
             return _serializer ?? new JsonNetSerializer();
         }

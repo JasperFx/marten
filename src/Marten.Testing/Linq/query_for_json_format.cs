@@ -42,6 +42,8 @@ namespace Marten.Testing.Linq
 
     public class query_for_json_format : DocumentSessionFixture<NulloIdentityMap>
     {
+
+
         [Fact]
         public void to_list()
         {

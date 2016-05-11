@@ -63,6 +63,8 @@ namespace Marten.Testing
 
             configure(options);
 
+            options.Serializer<JilSerializer>();
+
             var store = new TestingDocumentStore(options);
             store.Advanced.Clean.CompletelyRemoveAll();
 

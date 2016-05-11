@@ -22,6 +22,11 @@ namespace Marten.Testing
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
         }
 
+        protected string toJson<T>(T doc)
+        {
+            return theStore.Advanced.Options.Serializer().ToJson(doc);
+        }
+
         protected IDocumentStore theStore => _store.Value;
 
         protected void UseDefaultSchema()

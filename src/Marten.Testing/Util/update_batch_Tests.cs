@@ -102,7 +102,7 @@ namespace Marten.Testing.Util
 
             var upsert = theMapping.UpsertFunction;
 
-            var serializer = new JsonNetSerializer();
+            var serializer = new JilSerializer();
 
             batch.Sproc(upsert).Param("docId", target1.Id).JsonBody("doc", serializer.ToJson(target1));
             batch.Sproc(upsert).Param("docId", target2.Id).JsonBody("doc", serializer.ToJson(target2));

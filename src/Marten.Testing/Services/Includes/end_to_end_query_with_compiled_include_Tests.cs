@@ -80,21 +80,21 @@ namespace Marten.Testing.Services.Includes
             }
         }
 
-        public class IssueByTitleIncludingUsers : ICompiledQuery<Issue>
-        {
-            public string Title { get; set; }
-            public User IncludedAssignee { get; private set; } = new User();
-            public User IncludedReported { get; private set; } = new User();
-            public JoinType JoinType { get; set; } = JoinType.Inner;
+public class IssueByTitleIncludingUsers : ICompiledQuery<Issue>
+{
+    public string Title { get; set; }
+    public User IncludedAssignee { get; private set; } = new User();
+    public User IncludedReported { get; private set; } = new User();
+    public JoinType JoinType { get; set; } = JoinType.Inner;
 
-            public Expression<Func<IQueryable<Issue>, Issue>> QueryIs()
-            {
-                return query => query
-                    .Include<Issue, IssueByTitleIncludingUsers>(x => x.AssigneeId, x => x.IncludedAssignee, JoinType)
-                    .Include<Issue, IssueByTitleIncludingUsers>(x => x.ReporterId, x => x.IncludedReported, JoinType)
-                    .Single(x => x.Title == Title);
-            }
-        }
+    public Expression<Func<IQueryable<Issue>, Issue>> QueryIs()
+    {
+        return query => query
+            .Include<Issue, IssueByTitleIncludingUsers>(x => x.AssigneeId, x => x.IncludedAssignee, JoinType)
+            .Include<Issue, IssueByTitleIncludingUsers>(x => x.ReporterId, x => x.IncludedReported, JoinType)
+            .Single(x => x.Title == Title);
+    }
+}
 
         // SAMPLE: compiled_include_list
         public class IssueWithUsers : ICompiledListQuery<Issue>
