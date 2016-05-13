@@ -94,6 +94,7 @@ namespace Marten.Schema
                 "System",
                 "Marten",
                 "Marten.Schema",
+                "Marten.Schema.BulkLoading",
                 "Marten.Schema.Identity",
                 "Marten.Services",
                 "Marten.Linq",

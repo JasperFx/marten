@@ -105,6 +105,8 @@ namespace Marten.Testing.Fixtures
 
         public bool Flag { get; set; }
 
+        public string StringField;
+
         public double Double { get; set; }
         public decimal Decimal { get; set; }
         public DateTime Date { get; set; }

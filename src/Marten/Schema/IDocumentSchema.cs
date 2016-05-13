@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Marten.Events;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
+using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 
@@ -101,5 +102,7 @@ namespace Marten.Schema
         /// Query against the actual Postgresql database schema objects
         /// </summary>
         IDbObjects DbObjects { get; }
+
+        IBulkLoader<T> BulkLoaderFor<T>();
     }
 }

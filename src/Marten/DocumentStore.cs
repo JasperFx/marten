@@ -7,6 +7,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Schema.BulkLoading;
 using Marten.Services;
 using Npgsql;
 using Remotion.Linq.Parsing.Structure;

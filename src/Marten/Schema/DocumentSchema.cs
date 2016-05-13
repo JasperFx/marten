@@ -8,6 +8,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
+using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Util;
@@ -26,6 +27,7 @@ namespace Marten.Schema
             new ConcurrentDictionary<Type, IDocumentMapping>();
 
 
+        private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new ConcurrentDictionary<Type, object>();
         private readonly ConcurrentDictionary<Type, object> _identityAssignments = new ConcurrentDictionary<Type, object>();
 
 
@@ -55,6 +57,23 @@ namespace Marten.Schema
         }
 
         public IDbObjects DbObjects { get; }
+        public IBulkLoader<T> BulkLoaderFor<T>()
+        {
+            return _bulkLoaders.GetOrAdd(typeof(T), t =>
+            {
+                var assignment = IdAssignmentFor<T>();
+
+                var mapping = MappingFor(typeof(T));
+
+                if (mapping is DocumentMapping)
+                {
+                    return new BulkLoader<T>(mapping.As<DocumentMapping>(), assignment);
+                }
+
+                
+                throw new ArgumentOutOfRangeException("T", "Marten cannot do bulk inserts of " + typeof(T).FullName);
+            }).As<IBulkLoader<T>>();
+        }
 
         public MartenExpressionParser Parser { get; }
 

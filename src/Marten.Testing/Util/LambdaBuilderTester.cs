@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
 using Baseline.Reflection;
+using Marten.Linq;
 using Marten.Testing.Fixtures;
 using Marten.Util;
 using Shouldly;
@@ -70,6 +72,22 @@ namespace Marten.Testing.Util
             guy.Id.ShouldBe(newGuid);
         }
 
+        [Fact]
+        public void can_build_getter_for_deep_expression()
+        {
+            Expression<Func<Target, int>> expression = t => t.Inner.Number;
 
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            var members = visitor.Members.ToArray();
+
+            var getter = LambdaBuilder.Getter<Target, int>(members);
+
+            var target = Target.Random(true);
+
+            getter(target).ShouldBe(target.Inner.Number);
+
+        }
     }
 }

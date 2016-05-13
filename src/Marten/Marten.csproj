@@ -236,7 +236,7 @@
     <Compile Include="Schema\PostgresUpsertType.cs" />
     <Compile Include="Schema\Identity\StringIdGeneration.cs" />
     <Compile Include="Schema\Identity\Sequences\HiloIdGeneration.cs" />
-    <Compile Include="Schema\IBulkLoader.cs" />
+    <Compile Include="Schema\BulkLoading\IBulkLoader.cs" />
     <Compile Include="Schema\Identity\IdAssignment.cs" />
     <Compile Include="Schema\IDocumentCleaner.cs" />
     <Compile Include="Schema\IDocumentSchema.cs" />

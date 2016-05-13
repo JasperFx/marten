@@ -1,13 +1,20 @@
+using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Baseline.Reflection;
 using Marten.Util;
+using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Schema
 {
     public class UpsertArgument
     {
+        private readonly static MethodInfo writeMethod =
+            typeof(NpgsqlBinaryImporter).GetMethods().FirstOrDefault(x => x.GetParameters().Length == 2);
+
         private MemberInfo[] _members;
         public string Arg { get; set; }
         public string PostgresType { get; set; }
@@ -30,6 +37,19 @@ namespace Marten.Schema
                     DbType = TypeMappings.ToDbType(value.Last().GetMemberType());
                 }
             }
+        }
+
+        public Expression CompileBulkImporter<T>(Expression writer, ParameterExpression document)
+        {
+            var memberType = Members.Last().GetMemberType();
+            var method = writeMethod.MakeGenericMethod(memberType);
+
+            var value = LambdaBuilder.ToExpression(Members, document);
+
+            var dbType = Expression.Constant(DbType);
+            var call = Expression.Call(writer, method, value, dbType);
+
+            return call;
         }
 
         public NpgsqlDbType DbType { get; set; }

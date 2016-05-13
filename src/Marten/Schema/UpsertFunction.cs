@@ -83,7 +83,7 @@ namespace Marten.Schema
             }
         }
 
-        private UpsertArgument[] OrderedArguments()
+        public UpsertArgument[] OrderedArguments()
         {
             return Arguments.OrderBy(x => x.Arg).ToArray();
         }
