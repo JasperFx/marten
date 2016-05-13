@@ -54,15 +54,6 @@ namespace Marten.Schema
 
         public NpgsqlDbType DbType { get; set; }
 
-        public string BulkInsertPattern = "writer.Write(x.{0}, NpgsqlDbType.{1});";
-
-        public string ToBulkInsertWriterStatement()
-        {
-            if (Members == null) return BulkInsertPattern;
-
-            var accessor = Members.Select(x => x.Name).Join("?.");
-            return BulkInsertPattern.ToFormat(accessor, DbType);
-        }
 
         public string BatchUpdatePattern = ".Param(\"{2}\", document.{0}, NpgsqlDbType.{1})";
 

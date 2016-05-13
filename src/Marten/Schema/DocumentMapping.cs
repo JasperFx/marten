@@ -453,7 +453,6 @@ namespace Marten.Schema
                     DbType = NpgsqlDbType.Varchar,
                     PostgresType = "varchar",
                     BatchUpdatePattern = ".Param(\"docType\", _hierarchy.AliasFor(document.GetType()), NpgsqlDbType.Varchar)",
-                    BulkInsertPattern = "writer.Write(_hierarchy.AliasFor(x.GetType()), NpgsqlDbType.Varchar);"
                 });
             }
 

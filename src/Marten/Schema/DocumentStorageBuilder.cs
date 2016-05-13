@@ -94,7 +94,6 @@ namespace Marten.Schema
                 "System",
                 "Marten",
                 "Marten.Schema",
-                "Marten.Schema.BulkLoading",
                 "Marten.Schema.Identity",
                 "Marten.Services",
                 "Marten.Linq",
@@ -145,7 +144,7 @@ namespace Marten.Schema
 
             writer.Write(
                 $@"
-BLOCK:public class {storeName}Storage : {baseType}<{typeName}>, IDocumentStorage, IBulkLoader<{typeName}>, IdAssignment<{typeName}>, IResolver<{typeName}>
+BLOCK:public class {storeName}Storage : {baseType}<{typeName}>, IDocumentStorage, IdAssignment<{typeName}>, IResolver<{typeName}>
 
 {fields}
 
@@ -209,8 +208,6 @@ return (({typeName})document).{mapping.IdMember.Name};
 END
 
 {upsertFunction.ToUpdateBatchMethod(typeName)}
-
-{upsertFunction.ToBulkInsertMethod(typeName)}
 
 
 END

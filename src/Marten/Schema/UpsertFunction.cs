@@ -40,7 +40,6 @@ namespace Marten.Schema
                 PostgresType = "JSONB",
                 DbType = NpgsqlDbType.Jsonb,
                 Column = "data",
-                BulkInsertPattern = "writer.Write(serializer.ToJson(x), NpgsqlDbType.Jsonb);",
                 BatchUpdatePattern = "*"
             });
         }
@@ -107,26 +106,5 @@ END
 ";
         }
 
-        public string ToBulkInsertMethod(string typeName)
-        {
-            var columns = OrderedArguments().Select(x => $"\\\"{x.Column}\\\"").Join(", ");
-
-            var writerStatements = OrderedArguments()
-                .Select(x => x.ToBulkInsertWriterStatement())
-                .Join("\n");
-
-            return $@"
-BLOCK:public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<{typeName}> documents)
-BLOCK:using (var writer = conn.BeginBinaryImport(`COPY {_tableName}({columns}) FROM STDIN BINARY`))
-BLOCK:foreach (var x in documents)
-bool assigned = false;
-Assign(x, out assigned);
-writer.StartRow();
-{writerStatements}
-END
-END
-END
-";
-        }
     }
 }
