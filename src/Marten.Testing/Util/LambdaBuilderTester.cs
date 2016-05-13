@@ -1,4 +1,6 @@
-﻿using Baseline.Reflection;
+﻿using System;
+using System.Linq.Expressions;
+using Baseline.Reflection;
 using Marten.Testing.Fixtures;
 using Marten.Util;
 using Shouldly;
@@ -18,5 +20,56 @@ namespace Marten.Testing.Util
 
             getter(target).ShouldBe(target.Number);
         }
+
+        public class GuyWithField
+        {
+            public Guid Id = Guid.NewGuid();
+        }
+
+        [Fact]
+        public void can_build_getter_for_field()
+        {
+            var guy = new GuyWithField();
+
+            var field = typeof(GuyWithField).GetField("Id");
+
+            var getter = LambdaBuilder.GetField<GuyWithField, Guid>(field);
+
+            getter(guy).ShouldBe(guy.Id);
+        }
+
+        [Fact]
+        public void can_build_setter_for_property()
+        {
+            var target = new Target { Number = 5 };
+            var prop = ReflectionHelper.GetProperty<Target>(x => x.Number);
+
+            var setter = LambdaBuilder.SetProperty<Target, int>(prop);
+
+            setter(target, 11);
+
+
+            target.Number.ShouldBe(11);
+        }
+
+
+        [Fact]
+        public void can_build_setter_for_field()
+        {
+            var guy = new GuyWithField();
+
+            var field = typeof(GuyWithField).GetField("Id");
+
+            var setter = LambdaBuilder.SetField<GuyWithField, Guid>(field);
+
+
+            var newGuid = Guid.NewGuid();
+
+            setter(guy, newGuid);
+
+            guy.Id.ShouldBe(newGuid);
+        }
+
+
     }
 }
