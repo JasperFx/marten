@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Marten.Testing.Schema.Sequences
+namespace Marten.Testing.Schema.Identity.Sequences
 {
     public class UserWithGuid
     {

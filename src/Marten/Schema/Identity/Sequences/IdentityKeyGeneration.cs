@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
+using Baseline;
 using Marten.Util;
 
-namespace Marten.Schema.Sequences
+namespace Marten.Schema.Identity.Sequences
 {
     public class IdentityKeyGeneration : StorageArgument, IIdGeneration
     {
@@ -41,6 +43,41 @@ BLOCK:else
 assigned = false;
 END
 ";
+        }
+
+        public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
+
+        public IIdGeneration<T> Build<T>(IDocumentSchema schema)
+        {
+            var sequence = schema.Sequences.Hilo(_mapping.DocumentType, _hiloSettings);
+            return (IIdGeneration<T>) new IdentityKeyGenerator(_mapping.Alias, sequence);
+
+        }
+    }
+
+    public class IdentityKeyGenerator : IIdGeneration<string>
+    {
+        public string Alias { get; set; }
+        public ISequence Sequence { get; }
+
+        public IdentityKeyGenerator(string alias, ISequence sequence)
+        {
+            Alias = alias;
+            Sequence = sequence;
+        }
+
+        public string Assign(string existing, out bool assigned)
+        {
+            if (existing.IsEmpty())
+            {
+                var next = Sequence.NextLong();
+                assigned = true;
+
+                return $"{Alias}/{next}";
+            }
+
+            assigned = false;
+            return existing;
         }
     }
 }

@@ -2,7 +2,7 @@
 using System.Linq;
 using Marten.Schema;
 using Marten.Schema.Hierarchies;
-using Marten.Schema.Sequences;
+using Marten.Schema.Identity.Sequences;
 using Marten.Testing.Documents;
 using Marten.Testing.Schema.Hierarchies;
 using Shouldly;

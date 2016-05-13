@@ -1,10 +1,10 @@
 using System.Linq;
 using Marten.Schema;
-using Marten.Schema.Sequences;
+using Marten.Schema.Identity.Sequences;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Schema.Sequences
+namespace Marten.Testing.Schema.Identity.Sequences
 {
     public class IdentityKeyGenerationTests
     {

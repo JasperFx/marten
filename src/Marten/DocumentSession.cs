@@ -9,6 +9,7 @@ using Marten.Events;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
+using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Services.Includes;
 using Remotion.Linq.Parsing.Structure;

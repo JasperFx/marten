@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Marten.Util;
 
-namespace Marten.Schema.Sequences
+namespace Marten.Schema.Identity.Sequences
 {
     public class HiloIdGeneration : StorageArgument, IIdGeneration
     {
@@ -43,5 +43,22 @@ assigned = false;
 END
 ";
         }
+
+        public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(int), typeof(long)};
+
+
+        public IIdGeneration<T> Build<T>(IDocumentSchema schema)
+        {
+            var sequence = schema.Sequences.Hilo(DocumentType, _hiloSettings);
+
+            if (typeof(T) == typeof(int))
+            {
+                return (IIdGeneration<T>) new IntHiloGenerator(sequence);
+            }
+
+            return (IIdGeneration<T>) new LongHiloGenerator(sequence);
+        }
+
+
     }
 }

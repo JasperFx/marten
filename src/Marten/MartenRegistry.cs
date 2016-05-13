@@ -5,7 +5,8 @@ using System.Linq.Expressions;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
-using Marten.Schema.Sequences;
+using Marten.Schema.Identity;
+using Marten.Schema.Identity.Sequences;
 
 namespace Marten
 {

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Codegen;
 using Marten.Schema.Hierarchies;
+using Marten.Schema.Identity;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -93,6 +94,7 @@ namespace Marten.Schema
                 "System",
                 "Marten",
                 "Marten.Schema",
+                "Marten.Schema.Identity",
                 "Marten.Services",
                 "Marten.Linq",
                 "Marten.Util",

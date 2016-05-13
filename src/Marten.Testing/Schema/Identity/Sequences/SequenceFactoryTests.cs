@@ -1,10 +1,10 @@
 ﻿using Marten.Schema;
-using Marten.Schema.Sequences;
+using Marten.Schema.Identity.Sequences;
 using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Schema.Sequences
+namespace Marten.Testing.Schema.Identity.Sequences
 {
     [Collection("DefaultSchema")]
     public class SequenceFactoryTests : IntegratedFixture

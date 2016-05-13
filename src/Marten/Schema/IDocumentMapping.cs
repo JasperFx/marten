@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq;
+using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Services.Includes;
 

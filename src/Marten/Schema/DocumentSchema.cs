@@ -8,7 +8,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema.Sequences;
+using Marten.Schema.Identity.Sequences;
 using Marten.Util;
 
 namespace Marten.Schema

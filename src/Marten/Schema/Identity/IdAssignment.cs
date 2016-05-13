@@ -1,4 +1,4 @@
-﻿namespace Marten.Schema
+﻿namespace Marten.Schema.Identity
 {
     public interface IdAssignment<T>
     {
@@ -6,4 +6,10 @@
 
         void Assign(T document, object id);
     }
+
+    public interface IIdGeneration<T>
+    {
+        T Assign(T existing, out bool assigned);
+    }
+
 }

@@ -7,7 +7,8 @@ using Baseline;
 using Marten.Events;
 using Marten.Linq.Parsing;
 using Marten.Schema;
-using Marten.Schema.Sequences;
+using Marten.Schema.Identity;
+using Marten.Schema.Identity.Sequences;
 using Marten.Services;
 using Npgsql;
 

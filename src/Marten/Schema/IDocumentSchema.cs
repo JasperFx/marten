@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Marten.Events;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema.Sequences;
+using Marten.Schema.Identity.Sequences;
 
 namespace Marten.Schema
 {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Marten.Schema
+namespace Marten.Schema.Identity
 {
     /// <summary>
     /// Comb Guid Id Generation. More info http://www.informit.com/articles/article.aspx?p=25862
@@ -19,13 +19,20 @@ namespace Marten.Schema
         {
             return $@"
 BLOCK:if (document.{idMember.Name} == System.Guid.Empty)
-document.{idMember.Name} = Marten.Schema.CombGuidIdGeneration.NewGuid();
+document.{idMember.Name} = Marten.Schema.Identity.CombGuidIdGeneration.NewGuid();
 assigned = true;
 END
 BLOCK:else
 assigned = false;
 END
 ";
+        }
+
+        public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(Guid)};
+
+        public IIdGeneration<T> Build<T>(IDocumentSchema schema)
+        {
+            return (IIdGeneration<T>) new GuidIdGenerator(CombGuidIdGeneration.NewGuid);
         }
 
         /*

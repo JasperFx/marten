@@ -1,5 +1,5 @@
 ﻿using System;
-using Marten.Schema.Sequences;
+using Marten.Schema.Identity.Sequences;
 
 namespace Marten.Schema
 {

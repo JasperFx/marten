@@ -3,7 +3,7 @@ using System.Linq;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Schema.Sequences
+namespace Marten.Testing.Schema.Identity.Sequences
 {
     public class Bug_255_Hilo_table_being_erroneously_recreated
     {

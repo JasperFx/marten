@@ -1,11 +1,13 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Marten.Schema;
+using Marten.Schema.Identity;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Schema.Sequences
+namespace Marten.Testing.Schema.Identity.Sequences
 {
     // SAMPLE: custom-id-generation
     public class CustomdIdGeneration : IIdGeneration
@@ -21,6 +23,13 @@ namespace Marten.Testing.Schema.Sequences
 document.{idMember.Name} = ""newId""; //your id generation algorithm here
 assigned = true;
 ";
+        }
+
+        public IEnumerable<Type> KeyTypes { get; }
+
+        public IIdGeneration<T> Build<T>(IDocumentSchema schema)
+        {
+            throw new NotImplementedException();
         }
     }
     // ENDSAMPLE

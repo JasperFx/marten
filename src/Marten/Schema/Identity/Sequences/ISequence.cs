@@ -1,4 +1,4 @@
-﻿namespace Marten.Schema.Sequences
+﻿namespace Marten.Schema.Identity.Sequences
 {
     public interface ISequence
     {

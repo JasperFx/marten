@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Schema.Identity;
+using Marten.Schema.Identity.Sequences;
 
 namespace Marten.GeneratedCode
 {
@@ -20,9 +22,9 @@ namespace Marten.GeneratedCode
     public class TradeStorage : Resolver<Trade>, IDocumentStorage, IBulkLoader<Trade>, IdAssignment<Trade>, IResolver<Trade>
     {
 
-        private readonly Marten.Schema.Sequences.ISequence _sequence;
+        private readonly ISequence _sequence;
 
-        public TradeStorage(Marten.Schema.Sequences.ISequence sequence)
+        public TradeStorage(ISequence sequence)
         {
             _sequence = sequence;
         }

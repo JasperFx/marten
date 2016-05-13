@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Marten.Schema
+namespace Marten.Schema.Identity
 {
     public class GuidIdGeneration : IIdGeneration
     {
@@ -23,6 +24,13 @@ assigned = false;
 END
 ";
 
+        }
+
+        public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(Guid)};
+
+        public IIdGeneration<T> Build<T>(IDocumentSchema schema)
+        {
+            return (IIdGeneration<T>) new GuidIdGenerator(Guid.NewGuid);
         }
     }
 }

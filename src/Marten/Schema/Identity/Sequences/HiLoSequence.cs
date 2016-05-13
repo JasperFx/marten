@@ -3,7 +3,7 @@ using System.Data;
 using Marten.Util;
 using NpgsqlTypes;
 
-namespace Marten.Schema.Sequences
+namespace Marten.Schema.Identity.Sequences
 {
     public class HiloSequence : ISequence
     {
