@@ -194,11 +194,11 @@ namespace Marten
 
         private void bulkInsertDocuments<T>(T[] documents, int batchSize, NpgsqlConnection conn)
         {
-            var storage = Schema.StorageFor(typeof (T)).As<IBulkLoader<T>>();
+            var loader = Schema.BulkLoaderFor<T>();
 
             if (documents.Length <= batchSize)
             {
-                storage.Load(_serializer, conn, documents);
+                loader.Load(_serializer, conn, documents);
             }
             else
             {
@@ -209,7 +209,7 @@ namespace Marten
                 {
                     var batch = documents.Skip(page*batchSize).Take(batchSize).ToArray();
 
-                    storage.Load(_serializer, conn, batch);
+                    loader.Load(_serializer, conn, batch);
 
                     page++;
                     total += batch.Length;

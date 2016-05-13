@@ -140,6 +140,7 @@
     <Compile Include="Linq\WhereClauseVisitor.cs" />
     <Compile Include="Linq\WholeDocumentSelector.cs" />
     <Compile Include="QuerySession.cs" />
+    <Compile Include="Schema\BulkLoading\BulkLoader.cs" />
     <Compile Include="Schema\DbObjects.cs" />
     <Compile Include="Schema\DocumentSchemaExtensions.cs" />
     <Compile Include="Schema\IDbObjects.cs" />

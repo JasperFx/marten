@@ -59,6 +59,8 @@ namespace Marten.Schema
         public IDbObjects DbObjects { get; }
         public IBulkLoader<T> BulkLoaderFor<T>()
         {
+            EnsureStorageExists(typeof(T));
+
             return _bulkLoaders.GetOrAdd(typeof(T), t =>
             {
                 var assignment = IdAssignmentFor<T>();
