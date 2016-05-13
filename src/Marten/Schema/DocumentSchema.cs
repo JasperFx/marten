@@ -8,6 +8,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
+using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Util;
 
@@ -23,6 +24,9 @@ namespace Marten.Schema
 
         private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
             new ConcurrentDictionary<Type, IDocumentMapping>();
+
+
+        private readonly ConcurrentDictionary<Type, object> _identityAssignments = new ConcurrentDictionary<Type, object>();
 
 
         public DocumentSchema(StoreOptions options, IConnectionFactory factory, IMartenLogger logger)
@@ -194,6 +198,19 @@ namespace Marten.Schema
         public IResolver<T> ResolverFor<T>()
         {
             return StorageFor(typeof(T)).As<IResolver<T>>();
+        }
+
+        public IdAssignment<T> IdAssignmentFor<T>()
+        {
+            return _identityAssignments.GetOrAdd(typeof(T), t =>
+            {
+                var mapping = MappingFor(typeof(T));
+                var idType = mapping.IdMember.GetMemberType();
+
+                var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
+
+                return Activator.CreateInstance(assignerType, mapping.IdMember, mapping.IdStrategy, this);
+            }).As<IdAssignment<T>>();
         }
 
 

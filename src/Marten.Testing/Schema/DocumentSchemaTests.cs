@@ -307,6 +307,37 @@ namespace Marten.Testing.Schema
         }
     }
 
+    public class building_id_assignment_for_document_types
+    {
+        private readonly IDocumentSchema theSchema = new DocumentSchema(new StoreOptions(), new ConnectionSource(), new NulloMartenLogger());
+
+        [Fact]
+        public void can_build_with_guid_property()
+        {
+            theSchema.IdAssignmentFor<User>()
+                .ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void can_build_for_int_and_long_id()
+        {
+            theSchema.IdAssignmentFor<IntDoc>().ShouldNotBeNull();
+            theSchema.IdAssignmentFor<LongDoc>().ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void can_build_for_a_field()
+        {
+            theSchema.IdAssignmentFor<StringFieldGuy>()
+                .ShouldNotBeNull();
+        }
+
+        public class StringFieldGuy
+        {
+            public string Id;
+        }
+    }
+
     [Collection("DefaultSchema")]
     public class DocumentSchemaWithOverridenSchemaTests : IntegratedFixture
     {
