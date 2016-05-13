@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using Marten.Util;
 
 namespace Marten.Linq
 {
     internal class CompiledQueryMemberExpressionVisitor : ExpressionVisitor
     {
-        private IList<IDbParameterSetter> _parameterSetters = new List<IDbParameterSetter>();
+        private readonly IList<IDbParameterSetter> _parameterSetters = new List<IDbParameterSetter>();
         private readonly Type _queryType;
 
         public CompiledQueryMemberExpressionVisitor(Type queryType)
@@ -35,22 +36,10 @@ namespace Marten.Linq
             return node.Method.Name.Contains("Include") ? node : base.VisitMethodCall(node);
         }
 
-        public static Func<TTarget, TProperty> CompileGetter<TTarget, TProperty>(PropertyInfo property)
-        {
-            ParameterExpression target = Expression.Parameter(property.ReflectedType, "target");
-            MethodInfo method = property.GetGetMethod();
-
-            MethodCallExpression callGetMethod = Expression.Call(target, method);
-
-            var lambda = Expression.Lambda<Func<TTarget, TProperty>>(callGetMethod, target);
-
-            return lambda.Compile();
-        }
-
 
         private IDbParameterSetter CreateParameterSetter<TObject, TProperty>(PropertyInfo property)
         {
-            return new DbParameterSetter<TObject, TProperty>(CompileGetter<TObject, TProperty>(property));
+            return new DbParameterSetter<TObject, TProperty>(LambdaBuilder.GetProperty<TObject, TProperty>(property));
         }
     }
 }
