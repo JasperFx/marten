@@ -6,10 +6,4 @@
 
         void Assign(T document, object id);
     }
-
-    public interface IIdGeneration<T>
-    {
-        T Assign(T existing, out bool assigned);
-    }
-
 }

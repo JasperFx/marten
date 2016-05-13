@@ -1,6 +1,6 @@
 namespace Marten.Schema.Identity.Sequences
 {
-    public class LongHiloGenerator : IIdGeneration<long>
+    public class LongHiloGenerator : IIdGenerator<long>
     {
         public LongHiloGenerator(ISequence sequence)
         {

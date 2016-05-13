@@ -1,6 +1,6 @@
 namespace Marten.Schema.Identity.Sequences
 {
-    public class IntHiloGenerator : IIdGeneration<int>
+    public class IntHiloGenerator : IIdGenerator<int>
     {
         public IntHiloGenerator(ISequence sequence)
         {

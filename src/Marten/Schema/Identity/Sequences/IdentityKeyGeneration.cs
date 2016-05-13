@@ -47,15 +47,15 @@ END
 
         public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
 
-        public IIdGeneration<T> Build<T>(IDocumentSchema schema)
+        public IIdGenerator<T> Build<T>(IDocumentSchema schema)
         {
             var sequence = schema.Sequences.Hilo(_mapping.DocumentType, _hiloSettings);
-            return (IIdGeneration<T>) new IdentityKeyGenerator(_mapping.Alias, sequence);
+            return (IIdGenerator<T>) new IdentityKeyGenerator(_mapping.Alias, sequence);
 
         }
     }
 
-    public class IdentityKeyGenerator : IIdGeneration<string>
+    public class IdentityKeyGenerator : IIdGenerator<string>
     {
         public string Alias { get; set; }
         public ISequence Sequence { get; }

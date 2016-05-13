@@ -185,6 +185,7 @@
     <Compile Include="Linq\query_with_nullable_types_Tests.cs" />
     <Compile Include="Schema\DbObjectsTests.cs" />
     <Compile Include="Schema\Identity\GuidIdGeneratorTests.cs" />
+    <Compile Include="Schema\Identity\IdAssignerTests.cs" />
     <Compile Include="Schema\Identity\IdentityKeyGenerationTests.cs" />
     <Compile Include="Schema\Identity\NoOpIdGenerationTests.cs" />
     <Compile Include="Schema\SchemaDiff_Generation_Tests.cs" />

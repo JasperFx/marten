@@ -6,7 +6,7 @@ using Baseline;
 
 namespace Marten.Schema.Identity
 {
-    public class StringIdGeneration : IIdGeneration, IIdGeneration<string>
+    public class StringIdGeneration : IIdGeneration, IIdGenerator<string>
     {
         public IEnumerable<StorageArgument> ToArguments()
         {
@@ -25,9 +25,9 @@ assigned = false;
         public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
 
 
-        public IIdGeneration<T> Build<T>(IDocumentSchema schema)
+        public IIdGenerator<T> Build<T>(IDocumentSchema schema)
         {
-            return this.As<IIdGeneration<T>>();
+            return this.As<IIdGenerator<T>>();
         }
 
         public string Assign(string existing, out bool assigned)

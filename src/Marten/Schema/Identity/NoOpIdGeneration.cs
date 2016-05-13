@@ -20,12 +20,12 @@ namespace Marten.Schema.Identity
         public IEnumerable<Type> KeyTypes { get; } = new Type[] { typeof(int), typeof(long), typeof(string), typeof(Guid) };
 
 
-        public IIdGeneration<T> Build<T>(IDocumentSchema schema)
+        public IIdGenerator<T> Build<T>(IDocumentSchema schema)
         {
             return new NoOpIdGenerator<T>();
         }
 
-        public class NoOpIdGenerator<T> : IIdGeneration<T>
+        public class NoOpIdGenerator<T> : IIdGenerator<T>
         {
             public T Assign(T existing, out bool assigned)
             {

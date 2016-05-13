@@ -2,7 +2,7 @@
 
 namespace Marten.Schema.Identity
 {
-    public class GuidIdGenerator : IIdGeneration<Guid>
+    public class GuidIdGenerator : IIdGenerator<Guid>
     {
         private readonly Func<Guid> _guidmaker;
 

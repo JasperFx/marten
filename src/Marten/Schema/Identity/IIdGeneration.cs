@@ -11,7 +11,7 @@ namespace Marten.Schema.Identity
 
         IEnumerable<Type> KeyTypes { get; }
 
-        IIdGeneration<T> Build<T>(IDocumentSchema schema);
+        IIdGenerator<T> Build<T>(IDocumentSchema schema);
     }
 
 

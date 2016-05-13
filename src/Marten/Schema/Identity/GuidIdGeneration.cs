@@ -28,9 +28,9 @@ END
 
         public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(Guid)};
 
-        public IIdGeneration<T> Build<T>(IDocumentSchema schema)
+        public IIdGenerator<T> Build<T>(IDocumentSchema schema)
         {
-            return (IIdGeneration<T>) new GuidIdGenerator(Guid.NewGuid);
+            return (IIdGenerator<T>) new GuidIdGenerator(Guid.NewGuid);
         }
     }
 }
