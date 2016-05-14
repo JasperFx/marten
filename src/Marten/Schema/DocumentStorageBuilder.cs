@@ -154,9 +154,6 @@ END
 
 public Type DocumentType => typeof ({typeName});
 
-BLOCK:public NpgsqlCommand UpsertCommand(object document, string json)
-return UpsertCommand(({typeName})document, json);
-END
 
 BLOCK:public NpgsqlCommand LoaderCommand(object id)
 return new NpgsqlCommand(`select {mapping.SelectFields().Join(", ")} from {mapping.Table.QualifiedName} as d where id = :id`).With(`id`, id);
