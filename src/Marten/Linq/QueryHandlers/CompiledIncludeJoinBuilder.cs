@@ -7,6 +7,7 @@ using System.Reflection;
 using Baseline;
 using Marten.Schema;
 using Marten.Services.Includes;
+using Marten.Util;
 using Remotion.Linq;
 
 namespace Marten.Linq.QueryHandlers
@@ -27,9 +28,18 @@ namespace Marten.Linq.QueryHandlers
             foreach (var includeOperator in includeOperators)
             {
                 var includeType = includeOperator.Callback.Body.Type;
-                if (includeType.IsGenericEnumerable())
-                    includeType = includeType.GenericTypeArguments[0];
                 var method = GetType().GetMethod(nameof(GetJoin), BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(includeType);
+                if (includeType.IsGenericDictionary())
+                {
+                    var tkey = includeType.GenericTypeArguments[0];
+                    var tinclude = includeType.GenericTypeArguments[1];
+                    method = GetType().GetMethod(nameof(GetDictionaryJoin), BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(tkey, tinclude);
+                }
+                else if (includeType.IsGenericEnumerable())
+                {
+                    includeType = includeType.GenericTypeArguments[0];
+                    method = GetType().GetMethod(nameof(GetJoin), BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(includeType);
+                }
                 var result = (IIncludeJoin) method.Invoke(this, new object[] {query, includeOperator});
                 includeJoins.Add(result);
             }
@@ -57,6 +67,28 @@ namespace Marten.Linq.QueryHandlers
             return included.Fill;
         }
 
+        private Action<TInclude> GetJoinDictionaryCallback<TKey, TInclude>(PropertyInfo property, IncludeResultOperator @operator, ICompiledQuery<TDoc, TOut> query)
+        {
+            var queryProperty = GetPropertyInfo(property, @operator);
+
+            var storage = _schema.StorageFor(typeof(TInclude));
+
+            var dictionary = (IDictionary<TKey,TInclude>) (queryProperty).GetValue(query);
+            if (dictionary == null)
+            {
+                queryProperty.SetValue(query, new Dictionary<TKey,TInclude>());
+                dictionary = (IDictionary<TKey,TInclude>)queryProperty.GetValue(query);
+            }
+
+            return x => {
+                var id = storage.Identity(x).As<TKey>();
+                if (!dictionary.ContainsKey(id))
+                {
+                    dictionary.Add(id, x);
+                }
+            };
+        }
+
         private static PropertyInfo GetPropertyInfo(PropertyInfo property, IncludeResultOperator @operator)
         {
             var target = Expression.Parameter(property.ReflectedType, "target");
@@ -70,6 +102,29 @@ namespace Marten.Linq.QueryHandlers
             var callback = compiledLambda.Invoke(@operator);
             var mi = (PropertyInfo) ((MemberExpression) callback.Body).Member;
             return mi;
+        }
+
+        private IIncludeJoin GetDictionaryJoin<TKey,TInclude>(ICompiledQuery<TDoc, TOut> query, IncludeResultOperator includeOperator) where TInclude : class
+        {
+            var idSource = includeOperator.IdSource as Expression<Func<TDoc, object>>;
+            var joinType = (JoinType)includeOperator.JoinType.Value;
+
+            var visitor = new FindMembers();
+            visitor.Visit(idSource);
+            var members = visitor.Members.ToArray();
+
+            var mapping = _schema.MappingFor(typeof(TDoc));
+            var includeType = includeOperator.Callback.Body.Type;
+
+            var property = typeof (IncludeResultOperator).GetProperty("Callback");
+
+            Action<TInclude> callback;
+            includeType = includeType.GenericTypeArguments[1];
+            callback = GetJoinDictionaryCallback<TKey, TInclude>(property, includeOperator, query);
+
+            var included = _schema.MappingFor(includeType);
+
+            return mapping.JoinToInclude(joinType, included, members, callback);
         }
 
         private IIncludeJoin GetJoin<TInclude>(ICompiledQuery<TDoc, TOut> query, IncludeResultOperator includeOperator) where TInclude : class
