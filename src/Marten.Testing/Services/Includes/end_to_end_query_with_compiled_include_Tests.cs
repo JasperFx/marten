@@ -99,7 +99,7 @@ namespace Marten.Testing.Services.Includes
         public class IssueWithUsers : ICompiledListQuery<Issue>
         {
             public List<User> Users { get; set; }
-            // Can work also like that:
+            // Can also work like that:
             //public List<User> Users => new List<User>();
 
             public Expression<Func<IQueryable<Issue>, IEnumerable<Issue>>> QueryIs()
@@ -139,7 +139,7 @@ namespace Marten.Testing.Services.Includes
         public class IssueWithUsersById : ICompiledListQuery<Issue>
         {
             public IDictionary<Guid,User> UsersById { get; set; }
-            // Can work also like that:
+            // Can also work like that:
             //public List<User> Users => new Dictionary<Guid,User>();
 
             public Expression<Func<IQueryable<Issue>, IEnumerable<Issue>>> QueryIs()
