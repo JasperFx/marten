@@ -255,6 +255,8 @@ namespace Marten.Schema
 
         public virtual IEnumerable<StorageArgument> ToArguments()
         {
+            yield return new DocumentMappingArgument(this);
+
             foreach (var argument in IdStrategy.ToArguments())
             {
                 yield return argument;
@@ -587,6 +589,22 @@ namespace Marten.Schema
         public IEnumerable<IndexDefinition> IndexesFor(string column)
         {
             return Indexes.Where(x => x.Columns.Contains(column));
+        }
+    }
+
+    [Obsolete("This is going to die when the Roslyn compilation is replaced")]
+    public class DocumentMappingArgument : StorageArgument
+    {
+        private readonly DocumentMapping _documentMapping;
+
+        public DocumentMappingArgument(DocumentMapping documentMapping) : base("mapping", typeof(IDocumentMapping))
+        {
+            _documentMapping = documentMapping;
+        }
+
+        public override object GetValue(IDocumentSchema schema)
+        {
+            return _documentMapping;
         }
     }
 }

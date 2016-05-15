@@ -157,20 +157,6 @@ namespace Marten.Testing
         }
 
         [Fact]
-        public void no_storage_arguments_with_simple_id()
-        {
-            var mapping = DocumentMapping.For<User>();
-            mapping.ToArguments().Any().ShouldBeFalse();
-        }
-
-        [Fact]
-        public void storage_arguments_from_id_member()
-        {
-            var mapping = DocumentMapping.For<IntDoc>();
-            mapping.ToArguments().Single().ShouldBeOfType<HiloIdGeneration>();
-        }
-
-        [Fact]
         public void storage_arguments_adds_hierarchy_argument_with_subclasses()
         {
             var mapping = DocumentMapping.For<Squad>();

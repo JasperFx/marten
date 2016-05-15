@@ -140,7 +140,7 @@ namespace Marten.Schema
 
             var baseType = mapping.IsHierarchy() ? "HierarchicalResolver" : "Resolver";
 
-            var callBaseCtor = mapping.IsHierarchy() ? $": base({HierarchyArgument.Hierarchy})" : string.Empty;
+            var callBaseCtor = mapping.IsHierarchy() ? $": base(mapping, {HierarchyArgument.Hierarchy})" : ": base(mapping)";
 
             writer.Write(
                 $@"

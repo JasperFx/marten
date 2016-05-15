@@ -7,6 +7,16 @@ namespace Marten.Schema
 {
     public class Resolver<T> : IResolver<T> where T : class
     {
+        private readonly IDocumentMapping _mapping;
+
+        public Resolver(IDocumentMapping mapping)
+        {
+            _mapping = mapping;
+        }
+
+        // DocumentStorage methods
+
+
         public virtual T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
             if (reader.IsDBNull(startingIndex)) return null;

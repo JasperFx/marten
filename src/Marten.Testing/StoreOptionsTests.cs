@@ -26,25 +26,6 @@ namespace Marten.Testing
                 .ShouldHaveTheSameElementsAs("Company", "Issue", "Target", "User");
         }
 
-        [Fact]
-        public void import_document_storage_from_assembly()
-        {
-            // SAMPLE: import-document-storage-from-an-assembly
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.Connection(ConnectionSource.ConnectionString);
-
-                // Use any precompiled IDocumentStorage classes from the 
-                // supplied Assembly
-                _.LoadPrecompiledStorageFrom(GetType().Assembly);
-                _.AutoCreateSchemaObjects = AutoCreate.All;
-            }))
-            {
-                store.Schema.StorageFor(typeof (User)).ShouldBeOfType<FakeUserStorage>();
-                store.Schema.StorageFor(typeof (Company)).ShouldBeOfType<FakeCompanyStorage>();
-            }
-            // ENDSAMPLE
-        }
 
         [Fact]
         public void default_logger_is_the_nullo()

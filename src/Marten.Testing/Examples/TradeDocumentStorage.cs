@@ -25,7 +25,7 @@ namespace Marten.GeneratedCode
 
         private readonly ISequence _sequence;
 
-        public TradeStorage(ISequence sequence)
+        public TradeStorage(IDocumentMapping mapping, ISequence sequence) : base(mapping)
         {
             _sequence = sequence;
         }
