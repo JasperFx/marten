@@ -201,7 +201,8 @@ FakesAssemblies/
 
 artifacts
 src/CommonAssemblyInfo.cs
-paket.lock
+paket.exe
+.idea/
 
 *.DotSettings
 
