@@ -23,11 +23,21 @@ namespace Marten.Linq
             if (node.NodeType == ExpressionType.MemberAccess && node.Member.ReflectedType == _queryType)
             {
                 var property = (PropertyInfo)node.Member;
-                var method = GetType().GetMethod("CreateParameterSetter", BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(_queryType, property.PropertyType);
+                var method = GetType().GetMethod(nameof(CreateParameterSetter), BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(_queryType, property.PropertyType);
                 var result = (IDbParameterSetter)method.Invoke(this, new []{property});
-                _parameterSetters.Add(result);
+                _parameterSetters.Add(result);              
             }
             return base.VisitMember(node);
+        }
+
+        protected override Expression VisitConstant(ConstantExpression node)
+        {
+            if (node.Type != _queryType)
+            {
+                var setter = new ConstantDbParameterSetter(node.Value);
+                _parameterSetters.Add(setter);
+            }
+            return base.VisitConstant(node);
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -35,7 +45,6 @@ namespace Marten.Linq
             // skip Visiting Include method members
             return node.Method.Name.Contains("Include") ? node : base.VisitMethodCall(node);
         }
-
 
         private IDbParameterSetter CreateParameterSetter<TObject, TProperty>(PropertyInfo property)
         {

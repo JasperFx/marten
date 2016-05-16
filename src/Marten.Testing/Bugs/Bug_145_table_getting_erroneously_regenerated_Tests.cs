@@ -7,9 +7,9 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug145_table_getting_erroneously_regenerated_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_145_table_getting_erroneously_regenerated_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
-        public Bug145_table_getting_erroneously_regenerated_Tests()
+        public Bug_145_table_getting_erroneously_regenerated_Tests()
         {
             StoreOptions(_ =>
             {
