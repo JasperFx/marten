@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -72,6 +73,11 @@ namespace Marten.Util
             return type.IsNested
                             ? $"{type.DeclaringType.FullName}.{type.Name}"
                             : type.FullName;
+        }
+
+        public static bool IsGenericDictionary(this Type type)
+        {
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof (IDictionary<,>);
         }
     }
 }

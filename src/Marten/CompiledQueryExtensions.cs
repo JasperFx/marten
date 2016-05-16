@@ -21,7 +21,6 @@ namespace Marten
             JoinType joinType = JoinType.Inner)
         {
             throw new NotImplementedException();
-            //return ((IMartenQueryable<T>)queryable).Include(idSource, callback);
         }
 
         public static IQueryable<string> AsJson<T>(this IMartenQueryable<T> queryable)

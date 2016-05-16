@@ -8,7 +8,7 @@ build_revision = tc_build_number || Time.new.strftime('5%H%M')
 build_number = "#{BUILD_VERSION}.#{build_revision}"
 BUILD_NUMBER = build_number 
 
-task :ci => [:connection, :version, :default, :pack]
+task :ci => [:connection, :version, :default, 'paket:pack']
 
 task :default => [:mocha, :test, :storyteller]
 
@@ -64,7 +64,6 @@ task :connection do
 	end
 end
 
-
 desc 'Runs the Mocha tests'
 task :mocha do
 	sh "npm install"
@@ -72,9 +71,7 @@ task :mocha do
 end
 
 desc 'Compile the code'
-task :compile => [:clean] do
-	sh "paket.exe install"
-
+task :compile => [:clean, 'paket:restore'] do
 	msbuild = '"C:\Program Files (x86)\MSBuild\14.0\Bin\msbuild.exe"'
 
 	sh "#{msbuild} src/Marten.sln   /property:Configuration=#{COMPILE_TARGET} /v:m /t:rebuild /nr:False /maxcpucount:2"
@@ -85,12 +82,6 @@ task :compile => [:clean] do
 	# FileUtils.cp "src/Marten/bin/#{COMPILE_TARGET}/Marten.dll", "src/Marten.Testing/bin/#{COMPILE_TARGET}/Marten.dll"
 
 end
-
-desc 'Build the Nupkg file'
-task :pack => [:compile] do
-	sh "paket.exe pack output artifacts version #{BUILD_NUMBER}"
-end
-
 
 desc 'Run the unit tests'
 task :test => [:compile] do
@@ -120,8 +111,30 @@ task :open_st => [:compile] do
 end
 
 desc "Launches the documentation project in editable mode"
-task :docs do
-	sh "paket.exe restore"
+task :docs => ['paket:restore'] do
 	sh "packages/Storyteller/tools/st.exe doc-run -v #{BUILD_VERSION}"
+end
+
+namespace :paket do
+  desc 'Pulls the latest paket.exe into .paket folder'
+	task :bootstrap do
+		sh '.paket/paket.bootstrapper.exe' unless File.exists? '.paket/paket.exe'
+	end
+
+  desc 'Restores nuget packages with paket'
+	task :restore => [:bootstrap] do
+		sh '.paket/paket.exe restore'
+  end
+
+	desc 'Setup paket.exe symlink for convenience (requires elevation)'
+	task :symlink do
+		sh '.paket/paket.bootstrapper.exe'
+		sh 'cmd.exe /c mklink .\paket.exe .paket\paket.exe'
+  end
+
+  desc 'Build the Nupkg file'
+	task :pack => [:compile] do
+		sh ".paket/paket.exe pack output artifacts version #{BUILD_NUMBER}"
+	end
 end
 

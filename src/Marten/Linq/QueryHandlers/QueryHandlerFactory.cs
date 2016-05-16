@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.QueryHandlers.CompiledInclude;
 using Marten.Schema;
 using Marten.Services.Includes;
 using Npgsql;
