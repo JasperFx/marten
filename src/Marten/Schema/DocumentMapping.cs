@@ -597,7 +597,7 @@ namespace Marten.Schema
     {
         private readonly DocumentMapping _documentMapping;
 
-        public DocumentMappingArgument(DocumentMapping documentMapping) : base("mapping", typeof(IDocumentMapping))
+        public DocumentMappingArgument(DocumentMapping documentMapping) : base("mapping", typeof(DocumentMapping))
         {
             _documentMapping = documentMapping;
         }

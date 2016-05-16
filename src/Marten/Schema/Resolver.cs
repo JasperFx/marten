@@ -1,5 +1,7 @@
 using System;
 using System.Data.Common;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -16,9 +18,11 @@ namespace Marten.Schema
         private readonly Func<T, object> _identity;
         private readonly string _loadArraySql;
         private readonly string _loaderSql;
-        private readonly IDocumentMapping _mapping;
+        private readonly DocumentMapping _mapping;
+        private readonly FunctionName _upsertName;
+        private readonly Action<BatchCommand.SprocCall, T, string, DocumentMapping, string> _sprocWriter;
 
-        public Resolver(IDocumentMapping mapping)
+        public Resolver(DocumentMapping mapping)
         {
             _mapping = mapping;
             IdType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
@@ -32,6 +36,36 @@ namespace Marten.Schema
 
 
             _identity = LambdaBuilder.Getter<T, object>(mapping.IdMember);
+
+            _sprocWriter = buildSprocWriter(mapping);
+            
+
+            _upsertName = mapping.UpsertFunction;
+        }
+
+        private Action<BatchCommand.SprocCall, T, string, DocumentMapping, string> buildSprocWriter(DocumentMapping mapping)
+        {
+            var call = Expression.Parameter(typeof(BatchCommand.SprocCall), "call");
+            var doc = Expression.Parameter(typeof(T), "doc");
+            var json = Expression.Parameter(typeof(string), "json");
+            var mappingParam = Expression.Parameter(typeof(DocumentMapping), "mapping");
+            var aliasParam = Expression.Parameter(typeof(string), "alias");
+
+            var arguments = mapping.ToUpsertFunction().OrderedArguments().Select(x =>
+            {
+                return x.CompileUpdateExpression(call, doc, json, mappingParam, aliasParam);
+            });
+
+            var block = Expression.Block(arguments);
+
+            var lambda = Expression.Lambda<Action<BatchCommand.SprocCall, T, string, DocumentMapping, string>>(block,
+                new ParameterExpression[]
+                {
+                    call, doc, json, mappingParam, aliasParam
+                });
+
+
+            return lambda.Compile();
         }
 
         public Type DocumentType => _mapping.DocumentType;
@@ -101,20 +135,20 @@ namespace Marten.Schema
             return _identity((T) document);
         }
 
+        public void RegisterUpdate(UpdateBatch batch, object entity)
+        {
+            var json = batch.Serializer.ToJson(entity);
+            RegisterUpdate(batch, entity, json);
+        }
 
-        /*
+        public void RegisterUpdate(UpdateBatch batch, object entity, string json)
+        {
+            var call = batch.Sproc(_upsertName);
 
-                public void RegisterUpdate(UpdateBatch batch, object entity)
-                {
-                    throw new NotImplementedException();
-                }
+            _sprocWriter(call, (T) entity, json, _mapping, _mapping.AliasFor(entity.GetType()));
+        }
 
-                public void RegisterUpdate(UpdateBatch batch, object entity, string json)
-                {
-                    throw new NotImplementedException();
-                }
-
-    */
+    
 
         public void Remove(IIdentityMap map, object entity)
         {

@@ -19,13 +19,13 @@ using Marten.Schema.Identity.Sequences;
 
 namespace Marten.GeneratedCode
 {
-
+    [Obsolete("Will be unnecessary after Roslyn compilation is removed")]
     public class TradeStorage : Resolver<Trade>, IDocumentStorage, IBulkLoader<Trade>, IdAssignment<Trade>, IResolver<Trade>
     {
 
         private readonly ISequence _sequence;
 
-        public TradeStorage(IDocumentMapping mapping, ISequence sequence) : base(mapping)
+        public TradeStorage(DocumentMapping mapping, ISequence sequence) : base(mapping)
         {
             _sequence = sequence;
         }

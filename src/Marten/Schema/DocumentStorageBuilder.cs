@@ -126,7 +126,6 @@ namespace Marten.Schema
 
         public static void GenerateDocumentStorage(DocumentMapping mapping, SourceWriter writer)
         {
-            var upsertFunction = mapping.ToUpsertFunction();
 
             var typeName = mapping.DocumentType.GetTypeName();
             var storeName = _storenameSanitizer.Replace(mapping.DocumentType.GetPrettyName(), string.Empty);
@@ -170,8 +169,6 @@ END
 BLOCK:public object Identity(object document)
 return (({typeName})document).{mapping.IdMember.Name};
 END
-
-{upsertFunction.ToUpdateBatchMethod(typeName)}
 
 
 END
