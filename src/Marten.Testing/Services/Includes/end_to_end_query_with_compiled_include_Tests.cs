@@ -96,6 +96,7 @@ namespace Marten.Testing.Services.Includes
             }
         }
 
+        // SAMPLE: compiled_include_list
         public class IssueWithUsers : ICompiledListQuery<Issue>
         {
             public List<User> Users { get; set; }
@@ -135,7 +136,9 @@ namespace Marten.Testing.Services.Includes
                 query.Users.Any(x => x.Id == user2.Id);
             }
         }
+        // ENDSAMPLE
 
+        // SAMPLE: compiled_include_dictionary
         public class IssueWithUsersById : ICompiledListQuery<Issue>
         {
             public IDictionary<Guid,User> UsersById { get; set; }
@@ -175,5 +178,6 @@ namespace Marten.Testing.Services.Includes
                 query.UsersById.ContainsKey(user2.Id).ShouldBeTrue();
             }
         }
+        // ENDSAMPLE
     }
 }

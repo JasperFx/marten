@@ -93,6 +93,19 @@ you can simply remove the `JoinType` parameter like so: `.Include<Issue, IssueBy
 
 You can also chain `Include` methods if you need more than one `JOIN`s.
 
+### Querying for multiple included documents
+
+Fetching "included" documents could also be done when you wish to include multiple documents.
+So picking up the same example, if you wish to get a list of `Issue`s and for every Issue you wish to retrieve
+its' Assignee / `User`, in your compiled query you should have a list of `User`s like so:
+
+<[sample:compiled_include_list]>
+
+Note that you could either have the list instantiated or at least make sure the property has a setter as well as a getter (we've got your back).
+
+As with the simple include queries, you could also use a Dictionary with a key type corresponding to the Id of the document- the dictionary value type:
+
+<[sample:compiled_include_dictionary]>
 
 ## Querying for a single document
 
