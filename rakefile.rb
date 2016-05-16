@@ -122,7 +122,7 @@ namespace :paket do
 	end
 
   desc 'Restores nuget packages with paket'
-	task :restore do
+	task :restore => [:bootstrap] do
 		sh '.paket/paket.exe restore'
   end
 
