@@ -16,7 +16,10 @@ namespace Marten.Util
 
             var callGetMethod = Expression.Call(target, method);
 
-            var lambda = Expression.Lambda<Func<TTarget, TProperty>>(callGetMethod, target);
+            var lambda = method.ReturnType == typeof(TProperty)
+                ? Expression.Lambda<Func<TTarget, TProperty>>(callGetMethod, target)
+                : Expression.Lambda<Func<TTarget, TProperty>>(Expression.Convert(callGetMethod, typeof(TProperty)),
+                    target);
 
             return lambda.Compile();
         }
@@ -42,7 +45,9 @@ namespace Marten.Util
 
             var fieldAccess = Expression.Field(target, field);
 
-            var lambda = Expression.Lambda<Func<TTarget, TField>>(fieldAccess, target);
+            var lambda = field.FieldType == typeof(TField)
+                ? Expression.Lambda<Func<TTarget, TField>>(fieldAccess, target)
+                : Expression.Lambda<Func<TTarget, TField>>(Expression.Convert(fieldAccess, typeof(TField)), target);
 
             return lambda.Compile();
         }

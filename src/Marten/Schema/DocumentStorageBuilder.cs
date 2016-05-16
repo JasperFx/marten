@@ -128,8 +128,6 @@ namespace Marten.Schema
         {
             var upsertFunction = mapping.ToUpsertFunction();
 
-            var id_NpgsqlDbType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
-            
             var typeName = mapping.DocumentType.GetTypeName();
             var storeName = _storenameSanitizer.Replace(mapping.DocumentType.GetPrettyName(), string.Empty);
 
@@ -152,37 +150,8 @@ BLOCK:public {storeName}Storage({ctorArgs}) {callBaseCtor}
 {ctorLines}
 END
 
-public Type DocumentType => typeof ({typeName});
 
 
-BLOCK:public NpgsqlCommand LoaderCommand(object id)
-return new NpgsqlCommand(`select {mapping.SelectFields().Join(", ")} from {mapping.Table.QualifiedName} as d where id = :id`).With(`id`, id);
-END
-
-BLOCK:public NpgsqlCommand DeleteCommandForId(object id)
-return new NpgsqlCommand(`delete from {mapping.Table.QualifiedName} where id = :id`).With(`id`, id);
-END
-
-BLOCK:public NpgsqlCommand DeleteCommandForEntity(object entity)
-return DeleteCommandForId((({typeName})entity).{mapping.IdMember.Name});
-END
-
-BLOCK:public NpgsqlCommand LoadByArrayCommand<T>(T[] ids)
-return new NpgsqlCommand(`select {mapping.SelectFields().Join(", ")} from {mapping.Table.QualifiedName} as d where id = ANY(:ids)`).With(`ids`, ids);
-END
-
-BLOCK:public void Remove(IIdentityMap map, object entity)
-var id = Identity(entity);
-map.Remove<{typeName}>(id);
-END
-
-BLOCK:public void Delete(IIdentityMap map, object id)
-map.Remove<{typeName}>(id);
-END
-
-BLOCK:public void Store(IIdentityMap map, object id, object entity)
-map.Store<{typeName}>(id, ({typeName})entity);
-END
 
 BLOCK:public object Assign({typeName} document, out bool assigned)
 {mapping.IdStrategy.AssignmentBodyCode(mapping.IdMember)}
@@ -197,8 +166,6 @@ BLOCK:public object Retrieve({typeName} document)
 return document.{mapping.IdMember.Name};
 END
 
-
-public NpgsqlDbType IdType => NpgsqlDbType.{id_NpgsqlDbType};
 
 BLOCK:public object Identity(object document)
 return (({typeName})document).{mapping.IdMember.Name};
