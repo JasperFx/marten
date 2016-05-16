@@ -20,14 +20,29 @@ namespace Marten.Linq
 
         protected override Expression VisitMember(MemberExpression node)
         {
-            if (node.NodeType == ExpressionType.MemberAccess && node.Member.ReflectedType == _queryType)
+            if (node.NodeType == ExpressionType.MemberAccess)
             {
-                var property = (PropertyInfo)node.Member;
-                var method = GetType().GetMethod("CreateParameterSetter", BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(_queryType, property.PropertyType);
-                var result = (IDbParameterSetter)method.Invoke(this, new []{property});
-                _parameterSetters.Add(result);
+                if (node.Member.ReflectedType == _queryType)
+                {
+                    var property = (PropertyInfo) node.Member;
+                    var method = GetType().GetMethod("CreateParameterSetter", BindingFlags.Instance | BindingFlags.NonPublic)
+                            .MakeGenericMethod(_queryType, property.PropertyType);
+                    var result = (IDbParameterSetter) method.Invoke(this, new[] {property});
+                    _parameterSetters.Add(result);
+                }
+              
             }
             return base.VisitMember(node);
+        }
+
+        protected override Expression VisitConstant(ConstantExpression node)
+        {
+            if (node.Type != _queryType)
+            {
+                var result = new ConstantDbParameterSetter(node.Value);
+                _parameterSetters.Add(result);
+            }
+            return base.VisitConstant(node);
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -36,6 +51,11 @@ namespace Marten.Linq
             return node.Method.Name.Contains("Include") ? node : base.VisitMethodCall(node);
         }
 
+
+        private IDbParameterSetter CreateConstantParameterSetter<TObject, TProperty>(PropertyInfo property)
+        {
+            return new DbParameterSetter<TObject, TProperty>(LambdaBuilder.GetProperty<TObject, TProperty>(property));
+        }
 
         private IDbParameterSetter CreateParameterSetter<TObject, TProperty>(PropertyInfo property)
         {

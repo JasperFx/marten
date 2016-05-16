@@ -48,6 +48,7 @@
     <Compile Include="Bugs\ability_to_persist_generic_types.cs" />
     <Compile Include="Bugs\ability_to_persist_nested_types_Tests.cs" />
     <Compile Include="Bugs\Bug118_bad_exception_message_Tests.cs" />
+    <Compile Include="Bugs\Bug_365_compiled_query_with_constant_fails.cs" />
     <Compile Include="Bugs\Bug_337_certain_boolean_searches_are_not_using_searchable_field.cs" />
     <Compile Include="Bugs\Bug_339_async_cache_problem.cs" />
     <Compile Include="Bugs\Bug145_table_getting_erroneously_regenerated_Tests.cs" />
