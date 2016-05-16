@@ -253,20 +253,6 @@ namespace Marten.Schema
             }
         }
 
-        public virtual IEnumerable<StorageArgument> ToArguments()
-        {
-            yield return new DocumentMappingArgument(this);
-
-            foreach (var argument in IdStrategy.ToArguments())
-            {
-                yield return argument;
-            }
-
-            if (IsHierarchy())
-            {
-                yield return new HierarchyArgument(this);
-            }
-        }
 
         public IWhereFragment DefaultWhereFragment()
         {
@@ -280,7 +266,9 @@ namespace Marten.Schema
 
         public IDocumentStorage BuildStorage(IDocumentSchema schema)
         {
-            return DocumentStorageBuilder.Build(schema, this);
+            var resolverType = IsHierarchy() ? typeof(HierarchicalResolver<>) : typeof(Resolver<>);
+
+            return resolverType.CloseAndBuildAs<IDocumentStorage>(this, DocumentType);
         }
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
@@ -454,7 +442,6 @@ namespace Marten.Schema
                     Column = DocumentTypeColumn,
                     DbType = NpgsqlDbType.Varchar,
                     PostgresType = "varchar",
-                    BatchUpdatePattern = ".Param(\"docType\", _hierarchy.AliasFor(document.GetType()), NpgsqlDbType.Varchar)",
                 });
             }
 
@@ -592,19 +579,4 @@ namespace Marten.Schema
         }
     }
 
-    [Obsolete("This is going to die when the Roslyn compilation is replaced")]
-    public class DocumentMappingArgument : StorageArgument
-    {
-        private readonly DocumentMapping _documentMapping;
-
-        public DocumentMappingArgument(DocumentMapping documentMapping) : base("mapping", typeof(DocumentMapping))
-        {
-            _documentMapping = documentMapping;
-        }
-
-        public override object GetValue(IDocumentSchema schema)
-        {
-            return _documentMapping;
-        }
-    }
 }

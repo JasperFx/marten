@@ -25,6 +25,11 @@ namespace Marten.Schema.Identity
 
             if (assigned)
             {
+                if (_setter == null)
+                {
+                    throw new InvalidOperationException($"The identity of {typeof(TDoc)} cannot be assigned");
+                }
+
                 _setter(document, id);
             }
 
@@ -33,7 +38,7 @@ namespace Marten.Schema.Identity
 
         public void Assign(TDoc document, object id)
         {
-            _setter(document, (TId) id);
+            if (_setter != null) _setter(document, (TId) id);
         }
     }
 }

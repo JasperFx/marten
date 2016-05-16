@@ -157,16 +157,6 @@ namespace Marten.Testing
         }
 
         [Fact]
-        public void storage_arguments_adds_hierarchy_argument_with_subclasses()
-        {
-            var mapping = DocumentMapping.For<Squad>();
-            mapping.AddSubClass(typeof(FootballTeam));
-
-            mapping.ToArguments().OfType<HierarchyArgument>()
-                .Single().Mapping.ShouldBeSameAs(mapping);
-        }
-
-        [Fact]
         public void to_table_without_subclasses_and_no_duplicated_fields()
         {
             var mapping = DocumentMapping.For<IntDoc>();

@@ -487,16 +487,6 @@ namespace Marten.Testing.Schema
 
         public class CustomIdGeneration : IIdGeneration
         {
-            public IEnumerable<StorageArgument> ToArguments()
-            {
-                yield break;
-            }
-
-            public string AssignmentBodyCode(MemberInfo idMember)
-            {
-                return null;
-            }
-
             public IEnumerable<Type> KeyTypes { get; }
 
             public IIdGenerator<T> Build<T>(IDocumentSchema schema)

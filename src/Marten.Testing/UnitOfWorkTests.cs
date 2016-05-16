@@ -11,11 +11,6 @@ namespace Marten.Testing
 {
     public class UnitOfWorkTests : DocumentSessionFixture<NulloIdentityMap>
     {
-
-        public UnitOfWorkTests()
-        {
-        }
-
         public override void Dispose()
         {
             base.Dispose();
@@ -141,7 +136,4 @@ namespace Marten.Testing
         }
 
     }
-
-
-
 }

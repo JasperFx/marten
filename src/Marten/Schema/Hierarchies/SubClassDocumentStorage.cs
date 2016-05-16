@@ -11,27 +11,15 @@ using NpgsqlTypes;
 namespace Marten.Schema.Hierarchies
 {
     public class SubClassDocumentStorage<T, TBase>
-        : IDocumentStorage, IResolver<T>, IdAssignment<T>
+        : IDocumentStorage, IResolver<T>
         where T : class, TBase
         where TBase : class
     {
         private readonly IDocumentStorage _parent;
-        private readonly IdAssignment<TBase> _parentIdAssignment;
 
         public SubClassDocumentStorage(IDocumentStorage parent)
         {
             _parent = parent;
-            _parentIdAssignment = _parent.As<IdAssignment<TBase>>();
-        }
-
-        public object Assign(T document, out bool assigned)
-        {
-            return _parentIdAssignment.Assign(document, out assigned);
-        }
-
-        public void Assign(T document, object id)
-        {
-            throw new NotSupportedException();
         }
 
         public Type DocumentType => typeof(T);

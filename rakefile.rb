@@ -79,7 +79,7 @@ task :compile => [:clean] do
 
 	sh "#{msbuild} src/Marten.sln   /property:Configuration=#{COMPILE_TARGET} /v:m /t:rebuild /nr:False /maxcpucount:2"
 	
-	sh "ILMerge.exe /out:src/Marten/bin/#{COMPILE_TARGET}/Marten.dll /lib:src/Marten/bin/#{COMPILE_TARGET} /target:library /targetplatform:v4 /internalize /ndebug src/Marten/bin/#{COMPILE_TARGET}/Marten.dll src/Marten/bin/#{COMPILE_TARGET}/Newtonsoft.Json.dll src/Marten/bin/#{COMPILE_TARGET}/Baseline.dll  src/Marten/bin/#{COMPILE_TARGET}/Microsoft.CodeAnalysis.dll src/Marten/bin/#{COMPILE_TARGET}/Microsoft.CodeAnalysis.CSharp.dll src/Marten/bin/#{COMPILE_TARGET}/Remotion.Linq.dll src/Marten/bin/#{COMPILE_TARGET}/System.Reflection.Metadata.dll src/Marten/bin/#{COMPILE_TARGET}/System.Collections.Immutable.dll"
+	sh "ILMerge.exe /out:src/Marten/bin/#{COMPILE_TARGET}/Marten.dll /lib:src/Marten/bin/#{COMPILE_TARGET} /target:library /targetplatform:v4 /internalize /ndebug src/Marten/bin/#{COMPILE_TARGET}/Marten.dll src/Marten/bin/#{COMPILE_TARGET}/Newtonsoft.Json.dll src/Marten/bin/#{COMPILE_TARGET}/Baseline.dll  src/Marten/bin/#{COMPILE_TARGET}/Remotion.Linq.dll"
 
 
 	# FileUtils.cp "src/Marten/bin/#{COMPILE_TARGET}/Marten.dll", "src/Marten.Testing/bin/#{COMPILE_TARGET}/Marten.dll"

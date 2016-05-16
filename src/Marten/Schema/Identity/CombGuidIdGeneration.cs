@@ -1,38 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 
 namespace Marten.Schema.Identity
 {
     /// <summary>
-    /// Comb Guid Id Generation. More info http://www.informit.com/articles/article.aspx?p=25862
+    ///     Comb Guid Id Generation. More info http://www.informit.com/articles/article.aspx?p=25862
     /// </summary>
     public class CombGuidIdGeneration : IIdGeneration
     {
-        public IEnumerable<StorageArgument> ToArguments()
-        {
-            return Enumerable.Empty<StorageArgument>();
-        }
+        private const int NumDateBytes = 6;
+        private const double TicksPerMillisecond = 3d/10d;
 
-        public string AssignmentBodyCode(MemberInfo idMember)
-        {
-            return $@"
-BLOCK:if (document.{idMember.Name} == System.Guid.Empty)
-document.{idMember.Name} = Marten.Schema.Identity.CombGuidIdGeneration.NewGuid();
-assigned = true;
-END
-BLOCK:else
-assigned = false;
-END
-";
-        }
-
-        public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(Guid)};
+        private static readonly DateTime _minCombDate = new DateTime(1900, 1, 1);
+        private static readonly DateTime _maxCombDate = _minCombDate.AddDays(ushort.MaxValue);
+        public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(Guid)};
 
         public IIdGenerator<T> Build<T>(IDocumentSchema schema)
         {
-            return (IIdGenerator<T>) new GuidIdGenerator(CombGuidIdGeneration.NewGuid);
+            return (IIdGenerator<T>) new GuidIdGenerator(NewGuid);
         }
 
         /*
@@ -51,31 +36,27 @@ END
         */
 
         /// <summary>
-        /// Returns a new Guid COMB, consisting of a random Guid combined with the current UTC timestamp.
+        ///     Returns a new Guid COMB, consisting of a random Guid combined with the current UTC timestamp.
         /// </summary>
         public static Guid NewGuid() => Create(Guid.NewGuid(), DateTime.UtcNow);
 
         /// <summary>
-        /// Returns a new Guid COMB, consisting of a random Guid combined with the provided timestap.
+        ///     Returns a new Guid COMB, consisting of a random Guid combined with the provided timestap.
         /// </summary>
         public static Guid NewGuid(DateTime timestamp) => Create(Guid.NewGuid(), timestamp);
 
-        private static readonly DateTime _minCombDate = new DateTime(1900, 1, 1);
-        private static readonly DateTime _maxCombDate = _minCombDate.AddDays(ushort.MaxValue);
-
-        private const int NumDateBytes = 6;
-        private const double TicksPerMillisecond = 3d / 10d;
-
         private static byte[] DateTimeToBytes(DateTime timestamp)
         {
-            if (timestamp < _minCombDate) throw new ArgumentException($"COMB values only support dates on or after {_minCombDate}");
-            if (timestamp > _maxCombDate) throw new ArgumentException($"COMB values only support dates through {_maxCombDate}");
+            if (timestamp < _minCombDate)
+                throw new ArgumentException($"COMB values only support dates on or after {_minCombDate}");
+            if (timestamp > _maxCombDate)
+                throw new ArgumentException($"COMB values only support dates through {_maxCombDate}");
 
             // Convert the time to 300ths of a second. SQL Server uses float math for this before converting to an integer, so this does as well
             // to avoid rounding errors. This is confirmed in MSSQL by SELECT CONVERT(varchar, CAST(CAST(2 as binary(8)) AS datetime), 121),
             // which would return .006 if it were integer math, but it returns .007.
-            var ticks = (int)(timestamp.TimeOfDay.TotalMilliseconds * TicksPerMillisecond);
-            var days = (ushort)(timestamp - _minCombDate).TotalDays;
+            var ticks = (int) (timestamp.TimeOfDay.TotalMilliseconds*TicksPerMillisecond);
+            var days = (ushort) (timestamp - _minCombDate).TotalDays;
             var tickBytes = BitConverter.GetBytes(ticks);
             var dayBytes = BitConverter.GetBytes(days);
 
@@ -97,9 +78,9 @@ END
             var bytes = value.ToByteArray();
             var dtbytes = DateTimeToBytes(timestamp);
             // Nybble 6-9 move left to 5-8. Nybble 9 is set to "4" (the version)
-            dtbytes[2] = (byte)((byte)(dtbytes[2] << 4) | (byte)(dtbytes[3] >> 4));
-            dtbytes[3] = (byte)((byte)(dtbytes[3] << 4) | (byte)(dtbytes[4] >> 4));
-            dtbytes[4] = (byte)(0x40 | (byte)(dtbytes[4] & 0x0F));
+            dtbytes[2] = (byte) ((byte) (dtbytes[2] << 4) | (byte) (dtbytes[3] >> 4));
+            dtbytes[3] = (byte) ((byte) (dtbytes[3] << 4) | (byte) (dtbytes[4] >> 4));
+            dtbytes[4] = (byte) (0x40 | (byte) (dtbytes[4] & 0x0F));
             // Overwrite the first six bytes
             Array.Copy(dtbytes, 0, bytes, 0, NumDateBytes);
             return new Guid(bytes);

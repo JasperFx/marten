@@ -40,7 +40,6 @@ namespace Marten.Schema
                 PostgresType = "JSONB",
                 DbType = NpgsqlDbType.Jsonb,
                 Column = "data",
-                BatchUpdatePattern = "*"
             });
         }
 
@@ -87,24 +86,6 @@ namespace Marten.Schema
             return Arguments.OrderBy(x => x.Arg).ToArray();
         }
 
-        public string ToUpdateBatchMethod(string typeName)
-        {
-            var parameters = OrderedArguments().Select(x => x.ToUpdateBatchParameter()).Join("");
-
-            return $@"
-BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity)
-var document = ({typeName})entity;
-var function = new FunctionName(`{_functionName.Schema}`, `{_functionName.Name}`);
-batch.Sproc(function){parameters.Replace("*", ".JsonEntity(`doc`, document)")};
-END
-
-BLOCK:public void RegisterUpdate(UpdateBatch batch, object entity, string json)
-var document = ({typeName})entity;
-var function = new FunctionName(`{_functionName.Schema}`, `{_functionName.Name}`);
-batch.Sproc(function){parameters.Replace("*", ".JsonBody(`doc`, json)")};
-END
-";
-        }
 
     }
 }

@@ -3,10 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Npgsql;
-using Remotion.Linq;
-using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
 {
@@ -22,9 +19,17 @@ namespace Marten.Linq
             _dictionary = dictionary;
         }
 
-        public ContainmentWhereFragment(ISerializer serializer, BinaryExpression binary) : this(serializer, new Dictionary<string, object>())
+        public ContainmentWhereFragment(ISerializer serializer, BinaryExpression binary)
+            : this(serializer, new Dictionary<string, object>())
         {
             CreateDictionaryForSearch(binary, _dictionary);
+        }
+
+        public string ToSql(NpgsqlCommand command)
+        {
+            var json = _serializer.ToCleanJson(_dictionary);
+
+            return $"d.data @> '{json}'";
         }
 
         public static void CreateDictionaryForSearch(BinaryExpression binary, IDictionary<string, object> dict)
@@ -35,7 +40,8 @@ namespace Marten.Linq
             CreateDictionaryForSearch(dict, memberExpression, expressionValue);
         }
 
-        public static void CreateDictionaryForSearch(IDictionary<string, object> dict, Expression memberExpression, object expressionValue)
+        public static void CreateDictionaryForSearch(IDictionary<string, object> dict, Expression memberExpression,
+            object expressionValue)
         {
             var visitor = new FindMembers();
             visitor.Visit(memberExpression);
@@ -60,13 +66,6 @@ namespace Marten.Linq
                 var value = expressionValue;
                 dict.Add(member.Name, value);
             }
-        }
-
-        public string ToSql(NpgsqlCommand command)
-        {
-            var json = _serializer.ToCleanJson(_dictionary);
-
-            return $"d.data @> '{json}'";
         }
 
         public static IWhereFragment SimpleArrayContains(ISerializer serializer, Expression from,

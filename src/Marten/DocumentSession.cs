@@ -91,7 +91,7 @@ namespace Marten
             else
             {
                 var storage = _schema.StorageFor(typeof(T));
-                var idAssignment = storage.As<IdAssignment<T>>();
+                var idAssignment = _schema.IdAssignmentFor<T>();
 
                 foreach (var entity in entities)
                 {

@@ -42,11 +42,6 @@ namespace Marten.Testing.Schema.Hierarchies
             sql.ShouldContain("WITH upsert AS (UPDATE public.mt_doc_squad SET \"data\" = doc, \"mt_doc_type\" = docType WHERE id=docId RETURNING *)");
         }
 
-        [Fact]
-        public void generate_document_storage_code_for_the_hierarchy_without_blowing_up()
-        {
-            DocumentStorageBuilder.Build(null, theHierarchy).ShouldNotBeNull();
-        }
     }
 
     public class generating_code_and_sql_for_hierarchy_smoke_Tests_on_other_database_schema
@@ -87,11 +82,6 @@ namespace Marten.Testing.Schema.Hierarchies
             sql.ShouldContain("WITH upsert AS (UPDATE other.mt_doc_squad SET \"data\" = doc, \"mt_doc_type\" = docType WHERE id=docId RETURNING *)");
         }
 
-        [Fact]
-        public void generate_document_storage_code_for_the_hierarchy_without_blowing_up()
-        {
-            DocumentStorageBuilder.Build(null, theHierarchy).ShouldNotBeNull();
-        }
     }
 
     public class Squad

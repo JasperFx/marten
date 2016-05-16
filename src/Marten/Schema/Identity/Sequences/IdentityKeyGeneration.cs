@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Baseline;
-using Marten.Util;
 
 namespace Marten.Schema.Identity.Sequences
 {
-    public class IdentityKeyGeneration : StorageArgument, IIdGeneration
+    public class IdentityKeyGeneration : IIdGeneration
     {
-        private readonly IDocumentMapping _mapping;
         private readonly HiloSettings _hiloSettings;
+        private readonly IDocumentMapping _mapping;
 
-        public IdentityKeyGeneration(IDocumentMapping mapping, HiloSettings hiloSettings) : base("sequence", typeof(ISequence))
+        public IdentityKeyGeneration(IDocumentMapping mapping, HiloSettings hiloSettings)
         {
             _mapping = mapping;
             _hiloSettings = hiloSettings;
@@ -20,51 +18,26 @@ namespace Marten.Schema.Identity.Sequences
         public int Increment => _hiloSettings.Increment;
         public int MaxLo => _hiloSettings.MaxLo;
 
-        public override object GetValue(IDocumentSchema schema)
-        {
-            return schema.Sequences.Hilo(_mapping.DocumentType, _hiloSettings);
-        }
 
-        public IEnumerable<StorageArgument> ToArguments()
-        {
-            return new StorageArgument[] { this };
-        }
-
-        public string AssignmentBodyCode(MemberInfo idMember)
-        {
-            var member = idMember.GetMemberType() == typeof (int) ? "NextInt" : "NextLong";
-            return
-                $@"
-BLOCK:if (document.{idMember.Name} == null) 
-document.{idMember.Name} = ""{_mapping.Alias}/"" +_sequence.{member}();
-assigned = true;
-END
-BLOCK:else
-assigned = false;
-END
-";
-        }
-
-        public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
+        public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(string)};
 
         public IIdGenerator<T> Build<T>(IDocumentSchema schema)
         {
             var sequence = schema.Sequences.Hilo(_mapping.DocumentType, _hiloSettings);
             return (IIdGenerator<T>) new IdentityKeyGenerator(_mapping.Alias, sequence);
-
         }
     }
 
     public class IdentityKeyGenerator : IIdGenerator<string>
     {
-        public string Alias { get; set; }
-        public ISequence Sequence { get; }
-
         public IdentityKeyGenerator(string alias, ISequence sequence)
         {
             Alias = alias;
             Sequence = sequence;
         }
+
+        public string Alias { get; set; }
+        public ISequence Sequence { get; }
 
         public string Assign(string existing, out bool assigned)
         {

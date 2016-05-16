@@ -12,7 +12,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema
 {
-    public class Resolver<T> : IResolver<T> where T : class
+    public class Resolver<T> : IResolver<T>, IDocumentStorage where T : class
     {
         private readonly string _deleteSql;
         private readonly Func<T, object> _identity;

@@ -12,24 +12,20 @@ namespace Marten.Testing.Schema.Identity.Sequences
     // SAMPLE: custom-id-generation
     public class CustomdIdGeneration : IIdGeneration
     {
-        public IEnumerable<StorageArgument> ToArguments()
-        {
-            return Enumerable.Empty<StorageArgument>();
-        }
-
-        public string AssignmentBodyCode(MemberInfo idMember)
-        {
-            return $@"
-document.{idMember.Name} = ""newId""; //your id generation algorithm here
-assigned = true;
-";
-        }
-
-        public IEnumerable<Type> KeyTypes { get; }
+        public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
 
         public IIdGenerator<T> Build<T>(IDocumentSchema schema)
         {
-            throw new NotImplementedException();
+            return (IIdGenerator<T>) new CustomIdGenerator();
+        }
+
+        public class CustomIdGenerator : IIdGenerator<string>
+        {
+            public string Assign(string existing, out bool assigned)
+            {
+                assigned = true;
+                return "newId";
+            }
         }
     }
     // ENDSAMPLE

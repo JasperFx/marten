@@ -13,6 +13,5 @@ nuget Remotion.Linq
 nuget Shouldly
 nuget Storyteller 3.0.0.329-rc
 nuget structuremap
-nuget Microsoft.CodeAnalysis.CSharp prerelease
 nuget xunit
 nuget xunit.runner.console

@@ -10,8 +10,8 @@ namespace Marten.Schema
     {
         private readonly DocumentMapping _hierarchy;
 
-        public HierarchicalResolver(DocumentMapping mapping, DocumentMapping hierarchy)
-            : base(mapping)
+        public HierarchicalResolver(DocumentMapping hierarchy)
+            : base(hierarchy)
         {
             _hierarchy = hierarchy;
         }

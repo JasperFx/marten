@@ -55,19 +55,6 @@ namespace Marten.Schema
 
         public NpgsqlDbType DbType { get; set; }
 
-        [Obsolete("Goes away after the Roslyn generation is gone")]
-        public string BatchUpdatePattern = ".Param(\"{2}\", document.{0}, NpgsqlDbType.{1})";
-
-        [Obsolete("Goes away after the Roslyn generation is gone")]
-        public string ToUpdateBatchParameter()
-        {
-            if (Members == null) return BatchUpdatePattern;
-
-            var accessor = Members.Select(x => x.Name).Join("?.");
-
-            return BatchUpdatePattern.ToFormat(accessor, DbType, Arg);
-        }
-
         private readonly static MethodInfo _paramMethod = typeof(BatchCommand.SprocCall)
             .GetMethod("Param", new Type[] {typeof(string), typeof(object), typeof(NpgsqlDbType)});
 

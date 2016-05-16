@@ -31,6 +31,8 @@ namespace Marten.Util
 
             var method = property.GetSetMethod();
 
+            if (method == null) return null;
+
             var callSetMethod = Expression.Call(target, method, value);
 
             var lambda = Expression.Lambda<Action<TTarget, TProperty>>(callSetMethod, target, value);
