@@ -4,12 +4,14 @@ using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq
 {
-    public class using_containment_operator_in_linq_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class using_containment_operator_in_linq_Tests : DocumentSessionFixture<IdentityMap>
     {
-        public using_containment_operator_in_linq_Tests()
+
+        public using_containment_operator_in_linq_Tests(ITestOutputHelper output)
         {
             StoreOptions(_ =>
             {
@@ -43,6 +45,8 @@ namespace Marten.Testing.Linq
 
             theSession.SaveChanges();
 
+
+
             theSession.Query<Target>().Where(x => x.Number == 3).Single().Number.ShouldBe(3);
         }
 
@@ -50,12 +54,17 @@ namespace Marten.Testing.Linq
         public void query_by_date()
         {
             var targets = Target.GenerateRandomData(6).ToArray();
-            targets.Each(x => theSession.Store(x));
+            theSession.Store(targets);
 
             theSession.SaveChanges();
 
-            theSession.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
-                .ToArray().ShouldContain(x => x.Date == targets.ElementAt(2).Date);
+            var actual = theSession.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
+                .ToArray();
+
+            actual.Length.ShouldBeGreaterThan(0);
+
+
+            actual.ShouldContain(targets.ElementAt(2));
         }
     }
 }

@@ -1,5 +1,8 @@
 using System;
+using System.Linq.Expressions;
 using System.Reflection;
+using Marten.Linq;
+using Marten.Util;
 
 namespace Marten.Schema
 {
@@ -19,6 +22,17 @@ namespace Marten.Schema
         public void WritePatch(DocumentMapping mapping, Action<string> writer)
         {
             // Nothing
+        }
+
+        public object GetValue(Expression valueExpression)
+        {
+            return valueExpression.Value();
+        }
+
+        public Type MemberType => _idMember.GetMemberType();
+        public bool ShouldUseContainmentOperator()
+        {
+            return false;
         }
     }
 }

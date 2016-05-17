@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
@@ -28,7 +29,6 @@ namespace Marten.Linq
         public string ToSql(NpgsqlCommand command)
         {
             var json = _serializer.ToCleanJson(_dictionary);
-
             return $"d.data @> '{json}'";
         }
 

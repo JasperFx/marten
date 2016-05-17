@@ -268,7 +268,10 @@ namespace Marten.Schema
         {
             var resolverType = IsHierarchy() ? typeof(HierarchicalResolver<>) : typeof(Resolver<>);
 
-            return resolverType.CloseAndBuildAs<IDocumentStorage>(this, DocumentType);
+            var closedType = resolverType.MakeGenericType(DocumentType);
+
+            return Activator.CreateInstance(closedType, schema.StoreOptions.Serializer(), this)
+                .As<IDocumentStorage>();
         }
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
@@ -390,7 +393,7 @@ namespace Marten.Schema
 
         public IField FieldFor(MemberInfo member)
         {
-            return _fields.GetOrAdd(member.Name, name => new JsonLocatorField(member));
+            return _fields.GetOrAdd(member.Name, name => new JsonLocatorField(_storeOptions.Serializer().EnumStorage, member));
         }
 
         public IField FieldFor(string memberName)
@@ -402,7 +405,7 @@ namespace Marten.Schema
 
                 if (member == null) return null;
 
-                return new JsonLocatorField(member);
+                return new JsonLocatorField(_storeOptions.Serializer().EnumStorage, member);
             });
         }
 
@@ -531,7 +534,7 @@ namespace Marten.Schema
         public DuplicatedField DuplicateField(string memberName, string pgType = null)
         {
             var field = FieldFor(memberName);
-            var duplicate = new DuplicatedField(field.Members);
+            var duplicate = new DuplicatedField(_storeOptions.Serializer().EnumStorage, field.Members);
             if (pgType.IsNotEmpty())
             {
                 duplicate.PgType = pgType;
@@ -550,7 +553,7 @@ namespace Marten.Schema
             }
 
             var key = members.Select(x => x.Name).Join("");
-            return _fields.GetOrAdd(key, _ => new JsonLocatorField(members.ToArray()));
+            return _fields.GetOrAdd(key, _ => new JsonLocatorField(_storeOptions.Serializer().EnumStorage, members.ToArray()));
         }
 
         public IWhereFragment FilterDocuments(IWhereFragment query)
@@ -562,7 +565,7 @@ namespace Marten.Schema
         {
             var memberName = members.Select(x => x.Name).Join("");
 
-            var duplicatedField = new DuplicatedField(members);
+            var duplicatedField = new DuplicatedField(_storeOptions.Serializer().EnumStorage, members);
             if (pgType.IsNotEmpty())
             {
                 duplicatedField.PgType = pgType;

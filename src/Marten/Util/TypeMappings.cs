@@ -92,11 +92,11 @@ namespace Marten.Util
             return PgTypes.ContainsKey(memberType) || memberType.IsEnum;
         }
 
-        public static string ApplyCastToLocator(this string locator, Type memberType)
+        public static string ApplyCastToLocator(this string locator, EnumStorage enumStyle, Type memberType)
         {
             if (memberType.IsEnum)
             {
-                return "({0})::int".ToFormat(locator);
+                return enumStyle == EnumStorage.AsInteger ? "({0})::int".ToFormat(locator) : locator;
             }
 
             if (!PgTypes.ContainsKey(memberType))

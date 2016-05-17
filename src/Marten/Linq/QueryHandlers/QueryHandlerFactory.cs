@@ -26,11 +26,13 @@ namespace Marten.Linq.QueryHandlers
     public class QueryHandlerFactory : IQueryHandlerFactory
     {
         private readonly IDocumentSchema _schema;
+        private readonly ISerializer _serializer;
         private readonly ConcurrentCache<Type, CachedQuery> _cache = new ConcurrentCache<Type, CachedQuery>();
 
-        public QueryHandlerFactory(IDocumentSchema schema)
+        public QueryHandlerFactory(IDocumentSchema schema, ISerializer serializer)
         {
             _schema = schema;
+            _serializer = serializer;
         }
 
         public IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins)
@@ -162,7 +164,7 @@ namespace Marten.Linq.QueryHandlers
             Expression expression = query.QueryIs();
             var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
 
-            var setters = findSetters(queryType, expression);
+            var setters = findSetters(_schema.MappingFor(typeof(TDoc)), queryType, expression, _serializer.EnumStorage);
 
             var model = MartenQueryParser.TransformQueryFlyweight.GetParsedQuery(invocation);
             _schema.EnsureStorageExists(typeof(TDoc));
@@ -188,9 +190,9 @@ namespace Marten.Linq.QueryHandlers
             };
         }
 
-        private static IList<IDbParameterSetter> findSetters(Type queryType, Expression expression)
+        private static IList<IDbParameterSetter> findSetters(IDocumentMapping mapping, Type queryType, Expression expression, EnumStorage enumStorage)
         {
-            var visitor = new CompiledQueryMemberExpressionVisitor(queryType);
+            var visitor = new CompiledQueryMemberExpressionVisitor(mapping, queryType, enumStorage);
             visitor.Visit(expression);
             var parameterSetters = visitor.ParameterSetters;
             return parameterSetters;

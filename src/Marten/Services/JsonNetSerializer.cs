@@ -49,5 +49,8 @@ namespace Marten.Services
 
             return writer.ToString();
         }
+
+        // TODO -- make this configurable?
+        public EnumStorage EnumStorage => EnumStorage.AsInteger;
     }
 }

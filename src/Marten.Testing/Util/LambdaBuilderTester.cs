@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Testing.Fixtures;
@@ -82,12 +83,18 @@ namespace Marten.Testing.Util
 
             var members = visitor.Members.ToArray();
 
-            var getter = LambdaBuilder.Getter<Target, int>(members);
+            var getter = LambdaBuilder.Getter<Target, int>(EnumStorage.AsInteger, members);
 
             var target = Target.Random(true);
 
             getter(target).ShouldBe(target.Inner.Number);
 
+        }
+
+        [Fact]
+        public void can_get_the_Enum_GetName_method()
+        {
+            typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public).ShouldNotBeNull();
         }
     }
 }

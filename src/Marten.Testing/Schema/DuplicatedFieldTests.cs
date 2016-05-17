@@ -1,7 +1,10 @@
-﻿using System.Reflection;
+﻿using System.Linq.Expressions;
+using System.Reflection;
 using Baseline.Reflection;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Marten.Testing.Fixtures;
+using NpgsqlTypes;
 using Shouldly;
 using Xunit;
 
@@ -9,7 +12,7 @@ namespace Marten.Testing.Schema
 {
     public class DuplicatedFieldTests
     {
-        private DuplicatedField theField = new DuplicatedField(new MemberInfo[] { ReflectionHelper.GetProperty<User>(x => x.FirstName)});
+        private DuplicatedField theField = new DuplicatedField(EnumStorage.AsInteger, new MemberInfo[] { ReflectionHelper.GetProperty<User>(x => x.FirstName)});
 
         [Fact]
         public void default_role_is_search()
@@ -47,7 +50,18 @@ namespace Marten.Testing.Schema
             theField.SqlLocator.ShouldBe("d.x_first_name");
         }
 
-        
+        [Fact]
+        public void enum_field()
+        {
+            var field = DuplicatedField.For<Target>(EnumStorage.AsString, x => x.Color);
+            field.UpsertArgument.DbType.ShouldBe(NpgsqlDbType.Varchar);
+            field.UpsertArgument.PostgresType.ShouldBe("varchar");
+
+            var constant = Expression.Constant((int)Colors.Blue);
+
+            field.GetValue(constant).ShouldBe(Colors.Blue.ToString());
+
+        }
 
     }
 }

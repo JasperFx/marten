@@ -83,7 +83,7 @@ namespace Marten.Util
                 : SetField<TTarget, TMember>(member.As<FieldInfo>());
         }
 
-        public static Func<TTarget, TValue> Getter<TTarget, TValue>(MemberInfo[] members)
+        public static Func<TTarget, TValue> Getter<TTarget, TValue>(EnumStorage enumStorage, MemberInfo[] members)
         {
             if (members.Length == 1)
             {
@@ -92,14 +92,18 @@ namespace Marten.Util
 
             var target = Expression.Parameter(typeof(TTarget), "target");
 
-            var body = ToExpression(members, target);
+            var body = ToExpression(enumStorage, members, target);
 
             var lambda = Expression.Lambda<Func<TTarget, TValue>>(body, target);
 
             return lambda.Compile();
         }
 
-        public static Expression ToExpression(MemberInfo[] members, ParameterExpression target)
+
+
+        private static readonly MethodInfo _getName = typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public);
+
+        public static Expression ToExpression(EnumStorage enumStorage, MemberInfo[] members, ParameterExpression target)
         {
             Expression body = target;
             foreach (var member in members)
@@ -116,7 +120,14 @@ namespace Marten.Util
                     var field = member.As<FieldInfo>();
                     body = Expression.Field(body, field);
                 }
+
+                var memberType = members.Last().GetMemberType();
+                if (memberType.IsEnum && enumStorage == EnumStorage.AsString)
+                {
+                    body = Expression.Call(_getName, Expression.Constant(memberType), Expression.Convert(body, typeof(object)));
+                }
             }
+
             return body;
         }
     }

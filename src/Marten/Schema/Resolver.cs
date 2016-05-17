@@ -18,12 +18,14 @@ namespace Marten.Schema
         private readonly Func<T, object> _identity;
         private readonly string _loadArraySql;
         private readonly string _loaderSql;
+        private readonly ISerializer _serializer;
         private readonly DocumentMapping _mapping;
         private readonly FunctionName _upsertName;
         private readonly Action<BatchCommand.SprocCall, T, string, DocumentMapping, string> _sprocWriter;
 
-        public Resolver(DocumentMapping mapping)
+        public Resolver(ISerializer serializer, DocumentMapping mapping)
         {
+            _serializer = serializer;
             _mapping = mapping;
             IdType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
 
@@ -53,7 +55,7 @@ namespace Marten.Schema
 
             var arguments = mapping.ToUpsertFunction().OrderedArguments().Select(x =>
             {
-                return x.CompileUpdateExpression(call, doc, json, mappingParam, aliasParam);
+                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, json, mappingParam, aliasParam);
             });
 
             var block = Expression.Block(arguments);
@@ -106,7 +108,7 @@ namespace Marten.Schema
 
         public Task<T> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
         {
-            return map.GetAsync(id, tk => loader.LoadDocumentAsync<T>(id, tk), token).ContinueWith(x => x.Result, token);
+            return map.GetAsync(id, async tk => await loader.LoadDocumentAsync<T>(id, tk).ConfigureAwait(false), token);
         }
 
 

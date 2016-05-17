@@ -7,8 +7,10 @@ using System.Reflection;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Generation;
+using Marten.Linq;
 using Marten.Util;
 using Npgsql;
+using NpgsqlTypes;
 
 
 namespace Marten.Schema
@@ -16,8 +18,11 @@ namespace Marten.Schema
     public class DuplicatedField : Field, IField
     {
         private string _columnName;
+        private readonly Func<Expression, object> _parseObject = expression => expression.Value();
+        private readonly EnumStorage _enumStorage;
+        private readonly NpgsqlDbType _dbType;
 
-        public static DuplicatedField For<T>(Expression<Func<T, object>> expression)
+        public static DuplicatedField For<T>(EnumStorage enumStorage, Expression<Func<T, object>> expression)
         {
             var accessor = ReflectionHelper.GetAccessor(expression);
 
@@ -28,19 +33,38 @@ namespace Marten.Schema
             }
 
 
-            return new DuplicatedField(new MemberInfo[] {accessor.InnerProperty});
+            return new DuplicatedField(enumStorage, new MemberInfo[] {accessor.InnerProperty});
 
             
         }
 
-        public DuplicatedField(MemberInfo[] memberPath) : base(memberPath)
+        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath) : base(memberPath)
         {
+            _enumStorage = enumStorage;
+            _dbType = TypeMappings.ToDbType(MemberType);
+
+
+
             ColumnName = MemberName.ToTableAlias();
 
             if (MemberType.IsEnum)
             {
                 typeof(EnumRegistrar<>).CloseAndBuildAs<IEnumRegistrar>(MemberType).Register();
+
+                
+
+                _parseObject = expression =>
+                {
+                    var raw = expression.Value();
+                    return Enum.GetName(MemberType, raw);
+                };
+
+                _dbType = NpgsqlDbType.Varchar;
+                PgType = "varchar";
+
             }
+
+            
         }
 
         internal interface IEnumRegistrar
@@ -71,7 +95,7 @@ namespace Marten.Schema
         {
             executeSql($"ALTER TABLE {mapping.Table.QualifiedName} ADD COLUMN {ColumnName} {PgType};");
 
-            var jsonField = new JsonLocatorField(Members);
+            var jsonField = new JsonLocatorField(_enumStorage, Members);
 
             // HOKEY, but I'm letting it pass for now.
             var sqlLocator = jsonField.SqlLocator.Replace("d.", "");
@@ -80,14 +104,25 @@ namespace Marten.Schema
 
         }
 
+        public object GetValue(Expression valueExpression)
+        {
+            return _parseObject(valueExpression);
+        }
+
+        public bool ShouldUseContainmentOperator()
+        {
+            return false;
+        }
+
         public DuplicatedFieldRole Role { get; set; } = DuplicatedFieldRole.Search;
 
         public UpsertArgument UpsertArgument => new UpsertArgument
         {
             Arg = "arg_" + ColumnName.ToLower(),
             Column = ColumnName.ToLower(),
-            PostgresType = TypeMappings.GetPgType(Members.Last().GetMemberType()),
-            Members = Members
+            PostgresType = PgType,
+            Members = Members,
+            DbType = _dbType
         };
 
         // I say you don't need a ForeignKey 
@@ -96,38 +131,8 @@ namespace Marten.Schema
             return new TableColumn(ColumnName, PgType);
         }
 
-        public string WithParameterCode()
-        {
-            var accessor = accessorPath();
-            
-            if (MemberType == typeof (DateTime))
-            {
-                // TODO -- might have to correct things later   
-                return $".With(`{UpsertArgument.Arg}`, document.{accessor}, NpgsqlDbType.Date)".Replace('`', '"');
-            }
-
-            return $".With(`{UpsertArgument.Arg}`, document.{accessor})".Replace('`', '"');
-        }
-
-        private string accessorPath()
-        {
-            var accessor = Members.Select(x => x.Name).Join("?.");
-            return accessor;
-        }
-
-        public string ToBulkWriterCode()
-        {
-            var accessor = accessorPath();
-
-            return $"writer.Write(x.{accessor}, NpgsqlDbType.{NpgsqlDbType});";
-        }
 
         public string SqlLocator { get; private set; }
 
-        public string ToUpdateBatchParam()
-        {
-            var dbType = TypeMappings.ToDbType(Members.Last().GetMemberType());
-            return $".Param(document.{accessorPath()}, NpgsqlDbType.{dbType})";
-        }
     }
 }

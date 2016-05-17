@@ -44,7 +44,7 @@ namespace Marten.Schema
 
             Parser = new MartenExpressionParser(StoreOptions.Serializer(), StoreOptions);
 
-            HandlerFactory = new QueryHandlerFactory(this);
+            HandlerFactory = new QueryHandlerFactory(this, options.Serializer());
 
             DbObjects = new DbObjects(_factory, this);
         }
@@ -69,7 +69,7 @@ namespace Marten.Schema
 
                 if (mapping is DocumentMapping)
                 {
-                    return new BulkLoader<T>(mapping.As<DocumentMapping>(), assignment);
+                    return new BulkLoader<T>(StoreOptions.Serializer(), mapping.As<DocumentMapping>(), assignment);
                 }
 
                 

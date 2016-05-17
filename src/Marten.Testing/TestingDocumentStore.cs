@@ -54,16 +54,12 @@ namespace Marten.Testing
         {
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
+            options.Serializer<JilSerializer>();
 
-            lock (_locker)
-            {
-                //options.DatabaseSchemaName = "Test_" + SchemaCount++;
-            }
-            
 
             configure(options);
 
-            options.Serializer<JilSerializer>();
+            
 
             var store = new TestingDocumentStore(options);
             store.Advanced.Clean.CompletelyRemoveAll();

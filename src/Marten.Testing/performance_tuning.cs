@@ -45,6 +45,8 @@ namespace Marten.Testing
         {
             return ToJson(document);
         }
+
+        public EnumStorage EnumStorage => EnumStorage.AsString;
     }
     // ENDSAMPLE
 

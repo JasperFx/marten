@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
 using Marten.Linq.Parsing;
 using Marten.Schema;
+using Marten.Util;
 
 namespace Marten.Linq
 {
@@ -70,19 +72,31 @@ namespace Marten.Linq
         {
             var isValueExpressionOnRight = binary.Right.IsValueExpression();
             var jsonLocatorExpression = isValueExpressionOnRight ? binary.Left : binary.Right;
-            var valuExpression = isValueExpressionOnRight ? binary.Right : binary.Left;
+            var valueExpression = isValueExpressionOnRight ? binary.Right : binary.Left;
 
             var op = _operators[binary.NodeType];
 
-            var value = valuExpression.Value();
+            var visitor = new FindMembers();
+            visitor.Visit(jsonLocatorExpression);
+            var members = visitor.Members;
 
-            if (mapping.PropertySearching == PropertySearching.ContainmentOperator &&
-                binary.NodeType == ExpressionType.Equal && value != null)
+            var field = mapping.FieldFor(members);
+
+
+            var value = field.GetValue(valueExpression);
+            var jsonLocator = field.SqlLocator;
+
+            var useContainment = mapping.PropertySearching == PropertySearching.ContainmentOperator || field.ShouldUseContainmentOperator();
+
+            var isDuplicated = (mapping.FieldFor(members) is DuplicatedField);
+
+            if (useContainment &&
+                binary.NodeType == ExpressionType.Equal && value != null && !isDuplicated)
             {
                 return new ContainmentWhereFragment(_serializer, binary);
             }
 
-            var jsonLocator = mapping.JsonLocator(jsonLocatorExpression);
+            
 
             if (value == null)
             {

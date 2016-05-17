@@ -40,12 +40,20 @@ namespace Marten.Schema
             }
         }
 
-        public Expression CompileBulkImporter<T>(Expression writer, ParameterExpression document)
+        public Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document)
         {
             var memberType = Members.Last().GetMemberType();
-            var method = writeMethod.MakeGenericMethod(memberType);
+            
 
-            var value = LambdaBuilder.ToExpression(Members, document);
+            var value = LambdaBuilder.ToExpression(enumStorage, Members, document);
+
+            if (memberType.IsEnum)
+            {
+                memberType = typeof(string);
+                value = LambdaBuilder.ToExpression(EnumStorage.AsString, Members, document);
+            }
+
+            var method = writeMethod.MakeGenericMethod(memberType);
 
             var dbType = Expression.Constant(DbType);
             var call = Expression.Call(writer, method, value, dbType);
@@ -60,23 +68,21 @@ namespace Marten.Schema
 
 
 
-        public Expression CompileUpdateExpression(ParameterExpression call, ParameterExpression doc,
-            ParameterExpression json, ParameterExpression mapping, ParameterExpression typeAlias)
+        public Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression json, ParameterExpression mapping, ParameterExpression typeAlias)
         {
             var argName = Expression.Constant(Arg);
 
             if (Members != null)
             {
                 var memberType = Members.Last().GetMemberType();
-                Expression body = LambdaBuilder.ToExpression(Members, doc);
+                Expression body = LambdaBuilder.ToExpression(enumStorage, Members, doc);
                 if (!memberType.IsClass)
                 {
                     body = Expression.Convert(body, typeof(object));
                 }
 
-                NpgsqlDbType dbType = TypeMappings.ToDbType(memberType);
 
-                return Expression.Call(call, _paramMethod, argName, body, Expression.Constant(dbType));
+                return Expression.Call(call, _paramMethod, argName, body, Expression.Constant(DbType));
             }
 
             if (Arg == "docType")

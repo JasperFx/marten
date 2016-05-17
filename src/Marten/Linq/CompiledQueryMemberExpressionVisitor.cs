@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using Marten.Schema;
 using Marten.Util;
 
 namespace Marten.Linq
@@ -9,17 +10,24 @@ namespace Marten.Linq
     internal class CompiledQueryMemberExpressionVisitor : ExpressionVisitor
     {
         private readonly IList<IDbParameterSetter> _parameterSetters = new List<IDbParameterSetter>();
+        private readonly IDocumentMapping _mapping;
         private readonly Type _queryType;
+        private readonly EnumStorage _enumStorage;
+        private IField _lastMember;
 
-        public CompiledQueryMemberExpressionVisitor(Type queryType)
+        public CompiledQueryMemberExpressionVisitor(IDocumentMapping mapping, Type queryType, EnumStorage enumStorage)
         {
+            _mapping = mapping;
             _queryType = queryType;
+            _enumStorage = enumStorage;
         }
 
         public IList<IDbParameterSetter> ParameterSetters => _parameterSetters;
 
         protected override Expression VisitMember(MemberExpression node)
         {
+            _lastMember = _mapping.FieldFor(new MemberInfo[] {node.Member});
+
             if (node.NodeType == ExpressionType.MemberAccess && node.Member.ReflectedType == _queryType)
             {
                 var property = (PropertyInfo)node.Member;
@@ -34,9 +42,12 @@ namespace Marten.Linq
         {
             if (node.Type != _queryType)
             {
-                var setter = new ConstantDbParameterSetter(node.Value);
+                var value = _lastMember.GetValue(node);
+
+                var setter = new ConstantDbParameterSetter(value);
                 _parameterSetters.Add(setter);
             }
+
             return base.VisitConstant(node);
         }
 
@@ -48,7 +59,17 @@ namespace Marten.Linq
 
         private IDbParameterSetter CreateParameterSetter<TObject, TProperty>(PropertyInfo property)
         {
-            return new DbParameterSetter<TObject, TProperty>(LambdaBuilder.GetProperty<TObject, TProperty>(property));
+            var getter = LambdaBuilder.GetProperty<TObject, object>(property);
+            if (property.PropertyType.IsEnum && _enumStorage == EnumStorage.AsString)
+            {
+                getter = o =>
+                {
+                    var number = getter(o);
+                    return Enum.GetName(property.PropertyType, number);
+                };
+            }
+
+            return new DbParameterSetter<TObject, object>(getter);
         }
     }
 }

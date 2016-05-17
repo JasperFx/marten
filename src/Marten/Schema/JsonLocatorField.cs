@@ -4,37 +4,53 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline.Reflection;
+using Marten.Linq;
 using Marten.Util;
 
 namespace Marten.Schema
 {
     public class JsonLocatorField : Field, IField
     {
-        public static JsonLocatorField For<T>(Expression<Func<T, object>> expression)
+        public static JsonLocatorField For<T>(EnumStorage enumStyle, Expression<Func<T, object>> expression)
         {
             var property = ReflectionHelper.GetProperty(expression);
 
 
-            return new JsonLocatorField(property);
+            return new JsonLocatorField(enumStyle, property);
         }
 
+        private readonly Func<Expression, object> _parseObject = expression => expression.Value();
 
-        public JsonLocatorField(MemberInfo member) : base(member)
+        public JsonLocatorField(EnumStorage enumStyle, MemberInfo member) : base(member)
         {
             var memberType = member.GetMemberType();
-            if (memberType == typeof (string))
+
+            
+
+            var isStringEnum = memberType.IsEnum && enumStyle == EnumStorage.AsString;
+            if (memberType == typeof (string) || isStringEnum)
             {
                 SqlLocator = $"d.data ->> '{member.Name}'";
             }
+
             else
             {
                 SqlLocator = $"CAST(d.data ->> '{member.Name}' as {PgType})";
             }
 
+            if (isStringEnum)
+            {
+                _parseObject = expression =>
+                {
+                    var raw = expression.Value();
+                    return Enum.GetName(MemberType, raw);
+                };
+            }
+
 
         }
 
-        public JsonLocatorField(MemberInfo[] members) : base(members)
+        public JsonLocatorField(EnumStorage enumStyle, MemberInfo[] members) : base(members)
         {
             var locator = "d.data";
 
@@ -56,7 +72,18 @@ namespace Marten.Schema
 
 
 
-            SqlLocator = MemberType == typeof (string) ? locator : locator.ApplyCastToLocator(MemberType);
+            SqlLocator = MemberType == typeof (string) ? locator : locator.ApplyCastToLocator(enumStyle, MemberType);
+
+
+            var isStringEnum = MemberType.IsEnum && enumStyle == EnumStorage.AsString;
+            if (isStringEnum)
+            {
+                _parseObject = expression =>
+                {
+                    var raw = expression.Value();
+                    return Enum.GetName(MemberType, raw);
+                };
+            }
         }
 
         public string SqlLocator { get; }
@@ -64,6 +91,17 @@ namespace Marten.Schema
         public void WritePatch(DocumentMapping mapping, Action<string> writer)
         {
             throw new NotSupportedException();
+        }
+
+        public object GetValue(Expression valueExpression)
+        {
+            return _parseObject(valueExpression);
+        }
+
+        public bool ShouldUseContainmentOperator()
+        {
+            return MemberType.IsOneOf(typeof(DateTime), typeof(DateTime?), typeof(DateTimeOffset),
+                typeof(DateTimeOffset?));
         }
     }
 }

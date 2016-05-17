@@ -12,7 +12,7 @@ namespace Marten.Testing.Bugs
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<Target>().Searchable(x => x.Flag);
+                _.Schema.For<Target>().Searchable(x => x.Flag).GinIndexJsonData();
             });
 
             using (var session = theStore.OpenSession())
@@ -32,6 +32,7 @@ namespace Marten.Testing.Bugs
         {
             StoreOptions(_ =>
             {
+                _.Schema.For<Target>().GinIndexJsonData();
                 //_.Schema.For<Target>().Searchable(x => x.Flag);
             });
 
@@ -40,10 +41,8 @@ namespace Marten.Testing.Bugs
                 var cmd1 = session.Query<Target>().Where(x => x.Flag == false).ToCommand();
 
 
-                var cmd2 = session.Query<Target>().Where(x => !x.Flag).ToCommand();
 
-                cmd1.CommandText.ShouldBe("select d.data, d.id from public.mt_doc_target as d where CAST(d.data ->> 'Flag' as boolean) = :arg0");
-                cmd2.CommandText.ShouldBe("select d.data, d.id from public.mt_doc_target as d where CAST(d.data ->> 'Flag' as boolean) = False");
+                cmd1.CommandText.ShouldBe("select d.data, d.id from public.mt_doc_target as d where d.data @> \'{\"Flag\":false}\'");
             }
         }
     }

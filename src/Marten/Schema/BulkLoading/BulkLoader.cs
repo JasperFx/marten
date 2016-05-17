@@ -17,7 +17,7 @@ namespace Marten.Schema.BulkLoading
         private readonly Action<T, NpgsqlBinaryImporter> _transferData;
 
 
-        public BulkLoader(DocumentMapping mapping, IdAssignment<T> assignment)
+        public BulkLoader(ISerializer serializer, DocumentMapping mapping, IdAssignment<T> assignment)
         {
             _assignment = assignment;
             var upsertFunction = mapping.ToUpsertFunction();
@@ -27,7 +27,7 @@ namespace Marten.Schema.BulkLoading
             var document = Expression.Parameter(typeof(T), "document");
 
             var arguments = upsertFunction.OrderedArguments().Where(x => x.Members != null && x.Members.Any()).ToArray();
-            var expressions = arguments.Select(x => x.CompileBulkImporter<T>(writer, document));
+            var expressions = arguments.Select(x => x.CompileBulkImporter(serializer.EnumStorage, writer, document));
 
             var columns = arguments.Select(x => $"\"{x.Column}\"").Join(", ");
             _sql = $"COPY {mapping.Table.QualifiedName}(data, {columns}) FROM STDIN BINARY";

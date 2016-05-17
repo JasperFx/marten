@@ -11,6 +11,12 @@ namespace Marten.Testing.Linq
 {
     public class query_for_single_json : DocumentSessionFixture<NulloIdentityMap>
     {
+        public query_for_single_json()
+        {
+            // The test expectations are hard-coded for Json.Net
+            StoreOptions(_ => _.Serializer<JsonNetSerializer>());
+        }
+
         [Fact]
         public void single_returns_only_match()
         {

@@ -36,8 +36,20 @@ namespace Marten
         /// <param name="document"></param>
         /// <returns></returns>
         string ToCleanJson(object document);
+
+        /// <summary>
+        /// Just gotta tell Marten if enum's are stored
+        /// as int's or string's in the JSON
+        /// </summary>
+        EnumStorage EnumStorage { get; }
     }
     // ENDSAMPLE
+
+    public enum EnumStorage
+    {
+        AsInteger,
+        AsString
+    }
 
 
 }
