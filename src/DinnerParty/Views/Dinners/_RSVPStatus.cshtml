@@ -1,0 +1,71 @@
+﻿@using Nancy.ViewEngines.Razor
+@inherits NancyRazorViewBase<dynamic>
+              
+
+<div id="rsvpmsg">
+    @if (Model.Page.IsAuthenticated)
+    {
+        if (Model.Dinner.IsHostedBy(Model.Page.CurrentUser))
+        { 
+
+        <p>You are the host for this event!</p>
+
+        }
+        else if (Model.Dinner.IsUserRegistered(Model.Page.CurrentUser))
+        {
+	
+        <p>You are registered for this event!</p>
+        
+         <script type="text/javascript">
+             $(document).ready(function () {
+                 $("#CancelRSVP").click(function (event) {
+                     $.ajax({
+                         type: 'POST',
+                         url: '/RSVP/Cancel/@Model.Dinner.DinnerID',
+                         success: function (data) {
+                             $("#rsvpmsg").html(data);
+                             $("#rsvpmsg").animate({ fontSize: "1.5em" }, 400);
+                         }
+                     });
+                 });
+             });
+             </script>
+    
+        <a href="#" id="CancelRSVP">Cancel your RSVP</a> 
+	
+        }
+        else
+        { 
+	
+              <script type="text/javascript">
+                $(document).ready(function() {
+                  $("#RegisterRSVP").click(function (event) {
+                      $.ajax({
+                          type: 'POST',
+                          url: '/RSVP/Register/@Model.Dinner.DinnerID',
+                          success: function (data) {
+                              $("#rsvpmsg").html(data);
+                              $("#rsvpmsg").animate({ fontSize: "1.5em" }, 400);
+                          }
+                      });
+                  });
+                });
+             </script>
+    
+        <a href="#" id="RegisterRSVP">RSVP for this event</a> 
+            
+        }
+    }
+    else
+    {
+
+        <strong>RSVP for this event:</strong>
+        <a href="#">
+            <img alt="Twitter" src="@Url.Content("~/images/icon-twitter.png")" border="0" /></a>
+        <a href="#">
+            <img alt="Google" src="@Url.Content("~/images/icon-google.png")" border="0" /></a>
+        <a href="#">
+            <img alt="Yahoo!" src="@Url.Content("~/images/icon-yahoo.png")" border="0" /></a>
+            
+    }
+</div>

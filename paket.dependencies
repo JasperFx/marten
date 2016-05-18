@@ -15,3 +15,18 @@ nuget Storyteller 3.0.0.329-rc
 nuget structuremap
 nuget xunit
 nuget xunit.runner.console
+
+nuget AjaxMin
+nuget Cassette
+nuget Cassette.Nancy
+nuget elmah
+nuget elmah.corelibrary
+nuget Microsoft.AspNet.Razor
+nuget Nancy
+nuget Nancy.Authentication.Forms
+nuget Nancy.Hosting.Aspnet
+nuget Nancy.RouteHelpers
+nuget Nancy.Validation.DataAnnotations
+nuget Nancy.Viewengines.Razor
+nuget NLog
+nuget PagedList

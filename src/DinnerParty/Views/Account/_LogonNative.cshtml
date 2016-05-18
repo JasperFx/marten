@@ -1,0 +1,36 @@
+﻿ @inherits NancyRazorViewBase<dynamic>
+ @using DinnerParty.HtmlExtensions;
+ @using System.Collections.Generic;
+ @using Nancy.ViewEngines.Razor
+                         
+<script src="@Url.Content("~/Scripts/jquery.validate.min.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery.validate.unobtrusive.min.js")" type="text/javascript"></script>
+
+<div id="login-account">
+    <form method="post">
+        <h3>using a NerdDinner account</h3>        
+        <div>
+            <p>
+                <label for="Username">Username</label>
+                <input type="text" name="Username" value="@Model.LoginModel.UserName" />
+                @Html.ValidationMessageFor((List<DinnerParty.Models.ErrorModel>)Model.Page.Errors, "UserName")
+            </p>
+            <p>
+                <label for="Password">Password</label>
+                <input type="password" name="Password" value="@Model.LoginModel.Password" />
+                @Html.ValidationMessageFor((List<DinnerParty.Models.ErrorModel>)Model.Page.Errors, "Password")
+            </p>
+            <p>
+               @Html.CheckBox("RememberMe", (bool)Model.LoginModel.RememberMe)
+               <label for="RememberMe">Remember Me?</label>              
+            </p>
+            <p>
+                <input class="classiclogon" type="submit" value="Log On" />
+            </p>
+            <p>
+                Please enter your username and password. <a href="/account/register">Register</a>
+                if you don't have an account.
+            </p>
+        </div>
+    </form>
+</div>

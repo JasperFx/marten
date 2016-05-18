@@ -1,0 +1,71 @@
+﻿@using Nancy.ViewEngines.Razor
+@inherits NancyRazorViewBase<object>
+
+@{
+  Layout = "_Layout.cshtml";
+}   
+
+@section Masthead {
+	@Html.Partial("_Masthead")
+}
+<script src="http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.3" type="text/javascript"></script>
+
+<h2>Find a Dinner</h2>
+
+<div id="mapDivLeft">
+	<div id="theMap" style="width: 580px; height: 400px;"></div>
+</div>
+
+<div id="mapDivRight">
+	<div class='hslice' id='2'>
+		<h2 class='entry-title'>Popular Dinners</h2>
+		<div class="entry-content" id="dinnerList"></div>
+		<a rel='feedurl' href='/Dinners/WebSlicePopular' style='display:none;'></a>
+	</div>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        // make sure that the mapcontrol has loaded, this has been an issue in FF4
+        // see http://stackoverflow.com/questions/5566393/issue-with-bing-map-p-elsource-attachevent-is-not-a-function
+        var interval = setInterval(function () {
+            if ((eval("typeof VEMap") != "undefined") && (document.getElementById("theMap").attachEvent != undefined)) {
+                clearInterval(interval);
+                onMapLoaded();
+            }
+        }, 10);
+    });
+
+    function onMapLoaded() {
+        NerdDinner.LoadMap();
+       
+        Sys.Application.set_enableHistory(true);
+        Sys.Application.add_navigate(OnNavigation);
+
+        NerdDinner.ipInfoDbKey = '@System.Configuration.ConfigurationManager.AppSettings["ipInfoDbKey"]';
+        NerdDinner.BingMapsKey = '@System.Configuration.ConfigurationManager.AppSettings["BingMapsKey"]';
+        yepnope({
+            test: Modernizr.geolocation,
+            yep: '@Url.Content("~/Content/Scripts/geo.js")',
+            nope: '@Url.Content("~/Content/Scripts/geo-polyfill.js")',
+            callback: function (url, result, key) {
+                OnNavigation();
+            }
+        });
+    }
+
+    function OnNavigation(sender, args) {
+        if (Sys.Application.get_stateString() === '') {
+            $get('Location').value = '';
+            NerdDinner.FindMostPopularDinners(8);
+
+            getCurrentLocation();
+        }
+        else {
+            var where = Sys.Application._state.where;
+
+            $get('Location').value = where;
+            NerdDinner.FindDinnersGivenLocation(where);
+        }
+    }
+</script>

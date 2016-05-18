@@ -1,0 +1,32 @@
+﻿@using System.Collections.Generic
+@using System.Linq
+@using Nancy.ViewEngines.Razor
+@using DinnerParty.Models
+@inherits NancyRazorViewBase<dynamic>
+
+@{
+    Layout = "_Layout.cshtml";
+}
+
+<h2>My Dinners</h2>
+
+<ul class="upcomingdinners">
+	
+	@foreach (var dinner in Model.Dinners)
+ { 
+		<li>     
+            <a href="/@dinner.DinnerID">@dinner.Title</a>
+			on 
+			<strong>@dinner.EventDate.ToString("yyyy-MMM-dd")
+			@dinner.EventDate.ToString("HH:mm tt")</strong>
+			at 
+			@dinner.Address @dinner.Country
+		</li>    
+ }
+
+	@if (!((IEnumerable<Dinner>)Model.Dinners).Any())
+ { 
+		<li>You don't own or aren't registered for any dinners.</li>
+	}
+</ul>
+

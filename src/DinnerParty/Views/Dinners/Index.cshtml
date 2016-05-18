@@ -1,0 +1,27 @@
+﻿@using Nancy.ViewEngines.Razor
+@inherits NancyRazorViewBase<dynamic>
+@using PagedList;
+
+@{
+    Layout = "_Layout.cshtml";
+}
+
+<div class='hslice' id='1' >
+	<h2 class='entry-title'>Upcoming Dinners</h2>
+	<a rel='feedurl' href='/Dinners/WebSliceUpcoming' style='display:none;' ></a>
+	<ul class="upcomingdinners">
+	
+		@foreach (var dinner in (PagedList<DinnerParty.Models.Dinner>)Model.Dinners) {        
+			<li>     
+                <a href="@dinner.DinnerID">@dinner.Title</a>
+				on 
+				<strong>@dinner.EventDate.ToString("yyyy-MMM-dd")
+				@dinner.EventDate.ToString("HH:mm tt")</strong>
+				at 
+				@(dinner.Address + " " + dinner.Country)
+			</li>
+		}
+	</ul>
+</div>
+
+@Html.Partial("Dinners/DinnerPagination", Model)

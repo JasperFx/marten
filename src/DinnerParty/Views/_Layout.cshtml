@@ -1,0 +1,125 @@
+﻿@using Cassette.Nancy
+@using Nancy.ViewEngines.Razor
+@inherits NancyRazorViewBase<dynamic>
+@{
+    Bundles.Reference("assets/stylesheets/main.css");
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8" />
+   <meta name="viewport" content="width=device-width" />
+   <title>@Model.Page.PreFixTitle @Model.Page.Title</title>
+   <meta content="Nerd, Dinner, Geek, Luncheon, Dweeb, Breakfast, Technology, Bar, Beer, Wonk"
+       name="keywords" />
+   <meta name="description" content="Host and promote your own Nerd Dinner free!" />
+   
+      
+   <link href="@Bundles.Url("assets/stylesheets/main.css")" rel="stylesheet" type="text/css" media="screen" />
+  
+   <link href="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.11/themes/humanity/jquery-ui.css" rel="stylesheet" type="text/css" />
+   <script src="http://ajax.aspnetcdn.com/ajax/jquery/jquery-1.6.2.min.js" type="text/javascript"></script> 
+   <script src="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.15/jquery-ui.min.js" type="text/javascript"></script> 
+   <script src="http://ajax.aspnetcdn.com/ajax/mvc/3.0/jquery.unobtrusive-ajax.min.js" type="text/javascript"></script>
+   <script src="http://ajax.aspnetcdn.com/ajax/4.0/1/MicrosoftAjax.js" type="text/javascript"></script> 
+    <script src="http://ajax.aspnetcdn.com/ajax/mvc/3.0/MicrosoftMvcAjax.js" type="text/javascript"></script> 
+   
+
+   <script type="text/javascript">
+       if (typeof jQuery == 'undefined') {
+           document.write(unescape("%3Clink href='/Content/themes/base/jquery.ui.all.css' rel='stylesheet' type='text/css'%3E"));
+           document.write(unescape("%3Cscript src='/Content/Scripts/jquery-1.6.2.min.js' type='text/javascript'%3E%3C/script%3E"));
+           document.write(unescape("%3Cscript src='/Content/Scripts/jquery-ui-1.8.15.min.js' type='text/javascript'%3E%3C/script%3E"));
+           document.write(unescape("%3Cscript src='/Content/Scripts/jquery.unobtrusive-ajax.min.js' type='text/javascript'%3E%3C/script%3E"));
+           document.write(unescape("%3Cscript src='/Content/Scripts/MicrosoftAjax.js' type='text/javascript'%3E%3C/script%3E"));
+           document.write(unescape("%3Cscript src='/Content/Scripts/MicrosoftMvcAjax.js' type='text/javascript'%3E%3C/script%3E"));
+       }
+  </script>
+
+   <script src="@Url.Content("~/Content/Scripts/modernizr-1.7.min.js")" type="text/javascript"></script>
+   <script src="@Url.Content("~/Content/Scripts/yepnope.1.0.1-min.js")" type="text/javascript"></script>    
+   <script src="@Url.Content("~/Content/Scripts/date.format.js")" type="text/javascript"></script>
+   <script src="@Url.Content("~/Content/Scripts/NerdDinner.js?v=6")" type="text/javascript"></script>
+   <script src="@Url.Content("~/Content/Scripts/timepicker_plug/TimePickerAddOn.js")" type="text/javascript"></script>
+   @*<script src="http://www.google-analytics.com/ga.js" type="text/javascript"></script>
+   <script src="http://cdn.uservoice.com/javascripts/widgets/tab.js" type="text/javascript"></script>*@
+   <link rel="stylesheet" type="text/css" href="@Url.Content("~/Content/Scripts/timepicker_plug/css/TimePickerAddOn.css")"/>
+   <link rel="alternate" type="application/rss+xml" title="NerdDinner.com - Upcoming Dinners" href="@Url.Content("~/Services/RSS")" />
+   @RenderSection("HeadArea", required: false)
+
+   @*@MvcMiniProfiler.MiniProfiler.RenderIncludes()*@
+
+</head>
+<body>
+   <img src="@Url.Content("~/images/ribbon.gif")" id="ribbon" />
+<div class="page">
+    <header>
+        <div id="title">
+            <h1>
+                <a href="@Url.Content("~/")" title="Nerd Dinner" class="logo"></a>
+            </h1>
+        </div>
+        <div id="newlogo">
+            <img src="@Url.Content("~/images/dplogo.png")"/>
+        </div>
+
+        <div id="logindisplay">
+            @Html.Partial("_LoginStatus", Model)
+        </div>
+        <nav>
+            <ul id="menu">
+                <li><a href="/">Find Dinner</a></li>
+                <li><a href="/Dinners/Create">Host Dinner</a></li>
+
+                @if(Model.Page.IsAuthenticated)
+                {
+                    <li><a href="/dinners/my">My Dinners</a></li>
+                }
+                <li class="last"><a href="/About">About</a></li>
+            </ul>
+            <!--<a class="feed" href="@Url.Content("~/Services/OData.svc")">
+                <img alt="OData Feed" title="OData Feed" src="@Url.Content("~/images/icon-odatafeed-28x28.png")"/></a>-->
+            <a class="feed" href="@Url.Content("~/Services/RSS")">
+                <img alt="RSS Feed" title="RSS Feed" src="@Url.Content("~/images/icon-feed-28x28.png")"/></a>
+            <a class="feed" href="webcal://Services/iCalFeed">
+                <img alt="iCal Calendar Feed for Nerd Dinners" title="iCal Calendar Feed for Nerd Dinners" src="@Url.Content("~/images/icon-icalfeed-28x28.png")"/></a>
+        </nav>
+    </header>
+    @RenderSection("Masthead", required:false)
+    <div id="main" class="clearfix">
+        @RenderBody()
+    </div>
+    <footer>
+        Code by <a href="http://www.jonathanchannon.com">Jonathan Channon</a>. <a href="http://nancyfx.org/">Nancy</a> by <a href="http://www.thecodejunkie.com">TheCodeJunkie</a>, <a href="http:///www.grumpydev.com">GrumpyDev</a> and friends. <a href="https://github.com/JasperFx/marten">Marten</a> by <a href="https://jeremydmiller.com/">Jeremy D Miller</a> and friends.
+        <br/>
+        Style by <a href="http://michaeldorian.com/">Michael Dorian Bach</a>. JavaScript by <a href="http://encosia.com">Dave Ward</a>.
+        <br/>
+        Source Code at <a href="https://github.com/NancyFx/DinnerParty">Github</a>.
+        <br/>
+        <p class="red"><strong>This website is a port of NerdDinner using Nancy as the web framework and Marten for storage. This website is for strictly demo purposes and so if you want to organise a valid meetup please visit <a class="stronglink" href="http://www.nerddinner.com">NerdDinner</a></strong>
+        </p>
+    </footer>
+    @* <script type="text/javascript">
+           var pageTracker = _gat._getTracker("UA-6399325-1");
+           pageTracker._initData();
+           pageTracker._trackPageview();
+       </script>
+      *@
+
+
+    @*   <script type="text/javascript">
+           UserVoice.Tab.show({
+               key: 'nerddinner',
+               host: 'feedback.nerddinner.com',
+               forum: 'general',
+               alignment: 'right', /* 'left', 'right' */
+               background_color: '#A2CC3B',
+               text_color: 'white', /* 'white', 'black' */
+               hover_color: '#7A0100',
+               lang: 'en' /* 'en', 'de', 'nl', 'es', 'fr' */
+           });
+       </script>*@
+</div>
+</body>
+</html>

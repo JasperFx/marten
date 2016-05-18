@@ -1,0 +1,11 @@
+﻿@using Nancy.ViewEngines.Razor
+@inherits NancyRazorViewBase<dynamic>
+              
+@if (Model.Page.IsAuthenticated)
+{
+    <text>Welcome <b>@Model.Page.CurrentUser</b>!
+    [ <a href="/account/logoff">Log Off</a> ]</text>
+}
+else {
+    <text>[ <a href="/account/logon">Log On</a> ]</text>
+}

@@ -1,0 +1,19 @@
+﻿@using Nancy.ViewEngines.Razor
+@inherits NancyRazorViewBase<dynamic>
+
+@{
+    Layout = "_Layout.cshtml";
+}
+
+<h2>
+	Delete Confirmation
+</h2>
+
+<div>
+	<p>Please confirm you want to cancel the dinner titled: 
+	<i> @Model.Dinner.Title ? </i> </p>
+</div>
+	
+<form action="/dinners/delete/@Model.Dinner.Id" method="post" >
+	<input name="confirmButton" type="submit" value="Delete" />        
+</form>

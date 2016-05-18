@@ -1,0 +1,10 @@
+﻿@using Nancy.ViewEngines.Razor
+@inherits NancyRazorViewBase<dynamic>
+
+@{
+    Layout = "_Layout.cshtml";
+}
+
+<h2>Edit Dinner</h2>
+
+@Html.Partial("_DinnerForm", Model)

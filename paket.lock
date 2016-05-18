@@ -1,64 +1,109 @@
 NUGET
-  remote: https://nuget.org/api/v2
+  remote: https://www.nuget.org/api/v2
   specs:
+    AjaxMin (5.14.5506.26202)
     Baseline (0.5.0.7)
+    Cassette (2.4.2)
+      AjaxMin (>= 4.84) - framework: >= net35
+      Iesi.Collections (< 4.0) - framework: net35
+    Cassette.Nancy (2.2.1)
+      Cassette
+      Nancy (>= 0.23)
+      Nancy.Viewengines.Razor (>= 0.23)
+      NLog
+    elmah (1.2.2)
+      elmah.corelibrary (>= 1.2.2)
+    elmah.corelibrary (1.2.2)
     Fixie (1.0.0.41)
     HtmlTags (3.0.0.186)
+    Iesi.Collections (3.4.1.4000) - framework: net35
     ILRepack (2.0.8)
     Jil (2.12.1)
-      Sigil (>= 4.5.0)
+      Sigil (>= 4.5)
     Marten (0.9.0.379)
-      Npgsql (>= 3.0.3 < 3.1.0)
-    Microsoft.Bcl (1.1.10)
+      Npgsql (>= 3.0.3 < 3.1)
+    Microsoft.AspNet.Razor (3.2.3)
+    Microsoft.Bcl (1.1.10) - framework: net10, net11, net20, net30, net35, net40, net40-full
       Microsoft.Bcl.Build (>= 1.0.14)
     Microsoft.Bcl.Build (1.0.21) - import_targets: false
-    Microsoft.Net.Http (2.2.29)
+    Microsoft.Net.Http (2.2.29) - framework: net10, net11, net20, net30, net35, net40, net40-full
       Microsoft.Bcl (>= 1.1.10)
       Microsoft.Bcl.Build (>= 1.0.14)
+    Nancy (1.4.3)
+    Nancy.Authentication.Forms (1.4.1)
+      Nancy (>= 1.4.1)
+    Nancy.Hosting.Aspnet (1.4.1)
+      Nancy (>= 1.4.1)
+    Nancy.RouteHelpers (1.0.6)
+    Nancy.Validation.DataAnnotations (1.4.1)
+      Nancy (>= 1.4.1)
+    Nancy.Viewengines.Razor (1.4.3)
+      Microsoft.AspNet.Razor
+      Microsoft.AspNet.Razor (>= 2.0.30506) - framework: >= net40
+      Nancy (>= 1.4.3)
     Newtonsoft.Json (8.0.2)
+    NLog (4.3.3)
     Npgsql (3.0.4)
-    NSubstitute (1.9.2.0)
-    Octokit (0.16.0)
+    NSubstitute (1.9.2)
+    Octokit (0.16)
       Microsoft.Net.Http
+    PagedList (1.17)
     Remotion.Linq (2.0.1)
-    Shouldly (2.6.0)
-    Sigil (4.5.0)
+    Shouldly (2.6)
+    Sigil (4.5)
     Storyteller (3.0.0.329-rc)
     structuremap (3.1.6.186)
     System.Collections (4.0.10) - framework: dnxcore50
-      System.Diagnostics.Debug (>= 4.0.0)
-      System.Resources.ResourceManager (>= 4.0.0)
-      System.Runtime (>= 4.0.0)
-      System.Runtime (>= 4.0.20)
-      System.Runtime.Extensions (>= 4.0.0)
-      System.Threading (>= 4.0.0)
+      System.Diagnostics.Debug (>= 4.0) - framework: dnxcore50
+      System.Resources.ResourceManager (>= 4.0) - framework: dnxcore50
+      System.Runtime (>= 4.0) - framework: dnxcore50
+      System.Runtime (>= 4.0.20) - framework: dnxcore50
+      System.Runtime.Extensions (>= 4.0) - framework: dnxcore50
+      System.Threading (>= 4.0) - framework: dnxcore50
     System.Diagnostics.Contracts (4.0.0) - framework: dnxcore50
       System.Runtime (>= 4.0.0)
     System.Diagnostics.Debug (4.0.10) - framework: dnxcore50
-      System.Runtime (>= 4.0.0)
+      System.Runtime (>= 4.0) - framework: dnxcore50
     System.Globalization (4.0.10) - framework: dnxcore50
-      System.Runtime (>= 4.0.0)
+      System.Runtime (>= 4.0) - framework: dnxcore50
     System.IO (4.0.10) - framework: dnxcore50
-      System.Globalization (>= 4.0.0)
-      System.Runtime (>= 4.0.20)
-      System.Text.Encoding (>= 4.0.0)
-      System.Text.Encoding (>= 4.0.10)
-      System.Text.Encoding.Extensions (>= 4.0.0)
-      System.Threading (>= 4.0.0)
-      System.Threading.Tasks (>= 4.0.0)
-    System.Linq (4.0.0) - framework: dnxcore50
-      System.Collections (>= 4.0.10)
-      System.Diagnostics.Debug (>= 4.0.10)
-      System.Resources.ResourceManager (>= 4.0.0)
-      System.Runtime (>= 4.0.20)
-      System.Runtime.Extensions (>= 4.0.10)
+      System.Globalization (>= 4.0) - framework: dnxcore50
+      System.Runtime (>= 4.0.20) - framework: dnxcore50
+      System.Text.Encoding (>= 4.0) - framework: dnxcore50
+      System.Text.Encoding (>= 4.0.10) - framework: dnxcore50
+      System.Text.Encoding.Extensions (>= 4.0) - framework: dnxcore50
+      System.Threading (>= 4.0) - framework: dnxcore50
+      System.Threading.Tasks (>= 4.0) - framework: dnxcore50
+    System.Linq (4.0) - framework: dnxcore50
+      System.Collections (>= 4.0.10) - framework: dnxcore50
+      System.Diagnostics.Debug (>= 4.0.10) - framework: dnxcore50
+      System.Resources.ResourceManager (>= 4.0) - framework: dnxcore50
+      System.Runtime (>= 4.0.20) - framework: dnxcore50
+      System.Runtime.Extensions (>= 4.0.10) - framework: dnxcore50
+    System.Linq.Expressions (4.0.10) - framework: dnxcore50
+      System.Collections (>= 4.0) - framework: dnxcore50
+      System.Diagnostics.Debug (>= 4.0) - framework: dnxcore50
+      System.Globalization (>= 4.0) - framework: dnxcore50
+      System.IO (>= 4.0) - framework: dnxcore50
+      System.Linq (>= 4.0) - framework: dnxcore50
+      System.ObjectModel (>= 4.0) - framework: dnxcore50
+      System.Reflection (>= 4.0) - framework: dnxcore50
+      System.Reflection.Emit (>= 4.0) - framework: dnxcore50
+      System.Reflection.Extensions (>= 4.0) - framework: dnxcore50
+      System.Reflection.Primitives (>= 4.0) - framework: dnxcore50
+      System.Reflection.TypeExtensions (>= 4.0) - framework: dnxcore50
+      System.Resources.ResourceManager (>= 4.0) - framework: dnxcore50
+      System.Runtime (>= 4.0) - framework: dnxcore50
+      System.Runtime (>= 4.0.20) - framework: dnxcore50
+      System.Runtime.Extensions (>= 4.0) - framework: dnxcore50
+      System.Threading (>= 4.0) - framework: dnxcore50
     System.ObjectModel (4.0.10) - framework: dnxcore50
-      System.Collections (>= 4.0.10)
-      System.Diagnostics.Debug (>= 4.0.10)
-      System.Resources.ResourceManager (>= 4.0.0)
-      System.Runtime (>= 4.0.20)
-      System.Threading (>= 4.0.10)
-    System.Private.Uri (4.0.0) - framework: dnxcore50
+      System.Collections (>= 4.0.10) - framework: dnxcore50
+      System.Diagnostics.Debug (>= 4.0.10) - framework: dnxcore50
+      System.Resources.ResourceManager (>= 4.0) - framework: dnxcore50
+      System.Runtime (>= 4.0.20) - framework: dnxcore50
+      System.Threading (>= 4.0.10) - framework: dnxcore50
+    System.Private.Uri (4.0) - framework: dnxcore50
     System.Reflection (4.0.10) - framework: dnxcore50
       System.IO (>= 4.0.0)
       System.Reflection.Primitives (>= 4.0.0)
@@ -94,57 +139,71 @@ NUGET
       System.Runtime (>= 4.0.0)
       System.Runtime (>= 4.0.20)
     System.Runtime (4.0.20) - framework: dnxcore50
-      System.Private.Uri (>= 4.0.0)
+      System.Private.Uri (>= 4.0) - framework: dnxcore50
     System.Runtime.Extensions (4.0.10) - framework: dnxcore50
       System.Runtime (>= 4.0.20)
     System.Text.Encoding (4.0.10) - framework: dnxcore50
-      System.Runtime (>= 4.0.0)
+      System.Runtime (>= 4.0) - framework: dnxcore50
     System.Text.Encoding.Extensions (4.0.10) - framework: dnxcore50
-      System.Runtime (>= 4.0.0)
-      System.Text.Encoding (>= 4.0.10)
+      System.Runtime (>= 4.0) - framework: dnxcore50
+      System.Text.Encoding (>= 4.0.10) - framework: dnxcore50
     System.Text.RegularExpressions (4.0.10) - framework: dnxcore50
-      System.Collections (>= 4.0.10)
-      System.Globalization (>= 4.0.10)
-      System.Resources.ResourceManager (>= 4.0.0)
-      System.Runtime (>= 4.0.20)
-      System.Runtime.Extensions (>= 4.0.10)
-      System.Threading (>= 4.0.10)
+      System.Collections (>= 4.0.10) - framework: dnxcore50
+      System.Globalization (>= 4.0.10) - framework: dnxcore50
+      System.Resources.ResourceManager (>= 4.0) - framework: dnxcore50
+      System.Runtime (>= 4.0.20) - framework: dnxcore50
+      System.Runtime.Extensions (>= 4.0.10) - framework: dnxcore50
+      System.Threading (>= 4.0.10) - framework: dnxcore50
     System.Threading (4.0.10) - framework: dnxcore50
-      System.Runtime (>= 4.0.0)
-      System.Threading.Tasks (>= 4.0.0)
+      System.Runtime (>= 4.0) - framework: dnxcore50
+      System.Threading.Tasks (>= 4.0) - framework: dnxcore50
     System.Threading.Tasks (4.0.10) - framework: dnxcore50
-      System.Runtime (>= 4.0.0)
-    xunit (2.1.0)
-      xunit.assert (2.1.0)
-      xunit.core (2.1.0)
-    xunit.abstractions (2.0.0) - framework: dnx451, dnxcore50, monoandroid, monotouch, xamarinios, winv4.5, wpv8.0, portable-net45+win80+wp80+wpa81, >= net45
-    xunit.assert (2.1.0)
-      System.Collections (>= 4.0.0)
-      System.Diagnostics.Debug (>= 4.0.0)
-      System.Globalization (>= 4.0.0)
-      System.Linq (>= 4.0.0)
-      System.ObjectModel (>= 4.0.0)
-      System.Reflection (>= 4.0.0)
-      System.Reflection.Extensions (>= 4.0.0)
-      System.Runtime (>= 4.0.0)
-      System.Runtime.Extensions (>= 4.0.0)
-      System.Text.RegularExpressions (>= 4.0.0)
-      System.Threading.Tasks (>= 4.0.0)
-    xunit.core (2.1.0)
-      System.Collections (>= 4.0.0)
-      System.Diagnostics.Debug (>= 4.0.0)
-      System.Globalization (>= 4.0.0)
-      System.Linq (>= 4.0.0)
-      System.Reflection (>= 4.0.0)
-      System.Reflection.Extensions (>= 4.0.0)
-      System.Runtime (>= 4.0.0)
-      System.Runtime.Extensions (>= 4.0.0)
-      System.Threading.Tasks (>= 4.0.0)
-      xunit.abstractions (>= 2.0.0)
-      xunit.extensibility.core (2.1.0)
-      xunit.extensibility.execution (2.1.0)
-    xunit.extensibility.core (2.1.0) - framework: dnx451, dnxcore50, monoandroid, monotouch, xamarinios, winv4.5, wpv8.0, portable-net45+win80+wp80+wpa81, >= net45
-      xunit.abstractions (2.0.0)
-    xunit.extensibility.execution (2.1.0) - framework: dnx451, dnxcore50, monoandroid, monotouch, xamarinios, winv4.5, wpv8.0, portable-net45+win80+wp80+wpa81, >= net45
-      xunit.extensibility.core (2.1.0)
-    xunit.runner.console (2.1.0)
+      System.Runtime (>= 4.0) - framework: dnxcore50
+    xunit (2.1)
+      xunit.assert (2.1)
+      xunit.core (2.1)
+    xunit.abstractions (2.0) - framework: >= net45, dnx451, dnxcore50, monoandroid, monotouch, portable-net45+win80+wp80+wpa81, xamarinios, winv4.5, wpv8.0, wpav8.1
+    xunit.assert (2.1)
+      System.Collections (>= 4.0) - framework: dnxcore50
+      System.Diagnostics.Debug (>= 4.0) - framework: dnxcore50
+      System.Globalization (>= 4.0) - framework: dnxcore50
+      System.Linq (>= 4.0) - framework: dnxcore50
+      System.ObjectModel (>= 4.0) - framework: dnxcore50
+      System.Reflection (>= 4.0) - framework: dnxcore50
+      System.Reflection.Extensions (>= 4.0) - framework: dnxcore50
+      System.Runtime (>= 4.0) - framework: dnxcore50
+      System.Runtime.Extensions (>= 4.0) - framework: dnxcore50
+      System.Text.RegularExpressions (>= 4.0) - framework: dnxcore50
+      System.Threading.Tasks (>= 4.0) - framework: dnxcore50
+    xunit.core (2.1)
+      System.Collections (>= 4.0) - framework: dnxcore50
+      System.Diagnostics.Debug (>= 4.0) - framework: dnxcore50
+      System.Globalization (>= 4.0) - framework: dnxcore50
+      System.Linq (>= 4.0) - framework: dnxcore50
+      System.Reflection (>= 4.0) - framework: dnxcore50
+      System.Reflection.Extensions (>= 4.0) - framework: dnxcore50
+      System.Runtime (>= 4.0) - framework: dnxcore50
+      System.Runtime.Extensions (>= 4.0) - framework: dnxcore50
+      System.Threading.Tasks (>= 4.0) - framework: dnxcore50
+      xunit.abstractions (>= 2.0) - framework: dnxcore50
+      xunit.extensibility.core (2.1) - framework: >= net45, dnx451, dnxcore50, monoandroid, monotouch, portable-net45+win80+wp80+wpa81, xamarinios, winv4.5, wpv8.0, wpav8.1
+      xunit.extensibility.execution (2.1) - framework: >= net45, dnx451, dnxcore50, monoandroid, monotouch, portable-net45+win80+wp80+wpa81, xamarinios, winv4.5, wpv8.0, wpav8.1
+    xunit.extensibility.core (2.1) - framework: >= net45, dnx451, dnxcore50, monoandroid, monotouch, portable-net45+win80+wp80+wpa81, xamarinios, winv4.5, wpv8.0, wpav8.1
+      xunit.abstractions (2.0)
+    xunit.extensibility.execution (2.1) - framework: >= net45, dnx451, dnxcore50, monoandroid, monotouch, portable-net45+win80+wp80+wpa81, xamarinios, winv4.5, wpv8.0, wpav8.1
+      System.Collections (>= 4.0) - framework: dnxcore50
+      System.Diagnostics.Debug (>= 4.0) - framework: dnxcore50
+      System.Globalization (>= 4.0) - framework: dnxcore50
+      System.IO (>= 4.0) - framework: dnxcore50
+      System.Linq (>= 4.0) - framework: dnxcore50
+      System.Linq.Expressions (>= 4.0) - framework: dnxcore50
+      System.Reflection (>= 4.0) - framework: dnxcore50
+      System.Reflection.Extensions (>= 4.0) - framework: dnxcore50
+      System.Runtime (>= 4.0) - framework: dnxcore50
+      System.Runtime.Extensions (>= 4.0) - framework: dnxcore50
+      System.Text.Encoding (>= 4.0) - framework: dnxcore50
+      System.Threading (>= 4.0) - framework: dnxcore50
+      System.Threading.Tasks (>= 4.0) - framework: dnxcore50
+      xunit.abstractions (>= 2.0) - framework: dnxcore50
+      xunit.extensibility.core (2.1) - framework: >= net45, dnx451, dnxcore50, monoandroid, monotouch, xamarinios, winv4.5, wpv8.0, wpav8.1
+    xunit.runner.console (2.1)
