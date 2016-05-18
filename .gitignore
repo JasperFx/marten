@@ -207,3 +207,6 @@ paket.exe
 *.DotSettings
 
 /results
+
+# Keeps ELMAH error logs out of the sample app
+App_Data/

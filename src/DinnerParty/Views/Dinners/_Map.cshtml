@@ -1,0 +1,43 @@
+﻿@using Nancy.ViewEngines.Razor
+@inherits NancyRazorViewBase<dynamic>
+              
+@using System.Globalization;
+
+<script src="http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.3" type="text/javascript"></script>
+
+<script src="@Url.Content("~/Content/Scripts/NerdDinner.js")" type="text/javascript"></script>
+
+<div id="theMap" style="width:520px"></div>
+
+<script type="text/javascript">
+//<![CDATA[   
+    $(document).ready(function() {
+        // make sure that the mapcontrol has loaded, this has been an issue in FF4
+        // see http://stackoverflow.com/questions/5566393/issue-with-bing-map-p-elsource-attachevent-is-not-a-function
+        var interval = setInterval(function () {
+            if ((eval("typeof VEMap") != "undefined") && (document.getElementById("theMap").attachEvent != undefined)) {
+                clearInterval(interval);
+                onMapLoaded();
+            }
+        }, 10);
+    });
+
+    function onMapLoaded() {
+        var latitude = @Convert.ToString(Model.Dinner.Latitude, CultureInfo.InvariantCulture);
+        var longitude = @Convert.ToString(Model.Dinner.Longitude, CultureInfo.InvariantCulture);
+      
+        if ((latitude == 0) || (longitude == 0))
+            NerdDinner.LoadMap();
+        else
+            NerdDinner.LoadMap(latitude, longitude, mapLoaded);
+    }
+      
+    function mapLoaded() {
+        var title = "@Model.Dinner.Title";
+        var address = "@Model.Dinner.Address";
+    
+        NerdDinner.LoadPin(NerdDinner._map.GetCenter(), title, address, false);
+        NerdDinner._map.SetZoomLevel(14);
+    } 
+//]]>
+</script>

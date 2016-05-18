@@ -1,0 +1,25 @@
+﻿@using Nancy.ViewEngines.Razor
+@inherits NancyRazorViewBase<dynamic>
+@using PagedList;
+              
+<div class="pagination">
+    @if (!((PagedList<DinnerParty.Models.Dinner>)Model.Dinners).IsFirstPage)
+    {
+        <span class="page-link"><a href="/dinners/page/1"><<</a></span>
+    }
+    @if (((PagedList<DinnerParty.Models.Dinner>)Model.Dinners).HasPreviousPage)
+    {
+        <span class="page-link"><a href="/dinners/page/@Model.Dinners.PageNumber - 1">< Prev</a></span>
+    }
+    @if (((PagedList<DinnerParty.Models.Dinner>)Model.Dinners).HasNextPage)
+    {
+        <span class="page-link"><a href="/dinners/page/@Model.Dinners.PageNumber + 1">Next ></a></span>
+    }
+    @if (!((PagedList<DinnerParty.Models.Dinner>)Model.Dinners).IsLastPage)
+    {
+        <span class="page-link"><a href="/dinners/page/@Model.PageCount">>></a></span>
+    }
+    <div class="info">
+        <i>Page @(((PagedList<DinnerParty.Models.Dinner>)Model.Dinners).PageCount < ((PagedList<DinnerParty.Models.Dinner>)Model.Dinners).PageNumber ? 0 : ((PagedList<DinnerParty.Models.Dinner>)Model.Dinners).PageNumber) of @(((PagedList<DinnerParty.Models.Dinner>)Model.Dinners).PageCount)</i>
+    </div>
+</div>

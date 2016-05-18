@@ -1,0 +1,34 @@
+﻿<div id="hm-masthead">
+    @if (Model == null)
+    { 
+        <div id="searchBox">
+            <div class="search-text">
+                Enter your location or <strong><a href="/dinners">View All Upcoming Dinners</a></strong>.</div>
+            <input id="Location" name="Location" type="text" value="" />
+            <input id="search" type="submit" value="Search" />
+        </div>
+        
+        <script type="text/javascript">
+            $("#search").click(ValidateAndFindDinners);
+
+            $("#Location").keypress(function (evt) {
+                if (evt.which == 13) {
+                    ValidateAndFindDinners();
+                }
+            });
+
+            function ValidateAndFindDinners() {
+                var where = $.trim($get('Location').value);
+
+                if (where.length < 1)
+                    return;
+
+                //Taken this out as it endedup calling OnNavigation 
+                //which would search for dinners as well duplicating requests
+                //Sys.Application.addHistoryPoint({ 'where': where });
+
+                NerdDinner.FindDinnersGivenLocation(where);
+            }
+        </script>
+    }
+</div>

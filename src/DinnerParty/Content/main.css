@@ -1,0 +1,425 @@
+﻿/*
+Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+Code licensed under the BSD License:
+http://developer.yahoo.net/yui/license.txt
+version: 2.5.2
+*/
+/* YUI CSS/FONT RESET */
+
+/* FONT SIZE REFERENCE
+
+(PX)    (%)
+
+10 		77
+11 		85
+12 		93 (was 93)
+13 		100
+14 		108 (was 107)
+15 		116 (was 114)
+16 		123.1 (was 122)
+17 		131 (was 129)
+18 		138.5 (was 136)
+19 		146.5 (was 144)
+20 		153.9 (was 152)
+21 		161.6 (was 159)
+22 		167
+23 		174
+24 		182
+25 		189
+26 		197
+
+*/
+
+html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0;}table{border-collapse:collapse;border-spacing:0;}fieldset,images{border:0;}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal;}li{list-style:none;}caption,th{text-align:left;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}q:before,q:after{content:'';}abbr,acronym {border:0;font-variant:normal;}sup {vertical-align:text-top;}sub {vertical-align:text-bottom;}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit;}input,textarea,select{*font-size:100%;}legend{color:#000;}body {font:13px/1.231 arial,helvetica,clean,sans-serif;*font-size:small;*font:x-small;}table {font-size:inherit;font:100%;}pre,code,kbd,samp,tt{font-family:monospace;*font-size:108%;line-height:100%;}
+
+/* Clear Float Fix */
+/* Add class clearfix to parent container for dealing with child floats */
+
+.clearfix:after {
+    content: ".";
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+}
+
+.clearfix {display: inline-block;}
+
+/* Hides from IE-mac \*/
+* html .clearfix {height: 1%;}
+.clearfix {display: block;}
+/* End hide from IE-mac */
+
+
+/* Forms */
+legend {padding: 7px 10px 7px 10px; margin: 0px 0px 0px 0px; border: 0px; background-color: #FFFFFF;}
+input[type="text"], input[type="datetime"], input[type="password"] {margin-right: 12px; padding: 5px; color: #666666; font-size: 100%; width: 215px;}
+input[type="image"] {margin: 7px 0px 0px 0px;}
+input[type="checkbox"] { float: left; margin: 0px 10px 0px 0px; }
+form fieldset {padding: 10px; margin: 0px; border: 0px; border: dotted 1px #ccc;} */
+form fieldset p {}
+form fieldset label {display: block;}
+
+/* General Layout */
+
+html {background: #f7f4e6 url('images/bkg.jpg') repeat-x top left;}
+body {}
+
+#theMap {
+    position: relative; 
+    width: 580px; 
+    height: 450px;
+    border: solid 1px #bbd1ec;
+}
+
+p {line-height: 150%; margin: 7px 0px 7px 0px;}
+a {color: #660000; font-style: normal; text-decoration: underline; font-weight: bold;}
+a:hover {color: #666666; font-style: normal; text-decoration: none;}
+
+h1 {font-size: 138.5%; padding: 0px 0px 10px 0px;}
+h2 {font-size: 138.5%; padding: 0px 0px 10px 0px;}
+h3 {}
+h4 {}
+
+.page {width: 863px; margin: 0px auto 0px auto;}
+
+#ribbon
+{
+	border:0;
+	width:150px;
+	height:150px;
+	position:absolute;
+	right:0px;
+	top:0px;
+	margin:0;
+	padding:0;
+}
+
+header {position: relative; height: 140px; background: transparent url('images/header-bkg.jpg') no-repeat bottom left; margin: 0px 0px 0px 0px;}
+/* 
+#header #title h1 {display:none;}
+#header #title a {position: absolute; width: 244px; height: 87px; top: 24px; left: 0px; background: transparent url('images/logo.png') no-repeat bottom left;}
+*/
+header #title h1 a {display:block; position: absolute; width: 244px; height: 87px; top: 24px; left: 0px; background: transparent url('images/logo.png') no-repeat bottom left; text-indent: -5000;}
+
+nav {position: absolute; right:25px; bottom: 0px; }
+nav li {position:relative; left:0px; bottom:0px; float: left; margin:0px 0px 0px 4px; background: transparent url('images/menu-left.png') no-repeat bottom left;}
+nav li a {display:block; text-decoration: none; height:28px; padding:30px 20px 0px 20px; font-size: 108%; color:#FFFFFF; background: transparent url('images/menu-right.png') no-repeat bottom right;}
+nav li a:hover {color:#003300;}
+
+nav li.selected {float: left; margin:0px 0px 0px 4px; background: transparent url('images/menu-left-selected.png') no-repeat bottom left;}
+nav li.selected a {display:block; height:33px; padding:25px 20px 0px 20px; font-size: 123.1%; color:#000000; background: transparent url('images/menu-right-selected.png') no-repeat bottom right;}
+nav li.selected a:hover {color:#003300;}
+
+nav li.selected {}
+nav li.selected a {}
+nav li.selected a:hover {}
+
+#menu { float: left; }
+#menu li.last { margin-right: 10px; }
+a.feed { position: relative; top: 23px; text-decoration: none; }
+
+#main-top {width: 863px; height:10px; background: transparent url('images/content-top.png') no-repeat top left;}
+#main {width: 803px; background: #fff url('images/content-bottom.png') no-repeat bottom left; margin: 0px 0px 0px 0px; padding: 20px 30px 30px 30px;}
+#main .pagetitle {width: 763px; background: transparent url('images/content-top.png') no-repeat top left; padding: 30px 50px 15px 50px; font-size:182%}
+#main .errortitle {width: 763px; background: transparent url('images/content-top.png') no-repeat top left; padding: 30px 50px 15px 50px; font-size:182%}
+#main .pagecontent {width: 763px; padding: 0px 50px 30px 50px;}
+
+#mapDivLeft 
+{
+    float: left;
+    width: 600px;
+}
+
+#mapDivRight 
+{
+    float: left;
+    padding: 0px;
+    width: 200px;
+}
+
+#logged-in {position: absolute; right:65px; top:56px; font-size: 138.5%;}
+.logged-in-name {color: #336600;}
+.notme {font-size: 77%;}
+
+
+/* Errors */
+.validation-summary-errors
+{
+    background-color: #ffffcc;
+    padding: 15px 20px 15px 20px;
+    border: solid 1px #cc0000;
+    font-weight: bold;
+    margin: 20px 0px 20px 0px;
+}
+
+.validation-summary-errors li 
+{
+    display: block;
+    background: url('/content/images/exclamation.png') no-repeat 0px 50%;
+    padding: 5px 0px 5px 25px; 
+}
+
+
+.field-validation-error,
+span.input-validation-error
+{
+    color: #cc0000;
+}
+
+input.input-validation-error,
+textarea.input-validation-error,
+select.input-validation-error
+{
+    border: 1px solid #cc0000;
+    background-color: #ffffcc;
+}
+
+	
+.error
+{
+    
+}
+
+/* Map */
+
+#myMap {}
+
+/* Home */
+
+#main {}
+
+#hm-masthead {position:relative; height: 160px; width: 863px; background: transparent url('images/hm-masthead.png') no-repeat 0px 45px;}
+
+#searchBox {position:absolute; bottom:0px; left:490px; width: 373px; height: 109px; padding: 20px 0px 0px 25px; background: transparent url('images/search-bubble.png') no-repeat;}
+#searchBox images {margin: 0px 0px 8px 0px;}
+
+#searchBox input[type="text"] {float:left; width: 200px; margin-right: 12px; padding: 9px; color: #666666; font-size: 100%; margin-top: 10px;}
+#searchBox input[type="submit"] {float: left; padding: 9px; margin-top: 8px;}
+
+#hm-map {float: left; width: 578px; height: 409px; margin: 0px 0px 0px 20px;}
+
+#dinnerList {margin: 0px 0px 0px 20px;}
+#dinnerList li {padding: 7px 0px 7px 0px; border-top: dotted 1px #CCCCCC;}
+#dinnerList li a {}
+#dinnerList li a:hover {}
+
+/* Account */
+#accountlogin {}
+#accountlogin #login {float:left; width: 382px;}
+#accountlogin #register {float:left; width: 381px;}
+
+
+
+#dinnerDiv 
+{
+    float:right;
+    width: 235px;
+    padding: 10px 0px 0px 20px;
+    
+}
+
+#whoscomingDiv
+{
+	height:150px;
+	width:235px;
+	overflow:auto; /* so it scrolls */
+}
+
+#mapDiv 
+{
+    float: left;
+    width: 522px;
+}
+
+
+
+/* MISC  
+----------------------------------------------------------*/
+.clear
+{
+    clear: both;
+}
+
+
+
+#menucontainer
+{
+    margin-top: 40px;
+}
+
+#headerTitle
+{
+    display: block;
+    float: left;
+    text-align: left;
+}
+
+#logindisplay
+{
+    font-size: 1.1em;
+    display: block;
+    text-align: right;
+    margin: 10px;
+    color: #660000;
+    position: relative;
+    top: 35px;
+    right: 20px;
+}
+
+#logindisplay a:link
+{
+    color: #660000;
+    text-decoration: underline;
+}
+
+#logindisplay a:visited
+{
+    color: #660000;
+    text-decoration: underline;
+}
+
+#share a 
+{
+    text-decoration: none; 
+}
+
+#share input  
+{
+    width: 120px; 
+    font-size: 90%; 
+    padding: 1px 2px 0px 2px;
+    line-height: 100%; 
+    vertical-align: top; 
+    margin-right: 0; 
+}
+
+input:focus, textarea:focus
+{
+    background-color: #FFFFE0;
+}
+
+.multi-line
+{
+	width: 100%;	
+	height: 7em;
+}
+
+footer 
+{
+    font-size: 0.93em;
+    line-height: 1.6em;
+    text-align: center;
+    padding: 10px 0px 30px 0px;
+}
+
+footer a {text-decoration: none; font-weight: normal; }
+
+strong {
+  font-weight: bold;
+}
+
+.attendees {
+  padding-bottom: 10px;
+  padding-left: 10px;
+}
+
+/* MICROFORMATS  
+----------------------------------------------------------*/
+
+.vevent abbr {
+	border: 0;
+}
+.pagination {
+    padding-top: 10px;
+    font-weight: bold;
+}
+
+#disqus_thread { clear: both; padding-top: 15px; }
+
+#login
+{
+	width: 401px;
+	margin:0 auto;
+	padding:0;
+}
+
+#login-account
+{
+    width: 370px;
+    border: 1px dotted black;
+    padding: 10px;
+}
+
+.login-oauth
+{
+    width: 392px;
+    padding: 0px;
+}
+
+#login-oauth-container
+{
+    margin-top: 30px;
+}
+.login-oauth h3, #login-account h3
+{
+    font-size: 22px;
+    font-weight: bold;
+}
+#oauth-buttons
+{
+    margin-top: 60px;
+}
+#oauth-buttons a
+{
+    display: block;
+    height: 32px;
+    width: 111px;
+    border: 1px solid #aaa;
+    float: left;
+    margin-right: 5px;
+}
+
+#or
+{
+	width: 392px;
+    font-size: x-large;
+    padding:0;
+    display:block;
+}
+
+#or p{text-align:center;}
+
+#openid_identifier
+{
+    font-size: large;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+.OpenIdAjaxTextBox input[type='button']
+{
+    font-size: large;
+}
+.OpenIdAjaxTextBox .yui-button span button
+{
+    font-size: large;
+    margin-top: 2px;
+}
+.OpenIdAjaxTextBox images
+{
+    padding-top: 7px;
+}
+.classiclogon
+{
+    font-size: large;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+#nancyraven {width:250px;margin:0 auto;}
+
+#newlogo{display:block; position: absolute; width: 244px; height: 43px; top: 12px; left: 310px;}
+
+.red{color:#FF0000;}
+
+.stronglink{color:#FF0000; font-weight:700; text-decoration:underline;}

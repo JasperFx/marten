@@ -1,0 +1,157 @@
+﻿@inherits NancyRazorViewBase<dynamic>
+@using DinnerParty.HtmlExtensions;
+@using Nancy.ViewEngines.Razor
+@using System.Collections.Generic;
+@using System.Globalization;
+
+<script src="@Url.Content("~/Content/Scripts/jquery.validate.min.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Content/Scripts/jquery.validate.unobtrusive.min.js")" type="text/javascript"></script>
+  
+    <form method="post">   
+        @Html.ValidationSummary((List<DinnerParty.Models.ErrorModel>)Model.Page.Errors) 
+        <fieldset>
+
+            <div id="dinnerDiv">
+
+                <label for="Title">Title</label>
+                <input class="text-box single-line" id="Title" name="Title" type="text" value="@Model.Dinner.Title" /> 
+
+                <label for="EventDate">Event Date</label>
+                <input class="text-box single-line" id="EventDate" name="EventDate" type="datetime" value="@Model.Dinner.EventDate" />
+
+                <script type="text/javascript">
+                    $(function () {
+                        if (!Modernizr.inputtypes.date) {
+                            
+//                                        $("input[type='datetime']").datetime({
+//                                            userLang: 'en',
+//                                            americanMode: false
+//                                        });
+                        }
+                    });
+
+                </script>
+
+                <label for="Description">Description</label>
+                <textarea class="text-box multi-line" id="Description" name="Description">@Model.Dinner.Description</textarea> 
+
+                <label for="HostedBy">Host&#39;s Name</label>
+                <input class="text-box single-line" id="HostedBy" name="HostedBy" type="text" value="@Model.Dinner.HostedBy" /> 
+
+                <label for="ContactPhone">Contact Info</label>
+                <input class="text-box single-line" id="ContactPhone" name="ContactPhone" type="text" value="@Model.Dinner.ContactPhone" /> 
+
+                <label for="Address">Address, City, State, ZIP</label>
+                <input class="text-box single-line" id="Address" name="Address" type="text" value="@Model.Dinner.Address" /> 
+
+                <label for="Country">Country</label>
+                <select id="Country" name="Country">
+                    @foreach (var country in DinnerParty.Helpers.CountryList.Countries)
+                    {
+                        if (country == Model.Dinner.Country)
+                        {
+                            <option selected="selected">@country</option>
+                        }
+                        else
+                        {
+                        <option>@country</option>
+                        }
+                    }
+                </select>
+                <input id="Latitude" name="Latitude" type="hidden" value="0" />
+                <input id="Longitude" name="Longitude" type="hidden" value="0" />
+                <input id="HostedById" name="HostedById" type="hidden" value="" />
+
+
+                <p>
+                    <input type="submit" value="Save" />
+                </p>
+            </div>
+
+        <div id="mapDiv">
+            <script src="http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.3" type="text/javascript"></script>
+            <script src="/Content/Scripts/NerdDinner.js" type="text/javascript"></script>
+                <div id="theMap" style="width: 520px">
+                </div>
+                <script type="text/javascript">
+            //<![CDATA[   
+                $(document).ready(function() {
+                    // make sure that the mapcontrol has loaded, this has been an issue in FF4
+                    // see http://stackoverflow.com/questions/5566393/issue-with-bing-map-p-elsource-attachevent-is-not-a-function
+                    var interval = setInterval(function () {
+                        if ((eval("typeof VEMap") != "undefined") && (document.getElementById("theMap").attachEvent != undefined)) {
+                            clearInterval(interval);
+                            onMapLoaded();
+                        }
+                    }, 10);
+                });
+
+                function onMapLoaded() {
+                    var latitude = @Convert.ToString(Model.Dinner.Latitude, CultureInfo.InvariantCulture);
+                    var longitude = @Convert.ToString(Model.Dinner.Longitude, CultureInfo.InvariantCulture);
+                
+                    if ((latitude == 0) || (longitude == 0))
+                        NerdDinner.LoadMap();
+                    else
+                        NerdDinner.LoadMap(latitude, longitude, mapLoaded);
+                }
+      
+                function mapLoaded() {
+                    var title = "@Model.Dinner.Title";
+                    var address = "@Model.Dinner.Address";
+    
+                    NerdDinner.LoadPin(NerdDinner._map.GetCenter(), title, address, false);
+                    NerdDinner._map.SetZoomLevel(14);
+                } 
+            //]]>
+                </script>
+                (drag the pin in the map if it doesn't look right) *
+        </div>
+    </fieldset>
+</form>
+
+    <script type="text/javascript">
+//<![CDATA[
+        $(document).ready(function () {
+            // make sure that the mapcontrol has loaded, this has been an issue in FF4
+            // see http://stackoverflow.com/questions/5566393/issue-with-bing-map-p-elsource-attachevent-is-not-a-function
+            var interval = setInterval(function () {
+                if ((eval("typeof VEMap") != "undefined") && (document.getElementById("theMap").attachEvent != undefined)) {
+                    clearInterval(interval);
+                    onMapLoaded();
+                }
+            }, 10);
+        });
+
+        function onMapLoaded() {
+            //NerdDinner.EnableMapMouseClickCallback();
+
+            $('#EventDate').datetimepicker({ dateFormat: "dd/mm/yy"  });
+
+            $("#Address").blur(function (evt) {
+                //If it's time to look for an address, 
+                // clear out the Lat and Lon
+                $("#Latitude").val("0");
+                $("#Longitude").val("0");
+                var address = jQuery.trim($("#Address").val());
+                if (address.length < 1)
+                    return;
+                NerdDinner.FindAddressOnMap(address);
+            });
+
+            var latitude = @Convert.ToString(@Model.Dinner.Location.Latitude, CultureInfo.InvariantCulture);
+            var longitude = @Convert.ToString(@Model.Dinner.Location.Longitude, CultureInfo.InvariantCulture);
+                
+            if ((latitude == 0) || (longitude == 0))
+                NerdDinner.LoadMap();
+            else
+                NerdDinner.LoadMap(latitude, longitude, mapLoaded);
+        }
+
+        function mapLoaded() {
+            NerdDinner.LoadPin(NerdDinner._map.GetCenter(), '@Model.Dinner.Description', true);
+            NerdDinner._map.SetZoomLevel(14);
+        } 
+
+//]]>
+    </script>

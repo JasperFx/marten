@@ -1,0 +1,16 @@
+﻿AjaxMin
+Cassette
+Cassette.Nancy
+elmah
+elmah.corelibrary
+Microsoft.AspNet.Razor
+Nancy
+Nancy.Authentication.Forms
+Nancy.Hosting.Aspnet
+Nancy.RouteHelpers
+Nancy.Validation.DataAnnotations
+Nancy.Viewengines.Razor
+Newtonsoft.Json
+NLog
+Npgsql
+PagedList

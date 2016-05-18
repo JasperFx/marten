@@ -1,0 +1,99 @@
+﻿@inherits NancyRazorViewBase<dynamic>
+@using DinnerParty.Helpers;
+@using Nancy.ViewEngines.Razor
+@using System.Linq;
+@using System.Collections.Generic;
+
+@{
+    Layout = "_Layout.cshtml";
+}
+<div id="dinnerDiv" class="vevent">
+	<h2 class="summary">@Model.Dinner.Title</h2>
+	<div id="share">
+		<strong>Share: </strong><a href="http://twitter.com/home/?status=Nerd+Dinner%3A+@Model.Dinner.Title+on+@Model.Dinner.EventDate.ToString("MMM dd")+-+RSVP%3A+http%3A%2F%2Fdinnerparty.azurewebsites.net/@Model.Dinner.DinnerID"  
+		title="Tweet this" target="_blank">
+			<img src="@Url.Content("~/images/icon-twitter.png")" alt="Twitter" border="0" />
+		</a><a href="http://www.facebook.com/share.php?u=http%3A%2F%2Fdinnerparty.azurewebsites.net/@Model.Dinner.DinnerID"  
+		title="Add to Facebook" target="_blank">
+			<img src="@Url.Content("~/images/icon-facebook.png")" alt="Facebook" border="0" />
+		</a><a href="@string.Format("http://www.google.com/reader/link?url=http%3A%2F%2Fdinnerparty.azurewebsites.net/{0}&title=Nerd+Dinner%3A+{1}+on+{2}&snippet{3}+%3Cbr+%2F%3E%0D%0A%3Cbr+%2F%3E%3Cbr+%2F%3E%3Cstrong%3EWhere%3F%3C%2Fstrong%3E%3Cbr+%2F%3E{4}%3C%2Fstrong%3E%3Cbr+%2F%3E%3Cbr+%2F%3E%0D%0A%09%09%09%3Cstrong%3EWhen%3F%3C%2Fstrong%3E%3Cbr+%2F%3E%3Cstrong%3E{2}%3C%2Fstrong%3E%3Cbr+%2F%3E%3Ca+href%3D%22http%3A%2F%2Fdinnerparty.azurewebsites.net/{0}%22++title%3D%22RSVP+here%21%22+%3ERSVP+here%21%3C%2Fa%3E&srcURL=http%3A%2F%2Fdinnerparty.azurewebsites.net/{0}&srcTitle=Twtvite", Model.Dinner.DinnerID, Model.Dinner.Title, Model.Dinner.EventDate.ToString("MMM dd, yyyy"), Model.Dinner.Description, Model.Dinner.Address)"  title="Add to Google Buzz" target="_blank">
+			<img src="@Url.Content("~/images/icon-google.png")" alt="Google Buzz" border="0" />
+		</a>
+		<input name="share_link" type="text" value="http://dinnerparty.azurewebsites.net/@Model.Dinner.DinnerID" class="widget" onclick="this.select()" size="15"/>
+	</div>
+	<p>
+        <a href="/services/iCal/@Model.Dinner.DinnerID">Add event to your calendar:</a>
+        <a href="/Services/iCal/@Model.Dinner.DinnerID"><img src="@Url.Content("~/images/icon-icalfeed-16x16.png")" /></a>
+	</p>
+	<p>
+		<strong>When:</strong>
+		<abbr class="dtstart" title="@Model.Dinner.EventDate.ToString("s")">
+			@Model.Dinner.EventDate.ToString("MMM dd, yyyy")
+			<strong>@@</strong>
+			@Model.Dinner.EventDate.ToShortTimeString()
+		</abbr>
+	</p>
+	<p>
+		<strong>Where:</strong> <span class="location adr"><span class="extended-address">@Model.Dinner.Address</span>,
+			<span class="country-name">@Model.Dinner.Country</span>
+			<abbr class="geo" title="@Model.Dinner.Latitude;@Model.Dinner.Longitude" style="display: none;">
+				Geolocation for hCalendar</abbr>
+		</span>
+	</p>
+	<p>
+		<strong>Description:</strong> <span class="description">@Model.Dinner.Description</span>
+		<span style="display: none;">
+            <a href="/Services/iCal/@Model.Dinner.DinnerID" class="url">URL for hCalendar</a>
+		</span>
+	</p>
+	<p>
+		<strong>Organizer:</strong> <span class="organizer"><span class="vcard"><span class="fn nickname">@Model.Dinner.HostedBy</span>
+			<span class="tel">@Model.Dinner.ContactPhone</span> </span></span>
+	</p>
+	@Html.Partial("Dinners/_RSVPStatus", Model)
+	<p id="whoscoming">
+		<strong>Who's Coming:</strong>
+		@if (Model.Dinner.RSVPs.Count == 0)
+		{
+			<text>No one has registered.</text>
+		}
+	</p>
+	@if (Model.Dinner.RSVPs.Count > 0)
+ {
+		<div id="whoscomingDiv">
+			<ul class="attendees">
+				@{  var RSVPs = ((ICollection<DinnerParty.Models.RSVP>)Model.Dinner.RSVPs).Reverse();
+                    foreach (var RSVP in RSVPs)
+                    { 
+					            <li class="attendee"><span class="vcard"><span class="fn nickname">@(RSVP.AttendeeName.StartsWith("@") ? RSVP.AttendeeName : RSVP.AttendeeName.Replace("@", " at ").Truncate(30))</span>
+					            </span></li>
+                    }
+                }
+			</ul>
+		</div>
+	}
+	@Html.Partial("Dinners/_EditAndDeleteLinks", Model)
+</div>
+<div id="mapDiv"> 
+	@Html.Partial("Dinners/_Map", Model)
+	<p>
+		<img src="@Url.Content("~/images/microformat_hcalendar.png")" alt="hCalendar"/>
+	</p>
+</div>
+<div id="disqus_thread">
+</div>
+<script type="text/javascript">
+    var disqus_url = '@("http://dinnerparty.azurewebsites.net/" + Model.Dinner.DinnerID.ToString())';
+	var disqus_developer = 1;
+
+	(function () {
+		var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+		dsq.src = 'http://dinnerparty.disqus.com/embed.js';
+		(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	})();
+</script>
+<noscript>
+	Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript=dinnerparty">
+		comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">
+	Disqus</span></a> 
