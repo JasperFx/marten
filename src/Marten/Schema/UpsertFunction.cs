@@ -49,8 +49,9 @@ namespace Marten.Schema
 
             var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");
 
+            var systemUpdates = new string[] {$"{DocumentMapping.LastModifiedColumn} = transaction_timestamp()" };
             var updates = ordered.Where(x => x.Column != "id")
-                .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(new string[] {$"{DocumentMapping.LastModifiedColumn} = transaction_timestamp()" }).Join(", ");
+                .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
             var inserts = ordered.Select(x => $"\"{x.Column}\"").Concat(new string[] {DocumentMapping.LastModifiedColumn}).Join(", ");
             var valueList = ordered.Select(x => x.Arg).Concat(new string[] { "transaction_timestamp()" }).Join(", ");

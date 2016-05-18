@@ -25,7 +25,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS void LANGUAGE plpgsql AS $function$");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS void LANGUAGE plpgsql AS $function$");
         }
 
         [Fact]
@@ -37,7 +37,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docId varchar, docType varchar) RETURNS void LANGUAGE plpgsql AS $function$");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS void LANGUAGE plpgsql AS $function$");
         }
 
     }
@@ -63,7 +63,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docId varchar, docType varchar)");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS void LANGUAGE plpgsql AS $function$");
         }
 
         [Fact]
@@ -75,7 +75,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docId varchar, docType varchar)");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS void LANGUAGE plpgsql AS $function$");
         }
 
     }

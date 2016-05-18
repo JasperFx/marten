@@ -35,6 +35,8 @@ namespace Marten.Schema
         public const string DocumentTypeColumn = "mt_doc_type";
         public const string MartenPrefix = "mt_";
         public const string LastModifiedColumn = "mt_last_modified";
+        public const string DotNetTypeColumn = "mt_dotnet_type";
+        public const string VersionColumn = "mt_version";
 
         private readonly StoreOptions _storeOptions;
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
@@ -415,6 +417,7 @@ namespace Marten.Schema
             return _fields.Values.FirstOrDefault(x => x.ColumnName == columnName);
         }
 
+        // TODO -- extract most of this somehow. It's huuuuuge
         public virtual TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
                                                                        // can do foreign keys
         {
@@ -423,6 +426,8 @@ namespace Marten.Schema
             table.Columns.Add(new TableColumn("data", "jsonb") { Directive = "NOT NULL" });
 
             table.Columns.Add(new TableColumn(LastModifiedColumn, "timestamp with time zone") {Directive = "DEFAULT transaction_timestamp()" });
+            table.Columns.Add(new TableColumn(VersionColumn, "uuid"));
+            table.Columns.Add(new TableColumn(DotNetTypeColumn, "varchar"));
 
             _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
 
@@ -440,8 +445,13 @@ namespace Marten.Schema
             var function = new UpsertFunction(this);
             function.Arguments.AddRange(DuplicatedFields.Select(x => x.UpsertArgument));
 
+            function.Arguments.Add(new VersionArgument());
+
+            function.Arguments.Add(new DotNetTypeArgument());
+
             if (IsHierarchy())
             {
+                // TODO -- make this be a subclass of UpsertArgument too
                 function.Arguments.Add(new UpsertArgument
                 {
                     Arg = "docType",

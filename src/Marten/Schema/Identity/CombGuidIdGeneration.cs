@@ -17,7 +17,7 @@ namespace Marten.Schema.Identity
 
         public IIdGenerator<T> Build<T>(IDocumentSchema schema)
         {
-            return (IIdGenerator<T>) new GuidIdGenerator(NewGuid);
+            return (IIdGenerator<T>) new GuidIdGenerator(New);
         }
 
         /*
@@ -38,7 +38,7 @@ namespace Marten.Schema.Identity
         /// <summary>
         ///     Returns a new Guid COMB, consisting of a random Guid combined with the current UTC timestamp.
         /// </summary>
-        public static Guid NewGuid() => Create(Guid.NewGuid(), DateTime.UtcNow);
+        public static Guid New() => Create(Guid.NewGuid(), DateTime.UtcNow);
 
         /// <summary>
         ///     Returns a new Guid COMB, consisting of a random Guid combined with the provided timestap.

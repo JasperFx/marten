@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
@@ -67,9 +68,9 @@ namespace Marten.Testing.Util
             var target2 = Target.Random();
             var target3 = Target.Random();
 
-            batch.Sproc(theMapping.UpsertFunction).Param("docId", target1.Id).JsonEntity("doc", target1);
-            batch.Sproc(theMapping.UpsertFunction).Param("docId", target2.Id).JsonEntity("doc", target2);
-            batch.Sproc(theMapping.UpsertFunction).Param("docId", target3.Id).JsonEntity("doc", target3);
+            batch.Sproc(theMapping.UpsertFunction).Param("docId", target1.Id).JsonEntity("doc", target1).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
+            batch.Sproc(theMapping.UpsertFunction).Param("docId", target2.Id).JsonEntity("doc", target2).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
+            batch.Sproc(theMapping.UpsertFunction).Param("docId", target3.Id).JsonEntity("doc", target3).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
             batch.Delete(theMapping.Table, initialTarget.Id, NpgsqlDbType.Uuid);
 
             batch.Execute();
@@ -104,9 +105,9 @@ namespace Marten.Testing.Util
 
             var serializer = new JilSerializer();
 
-            batch.Sproc(upsert).Param("docId", target1.Id).JsonBody("doc", serializer.ToJson(target1));
-            batch.Sproc(upsert).Param("docId", target2.Id).JsonBody("doc", serializer.ToJson(target2));
-            batch.Sproc(upsert).Param("docId", target3.Id).JsonBody("doc", serializer.ToJson(target3));
+            batch.Sproc(upsert).Param("docId", target1.Id).JsonBody("doc", serializer.ToJson(target1)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
+            batch.Sproc(upsert).Param("docId", target2.Id).JsonBody("doc", serializer.ToJson(target2)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
+            batch.Sproc(upsert).Param("docId", target3.Id).JsonBody("doc", serializer.ToJson(target3)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
             batch.Delete(theMapping.Table, initialTarget.Id, NpgsqlDbType.Uuid);
 
             batch.Execute();

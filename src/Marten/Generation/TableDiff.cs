@@ -39,7 +39,7 @@ namespace Marten.Generation
 
         public void CreatePatch(DocumentMapping mapping, Action<string> executeSql)
         {
-            var systemFields = new string[] {DocumentMapping.LastModifiedColumn};
+            var systemFields = new string[] {DocumentMapping.LastModifiedColumn, DocumentMapping.DotNetTypeColumn, DocumentMapping.VersionColumn};
 
             var fields = Missing.Where(x => !systemFields.Contains(x.Name)).Select(x => mapping.FieldForColumn(x.Name)).ToArray();
             if (fields.Length != Missing.Length)

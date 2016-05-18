@@ -145,6 +145,7 @@
     <Compile Include="Schema\BulkLoading\BulkLoader.cs" />
     <Compile Include="Schema\DbObjects.cs" />
     <Compile Include="Schema\DocumentSchemaExtensions.cs" />
+    <Compile Include="Schema\DotNetTypeArgument.cs" />
     <Compile Include="Schema\IDbObjects.cs" />
     <Compile Include="Schema\Identity\GuidIdGenerator.cs" />
     <Compile Include="Schema\Identity\IdAssigner.cs" />
@@ -176,6 +177,7 @@
     <Compile Include="Schema\SubClassMapping.cs" />
     <Compile Include="Schema\DatabaseSchemaGenerator.cs" />
     <Compile Include="Schema\UpsertFunction.cs" />
+    <Compile Include="Schema\VersionArgument.cs" />
     <Compile Include="Services\BatchCommand.cs" />
     <Compile Include="Services\BatchQuerying\BatchedQuery.cs" />
     <Compile Include="Services\BatchQuerying\BatchedQueryable.cs" />

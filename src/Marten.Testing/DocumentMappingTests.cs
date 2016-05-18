@@ -161,7 +161,7 @@ namespace Marten.Testing
         {
             var mapping = DocumentMapping.For<IntDoc>();
             mapping.ToTable(null).Columns.Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn);
+                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn);
         }
 
         [Fact]
@@ -170,7 +170,7 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<User>();
             mapping.DuplicateField("FirstName");
             mapping.ToTable(null).Columns.Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn, "first_name");
+                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, "first_name");
 
         }
 
@@ -194,7 +194,7 @@ namespace Marten.Testing
             var function = mapping.ToUpsertFunction();
 
             function.Arguments.Select(x => x.Column)
-                .ShouldHaveTheSameElementsAs("id", "data");
+                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn);
         }
 
         [Fact]
@@ -207,7 +207,7 @@ namespace Marten.Testing
             var function = mapping.ToUpsertFunction();
 
             function.Arguments.Select(x => x.Column)
-                .ShouldHaveTheSameElementsAs("id", "data", "first_name", "last_name");
+                .ShouldHaveTheSameElementsAs("id", "data", "first_name", "last_name", DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn);
         }
 
         [Fact]
@@ -219,7 +219,7 @@ namespace Marten.Testing
             var function = mapping.ToUpsertFunction();
 
             function.Arguments.Select(x => x.Column)
-                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.DocumentTypeColumn);
+                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, DocumentMapping.DocumentTypeColumn);
         }
 
         [Fact]

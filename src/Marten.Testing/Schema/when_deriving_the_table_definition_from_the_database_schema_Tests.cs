@@ -45,7 +45,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void it_has_all_the_columns()
         {
-            theDerivedTable.Columns.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn, "user_name");
+            theDerivedTable.Columns.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, "user_name");
         }
 
         [Fact]
