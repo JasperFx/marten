@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
+using Baseline;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Marten.Services
 {
@@ -50,7 +52,30 @@ namespace Marten.Services
             return writer.ToString();
         }
 
-        // TODO -- make this configurable?
-        public EnumStorage EnumStorage => EnumStorage.AsInteger;
+        private EnumStorage _enumStorage = EnumStorage.AsInteger;
+
+        public EnumStorage EnumStorage
+        {
+            get
+            {
+                return _enumStorage;
+            }
+            set
+            {
+                _enumStorage = value;
+
+                if (value == EnumStorage.AsString)
+                {
+                    var converter = new StringEnumConverter();
+                    _serializer.Converters.Add(converter);
+                    _clean.Converters.Add(converter);
+                }
+                else
+                {
+                    _serializer.Converters.RemoveAll(x => x is StringEnumConverter);
+                    _clean.Converters.RemoveAll(x => x is StringEnumConverter);
+                }
+            }
+        }
     }
 }

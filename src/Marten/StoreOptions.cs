@@ -117,6 +117,16 @@ namespace Marten
         }
 
         /// <summary>
+        /// Use the default serialization (ilmerged Newtonsoft.Json) with Enum values
+        /// stored as either integers or strings
+        /// </summary>
+        /// <param name="enumStyle"></param>
+        public void UseDefaultSerialization(EnumStorage enumStyle)
+        {
+            Serializer(new JsonNetSerializer {EnumStorage = enumStyle});
+        }
+
+        /// <summary>
         /// Override the JSON serialization by an ISerializer of type "T"
         /// </summary>
         /// <typeparam name="T">The ISerializer type</typeparam>
