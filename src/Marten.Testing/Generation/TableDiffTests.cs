@@ -30,7 +30,7 @@ namespace Marten.Testing.Generation
             var diff = new TableDiff(expected, actual);
 
             diff.Matched.OrderBy(x => x.Name).Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("data", "id");
+                .ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.LastModifiedColumn);
         }
 
         [Fact]

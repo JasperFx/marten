@@ -57,7 +57,7 @@ namespace Marten.Generation
 
             Columns.Each(col =>
             {
-                writer.Write("    {0}{1} {2}", $"\"{col.Name}\"".PadRight(length), col.Type, col.Directive);
+                writer.Write($"    {col.ToDeclaration(length)}");
                 if (col == Columns.Last())
                 {
                     writer.WriteLine();

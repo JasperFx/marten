@@ -161,7 +161,7 @@ namespace Marten.Testing
         {
             var mapping = DocumentMapping.For<IntDoc>();
             mapping.ToTable(null).Columns.Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("id", "data");
+                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn);
         }
 
         [Fact]
@@ -170,7 +170,7 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<User>();
             mapping.DuplicateField("FirstName");
             mapping.ToTable(null).Columns.Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("id", "data", "first_name");
+                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn, "first_name");
 
         }
 

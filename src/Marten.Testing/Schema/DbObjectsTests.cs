@@ -85,7 +85,7 @@ namespace Marten.Testing.Schema
 
 
             objects.Table.Columns.OrderBy(x => x.Name).Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("data", "id", "internal", "user_name");
+                .ShouldHaveTheSameElementsAs("data", "id", "internal", DocumentMapping.LastModifiedColumn, "user_name");
 
             objects.UpsertFunction.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
 
@@ -110,7 +110,7 @@ namespace Marten.Testing.Schema
 
 
             objects.Table.Columns.OrderBy(x => x.Name).Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("data", "id", "internal", "user_name");
+                .ShouldHaveTheSameElementsAs("data", "id", "internal", DocumentMapping.LastModifiedColumn, "user_name");
 
             objects.UpsertFunction.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
 

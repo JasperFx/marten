@@ -34,6 +34,7 @@ namespace Marten.Schema
         public const string UpsertPrefix = "mt_upsert_";
         public const string DocumentTypeColumn = "mt_doc_type";
         public const string MartenPrefix = "mt_";
+        public const string LastModifiedColumn = "mt_last_modified";
 
         private readonly StoreOptions _storeOptions;
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
@@ -420,6 +421,8 @@ namespace Marten.Schema
             var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
             var table = new TableDefinition(Table, new TableColumn("id", pgIdType));
             table.Columns.Add(new TableColumn("data", "jsonb") { Directive = "NOT NULL" });
+
+            table.Columns.Add(new TableColumn(LastModifiedColumn, "timestamp with time zone") {Directive = "DEFAULT transaction_timestamp()" });
 
             _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
 

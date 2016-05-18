@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.Contracts;
+using System.IO;
 using Marten.Util;
 
 namespace Marten.Generation
@@ -38,5 +39,11 @@ namespace Marten.Generation
                 return (Name.GetHashCode() * 397) ^ (Type.GetHashCode());
             }
         }
+
+        public string ToDeclaration(int length)
+        {
+            return $"{Name.PadRight(length)}{Type} {Directive}";
+        }
+
     }
 }
