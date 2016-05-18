@@ -2,6 +2,8 @@
 
 [![Join the chat at https://gitter.im/JasperFx/Marten](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JasperFx/Marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+                        <a href="http://build.fubu-project.org/project.html?projectId=Marten&tab=projectOverview"><img src="https://img.shields.io/teamcity/http/build.fubu-project.org/s/marten_master.svg"></img></a>
+                        <a href="https://www.nuget.org/packages/Marten/"><img src="https://img.shields.io/nuget/v/Marten.svg"></img></a>
 
 Hey, we're just getting started, but there'll be stuff here soon. Check the issue list as quasi-roadmap and feel free to jump into the Gitter room linked above.
 See this blog post http://jeremydmiller.com/2015/10/21/postgresql-as-a-document-db-for-net-development/ for more information
