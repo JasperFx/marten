@@ -17,11 +17,11 @@ namespace Marten.Linq
         public class WhereClauseVisitor : RelinqExpressionVisitor
         {
             private readonly MartenExpressionParser _parent;
-            private readonly IDocumentMapping _mapping;
+            private readonly IQueryableDocument _mapping;
             private readonly Stack<Action<IWhereFragment>> _register = new Stack<Action<IWhereFragment>>();
             private IWhereFragment _top;
 
-            public WhereClauseVisitor(MartenExpressionParser parent, IDocumentMapping mapping)
+            public WhereClauseVisitor(MartenExpressionParser parent, IQueryableDocument mapping)
             {
                 _parent = parent;
                 _mapping = mapping;

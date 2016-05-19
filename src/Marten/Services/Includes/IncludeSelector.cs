@@ -15,7 +15,7 @@ namespace Marten.Services.Includes
         private readonly ISelector<TSearched> _inner;
         private readonly IResolver<TIncluded> _resolver;
 
-        public static string[] ToSelectFields(string tableAlias, IDocumentMapping includedMapping, ISelector<TSearched> inner)
+        public static string[] ToSelectFields(string tableAlias, IQueryableDocument includedMapping, ISelector<TSearched> inner)
         {
             var innerFields = inner.SelectFields();
             var outerFields = includedMapping.SelectFields().Select(x => $"{tableAlias}.{x}");

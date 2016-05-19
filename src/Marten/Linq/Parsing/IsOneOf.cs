@@ -12,7 +12,7 @@ namespace Marten.Linq.Parsing
                    && expression.Method.DeclaringType.Equals(typeof (LinqExtensions));
         }
 
-        public IWhereFragment Parse(IDocumentMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var finder = new FindMembers();
             finder.Visit(expression);

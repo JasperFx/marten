@@ -13,7 +13,7 @@ namespace Marten.Linq
         private readonly string _separator;
         private readonly IList<IWhereFragment> _children = new List<IWhereFragment>();
 
-        public CompoundWhereFragment(MartenExpressionParser parser, IDocumentMapping mapping, string separator, IEnumerable<WhereClause> wheres)
+        public CompoundWhereFragment(MartenExpressionParser parser, IQueryableDocument mapping, string separator, IEnumerable<WhereClause> wheres)
         {
             _separator = separator;
             _children = wheres.Select(x => parser.ParseWhereFragment(mapping, x.Predicate)).ToArray();

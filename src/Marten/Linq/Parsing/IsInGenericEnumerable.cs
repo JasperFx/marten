@@ -14,7 +14,7 @@ namespace Marten.Linq.Parsing
                    !expression.Arguments.Single().IsValueExpression();
         }
 
-        public IWhereFragment Parse(IDocumentMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var finder = new FindMembers();
             finder.Visit(expression);

@@ -94,7 +94,7 @@ namespace Marten.Events
         public IIdGeneration IdStrategy { get; set; } = new GuidIdGeneration();
         public MemberInfo IdMember { get; } = ReflectionHelper.GetProperty<EventStream>(x => x.Id);
 
-        string[] IDocumentMapping.SelectFields()
+        string[] IQueryableDocument.SelectFields()
         {
             throw new NotSupportedException();
         }
@@ -188,7 +188,7 @@ namespace Marten.Events
         }
 
 
-        IncludeJoin<TOther> IDocumentMapping.JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback)
+        IncludeJoin<TOther> IQueryableDocument.JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback)
         {
             throw new NotSupportedException();
         }

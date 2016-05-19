@@ -8,35 +8,44 @@ using Marten.Services.Includes;
 
 namespace Marten.Schema
 {
-    public interface IDocumentMapping
+
+    public interface IQueryableDocument
+    {
+        IWhereFragment FilterDocuments(IWhereFragment query);
+
+        IWhereFragment DefaultWhereFragment();
+
+        IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class;
+
+        IField FieldFor(IEnumerable<MemberInfo> members);
+
+        string[] SelectFields();
+
+        PropertySearching PropertySearching { get; }
+
+        TableName Table { get; }
+    }
+
+
+    public interface IDocumentMapping : IQueryableDocument
     {
         string Alias { get; }
         Type DocumentType { get; }
 
-        TableName Table { get; }
-
-        PropertySearching PropertySearching { get; }
         IIdGeneration IdStrategy { get; set; }
         MemberInfo IdMember { get; }
-        string[] SelectFields();
 
-        IField FieldFor(IEnumerable<MemberInfo> members);
-
-        IWhereFragment FilterDocuments(IWhereFragment query);
-
-        IWhereFragment DefaultWhereFragment();
         IDocumentStorage BuildStorage(IDocumentSchema schema);
 
         IDocumentSchemaObjects SchemaObjects { get; }
 
         void DeleteAllDocuments(IConnectionFactory factory);
-
-        IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class;
+        
     }
 
     public static class DocumentMappingExtensions
     {
-        public static string JsonLocator(this IDocumentMapping mapping, Expression expression)
+        public static string JsonLocator(this IQueryableDocument mapping, Expression expression)
         {
             var visitor = new FindMembers();
             visitor.Visit(expression);

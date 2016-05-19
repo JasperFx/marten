@@ -11,7 +11,7 @@ namespace Marten.Linq
     {
         private readonly IResolver<T> _resolver;
 
-        public WholeDocumentSelector(IDocumentMapping mapping, IResolver<T> resolver)
+        public WholeDocumentSelector(IQueryableDocument mapping, IResolver<T> resolver)
             : base(mapping.SelectFields().Select(x => $"d.{x}").ToArray())
         {
             _resolver = resolver;

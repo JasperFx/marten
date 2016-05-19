@@ -59,7 +59,7 @@ namespace Marten.Linq
                 : locator + " desc";
         }
 
-        public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, IDocumentMapping mapping, QueryModel query)
+        public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, IQueryableDocument mapping, QueryModel query)
         {
             var wheres = query.BodyClauses.OfType<WhereClause>().ToArray();
             if (wheres.Length == 0) return mapping.DefaultWhereFragment();

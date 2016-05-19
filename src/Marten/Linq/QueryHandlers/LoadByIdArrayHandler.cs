@@ -14,10 +14,10 @@ namespace Marten.Linq.QueryHandlers
     public class LoadByIdArrayHandler<T, TKey> : IQueryHandler<IList<T>>
     {
         private readonly IResolver<T> _resolver;
-        private readonly IDocumentMapping _mapping;
+        private readonly IQueryableDocument _mapping;
         private readonly TKey[] _ids;
 
-        public LoadByIdArrayHandler(IResolver<T> resolver, IDocumentMapping mapping, TKey[] ids)
+        public LoadByIdArrayHandler(IResolver<T> resolver, IQueryableDocument mapping, TKey[] ids)
         {
             _resolver = resolver;
             _mapping = mapping;

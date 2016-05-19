@@ -86,7 +86,7 @@ namespace Marten.Testing.Linq
             return expression.Method.Name == nameof(CustomExtensions.IsBlue);
         }
 
-        public IWhereFragment Parse(IDocumentMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var locator = mapping.FieldFor(new MemberInfo[] {_property}).SqlLocator;
 

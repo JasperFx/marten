@@ -13,10 +13,10 @@ namespace Marten.Linq.QueryHandlers
     public class LoadByIdHandler<T> : IQueryHandler<T>
     {
         private readonly IResolver<T> _resolver;
-        private readonly IDocumentMapping _mapping;
+        private readonly IQueryableDocument _mapping;
         private readonly object _id;
 
-        public LoadByIdHandler(IResolver<T> resolver, IDocumentMapping mapping, object id)
+        public LoadByIdHandler(IResolver<T> resolver, IQueryableDocument mapping, object id)
         {
             _resolver = resolver;
             _mapping = mapping;

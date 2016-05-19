@@ -22,9 +22,6 @@ namespace Marten.Linq.Parsing
             return expression.Object?.Type == typeof (T) && expression.Method.Name == _method.Name;
         }
 
-        public abstract IWhereFragment Parse(
-            IDocumentMapping mapping, 
-            ISerializer serializer,
-            MethodCallExpression expression);
+        public abstract IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression);
     }
 }

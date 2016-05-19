@@ -34,7 +34,7 @@ namespace Marten.Linq
             _options = options;
         }
 
-        public IWhereFragment ParseWhereFragment(IDocumentMapping mapping, Expression expression)
+        public IWhereFragment ParseWhereFragment(IQueryableDocument mapping, Expression expression)
         {
             if (expression is LambdaExpression)
             {
@@ -68,7 +68,7 @@ namespace Marten.Linq
         };
 
 
-        private IWhereFragment buildSimpleWhereClause(IDocumentMapping mapping, BinaryExpression binary)
+        private IWhereFragment buildSimpleWhereClause(IQueryableDocument mapping, BinaryExpression binary)
         {
             var isValueExpressionOnRight = binary.Right.IsValueExpression();
             var jsonLocatorExpression = isValueExpressionOnRight ? binary.Left : binary.Right;

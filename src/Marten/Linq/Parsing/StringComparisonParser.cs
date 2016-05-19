@@ -21,7 +21,7 @@ namespace Marten.Linq.Parsing
             return _supportedMethods.Any(m => AreMethodsEqual(m, expression.Method));
         }
 
-        public IWhereFragment Parse(IDocumentMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var locator = GetLocator(mapping, expression);
 
@@ -72,7 +72,7 @@ namespace Marten.Linq.Parsing
         /// <param name="mapping"></param>
         /// <param name="expression"></param>
         /// <returns></returns>
-        protected virtual string GetLocator(IDocumentMapping mapping, MethodCallExpression expression)
+        protected virtual string GetLocator(IQueryableDocument mapping, MethodCallExpression expression)
         {
             if (!expression.Method.IsStatic && expression.Object != null && expression.Object.NodeType != ExpressionType.Constant)
             {
