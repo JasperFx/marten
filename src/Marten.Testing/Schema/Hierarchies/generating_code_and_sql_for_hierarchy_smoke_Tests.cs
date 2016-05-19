@@ -21,7 +21,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            theHierarchy.ToUpsertFunction().WriteFunctionSql(PostgresUpsertType.Standard, writer);
+            new UpsertFunction(theHierarchy).WriteFunctionSql(PostgresUpsertType.Standard, writer);
 
             var sql = writer.ToString();
 
@@ -33,7 +33,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            theHierarchy.ToUpsertFunction().WriteFunctionSql(PostgresUpsertType.Legacy, writer);
+            new UpsertFunction(theHierarchy).WriteFunctionSql(PostgresUpsertType.Legacy, writer);
 
             var sql = writer.ToString();
 
@@ -59,7 +59,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            theHierarchy.ToUpsertFunction().WriteFunctionSql(PostgresUpsertType.Standard, writer);
+            new UpsertFunction(theHierarchy).WriteFunctionSql(PostgresUpsertType.Standard, writer);
 
             var sql = writer.ToString();
 
@@ -71,7 +71,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            theHierarchy.ToUpsertFunction().WriteFunctionSql(PostgresUpsertType.Legacy, writer);
+            new UpsertFunction(theHierarchy).WriteFunctionSql(PostgresUpsertType.Legacy, writer);
 
             var sql = writer.ToString();
 

@@ -53,7 +53,7 @@ namespace Marten.Schema
             var mappingParam = Expression.Parameter(typeof(DocumentMapping), "mapping");
             var aliasParam = Expression.Parameter(typeof(string), "alias");
 
-            var arguments = mapping.ToUpsertFunction().OrderedArguments().Select(x =>
+            var arguments = new UpsertFunction(mapping).OrderedArguments().Select(x =>
             {
                 return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, json, mappingParam, aliasParam);
             });

@@ -22,7 +22,7 @@ namespace Marten.Schema.BulkLoading
         {
             _mapping = mapping;
             _assignment = assignment;
-            var upsertFunction = mapping.ToUpsertFunction();
+            var upsertFunction = new UpsertFunction(mapping);
 
 
             var writer = Expression.Parameter(typeof(NpgsqlBinaryImporter), "writer");

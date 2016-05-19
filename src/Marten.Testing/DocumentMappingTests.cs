@@ -191,7 +191,7 @@ namespace Marten.Testing
         public void to_upsert_baseline()
         {
             var mapping = DocumentMapping.For<Squad>();
-            var function = mapping.ToUpsertFunction();
+            var function = new UpsertFunction(mapping);
 
             function.Arguments.Select(x => x.Column)
                 .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn);
@@ -204,7 +204,7 @@ namespace Marten.Testing
             mapping.DuplicateField("FirstName");
             mapping.DuplicateField("LastName");
 
-            var function = mapping.ToUpsertFunction();
+            var function = new UpsertFunction(mapping);
 
             function.Arguments.Select(x => x.Column)
                 .ShouldHaveTheSameElementsAs("id", "data", "first_name", "last_name", DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn);
@@ -216,7 +216,7 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<Squad>();
             mapping.AddSubClass(typeof(BaseballTeam));
 
-            var function = mapping.ToUpsertFunction();
+            var function = new UpsertFunction(mapping);
 
             function.Arguments.Select(x => x.Column)
                 .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, DocumentMapping.DocumentTypeColumn);
