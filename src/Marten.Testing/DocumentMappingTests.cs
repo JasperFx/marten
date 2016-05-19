@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Linq;
+using Baseline;
 using Marten.Schema;
 using Marten.Schema.Hierarchies;
 using Marten.Schema.Identity.Sequences;
@@ -160,7 +161,7 @@ namespace Marten.Testing
         public void to_table_without_subclasses_and_no_duplicated_fields()
         {
             var mapping = DocumentMapping.For<IntDoc>();
-            mapping.ToTable(null).Columns.Select(x => x.Name)
+            mapping.SchemaObjects.As<DocumentSchemaObjects>().ToTable(null).Columns.Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn);
         }
 
@@ -169,7 +170,7 @@ namespace Marten.Testing
         {
             var mapping = DocumentMapping.For<User>();
             mapping.DuplicateField("FirstName");
-            mapping.ToTable(null).Columns.Select(x => x.Name)
+            mapping.SchemaObjects.As<DocumentSchemaObjects>().ToTable(null).Columns.Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, "first_name");
 
         }
@@ -180,7 +181,7 @@ namespace Marten.Testing
             var mapping = DocumentMapping.For<Squad>();
             mapping.AddSubClass(typeof(BaseballTeam));
 
-            var table = mapping.ToTable(null);
+            var table = mapping.SchemaObjects.As<DocumentSchemaObjects>().ToTable(null);
 
             var typeColumn = table.Columns.Last();
             typeColumn.Name.ShouldBe(DocumentMapping.DocumentTypeColumn);

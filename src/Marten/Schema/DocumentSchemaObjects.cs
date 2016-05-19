@@ -1,12 +1,20 @@
 using System;
 using System.IO;
+using System.Linq;
 using Baseline;
+using Marten.Generation;
 using Marten.Services;
+using Marten.Util;
 
 namespace Marten.Schema
 {
     public class DocumentSchemaObjects : IDocumentSchemaObjects
     {
+        public static DocumentSchemaObjects For<T>()
+        {
+            return new DocumentSchemaObjects(DocumentMapping.For<T>());
+        }
+
         private readonly DocumentMapping _mapping;
         private bool _hasCheckedSchema;
         private readonly object _lock = new object();
@@ -18,7 +26,7 @@ namespace Marten.Schema
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
-            var table = _mapping.ToTable(schema);
+            var table = ToTable(schema);
             table.Write(writer);
             writer.WriteLine();
             writer.WriteLine();
@@ -146,6 +154,32 @@ namespace Marten.Schema
 
             var sql = writer.ToString();
             executeSql(sql);
+        }
+
+
+        public virtual TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
+                                                                       // can do foreign keys
+        {
+            var pgIdType = TypeMappings.GetPgType(_mapping.IdMember.GetMemberType());
+            var table = new TableDefinition(_mapping.Table, new TableColumn("id", pgIdType));
+            table.Columns.Add(new TableColumn("data", "jsonb") { Directive = "NOT NULL" });
+
+            table.Columns.Add(new TableColumn(DocumentMapping.LastModifiedColumn, "timestamp with time zone")
+            {
+                Directive = "DEFAULT transaction_timestamp()"
+            });
+            table.Columns.Add(new TableColumn(DocumentMapping.VersionColumn, "uuid"));
+            table.Columns.Add(new TableColumn(DocumentMapping.DotNetTypeColumn, "varchar"));
+
+            _mapping.DuplicatedFields.Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
+
+
+            if (_mapping.IsHierarchy())
+            {
+                table.Columns.Add(new TableColumn(DocumentMapping.DocumentTypeColumn, "varchar"));
+            }
+
+            return table;
         }
     }
 

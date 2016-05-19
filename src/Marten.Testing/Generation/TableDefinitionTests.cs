@@ -1,4 +1,5 @@
-﻿using Marten.Generation;
+﻿using Baseline;
+using Marten.Generation;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -11,7 +12,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void equivalency_positive()
         {
-            var users = DocumentMapping.For<User>();
+            var users = DocumentSchemaObjects.For<User>();
             var table1 = users.ToTable(null);
             var table2 = users.ToTable(null);
 
@@ -23,7 +24,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void equivalency_negative_different_numbers_of_columns()
         {
-            var users = DocumentMapping.For<User>();
+            var users = DocumentSchemaObjects.For<User>();
             var table1 = users.ToTable(null);
             var table2 = users.ToTable(null);
 
@@ -35,7 +36,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void equivalency_negative_column_type_changed()
         {
-            var users = DocumentMapping.For<User>();
+            var users = DocumentSchemaObjects.For<User>();
             var table1 = users.ToTable(null);
             var table2 = users.ToTable(null);
 
@@ -47,7 +48,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void equivalency_positive_column_name_case_insensitive()
         {
-            var users = DocumentMapping.For<User>();
+            var users = DocumentSchemaObjects.For<User>();
             var table1 = users.ToTable(null);
             var table2 = users.ToTable(null);
 
@@ -64,8 +65,8 @@ namespace Marten.Testing.Generation
             var users = DocumentMapping.For<User>();
             users.DuplicateField("FirstName");
 
-            var table1 = users.ToTable(null);
-            var table2 = users.ToTable(null);
+            var table1 = users.SchemaObjects.As<DocumentSchemaObjects>().ToTable(null);
+            var table2 = users.SchemaObjects.As<DocumentSchemaObjects>().ToTable(null);
 
             table1.ReplaceOrAddColumn("first_name", "varchar");
             table2.ReplaceOrAddColumn("first_name", "character varying");

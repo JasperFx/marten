@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Baseline;
 using Baseline.Reflection;
-using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -55,6 +54,11 @@ namespace Marten.Schema
                 IdStrategy = defineIdStrategy(documentType, storeOptions);
             }
 
+            applyAnyMartenAttributes(documentType);
+        }
+
+        private void applyAnyMartenAttributes(Type documentType)
+        {
             documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
 
             documentType.GetProperties()
@@ -386,32 +390,6 @@ namespace Marten.Schema
         public IField FieldForColumn(string columnName)
         {
             return _fields.Values.FirstOrDefault(x => x.ColumnName == columnName);
-        }
-
-        // TODO -- extract most of this somehow. It's huuuuuge
-        public virtual TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
-            // can do foreign keys
-        {
-            var pgIdType = TypeMappings.GetPgType(IdMember.GetMemberType());
-            var table = new TableDefinition(Table, new TableColumn("id", pgIdType));
-            table.Columns.Add(new TableColumn("data", "jsonb") {Directive = "NOT NULL"});
-
-            table.Columns.Add(new TableColumn(LastModifiedColumn, "timestamp with time zone")
-            {
-                Directive = "DEFAULT transaction_timestamp()"
-            });
-            table.Columns.Add(new TableColumn(VersionColumn, "uuid"));
-            table.Columns.Add(new TableColumn(DotNetTypeColumn, "varchar"));
-
-            _fields.Values.OfType<DuplicatedField>().Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
-
-
-            if (IsHierarchy())
-            {
-                table.Columns.Add(new TableColumn(DocumentTypeColumn, "varchar"));
-            }
-
-            return table;
         }
 
 

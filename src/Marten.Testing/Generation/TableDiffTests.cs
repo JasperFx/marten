@@ -12,7 +12,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void perfect_match()
         {
-            var users = DocumentMapping.For<User>();
+            var users = DocumentSchemaObjects.For<User>();
             var actual = users.ToTable(null);
             var expected = users.ToTable(null);
 
@@ -23,7 +23,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void can_match_up_on_columns()
         {
-            var users = DocumentMapping.For<User>();
+            var users = DocumentSchemaObjects.For<User>();
             var actual = users.ToTable(null);
             var expected = users.ToTable(null);
 
@@ -36,7 +36,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void not_matching_with_missing_columns()
         {
-            var users = DocumentMapping.For<User>();
+            var users = DocumentSchemaObjects.For<User>();
             var actual = users.ToTable(null);
 
             var expected = users.ToTable(null);
@@ -55,7 +55,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void not_matching_with_extra_columns()
         {
-            var users = DocumentMapping.For<User>();
+            var users = DocumentSchemaObjects.For<User>();
             var actual = users.ToTable(null);
             var tableColumn = new TableColumn("new", "varchar");
             actual.Columns.Add(tableColumn);
@@ -71,7 +71,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void not_matching_with_columns_of_same_name_that_are_different()
         {
-            var users = DocumentMapping.For<User>();
+            var users = DocumentSchemaObjects.For<User>();
             var actual = users.ToTable(null);
             actual.ReplaceOrAddColumn("id", "int");
 

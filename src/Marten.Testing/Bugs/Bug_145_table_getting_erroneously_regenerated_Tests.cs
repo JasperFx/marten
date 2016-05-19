@@ -28,7 +28,8 @@ namespace Marten.Testing.Bugs
         {
             var existing = theStore.Schema.TableSchema(typeof(Login));
 
-            var configured = theStore.Schema.MappingFor(typeof(Login)).As<DocumentMapping>().ToTable(theStore.Schema);
+            var configured = theStore.Schema.MappingFor(typeof(Login))
+                .SchemaObjects.As<DocumentSchemaObjects>().ToTable(theStore.Schema);
 
             if (!existing.Equals(configured))
             {
