@@ -17,7 +17,7 @@ namespace Marten.Events
 {
     // TODO -- try to eliminate the IDocumentMapping implementation here
     // just making things ugly
-    public class EventGraph : IDocumentMapping, IEventStoreConfiguration, IProjections
+    public class EventGraph : IDocumentMapping, IEventStoreConfiguration, IProjections, IDocumentSchemaObjects
     {
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
@@ -168,6 +168,8 @@ namespace Marten.Events
             return new EventStreamStorage(this);
         }
 
+        public IDocumentSchemaObjects SchemaObjects => this;
+
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             writeBasicTables(schema, writer);
@@ -175,15 +177,16 @@ namespace Marten.Events
             // TODO -- need to load the projection and initialize
         }
 
-        void IDocumentMapping.RemoveSchemaObjects(IManagedConnection connection)
+        public void RemoveSchemaObjects(IManagedConnection connection)
         {
             throw new NotImplementedException();
         }
 
-        void IDocumentMapping.DeleteAllDocuments(IConnectionFactory factory)
+        public void DeleteAllDocuments(IConnectionFactory factory)
         {
             throw new NotImplementedException();
         }
+
 
         IncludeJoin<TOther> IDocumentMapping.JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback)
         {

@@ -17,7 +17,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class DocumentMapping : IDocumentMapping
+    public class DocumentMapping : IDocumentMapping, IDocumentSchemaObjects
     {
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
@@ -111,6 +111,8 @@ namespace Marten.Schema
             return Activator.CreateInstance(closedType, schema.StoreOptions.Serializer(), this)
                 .As<IDocumentStorage>();
         }
+
+        public IDocumentSchemaObjects SchemaObjects => this;
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {

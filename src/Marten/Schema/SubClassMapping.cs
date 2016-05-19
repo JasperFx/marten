@@ -106,15 +106,9 @@ namespace Marten.Schema
                 _parent.DocumentType);
         }
 
-        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
-        {
-            _parent.WriteSchemaObjects(schema, writer);
-        }
+        public IDocumentSchemaObjects SchemaObjects => _parent.SchemaObjects;
 
-        public void RemoveSchemaObjects(IManagedConnection connection)
-        {
-            throw new NotSupportedException($"Invalid to remove schema objects for {DocumentType}, Use the parent {_parent.DocumentType} instead");
-        }
+
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
@@ -126,10 +120,6 @@ namespace Marten.Schema
             return _parent.JoinToInclude<TOther>(joinType, other, members, callback);
         }
 
-        public void ResetSchemaExistenceChecks()
-        {
-            _parent.ResetSchemaExistenceChecks();
-        }
     }
 
 

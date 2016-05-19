@@ -177,7 +177,7 @@ namespace Marten.Schema
                 var filename = directory.AppendPath("mt_streams.sql");
                 var writer = new StringWriter();
 
-                Events.As<IDocumentMapping>().WriteSchemaObjects(this, writer);
+                Events.As<IDocumentMapping>().SchemaObjects.WriteSchemaObjects(this, writer);
 
                 system.WriteStringToFile(filename, writer.ToString());
             }
@@ -195,7 +195,7 @@ namespace Marten.Schema
 
             if (Events.IsActive && !StoreOptions.AllDocumentMappings.Contains(Events.As<IDocumentMapping>()))
             {
-                Events.As<IDocumentMapping>().WriteSchemaObjects(this, writer);
+                Events.As<IDocumentMapping>().SchemaObjects.WriteSchemaObjects(this, writer);
             }
 
             writer.WriteLine(SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo"));
@@ -232,7 +232,7 @@ namespace Marten.Schema
 
         public void ResetSchemaExistenceChecks()
         {
-            AllDocumentMaps().Each(x => x.ResetSchemaExistenceChecks());
+            AllDocumentMaps().Each(x => x.SchemaObjects.ResetSchemaExistenceChecks());
             Events.As<EventGraph>().ResetSchemaExistenceChecks();
 
             _documentTypes.Clear();
@@ -285,7 +285,7 @@ namespace Marten.Schema
             });
 
             sortedMappings.Each(
-                x => x.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, executeSql));
+                x => x.SchemaObjects.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, executeSql));
         }
 
         private void assertNoDuplicateDocumentAliases()

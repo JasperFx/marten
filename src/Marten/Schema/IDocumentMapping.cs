@@ -10,6 +10,17 @@ using Marten.Services.Includes;
 
 namespace Marten.Schema
 {
+    public interface IDocumentSchemaObjects
+    {
+        void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql);
+
+        void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer);
+
+        void RemoveSchemaObjects(IManagedConnection connection);
+
+        void ResetSchemaExistenceChecks();
+    }
+
     public interface IDocumentMapping
     {
         string Alias { get; }
@@ -22,23 +33,18 @@ namespace Marten.Schema
         MemberInfo IdMember { get; }
         string[] SelectFields();
 
-        void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql);
-
         IField FieldFor(IEnumerable<MemberInfo> members);
 
         IWhereFragment FilterDocuments(IWhereFragment query);
 
-
         IWhereFragment DefaultWhereFragment();
         IDocumentStorage BuildStorage(IDocumentSchema schema);
 
-        void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer);
+        IDocumentSchemaObjects SchemaObjects { get; }
 
-        void RemoveSchemaObjects(IManagedConnection connection);
         void DeleteAllDocuments(IConnectionFactory factory);
 
         IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class;
-        void ResetSchemaExistenceChecks();
     }
 
     public static class DocumentMappingExtensions

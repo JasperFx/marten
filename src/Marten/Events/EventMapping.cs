@@ -17,7 +17,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public abstract class EventMapping : IDocumentMapping
+    public abstract class EventMapping : IDocumentMapping, IDocumentSchemaObjects
     {
         private readonly StoreOptions _options;
         private readonly EventGraph _parent;
@@ -84,6 +84,7 @@ namespace Marten.Events
         }
 
         public abstract IDocumentStorage BuildStorage(IDocumentSchema schema);
+        public IDocumentSchemaObjects SchemaObjects => this;
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {

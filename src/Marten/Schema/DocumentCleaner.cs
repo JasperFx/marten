@@ -68,7 +68,7 @@ AND    n.nspname = '{1}';";
 
             using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
             {
-                mapping.RemoveSchemaObjects(connection);
+                mapping.SchemaObjects.RemoveSchemaObjects(connection);
                 connection.Commit();
             }
         }
