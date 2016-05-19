@@ -63,7 +63,7 @@ namespace Marten.Events
             return new[] {"id", "type", "version", "data"};
         }
 
-        public string ToSelectClause(IDocumentMapping mapping)
+        public string ToSelectClause(IQueryableDocument mapping)
         {
             return $"select id, type, version, data from {_events.DatabaseSchemaName}.mt_events";
         }

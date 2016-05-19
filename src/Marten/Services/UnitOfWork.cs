@@ -157,7 +157,7 @@ namespace Marten.Services
             _deletes.Keys.Each(type =>
             {
                 var storage = _schema.StorageFor(type);
-                var mapping = _schema.MappingFor(type);
+                var mapping = _schema.MappingFor(type).ToQueryableDocument();
 
                 _deletes[type].Each(id => id.Configure(_schema.Parser, storage, mapping, batch));
             });

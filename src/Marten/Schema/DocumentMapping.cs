@@ -14,7 +14,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class DocumentMapping : IDocumentMapping
+    public class DocumentMapping : IDocumentMapping, IQueryableDocument
     {
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
@@ -130,8 +130,12 @@ namespace Marten.Schema
             return (IdAssignment<T>) Activator.CreateInstance(assignerType, IdMember, IdStrategy, schema);
         }
 
-        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members,
-            Action<TOther> callback) where TOther : class
+        public IQueryableDocument ToQueryableDocument()
+        {
+            return this;
+        }
+
+        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback) where TOther : class
         {
             var joinOperator = joinType == JoinType.Inner ? "INNER JOIN" : "LEFT OUTER JOIN";
 

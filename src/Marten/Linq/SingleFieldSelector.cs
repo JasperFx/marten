@@ -10,7 +10,7 @@ namespace Marten.Linq
 {
     public class SingleFieldSelector<T> : BasicSelector, ISelector<T>
     {
-        public SingleFieldSelector(IDocumentMapping mapping, MemberInfo[] members)
+        public SingleFieldSelector(IQueryableDocument mapping, MemberInfo[] members)
             : base(mapping.FieldFor(members).SqlLocator)
         {
         }

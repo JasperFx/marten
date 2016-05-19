@@ -16,7 +16,7 @@ namespace Marten.Linq
 
         string[] SelectFields();
 
-        string ToSelectClause(IDocumentMapping mapping);
+        string ToSelectClause(IQueryableDocument mapping);
     }
 
     public abstract class BasicSelector
@@ -30,7 +30,7 @@ namespace Marten.Linq
 
         public string[] SelectFields() => _selectFields;
 
-        public string ToSelectClause(IDocumentMapping mapping)
+        public string ToSelectClause(IQueryableDocument mapping)
         {
             return $"select {SelectFields().Join(", ")} from {mapping.Table.QualifiedName} as d";
         }

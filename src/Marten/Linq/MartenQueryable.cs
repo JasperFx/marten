@@ -64,8 +64,8 @@ namespace Marten.Linq
 
             schema.EnsureStorageExists(typeof (TInclude));
 
-            var mapping = schema.MappingFor(typeof (T));
-            var included = schema.MappingFor(typeof (TInclude));
+            var mapping = schema.MappingFor(typeof (T)).ToQueryableDocument();
+            var included = schema.MappingFor(typeof (TInclude)).ToQueryableDocument();
 
             var visitor = new FindMembers();
             visitor.Visit(idSource);

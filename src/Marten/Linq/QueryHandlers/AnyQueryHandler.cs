@@ -25,7 +25,7 @@ namespace Marten.Linq.QueryHandlers
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
-            var mapping = _schema.MappingFor(_query);
+            var mapping = _schema.MappingFor(_query).ToQueryableDocument();
             var sql = "select (count(*) > 0) as result from " + mapping.Table.QualifiedName + " as d";
 
             var where = _schema.BuildWhereFragment(mapping, _query);

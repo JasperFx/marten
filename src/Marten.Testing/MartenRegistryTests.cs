@@ -24,7 +24,7 @@ namespace Marten.Testing
         [Fact]
         public void property_searching_override()
         {
-            theSchema.MappingFor(typeof(User))
+            theSchema.MappingFor(typeof(User)).As<DocumentMapping>()
                 .PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
@@ -78,7 +78,7 @@ namespace Marten.Testing
         [Fact]
         public void mapping_is_set_to_containment_if_gin_index_is_added()
         {
-            var mapping = theSchema.MappingFor(typeof(Organization));
+            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
             mapping.PropertySearching.ShouldBe(PropertySearching.ContainmentOperator);
         }
 

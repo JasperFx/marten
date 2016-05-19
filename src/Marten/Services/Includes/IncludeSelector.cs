@@ -23,7 +23,7 @@ namespace Marten.Services.Includes
             return innerFields.Concat(outerFields).ToArray();
         }
 
-        public IncludeSelector(string tableAlias, IDocumentMapping includedMapping, Action<TIncluded> callback, ISelector<TSearched> inner, IResolver<TIncluded> resolver)
+        public IncludeSelector(string tableAlias, IQueryableDocument includedMapping, Action<TIncluded> callback, ISelector<TSearched> inner, IResolver<TIncluded> resolver)
             : base(ToSelectFields(tableAlias, includedMapping, inner))
         {
             _callback = callback;

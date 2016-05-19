@@ -18,11 +18,11 @@ namespace Marten.Linq.QueryHandlers
         private readonly IDocumentSchema _schema;
         private readonly QueryModel _query;
         private readonly ISelector<string> _selector;
-        private readonly IDocumentMapping _mapping;
+        private readonly IQueryableDocument _mapping;
 
         public JsonQueryHandler(IDocumentSchema schema, QueryModel query)
         {
-            _mapping = schema.MappingFor(query);
+            _mapping = schema.MappingFor(query).ToQueryableDocument();
             _schema = schema;
             _query = query;
 

@@ -13,12 +13,12 @@ namespace Marten.Linq.QueryHandlers
     {
         private readonly IDocumentSchema _schema;
         private readonly QueryModel _query;
-        private readonly IDocumentMapping _mapping;
+        private readonly IQueryableDocument _mapping;
 
         public static ISelector<T> BuildSelector(IDocumentSchema schema, QueryModel query,
             IIncludeJoin[] joins, QueryStatistics stats)
         {
-            var mapping = schema.MappingFor(query);
+            var mapping = schema.MappingFor(query).ToQueryableDocument();
             var selector = schema.BuildSelector<T>(mapping, query);
 
             if (stats != null)
@@ -37,7 +37,7 @@ namespace Marten.Linq.QueryHandlers
         public LinqQueryHandler(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins, QueryStatistics stats)
             : base(BuildSelector(schema, query, joins, stats))
         {
-            _mapping = schema.MappingFor(query);
+            _mapping = schema.MappingFor(query).ToQueryableDocument();
             _schema = schema;
             _query = query;
         }

@@ -25,7 +25,7 @@ namespace Marten.Linq.QueryHandlers
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
-            var mapping = _schema.MappingFor(_query.SourceType());
+            var mapping = _schema.MappingFor(_query.SourceType()).ToQueryableDocument();
 
             var sql = "select count(*) as number from " + mapping.Table.QualifiedName + " as d";
 

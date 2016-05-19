@@ -25,18 +25,18 @@ namespace Marten.Linq
             return setter.Field;
         }
 
-        public ISelector<T> ToSelector<T>(IDocumentMapping mapping)
+        public ISelector<T> ToSelector<T>(IQueryableDocument mapping)
         {
             return new SelectTransformer<T>(mapping, this);
         }
 
-        public string ToSelectField(IDocumentMapping mapping)
+        public string ToSelectField(IQueryableDocument mapping)
         {
             var jsonBuildObjectArgs = Setters.Select(x => x.ToJsonBuildObjectPair(mapping)).Join(", ");
             return  $"json_build_object({jsonBuildObjectArgs}) as json";
         }
 
-        public ISelector<T> ToJsonSelector<T>(IDocumentMapping mapping)
+        public ISelector<T> ToJsonSelector<T>(IQueryableDocument mapping)
         {
             var field = ToSelectField(mapping);
             return new JsonSelector(field).As<ISelector<T>>();

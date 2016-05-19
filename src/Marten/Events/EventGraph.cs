@@ -92,11 +92,6 @@ namespace Marten.Events
 
         public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
 
-        string[] IQueryableDocument.SelectFields()
-        {
-            throw new NotSupportedException();
-        }
-
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
         {
             if (_checkedSchema) return;
@@ -195,11 +190,11 @@ namespace Marten.Events
             return (IdAssignment<T>)Activator.CreateInstance(assignerType, idMember, new CombGuidIdGeneration(), schema);
         }
 
-
-        IncludeJoin<TOther> IQueryableDocument.JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback)
+        public IQueryableDocument ToQueryableDocument()
         {
             throw new NotSupportedException();
         }
+
 
         public Aggregator<T> AggregateFor<T>() where T : class, new()
         {

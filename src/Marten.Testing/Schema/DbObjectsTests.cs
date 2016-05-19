@@ -40,10 +40,10 @@ namespace Marten.Testing.Schema
 
             var indices = store2.Schema.DbObjects.AllIndexes();
 
-            indices.Any(x => Equals(x.Table, store1.Schema.MappingFor(typeof(User)).Table))
+            indices.Any(x => Equals(x.Table, store1.Schema.MappingFor(typeof(User)).ToQueryableDocument().Table))
                 .ShouldBeTrue();
 
-            indices.Any(x => Equals(x.Table, store2.Schema.MappingFor(typeof(User)).Table))
+            indices.Any(x => Equals(x.Table, store2.Schema.MappingFor(typeof(User)).ToQueryableDocument().Table))
                 .ShouldBeTrue();
 
 

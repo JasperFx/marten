@@ -33,7 +33,7 @@ namespace Marten.Linq.QueryHandlers
             var sql = _sql;
             if (!sql.Contains("select", StringComparison.OrdinalIgnoreCase))
             {
-                var mapping = _schema.MappingFor(typeof(T));
+                var mapping = _schema.MappingFor(typeof(T)).ToQueryableDocument();
                 var tableName = mapping.Table.QualifiedName;
                 sql = "select data from {0} {1}".ToFormat(tableName, sql);
             }

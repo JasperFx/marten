@@ -77,7 +77,7 @@ namespace Marten.Testing.Schema
             theSession.SaveChanges();
             theSession.Dispose();
 
-            var tableName = theStore.Schema.MappingFor(typeof(Target)).Table;
+            var tableName = theStore.Schema.MappingFor(typeof(Target)).ToQueryableDocument().Table;
 
             theStore.Schema.DbObjects.DocumentTables().Contains(tableName)
                 .ShouldBeTrue();

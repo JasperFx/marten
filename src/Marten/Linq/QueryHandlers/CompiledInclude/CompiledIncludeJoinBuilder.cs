@@ -66,14 +66,14 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
             visitor.Visit(idSource);
             var members = visitor.Members.ToArray();
 
-            var mapping = _schema.MappingFor(typeof(TDoc));
+            var mapping = _schema.MappingFor(typeof(TDoc)).ToQueryableDocument();
             var typeContainer = new IncludeTypeContainer {IncludeType = includeOperator.Callback.Body.Type};
 
             var property = typeof (IncludeResultOperator).GetProperty("Callback");
 
             var callback = callbackResolver.Resolve(property, typeContainer);
 
-            var included = _schema.MappingFor(typeContainer.IncludeType);
+            var included = _schema.MappingFor(typeContainer.IncludeType).ToQueryableDocument();
 
             return mapping.JoinToInclude(joinType, included, members, callback);
         }

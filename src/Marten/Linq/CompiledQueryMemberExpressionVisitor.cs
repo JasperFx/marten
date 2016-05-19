@@ -10,12 +10,12 @@ namespace Marten.Linq
     internal class CompiledQueryMemberExpressionVisitor : ExpressionVisitor
     {
         private readonly IList<IDbParameterSetter> _parameterSetters = new List<IDbParameterSetter>();
-        private readonly IDocumentMapping _mapping;
+        private readonly IQueryableDocument _mapping;
         private readonly Type _queryType;
         private readonly EnumStorage _enumStorage;
         private IField _lastMember;
 
-        public CompiledQueryMemberExpressionVisitor(IDocumentMapping mapping, Type queryType, EnumStorage enumStorage)
+        public CompiledQueryMemberExpressionVisitor(IQueryableDocument mapping, Type queryType, EnumStorage enumStorage)
         {
             _mapping = mapping;
             _queryType = queryType;

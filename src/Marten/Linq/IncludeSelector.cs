@@ -39,7 +39,7 @@ namespace Marten.Linq
             return _inner.SelectFields();
         }
 
-        public string ToSelectClause(IDocumentMapping mapping)
+        public string ToSelectClause(IQueryableDocument mapping)
         {
             var select = _inner.ToSelectClause(mapping);
             return $"{select} {_joins.Select(x => x.JoinText).Join(" ")}";

@@ -14,7 +14,7 @@ namespace Marten.Testing.Linq
     public class WholeDocumentSelectorTests
     {
         private readonly IResolver<User> theResolver = Substitute.For<IResolver<User>>();
-        private readonly IDocumentMapping theMapping = DocumentMapping.For<User>();
+        private readonly IQueryableDocument theMapping = DocumentMapping.For<User>().ToQueryableDocument();
         private WholeDocumentSelector<User> theSelector;
 
         public WholeDocumentSelectorTests()

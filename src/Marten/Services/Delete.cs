@@ -27,7 +27,7 @@ namespace Marten.Services
 
         public IWhereFragment Where { get; set; }
 
-        public void Configure(MartenExpressionParser parser, IDocumentStorage storage, IDocumentMapping mapping, UpdateBatch batch)
+        public void Configure(MartenExpressionParser parser, IDocumentStorage storage, IQueryableDocument mapping, UpdateBatch batch)
         {
             if (Where == null)
             {

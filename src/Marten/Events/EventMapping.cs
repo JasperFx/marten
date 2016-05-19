@@ -17,7 +17,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public abstract class EventMapping : IDocumentMapping
+    public abstract class EventMapping : IDocumentMapping, IQueryableDocument
     {
         private readonly StoreOptions _options;
         private readonly EventGraph _parent;
@@ -96,7 +96,12 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class
+        public IQueryableDocument ToQueryableDocument()
+        {
+            return this;
+        }
+
+        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback) where TOther : class
         {
             return _inner.JoinToInclude<TOther>(joinType, other, members, callback);
         }

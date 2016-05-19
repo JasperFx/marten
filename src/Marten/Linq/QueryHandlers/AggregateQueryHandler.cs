@@ -60,7 +60,7 @@ namespace Marten.Linq.QueryHandlers
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
-            var mapping = _schema.MappingFor(_query.SourceType());
+            var mapping = _schema.MappingFor(_query.SourceType()).ToQueryableDocument();
             var locator = mapping.JsonLocator(_query.SelectClause.Selector);
             var field = _operator.ToFormat(locator);
 

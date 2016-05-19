@@ -15,7 +15,7 @@ namespace Marten.Schema
 
         IWhereFragment DefaultWhereFragment();
 
-        IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class;
+        IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback) where TOther : class;
 
         IField FieldFor(IEnumerable<MemberInfo> members);
 
@@ -27,17 +27,20 @@ namespace Marten.Schema
     }
 
 
-    public interface IDocumentMapping : IQueryableDocument
+    public interface IDocumentMapping
     {
         Type DocumentType { get; }
 
         IDocumentStorage BuildStorage(IDocumentSchema schema);
 
         IDocumentSchemaObjects SchemaObjects { get; }
+        TableName Table { get; }
 
         void DeleteAllDocuments(IConnectionFactory factory);
 
         IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema);
+
+        IQueryableDocument ToQueryableDocument();
 
         // More methods for creating a deleter? Queryable document?
 

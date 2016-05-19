@@ -18,7 +18,7 @@ namespace Marten.Linq.QueryHandlers
         private const string NoElementsMessage = "Sequence contains no elements";
         private const string MoreThanOneElementMessage = "Sequence contains more than one element";
         private readonly int _rowLimit;
-        private readonly IDocumentMapping _mapping;
+        private readonly IQueryableDocument _mapping;
         private readonly IDocumentSchema _schema;
         private readonly QueryModel _query;
         private readonly bool _canBeNull;
@@ -48,7 +48,7 @@ namespace Marten.Linq.QueryHandlers
         public OneResultHandler(int rowLimit, IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins, bool canBeNull = true, bool canBeMultiples = true)
         {
             _rowLimit = rowLimit;
-            _mapping = schema.MappingFor(query);
+            _mapping = schema.MappingFor(query).ToQueryableDocument();
             _schema = schema;
             _query = query;
             _canBeNull = canBeNull;

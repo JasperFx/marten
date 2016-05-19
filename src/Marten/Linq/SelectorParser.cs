@@ -55,7 +55,7 @@ namespace Marten.Linq
             return base.VisitMemberBinding(node);
         }
 
-        public ISelector<T> ToSelector<T>(IDocumentMapping mapping)
+        public ISelector<T> ToSelector<T>(IQueryableDocument mapping)
         {
             if (_isJson && _target == null) return new JsonSelector().As<ISelector<T>>();
 
@@ -113,7 +113,7 @@ namespace Marten.Linq
 
         }
 
-        public string ToJsonBuildObjectPair(IDocumentMapping mapping)
+        public string ToJsonBuildObjectPair(IQueryableDocument mapping)
         {
             var locator = mapping.FieldFor(Field.Members).SqlLocator;
             return $"'{Setter.Name}', {locator}";

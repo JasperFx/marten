@@ -84,7 +84,7 @@ namespace Marten.Events
             return new string[] { "id", "version", "type", "timestamp" };
         }
 
-        public string ToSelectClause(IDocumentMapping mapping)
+        public string ToSelectClause(IQueryableDocument mapping)
         {
             return $"select id, version, type, timestamp as timestamp from {_events.DatabaseSchemaName}.mt_streams";
         }

@@ -8,7 +8,7 @@ namespace Marten.Linq
 {
     public class SelectTransformer<T> : BasicSelector, ISelector<T>
     {
-        public SelectTransformer(IDocumentMapping mapping, TargetObject target) 
+        public SelectTransformer(IQueryableDocument mapping, TargetObject target) 
             : base(target.ToSelectField(mapping))
         {
         }

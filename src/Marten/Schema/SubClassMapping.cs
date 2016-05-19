@@ -11,7 +11,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class SubClassMapping : IDocumentMapping
+    public class SubClassMapping : IDocumentMapping, IQueryableDocument
     {
         private readonly DocumentMapping _inner;
 
@@ -107,7 +107,12 @@ namespace Marten.Schema
             return Parent.ToIdAssignment<T>(schema);
         }
 
-        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members,
+        public IQueryableDocument ToQueryableDocument()
+        {
+            return this;
+        }
+
+        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members,
             Action<TOther> callback) where TOther : class
         {
             return Parent.JoinToInclude(joinType, other, members, callback);

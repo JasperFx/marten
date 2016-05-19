@@ -43,7 +43,7 @@ namespace Marten.Linq
             return query.AllResultOperators().Any(x => x is T);
         }
 
-        public static string ToOrderClause(this QueryModel query, IDocumentMapping mapping)
+        public static string ToOrderClause(this QueryModel query, IQueryableDocument mapping)
         {
             var orders = query.BodyClauses.OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
             if (!orders.Any()) return string.Empty;
@@ -51,7 +51,7 @@ namespace Marten.Linq
             return " order by " + orders.Select(c => ToOrderClause(c, mapping)).Join(", ");
         }
 
-        public static string ToOrderClause(this Ordering clause, IDocumentMapping mapping)
+        public static string ToOrderClause(this Ordering clause, IQueryableDocument mapping)
         {
             var locator = mapping.JsonLocator(clause.Expression);
             return clause.OrderingDirection == OrderingDirection.Asc
@@ -73,7 +73,7 @@ namespace Marten.Linq
 
         public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, QueryModel query)
         {
-            var mapping = schema.MappingFor(query.SourceType());
+            var mapping = schema.MappingFor(query.SourceType()).ToQueryableDocument();
             return schema.BuildWhereFragment(mapping, query);
         }
 
@@ -91,7 +91,7 @@ namespace Marten.Linq
             return take == null ? sql : sql + " LIMIT " + take.Count + " ";
         }
 
-        public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, IDocumentMapping mapping, QueryModel query)
+        public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, IQueryableDocument mapping, QueryModel query)
         {
             if (query.SelectClause.Selector.Type == query.SourceType())
             {
@@ -112,7 +112,7 @@ namespace Marten.Linq
 
         public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, QueryModel query)
         {
-            var mapping = schema.MappingFor(query.SourceType());
+            var mapping = schema.MappingFor(query.SourceType()).ToQueryableDocument();
             return schema.BuildSelector<T>(mapping, query);
         }
 

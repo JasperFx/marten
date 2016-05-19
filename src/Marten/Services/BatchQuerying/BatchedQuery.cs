@@ -65,7 +65,9 @@ namespace Marten.Services.BatchQuerying
                 return Task.FromResult(_identityMap.Retrieve<T>(id));
             }
 
-            return AddItem(new LoadByIdHandler<T>(_schema.ResolverFor<T>(), _schema.MappingFor(typeof (T)), id));
+            var mapping = _schema.MappingFor(typeof (T)).ToQueryableDocument();
+
+            return AddItem(new LoadByIdHandler<T>(_schema.ResolverFor<T>(), mapping, id));
         }
 
 
@@ -86,7 +88,7 @@ namespace Marten.Services.BatchQuerying
             private Task<IList<TDoc>> load<TKey>(TKey[] keys)
             {
                 var resolver = _parent._schema.ResolverFor<TDoc>();
-                var mapping = _parent._schema.MappingFor(typeof (TDoc));
+                var mapping = _parent._schema.MappingFor(typeof (TDoc)).ToQueryableDocument();
 
                 return _parent.AddItem(new LoadByIdArrayHandler<TDoc, TKey>(resolver, mapping, keys));
             }

@@ -7,10 +7,10 @@ namespace Marten.Services.Includes
     public class IncludeJoin<T> : IIncludeJoin where T : class
     {
         public string JoinText { get; }
-        private readonly IDocumentMapping _mapping;
+        private readonly IQueryableDocument _mapping;
         private readonly Action<T> _callback;
 
-        public IncludeJoin(IDocumentMapping mapping, string joinText, string tableAlias, Action<T> callback)
+        public IncludeJoin(IQueryableDocument mapping, string joinText, string tableAlias, Action<T> callback)
         {
             JoinText = joinText;
             _mapping = mapping;

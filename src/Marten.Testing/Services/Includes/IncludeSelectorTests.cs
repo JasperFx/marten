@@ -15,7 +15,7 @@ namespace Marten.Testing.Services.Includes
 
     public class IncludeSelectorTests
     {
-        private IDocumentMapping theMapping = DocumentMapping.For<User>();
+        private IQueryableDocument theMapping = DocumentMapping.For<User>();
         private Action<User> theCallback = Substitute.For<Action<User>>();
         private ISelector<Issue> inner = Substitute.For<ISelector<Issue>>();
         private IResolver<User> theResolver = Substitute.For<IResolver<User>>();
