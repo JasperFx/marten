@@ -29,18 +29,26 @@ namespace Marten.Schema
 
     public interface IDocumentMapping : IQueryableDocument
     {
+        /*
+        // These 3 need to move out
         string Alias { get; }
-        Type DocumentType { get; }
-
         IIdGeneration IdStrategy { get; set; }
         MemberInfo IdMember { get; }
+        */
+
+
+        Type DocumentType { get; }
 
         IDocumentStorage BuildStorage(IDocumentSchema schema);
 
         IDocumentSchemaObjects SchemaObjects { get; }
 
         void DeleteAllDocuments(IConnectionFactory factory);
-        
+
+        IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema);
+
+        // More methods for creating a deleter? Queryable document?
+
     }
 
     public static class DocumentMappingExtensions

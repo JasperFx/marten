@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Shouldly;
@@ -70,7 +71,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
                         ))
             {
                 var store = container.GetInstance<IDocumentStore>();
-                store.Schema.MappingFor(typeof(UserWithString)).IdStrategy.ShouldBeOfType<CustomdIdGeneration>();
+                store.Schema.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomdIdGeneration>();
             }
         }
     }

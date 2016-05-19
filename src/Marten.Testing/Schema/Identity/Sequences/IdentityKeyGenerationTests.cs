@@ -1,4 +1,5 @@
 using System.Linq;
+using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Shouldly;
@@ -13,7 +14,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
         {
             using (
                 var container =
-                    ContainerFactory.Configure(options => options.DefaultIdStrategy = (mapping, storeOptions) => new IdentityKeyGeneration(mapping, storeOptions.HiloSequenceDefaults)))
+                    ContainerFactory.Configure(options => options.DefaultIdStrategy = (mapping, storeOptions) => new IdentityKeyGeneration(mapping.As<DocumentMapping>(), storeOptions.HiloSequenceDefaults)))
             {
                 container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 

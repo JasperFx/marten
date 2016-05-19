@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
+using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Shouldly;
@@ -58,8 +59,8 @@ namespace Marten.Testing.Schema.Identity.Sequences
                         ))
             {
                 var store = container.GetInstance<IDocumentStore>();
-                store.Schema.MappingFor(typeof (UserWithGuid)).IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
-                store.Schema.MappingFor(typeof (UserWithGuid2)).IdStrategy.ShouldBeOfType<GuidIdGeneration>();
+                store.Schema.MappingFor(typeof (UserWithGuid)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
+                store.Schema.MappingFor(typeof (UserWithGuid2)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<GuidIdGeneration>();
             }
         }
 

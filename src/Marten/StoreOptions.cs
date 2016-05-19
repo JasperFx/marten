@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using Baseline;
 using Marten.Events;
 using Marten.Linq.Parsing;
@@ -15,31 +13,90 @@ using Npgsql;
 namespace Marten
 {
     /// <summary>
-    /// StoreOptions supplies all the necessary configuration
-    /// necessary to customize and bootstrap a working
-    /// DocumentStore
+    ///     StoreOptions supplies all the necessary configuration
+    ///     necessary to customize and bootstrap a working
+    ///     DocumentStore
     /// </summary>
     public class StoreOptions
     {
-        private ISerializer _serializer;
-        private IConnectionFactory _factory;
-        private IMartenLogger _logger = new NulloMartenLogger();
+        /// <summary>
+        ///     The default database schema used 'public'.
+        /// </summary>
+        public const string DefaultDatabaseSchemaName = "public";
 
         private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
             new ConcurrentDictionary<Type, DocumentMapping>();
 
-        private string _databaseSchemaName = DefaultDatabaseSchemaName;
+        /// <summary>
+        ///     Add, remove, or reorder global session listeners
+        /// </summary>
+        public readonly IList<IDocumentSessionListener> Listeners = new List<IDocumentSessionListener>();
 
         /// <summary>
-        /// The default database schema used 'public'.
+        ///     Modify the document and event store database mappings for indexes and searching options
         /// </summary>
-        public const string DefaultDatabaseSchemaName = "public";
+        public readonly MartenRegistry Schema;
+
+        private string _databaseSchemaName = DefaultDatabaseSchemaName;
+        private IConnectionFactory _factory;
+        private IMartenLogger _logger = new NulloMartenLogger();
+        private ISerializer _serializer;
+
+        /// <summary>
+        ///     Whether or Marten should attempt to create any missing database schema objects at runtime. This
+        ///     property is "All" by default for more efficient development, but can be set to lower values for production usage.
+        /// </summary>
+        public AutoCreate AutoCreateSchemaObjects = AutoCreate.All;
 
         public StoreOptions()
         {
             Events = new EventGraph(this);
             Schema = new MartenRegistry(this);
         }
+
+        public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Values;
+
+        /// <summary>
+        ///     Upsert syntax options. Defaults to Postgresql >= 9.5, but you can opt into
+        ///     the older upsert style for Postgresql 9.4
+        /// </summary>
+        public PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Standard;
+
+        /// <summary>
+        ///     Sets the database default schema name used to store the documents.
+        /// </summary>
+        public string DatabaseSchemaName
+        {
+            get { return _databaseSchemaName; }
+            set { _databaseSchemaName = value?.ToLowerInvariant(); }
+        }
+
+        /// <summary>
+        ///     Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
+        ///     type as well
+        /// </summary>
+        public HiloSettings HiloSequenceDefaults { get; } = new HiloSettings();
+
+        /// <summary>
+        ///     Sets the batch size for updating or deleting documents in IDocumentSession.SaveChanges() /
+        ///     IUnitOfWork.ApplyChanges()
+        /// </summary>
+        public int UpdateBatchSize { get; set; } = 500;
+
+        /// <summary>
+        ///     Set the default Id strategy for the document mapping.
+        /// </summary>
+        public Func<IDocumentMapping, StoreOptions, IIdGeneration> DefaultIdStrategy { get; set; }
+
+        /// <summary>
+        ///     Configuration of event streams and projections
+        /// </summary>
+        public IEventStoreConfiguration Events { get; }
+
+        /// <summary>
+        ///     Extension point to add custom Linq query parsers
+        /// </summary>
+        public LinqCustomizations Linq { get; } = new LinqCustomizations();
 
         public DocumentMapping MappingFor(Type documentType)
         {
@@ -58,29 +115,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Add, remove, or reorder global session listeners
-        /// </summary>
-        public readonly IList<IDocumentSessionListener> Listeners = new List<IDocumentSessionListener>(); 
-
-        public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Values; 
-
-        /// <summary>
-        /// Upsert syntax options. Defaults to Postgresql >= 9.5, but you can opt into
-        /// the older upsert style for Postgresql 9.4
-        /// </summary>
-        public PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Standard;
-
-        /// <summary>
-        /// Sets the database default schema name used to store the documents.
-        /// </summary>
-        public string DatabaseSchemaName
-        {
-            get { return _databaseSchemaName; }
-            set { _databaseSchemaName = value?.ToLowerInvariant(); }
-        }
-
-        /// <summary>
-        /// Supply the connection string to the Postgresql database
+        ///     Supply the connection string to the Postgresql database
         /// </summary>
         /// <param name="connectionString"></param>
         public void Connection(string connectionString)
@@ -89,7 +124,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Supply a source for the connection string to a Postgresql database
+        ///     Supply a source for the connection string to a Postgresql database
         /// </summary>
         /// <param name="connectionSource"></param>
         public void Connection(Func<string> connectionSource)
@@ -98,8 +133,8 @@ namespace Marten
         }
 
         /// <summary>
-        /// Supply a mechanism for resolving an NpgsqlConnection object to
-        /// the Postgresql database
+        ///     Supply a mechanism for resolving an NpgsqlConnection object to
+        ///     the Postgresql database
         /// </summary>
         /// <param name="source"></param>
         public void Connection(Func<NpgsqlConnection> source)
@@ -108,7 +143,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Override the JSON serialization by ISerializer type
+        ///     Override the JSON serialization by ISerializer type
         /// </summary>
         /// <param name="serializer"></param>
         public void Serializer(ISerializer serializer)
@@ -117,8 +152,8 @@ namespace Marten
         }
 
         /// <summary>
-        /// Use the default serialization (ilmerged Newtonsoft.Json) with Enum values
-        /// stored as either integers or strings
+        ///     Use the default serialization (ilmerged Newtonsoft.Json) with Enum values
+        ///     stored as either integers or strings
         /// </summary>
         /// <param name="enumStyle"></param>
         public void UseDefaultSerialization(EnumStorage enumStyle)
@@ -127,7 +162,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Override the JSON serialization by an ISerializer of type "T"
+        ///     Override the JSON serialization by an ISerializer of type "T"
         /// </summary>
         /// <typeparam name="T">The ISerializer type</typeparam>
         public void Serializer<T>() where T : ISerializer, new()
@@ -136,63 +171,32 @@ namespace Marten
         }
 
         /// <summary>
-        /// Modify the document and event store database mappings for indexes and searching options
-        /// </summary>
-        public readonly MartenRegistry Schema;
-
-        /// <summary>
-        /// Whether or Marten should attempt to create any missing database schema objects at runtime. This
-        /// property is "All" by default for more efficient development, but can be set to lower values for production usage.
-        /// </summary>
-        public AutoCreate AutoCreateSchemaObjects = AutoCreate.All;
-
-        /// <summary>
-        /// Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
-        /// type as well
-        /// </summary>
-        public HiloSettings HiloSequenceDefaults { get; } = new HiloSettings();
-
-        /// <summary>
-        /// Sets the batch size for updating or deleting documents in IDocumentSession.SaveChanges() / IUnitOfWork.ApplyChanges()
-        /// </summary>
-        public int UpdateBatchSize { get; set; } = 500;
-
-        /// <summary>
-        /// Set the default Id strategy for the document mapping.
-        /// </summary>
-        public Func<IDocumentMapping, StoreOptions, IIdGeneration> DefaultIdStrategy { get; set; }
-
-        /// <summary>
-        /// Force Marten to create document mappings for type T
+        ///     Force Marten to create document mappings for type T
         /// </summary>
         /// <typeparam name="T"></typeparam>
         public void RegisterDocumentType<T>()
         {
-            RegisterDocumentType(typeof (T));
+            RegisterDocumentType(typeof(T));
         }
 
         /// <summary>
-        /// Force Marten to create a document mapping for the document type
+        ///     Force Marten to create a document mapping for the document type
         /// </summary>
         /// <param name="documentType"></param>
         public void RegisterDocumentType(Type documentType)
         {
-            if (MappingFor(documentType) == null) throw new Exception("Unable to create document mapping for " + documentType);
+            if (MappingFor(documentType) == null)
+                throw new Exception("Unable to create document mapping for " + documentType);
         }
 
         /// <summary>
-        /// Force Marten to create document mappings for all the given document types
+        ///     Force Marten to create document mappings for all the given document types
         /// </summary>
         /// <param name="documentTypes"></param>
         public void RegisterDocumentTypes(IEnumerable<Type> documentTypes)
         {
             documentTypes.Each(RegisterDocumentType);
         }
-
-        /// <summary>
-        /// Configuration of event streams and projections
-        /// </summary>
-        public IEventStoreConfiguration Events { get; }
 
         public ISerializer Serializer()
         {
@@ -215,19 +219,13 @@ namespace Marten
         {
             _logger = logger;
         }
-
-        /// <summary>
-        /// Extension point to add custom Linq query parsers
-        /// </summary>
-        public LinqCustomizations Linq { get; } = new LinqCustomizations();
-
     }
 
     public class LinqCustomizations
     {
         /// <summary>
-        /// Add custom Linq expression parsers for your own methods
+        ///     Add custom Linq expression parsers for your own methods
         /// </summary>
-        public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>(); 
+        public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
     }
 }

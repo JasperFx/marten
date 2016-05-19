@@ -219,11 +219,9 @@ namespace Marten.Schema
             return _identityAssignments.GetOrAdd(typeof(T), t =>
             {
                 var mapping = MappingFor(typeof(T));
-                var idType = mapping.IdMember.GetMemberType();
+                return mapping.ToIdAssignment<T>(this);
 
-                var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
 
-                return Activator.CreateInstance(assignerType, mapping.IdMember, mapping.IdStrategy, this);
             }).As<IdAssignment<T>>();
         }
 

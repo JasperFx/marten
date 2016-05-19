@@ -96,7 +96,7 @@ namespace Marten.Schema
 
         public IDocumentStorage BuildStorage(IDocumentSchema schema)
         {
-            var parentStorage = _parent.BuildStorage(schema);
+            var parentStorage = _parent.As<IDocumentMapping>().BuildStorage(schema);
             return typeof (SubClassDocumentStorage<,>).CloseAndBuildAs<IDocumentStorage>(parentStorage, DocumentType,
                 _parent.DocumentType);
         }
@@ -108,6 +108,11 @@ namespace Marten.Schema
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
             factory.RunSql($"delete from {_parent.Table.QualifiedName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
+        }
+
+        public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
+        {
+            return _parent.ToIdAssignment<T>(schema);
         }
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class

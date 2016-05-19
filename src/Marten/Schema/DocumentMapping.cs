@@ -103,7 +103,7 @@ namespace Marten.Schema
             return null;
         }
 
-        public IDocumentStorage BuildStorage(IDocumentSchema schema)
+        IDocumentStorage IDocumentMapping.BuildStorage(IDocumentSchema schema)
         {
             var resolverType = IsHierarchy() ? typeof(HierarchicalResolver<>) : typeof(Resolver<>);
 
@@ -115,10 +115,19 @@ namespace Marten.Schema
 
         public IDocumentSchemaObjects SchemaObjects { get; }
 
-        public void DeleteAllDocuments(IConnectionFactory factory)
+        void IDocumentMapping.DeleteAllDocuments(IConnectionFactory factory)
         {
             var sql = "truncate {0} cascade".ToFormat(Table.QualifiedName);
             factory.RunSql(sql);
+        }
+
+        public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
+        {
+            var idType = IdMember.GetMemberType();
+
+            var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
+
+            return (IdAssignment<T>) Activator.CreateInstance(assignerType, IdMember, IdStrategy, schema);
         }
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members,

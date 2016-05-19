@@ -101,6 +101,11 @@ namespace Marten.Events
             factory.RunSql($"delete from mt_events where type = '{Alias}'");
         }
 
+        public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
+        {
+            throw new NotImplementedException();
+        }
+
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class
         {
             return _inner.JoinToInclude<TOther>(joinType, other, members, callback);

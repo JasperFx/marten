@@ -7,9 +7,9 @@ namespace Marten.Schema.Identity.Sequences
     public class IdentityKeyGeneration : IIdGeneration
     {
         private readonly HiloSettings _hiloSettings;
-        private readonly IDocumentMapping _mapping;
+        private readonly DocumentMapping _mapping;
 
-        public IdentityKeyGeneration(IDocumentMapping mapping, HiloSettings hiloSettings)
+        public IdentityKeyGeneration(DocumentMapping mapping, HiloSettings hiloSettings)
         {
             _mapping = mapping;
             _hiloSettings = hiloSettings;
