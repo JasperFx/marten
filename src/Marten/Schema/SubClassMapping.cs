@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema.Hierarchies;
 using Marten.Schema.Identity;
-using Marten.Services;
 using Marten.Services.Includes;
 using Marten.Util;
 
@@ -15,65 +13,57 @@ namespace Marten.Schema
 {
     public class SubClassMapping : IDocumentMapping
     {
-        private readonly DocumentMapping _parent;
         private readonly DocumentMapping _inner;
 
         public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions, string alias = null)
         {
             DocumentType = documentType;
             _inner = new DocumentMapping(documentType, storeOptions);
-            _parent = parent;
+            Parent = parent;
             Alias = alias ?? GetTypeMartenAlias(documentType);
             Aliases = new[] {Alias};
         }
 
-        public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions, IEnumerable<MappedType> otherSubclassTypes, string alias = null)
+        public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions,
+            IEnumerable<MappedType> otherSubclassTypes, string alias = null)
             : this(documentType, parent, storeOptions, alias)
         {
             Aliases = otherSubclassTypes
-                    .Where(t => t.Type.IsSubclassOf(documentType) || (documentType.IsInterface && t.Type.GetInterfaces().Contains(documentType)) || t.Type == documentType)
-                    .Select(GetTypeMartenAlias).Concat(Aliases).ToArray();
-        }
-
-        private static string GetTypeMartenAlias(Type documentType)
-        {
-            return GetTypeMartenAlias(new MappedType(documentType));
-        }
-
-        private static string GetTypeMartenAlias(MappedType documentType)
-        {
-            return documentType.Alias ?? documentType.Type.GetTypeName().Replace(".", "_").SplitCamelCase().Replace(" ", "_").ToLowerInvariant();
+                .Where(
+                    t =>
+                        t.Type.IsSubclassOf(documentType) ||
+                        (documentType.IsInterface && t.Type.GetInterfaces().Contains(documentType)) ||
+                        t.Type == documentType)
+                .Select(GetTypeMartenAlias).Concat(Aliases).ToArray();
         }
 
 
-        public DocumentMapping Parent => _parent;
+        public DocumentMapping Parent { get; }
 
 
         public string[] Aliases { get; }
         public string Alias { get; set; }
 
-        public FunctionName UpsertName => _parent.UpsertFunction;
-
-        public Type DocumentType { get; }
-
-        public TableName Table => _parent.Table;
+        public FunctionName UpsertName => Parent.UpsertFunction;
 
         public string DatabaseSchemaName
         {
-            get { return _parent.DatabaseSchemaName; }
-            set { throw new NotSupportedException("The DatabaseSchemaName of a sub class mapping can't be set. The DatabaseSchemaName of the parent will be used."); }
+            get { return Parent.DatabaseSchemaName; }
+            set
+            {
+                throw new NotSupportedException(
+                    "The DatabaseSchemaName of a sub class mapping can't be set. The DatabaseSchemaName of the parent will be used.");
+            }
         }
 
-        public PropertySearching PropertySearching => _parent.PropertySearching;
+        public IEnumerable<DuplicatedField> DuplicatedFields => Parent.DuplicatedFields;
 
-        public IIdGeneration IdStrategy
-        {
-            get { return _parent.IdStrategy; }
-            set { throw new NotSupportedException("The IdStrategy of a sub class mapping can't be set. The IdStrategy of the parent will be used."); }
-        }
+        public Type DocumentType { get; }
 
-        public IEnumerable<DuplicatedField> DuplicatedFields => _parent.DuplicatedFields;
-        public MemberInfo IdMember => _parent.IdMember;
+        public TableName Table => Parent.Table;
+
+        public PropertySearching PropertySearching => Parent.PropertySearching;
+
         public string[] SelectFields()
         {
             return _inner.SelectFields();
@@ -81,7 +71,7 @@ namespace Marten.Schema
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
-            return _parent.FieldFor(members) ?? _inner.FieldFor(members);
+            return Parent.FieldFor(members) ?? _inner.FieldFor(members);
         }
 
         public IWhereFragment FilterDocuments(IWhereFragment query)
@@ -91,36 +81,51 @@ namespace Marten.Schema
 
         public IWhereFragment DefaultWhereFragment()
         {
-            return new WhereFragment(Aliases.Select(a=>$"d.{DocumentMapping.DocumentTypeColumn} = '{a}'").ToArray().Join(" or "));
+            return
+                new WhereFragment(
+                    Aliases.Select(a => $"d.{DocumentMapping.DocumentTypeColumn} = '{a}'").ToArray().Join(" or "));
         }
 
         public IDocumentStorage BuildStorage(IDocumentSchema schema)
         {
-            var parentStorage = _parent.As<IDocumentMapping>().BuildStorage(schema);
-            return typeof (SubClassDocumentStorage<,>).CloseAndBuildAs<IDocumentStorage>(parentStorage, DocumentType,
-                _parent.DocumentType);
+            var parentStorage = Parent.As<IDocumentMapping>().BuildStorage(schema);
+            return typeof(SubClassDocumentStorage<,>).CloseAndBuildAs<IDocumentStorage>(parentStorage, DocumentType,
+                Parent.DocumentType);
         }
 
-        public IDocumentSchemaObjects SchemaObjects => _parent.SchemaObjects;
-
+        public IDocumentSchemaObjects SchemaObjects => Parent.SchemaObjects;
 
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
-            factory.RunSql($"delete from {_parent.Table.QualifiedName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
+            factory.RunSql(
+                $"delete from {Parent.Table.QualifiedName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
         }
 
         public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
         {
-            return _parent.ToIdAssignment<T>(schema);
+            return Parent.ToIdAssignment<T>(schema);
         }
 
-        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class
+        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members,
+            Action<TOther> callback) where TOther : class
         {
-            return _parent.JoinToInclude<TOther>(joinType, other, members, callback);
+            return Parent.JoinToInclude(joinType, other, members, callback);
         }
 
+        private static string GetTypeMartenAlias(Type documentType)
+        {
+            return GetTypeMartenAlias(new MappedType(documentType));
+        }
+
+        private static string GetTypeMartenAlias(MappedType documentType)
+        {
+            return documentType.Alias ??
+                   documentType.Type.GetTypeName()
+                       .Replace(".", "_")
+                       .SplitCamelCase()
+                       .Replace(" ", "_")
+                       .ToLowerInvariant();
+        }
     }
-
-
 }

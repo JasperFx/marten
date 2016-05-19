@@ -29,14 +29,6 @@ namespace Marten.Schema
 
     public interface IDocumentMapping : IQueryableDocument
     {
-        /*
-        // These 3 need to move out
-        string Alias { get; }
-        IIdGeneration IdStrategy { get; set; }
-        MemberInfo IdMember { get; }
-        */
-
-
         Type DocumentType { get; }
 
         IDocumentStorage BuildStorage(IDocumentSchema schema);

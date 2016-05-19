@@ -17,7 +17,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public abstract class EventMapping : IDocumentMapping, IDocumentSchemaObjects
+    public abstract class EventMapping : IDocumentMapping
     {
         private readonly StoreOptions _options;
         private readonly EventGraph _parent;
@@ -45,7 +45,6 @@ namespace Marten.Events
         public string EventTypeName { get; set; }
         public string Alias { get; }
         public MemberInfo IdMember { get; }
-        public IIdGeneration IdStrategy { get; set; } = new GuidIdGeneration();
         public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
 
         public TableName Table =>  new TableName(_options.Events.DatabaseSchemaName, "mt_events");
@@ -84,17 +83,8 @@ namespace Marten.Events
         }
 
         public abstract IDocumentStorage BuildStorage(IDocumentSchema schema);
-        public IDocumentSchemaObjects SchemaObjects => this;
 
-        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
-        {
-            _parent.WriteSchemaObjects(schema, writer);
-        }
-
-        public void RemoveSchemaObjects(IManagedConnection connection)
-        {
-            throw new NotSupportedException($"Invalid to remove schema objects for {DocumentType}");
-        }
+        public IDocumentSchemaObjects SchemaObjects => _parent.SchemaObjects;
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
@@ -103,7 +93,7 @@ namespace Marten.Events
 
         public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IDocumentMapping other, MemberInfo[] members, Action<TOther> callback) where TOther : class
@@ -111,10 +101,6 @@ namespace Marten.Events
             return _inner.JoinToInclude<TOther>(joinType, other, members, callback);
         }
 
-        public void ResetSchemaExistenceChecks()
-        {
-            _parent.ResetSchemaExistenceChecks();
-        }
     }
 
     public class EventMapping<T> : EventMapping, IDocumentStorage, IResolver<T> where T : class, new()
