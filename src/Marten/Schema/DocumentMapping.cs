@@ -442,20 +442,7 @@ namespace Marten.Schema
 
         public virtual UpsertFunction ToUpsertFunction()
         {
-            var function = new UpsertFunction(this);
-            function.Arguments.AddRange(DuplicatedFields.Select(x => x.UpsertArgument));
-
-            function.Arguments.Add(new VersionArgument());
-
-            function.Arguments.Add(new DotNetTypeArgument());
-
-            if (IsHierarchy())
-            {
-                function.Arguments.Add(new DocTypeArgument());
-            }
-
-
-            return function;
+            return new UpsertFunction(this);
         }
 
         public SchemaDiff CreateSchemaDiff(IDocumentSchema schema)
