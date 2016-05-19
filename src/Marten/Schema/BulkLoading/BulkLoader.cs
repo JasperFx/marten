@@ -16,6 +16,7 @@ namespace Marten.Schema.BulkLoading
         private readonly string _sql;
 
         private readonly Action<T, string, ISerializer, NpgsqlBinaryImporter> _transferData;
+        private readonly string _baseSql;
 
 
         public BulkLoader(ISerializer serializer, DocumentMapping mapping, IdAssignment<T> assignment)
@@ -34,7 +35,8 @@ namespace Marten.Schema.BulkLoading
             var expressions = arguments.Select(x => x.CompileBulkImporter(serializer.EnumStorage, writer, document, alias, serializerParam));
 
             var columns = arguments.Select(x => $"\"{x.Column}\"").Join(", ");
-            _sql = $"COPY {mapping.Table.QualifiedName}({columns}) FROM STDIN BINARY";
+            _baseSql = $"COPY %TABLE%({columns}) FROM STDIN BINARY";
+            _sql = _baseSql.Replace("%TABLE%", mapping.Table.QualifiedName);
 
             var block = Expression.Block(expressions);
 
@@ -45,7 +47,18 @@ namespace Marten.Schema.BulkLoading
 
         public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
         {
-            using (var writer = conn.BeginBinaryImport(_sql))
+            load(serializer, conn, documents, _sql);
+        }
+
+        public void Load(TableName table, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
+        {
+            var sql = _baseSql.Replace("%TABLE%", table.QualifiedName);
+            load(serializer, conn, documents, sql);
+        }
+
+        private void load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, string sql)
+        {
+            using (var writer = conn.BeginBinaryImport(sql))
             {
                 foreach (var document in documents)
                 {
