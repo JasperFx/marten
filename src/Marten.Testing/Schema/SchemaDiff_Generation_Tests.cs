@@ -37,7 +37,7 @@ namespace Marten.Testing.Schema
             });
 
             mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
-            diff = mapping.CreateSchemaDiff(store2.Schema);
+            diff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
         }
 
         [Fact]
@@ -100,7 +100,7 @@ namespace Marten.Testing.Schema
             });
 
             mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
-            diff = mapping.CreateSchemaDiff(store2.Schema);
+            diff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
         }
 
         [Fact]
@@ -170,7 +170,7 @@ namespace Marten.Testing.Schema
             });
 
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
-            var diff = mapping.CreateSchemaDiff(store2.Schema);
+            var diff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
 
             diff.AllMissing.ShouldBeFalse();
 
@@ -201,7 +201,7 @@ namespace Marten.Testing.Schema
             });
 
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
-            var diff = mapping.CreateSchemaDiff(store2.Schema);
+            var diff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
 
             diff.AllMissing.ShouldBeFalse();
 
@@ -236,7 +236,7 @@ namespace Marten.Testing.Schema
             });
 
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
-            var diff = mapping.CreateSchemaDiff(store2.Schema);
+            var diff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
 
             diff.AllMissing.ShouldBeFalse();
 
@@ -259,7 +259,7 @@ namespace Marten.Testing.Schema
             var documentMapping = store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
             using (var conn = store1.Advanced.OpenConnection())
             {
-                documentMapping.RemoveUpsertFunction(conn);
+                documentMapping.SchemaObjects.As<DocumentSchemaObjects>().RemoveUpsertFunction(conn);
             }
 
             store1.Schema.DbObjects.FindSchemaObjects(documentMapping)
@@ -318,7 +318,7 @@ namespace Marten.Testing.Schema
             store2.Schema.EnsureStorageExists(typeof(User));
 
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
-            var schemaDiff = mapping.CreateSchemaDiff(store2.Schema);
+            var schemaDiff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
             schemaDiff.HasFunctionChanged().ShouldBeFalse();
 
 
@@ -352,12 +352,12 @@ namespace Marten.Testing.Schema
             });
 
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
-            var schemaDiff = mapping.CreateSchemaDiff(store2.Schema);
+            var schemaDiff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
             schemaDiff.IndexChanges.Count.ShouldBe(2);
 
             store2.Schema.EnsureStorageExists(typeof(User));
 
-            var schemaDiff2 = mapping.CreateSchemaDiff(store2.Schema);
+            var schemaDiff2 = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
             schemaDiff2.HasDifferences().ShouldBeFalse();
 
             schemaDiff2.IndexChanges.Any().ShouldBeFalse();
@@ -398,12 +398,12 @@ namespace Marten.Testing.Schema
             });
 
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
-            var schemaDiff = mapping.CreateSchemaDiff(store2.Schema);
+            var schemaDiff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
             schemaDiff.IndexChanges.Count.ShouldBe(1);
 
             store2.Schema.EnsureStorageExists(typeof(User));
 
-            var schemaDiff2 = mapping.CreateSchemaDiff(store2.Schema);
+            var schemaDiff2 = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
             schemaDiff2.HasDifferences().ShouldBeFalse();
 
             schemaDiff2.IndexChanges.Any().ShouldBeFalse();

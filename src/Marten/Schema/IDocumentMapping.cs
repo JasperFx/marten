@@ -1,26 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq;
 using Marten.Schema.Identity;
-using Marten.Services;
 using Marten.Services.Includes;
 
 namespace Marten.Schema
 {
-    public interface IDocumentSchemaObjects
-    {
-        void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql);
-
-        void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer);
-
-        void RemoveSchemaObjects(IManagedConnection connection);
-
-        void ResetSchemaExistenceChecks();
-    }
-
     public interface IDocumentMapping
     {
         string Alias { get; }

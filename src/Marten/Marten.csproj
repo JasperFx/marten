@@ -147,6 +147,7 @@
     <Compile Include="Schema\DocJsonBodyArgument.cs" />
     <Compile Include="Schema\DocTypeArgument.cs" />
     <Compile Include="Schema\DocumentSchemaExtensions.cs" />
+    <Compile Include="Schema\DocumentSchemaObjects.cs" />
     <Compile Include="Schema\DotNetTypeArgument.cs" />
     <Compile Include="Schema\IDbObjects.cs" />
     <Compile Include="Schema\Identity\GuidIdGenerator.cs" />
@@ -154,6 +155,7 @@
     <Compile Include="Schema\Identity\IIdGenerator.cs" />
     <Compile Include="Schema\IdField.cs" />
     <Compile Include="Schema\ActualIndex.cs" />
+    <Compile Include="Schema\IDocumentSchemaObjects.cs" />
     <Compile Include="Schema\QualifiedDatabaseName.cs" />
     <Compile Include="Schema\ColumnValue.cs" />
     <Compile Include="Schema\Identity\CombGuidIdGeneration.cs" />

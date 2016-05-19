@@ -83,7 +83,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<MySpecialDocument>();
             var builder = new StringWriter();
 
-            mapping.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
 
             var sql = builder.ToString();
 
@@ -97,7 +97,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<MySpecialDocument>("other");
             var builder = new StringWriter();
 
-            mapping.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
 
             var sql = builder.ToString();
 
@@ -113,7 +113,7 @@ namespace Marten.Testing.Schema
 
             var builder = new StringWriter();
 
-            mapping.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
 
             var sql = builder.ToString();
 
@@ -130,7 +130,7 @@ namespace Marten.Testing.Schema
 
             var builder = new StringWriter();
 
-            mapping.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
 
             var sql = builder.ToString();
 
@@ -146,7 +146,7 @@ namespace Marten.Testing.Schema
 
             var builder = new StringWriter();
 
-            mapping.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
 
             var sql = builder.ToString();
 
@@ -188,7 +188,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<MySpecialDocument>();
             var builder = new StringWriter();
 
-            mapping.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
 
             var sql = builder.ToString();
 
@@ -202,7 +202,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<MySpecialDocument>("other");
             var builder = new StringWriter();
 
-            mapping.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
 
             var sql = builder.ToString();
 
@@ -218,7 +218,7 @@ namespace Marten.Testing.Schema
 
             var builder = new StringWriter();
 
-            mapping.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
 
             var sql = builder.ToString();
 

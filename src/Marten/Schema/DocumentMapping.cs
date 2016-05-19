@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -11,13 +10,12 @@ using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
-using Marten.Services;
 using Marten.Services.Includes;
 using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class DocumentMapping : IDocumentMapping, IDocumentSchemaObjects
+    public class DocumentMapping : IDocumentMapping
     {
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
@@ -30,20 +28,19 @@ namespace Marten.Schema
 
         private static readonly Regex _aliasSanitizer = new Regex("<|>", RegexOptions.Compiled);
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
-
-        private readonly object _lock = new object();
-
         private readonly StoreOptions _storeOptions;
 
         private readonly IList<SubClassMapping> _subClasses = new List<SubClassMapping>();
         private string _alias;
         private string _databaseSchemaName;
-        private bool _hasCheckedSchema;
+
 
         public DocumentMapping(Type documentType, StoreOptions storeOptions)
         {
             if (documentType == null) throw new ArgumentNullException(nameof(documentType));
             if (storeOptions == null) throw new ArgumentNullException(nameof(storeOptions));
+
+            SchemaObjects = new DocumentSchemaObjects(this);
 
             _storeOptions = storeOptions;
 
@@ -112,43 +109,7 @@ namespace Marten.Schema
                 .As<IDocumentStorage>();
         }
 
-        public IDocumentSchemaObjects SchemaObjects => this;
-
-        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
-        {
-            var table = ToTable(schema);
-            table.Write(writer);
-            writer.WriteLine();
-            writer.WriteLine();
-
-            new UpsertFunction(this).WriteFunctionSql(schema?.StoreOptions?.UpsertType ?? PostgresUpsertType.Legacy,
-                writer);
-
-            ForeignKeys.Each(x =>
-            {
-                writer.WriteLine();
-                writer.WriteLine(x.ToDDL());
-            });
-
-            Indexes.Each(x =>
-            {
-                writer.WriteLine();
-                writer.WriteLine(x.ToDDL());
-            });
-
-            writer.WriteLine();
-            writer.WriteLine();
-        }
-
-        public void RemoveSchemaObjects(IManagedConnection connection)
-        {
-            _hasCheckedSchema = false;
-
-            connection.Execute($"DROP TABLE IF EXISTS {Table.QualifiedName} CASCADE;");
-
-            RemoveUpsertFunction(connection);
-        }
-
+        public IDocumentSchemaObjects SchemaObjects { get; }
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
@@ -169,11 +130,6 @@ namespace Marten.Schema
             return new IncludeJoin<TOther>(other, joinText, tableAlias, callback);
         }
 
-        public void ResetSchemaExistenceChecks()
-        {
-            _hasCheckedSchema = false;
-        }
-
         public IIdGeneration IdStrategy { get; set; }
 
         public Type DocumentType { get; }
@@ -190,30 +146,6 @@ namespace Marten.Schema
         }
 
         public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;
-
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,
-            Action<string> executeSql)
-        {
-            if (_hasCheckedSchema) return;
-
-
-            var diff = CreateSchemaDiff(schema);
-
-            if (!diff.HasDifferences())
-            {
-                _hasCheckedSchema = true;
-                return;
-            }
-
-            lock (_lock)
-            {
-                if (_hasCheckedSchema) return;
-
-                buildOrModifySchemaObjects(diff, autoCreateSchemaObjectsMode, schema, executeSql);
-
-                _hasCheckedSchema = true;
-            }
-        }
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
@@ -415,17 +347,6 @@ namespace Marten.Schema
             return _subClasses.Any() || DocumentType.IsAbstract || DocumentType.IsInterface;
         }
 
-        /// <summary>
-        ///     Only for testing scenarios
-        /// </summary>
-        /// <param name="connection"></param>
-        public void RemoveUpsertFunction(IManagedConnection connection)
-        {
-            var dropTargets = DocumentCleaner.DropFunctionSql.ToFormat(UpsertFunction.Name, UpsertFunction.Schema);
-
-            var drops = connection.GetStringList(dropTargets);
-            drops.Each(drop => connection.Execute(drop));
-        }
 
         private static string defaultDocumentAliasName(Type documentType)
         {
@@ -493,61 +414,6 @@ namespace Marten.Schema
             return table;
         }
 
-        public SchemaDiff CreateSchemaDiff(IDocumentSchema schema)
-        {
-            var objects = schema.DbObjects.FindSchemaObjects(this);
-            return new SchemaDiff(schema, objects, this);
-        }
-
-        private void buildOrModifySchemaObjects(SchemaDiff diff, AutoCreate autoCreateSchemaObjectsMode,
-            IDocumentSchema schema, Action<string> executeSql)
-        {
-            if (autoCreateSchemaObjectsMode == AutoCreate.None)
-            {
-                var className = nameof(StoreOptions);
-                var propName = nameof(StoreOptions.AutoCreateSchemaObjects);
-
-                string message =
-                    $"No document storage exists for type {DocumentType.FullName} and cannot be created dynamically unless the {className}.{propName} = true. See http://jasperfx.github.io/marten/documentation/documents/ for more information";
-                throw new InvalidOperationException(message);
-            }
-
-            if (diff.AllMissing)
-            {
-                rebuildTableAndUpsertFunction(schema, executeSql);
-                return;
-            }
-
-            if (autoCreateSchemaObjectsMode == AutoCreate.CreateOnly)
-            {
-                throw new InvalidOperationException(
-                    $"The table for document type {DocumentType.FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{nameof(AutoCreate.CreateOnly)}'");
-            }
-
-            if (diff.CanPatch())
-            {
-                diff.CreatePatch(executeSql);
-            }
-            else if (autoCreateSchemaObjectsMode == AutoCreate.All)
-            {
-                // TODO -- better evaluation here against the auto create mode
-                rebuildTableAndUpsertFunction(schema, executeSql);
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"The table for document type {DocumentType.FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{autoCreateSchemaObjectsMode}'");
-            }
-        }
-
-        private void rebuildTableAndUpsertFunction(IDocumentSchema schema, Action<string> executeSql)
-        {
-            var writer = new StringWriter();
-            WriteSchemaObjects(schema, writer);
-
-            var sql = writer.ToString();
-            executeSql(sql);
-        }
 
         public DuplicatedField DuplicateField(string memberName, string pgType = null)
         {

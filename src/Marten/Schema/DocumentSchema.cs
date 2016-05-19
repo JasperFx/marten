@@ -163,7 +163,7 @@ namespace Marten.Schema
             _mappings.Values.OfType<DocumentMapping>().Each(mapping =>
             {
                 var writer = new StringWriter();
-                mapping.WriteSchemaObjects(this, writer);
+                mapping.SchemaObjects.WriteSchemaObjects(this, writer);
 
                 var filename = directory.AppendPath(mapping.Alias + ".sql");
                 system.WriteStringToFile(filename, writer.ToString());
@@ -191,7 +191,7 @@ namespace Marten.Schema
             var allSchemaNames = AllSchemaNames();
             DatabaseSchemaGenerator.WriteSql(allSchemaNames, writer);
 
-            StoreOptions.AllDocumentMappings.Each(x => x.WriteSchemaObjects(this, writer));
+            StoreOptions.AllDocumentMappings.Each(x => x.SchemaObjects.WriteSchemaObjects(this, writer));
 
             if (Events.IsActive && !StoreOptions.AllDocumentMappings.Contains(Events.As<IDocumentMapping>()))
             {
