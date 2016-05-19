@@ -79,7 +79,6 @@ namespace Marten.Events
 
         public bool IsActive => _events.Any() || _aggregates.Any();
 
-        public string Alias { get; } = null;
         public Type DocumentType { get; } = typeof (EventStream);
 
         public TableName Table => new TableName(DatabaseSchemaName, "mt_streams");
@@ -92,8 +91,6 @@ namespace Marten.Events
         }
 
         public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
-        public IIdGeneration IdStrategy { get; set; } = new GuidIdGeneration();
-        public MemberInfo IdMember { get; } = ReflectionHelper.GetProperty<EventStream>(x => x.Id);
 
         string[] IQueryableDocument.SelectFields()
         {
@@ -190,11 +187,12 @@ namespace Marten.Events
 
         public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
         {
-            var idType = IdMember.GetMemberType();
+            var idMember = ReflectionHelper.GetProperty<EventStream>(x => x.Id);
+            var idType = typeof(Guid);
 
             var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
 
-            return (IdAssignment<T>)Activator.CreateInstance(assignerType, IdMember, IdStrategy, schema);
+            return (IdAssignment<T>)Activator.CreateInstance(assignerType, idMember, new CombGuidIdGeneration(), schema);
         }
 
 
