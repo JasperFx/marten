@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Util;
-using NpgsqlTypes;
 
 namespace Marten.Schema
 {
@@ -34,13 +33,8 @@ namespace Marten.Schema
                 Column = "id",
                 Members = new[] {mapping.IdMember}
             });
-            Arguments.Add(new UpsertArgument
-            {
-                Arg = "doc",
-                PostgresType = "JSONB",
-                DbType = NpgsqlDbType.Jsonb,
-                Column = "data",
-            });
+
+            Arguments.Add(new DocJsonBodyArgument());
         }
 
         public void WriteFunctionSql(PostgresUpsertType upsertType, StringWriter writer)

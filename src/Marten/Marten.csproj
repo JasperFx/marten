@@ -144,6 +144,8 @@
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\BulkLoading\BulkLoader.cs" />
     <Compile Include="Schema\DbObjects.cs" />
+    <Compile Include="Schema\DocJsonBodyArgument.cs" />
+    <Compile Include="Schema\DocTypeArgument.cs" />
     <Compile Include="Schema\DocumentSchemaExtensions.cs" />
     <Compile Include="Schema\DotNetTypeArgument.cs" />
     <Compile Include="Schema\IDbObjects.cs" />

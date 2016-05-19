@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -133,8 +134,10 @@ namespace Marten
 
                         tx.Commit();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        Debug.WriteLine(ex);
+
                         tx.Rollback();
                         throw;
                     }

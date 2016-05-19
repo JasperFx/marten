@@ -43,8 +43,7 @@ namespace Marten.Schema
             return $"{Arg} {PostgresType}";
         }
 
-        public virtual Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer,
-            ParameterExpression document)
+        public virtual Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer)
         {
             var memberType = Members.Last().GetMemberType();
 
@@ -71,33 +70,15 @@ namespace Marten.Schema
         {
             var argName = Expression.Constant(Arg);
 
-            if (Members != null)
+            var memberType = Members.Last().GetMemberType();
+            var body = LambdaBuilder.ToExpression(enumStorage, Members, doc);
+            if (!memberType.IsClass)
             {
-                var memberType = Members.Last().GetMemberType();
-                var body = LambdaBuilder.ToExpression(enumStorage, Members, doc);
-                if (!memberType.IsClass)
-                {
-                    body = Expression.Convert(body, typeof(object));
-                }
-
-
-                return Expression.Call(call, _paramMethod, argName, body, Expression.Constant(DbType));
+                body = Expression.Convert(body, typeof(object));
             }
 
-            // TODO -- make a separate UpsertArgument for this
-            if (Arg == "docType")
-            {
-                return Expression.Call(call, _paramMethod, argName, typeAlias, Expression.Constant(NpgsqlDbType.Varchar));
-            }
 
-            // TODO -- make a separate UpsertArgument for this
-            if (Arg == "doc")
-            {
-                return Expression.Call(call, _paramMethod, argName, json, Expression.Constant(NpgsqlDbType.Jsonb));
-            }
-
-            throw new InvalidOperationException(
-                $"Don't know how to create an upsert argument expression for Arg == {Arg}");
+            return Expression.Call(call, _paramMethod, argName, body, Expression.Constant(DbType));
         }
     }
 }

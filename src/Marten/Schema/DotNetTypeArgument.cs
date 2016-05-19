@@ -22,7 +22,7 @@ namespace Marten.Schema
             PostgresType = "varchar";
         }
 
-        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document)
+        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer)
         {
             var getType = Expression.Call(document, _getType);
             var getName = Expression.Call(getType, _fullName);

@@ -177,7 +177,6 @@ namespace Marten.Linq.QueryHandlers
                 includeJoins = builder.BuildIncludeJoins(model, query);
             }
 
-            // TODO -- someday we'll add Include()'s to compiled queries
             var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins);
             var cmd = new NpgsqlCommand();
             handler.ConfigureCommand(cmd);

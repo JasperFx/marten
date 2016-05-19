@@ -20,20 +20,21 @@ namespace Marten.Schema
             PostgresType = "uuid";
         }
 
-        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document)
+        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer)
         {
-            var value = Expression.Call(_newGuid);
+            Expression value = Expression.Call(_newGuid);
+
             var dbType = Expression.Constant(DbType);
 
             var method = writeMethod.MakeGenericMethod(typeof(Guid));
 
-            return Expression.Call(writer, method, Expression.Convert(value, typeof(object)), dbType);
+            return Expression.Call(writer, method, value, dbType);
         }
 
         public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc,
             ParameterExpression json, ParameterExpression mapping, ParameterExpression typeAlias)
         {
-            var value = Expression.Call(_newGuid);
+            var value = Expression.Convert(Expression.Call(_newGuid), typeof(object));
 
             var dbType = Expression.Constant(DbType);
             return Expression.Call(call, _paramMethod, Expression.Constant(Arg), Expression.Convert(value, typeof(object)), dbType);

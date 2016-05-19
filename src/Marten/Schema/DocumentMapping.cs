@@ -451,14 +451,7 @@ namespace Marten.Schema
 
             if (IsHierarchy())
             {
-                // TODO -- make this be a subclass of UpsertArgument too
-                function.Arguments.Add(new UpsertArgument
-                {
-                    Arg = "docType",
-                    Column = DocumentTypeColumn,
-                    DbType = NpgsqlDbType.Varchar,
-                    PostgresType = "varchar",
-                });
+                function.Arguments.Add(new DocTypeArgument());
             }
 
 
