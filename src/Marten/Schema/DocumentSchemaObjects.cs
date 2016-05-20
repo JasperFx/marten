@@ -26,7 +26,7 @@ namespace Marten.Schema
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
-            var table = ToTable();
+            var table = StorageTable();
             table.Write(writer);
             writer.WriteLine();
             writer.WriteLine();
@@ -157,7 +157,7 @@ namespace Marten.Schema
         }
 
 
-        public virtual TableDefinition ToTable() 
+        public TableDefinition StorageTable() 
         {
             var pgIdType = TypeMappings.GetPgType(_mapping.IdMember.GetMemberType());
             var table = new TableDefinition(_mapping.Table, new TableColumn("id", pgIdType));

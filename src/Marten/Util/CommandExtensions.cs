@@ -12,6 +12,13 @@ namespace Marten.Util
 {
     public static class CommandExtensions
     {
+        public static int RunSql(this NpgsqlConnection conn, params string[] sqls)
+        {
+            var sql = sqls.Join(";");
+            return conn.CreateCommand().Sql(sql).ExecuteNonQuery();
+        }
+
+
         public static IEnumerable<T> Fetch<T>(this NpgsqlCommand cmd, string sql, Func<DbDataReader, T> transform, params object[] parameters)
         {
             cmd.WithText(sql);
@@ -112,6 +119,12 @@ namespace Marten.Util
             command.Parameters.Add(name, NpgsqlDbType.Jsonb).Value = json;
 
             return command;
+        }
+
+        public static NpgsqlCommand Sql(this NpgsqlCommand cmd, string sql)
+        {
+            cmd.CommandText = sql;
+            return cmd;
         }
 
         public static NpgsqlCommand CallsSproc(this NpgsqlCommand cmd, FunctionName function)

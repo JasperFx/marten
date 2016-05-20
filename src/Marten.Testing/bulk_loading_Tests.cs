@@ -72,15 +72,103 @@ namespace Marten.Testing
         {
             var data = Target.GenerateRandomData(100).ToArray();
 
-            theStore.BulkInsert(data, 15);
+            theStore.BulkInsert(data, batchSize:15);
 
             theSession.Query<Target>().Count().ShouldBe(data.Length);
 
             theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
         }
 
+        [Fact]
+        public void load_with_small_batch_and_ignore_duplicates_smoke_test()
+        {
+            var data = Target.GenerateRandomData(100).ToArray();
+
+            theStore.BulkInsert(data, mode: BulkInsertMode.IgnoreDuplicates);
+
+            theSession.Query<Target>().Count().ShouldBe(data.Length);
 
 
-        
+            theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
+
+        }
+
+        [Fact]
+        public void load_with_small_batch_and_overwrites_smoke_test()
+        {
+            var data = Target.GenerateRandomData(100).ToArray();
+
+            theStore.BulkInsert(data, mode: BulkInsertMode.OverwriteExisting);
+
+            theSession.Query<Target>().Count().ShouldBe(data.Length);
+
+
+            theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
+
+        }
+
+
+        [Fact]
+        public void load_with_ignore_duplicates()
+        {
+            var data1 = Target.GenerateRandomData(100).ToArray();
+
+            theStore.BulkInsert(data1);
+
+            var data2 = Target.GenerateRandomData(50).ToArray();
+
+            // Rigging up data2 so 5 of its values would be getting lost
+            for (int i = 0; i < 5; i++)
+            {
+                data2[i].Id = data1[i].Id;
+                data2[i].Number = -1;
+            }
+
+            theStore.BulkInsert(data2, mode: BulkInsertMode.IgnoreDuplicates);
+
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<Target>().Count().ShouldBe(data1.Length + data2.Length - 5);
+
+                for (int i = 0; i < 5; i++)
+                {
+                    session.Load<Target>(data1[i].Id).Number.ShouldBeGreaterThanOrEqualTo(0);
+                }
+            }
+
+
+        }
+
+        [Fact]
+        public void load_with_overwrite_duplicates()
+        {
+            var data1 = Target.GenerateRandomData(100).ToArray();
+
+            theStore.BulkInsert(data1);
+
+            var data2 = Target.GenerateRandomData(50).ToArray();
+
+            // Rigging up data2 so 5 of its values would be getting lost
+            for (int i = 0; i < 5; i++)
+            {
+                data2[i].Id = data1[i].Id;
+                data2[i].Number = -1;
+            }
+
+            theStore.BulkInsert(data2, mode: BulkInsertMode.OverwriteExisting);
+
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<Target>().Count().ShouldBe(data1.Length + data2.Length - 5);
+
+                // Values were overwritten
+                for (int i = 0; i < 5; i++)
+                {
+                    session.Load<Target>(data1[i].Id).Number.ShouldBe(-1);
+                }
+            }
+        }
+
+
     }
 }

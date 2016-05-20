@@ -13,8 +13,8 @@ namespace Marten.Testing.Generation
         public void perfect_match()
         {
             var users = DocumentSchemaObjects.For<User>();
-            var actual = users.ToTable();
-            var expected = users.ToTable();
+            var actual = users.StorageTable();
+            var expected = users.StorageTable();
 
             var diff = new TableDiff(expected, actual);
             diff.Matches.ShouldBeTrue();
@@ -24,8 +24,8 @@ namespace Marten.Testing.Generation
         public void can_match_up_on_columns()
         {
             var users = DocumentSchemaObjects.For<User>();
-            var actual = users.ToTable();
-            var expected = users.ToTable();
+            var actual = users.StorageTable();
+            var expected = users.StorageTable();
 
             var diff = new TableDiff(expected, actual);
 
@@ -37,9 +37,9 @@ namespace Marten.Testing.Generation
         public void not_matching_with_missing_columns()
         {
             var users = DocumentSchemaObjects.For<User>();
-            var actual = users.ToTable();
+            var actual = users.StorageTable();
 
-            var expected = users.ToTable();
+            var expected = users.StorageTable();
             var tableColumn = new TableColumn("new", "varchar");
             expected.Columns.Add(tableColumn);
 
@@ -56,11 +56,11 @@ namespace Marten.Testing.Generation
         public void not_matching_with_extra_columns()
         {
             var users = DocumentSchemaObjects.For<User>();
-            var actual = users.ToTable();
+            var actual = users.StorageTable();
             var tableColumn = new TableColumn("new", "varchar");
             actual.Columns.Add(tableColumn);
 
-            var expected = users.ToTable();
+            var expected = users.StorageTable();
 
             var diff = new TableDiff(expected, actual);
 
@@ -72,10 +72,10 @@ namespace Marten.Testing.Generation
         public void not_matching_with_columns_of_same_name_that_are_different()
         {
             var users = DocumentSchemaObjects.For<User>();
-            var actual = users.ToTable();
+            var actual = users.StorageTable();
             actual.ReplaceOrAddColumn("id", "int");
 
-            var expected = users.ToTable();
+            var expected = users.StorageTable();
 
             var diff = new TableDiff(expected, actual);
             diff.Matches.ShouldBeFalse();

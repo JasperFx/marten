@@ -7,6 +7,7 @@ using System.Reflection;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Events.Projections;
+using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
@@ -251,6 +252,11 @@ namespace Marten.Events
         public void ResetSchemaExistenceChecks()
         {
             _checkedSchema = false;
+        }
+
+        public TableDefinition StorageTable()
+        {
+            throw new NotSupportedException();
         }
     }
 }

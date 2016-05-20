@@ -29,7 +29,7 @@ namespace Marten.Testing.Bugs
             var existing = theStore.Schema.TableSchema(typeof(Login));
 
             var configured = theStore.Schema.MappingFor(typeof(Login))
-                .SchemaObjects.As<DocumentSchemaObjects>().ToTable();
+                .SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
 
             if (!existing.Equals(configured))
             {

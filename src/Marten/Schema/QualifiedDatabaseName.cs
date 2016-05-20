@@ -19,6 +19,11 @@ namespace Marten.Schema
         /// Name that would match the relowner column in idx.indrelid::regclass
         /// </summary>
         public string OwnerName => Schema == StoreOptions.DefaultDatabaseSchemaName ? Name : QualifiedName;
+
+        public TableName ToTempCopyTable()
+        {
+            return new TableName(Schema, Name + "_temp");
+        }
     }
 
     public class FunctionName : QualifiedDatabaseName

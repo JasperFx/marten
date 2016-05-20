@@ -22,7 +22,7 @@ namespace Marten.Schema
             }
             else
             {
-                var expectedTable = mapping.SchemaObjects.As<DocumentSchemaObjects>().ToTable();
+                var expectedTable = mapping.SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
                 TableDiff = new TableDiff(expectedTable, existing.Table);
 
                 // TODO -- drop obsolete indices?

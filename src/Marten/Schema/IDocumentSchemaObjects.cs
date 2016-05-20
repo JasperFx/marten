@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Marten.Generation;
 using Marten.Services;
 
 namespace Marten.Schema
@@ -13,5 +14,6 @@ namespace Marten.Schema
         void RemoveSchemaObjects(IManagedConnection connection);
 
         void ResetSchemaExistenceChecks();
+        TableDefinition StorageTable();
     }
 }

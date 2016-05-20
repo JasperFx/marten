@@ -22,7 +22,7 @@ namespace Marten.Testing.Schema
 
             var existing = theStore.Schema.TableSchema(typeof (Target));
 
-            var configured = theStore.Schema.MappingFor(typeof (Target)).SchemaObjects.As<DocumentSchemaObjects>().ToTable();
+            var configured = theStore.Schema.MappingFor(typeof (Target)).SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
 
             if (!existing.Equals(configured))
             {

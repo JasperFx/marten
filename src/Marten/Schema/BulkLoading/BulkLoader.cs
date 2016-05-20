@@ -1,22 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
 using Marten.Schema.Identity;
+using Marten.Util;
 using Npgsql;
-using NpgsqlTypes;
 
 namespace Marten.Schema.BulkLoading
 {
     public class BulkLoader<T> : IBulkLoader<T>
     {
-        private readonly DocumentMapping _mapping;
         private readonly IdAssignment<T> _assignment;
+        private readonly string _baseSql;
+        private readonly DocumentMapping _mapping;
         private readonly string _sql;
 
         private readonly Action<T, string, ISerializer, NpgsqlBinaryImporter> _transferData;
-        private readonly string _baseSql;
+        private readonly string _tempTableName;
 
 
         public BulkLoader(ISerializer serializer, DocumentMapping mapping, IdAssignment<T> assignment)
@@ -25,6 +27,8 @@ namespace Marten.Schema.BulkLoading
             _assignment = assignment;
             var upsertFunction = new UpsertFunction(mapping);
 
+            _tempTableName = mapping.Table.Name + "_temp";
+
 
             var writer = Expression.Parameter(typeof(NpgsqlBinaryImporter), "writer");
             var document = Expression.Parameter(typeof(T), "document");
@@ -32,7 +36,9 @@ namespace Marten.Schema.BulkLoading
             var serializerParam = Expression.Parameter(typeof(ISerializer), "serializer");
 
             var arguments = upsertFunction.OrderedArguments().ToArray();
-            var expressions = arguments.Select(x => x.CompileBulkImporter(serializer.EnumStorage, writer, document, alias, serializerParam));
+            var expressions =
+                arguments.Select(
+                    x => x.CompileBulkImporter(serializer.EnumStorage, writer, document, alias, serializerParam));
 
             var columns = arguments.Select(x => $"\"{x.Column}\"").Join(", ");
             _baseSql = $"COPY %TABLE%({columns}) FROM STDIN BINARY";
@@ -40,7 +46,8 @@ namespace Marten.Schema.BulkLoading
 
             var block = Expression.Block(expressions);
 
-            var lambda = Expression.Lambda<Action<T, string, ISerializer, NpgsqlBinaryImporter>>(block, document, alias, serializerParam, writer);
+            var lambda = Expression.Lambda<Action<T, string, ISerializer, NpgsqlBinaryImporter>>(block, document, alias,
+                serializerParam, writer);
 
             _transferData = lambda.Compile();
         }
@@ -55,6 +62,58 @@ namespace Marten.Schema.BulkLoading
             var sql = _baseSql.Replace("%TABLE%", table.QualifiedName);
             load(serializer, conn, documents, sql);
         }
+
+        public void LoadIntoTempTable(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
+        {
+            var sql = _baseSql.Replace("%TABLE%", _tempTableName);
+            conn.CreateCommand().Sql("truncate table " + _tempTableName).ExecuteNonQuery();
+
+            load(serializer, conn, documents, sql);
+        }
+
+        public string CopyNewDocumentsFromTempTable()
+        {
+            var table = _mapping.SchemaObjects.StorageTable();
+
+            var storageTable = table.Table.QualifiedName;
+            var columns = table.Columns.Select(x => $"\"{x.Name}\"").Join(", ");
+            var selectColumns = table.Columns.Select(x => $"{_tempTableName}.\"{x.Name}\"").Join(", ");
+
+
+
+            return $@"insert into {storageTable} ({columns}) (select {selectColumns} from {_tempTableName} 
+                         left join {storageTable} on {_tempTableName}.id = {storageTable}.id where {storageTable}.id is null)";
+
+
+        }
+
+        public string OverwriteDuplicatesFromTempTable()
+        {
+            var table = _mapping.SchemaObjects.StorageTable();
+            var storageTable = table.Table.QualifiedName;
+
+
+
+            var updates = table.Columns.Where(x => x.Name != "id")
+                .Select(x => $"\"{x.Name}\"").Join(", ");
+
+            var values = table.Columns.Where(x => x.Name != "id")
+                .Select(x => $"temp.\"{x.Name}\"").Join(", ");
+
+
+            return $@"update {storageTable} as docs set ({updates}) = ({values}) 
+                         from {_tempTableName} as temp where temp.id in (select id from {storageTable})";
+
+        }
+
+        public string CreateTempTableForCopying()
+        {
+            var tempTable = StorageTable.Name + "_temp";
+
+            return $"create temporary table {tempTable} as select * from {StorageTable.QualifiedName}";
+        }
+
+        public TableName StorageTable => _mapping.Table;
 
         private void load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, string sql)
         {

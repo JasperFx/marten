@@ -10,6 +10,7 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Services;
+using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Parsing.Structure;
 
@@ -115,7 +116,7 @@ namespace Marten
             }
         }
 
-        public void BulkInsert<T>(T[] documents, int batchSize = 1000, BulkInsertMode mode = BulkInsertMode.InsertsOnly)
+        public void BulkInsert<T>(T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
             if (typeof (T) == typeof (object))
             {
@@ -134,7 +135,7 @@ namespace Marten
 
                         tx.Commit();
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         tx.Rollback();
                         throw;
@@ -143,7 +144,7 @@ namespace Marten
             }
         }
 
-        public void BulkInsertDocuments(IEnumerable<object> documents, int batchSize = 1000, BulkInsertMode mode = BulkInsertMode.InsertsOnly)
+        public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
             var groups =
                 documents.Where(x => x != null)
@@ -197,9 +198,23 @@ namespace Marten
         {
             var loader = Schema.BulkLoaderFor<T>();
 
+            if (mode != BulkInsertMode.InsertsOnly)
+            {
+                var sql = loader.CreateTempTableForCopying();
+                conn.RunSql(sql);
+            }
+
             if (documents.Length <= batchSize)
             {
-                loader.Load(_serializer, conn, documents);
+                if (mode == BulkInsertMode.InsertsOnly)
+                {
+                    loader.Load(_serializer, conn, documents);
+                }
+                else
+                {
+                    loader.LoadIntoTempTable(_serializer, conn, documents);
+                }
+                
             }
             else
             {
@@ -210,11 +225,33 @@ namespace Marten
                 {
                     var batch = documents.Skip(page*batchSize).Take(batchSize).ToArray();
 
-                    loader.Load(_serializer, conn, batch);
+                    if (mode == BulkInsertMode.InsertsOnly)
+                    {
+                        loader.Load(_serializer, conn, batch);
+                    }
+                    else
+                    {
+                        loader.LoadIntoTempTable(_serializer, conn, batch);
+                    }
+
 
                     page++;
                     total += batch.Length;
                 }
+            }
+
+            if (mode == BulkInsertMode.IgnoreDuplicates)
+            {
+                var copy = loader.CopyNewDocumentsFromTempTable();
+
+                conn.RunSql(copy);
+            }
+            else if (mode == BulkInsertMode.OverwriteExisting)
+            {
+                var copy = loader.CopyNewDocumentsFromTempTable();
+                var overwrite = loader.OverwriteDuplicatesFromTempTable();
+
+                conn.RunSql(copy, overwrite);
             }
         }
 

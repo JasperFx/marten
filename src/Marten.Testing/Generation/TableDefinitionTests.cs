@@ -13,8 +13,8 @@ namespace Marten.Testing.Generation
         public void equivalency_positive()
         {
             var users = DocumentSchemaObjects.For<User>();
-            var table1 = users.ToTable();
-            var table2 = users.ToTable();
+            var table1 = users.StorageTable();
+            var table2 = users.StorageTable();
 
             table2.ShouldBe(table1);
             table1.ShouldBe(table2);
@@ -25,8 +25,8 @@ namespace Marten.Testing.Generation
         public void equivalency_negative_different_numbers_of_columns()
         {
             var users = DocumentSchemaObjects.For<User>();
-            var table1 = users.ToTable();
-            var table2 = users.ToTable();
+            var table1 = users.StorageTable();
+            var table2 = users.StorageTable();
 
             table2.Columns.Add(new TableColumn("user_name", "character varying"));
 
@@ -37,8 +37,8 @@ namespace Marten.Testing.Generation
         public void equivalency_negative_column_type_changed()
         {
             var users = DocumentSchemaObjects.For<User>();
-            var table1 = users.ToTable();
-            var table2 = users.ToTable();
+            var table1 = users.StorageTable();
+            var table2 = users.StorageTable();
 
             table2.ReplaceOrAddColumn(table2.PrimaryKey.Name, "int", table2.PrimaryKey.Directive);
 
@@ -49,8 +49,8 @@ namespace Marten.Testing.Generation
         public void equivalency_positive_column_name_case_insensitive()
         {
             var users = DocumentSchemaObjects.For<User>();
-            var table1 = users.ToTable();
-            var table2 = users.ToTable();
+            var table1 = users.StorageTable();
+            var table2 = users.StorageTable();
 
             table2.Column("username").ShouldBeSameAs(table1.Column("UserName"));
 
@@ -65,8 +65,8 @@ namespace Marten.Testing.Generation
             var users = DocumentMapping.For<User>();
             users.DuplicateField("FirstName");
 
-            var table1 = users.SchemaObjects.As<DocumentSchemaObjects>().ToTable();
-            var table2 = users.SchemaObjects.As<DocumentSchemaObjects>().ToTable();
+            var table1 = users.SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
+            var table2 = users.SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
 
             table1.ReplaceOrAddColumn("first_name", "varchar");
             table2.ReplaceOrAddColumn("first_name", "character varying");
