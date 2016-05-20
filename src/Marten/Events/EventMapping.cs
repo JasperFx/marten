@@ -108,9 +108,9 @@ namespace Marten.Events
 
     }
 
-    public class EventMapping<T> : EventMapping, IDocumentStorage, IResolver<T> where T : class, new()
+    public class EventMapping<T> : EventMapping, IDocumentStorage, IResolver<T> where T : class
     {
-        private readonly string _tableName = "mt_events";
+        private readonly string _tableName;
 
         public EventMapping(EventGraph parent) : base(parent, typeof(T))
         {
@@ -204,6 +204,4 @@ namespace Marten.Events
             return map.GetAsync(id, tkn => loader.LoadDocumentAsync<T>(id, tkn), token);
         }
     }
-
-
 }
