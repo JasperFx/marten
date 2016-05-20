@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
@@ -94,6 +96,33 @@ namespace Marten.Testing.Linq
             (await list).Any().ShouldBeTrue();
 
             stats.TotalResults.ShouldBe(count);
+        }
+
+        public class PagingTargetQuery : ICompiledListQuery<Target>
+        {
+            public QueryStatistics Stats { get; set; }
+
+            public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
+            {
+                return query => query.Stats<Target,PagingTargetQuery>(x=>x.Stats)
+                    .Where(x => x.Number > 10).Take(5);
+            }
+        }
+
+        [Fact]
+        public void can_get_the_total_from_a_compiled_query()
+        {
+            var count = theSession.Query<Target>().Count(x => x.Number > 10);
+            count.ShouldBeGreaterThan(0);
+
+            var query = new PagingTargetQuery();
+            var list = theSession
+                .Query(query)
+                .ToList();
+
+            list.Any().ShouldBeTrue();
+            
+            query.Stats.TotalResults.ShouldBe(count);
         }
     }
 }

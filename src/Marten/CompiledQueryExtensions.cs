@@ -23,6 +23,11 @@ namespace Marten
             throw new NotImplementedException();
         }
 
+        public static IMartenQueryable<T> Stats<T, TQuery>(this IQueryable<T> queryable, Expression<Func<TQuery, QueryStatistics>> stats)
+        {
+            throw new NotImplementedException();
+        } 
+
         public static IQueryable<string> AsJson<T>(this IMartenQueryable<T> queryable)
         {
             return queryable.Select(x => x.AsJson());
