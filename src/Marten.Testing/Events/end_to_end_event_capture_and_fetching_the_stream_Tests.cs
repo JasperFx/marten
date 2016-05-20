@@ -240,8 +240,8 @@ namespace Marten.Testing.Events
             using (var session = store.OpenSession(sessionType))
             {
                 // SAMPLE: append-events
-                var joined = new MembersJoined {Members = new[] {"Rand", "Matt", "Perrin", "Thom"}};
-                var departed = new MembersDeparted {Members = new[] {"Thom"}};
+                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+                var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 session.Events.Append(id, joined, departed);
 
@@ -257,6 +257,33 @@ namespace Marten.Testing.Events
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
                 streamEvents.ElementAt(2).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(2).Version.ShouldBe(3);
+            }
+        }
+
+        [Theory]
+        [MemberData("SessionTypes")]
+        public void capture_immutable_events(DocumentTracking sessionType)
+        {
+            var store = InitStore();
+
+            var id = Guid.NewGuid();
+            var immutableEvent = new ImmutableEvent(id, "some-name");
+
+            using (var session = store.OpenSession(sessionType))
+            {
+                session.Events.Append(id, immutableEvent);
+                session.SaveChanges();
+            }
+
+            using (var session = store.OpenSession(sessionType))
+            {
+                var streamEvents = session.Events.FetchStream(id);
+
+                streamEvents.Count.ShouldBe(1);
+                var @event = streamEvents.ElementAt(0).Data.ShouldBeOfType<ImmutableEvent>();
+
+                @event.Id.ShouldBe(id);
+                @event.Name.ShouldBe("some-name");
             }
         }
 
