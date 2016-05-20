@@ -37,7 +37,7 @@ namespace Marten.Services
             );
         }
 
-        public BatchCommand.SprocCall Sproc(FunctionName function)
+        public SprocCall Sproc(FunctionName function)
         {
             if (function == null) throw new ArgumentNullException(nameof(function));
 

@@ -14,7 +14,7 @@ namespace Marten.Schema
         protected static readonly MethodInfo writeMethod =
             typeof(NpgsqlBinaryImporter).GetMethods().FirstOrDefault(x => x.GetParameters().Length == 2);
 
-        protected static readonly MethodInfo _paramMethod = typeof(BatchCommand.SprocCall)
+        protected static readonly MethodInfo _paramMethod = typeof(SprocCall)
             .GetMethod("Param", new[] {typeof(string), typeof(object), typeof(NpgsqlDbType)});
 
         private MemberInfo[] _members;

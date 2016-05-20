@@ -21,7 +21,7 @@ namespace Marten.Schema
         private readonly ISerializer _serializer;
         private readonly DocumentMapping _mapping;
         private readonly FunctionName _upsertName;
-        private readonly Action<BatchCommand.SprocCall, T, string, DocumentMapping, string> _sprocWriter;
+        private readonly Action<SprocCall, T, string, DocumentMapping, string> _sprocWriter;
 
         public Resolver(ISerializer serializer, DocumentMapping mapping)
         {
@@ -45,9 +45,9 @@ namespace Marten.Schema
             _upsertName = mapping.UpsertFunction;
         }
 
-        private Action<BatchCommand.SprocCall, T, string, DocumentMapping, string> buildSprocWriter(DocumentMapping mapping)
+        private Action<SprocCall, T, string, DocumentMapping, string> buildSprocWriter(DocumentMapping mapping)
         {
-            var call = Expression.Parameter(typeof(BatchCommand.SprocCall), "call");
+            var call = Expression.Parameter(typeof(SprocCall), "call");
             var doc = Expression.Parameter(typeof(T), "doc");
             var json = Expression.Parameter(typeof(string), "json");
             var mappingParam = Expression.Parameter(typeof(DocumentMapping), "mapping");
@@ -60,7 +60,7 @@ namespace Marten.Schema
 
             var block = Expression.Block(arguments);
 
-            var lambda = Expression.Lambda<Action<BatchCommand.SprocCall, T, string, DocumentMapping, string>>(block,
+            var lambda = Expression.Lambda<Action<SprocCall, T, string, DocumentMapping, string>>(block,
                 new ParameterExpression[]
                 {
                     call, doc, json, mappingParam, aliasParam

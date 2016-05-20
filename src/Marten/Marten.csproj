@@ -198,7 +198,10 @@
     <Compile Include="Services\BatchQuerying\TransformedBatchQueryable.cs" />
     <Compile Include="Services\ChangeSet.cs" />
     <Compile Include="Services\CommandRunnerMode.cs" />
+    <Compile Include="Services\DeleteCall.cs" />
+    <Compile Include="Services\DeleteWhereCall.cs" />
     <Compile Include="Services\FetchResult.cs" />
+    <Compile Include="Services\ICall.cs" />
     <Compile Include="Services\IChangeSet.cs" />
     <Compile Include="Services\Includes\IIncludeJoin.cs" />
     <Compile Include="Services\Includes\IncludeSelector.cs" />
@@ -268,6 +271,7 @@
     <Compile Include="Schema\UpsertArgument.cs" />
     <Compile Include="Services\NulloIdentityMap.cs" />
     <Compile Include="Services\Delete.cs" />
+    <Compile Include="Services\SprocCall.cs" />
     <Compile Include="Services\TrackedEntity.cs" />
     <Compile Include="Services\TransactionState.cs" />
     <Compile Include="StoreOptions.cs" />
