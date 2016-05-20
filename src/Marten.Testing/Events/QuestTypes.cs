@@ -91,4 +91,16 @@ namespace Marten.Testing.Events
     {
         public Guid Id { get; set; }
     }
+
+    public class ImmutableEvent
+    {
+        public Guid Id { get; private set; }
+        public string Name { get; private set; }
+
+        public ImmutableEvent(Guid id, string name)
+        {
+            Id = id;
+            Name = name;
+        }
+    }
 }
