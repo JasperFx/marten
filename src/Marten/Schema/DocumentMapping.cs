@@ -342,7 +342,7 @@ namespace Marten.Schema
             var field = IdMember as FieldInfo;
             if (field != null) return field.IsPublic;
             var property = IdMember as PropertyInfo;
-            if (property != null) return property.CanWrite && property.GetSetMethod(false) != null;
+            if (property != null) return property.CanWrite && property.SetMethod != null;
             return false;
         }
 

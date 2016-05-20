@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline.Reflection;
 using Marten.Linq;
+using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Marten.Util;
 using Shouldly;
@@ -88,13 +89,26 @@ namespace Marten.Testing.Util
             var target = Target.Random(true);
 
             getter(target).ShouldBe(target.Inner.Number);
-
         }
 
         [Fact]
         public void can_get_the_Enum_GetName_method()
         {
             typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public).ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void can_set_a_private_id()
+        {
+            var member = ReflectionHelper.GetProperty<UserWithPrivateId>(x => x.Id);
+            var setter = LambdaBuilder.Setter<UserWithPrivateId, Guid>(member);
+
+            var newGuid = Guid.NewGuid();
+            var userWithPrivateId = new UserWithPrivateId();
+
+            setter(userWithPrivateId, newGuid);
+
+            userWithPrivateId.Id.ShouldBe(newGuid);
         }
     }
 }

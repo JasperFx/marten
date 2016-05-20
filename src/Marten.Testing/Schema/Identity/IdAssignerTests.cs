@@ -57,4 +57,20 @@ namespace Marten.Testing.Schema.Identity
             user.Id.ShouldNotBe(Guid.Empty);
         }
     }
+
+    public class IdAssignerTestsPrivateFields
+    { 
+        [Fact]
+        public void assign_a_given_id_setter_is_private()
+        {
+            var member = ReflectionHelper.GetProperty<UserWithPrivateId>(x => x.Id);
+            var theAssigner = new IdAssigner<UserWithPrivateId, Guid>(member, new GuidIdGeneration(), null);
+            var user = new UserWithPrivateId();
+            var id = Guid.NewGuid();
+
+            theAssigner.Assign(user, id);
+
+            user.Id.ShouldBe(id);
+        }
+    }
 }
