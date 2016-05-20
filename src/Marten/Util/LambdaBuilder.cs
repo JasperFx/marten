@@ -29,7 +29,7 @@ namespace Marten.Util
             var target = Expression.Parameter(property.ReflectedType, "target");
             var value = Expression.Parameter(property.PropertyType, "value");
 
-            var method = property.GetSetMethod();
+            var method = property.SetMethod;
 
             if (method == null) return null;
 

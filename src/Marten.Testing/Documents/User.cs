@@ -44,4 +44,22 @@ namespace Marten.Testing.Documents
     {
         public string Region { get; set; }
     }
+
+    public class UserWithPrivateId
+    {
+        public Guid Id { get; private set; }
+
+        public string UserName { get; set; }
+    }
+
+    public class UserWithoutIdSetter
+    {
+        public UserWithoutIdSetter()
+        {
+        }
+
+        public Guid Id { get; }
+
+        public string UserName { get; set; }
+    }
 }
