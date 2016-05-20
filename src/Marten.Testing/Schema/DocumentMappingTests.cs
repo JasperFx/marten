@@ -159,7 +159,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<User>();
             mapping.DuplicateField("FirstName");
 
-            var table = mapping.SchemaObjects.As<DocumentSchemaObjects>().ToTable(null);
+            var table = mapping.SchemaObjects.As<DocumentSchemaObjects>().ToTable();
 
             table.Columns.Any(x => x.Name == "first_name").ShouldBeTrue();
         }

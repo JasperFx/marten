@@ -115,11 +115,11 @@ namespace Marten
             }
         }
 
-        public void BulkInsert<T>(T[] documents, int batchSize = 1000)
+        public void BulkInsert<T>(T[] documents, int batchSize = 1000, BulkInsertMode mode = BulkInsertMode.InsertsOnly)
         {
             if (typeof (T) == typeof (object))
             {
-                BulkInsertDocuments(documents.OfType<object>());
+                BulkInsertDocuments(documents.OfType<object>(), mode: mode);
             }
             else
             {
@@ -130,14 +130,12 @@ namespace Marten
 
                     try
                     {
-                        bulkInsertDocuments(documents, batchSize, conn);
+                        bulkInsertDocuments(documents, batchSize, conn, mode);
 
                         tx.Commit();
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine(ex);
-
                         tx.Rollback();
                         throw;
                     }
@@ -145,13 +143,13 @@ namespace Marten
             }
         }
 
-        public void BulkInsertDocuments(IEnumerable<object> documents, int batchSize = 1000)
+        public void BulkInsertDocuments(IEnumerable<object> documents, int batchSize = 1000, BulkInsertMode mode = BulkInsertMode.InsertsOnly)
         {
             var groups =
                 documents.Where(x => x != null)
                     .GroupBy(x => x.GetType())
                     .Select(
-                        group => { return typeof (BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key); })
+                        group => typeof (BulkInserter<>).CloseAndBuildAs<IBulkInserter>(@group, @group.Key))
                     .ToArray();
 
             using (var conn = _connectionFactory.Create())
@@ -161,7 +159,7 @@ namespace Marten
 
                 try
                 {
-                    groups.Each(x => x.BulkInsert(batchSize, conn, this));
+                    groups.Each(x => x.BulkInsert(batchSize, conn, this, mode));
 
                     tx.Commit();
                 }
@@ -177,7 +175,7 @@ namespace Marten
 
         internal interface IBulkInserter
         {
-            void BulkInsert(int batchSize, NpgsqlConnection connection, DocumentStore parent);
+            void BulkInsert(int batchSize, NpgsqlConnection connection, DocumentStore parent, BulkInsertMode mode);
         }
 
         internal class BulkInserter<T> : IBulkInserter
@@ -189,13 +187,13 @@ namespace Marten
                 _documents = documents.OfType<T>().ToArray();
             }
 
-            public void BulkInsert(int batchSize, NpgsqlConnection connection, DocumentStore parent)
+            public void BulkInsert(int batchSize, NpgsqlConnection connection, DocumentStore parent, BulkInsertMode mode)
             {
-                parent.bulkInsertDocuments(_documents, batchSize, connection);
+                parent.bulkInsertDocuments(_documents, batchSize, connection, mode);
             }
         }
 
-        private void bulkInsertDocuments<T>(T[] documents, int batchSize, NpgsqlConnection conn)
+        private void bulkInsertDocuments<T>(T[] documents, int batchSize, NpgsqlConnection conn, BulkInsertMode mode)
         {
             var loader = Schema.BulkLoaderFor<T>();
 

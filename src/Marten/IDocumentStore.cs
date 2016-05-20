@@ -26,7 +26,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="documents"></param>
         /// <param name="batchSize"></param>
-        void BulkInsert<T>(T[] documents, int batchSize = 1000);
+        void BulkInsert<T>(T[] documents, int batchSize = 1000, BulkInsertMode mode = BulkInsertMode.InsertsOnly);
 
         /// <summary>
         /// Access to Marten's diagnostics for trouble shooting
@@ -66,7 +66,7 @@ namespace Marten
         /// Bulk insert a potentially mixed enumerable of document types
         /// </summary>
         /// <param name="documents"></param>
-        void BulkInsertDocuments(IEnumerable<object> documents, int batchSize = 1000);
+        void BulkInsertDocuments(IEnumerable<object> documents, int batchSize = 1000, BulkInsertMode mode = BulkInsertMode.InsertsOnly);
 
 
         /// <summary>

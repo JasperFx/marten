@@ -24,7 +24,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void create_table_column_for_non_indexed_search()
         {
-            var column = theField.ToColumn(null);
+            var column = theField.ToColumn();
             column.Name.ShouldBe("first_name");
             column.Type.ShouldBe("varchar");
         }

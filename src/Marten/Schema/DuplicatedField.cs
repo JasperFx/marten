@@ -126,7 +126,7 @@ namespace Marten.Schema
         };
 
         // I say you don't need a ForeignKey 
-        public virtual TableColumn ToColumn(IDocumentSchema schema)
+        public virtual TableColumn ToColumn()
         {
             return new TableColumn(ColumnName, PgType);
         }

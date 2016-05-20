@@ -45,6 +45,7 @@
     </Compile>
     <Compile Include="AdvancedOptions.cs" />
     <Compile Include="AutoCreate.cs" />
+    <Compile Include="BulkInsertMode.cs" />
     <Compile Include="CompiledQueryExtensions.cs" />
     <Compile Include="ConnectionFactory.cs" />
     <Compile Include="DocumentStore.cs" />

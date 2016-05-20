@@ -26,7 +26,7 @@ namespace Marten.Schema
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
-            var table = ToTable(schema);
+            var table = ToTable();
             table.Write(writer);
             writer.WriteLine();
             writer.WriteLine();
@@ -157,8 +157,7 @@ namespace Marten.Schema
         }
 
 
-        public virtual TableDefinition ToTable(IDocumentSchema schema) // take in schema so that you
-                                                                       // can do foreign keys
+        public virtual TableDefinition ToTable() 
         {
             var pgIdType = TypeMappings.GetPgType(_mapping.IdMember.GetMemberType());
             var table = new TableDefinition(_mapping.Table, new TableColumn("id", pgIdType));
@@ -171,7 +170,7 @@ namespace Marten.Schema
             table.Columns.Add(new TableColumn(DocumentMapping.VersionColumn, "uuid"));
             table.Columns.Add(new TableColumn(DocumentMapping.DotNetTypeColumn, "varchar"));
 
-            _mapping.DuplicatedFields.Select(x => x.ToColumn(schema)).Each(x => table.Columns.Add(x));
+            _mapping.DuplicatedFields.Select(x => x.ToColumn()).Each(x => table.Columns.Add(x));
 
 
             if (_mapping.IsHierarchy())
