@@ -1,32 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Reflection;
 using Marten.Linq;
 using Marten.Schema.Identity;
-using Marten.Services.Includes;
 
 namespace Marten.Schema
 {
-
-    public interface IQueryableDocument
-    {
-        IWhereFragment FilterDocuments(IWhereFragment query);
-
-        IWhereFragment DefaultWhereFragment();
-
-        IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback) where TOther : class;
-
-        IField FieldFor(IEnumerable<MemberInfo> members);
-
-        string[] SelectFields();
-
-        PropertySearching PropertySearching { get; }
-
-        TableName Table { get; }
-    }
-
-
     public interface IDocumentMapping
     {
         Type DocumentType { get; }

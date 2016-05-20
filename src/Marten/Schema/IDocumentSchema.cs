@@ -86,6 +86,9 @@ namespace Marten.Schema
         IdAssignment<T> IdAssignmentFor<T>();
 
 
+
+
+
             /// <summary>
         /// Used to create IQueryHandler's for Linq queries
         /// </summary>

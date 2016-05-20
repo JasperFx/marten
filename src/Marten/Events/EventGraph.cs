@@ -12,8 +12,6 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;
-using Marten.Services.Includes;
-using Marten.Util;
 
 namespace Marten.Events
 {
@@ -21,18 +19,19 @@ namespace Marten.Events
     // just making things ugly
     public class EventGraph : IDocumentMapping, IEventStoreConfiguration, IProjections, IDocumentSchemaObjects
     {
+        private readonly ConcurrentDictionary<string, IAggregator> _aggregateByName =
+            new ConcurrentDictionary<string, IAggregator>();
+
+        private readonly ConcurrentDictionary<Type, IAggregator> _aggregates =
+            new ConcurrentDictionary<Type, IAggregator>();
+
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
-        private readonly ConcurrentDictionary<Type, IAggregator> _aggregates = new ConcurrentDictionary<Type, IAggregator>();
-        private readonly ConcurrentDictionary<string, IAggregator> _aggregateByName = new ConcurrentDictionary<string, IAggregator>();
 
-        private readonly IList<IProjection> _inlineProjections = new List<IProjection>(); 
-
-        private bool _checkedSchema = false;
         private readonly object _locker = new object();
-        private string _databaseSchemaName;
 
-        internal StoreOptions Options { get; }
+        private bool _checkedSchema;
+        private string _databaseSchemaName;
 
         public EventGraph(StoreOptions options)
         {
@@ -42,58 +41,45 @@ namespace Marten.Events
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
         }
 
-        public EventMapping EventMappingFor(Type eventType)
-        {
-            return _events[eventType];
-        }
-
-        public EventMapping EventMappingFor<T>() where T : class, new()
-        {
-            return EventMappingFor(typeof (T));
-        }
-
-        public IEnumerable<EventMapping> AllEvents()
-        {
-            return _events;
-        }
-
-        public IEnumerable<IAggregator> AllAggregates()
-        {
-            return _aggregates.Values;
-        } 
-
-        public EventMapping EventMappingFor(string eventType)
-        {
-            return _byEventName[eventType];
-        }
-
-        public void AddEventType(Type eventType)
-        {
-            _events.FillDefault(eventType);
-        }
-
-        public void AddEventTypes(IEnumerable<Type> types)
-        {
-            types.Each(AddEventType);
-        }
-
-
-        public bool IsActive => _events.Any() || _aggregates.Any();
-
-        public Type DocumentType { get; } = typeof (EventStream);
-
-        public TableName Table => new TableName(DatabaseSchemaName, "mt_streams");
+        internal StoreOptions Options { get; }
         public TableName RollingBufferTable => new TableName(DatabaseSchemaName, "mt_rolling_buffer");
-
-        public string DatabaseSchemaName
-        {
-            get { return _databaseSchemaName ?? Options.DatabaseSchemaName; }
-            set { _databaseSchemaName = value; }
-        }
 
         public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
 
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        public Type DocumentType { get; } = typeof(EventStream);
+
+        public TableName Table => new TableName(DatabaseSchemaName, "mt_streams");
+
+        public IDocumentStorage BuildStorage(IDocumentSchema schema)
+        {
+            return new EventStreamStorage(this);
+        }
+
+        public IDocumentSchemaObjects SchemaObjects => this;
+
+        public void DeleteAllDocuments(IConnectionFactory factory)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
+        {
+            var idMember = ReflectionHelper.GetProperty<EventStream>(x => x.Id);
+            var idType = typeof(Guid);
+
+            var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
+
+            return
+                (IdAssignment<T>) Activator.CreateInstance(assignerType, idMember, new CombGuidIdGeneration(), schema);
+        }
+
+        public IQueryableDocument ToQueryableDocument()
+        {
+            throw new NotSupportedException();
+        }
+
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,
+            Action<string> executeSql)
         {
             if (_checkedSchema) return;
 
@@ -105,7 +91,9 @@ namespace Marten.Events
 
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
             {
-                throw new InvalidOperationException("The EventStore schema objects do not exist and the AutoCreateSchemaObjects is configured as " + autoCreateSchemaObjectsMode);
+                throw new InvalidOperationException(
+                    "The EventStore schema objects do not exist and the AutoCreateSchemaObjects is configured as " +
+                    autoCreateSchemaObjectsMode);
             }
 
             lock (_locker)
@@ -130,8 +118,119 @@ namespace Marten.Events
                     //executeSql("select mt_initialize_projections();");
                 }
             }
-
         }
+
+        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
+        {
+            writeBasicTables(schema, writer);
+
+            // TODO -- need to load the projection and initialize
+        }
+
+        public void RemoveSchemaObjects(IManagedConnection connection)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ResetSchemaExistenceChecks()
+        {
+            _checkedSchema = false;
+        }
+
+        public TableDefinition StorageTable()
+        {
+            throw new NotSupportedException();
+        }
+
+        public EventMapping EventMappingFor(Type eventType)
+        {
+            return _events[eventType];
+        }
+
+        public EventMapping EventMappingFor<T>() where T : class, new()
+        {
+            return EventMappingFor(typeof(T));
+        }
+
+        public IEnumerable<EventMapping> AllEvents()
+        {
+            return _events;
+        }
+
+        public IEnumerable<IAggregator> AllAggregates()
+        {
+            return _aggregates.Values;
+        }
+
+        public EventMapping EventMappingFor(string eventType)
+        {
+            return _byEventName[eventType];
+        }
+
+        public void AddEventType(Type eventType)
+        {
+            _events.FillDefault(eventType);
+        }
+
+        public void AddEventTypes(IEnumerable<Type> types)
+        {
+            types.Each(AddEventType);
+        }
+
+
+        public bool IsActive => _events.Any() || _aggregates.Any();
+
+        public string DatabaseSchemaName
+        {
+            get { return _databaseSchemaName ?? Options.DatabaseSchemaName; }
+            set { _databaseSchemaName = value; }
+        }
+
+
+        public Aggregator<T> AggregateFor<T>() where T : class, new()
+        {
+            return _aggregates
+                .GetOrAdd(typeof(T), type => new Aggregator<T>())
+                .As<Aggregator<T>>();
+        }
+
+
+        public Type AggregateTypeFor(string aggregateTypeName)
+        {
+            return
+                _aggregateByName.GetOrAdd(aggregateTypeName,
+                    name => { return AllAggregates().FirstOrDefault(x => x.Alias == name); }).AggregateType;
+        }
+
+        public Aggregator<T> AggregateStreamsInlineWith<T>() where T : class, new()
+        {
+            var aggregator = AggregateFor<T>();
+            var finder = new AggregateFinder<T>();
+            var projection = new AggregationProjection<T>(finder, aggregator);
+
+            Inlines.Add(projection);
+
+            return aggregator;
+        }
+
+        public void TransformEventsInlineWith<TEvent, TView>(ITransform<TEvent, TView> transform)
+        {
+            var projection = new OneForOneProjection<TEvent, TView>(transform);
+            Inlines.Add(projection);
+        }
+
+        public void InlineTransformation(IProjection projection)
+        {
+            Inlines.Add(projection);
+        }
+
+        public bool AsyncProjectionsEnabled { get; set; }
+        public bool JavascriptProjectionsEnabled { get; set; }
+
+
+        public int AsyncProjectionBufferTableSize { get; set; } = 1000;
+
+        public IList<IProjection> Inlines { get; } = new List<IProjection>();
 
         private void writeBasicTables(IDocumentSchema schema, StringWriter writer)
         {
@@ -157,106 +256,10 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        public IDocumentStorage BuildStorage(IDocumentSchema schema)
-        {
-            return new EventStreamStorage(this);
-        }
-
-        public IDocumentSchemaObjects SchemaObjects => this;
-
-        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
-        {
-            writeBasicTables(schema, writer);
-           
-            // TODO -- need to load the projection and initialize
-        }
-
-        public void RemoveSchemaObjects(IManagedConnection connection)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DeleteAllDocuments(IConnectionFactory factory)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
-        {
-            var idMember = ReflectionHelper.GetProperty<EventStream>(x => x.Id);
-            var idType = typeof(Guid);
-
-            var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
-
-            return (IdAssignment<T>)Activator.CreateInstance(assignerType, idMember, new CombGuidIdGeneration(), schema);
-        }
-
-        public IQueryableDocument ToQueryableDocument()
-        {
-            throw new NotSupportedException();
-        }
-
-
-        public Aggregator<T> AggregateFor<T>() where T : class, new()
-        {
-            return _aggregates
-                .GetOrAdd(typeof (T), type => new Aggregator<T>())
-                .As<Aggregator<T>>();
-        }
-
-
-        public Type AggregateTypeFor(string aggregateTypeName)
-        {
-            return _aggregateByName.GetOrAdd(aggregateTypeName, name =>
-            {
-                return AllAggregates().FirstOrDefault(x => x.Alias == name);
-            }).AggregateType;
-        }
-
-        public Aggregator<T> AggregateStreamsInlineWith<T>() where T : class, new()
-        {
-            var aggregator = AggregateFor<T>();
-            var finder = new AggregateFinder<T>();
-            var projection = new AggregationProjection<T>(finder, aggregator);
-
-            _inlineProjections.Add(projection);
-
-            return aggregator;
-        }
-
-        public void TransformEventsInlineWith<TEvent, TView>(ITransform<TEvent, TView> transform)
-        {
-            var projection = new OneForOneProjection<TEvent, TView>(transform);
-            _inlineProjections.Add(projection);
-        }
-
-        public void InlineTransformation(IProjection projection)
-        {
-            _inlineProjections.Add(projection);
-        }
-
-        public bool AsyncProjectionsEnabled { get; set; }
-        public bool JavascriptProjectionsEnabled { get; set; }
-
-
-        public int AsyncProjectionBufferTableSize { get; set; } = 1000;
-
         public string AggregateAliasFor(Type aggregateType)
         {
             return _aggregates
-                .GetOrAdd(aggregateType, type => typeof (Aggregator<>).CloseAndBuildAs<IAggregator>(aggregateType)).Alias;
-        }
-
-        public IList<IProjection> Inlines => _inlineProjections;
-
-        public void ResetSchemaExistenceChecks()
-        {
-            _checkedSchema = false;
-        }
-
-        public TableDefinition StorageTable()
-        {
-            throw new NotSupportedException();
+                .GetOrAdd(aggregateType, type => typeof(Aggregator<>).CloseAndBuildAs<IAggregator>(aggregateType)).Alias;
         }
     }
 }

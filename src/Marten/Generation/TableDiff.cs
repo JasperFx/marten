@@ -41,8 +41,9 @@ namespace Marten.Generation
         {
             var systemFields = new string[] {DocumentMapping.LastModifiedColumn, DocumentMapping.DotNetTypeColumn, DocumentMapping.VersionColumn};
 
-            var fields = Missing.Where(x => !systemFields.Contains(x.Name)).Select(x => mapping.FieldForColumn(x.Name)).ToArray();
-            if (fields.Length != Missing.Length)
+            var missingNonSystemFields = Missing.Where(x => !systemFields.Contains(x.Name)).ToArray();
+            var fields = missingNonSystemFields.Select(x => mapping.FieldForColumn(x.Name)).ToArray();
+            if (fields.Length != missingNonSystemFields.Length)
             {
                 throw new InvalidOperationException("The expected columns did not match with the DocumentMapping");
             }
@@ -60,10 +61,6 @@ namespace Marten.Generation
                 });
             }
 
-            if (Missing.Select(x => x.Name).Contains(DocumentMapping.LastModifiedColumn))
-            {
-                executeSql($"alter table {_tableName.QualifiedName} add column ");
-            }
 
             fields.Each(x => x.WritePatch(mapping, executeSql));
         }

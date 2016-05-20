@@ -115,5 +115,10 @@ namespace Marten.Generation
         {
             return Columns.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
+
+        public void RemoveColumn(string columnName)
+        {
+            Columns.RemoveAll(col => col.Name.EqualsIgnoreCase(columnName));
+        }
     }
 }
