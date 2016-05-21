@@ -47,6 +47,11 @@ namespace Marten.Services
             return _command;
         }
 
+        public void AddCall(ICall call)
+        {
+            _calls.Add(call);
+        }
+
         public SprocCall Sproc(FunctionName function)
         {
             if (function == null) throw new ArgumentNullException(nameof(function));
