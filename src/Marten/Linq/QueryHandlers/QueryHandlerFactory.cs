@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Baseline;
 using Marten.Linq.QueryHandlers.CompiledInclude;
 using Marten.Schema;
@@ -18,7 +19,7 @@ namespace Marten.Linq.QueryHandlers
         IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, bool returnDefaultWhenEmpty);
 
 
-        IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins);
+        IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats);
 
         IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query);
     }
@@ -29,18 +30,20 @@ namespace Marten.Linq.QueryHandlers
         private readonly ISerializer _serializer;
         private readonly ConcurrentCache<Type, CachedQuery> _cache = new ConcurrentCache<Type, CachedQuery>();
 
+        public QueryStatistics Stats { get; set; }
+
         public QueryHandlerFactory(IDocumentSchema schema, ISerializer serializer)
         {
             _schema = schema;
             _serializer = serializer;
         }
 
-        public IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins)
+        public IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
-            return tryFindScalarQuery<T>(model) ?? tryFindSingleQuery<T>(model, joins) ?? listHandlerFor<T>(model, joins);
+            return tryFindScalarQuery<T>(model) ?? tryFindSingleQuery<T>(model, joins) ?? listHandlerFor<T>(model, joins, stats);
         }
 
-        private IQueryHandler<T> listHandlerFor<T>(QueryModel model, IIncludeJoin[] joins)
+        private IQueryHandler<T> listHandlerFor<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
             if (model.HasOperator<ToJsonArrayResultOperator>())
             {
@@ -59,7 +62,7 @@ namespace Marten.Linq.QueryHandlers
             {
                 handlerType = typeof (EnumerableQueryHandler<>);
             }
-            return Activator.CreateInstance(handlerType.MakeGenericType(elementType), new object[] {_schema, model, joins}).As<IQueryHandler<T>>();
+            return Activator.CreateInstance(handlerType.MakeGenericType(elementType), new object[] {_schema, model, joins, stats}).As<IQueryHandler<T>>();
         }
 
         public IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model)
@@ -176,8 +179,13 @@ namespace Marten.Linq.QueryHandlers
                 var builder = new CompiledIncludeJoinBuilder<TDoc, TOut>(_schema);
                 includeJoins = builder.BuildIncludeJoins(model, query);
             }
+            
+            if (model.HasOperator<StatsResultOperator>())
+            {
+                SetStats(query, model);
+            }
 
-            var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins);
+            var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins, Stats);
             var cmd = new NpgsqlCommand();
             handler.ConfigureCommand(cmd);
 
@@ -187,6 +195,15 @@ namespace Marten.Linq.QueryHandlers
                 ParameterSetters = setters,
                 Handler = handler
             };
+        }
+
+        private void SetStats<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, QueryModel model)
+        {
+            var statsOperator = model.FindOperators<StatsResultOperator>().First();
+            var propExp = (MemberExpression) statsOperator.Stats.Body;
+            var prop = ((PropertyInfo) propExp.Member).SetMethod;
+            Stats = new QueryStatistics();
+            prop.Invoke(query, new[] {Stats});
         }
 
         private static IList<IDbParameterSetter> findSetters(IQueryableDocument mapping, Type queryType, Expression expression, EnumStorage enumStorage)

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
@@ -95,5 +97,42 @@ namespace Marten.Testing.Linq
 
             stats.TotalResults.ShouldBe(count);
         }
+
+        // SAMPLE: compiled-query-statistics
+        public class TargetPaginationQuery : ICompiledListQuery<Target>
+        {
+            public QueryStatistics Stats { get; set; }
+            public int PageNumber { get; set; }
+            public int PageSize { get; set; }
+
+            public TargetPaginationQuery(int pageNumber, int pageSize)
+            {
+                PageNumber = pageNumber;
+                PageSize = pageSize;
+            }
+
+            public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
+            {
+                return query => query.Stats<Target,TargetPaginationQuery>(x=>x.Stats)
+                    .Where(x => x.Number > 10).Skip(PageNumber).Take(PageSize);
+            }
+        }
+
+        [Fact]
+        public void can_get_the_total_from_a_compiled_query()
+        {
+            var count = theSession.Query<Target>().Count(x => x.Number > 10);
+            count.ShouldBeGreaterThan(0);
+
+            var query = new TargetPaginationQuery(2,5);
+            var list = theSession
+                .Query(query)
+                .ToList();
+
+            list.Any().ShouldBeTrue();
+            
+            query.Stats.TotalResults.ShouldBe(count);
+        }
+        // ENDSAMPLE
     }
 }
