@@ -52,6 +52,7 @@ To the best of our knowledge and testing, you may use any <[linkto:documentation
 * `AsJson()`
 * `ToJsonArray()`
 * `ToJsonArrayAsync()`
+* `Skip()`, `Take()` and `Stats()` for pagination
 
 At this point (v0.9), the only limitation is that you cannot use the Linq `ToArray()` or `ToList()` operators. See the next section for an explanation of how to query for multiple results.
 
@@ -106,6 +107,18 @@ Note that you could either have the list instantiated or at least make sure the 
 As with the simple include queries, you could also use a Dictionary with a key type corresponding to the Id of the document- the dictionary value type:
 
 <[sample:compiled_include_dictionary]>
+
+
+
+## Querying for paginated results
+
+Marten compiled queries also support queries for paginated results, where you could specify the page number and size, as well as getting the total count.
+A simple example of how this can be achieved as follows:
+
+<[sample:compiled-query-statistics]>
+
+Note that the way to get the `QueryStatistics` out is done by having a property on the query, which we specify in the `Stats()` method, similarly to the way 
+we handle Include queries.
 
 ## Querying for a single document
 

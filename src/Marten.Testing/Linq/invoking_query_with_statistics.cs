@@ -98,14 +98,23 @@ namespace Marten.Testing.Linq
             stats.TotalResults.ShouldBe(count);
         }
 
-        public class PagingTargetQuery : ICompiledListQuery<Target>
+        // SAMPLE: compiled-query-statistics
+        public class TargetPaginationQuery : ICompiledListQuery<Target>
         {
             public QueryStatistics Stats { get; set; }
+            public int PageNumber { get; set; }
+            public int PageSize { get; set; }
+
+            public TargetPaginationQuery(int pageNumber, int pageSize)
+            {
+                PageNumber = pageNumber;
+                PageSize = pageSize;
+            }
 
             public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
             {
-                return query => query.Stats<Target,PagingTargetQuery>(x=>x.Stats)
-                    .Where(x => x.Number > 10).Take(5);
+                return query => query.Stats<Target,TargetPaginationQuery>(x=>x.Stats)
+                    .Where(x => x.Number > 10).Skip(PageNumber).Take(PageSize);
             }
         }
 
@@ -115,7 +124,7 @@ namespace Marten.Testing.Linq
             var count = theSession.Query<Target>().Count(x => x.Number > 10);
             count.ShouldBeGreaterThan(0);
 
-            var query = new PagingTargetQuery();
+            var query = new TargetPaginationQuery(2,5);
             var list = theSession
                 .Query(query)
                 .ToList();
@@ -124,5 +133,6 @@ namespace Marten.Testing.Linq
             
             query.Stats.TotalResults.ShouldBe(count);
         }
+        // ENDSAMPLE
     }
 }
