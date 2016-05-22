@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
+using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Services
@@ -46,17 +48,95 @@ namespace Marten.Services
 
         public void Execute()
         {
+            var list = new List<Exception>();
+
             foreach (var batch in _commands.ToArray())
             {
-                Connection.Execute(batch.BuildCommand(), c => c.ExecuteNonQuery());
+                var cmd = batch.BuildCommand();
+                Connection.Execute(cmd, c =>
+                {
+                    if (batch.HasCallbacks())
+                    {
+                        executeCallbacks(cmd, batch, list);
+                    }
+                    else
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                });
+            }
+
+            if (list.Any())
+            {
+                throw new AggregateException(list);
+            }
+        }
+
+        private static void executeCallbacks(NpgsqlCommand cmd, BatchCommand batch, List<Exception> list)
+        {
+            using (var reader = cmd.ExecuteReader())
+            {
+                if (batch.Callbacks.Any())
+                {
+                    batch.Callbacks[0]?.Postprocess(reader, list);
+
+                    for (int i = 1; i < batch.Callbacks.Count; i++)
+                    {
+                        reader.NextResult();
+
+                        batch.Callbacks[i]?.Postprocess(reader, list);
+                    }
+                }
             }
         }
 
         public async Task ExecuteAsync(CancellationToken token)
         {
+            var list = new List<Exception>();
             foreach (var batch in _commands.ToArray())
             {
-                await Connection.ExecuteAsync(batch.BuildCommand(), (c, tkn) => c.ExecuteNonQueryAsync(tkn), token).ConfigureAwait(false);
+                var cmd = batch.BuildCommand();
+                await Connection.ExecuteAsync(cmd, async (c, tkn) =>
+                {
+                    if (batch.HasCallbacks())
+                    {
+                        await executeCallbacksAsync(c, tkn, batch, list);
+                    }
+                    else
+                    {
+                        await c.ExecuteNonQueryAsync(tkn);
+                    }
+
+                }, token).ConfigureAwait(false);
+            }
+
+            if (list.Any())
+            {
+                throw new AggregateException(list);
+            }
+        }
+
+        private static async Task executeCallbacksAsync(NpgsqlCommand cmd, CancellationToken tkn, BatchCommand batch, List<Exception> list)
+        {
+            using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
+            {
+                if (batch.Callbacks.Any())
+                {
+                    if (batch.Callbacks[0] != null)
+                    {
+                        await batch.Callbacks[0].PostprocessAsync(reader, list, tkn).ConfigureAwait(false);
+                    }
+
+                    for (int i = 1; i < batch.Callbacks.Count; i++)
+                    {
+                        await reader.NextResultAsync(tkn).ConfigureAwait(false);
+
+                        if (batch.Callbacks[i] != null)
+                        {
+                            await batch.Callbacks[i].PostprocessAsync(reader, list, tkn).ConfigureAwait(false);
+                        }
+                    }
+                }
             }
         }
 

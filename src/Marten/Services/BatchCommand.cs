@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Baseline;
 using Marten.Linq;
@@ -16,6 +17,7 @@ namespace Marten.Services
         private int _counter = 0;
         private readonly NpgsqlCommand _command = new NpgsqlCommand();
         private readonly IList<ICall> _calls = new List<ICall>();
+        private readonly IList<ICallback> _callbacks = new List<ICallback>();
 
         public BatchCommand(ISerializer serializer)
         {
@@ -33,6 +35,8 @@ namespace Marten.Services
             return param;
         }
 
+        public IList<ICallback> Callbacks => _callbacks;
+
         public NpgsqlCommand BuildCommand()
         {
             var builder = new StringBuilder();
@@ -47,9 +51,10 @@ namespace Marten.Services
             return _command;
         }
 
-        public void AddCall(ICall call)
+        public void AddCall(ICall call, ICallback callback = null)
         {
             _calls.Add(call);
+            _callbacks.Add(callback);
         }
 
         public SprocCall Sproc(FunctionName function)
@@ -57,7 +62,7 @@ namespace Marten.Services
             if (function == null) throw new ArgumentNullException(nameof(function));
 
             var call = new SprocCall(this, function);
-            _calls.Add(call);
+            AddCall(call);
 
             return call;
         }
@@ -66,7 +71,7 @@ namespace Marten.Services
         {
             var param = AddParameter(id, dbType);
             var call = new DeleteCall(table, param.ParameterName);
-            _calls.Add(call);
+            AddCall(call);
         }
 
 
@@ -77,7 +82,12 @@ namespace Marten.Services
 
             var whereClause = @where.ToSql(_command);
             var call = new DeleteWhereCall(table, whereClause);
-            _calls.Add(call);
+            AddCall(call);
+        }
+
+        public bool HasCallbacks()
+        {
+            return _callbacks.Any(x => x != null);
         }
     }
 }
