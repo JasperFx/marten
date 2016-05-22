@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Schema;
@@ -53,8 +54,9 @@ namespace Marten.Linq
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            // skip Visiting Include method members
-            return node.Method.Name.Contains("Include") ? node : base.VisitMethodCall(node);
+            // skip Visiting Include or Stats method members
+            var skippedMethods = new[] {nameof(CompiledQueryExtensions.Include),nameof(CompiledQueryExtensions.Stats)};
+            return skippedMethods.Contains(node.Method.Name) ? node : base.VisitMethodCall(node);
         }
 
         private IDbParameterSetter CreateParameterSetter<TObject, TProperty>(PropertyInfo property)
