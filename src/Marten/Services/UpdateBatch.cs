@@ -39,11 +39,11 @@ namespace Marten.Services
             );
         }
 
-        public SprocCall Sproc(FunctionName function)
+        public SprocCall Sproc(FunctionName function, ICallback callback = null)
         {
             if (function == null) throw new ArgumentNullException(nameof(function));
 
-            return Current().Sproc(function);
+            return Current().Sproc(function, callback);
         }
 
         public void Execute()

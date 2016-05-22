@@ -57,12 +57,12 @@ namespace Marten.Services
             _callbacks.Add(callback);
         }
 
-        public SprocCall Sproc(FunctionName function)
+        public SprocCall Sproc(FunctionName function, ICallback callback = null)
         {
             if (function == null) throw new ArgumentNullException(nameof(function));
 
             var call = new SprocCall(this, function);
-            AddCall(call);
+            AddCall(call, callback);
 
             return call;
         }
