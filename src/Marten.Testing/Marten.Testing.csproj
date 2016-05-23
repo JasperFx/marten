@@ -241,6 +241,7 @@
     <Compile Include="Services\ManagedConnectionTests.cs" />
     <Compile Include="Services\NulloIdentityMapTests.cs" />
     <Compile Include="Services\TrackedEntityTests.cs" />
+    <Compile Include="Services\VersionTrackerTests.cs" />
     <Compile Include="Session\document_session_find_json_async_Tests.cs" />
     <Compile Include="Session\document_session_load_document.cs" />
     <Compile Include="Session\document_session_load_already_loaded_document_Tests.cs" />

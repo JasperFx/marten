@@ -25,5 +25,7 @@ namespace Marten.Services
         T Retrieve<T>(object id) where T : class;
 
         IIdentityMap ForQuery();
+
+        VersionTracker Versions { get; }
     }
 }

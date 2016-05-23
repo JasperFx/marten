@@ -120,6 +120,8 @@ namespace Marten.Services
         {
             return this;
         }
+
+        public VersionTracker Versions { get; set; } = new VersionTracker();
     }
 
     public class IdentityMap : IdentityMap<object>

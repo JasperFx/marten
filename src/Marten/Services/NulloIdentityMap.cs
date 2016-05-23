@@ -64,7 +64,12 @@ namespace Marten.Services
 
         public IIdentityMap ForQuery()
         {
-            return new IdentityMap(_serializer, Enumerable.Empty<IDocumentSessionListener>());
+            return new IdentityMap(_serializer, Enumerable.Empty<IDocumentSessionListener>())
+            {
+                Versions = Versions
+            };
         }
+
+        public VersionTracker Versions { get; } = new VersionTracker();
     }
 }

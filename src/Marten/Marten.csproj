@@ -276,6 +276,7 @@
     <Compile Include="Services\SprocCall.cs" />
     <Compile Include="Services\TrackedEntity.cs" />
     <Compile Include="Services\TransactionState.cs" />
+    <Compile Include="Services\VersionTracker.cs" />
     <Compile Include="StoreOptions.cs" />
     <Compile Include="QueryableExtensions.cs" />
     <Compile Include="Util\EnumerableExtensions.cs" />
