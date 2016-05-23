@@ -21,7 +21,7 @@ namespace Marten.Schema
         private readonly ISerializer _serializer;
         private readonly DocumentMapping _mapping;
         private readonly FunctionName _upsertName;
-        private readonly Action<SprocCall, T, string, DocumentMapping, string> _sprocWriter;
+        private readonly Action<SprocCall, T, string, DocumentMapping> _sprocWriter;
 
         public Resolver(ISerializer serializer, DocumentMapping mapping)
         {
@@ -45,25 +45,24 @@ namespace Marten.Schema
             _upsertName = mapping.UpsertFunction;
         }
 
-        private Action<SprocCall, T, string, DocumentMapping, string> buildSprocWriter(DocumentMapping mapping)
+        private Action<SprocCall, T, string, DocumentMapping> buildSprocWriter(DocumentMapping mapping)
         {
             var call = Expression.Parameter(typeof(SprocCall), "call");
             var doc = Expression.Parameter(typeof(T), "doc");
             var json = Expression.Parameter(typeof(string), "json");
             var mappingParam = Expression.Parameter(typeof(DocumentMapping), "mapping");
-            var aliasParam = Expression.Parameter(typeof(string), "alias");
 
             var arguments = new UpsertFunction(mapping).OrderedArguments().Select(x =>
             {
-                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, json, mappingParam, aliasParam);
+                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, json, mappingParam);
             });
 
             var block = Expression.Block(arguments);
 
-            var lambda = Expression.Lambda<Action<SprocCall, T, string, DocumentMapping, string>>(block,
+            var lambda = Expression.Lambda<Action<SprocCall, T, string, DocumentMapping>>(block,
                 new ParameterExpression[]
                 {
-                    call, doc, json, mappingParam, aliasParam
+                    call, doc, json, mappingParam
                 });
 
 
@@ -164,7 +163,7 @@ namespace Marten.Schema
         {
             var call = batch.Sproc(_upsertName);
 
-            _sprocWriter(call, (T) entity, json, _mapping, _mapping.AliasFor(entity.GetType()));
+            _sprocWriter(call, (T) entity, json, _mapping);
         }
 
     

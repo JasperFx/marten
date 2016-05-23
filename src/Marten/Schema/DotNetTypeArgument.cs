@@ -34,8 +34,7 @@ namespace Marten.Schema
             return Expression.Call(writer, method, getName, dbType);
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc,
-            ParameterExpression json, ParameterExpression mapping, ParameterExpression typeAlias)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression json, ParameterExpression mapping)
         {
             var getType = Expression.Call(doc, _getType);
             var getName = Expression.Call(getType, _fullName);

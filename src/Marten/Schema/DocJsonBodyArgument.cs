@@ -16,8 +16,7 @@ namespace Marten.Schema
             Column = "data";
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc,
-            ParameterExpression json, ParameterExpression mapping, ParameterExpression typeAlias)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression json, ParameterExpression mapping)
         {
             var argName = Expression.Constant(Arg);
             return Expression.Call(call, _paramMethod, argName, json, Expression.Constant(NpgsqlDbType.Jsonb));

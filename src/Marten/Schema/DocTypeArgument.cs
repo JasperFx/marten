@@ -1,10 +1,15 @@
 ﻿using System.Linq.Expressions;
+using System.Reflection;
+using Baseline.Reflection;
 using NpgsqlTypes;
 
 namespace Marten.Schema
 {
     public class DocTypeArgument : UpsertArgument
     {
+        private readonly static MethodInfo _getAlias = ReflectionHelper.GetMethod<DocumentMapping>(x => x.AliasFor(null));
+        private static readonly MethodInfo _getType = typeof(object).GetMethod("GetType");
+
         public DocTypeArgument()
         {
             Arg = "docType";
@@ -21,11 +26,15 @@ namespace Marten.Schema
             return Expression.Call(writer, method, alias, dbType);
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc,
-            ParameterExpression json, ParameterExpression mapping, ParameterExpression typeAlias)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression json, ParameterExpression mapping)
         {
             var argName = Expression.Constant(Arg);
-            return Expression.Call(call, _paramMethod, argName, typeAlias, Expression.Constant(NpgsqlDbType.Varchar));
+            var dbType = Expression.Constant(NpgsqlDbType.Varchar);
+
+            var type = Expression.Call(doc, _getType);
+            var alias = Expression.Call(mapping, _getAlias, type);
+
+            return Expression.Call(call, _paramMethod, argName, alias, dbType);
         }
     }
 }
