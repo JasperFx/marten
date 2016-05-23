@@ -3,7 +3,7 @@ using System.Reflection;
 using Baseline.Reflection;
 using NpgsqlTypes;
 
-namespace Marten.Schema
+namespace Marten.Schema.Arguments
 {
     public class DocTypeArgument : UpsertArgument
     {

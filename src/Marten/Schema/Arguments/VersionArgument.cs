@@ -4,7 +4,7 @@ using System.Reflection;
 using Marten.Schema.Identity;
 using NpgsqlTypes;
 
-namespace Marten.Schema
+namespace Marten.Schema.Arguments
 {
     public class VersionArgument : UpsertArgument
     {

@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -7,7 +6,7 @@ using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace Marten.Schema
+namespace Marten.Schema.Arguments
 {
     public class UpsertArgument
     {

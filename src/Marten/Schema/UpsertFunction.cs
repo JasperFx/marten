@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Schema.Arguments;
 using Marten.Util;
 
 namespace Marten.Schema

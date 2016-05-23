@@ -8,6 +8,7 @@ using Baseline;
 using Baseline.Reflection;
 using Marten.Generation;
 using Marten.Linq;
+using Marten.Schema.Arguments;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;

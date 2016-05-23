@@ -4,7 +4,7 @@ using Baseline.Reflection;
 using Marten.Services;
 using NpgsqlTypes;
 
-namespace Marten.Schema
+namespace Marten.Schema.Arguments
 {
     public class DocJsonBodyArgument : UpsertArgument
     {

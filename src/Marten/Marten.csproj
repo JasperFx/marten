@@ -148,11 +148,11 @@
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\BulkLoading\BulkLoader.cs" />
     <Compile Include="Schema\DbObjects.cs" />
-    <Compile Include="Schema\DocJsonBodyArgument.cs" />
-    <Compile Include="Schema\DocTypeArgument.cs" />
+    <Compile Include="Schema\Arguments\DocJsonBodyArgument.cs" />
+    <Compile Include="Schema\Arguments\DocTypeArgument.cs" />
     <Compile Include="Schema\DocumentSchemaExtensions.cs" />
     <Compile Include="Schema\DocumentSchemaObjects.cs" />
-    <Compile Include="Schema\DotNetTypeArgument.cs" />
+    <Compile Include="Schema\Arguments\DotNetTypeArgument.cs" />
     <Compile Include="Schema\IDbObjects.cs" />
     <Compile Include="Schema\Identity\GuidIdGenerator.cs" />
     <Compile Include="Schema\Identity\IdAssigner.cs" />
@@ -187,7 +187,7 @@
     <Compile Include="Schema\DatabaseSchemaGenerator.cs" />
     <Compile Include="Schema\UpsertFunction.cs" />
     <Compile Include="Schema\UseOptimisticConcurrencyAttribute.cs" />
-    <Compile Include="Schema\VersionArgument.cs" />
+    <Compile Include="Schema\Arguments\VersionArgument.cs" />
     <Compile Include="Services\BatchCommand.cs" />
     <Compile Include="Services\BatchQuerying\BatchedQuery.cs" />
     <Compile Include="Services\BatchQuerying\BatchedQueryable.cs" />
@@ -270,7 +270,7 @@
     <Compile Include="Schema\Identity\Sequences\ISequence.cs" />
     <Compile Include="Schema\Identity\Sequences\ISequences.cs" />
     <Compile Include="Schema\Identity\Sequences\SequenceFactory.cs" />
-    <Compile Include="Schema\UpsertArgument.cs" />
+    <Compile Include="Schema\Arguments\UpsertArgument.cs" />
     <Compile Include="Services\NulloIdentityMap.cs" />
     <Compile Include="Services\Delete.cs" />
     <Compile Include="Services\SprocCall.cs" />
