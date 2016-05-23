@@ -64,7 +64,7 @@ namespace Marten.Schema
         }
 
 
-        public virtual Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression json, ParameterExpression mapping)
+        public virtual Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping)
         {
             var argName = Expression.Constant(Arg);
 

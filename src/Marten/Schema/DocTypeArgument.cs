@@ -26,7 +26,7 @@ namespace Marten.Schema
             return Expression.Call(writer, method, alias, dbType);
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression json, ParameterExpression mapping)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping)
         {
             var argName = Expression.Constant(Arg);
             var dbType = Expression.Constant(NpgsqlDbType.Varchar);

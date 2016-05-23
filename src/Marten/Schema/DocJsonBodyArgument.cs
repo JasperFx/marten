@@ -1,11 +1,14 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using Baseline.Reflection;
+using Marten.Services;
 using NpgsqlTypes;
 
 namespace Marten.Schema
 {
     public class DocJsonBodyArgument : UpsertArgument
     {
+        private static readonly MethodInfo _serializer = ReflectionHelper.GetProperty<UpdateBatch>(x => x.Serializer).GetMethod;
         private static readonly MethodInfo _tojson = typeof(ISerializer).GetMethod(nameof(ISerializer.ToJson));
 
         public DocJsonBodyArgument()
@@ -16,9 +19,13 @@ namespace Marten.Schema
             Column = "data";
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression json, ParameterExpression mapping)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping)
         {
             var argName = Expression.Constant(Arg);
+
+            var serializer = Expression.Call(updateBatch, _serializer);
+            var json = Expression.Call(serializer, _tojson, doc);
+
             return Expression.Call(call, _paramMethod, argName, json, Expression.Constant(NpgsqlDbType.Jsonb));
         }
 
