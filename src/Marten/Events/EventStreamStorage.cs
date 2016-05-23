@@ -73,7 +73,7 @@ namespace Marten.Events
             var bodies = stream.Events.Select(x => batch.Serializer.ToJson(x.Data)).ToArray();
             var ids = stream.Events.Select(x => x.Id).ToArray();
 
-            batch.Sproc(AppendEventFunction)
+            batch.Sproc(AppendEventFunction, new EventStreamVersioningCallback(stream))
                     .Param("stream", stream.Id)
                     .Param("stream_type", streamTypeName)
                     .Param("event_ids", ids)
