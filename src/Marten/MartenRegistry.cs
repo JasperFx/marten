@@ -276,7 +276,18 @@ namespace Marten
             public DocumentMappingExpression<T> AddSubclass<TSubclass>(string alias = null) where TSubclass : T
             {
                 return AddSubclass(typeof(TSubclass), alias);
-            }    
+            }
+
+            /// <summary>
+            /// Directs Marten to use the optimistic versioning checks upon updates
+            /// to this document type
+            /// </summary>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> UseOptimisticConcurrency()
+            {
+                alter = m => m.UseOptimisticConcurrency = true;
+                return this;
+            }
         }
     }
 

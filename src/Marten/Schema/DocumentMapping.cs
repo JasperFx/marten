@@ -14,6 +14,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
+
     public class DocumentMapping : IDocumentMapping, IQueryableDocument
     {
         public const string BaseAlias = "BASE";
@@ -69,6 +70,8 @@ namespace Marten.Schema
                 .Where(x => TypeMappings.HasTypeMapping(x.FieldType))
                 .Each(fieldInfo => { fieldInfo.ForAttribute<MartenAttribute>(att => att.Modify(this, fieldInfo)); });
         }
+
+        public bool UseOptimisticConcurrency { get; set; } = false;
 
         public IList<IndexDefinition> Indexes { get; } = new List<IndexDefinition>();
 

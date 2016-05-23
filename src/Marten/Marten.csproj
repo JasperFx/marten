@@ -186,6 +186,7 @@
     <Compile Include="Schema\SubClassMapping.cs" />
     <Compile Include="Schema\DatabaseSchemaGenerator.cs" />
     <Compile Include="Schema\UpsertFunction.cs" />
+    <Compile Include="Schema\UseOptimisticConcurrencyAttribute.cs" />
     <Compile Include="Schema\VersionArgument.cs" />
     <Compile Include="Services\BatchCommand.cs" />
     <Compile Include="Services\BatchQuerying\BatchedQuery.cs" />
