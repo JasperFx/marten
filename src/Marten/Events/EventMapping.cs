@@ -194,6 +194,12 @@ namespace Marten.Events
             return serializer.FromJson<T>(reader.GetString(0));
         }
 
+        public async Task<T> BuildAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
+        {
+            var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            return serializer.FromJson<T>(json);
+        }
+
         public T Resolve(IIdentityMap map, ILoader loader, object id)
         {
             return map.Get(id, () => loader.LoadDocument<T>(id));

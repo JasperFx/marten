@@ -98,6 +98,12 @@ namespace Marten.Schema.Hierarchies
             return serializer.FromJson<T>(reader.GetString(0));
         }
 
+        public async Task<T> BuildAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
+        {
+            var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            return serializer.FromJson<T>(json);
+        }
+
         public T Resolve(IIdentityMap map, ILoader loader, object id)
         {
             // TODO -- watch it here if it's the wrong type

@@ -101,8 +101,18 @@ namespace Marten
                 {
                     var found = await reader.ReadAsync(tkn).ConfigureAwait(false);
 
-                    // TODO -- this might be the offending line of code for the async load document problems
-                    return found ? new FetchResult<T>(resolver.Build(reader, _serializer), reader.GetString(0)) : null;
+
+                    if (found)
+                    {
+                        var document = await resolver.BuildAsync(reader, _serializer, token).ConfigureAwait(false);
+
+                        var json = await reader.GetFieldValueAsync<string>(0, tkn).ConfigureAwait(false);
+
+                        return new FetchResult<T>(document, json);
+                    }
+
+
+                    return  null;
                 }
             }, token);
         }
