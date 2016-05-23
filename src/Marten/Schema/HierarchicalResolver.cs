@@ -38,15 +38,35 @@ namespace Marten.Schema
             return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json);
         }
 
-        public override T Build(DbDataReader reader, ISerializer serializer)
+
+        public override FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
         {
+            if (!reader.Read()) return null;
+
             var json = reader.GetString(0);
             var typeAlias = reader.GetString(2);
 
             var actualType = _hierarchy.TypeFor(typeAlias);
 
+            var doc = (T)serializer.FromJson(actualType, json);
 
-            return (T) serializer.FromJson(actualType, json);
+            return new FetchResult<T>(doc, json);
+        }
+
+        public override async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
+        {
+            var found = await reader.ReadAsync(token).ConfigureAwait(false);
+
+            if (!found) return null;
+
+            var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            var typeAlias = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
+
+            var actualType = _hierarchy.TypeFor(typeAlias);
+
+            var doc = (T)serializer.FromJson(actualType, json);
+
+            return new FetchResult<T>(doc, json);
         }
     }
 }

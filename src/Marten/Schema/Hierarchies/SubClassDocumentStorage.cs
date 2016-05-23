@@ -2,8 +2,6 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
-using Marten.Schema.Identity;
 using Marten.Services;
 using Npgsql;
 using NpgsqlTypes;
@@ -92,16 +90,27 @@ namespace Marten.Schema.Hierarchies
             return map.Get<TBase>(id, typeof(T), json) as T;
         }
 
-        public T Build(DbDataReader reader, ISerializer serializer)
+
+        public FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
         {
-            // TODO -- watch this, will need to validate that it's the right type first
-            return serializer.FromJson<T>(reader.GetString(0));
+            if (!reader.Read()) return null;
+
+            var json = reader.GetString(0);
+            var doc = serializer.FromJson<T>(json);
+
+            return new FetchResult<T>(doc, json);
         }
 
-        public async Task<T> BuildAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
+        // TODO -- this is all duplicated from Resolver<T>, fix that.
+        public async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
         {
+            var found = await reader.ReadAsync(token).ConfigureAwait(false);
+            if (!found) return null;
+
             var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-            return serializer.FromJson<T>(json);
+            var doc = serializer.FromJson<T>(json);
+
+            return new FetchResult<T>(doc, json);
         }
 
         public T Resolve(IIdentityMap map, ILoader loader, object id)

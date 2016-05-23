@@ -189,15 +189,27 @@ namespace Marten.Events
             return map.Get<T>(id, json);
         }
 
-        public T Build(DbDataReader reader, ISerializer serializer)
+        public FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
         {
-            return serializer.FromJson<T>(reader.GetString(0));
+            if (!reader.Read()) return null;
+
+            var json = reader.GetString(0);
+            var doc = serializer.FromJson<T>(json);
+
+            return new FetchResult<T>(doc, json);
         }
 
-        public async Task<T> BuildAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
+        // TODO -- lots of this is duplicated from Resolver<T>
+        public async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
         {
+            var found = await reader.ReadAsync(token).ConfigureAwait(false);
+
+            if (!found) return null;
+
             var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-            return serializer.FromJson<T>(json);
+            var doc = serializer.FromJson<T>(json);
+
+            return new FetchResult<T>(doc, json);
         }
 
         public T Resolve(IIdentityMap map, ILoader loader, object id)
@@ -209,5 +221,7 @@ namespace Marten.Events
         {
             return map.GetAsync(id, tkn => loader.LoadDocumentAsync<T>(id, tkn), token);
         }
+
+
     }
 }

@@ -82,8 +82,7 @@ namespace Marten
             {
                 using (var reader = cmd.ExecuteReader())
                 {
-                    var found = reader.Read();
-                    return found ? new FetchResult<T>(resolver.Build(reader, _serializer), reader.GetString(0)) : null;
+                    return resolver.Fetch(reader, _serializer);
                 }
             });
         }
@@ -99,20 +98,7 @@ namespace Marten
             {
                 using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                 {
-                    var found = await reader.ReadAsync(tkn).ConfigureAwait(false);
-
-
-                    if (found)
-                    {
-                        var document = await resolver.BuildAsync(reader, _serializer, token).ConfigureAwait(false);
-
-                        var json = await reader.GetFieldValueAsync<string>(0, tkn).ConfigureAwait(false);
-
-                        return new FetchResult<T>(document, json);
-                    }
-
-
-                    return  null;
+                    return await resolver.FetchAsync(reader, _serializer, token).ConfigureAwait(false);
                 }
             }, token);
         }
