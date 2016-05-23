@@ -61,6 +61,7 @@
     <Compile Include="Bugs\Bug_336_completely_remove_crosses_schema_lines.cs" />
     <Compile Include="Events\end_to_end_event_capture_and_fetching_the_stream_with_rolling_buffer_Tests.cs" />
     <Compile Include="Events\EventStreamStorageTests.cs" />
+    <Compile Include="Events\EventStreamTester.cs" />
     <Compile Include="Events\fetch_a_single_event_with_metadata.cs" />
     <Compile Include="Events\get_committed_events_from_listener_Tests.cs" />
     <Compile Include="Events\insert_to_rolling_buffer_table.cs" />

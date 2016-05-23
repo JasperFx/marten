@@ -56,5 +56,15 @@ namespace Marten.Events
             _events.Add(new Event<T>(@event) {Id = Guid.NewGuid()});
             return this;
         }
+
+        public void ApplyLatestVersion(int version)
+        {
+            var current = version;
+            _events.Reverse().Each(e =>
+            {
+                e.Version = current;
+                current--;
+            });
+        }
     }
 }

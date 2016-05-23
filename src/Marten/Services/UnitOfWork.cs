@@ -61,14 +61,14 @@ namespace Marten.Services
 
         public void StoreUpdates<T>(params T[] documents)
         {
-            var list = _updates.GetOrAdd(typeof (T), type => typeof (List<>).CloseAndBuildAs<IEnumerable>(typeof (T))).As<List<T>>();
+            var list = _updates.GetOrAdd(typeof (T), type => new List<T>()).As<List<T>>();
 
             list.AddRange(documents);
         }
 
         public void StoreInserts<T>(params T[] documents)
         {
-            var list = _inserts.GetOrAdd(typeof(T), type => typeof(List<>).CloseAndBuildAs<IEnumerable>(typeof(T))).As<List<T>>();
+            var list = _inserts.GetOrAdd(typeof(T), type => new List<T>()).As<List<T>>();
 
             list.AddRange(documents);
         }
