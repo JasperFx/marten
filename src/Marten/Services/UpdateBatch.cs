@@ -19,10 +19,13 @@ namespace Marten.Services
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         
 
-        public UpdateBatch(StoreOptions options, ISerializer serializer, IManagedConnection connection)
+        public UpdateBatch(StoreOptions options, ISerializer serializer, IManagedConnection connection, VersionTracker versions)
         {
+            if (versions == null) throw new ArgumentNullException(nameof(versions));
+
             _options = options;
             _serializer = serializer;
+            Versions = versions;
 
             _commands.Push(new BatchCommand(serializer));
             Connection = connection;
@@ -38,6 +41,8 @@ namespace Marten.Services
                 write:() => _commands.Push(new BatchCommand(_serializer))
             );
         }
+
+        public VersionTracker Versions { get; }
 
         public SprocCall Sproc(FunctionName function, ICallback callback = null)
         {

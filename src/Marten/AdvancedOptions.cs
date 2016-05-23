@@ -49,7 +49,7 @@ namespace Marten
         /// <returns></returns>
         public UpdateBatch CreateUpdateBatch()
         {
-            return new UpdateBatch(Options, _serializer, OpenConnection());
+            return new UpdateBatch(Options, _serializer, OpenConnection(), new VersionTracker());
         }
 
         /// <summary>

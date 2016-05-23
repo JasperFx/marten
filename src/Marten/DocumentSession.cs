@@ -131,7 +131,7 @@ namespace Marten
 
             _options.Listeners.Each(x => x.BeforeSaveChanges(this));
 
-            var batch = new UpdateBatch(_options, _serializer, _connection);
+            var batch = new UpdateBatch(_options, _serializer, _connection, _identityMap.Versions);
             var changes = _unitOfWork.ApplyChanges(batch);
             _changes.Add(changes);
 
@@ -159,7 +159,7 @@ namespace Marten
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
             }
 
-            var batch = new UpdateBatch(_options, _serializer, _connection);
+            var batch = new UpdateBatch(_options, _serializer, _connection, _identityMap.Versions);
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
 
             _changes.Add(changes);
