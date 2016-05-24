@@ -46,6 +46,7 @@
     </Compile>
     <Compile Include="Acceptance\fetching_entity_metadata.cs" />
     <Compile Include="Acceptance\optimistic_concurrency.cs" />
+    <Compile Include="Acceptance\optimistic_concurrency_with_subclass_hierarchies.cs" />
     <Compile Include="auto_assign_missing_guid_ids_Tests.cs" />
     <Compile Include="Bugs\ability_to_persist_generic_types.cs" />
     <Compile Include="Bugs\ability_to_persist_nested_types_Tests.cs" />

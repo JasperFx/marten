@@ -807,10 +807,14 @@ namespace Marten.Testing.Acceptance
     }
 
     [UseOptimisticConcurrency]
-    public class CoffeeShop
+    public class Shop
     {
         public Guid Id { get; set; } = Guid.NewGuid();
+    }
 
+    [UseOptimisticConcurrency]
+    public class CoffeeShop : Shop
+    {
         // Guess where I'm at as I code this?
         public string Name { get; set; } = "Starbucks";
     }
