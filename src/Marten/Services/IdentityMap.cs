@@ -25,15 +25,28 @@ namespace Marten.Services
         protected abstract TCacheValue ToCache(object id, Type concreteType, object document, string json);
         protected abstract T FromCache<T>(TCacheValue cacheValue) where T : class;
 
+        private void storeFetched<T>(object id, FetchResult<T> fetched) where T : class
+        {
+            if (fetched != null && fetched.Version.HasValue)
+            {
+                Versions.Store<T>(id, fetched.Version.Value);
+            }
+        }
+
         public T Get<T>(object id, Func<FetchResult<T>> result) where T : class
         {
             var cacheValue = Cache[typeof(T)].GetOrAdd(id, _ =>
             {
                 var fetchResult = result();
+
+                storeFetched(id, fetchResult);
+
                 var document = fetchResult?.Document;
                 _listeners.Each(listener => listener.DocumentLoaded(id, document));
                 return ToCache(id, typeof(T), document, fetchResult?.Json);
             });
+
+
             return FromCache<T>(cacheValue);
         }
 
@@ -48,6 +61,8 @@ namespace Marten.Services
 
             var fetchResult = await result(token).ConfigureAwait(false);
             if (fetchResult == null) return null;
+
+            storeFetched(id, fetchResult);
 
             var document = fetchResult.Document;
 
@@ -69,6 +84,11 @@ namespace Marten.Services
             {
                 if (json.IsEmpty()) return ToCache(id, concreteType, null, json);
 
+                if (version.HasValue)
+                {
+                    Versions.Store<T>(id, version.Value);
+                }
+
                 var document = Serializer.FromJson(concreteType, json);
 
                 _listeners.Each(listener => listener.DocumentLoaded(id, document));
@@ -84,8 +104,13 @@ namespace Marten.Services
             Cache[typeof(T)].TryRemove(id, out value);
         }
 
-        public void Store<T>(object id, T entity) where T : class
+        public void Store<T>(object id, T entity, Guid? version = null) where T : class
         {
+            if (version.HasValue)
+            {
+                Versions.Store<T>(id, version.Value);
+            }
+
             var dictionary = Cache[typeof(T)];
 
             if (dictionary.ContainsKey(id) && dictionary[id] != null)

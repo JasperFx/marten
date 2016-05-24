@@ -32,6 +32,8 @@ namespace Marten
         public IDocumentCleaner Clean { get; }
 
 
+        public ISerializer Serializer => _serializer;
+
         /// <summary>
         /// Directly open a managed connection to the underlying Postgresql database
         /// </summary>

@@ -19,12 +19,28 @@ namespace Marten.Services
 
         public T Get<T>(object id, Func<FetchResult<T>> result) where T : class
         {
-            return result()?.Document;
+            var fetched = result();
+
+            storeFetched(id, fetched);
+
+            return fetched?.Document;
+        }
+
+        private void storeFetched<T>(object id, FetchResult<T> fetched) where T : class
+        {
+            if (fetched != null && fetched.Version.HasValue)
+            {
+                Versions.Store<T>(id, fetched.Version.Value);
+            }
         }
 
         public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class
         {
             var fetchResult = await result(token).ConfigureAwait(false);
+
+            storeFetched(id, fetchResult);
+
+
             return fetchResult?.Document;
         }
 
@@ -32,12 +48,22 @@ namespace Marten.Services
         {
             if (json.IsEmpty()) return null;
 
+            if (version.HasValue)
+            {
+                Versions.Store<T>(id, version.Value);
+            }
+
             return _serializer.FromJson<T>(json);
         }
 
         public T Get<T>(object id, Type concreteType, string json, Guid? version) where T : class
         {
             if (json.IsEmpty()) return null;
+
+            if (version.HasValue)
+            {
+                Versions.Store<T>(id, version.Value);
+            }
 
             return _serializer.FromJson(concreteType, json).As<T>();
         }
@@ -47,9 +73,12 @@ namespace Marten.Services
             // nothing
         }
 
-        public void Store<T>(object id, T entity) where T : class
+        public void Store<T>(object id, T entity, Guid? version = null) where T : class
         {
-            // nothing
+            if (version.HasValue)
+            {
+                Versions.Store<T>(id, version.Value);
+            }
         }
 
         public bool Has<T>(object id) where T : class

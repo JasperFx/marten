@@ -20,7 +20,7 @@ namespace Marten.Services
 
         void Remove<T>(object id);
 
-        void Store<T>(object id, T entity) where T : class;
+        void Store<T>(object id, T entity, Guid? version = null) where T : class;
 
         bool Has<T>(object id) where T : class;
 

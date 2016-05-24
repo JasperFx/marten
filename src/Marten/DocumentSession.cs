@@ -113,6 +113,9 @@ namespace Marten
 
         }
 
+        // This is here for testing purposes, not part of IDocumentSession
+        public IIdentityMap IdentityMap => _identityMap;
+
         public IUnitOfWork PendingChanges => _unitOfWork;
         public void StoreObjects(IEnumerable<object> documents)
         {
