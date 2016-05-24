@@ -161,8 +161,8 @@ namespace Marten.Schema
         public virtual string[] SelectFields()
         {
             return IsHierarchy()
-                ? new[] {"data", "id", DocumentTypeColumn}
-                : new[] {"data", "id"};
+                ? new[] {"data", "id", DocumentTypeColumn, VersionColumn}
+                : new[] {"data", "id", VersionColumn};
         }
 
         public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;

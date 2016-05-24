@@ -65,8 +65,8 @@ namespace Marten.Schema
             var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
                 .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
-            var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new string[] {DocumentMapping.LastModifiedColumn}).Join(", ");
-            var valueList = ordered.Select(x => x.Arg).Concat(new string[] { "transaction_timestamp()" }).Join(", ");
+            var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new [] {DocumentMapping.LastModifiedColumn}).Join(", ");
+            var valueList = ordered.Select(x => x.Arg).Concat(new [] { "transaction_timestamp()" }).Join(", ");
 
             var updateWhere = "";
             if (Arguments.Any(x => x is CurrentVersionArgument))

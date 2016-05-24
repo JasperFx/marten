@@ -6,8 +6,10 @@ namespace Marten.Services
 {
     public interface IIdentityMap
     {
+        // Add the version to FetchResult here, see that it gets in the version
         T Get<T>(object id, Func<FetchResult<T>> result) where T : class;
 
+        // Add the version to FetchResult here, see that it gets in the version
         Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class;
 
 

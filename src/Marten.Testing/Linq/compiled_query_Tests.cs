@@ -35,7 +35,7 @@ namespace Marten.Testing.Linq
         {
             var cmd = theStore.Diagnostics.PreviewCommand(new UserByUsername {UserName = "hank"});
 
-            cmd.CommandText.ShouldBe("select d.data, d.id from public.mt_doc_user as d where d.data ->> 'UserName' = :arg0 LIMIT 1");
+            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_user as d where d.data ->> 'UserName' = :arg0 LIMIT 1");
 
             cmd.Parameters.Single().Value.ShouldBe("hank");
         }

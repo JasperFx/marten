@@ -26,7 +26,7 @@ namespace Marten.Testing.Linq
         [Fact]
         public void the_selected_fields()
         {
-            theSelector.SelectFields().ShouldHaveTheSameElementsAs("d.data", "d.id");
+            theSelector.SelectFields().ShouldHaveTheSameElementsAs("d.data", "d.id", "d.mt_version");
         }
 
         [Fact]
