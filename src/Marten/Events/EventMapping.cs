@@ -178,7 +178,7 @@ namespace Marten.Events
             var id = reader.GetGuid(startingIndex);
             var json = reader.GetString(startingIndex + 1);
 
-            return map.Get<T>(id, json);
+            return map.Get<T>(id, json, null);
         }
 
         public async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map, CancellationToken token)
@@ -186,7 +186,7 @@ namespace Marten.Events
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var json = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
 
-            return map.Get<T>(id, json);
+            return map.Get<T>(id, json, null);
         }
 
         public FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)

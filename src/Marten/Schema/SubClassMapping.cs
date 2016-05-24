@@ -66,7 +66,7 @@ namespace Marten.Schema
 
         public string[] SelectFields()
         {
-            return _inner.SelectFields();
+            return new[] {"data", "id", DocumentMapping.DocumentTypeColumn, DocumentMapping.VersionColumn };
         }
 
         public IField FieldFor(IEnumerable<MemberInfo> members)

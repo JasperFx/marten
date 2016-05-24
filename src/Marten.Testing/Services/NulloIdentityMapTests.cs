@@ -39,7 +39,7 @@ namespace Marten.Testing.Services
 
             var map = new NulloIdentityMap(serializer);
 
-            var target2 = map.Get<Target>(target.Id, json);
+            var target2 = map.Get<Target>(target.Id, json, null);
             target2.Id.ShouldBe(target.Id);
         }
 
@@ -53,7 +53,7 @@ namespace Marten.Testing.Services
 
             var map = new NulloIdentityMap(serializer);
 
-            map.Get<Car>(camaro.Id, typeof (Camaro), json)
+            map.Get<Car>(camaro.Id, typeof (Camaro), json, null)
                 .ShouldBeOfType<Camaro>()
                 .Id.ShouldBe(camaro.Id);
 

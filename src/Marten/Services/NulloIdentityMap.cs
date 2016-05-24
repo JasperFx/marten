@@ -28,14 +28,14 @@ namespace Marten.Services
             return fetchResult?.Document;
         }
 
-        public T Get<T>(object id, string json) where T : class
+        public T Get<T>(object id, string json, Guid? version) where T : class
         {
             if (json.IsEmpty()) return null;
 
             return _serializer.FromJson<T>(json);
         }
 
-        public T Get<T>(object id, Type concreteType, string json) where T : class
+        public T Get<T>(object id, Type concreteType, string json, Guid? version) where T : class
         {
             if (json.IsEmpty()) return null;
 

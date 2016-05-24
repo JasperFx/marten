@@ -78,7 +78,9 @@ namespace Marten.Schema.Hierarchies
             var json = reader.GetString(startingIndex);
             var id = reader[startingIndex + 1];
 
-            return map.Get<TBase>(id, typeof(T), json) as T;
+            var version = reader.GetFieldValue<Guid>(3);
+
+            return map.Get<TBase>(id, typeof(T), json, version) as T;
         }
 
         public async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map,
@@ -87,7 +89,9 @@ namespace Marten.Schema.Hierarchies
             var json = await reader.GetFieldValueAsync<string>(startingIndex, token).ConfigureAwait(false);
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
-            return map.Get<TBase>(id, typeof(T), json) as T;
+            var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
+
+            return map.Get<TBase>(id, typeof(T), json, version) as T;
         }
 
 

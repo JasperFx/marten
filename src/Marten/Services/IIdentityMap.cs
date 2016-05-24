@@ -13,8 +13,8 @@ namespace Marten.Services
         Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class;
 
 
-        T Get<T>(object id, string json) where T : class;
-        T Get<T>(object id, Type concreteType, string json) where T : class;
+        T Get<T>(object id, string json, Guid? version) where T : class;
+        T Get<T>(object id, Type concreteType, string json, Guid? version) where T : class;
 
         ISerializer Serializer { get; }
 

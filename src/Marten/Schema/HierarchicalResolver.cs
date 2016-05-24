@@ -22,7 +22,9 @@ namespace Marten.Schema
             var id = reader[startingIndex + 1];
             var typeAlias = reader.GetString(startingIndex + 2);
 
-            return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json);
+            var version = reader.GetFieldValue<Guid>(3);
+
+            return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json, version);
         }
 
         public override async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map, CancellationToken token)
@@ -35,7 +37,9 @@ namespace Marten.Schema
 
             var typeAlias = await reader.GetFieldValueAsync<string>(startingIndex + 2, token).ConfigureAwait(false);
 
-            return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json);
+            var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
+
+            return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json, version);
         }
 
 

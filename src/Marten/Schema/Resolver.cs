@@ -82,7 +82,9 @@ namespace Marten.Schema
             var json = reader.GetString(startingIndex);
             var id = reader[startingIndex + 1];
 
-            return map.Get<T>(id, json);
+            var version = reader.GetFieldValue<Guid>(2);
+
+            return map.Get<T>(id, json, version);
         }
 
         public virtual async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map,
@@ -94,7 +96,9 @@ namespace Marten.Schema
 
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
-            return map.Get<T>(id, json);
+            var version = await reader.GetFieldValueAsync<Guid>(2, token).ConfigureAwait(false);
+
+            return map.Get<T>(id, json, version);
         }
 
         public T Resolve(IIdentityMap map, ILoader loader, object id)

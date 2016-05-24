@@ -58,12 +58,12 @@ namespace Marten.Services
             return document;
         }
 
-        public T Get<T>(object id, string json) where T : class
+        public T Get<T>(object id, string json, Guid? version) where T : class
         {
-            return Get<T>(id, typeof(T), json);
+            return Get<T>(id, typeof(T), json, version);
         }
 
-        public T Get<T>(object id, Type concreteType, string json) where T : class
+        public T Get<T>(object id, Type concreteType, string json, Guid? version) where T : class
         {
             var cacheValue = Cache[typeof(T)].GetOrAdd(id, _ =>
             {

@@ -20,7 +20,7 @@ namespace Marten.Testing.Services
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
-            var target2 = map.Get<Target>(target.Id, serializer.ToJson(target));
+            var target2 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
 
             target2.Id.ShouldBe(target.Id);
             target2.ShouldNotBeTheSameAs(target);
@@ -36,7 +36,7 @@ namespace Marten.Testing.Services
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
-            map.Get<NulloIdentityMapTests.Car>(camaro.Id, typeof(NulloIdentityMapTests.Camaro), json)
+            map.Get<NulloIdentityMapTests.Car>(camaro.Id, typeof(NulloIdentityMapTests.Camaro), json, null)
                 .ShouldBeOfType<NulloIdentityMapTests.Camaro>()
                 .Id.ShouldBe(camaro.Id);
 
@@ -52,10 +52,10 @@ namespace Marten.Testing.Services
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
-            var target2 = map.Get<Target>(target.Id, serializer.ToJson(target));
-            var target3 = map.Get<Target>(target.Id, serializer.ToJson(target));
-            var target4 = map.Get<Target>(target.Id, serializer.ToJson(target));
-            var target5 = map.Get<Target>(target.Id, serializer.ToJson(target));
+            var target2 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
+            var target3 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
+            var target4 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
+            var target5 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
 
             target2.Id.ShouldBe(target.Id);
             target3.Id.ShouldBe(target.Id);
@@ -126,10 +126,10 @@ namespace Marten.Testing.Services
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
 
-            var a1 = map.Get<Target>(a.Id, serializer.ToJson(a));
-            var b1 = map.Get<Target>(a.Id, serializer.ToJson(b));
-            var c1 = map.Get<Target>(a.Id, serializer.ToJson(c));
-            var d1 = map.Get<Target>(a.Id, serializer.ToJson(d));
+            var a1 = map.Get<Target>(a.Id, serializer.ToJson(a), null);
+            var b1 = map.Get<Target>(a.Id, serializer.ToJson(b), null);
+            var c1 = map.Get<Target>(a.Id, serializer.ToJson(c), null);
+            var d1 = map.Get<Target>(a.Id, serializer.ToJson(d), null);
 
             // no changes
 
@@ -150,14 +150,14 @@ namespace Marten.Testing.Services
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
 
-            var a1 = map.Get<Target>(a.Id, serializer.ToJson(a));
+            var a1 = map.Get<Target>(a.Id, serializer.ToJson(a), null);
             a1.Long++;
 
-            var b1 = map.Get<Target>(b.Id, serializer.ToJson(b));
-            var c1 = map.Get<Target>(c.Id, serializer.ToJson(c));
+            var b1 = map.Get<Target>(b.Id, serializer.ToJson(b), null);
+            var c1 = map.Get<Target>(c.Id, serializer.ToJson(c), null);
             c1.Long++;
 
-            var d1 = map.Get<Target>(d.Id, serializer.ToJson(d));
+            var d1 = map.Get<Target>(d.Id, serializer.ToJson(d), null);
 
 
             var changes = map.DetectChanges();
@@ -179,14 +179,14 @@ namespace Marten.Testing.Services
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
 
-            var a1 = map.Get<Target>(a.Id, serializer.ToJson(a));
+            var a1 = map.Get<Target>(a.Id, serializer.ToJson(a), null);
             a1.Long++;
 
-            var b1 = map.Get<Target>(b.Id, serializer.ToJson(b));
-            var c1 = map.Get<Target>(c.Id, serializer.ToJson(c));
+            var b1 = map.Get<Target>(b.Id, serializer.ToJson(b), null);
+            var c1 = map.Get<Target>(c.Id, serializer.ToJson(c), null);
             c1.Long++;
 
-            var d1 = map.Get<Target>(d.Id, serializer.ToJson(d));
+            var d1 = map.Get<Target>(d.Id, serializer.ToJson(d), null);
 
 
             var changes = map.DetectChanges();
@@ -208,12 +208,12 @@ namespace Marten.Testing.Services
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
-            var target3 = map.Get<Target>(target.Id, serializer.ToJson(target));
+            var target3 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
 
             // now remove it
             map.Remove<Target>(target.Id);
 
-            var target4 = map.Get<Target>(target.Id, serializer.ToJson(target2));
+            var target4 = map.Get<Target>(target.Id, serializer.ToJson(target2), null);
             target4.ShouldNotBeNull();
             target4.ShouldNotBeTheSameAs(target3);
 
@@ -230,7 +230,7 @@ namespace Marten.Testing.Services
             map.Store(target.Id, target);
 
 
-            map.Get<Target>(target.Id, "").ShouldBeTheSameAs(target);
+            map.Get<Target>(target.Id, "", null).ShouldBeTheSameAs(target);
         }
 
         [Fact]
