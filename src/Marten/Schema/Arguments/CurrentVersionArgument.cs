@@ -26,7 +26,7 @@ namespace Marten.Schema.Arguments
         {
             var argName = Expression.Constant(Arg);
 
-            return Expression.Call(call, _paramMethod, argName, version, Expression.Constant(DbType));
+            return Expression.Call(call, _paramMethod, argName, Expression.Convert(version, typeof(object)), Expression.Constant(DbType));
         }
     }
 }

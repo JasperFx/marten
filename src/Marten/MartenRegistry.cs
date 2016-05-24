@@ -283,9 +283,9 @@ namespace Marten
             /// to this document type
             /// </summary>
             /// <returns></returns>
-            public DocumentMappingExpression<T> UseOptimisticConcurrency()
+            public DocumentMappingExpression<T> UseOptimisticConcurrency(bool enabled)
             {
-                alter = m => m.UseOptimisticConcurrency = true;
+                alter = m => m.UseOptimisticConcurrency = enabled;
                 return this;
             }
         }

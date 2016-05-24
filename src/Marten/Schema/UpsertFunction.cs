@@ -62,19 +62,28 @@ namespace Marten.Schema
             var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");
 
             var systemUpdates = new string[] {$"{DocumentMapping.LastModifiedColumn} = transaction_timestamp()" };
-            var updates = ordered.Where(x => x.Column != "id")
+            var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
                 .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
-            var inserts = ordered.Select(x => $"\"{x.Column}\"").Concat(new string[] {DocumentMapping.LastModifiedColumn}).Join(", ");
+            var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new string[] {DocumentMapping.LastModifiedColumn}).Join(", ");
             var valueList = ordered.Select(x => x.Arg).Concat(new string[] { "transaction_timestamp()" }).Join(", ");
 
+            var updateWhere = "";
+            if (Arguments.Any(x => x is CurrentVersionArgument))
+            {
+                updateWhere = "and version = current_version";
+                if (upsertType == PostgresUpsertType.Standard)
+                {
+                    updates += " where version = current_version";
+                }
+            }
 
             if (upsertType == PostgresUpsertType.Legacy)
             {
                 writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS void LANGUAGE plpgsql AS $function$");
                 writer.WriteLine("BEGIN");
                 writer.WriteLine($"LOCK TABLE {_tableName.QualifiedName} IN SHARE ROW EXCLUSIVE MODE;");
-                writer.WriteLine($"  WITH upsert AS (UPDATE {_tableName.QualifiedName} SET {updates} WHERE id=docId RETURNING *) ");
+                writer.WriteLine($"  WITH upsert AS (UPDATE {_tableName.QualifiedName} SET {updates} WHERE id=docId {updateWhere} RETURNING *) ");
                 writer.WriteLine($"  INSERT INTO {_tableName.QualifiedName} ({inserts})");
                 writer.WriteLine($"  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);");
                 writer.WriteLine("END;");
