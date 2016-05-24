@@ -205,6 +205,7 @@
     <Compile Include="Services\DeleteWhereCall.cs" />
     <Compile Include="Services\FetchResult.cs" />
     <Compile Include="Services\ICall.cs" />
+    <Compile Include="Services\ICallback.cs" />
     <Compile Include="Services\IChangeSet.cs" />
     <Compile Include="Services\Includes\IIncludeJoin.cs" />
     <Compile Include="Services\Includes\IncludeSelector.cs" />
@@ -274,6 +275,7 @@
     <Compile Include="Schema\Arguments\UpsertArgument.cs" />
     <Compile Include="Services\NulloIdentityMap.cs" />
     <Compile Include="Services\Delete.cs" />
+    <Compile Include="Services\OptimisticConcurrencyCallback.cs" />
     <Compile Include="Services\SprocCall.cs" />
     <Compile Include="Services\TrackedEntity.cs" />
     <Compile Include="Services\TransactionState.cs" />
