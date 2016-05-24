@@ -196,7 +196,7 @@ namespace Marten.Events
             var json = reader.GetString(0);
             var doc = serializer.FromJson<T>(json);
 
-            return new FetchResult<T>(doc, json);
+            return new FetchResult<T>(doc, json, null);
         }
 
         // TODO -- lots of this is duplicated from Resolver<T>
@@ -209,7 +209,8 @@ namespace Marten.Events
             var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
             var doc = serializer.FromJson<T>(json);
 
-            return new FetchResult<T>(doc, json);
+
+            return new FetchResult<T>(doc, json, null);
         }
 
         public T Resolve(IIdentityMap map, ILoader loader, object id)

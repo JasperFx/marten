@@ -17,7 +17,7 @@ namespace Marten.Testing.Services
 
             var map = new NulloIdentityMap(serializer);
 
-            var target2 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, json));
+            var target2 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, json, null));
             target2.Id.ShouldBe(target.Id);
            
         }

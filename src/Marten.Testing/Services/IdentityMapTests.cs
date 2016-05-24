@@ -102,7 +102,7 @@ namespace Marten.Testing.Services
             var target2 = map.Get<Target>(target.Id, () =>
             {
                 
-                return new FetchResult<Target>(clonedTarget, json);
+                return new FetchResult<Target>(clonedTarget, json, null);
             });
 
             target2.Id.ShouldBe(target.Id);
@@ -118,10 +118,10 @@ namespace Marten.Testing.Services
 
             var map = new IdentityMap(serializer, null);
 
-            var target2 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target)));
-            var target3 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target)));
-            var target4 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target)));
-            var target5 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target)));
+            var target2 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target), null));
+            var target3 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target), null));
+            var target4 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target), null));
+            var target5 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target), null));
 
             target2.Id.ShouldBe(target.Id);
             target3.Id.ShouldBe(target.Id);

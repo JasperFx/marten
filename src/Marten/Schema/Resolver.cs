@@ -115,7 +115,9 @@ namespace Marten.Schema
             var json = reader.GetString(0);
             var doc = serializer.FromJson<T>(json);
 
-            return new FetchResult<T>(doc, json);
+            var version = reader.GetFieldValue<Guid>(2);
+
+            return new FetchResult<T>(doc, json, version);
         }
 
         public virtual async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
@@ -126,7 +128,9 @@ namespace Marten.Schema
             var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
             var doc = serializer.FromJson<T>(json);
 
-            return new FetchResult<T>(doc, json);
+            var version = await reader.GetFieldValueAsync<Guid>(2, token).ConfigureAwait(false);
+
+            return new FetchResult<T>(doc, json, version);
         }
 
 
