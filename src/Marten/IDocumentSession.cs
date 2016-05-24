@@ -56,7 +56,6 @@ namespace Marten
         /// <returns></returns>
         Task SaveChangesAsync(CancellationToken token = default(CancellationToken));
 
-        // TODO -- DocumentStore by etag? Version strategy?
 
         /// <summary>
         /// Explicitly marks a document as needing to be inserted or updated upon the next call to SaveChanges()
@@ -64,6 +63,16 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
         void Store<T>(params T[] entities);
+
+        /// <summary>
+        /// Explicitly marks a document as needing to be updated and supplies the
+        /// current known version for the purpose of optimistic versioning checks
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        /// <param name="version"></param>
+        void Store<T>(T entity, Guid version);
+
 
 
         /// <summary>

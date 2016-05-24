@@ -113,6 +113,16 @@ namespace Marten
 
         }
 
+        public void Store<T>(T entity, Guid version)
+        {
+            var storage = _schema.StorageFor(typeof(T));
+            var id = storage.Identity(entity);
+
+            _identityMap.Versions.Store<T>(id, version);
+
+            Store(entity);
+        }
+
         // This is here for testing purposes, not part of IDocumentSession
         public IIdentityMap IdentityMap => _identityMap;
 

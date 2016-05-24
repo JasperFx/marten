@@ -696,6 +696,114 @@ namespace Marten.Testing.Acceptance
                 ex.InnerExceptions.OfType<ConcurrencyException>().Count().ShouldBe(2);
             }
         }
+
+        [Fact]
+        public void store_with_the_right_version()
+        {
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                session.SaveChanges();
+            }
+
+            var metadata = theStore.Advanced.MetadataFor(doc1);
+
+            using (var session = theStore.OpenSession())
+            {
+                doc1.Name = "Mozart's";
+                session.Store(doc1, metadata.CurrentVersion);
+
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<CoffeeShop>(doc1.Id).Name
+                    .ShouldBe("Mozart's");
+            }
+        }
+
+        [Fact]
+        public async Task store_with_the_right_version_async()
+        {
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                await session.SaveChangesAsync();
+            }
+
+            var metadata = theStore.Advanced.MetadataFor(doc1);
+
+            using (var session = theStore.OpenSession())
+            {
+                doc1.Name = "Mozart's";
+                session.Store(doc1, metadata.CurrentVersion);
+
+                await session.SaveChangesAsync();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name
+                    .ShouldBe("Mozart's");
+            }
+        }
+
+        [Fact]
+        public void store_with_the_right_version_sad_path()
+        {
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                session.SaveChanges();
+            }
+
+
+            using (var session = theStore.OpenSession())
+            {
+                doc1.Name = "Mozart's";
+
+                // Some random version that won't match
+                session.Store(doc1, Guid.NewGuid());
+
+                Exception<AggregateException>.ShouldBeThrownBy(() =>
+                {
+                    session.SaveChanges();
+                });
+            }
+
+
+        }
+
+        [Fact]
+        public async Task store_with_the_right_version_sad_path_async()
+        {
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                await session.SaveChangesAsync();
+            }
+
+
+            using (var session = theStore.OpenSession())
+            {
+                doc1.Name = "Mozart's";
+
+                // Some random version that won't match
+                session.Store(doc1, Guid.NewGuid());
+
+                await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
+                {
+                    await session.SaveChangesAsync();
+                });
+            }
+
+
+        }
     }
 
     [UseOptimisticConcurrency]
