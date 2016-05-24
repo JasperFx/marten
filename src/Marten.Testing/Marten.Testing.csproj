@@ -44,6 +44,7 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Acceptance\fetching_entity_metadata.cs" />
     <Compile Include="Acceptance\optimistic_concurrency.cs" />
     <Compile Include="auto_assign_missing_guid_ids_Tests.cs" />
     <Compile Include="Bugs\ability_to_persist_generic_types.cs" />
