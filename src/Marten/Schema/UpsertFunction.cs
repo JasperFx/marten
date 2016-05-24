@@ -66,15 +66,15 @@ namespace Marten.Schema
                 .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
             var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new [] {DocumentMapping.LastModifiedColumn}).Join(", ");
-            var valueList = ordered.Select(x => x.Arg).Concat(new [] { "transaction_timestamp()" }).Join(", ");
+            var valueList = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).Concat(new [] { "transaction_timestamp()" }).Join(", ");
 
             var updateWhere = "";
             if (Arguments.Any(x => x is CurrentVersionArgument))
             {
-                updateWhere = $" and {DocumentMapping.VersionColumn} = current_version or current_version is null";
+                updateWhere = $" and {_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version or current_version is null";
                 if (upsertType == PostgresUpsertType.Standard)
                 {
-                    updates += $" where {DocumentMapping.VersionColumn} = current_version or current_version is null";
+                    updates += $" where {_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version or current_version is null";
                 }
             }
 
