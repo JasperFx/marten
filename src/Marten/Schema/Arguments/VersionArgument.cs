@@ -31,12 +31,10 @@ namespace Marten.Schema.Arguments
             return Expression.Call(writer, method, value, dbType);
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression version)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion)
         {
-            var value = Expression.Convert(Expression.Call(_newGuid), typeof(object));
-
             var dbType = Expression.Constant(DbType);
-            return Expression.Call(call, _paramMethod, Expression.Constant(Arg), Expression.Convert(value, typeof(object)), dbType);
+            return Expression.Call(call, _paramMethod, Expression.Constant(Arg), Expression.Convert(newVersion, typeof(object)), dbType);
         }
     }
 }

@@ -80,23 +80,33 @@ namespace Marten.Schema
 
             if (upsertType == PostgresUpsertType.Legacy)
             {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS void LANGUAGE plpgsql AS $function$");
+                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql AS $function$");
+                writer.WriteLine("DECLARE");
+                writer.WriteLine("  final_version uuid;");
                 writer.WriteLine("BEGIN");
                 writer.WriteLine($"LOCK TABLE {_tableName.QualifiedName} IN SHARE ROW EXCLUSIVE MODE;");
                 writer.WriteLine($"  WITH upsert AS (UPDATE {_tableName.QualifiedName} SET {updates} WHERE id=docId {updateWhere} RETURNING *) ");
                 writer.WriteLine($"  INSERT INTO {_tableName.QualifiedName} ({inserts})");
                 writer.WriteLine($"  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);");
+                writer.WriteLine("");
+                writer.WriteLine($"  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId;");
+                writer.WriteLine("   RETURN final_version;");
                 writer.WriteLine("END;");
                 writer.WriteLine("$function$;");
                 
             }
             else
             {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS void LANGUAGE plpgsql AS $function$");
+                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql AS $function$");
+                writer.WriteLine("DECLARE");
+                writer.WriteLine("  final_version uuid;");
                 writer.WriteLine("BEGIN");
                 writer.WriteLine($"INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})");
                 writer.WriteLine($"  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}");
                 writer.WriteLine($"  DO UPDATE SET {updates};");
+                writer.WriteLine("");
+                writer.WriteLine($"  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId;");
+                writer.WriteLine("   RETURN final_version;");
                 writer.WriteLine("END;");
                 writer.WriteLine("$function$;");
             }

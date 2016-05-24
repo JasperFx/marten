@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
@@ -21,7 +22,7 @@ namespace Marten.Schema
         private readonly ISerializer _serializer;
         private readonly DocumentMapping _mapping;
         private readonly FunctionName _upsertName;
-        private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?> _sprocWriter;
+        private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid> _sprocWriter;
 
         public Resolver(ISerializer serializer, DocumentMapping mapping)
         {
@@ -45,26 +46,27 @@ namespace Marten.Schema
             _upsertName = mapping.UpsertFunction;
         }
 
-        private Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?> buildSprocWriter(DocumentMapping mapping)
+        private Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid> buildSprocWriter(DocumentMapping mapping)
         {
             var call = Expression.Parameter(typeof(SprocCall), "call");
             var doc = Expression.Parameter(typeof(T), "doc");
             var batch = Expression.Parameter(typeof(UpdateBatch), "batch");
             var mappingParam = Expression.Parameter(typeof(DocumentMapping), "mapping");
 
-            var version = Expression.Parameter(typeof(Guid?), "version");
+            var currentVersion = Expression.Parameter(typeof(Guid?), "currentVersion");
+            var newVersion = Expression.Parameter(typeof(Guid), "newVersion");
 
             var arguments = new UpsertFunction(mapping).OrderedArguments().Select(x =>
             {
-                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, version);
+                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, currentVersion, newVersion);
             });
 
             var block = Expression.Block(arguments);
 
-            var lambda = Expression.Lambda<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?>>(block,
+            var lambda = Expression.Lambda<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid>>(block,
                 new ParameterExpression[]
                 {
-                    call, doc, batch, mappingParam, version
+                    call, doc, batch, mappingParam, currentVersion, newVersion
                 });
 
 
@@ -165,17 +167,28 @@ namespace Marten.Schema
 
         public void RegisterUpdate(UpdateBatch batch, object entity)
         {
+
             var json = batch.Serializer.ToJson(entity);
             RegisterUpdate(batch, entity, json);
         }
 
         public void RegisterUpdate(UpdateBatch batch, object entity, string json)
         {
-            var call = batch.Sproc(_upsertName);
+            var newVersion = CombGuidIdGeneration.New();
+            var currentVersion = batch.Versions.Version<T>(Identity(entity));
 
-            var version = batch.Versions.Version<T>(Identity(entity));
+            ICallback callback = null;
+            if (_mapping.UseOptimisticConcurrency && currentVersion.HasValue)
+            {
+                callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions, newVersion, currentVersion.Value);
+            }
 
-            _sprocWriter(call, (T) entity, batch, _mapping, version);
+
+            var call = batch.Sproc(_upsertName, callback);
+
+            
+
+            _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion);
         }
 
     

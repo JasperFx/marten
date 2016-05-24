@@ -20,13 +20,11 @@ namespace Marten.Schema.Arguments
             return null;
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call,
-            ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping,
-            ParameterExpression version)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion)
         {
             var argName = Expression.Constant(Arg);
 
-            return Expression.Call(call, _paramMethod, argName, Expression.Convert(version, typeof(object)), Expression.Constant(DbType));
+            return Expression.Call(call, _paramMethod, argName, Expression.Convert(currentVersion, typeof(object)), Expression.Constant(DbType));
         }
     }
 }

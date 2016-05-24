@@ -11,12 +11,14 @@ namespace Marten.Services
         private readonly object _id;
         private readonly VersionTracker _versions;
         private readonly Guid _newVersion;
+        private readonly Guid _oldVersion;
 
-        public OptimisticConcurrencyCallback(object id, VersionTracker versions, Guid newVersion)
+        public OptimisticConcurrencyCallback(object id, VersionTracker versions, Guid newVersion, Guid oldVersion)
         {
             _id = id;
             _versions = versions;
             _newVersion = newVersion;
+            _oldVersion = oldVersion;
         }
 
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
@@ -24,7 +26,8 @@ namespace Marten.Services
             var success = false;
             if (reader.Read())
             {
-                success = reader.GetFieldValue<int>(0) == 1;
+                var version = reader.GetFieldValue<Guid>(0);
+                success = version == _newVersion;
             };
 
             if (success)
@@ -42,8 +45,8 @@ namespace Marten.Services
             var success = false;
             if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                var rowCount = await reader.GetFieldValueAsync<int>(0, token).ConfigureAwait(false);
-                success = rowCount == 1;
+                var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
+                success = version == _newVersion;
             }
 
             if (success)
