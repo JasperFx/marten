@@ -429,7 +429,135 @@ namespace Marten.Testing.Acceptance
 
         }
 
+        [Fact]
+        public void can_do_multiple_updates_in_a_row_standard()
+        {
+            StoreOptions(_ => {
+                _.UpsertType = PostgresUpsertType.Standard;
+            });
 
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.DirtyTrackedSession())
+            {
+                var doc2 = session.Load<CoffeeShop>(doc1.Id);
+                doc2.Name = "Mozart's";
+
+                session.SaveChanges();
+
+                doc2.Name = "Cafe Medici";
+
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Cafe Medici");
+            }
+        }
+
+
+        [Fact]
+        public async Task can_do_multiple_updates_in_a_row_standard_async()
+        {
+            StoreOptions(_ => {
+                _.UpsertType = PostgresUpsertType.Standard;
+            });
+
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                await session.SaveChangesAsync();
+            }
+
+            using (var session = theStore.DirtyTrackedSession())
+            {
+                var doc2 = await session.LoadAsync<CoffeeShop>(doc1.Id);
+                doc2.Name = "Mozart's";
+
+                await session.SaveChangesAsync();
+
+                doc2.Name = "Cafe Medici";
+
+                await session.SaveChangesAsync();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Cafe Medici");
+            }
+        }
+
+        [Fact]
+        public void can_do_multiple_updates_in_a_row_legacy()
+        {
+            StoreOptions(_ => {
+                _.UpsertType = PostgresUpsertType.Legacy;
+            });
+
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.DirtyTrackedSession())
+            {
+                var doc2 = session.Load<CoffeeShop>(doc1.Id);
+                doc2.Name = "Mozart's";
+
+                session.SaveChanges();
+
+                doc2.Name = "Cafe Medici";
+
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Cafe Medici");
+            }
+        }
+
+
+        [Fact]
+        public async Task can_do_multiple_updates_in_a_row_legacy_async()
+        {
+            StoreOptions(_ => {
+                _.UpsertType = PostgresUpsertType.Legacy;
+            });
+
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                await session.SaveChangesAsync();
+            }
+
+            using (var session = theStore.DirtyTrackedSession())
+            {
+                var doc2 = await session.LoadAsync<CoffeeShop>(doc1.Id);
+                doc2.Name = "Mozart's";
+
+                await session.SaveChangesAsync();
+
+                doc2.Name = "Cafe Medici";
+
+                await session.SaveChangesAsync();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Cafe Medici");
+            }
+        }
     }
 
     [UseOptimisticConcurrency]
