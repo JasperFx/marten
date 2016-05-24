@@ -71,10 +71,10 @@ namespace Marten.Schema
             var updateWhere = "";
             if (Arguments.Any(x => x is CurrentVersionArgument))
             {
-                updateWhere = "and version = current_version";
+                updateWhere = $" and {DocumentMapping.VersionColumn} = current_version or current_version is null";
                 if (upsertType == PostgresUpsertType.Standard)
                 {
-                    updates += " where version = current_version";
+                    updates += $" where {DocumentMapping.VersionColumn} = current_version or current_version is null";
                 }
             }
 
