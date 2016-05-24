@@ -558,6 +558,144 @@ namespace Marten.Testing.Acceptance
                 (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Cafe Medici");
             }
         }
+
+        [Fact]
+        public void update_multiple_docs_at_a_time_happy_path()
+        {
+            var doc1 = new CoffeeShop();
+            var doc2 = new CoffeeShop();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1, doc2);
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.DirtyTrackedSession())
+            {
+                var doc12 = session.Load<CoffeeShop>(doc1.Id);
+                doc12.Name = "Mozart's";
+
+                var doc22 = session.Load<CoffeeShop>(doc2.Id);
+                doc22.Name = "Dominican Joe's";
+
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
+                query.Load<CoffeeShop>(doc2.Id).Name.ShouldBe("Dominican Joe's");
+            }
+        }
+
+        [Fact]
+        public async Task update_multiple_docs_at_a_time_happy_path_async()
+        {
+            var doc1 = new CoffeeShop();
+            var doc2 = new CoffeeShop();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1, doc2);
+                await session.SaveChangesAsync();
+            }
+
+            using (var session = theStore.DirtyTrackedSession())
+            {
+                var doc12 = await session.LoadAsync<CoffeeShop>(doc1.Id);
+                doc12.Name = "Mozart's";
+
+                var doc22 = await session.LoadAsync<CoffeeShop>(doc2.Id);
+                doc22.Name = "Dominican Joe's";
+
+                await session.SaveChangesAsync();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Mozart's");
+                (await query.LoadAsync<CoffeeShop>(doc2.Id)).Name.ShouldBe("Dominican Joe's");
+            }
+        }
+
+        [Fact]
+        public void update_multiple_docs_at_a_time_sad_path()
+        {
+            var doc1 = new CoffeeShop();
+            var doc2 = new CoffeeShop();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1, doc2);
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.DirtyTrackedSession())
+            {
+                var doc12 = session.Load<CoffeeShop>(doc1.Id);
+                doc12.Name = "Mozart's";
+
+                var doc22 = session.Load<CoffeeShop>(doc2.Id);
+                doc22.Name = "Dominican Joe's";
+
+
+                using (var other = theStore.DirtyTrackedSession())
+                {
+                    other.Load<CoffeeShop>(doc1.Id).Name = "Genuine Joe's";
+                    other.Load<CoffeeShop>(doc2.Id).Name = "Cafe Medici";
+
+                    other.SaveChanges();
+                }
+
+                var ex = Exception<AggregateException>.ShouldBeThrownBy(() =>
+                {
+                    session.SaveChanges();
+                });
+
+                ex.InnerExceptions.OfType<ConcurrencyException>().Count().ShouldBe(2);
+            }
+        }
+
+
+
+        [Fact]
+        public async Task update_multiple_docs_at_a_time_sad_path_async()
+        {
+            var doc1 = new CoffeeShop();
+            var doc2 = new CoffeeShop();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1, doc2);
+                await session.SaveChangesAsync();
+            }
+
+            using (var session = theStore.DirtyTrackedSession())
+            {
+                var doc12 = await session.LoadAsync<CoffeeShop>(doc1.Id);
+                doc12.Name = "Mozart's";
+
+                var doc22 = await session.LoadAsync<CoffeeShop>(doc2.Id);
+                doc22.Name = "Dominican Joe's";
+
+
+                using (var other = theStore.DirtyTrackedSession())
+                {
+                    (await other.LoadAsync<CoffeeShop>(doc1.Id)).Name = "Genuine Joe's";
+                    (await other.LoadAsync<CoffeeShop>(doc2.Id)).Name = "Cafe Medici";
+
+                    await other.SaveChangesAsync();
+                }
+
+                var ex = await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
+                {
+                    await session.SaveChangesAsync();
+                });
+
+                ex.InnerExceptions.OfType<ConcurrencyException>().Count().ShouldBe(2);
+            }
+        }
     }
 
     [UseOptimisticConcurrency]
