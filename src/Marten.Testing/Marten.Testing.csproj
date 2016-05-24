@@ -88,7 +88,6 @@
     <Compile Include="Linq\compiled_query_Tests.cs" />
     <Compile Include="delete_many_documents_by_query_Tests.cs" />
     <Compile Include="detecting_insert_or_update_Tests.cs" />
-    <Compile Include="DocumentMappingTests.cs" />
     <Compile Include="DocumentSession_change_set_tracking_Tests.cs" />
     <Compile Include="document_session_logs_SaveChanges_Tests.cs" />
     <Compile Include="document_session_storing_from_another_assembly_Tests.cs" />
@@ -196,6 +195,7 @@
     <Compile Include="Schema\Identity\Sequences\LongHiloGeneratorTests.cs" />
     <Compile Include="Schema\Identity\StringIdGenerationTester.cs" />
     <Compile Include="Schema\TableNameTests.cs" />
+    <Compile Include="Schema\UpsertFunctionTests.cs" />
     <Compile Include="Services\Includes\end_to_end_query_with_compiled_include_Tests.cs" />
     <Compile Include="Services\SelectTransformerTests.cs" />
     <Compile Include="Linq\select_transformations_Tests.cs" />

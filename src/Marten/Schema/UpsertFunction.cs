@@ -48,6 +48,11 @@ namespace Marten.Schema
                 Arguments.Add(new DocTypeArgument());
             }
 
+            if (mapping.UseOptimisticConcurrency)
+            {
+                Arguments.Add(new CurrentVersionArgument());
+            }
+
         }
 
         public void WriteFunctionSql(PostgresUpsertType upsertType, StringWriter writer)

@@ -31,7 +31,7 @@ namespace Marten.Schema.Arguments
             return Expression.Call(writer, method, value, dbType);
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression version)
         {
             var value = Expression.Convert(Expression.Call(_newGuid), typeof(object));
 

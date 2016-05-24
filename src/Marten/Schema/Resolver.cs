@@ -21,7 +21,7 @@ namespace Marten.Schema
         private readonly ISerializer _serializer;
         private readonly DocumentMapping _mapping;
         private readonly FunctionName _upsertName;
-        private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping> _sprocWriter;
+        private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?> _sprocWriter;
 
         public Resolver(ISerializer serializer, DocumentMapping mapping)
         {
@@ -45,24 +45,26 @@ namespace Marten.Schema
             _upsertName = mapping.UpsertFunction;
         }
 
-        private Action<SprocCall, T, UpdateBatch, DocumentMapping> buildSprocWriter(DocumentMapping mapping)
+        private Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?> buildSprocWriter(DocumentMapping mapping)
         {
             var call = Expression.Parameter(typeof(SprocCall), "call");
             var doc = Expression.Parameter(typeof(T), "doc");
             var batch = Expression.Parameter(typeof(UpdateBatch), "batch");
             var mappingParam = Expression.Parameter(typeof(DocumentMapping), "mapping");
 
+            var version = Expression.Parameter(typeof(Guid?), "version");
+
             var arguments = new UpsertFunction(mapping).OrderedArguments().Select(x =>
             {
-                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam);
+                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, version);
             });
 
             var block = Expression.Block(arguments);
 
-            var lambda = Expression.Lambda<Action<SprocCall, T, UpdateBatch, DocumentMapping>>(block,
+            var lambda = Expression.Lambda<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?>>(block,
                 new ParameterExpression[]
                 {
-                    call, doc, batch, mappingParam
+                    call, doc, batch, mappingParam, version
                 });
 
 
@@ -163,7 +165,9 @@ namespace Marten.Schema
         {
             var call = batch.Sproc(_upsertName);
 
-            _sprocWriter(call, (T) entity, batch, _mapping);
+            var version = batch.Versions.Version<T>(Identity(entity));
+
+            _sprocWriter(call, (T) entity, batch, _mapping, version);
         }
 
     
