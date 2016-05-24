@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -222,6 +224,211 @@ namespace Marten.Testing.Acceptance
                 (await session.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Mozart's");
             }
         }
+
+        [Fact]
+        public void update_with_stale_version_standard()
+        {
+            StoreOptions(_ => {
+                _.UpsertType = PostgresUpsertType.Standard;
+            });
+
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                session.SaveChanges();
+            }
+
+            var session1 = theStore.DirtyTrackedSession();
+            var session2 = theStore.DirtyTrackedSession();
+
+            var session1Copy = session1.Load<CoffeeShop>(doc1.Id);
+            var session2Copy = session2.Load<CoffeeShop>(doc1.Id);
+
+            try
+            {
+                session1Copy.Name = "Mozart's";
+                session2Copy.Name = "Dominican Joe's";
+
+                // Should go through just fine
+                session2.SaveChanges();
+
+
+                var ex = Exception<AggregateException>.ShouldBeThrownBy(() =>
+                {
+                    session1.SaveChanges();
+                });
+
+                var concurrency = ex.InnerExceptions.OfType<ConcurrencyException>().Single();
+                concurrency.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");
+            }
+            finally
+            {
+                session1.Dispose();
+                session2.Dispose();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
+            }
+
+        }
+
+        [Fact]
+        public void update_with_stale_version_legacy()
+        {
+            StoreOptions(_ => {
+                _.UpsertType = PostgresUpsertType.Legacy;
+            });
+
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                session.SaveChanges();
+            }
+
+            var session1 = theStore.DirtyTrackedSession();
+            var session2 = theStore.DirtyTrackedSession();
+
+            var session1Copy = session1.Load<CoffeeShop>(doc1.Id);
+            var session2Copy = session2.Load<CoffeeShop>(doc1.Id);
+
+            try
+            {
+                session1Copy.Name = "Mozart's";
+                session2Copy.Name = "Dominican Joe's";
+
+                // Should go through just fine
+                session2.SaveChanges();
+
+
+                var ex = Exception<AggregateException>.ShouldBeThrownBy(() =>
+                {
+                    session1.SaveChanges();
+                });
+
+                var concurrency = ex.InnerExceptions.OfType<ConcurrencyException>().Single();
+                concurrency.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");
+            }
+            finally
+            {
+                session1.Dispose();
+                session2.Dispose();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
+            }
+
+        }
+
+
+
+        [Fact]
+        public async Task update_with_stale_version_standard_async()
+        {
+            StoreOptions(_ => {
+                _.UpsertType = PostgresUpsertType.Standard;
+            });
+
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                await session.SaveChangesAsync();
+            }
+
+            var session1 = theStore.DirtyTrackedSession();
+            var session2 = theStore.DirtyTrackedSession();
+
+            var session1Copy = await session1.LoadAsync<CoffeeShop>(doc1.Id);
+            var session2Copy = await session2.LoadAsync<CoffeeShop>(doc1.Id);
+
+            try
+            {
+                session1Copy.Name = "Mozart's";
+                session2Copy.Name = "Dominican Joe's";
+
+                // Should go through just fine
+                await session2.SaveChangesAsync();
+
+
+                var ex = await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
+                {
+                    await session1.SaveChangesAsync();
+                });
+
+                var concurrency = ex.InnerExceptions.OfType<ConcurrencyException>().Single();
+                concurrency.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");
+            }
+            finally
+            {
+                session1.Dispose();
+                session2.Dispose();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Dominican Joe's");
+            }
+
+        }
+
+
+
+        [Fact]
+        public async Task update_with_stale_version_legacy_async()
+        {
+            StoreOptions(_ => {
+                _.UpsertType = PostgresUpsertType.Legacy;
+            });
+
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                await session.SaveChangesAsync();
+            }
+
+            var session1 = theStore.DirtyTrackedSession();
+            var session2 = theStore.DirtyTrackedSession();
+
+            var session1Copy = await session1.LoadAsync<CoffeeShop>(doc1.Id);
+            var session2Copy = await session2.LoadAsync<CoffeeShop>(doc1.Id);
+
+            try
+            {
+                session1Copy.Name = "Mozart's";
+                session2Copy.Name = "Dominican Joe's";
+
+                // Should go through just fine
+                await session2.SaveChangesAsync();
+
+
+                var ex = await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
+                {
+                    await session1.SaveChangesAsync();
+                });
+
+                var concurrency = ex.InnerExceptions.OfType<ConcurrencyException>().Single();
+                concurrency.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");
+            }
+            finally
+            {
+                session1.Dispose();
+                session2.Dispose();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Dominican Joe's");
+            }
+
+        }
+
 
     }
 

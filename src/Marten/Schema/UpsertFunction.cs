@@ -80,20 +80,52 @@ namespace Marten.Schema
 
             if (upsertType == PostgresUpsertType.Legacy)
             {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql AS $function$");
-                writer.WriteLine("DECLARE");
-                writer.WriteLine("  final_version uuid;");
-                writer.WriteLine("BEGIN");
-                writer.WriteLine($"LOCK TABLE {_tableName.QualifiedName} IN SHARE ROW EXCLUSIVE MODE;");
-                writer.WriteLine($"  WITH upsert AS (UPDATE {_tableName.QualifiedName} SET {updates} WHERE id=docId {updateWhere} RETURNING *) ");
-                writer.WriteLine($"  INSERT INTO {_tableName.QualifiedName} ({inserts})");
-                writer.WriteLine($"  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);");
-                writer.WriteLine("");
-                writer.WriteLine($"  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId;");
-                writer.WriteLine("   RETURN final_version;");
-                writer.WriteLine("END;");
-                writer.WriteLine("$function$;");
-                
+                if (Arguments.Any(x => x is CurrentVersionArgument))
+                {
+                    writer.WriteLine($@"
+CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql AS $function$
+DECLARE
+  final_version uuid;
+  old_version uuid;
+BEGIN
+  SELECT {DocumentMapping.VersionColumn} into old_version FROM {_tableName.QualifiedName} WHERE id = docId;
+  IF old_version IS NOT NULL AND old_version != current_version THEN
+    RETURN old_version;
+  END IF;
+
+  LOCK TABLE {_tableName.QualifiedName} IN SHARE ROW EXCLUSIVE MODE;
+  WITH upsert AS (UPDATE {_tableName.QualifiedName} SET {updates} WHERE id=docId {updateWhere} RETURNING *) 
+  INSERT INTO {_tableName.QualifiedName} ({inserts})
+  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);
+
+  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId;
+  RETURN final_version;
+END;
+$function$;
+");
+                }
+                else
+                {
+                    writer.WriteLine($@"
+CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql AS $function$
+DECLARE
+  final_version uuid;
+BEGIN
+  LOCK TABLE {_tableName.QualifiedName} IN SHARE ROW EXCLUSIVE MODE;
+  WITH upsert AS (UPDATE {_tableName.QualifiedName} SET {updates} WHERE id=docId RETURNING *) 
+  INSERT INTO {_tableName.QualifiedName} ({inserts})
+  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);
+
+  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId;
+  RETURN final_version;
+END;
+$function$;
+");
+                }
+
+
+
+
             }
             else
             {

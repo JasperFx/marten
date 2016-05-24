@@ -59,6 +59,7 @@ namespace Marten.Util
         public static string CanonicizeSql(this string sql)
         {
             return sql
+                .Trim()
                 .Replace('\n', ' ')
                 .Replace('\r', ' ')
                 .Replace("  ", " ")
