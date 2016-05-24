@@ -66,8 +66,6 @@ namespace Marten.Schema.BulkLoading
         public void LoadIntoTempTable(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
         {
             var sql = _baseSql.Replace("%TABLE%", _tempTableName);
-            conn.CreateCommand().Sql("truncate table " + _tempTableName).ExecuteNonQuery();
-
             load(serializer, conn, documents, sql);
         }
 
@@ -110,7 +108,7 @@ namespace Marten.Schema.BulkLoading
         {
             var tempTable = StorageTable.Name + "_temp";
 
-            return $"create temporary table {tempTable} as select * from {StorageTable.QualifiedName}";
+            return $"create temporary table {tempTable} as select * from {StorageTable.QualifiedName};truncate table {_tempTableName}";
         }
 
         public TableName StorageTable => _mapping.Table;
