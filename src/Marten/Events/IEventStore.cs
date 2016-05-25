@@ -167,7 +167,5 @@ namespace Marten.Events
         IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase(bool overwrite = false);
 
         IEnumerable<ProjectionUsage> ProjectionUsages();
-
-        void RebuildEventStoreSchema();
     }
 }

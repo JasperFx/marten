@@ -5,6 +5,12 @@ using NpgsqlTypes;
 
 namespace Marten.Schema
 {
+    public interface IDocumentUpsert
+    {
+        void RegisterUpdate(UpdateBatch batch, object entity);
+        void RegisterUpdate(UpdateBatch batch, object entity, string json);
+    }
+
     public interface IDocumentStorage
     {
         Type DocumentType { get; }
@@ -16,9 +22,6 @@ namespace Marten.Schema
         NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids);
 
         object Identity(object document);
-
-        void RegisterUpdate(UpdateBatch batch, object entity);
-        void RegisterUpdate(UpdateBatch batch, object entity, string json);
 
         void Remove(IIdentityMap map, object entity);
 

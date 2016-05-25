@@ -20,7 +20,8 @@ namespace Marten.Testing.Events
 
             var theEvents = theStore.EventStore;
 
-            theEvents.RebuildEventStoreSchema();
+            theStore.Schema.EnsureStorageExists(typeof(EventStream));
+
             theEvents.LoadProjections(directory);
             theEvents.InitializeEventStoreInDatabase(true);
         }

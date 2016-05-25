@@ -28,6 +28,7 @@ namespace Marten.Schema
 
 
         private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new ConcurrentDictionary<Type, object>();
+        private readonly ConcurrentDictionary<Type, IDocumentUpsert> _upserts = new ConcurrentDictionary<Type, IDocumentUpsert>();
         private readonly ConcurrentDictionary<Type, object> _identityAssignments = new ConcurrentDictionary<Type, object>();
 
 
@@ -75,6 +76,16 @@ namespace Marten.Schema
                 
                 throw new ArgumentOutOfRangeException("T", "Marten cannot do bulk inserts of " + typeof(T).FullName);
             }).As<IBulkLoader<T>>();
+        }
+
+        public IDocumentUpsert UpsertFor(Type documentType)
+        {
+            EnsureStorageExists(documentType);
+
+            return _upserts.GetOrAdd(documentType, type =>
+            {
+                return StorageFor(documentType).As<IDocumentUpsert>();
+            });
         }
 
         public MartenExpressionParser Parser { get; }

@@ -107,5 +107,6 @@ namespace Marten.Schema
         IDbObjects DbObjects { get; }
 
         IBulkLoader<T> BulkLoaderFor<T>();
+        IDocumentUpsert UpsertFor(Type documentType);
     }
 }

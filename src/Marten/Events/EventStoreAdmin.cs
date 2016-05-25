@@ -108,41 +108,5 @@ namespace Marten.Events
         }
 
 
-        [Obsolete("This should be going away now that EventGraph puts things together itself")]
-        public void RebuildEventStoreSchema()
-        {
-            runScript("mt_stream");
-            runScript("mt_initialize_projections");
-            runScript("mt_apply_transform");
-            runScript("mt_apply_aggregation");
-            
-
-            var js = SchemaBuilder.GetJavascript(_options, "mt_transforms");
-
-            using (var connection = new ManagedConnection(_connectionFactory))
-            {
-                connection.Execute(cmd =>
-                {
-                    cmd.WithText($"insert into {ModulesTable} (name, definition) values (:name, :definition)")
-                        .With("name", "mt_transforms")
-                        .With("definition", js)
-                        .ExecuteNonQuery();
-                });
-            }
-        }
-
-        private void runScript(string script)
-        {
-            var sql = SchemaBuilder.GetSqlScript(_options.Events.DatabaseSchemaName, script);
-            try
-            {
-                _connectionFactory.RunSql(sql);
-            }
-            catch (Exception e)
-            {
-                throw new MartenSchemaException(sql, e);
-            }
-        }
-
     }
 }

@@ -142,16 +142,16 @@ namespace Marten.Services
 
             _inserts.Keys.OrderBy(type => order[type]).Each(type =>
             {
-                var storage = _schema.StorageFor(type);
+                var upsert = _schema.UpsertFor(type);
 
-                _inserts[type].Each(o => storage.RegisterUpdate(batch, o));
+                _inserts[type].Each(o => upsert.RegisterUpdate(batch, o));
             });
 
             _updates.Keys.OrderBy(type => order[type]).Each(type =>
             {
-                var storage = _schema.StorageFor(type);
+                var upsert = _schema.UpsertFor(type);
 
-                _updates[type].Each(o => storage.RegisterUpdate(batch, o));
+                _updates[type].Each(o => upsert.RegisterUpdate(batch, o));
             });
 
             _deletes.Keys.Each(type =>
@@ -165,11 +165,11 @@ namespace Marten.Services
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
             {
-                var storage = _schema.StorageFor(group.Key);
+                var upsert = _schema.UpsertFor(group.Key);
 
                 group.Each(c =>
                 {
-                    storage.RegisterUpdate(batch, c.Document, c.Json);
+                    upsert.RegisterUpdate(batch, c.Document, c.Json);
                 });
             });
 

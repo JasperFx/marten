@@ -2,6 +2,7 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Services;
 using Npgsql;
 using NpgsqlTypes;
@@ -9,7 +10,7 @@ using NpgsqlTypes;
 namespace Marten.Schema.Hierarchies
 {
     public class SubClassDocumentStorage<T, TBase>
-        : IDocumentStorage, IResolver<T>
+        : IDocumentStorage, IDocumentUpsert, IResolver<T>
         where T : class, TBase
         where TBase : class
     {
@@ -50,12 +51,14 @@ namespace Marten.Schema.Hierarchies
 
         public void RegisterUpdate(UpdateBatch batch, object entity)
         {
-            _parent.RegisterUpdate(batch, entity);
+            // TODO -- smelly
+            _parent.As<IDocumentUpsert>().RegisterUpdate(batch, entity);
         }
 
         public void RegisterUpdate(UpdateBatch batch, object entity, string json)
         {
-            _parent.RegisterUpdate(batch, entity, json);
+            // TODO -- smelly
+            _parent.As<IDocumentUpsert>().RegisterUpdate(batch, entity, json);
         }
 
         public void Remove(IIdentityMap map, object entity)
