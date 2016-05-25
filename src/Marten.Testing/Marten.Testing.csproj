@@ -192,6 +192,7 @@
     <Compile Include="Schema\Identity\IdAssignerTests.cs" />
     <Compile Include="Schema\Identity\IdentityKeyGenerationTests.cs" />
     <Compile Include="Schema\Identity\NoOpIdGenerationTests.cs" />
+    <Compile Include="Schema\initial_data_loads_when_starting_up_the_document_store.cs" />
     <Compile Include="Schema\SchemaDiff_Generation_Tests.cs" />
     <Compile Include="Schema\Identity\Sequences\IntHiloGeneratorTests.cs" />
     <Compile Include="Schema\Identity\Sequences\LongHiloGeneratorTests.cs" />

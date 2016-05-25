@@ -247,6 +247,8 @@ namespace Marten
 
             }
         }
+
+        public readonly IList<IInitialData> InitialData = new List<IInitialData>();
     }
 
     public class LinqCustomizations

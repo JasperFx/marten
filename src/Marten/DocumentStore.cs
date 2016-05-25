@@ -87,6 +87,8 @@ namespace Marten
             EventStore = new EventStoreAdmin(Schema, _connectionFactory, _options, _serializer);
 
             CreateDatabaseObjects();
+
+            options.InitialData.Each(x => x.Populate(this));
         }
 
         private readonly StoreOptions _options;

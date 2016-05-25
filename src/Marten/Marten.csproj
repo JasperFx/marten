@@ -163,6 +163,7 @@
     <Compile Include="Schema\IdField.cs" />
     <Compile Include="Schema\ActualIndex.cs" />
     <Compile Include="Schema\IDocumentSchemaObjects.cs" />
+    <Compile Include="Schema\IInitialData.cs" />
     <Compile Include="Schema\IQueryableDocument.cs" />
     <Compile Include="Schema\QualifiedDatabaseName.cs" />
     <Compile Include="Schema\ColumnValue.cs" />
