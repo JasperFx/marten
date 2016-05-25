@@ -2,18 +2,29 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using Baseline;
+using Marten.Linq;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Fixtures;
+using Marten.Util;
 using StoryTeller;
 using StoryTeller.Engine;
 using StructureMap;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing
 {
     public class PlayingTests
     {
+        private readonly ITestOutputHelper _output;
+
+        public PlayingTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
 
         public void run_st_spec()
         {
@@ -23,6 +34,38 @@ namespace Marten.Testing
 
 
                 runner.OpenResultsInBrowser();
+            }
+        }
+
+        [Fact]
+        public void can_generate_a_computed_index()
+        {
+            using (var store = TestingDocumentStore.Basic())
+            {
+                store.Schema.EnsureStorageExists(typeof(User));
+
+                var mapping = store.Schema.MappingFor(typeof(User));
+                var sql = mapping.As<DocumentMapping>().FieldFor(nameof(User.UserName)).As<JsonLocatorField>().ToComputedIndex(mapping.Table)
+                    .Replace("d.data", "data");
+
+                using (var conn = store.Advanced.OpenConnection())
+                {
+                    conn.Execute(cmd => cmd.Sql(sql).ExecuteNonQuery());
+                }
+
+                using (var session = store.OpenSession())
+                {
+                    var query =
+                        session.Query<User>()
+                            .Where(x => x.UserName == "hank")
+                            .ToCommand(FetchType.FetchMany)
+                            .CommandText;
+
+                    _output.WriteLine(query);
+
+                    var plan = session.Query<User>().Where(x => x.UserName == "hank").Explain();
+                    _output.WriteLine(plan.ToString());
+                }
             }
         }
 

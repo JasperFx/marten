@@ -86,6 +86,11 @@ namespace Marten.Schema
             }
         }
 
+        public string ToComputedIndex(TableName tableName)
+        {
+            return $"CREATE INDEX {tableName.Name}_{MemberName.ToTableAlias()} ON {tableName.QualifiedName} (({SqlLocator}))";
+        }
+
         public string SqlLocator { get; }
         public string ColumnName => String.Empty;
         public void WritePatch(DocumentMapping mapping, Action<string> writer)
