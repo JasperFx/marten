@@ -126,7 +126,7 @@ namespace Marten.Services
             _listeners.Each(listener => listener.DocumentAddedForStorage(id, entity));
 
             var cacheValue = ToCache(id, typeof(T), entity, null);
-            dictionary.AddOrUpdate(id, cacheValue, (i, e) => e);
+            dictionary.AddOrUpdate(id, cacheValue, (i, e) => cacheValue);
         }
 
         public bool Has<T>(object id) where T : class
