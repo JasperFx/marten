@@ -9,7 +9,7 @@ namespace Marten.Schema.Arguments
     public class VersionArgument : UpsertArgument
     {
         private readonly static MethodInfo _newGuid =
-            typeof(CombGuidIdGeneration).GetMethod(nameof(CombGuidIdGeneration.New),
+            typeof(Guid).GetMethod(nameof(Guid.NewGuid),
                 BindingFlags.Static | BindingFlags.Public);
 
         public VersionArgument()

@@ -174,7 +174,7 @@ namespace Marten.Schema
 
         public void RegisterUpdate(UpdateBatch batch, object entity, string json)
         {
-            var newVersion = CombGuidIdGeneration.New();
+            var newVersion = Guid.NewGuid();
             var currentVersion = batch.Versions.Version<T>(Identity(entity));
 
             ICallback callback = null;
