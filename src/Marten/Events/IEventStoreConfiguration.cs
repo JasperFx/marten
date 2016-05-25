@@ -24,6 +24,6 @@ namespace Marten.Events
         void TransformEventsInlineWith<TEvent, TView>(ITransform<TEvent, TView> transform);
         void InlineTransformation(IProjection projection);
 
-        bool JavascriptProjectionsEnabled { get; set; }
+        
     }
 }

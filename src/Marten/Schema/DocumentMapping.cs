@@ -15,6 +15,8 @@ using Marten.Util;
 namespace Marten.Schema
 {
 
+
+
     public class DocumentMapping : IDocumentMapping, IQueryableDocument
     {
         public const string BaseAlias = "BASE";
@@ -33,6 +35,7 @@ namespace Marten.Schema
         private readonly IList<SubClassMapping> _subClasses = new List<SubClassMapping>();
         private string _alias;
         private string _databaseSchemaName;
+        private readonly DocumentSchemaObjects _schemaObjects;
 
 
         public DocumentMapping(Type documentType, StoreOptions storeOptions)
@@ -40,7 +43,7 @@ namespace Marten.Schema
             if (documentType == null) throw new ArgumentNullException(nameof(documentType));
             if (storeOptions == null) throw new ArgumentNullException(nameof(storeOptions));
 
-            SchemaObjects = new DocumentSchemaObjects(this);
+            _schemaObjects = new DocumentSchemaObjects(this);
 
             _storeOptions = storeOptions;
 
@@ -116,7 +119,10 @@ namespace Marten.Schema
                 .As<IDocumentStorage>();
         }
 
-        public IDocumentSchemaObjects SchemaObjects { get; }
+        public IDocumentSchemaObjects SchemaObjects => _schemaObjects;
+
+        public IList<string> DependentScripts => _schemaObjects.DependentScripts;
+        public IList<Type> DependentTypes => _schemaObjects.DependentTypes;
 
         void IDocumentMapping.DeleteAllDocuments(IConnectionFactory factory)
         {

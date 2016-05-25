@@ -9,8 +9,35 @@ using Npgsql;
 
 namespace Marten.Transforms
 {
+
+    public class DependentScriptAttribute : MartenAttribute
+    {
+        private readonly string[] _scripts;
+
+        public DependentScriptAttribute(params string[] scripts)
+        {
+            _scripts = scripts;
+        }
+
+        public override void Modify(DocumentMapping mapping)
+        {
+            mapping.DependentScripts.Fill(_scripts);
+        }
+    }
+
+    [DependentScript("mt_initialize_projections")]
     public class JavascriptModule
     {
+        public static DocumentMapping BuildMapping(StoreOptions options)
+        {
+            var mapping = new DocumentMapping(typeof(JavascriptModule), options);
+
+
+
+
+            return mapping;
+        }
+
         public JavascriptModule(string id, string javascript)
         {
             Id = id;
@@ -27,6 +54,8 @@ namespace Marten.Transforms
             return new JavascriptModule(name ?? Path.GetFileNameWithoutExtension(file), js);
         }
     }
+
+
 
     public interface ITransforms
     {

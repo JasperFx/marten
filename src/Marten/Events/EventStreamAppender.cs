@@ -14,11 +14,6 @@ namespace Marten.Events
         {
             _graph = graph;
 
-            if (_graph.JavascriptProjectionsEnabled)
-            {
-                throw new NotSupportedException("Marten does not yet support Javascript projections");
-            }
-
             AppendEventFunction = new FunctionName(_graph.DatabaseSchemaName, "mt_append_event");
         }
 

@@ -8,6 +8,7 @@ using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services;
+using Marten.Transforms;
 using Npgsql;
 
 namespace Marten
@@ -218,6 +219,33 @@ namespace Marten
         public void Logger(IMartenLogger logger)
         {
             _logger = logger;
+        }
+
+        /// <summary>
+        /// Enable Javascript projections. Requires PLV8 to be enabled in your Postgresql database
+        /// </summary>
+        public bool JavascriptProjectionsEnabled
+        {
+            get { return _documentMappings.ContainsKey(typeof(JavascriptModule)); }
+            set
+            {
+                if (value)
+                {
+                    if (!_documentMappings.ContainsKey(typeof(JavascriptModule)))
+                    {
+                        _documentMappings.GetOrAdd(typeof(JavascriptModule), t =>
+                        {
+                            return new DocumentMapping(typeof(JavascriptModule), this);
+                        });
+                    }
+                }
+                else
+                {
+                    DocumentMapping mapping = null;
+                    _documentMappings.TryRemove(typeof(JavascriptModule), out mapping);
+                }
+
+            }
         }
     }
 

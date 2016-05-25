@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -24,6 +25,9 @@ namespace Marten.Schema
             _mapping = mapping;
         }
 
+        public readonly IList<Type> DependentTypes = new List<Type>();
+        public readonly IList<string> DependentScripts = new List<string>();
+
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             var table = StorageTable();
@@ -44,6 +48,14 @@ namespace Marten.Schema
             {
                 writer.WriteLine();
                 writer.WriteLine(x.ToDDL());
+            });
+
+            DependentScripts.Each(script =>
+            {
+                writer.WriteLine();
+                writer.WriteLine();
+
+                writer.WriteSql(_mapping.DatabaseSchemaName, script);
             });
 
             writer.WriteLine();
@@ -81,6 +93,8 @@ namespace Marten.Schema
         {
             if (_hasCheckedSchema) return;
 
+            DependentTypes.Each(schema.EnsureStorageExists);
+
 
             var diff = CreateSchemaDiff(schema);
 
@@ -106,6 +120,15 @@ namespace Marten.Schema
             return new SchemaDiff(schema, objects, _mapping);
         }
 
+        private void runDependentScripts(Action<string> executeSql)
+        {
+            DependentScripts.Each(script =>
+            {
+                var sql = SchemaBuilder.GetSqlScript(_mapping.DatabaseSchemaName, script);
+                executeSql(sql);
+            });
+        }
+
         private void buildOrModifySchemaObjects(SchemaDiff diff, AutoCreate autoCreateSchemaObjectsMode,
             IDocumentSchema schema, Action<string> executeSql)
         {
@@ -122,6 +145,9 @@ namespace Marten.Schema
             if (diff.AllMissing)
             {
                 rebuildTableAndUpsertFunction(schema, executeSql);
+
+                runDependentScripts(executeSql);
+
                 return;
             }
 
@@ -145,6 +171,8 @@ namespace Marten.Schema
                 throw new InvalidOperationException(
                     $"The table for document type {_mapping.DocumentType.FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{autoCreateSchemaObjectsMode}'");
             }
+
+            runDependentScripts(executeSql);
         }
 
         private void rebuildTableAndUpsertFunction(IDocumentSchema schema, Action<string> executeSql)

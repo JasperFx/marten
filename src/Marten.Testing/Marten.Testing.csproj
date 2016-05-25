@@ -280,6 +280,7 @@
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="TrackingSession\document_session_update_existing_documents_in_collection_Tests.cs" />
     <Compile Include="TrackingSession\document_session_update_existing_document_Tests.cs" />
+    <Compile Include="Transforms\JavascriptModule_storage_Tests.cs" />
     <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="UnitOfWorkTests.cs" />
     <Compile Include="UnitOfWork_PendingChanges_Functionality_Tests.cs" />

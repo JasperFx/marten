@@ -9,11 +9,6 @@ namespace Marten.Testing.Events
     {
         private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
 
-        [Fact]
-        public void javascript_projections_are_not_enabled_by_default()
-        {
-            theGraph.JavascriptProjectionsEnabled.ShouldBeFalse();
-        }
 
         [Fact]
         public void find_stream_mapping_initially()
