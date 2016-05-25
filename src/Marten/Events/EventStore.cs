@@ -13,22 +13,21 @@ namespace Marten.Events
     public class EventStore : IEventStore
     {
         private readonly IDocumentSession _session;
-        private readonly IIdentityMap _identityMap;
         private readonly IDocumentSchema _schema;
         private readonly IManagedConnection _connection;
+        private readonly UnitOfWork _unitOfWork;
         private readonly EventSelector _selector;
         private readonly ISerializer _serializer;
 
 
-        public EventStore(IDocumentSession session, IIdentityMap identityMap, IDocumentSchema schema,
-            ISerializer serializer, IManagedConnection connection)
+        public EventStore(IDocumentSession session, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, UnitOfWork unitOfWork)
         {
             _session = session;
-            _identityMap = identityMap;
             _schema = schema;
             _serializer = serializer;
             
             _connection = connection;
+            _unitOfWork = unitOfWork;
 
             _selector = new EventSelector(_schema.Events.As<EventGraph>(), serializer);
 
@@ -37,15 +36,17 @@ namespace Marten.Events
 
         public void Append(Guid stream, params object[] events)
         {
-            if (_identityMap.Has<EventStream>(stream))
+
+
+            if (_unitOfWork.HasStream(stream))
             {
-                _identityMap.Retrieve<EventStream>(stream).AddEvents(events.Select(EventStream.ToEvent));
+                _unitOfWork.StreamFor(stream).AddEvents(events.Select(EventStream.ToEvent));
             }
             else
             {
                 var eventStream = new EventStream(stream, events.Select(EventStream.ToEvent).ToArray(), false);
 
-                _session.Store(eventStream);
+                _unitOfWork.StoreStream(eventStream);
             }
         }
 
@@ -56,7 +57,7 @@ namespace Marten.Events
                 AggregateType = typeof (T)
             };
 
-            _session.Store(stream);
+            _unitOfWork.StoreStream(stream);
 
             return id;
         }
@@ -127,13 +128,13 @@ namespace Marten.Events
         public IEvent Load(Guid id)
         {
             var handler = new SingleEventQueryHandler(id, _schema.Events.As<EventGraph>(), _serializer);
-            return _connection.Fetch(handler, _identityMap);
+            return _connection.Fetch(handler, new NulloIdentityMap(_serializer));
         }
 
         public Task<IEvent> LoadAsync(Guid id, CancellationToken token = default(CancellationToken))
         {
             var handler = new SingleEventQueryHandler(id, _schema.Events.As<EventGraph>(), _serializer);
-            return _connection.FetchAsync(handler, _identityMap, token);
+            return _connection.FetchAsync(handler, new NulloIdentityMap(_serializer), token);
         }
 
         public StreamState FetchStreamState(Guid streamId)

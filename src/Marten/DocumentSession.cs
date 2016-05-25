@@ -42,7 +42,7 @@ namespace Marten
                 _unitOfWork.AddTracker(_identityMap.As<IDocumentTracker>());
             }
 
-            Events = new EventStore(this, _identityMap, schema, _serializer, _connection);
+            Events = new EventStore(this, schema, _serializer, _connection, _unitOfWork);
 
         }
 

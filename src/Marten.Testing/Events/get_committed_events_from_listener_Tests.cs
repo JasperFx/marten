@@ -72,8 +72,10 @@ namespace Marten.Testing.Events
                     .ToList();
 
                 events.Count.ShouldBe(2);
-                events.ElementAt(0).Data.ShouldBeOfType<QuestStarted>().Id.ShouldBe(id1);
-                events.ElementAt(1).Data.ShouldBeOfType<QuestStarted>().Id.ShouldBe(id2);
+
+                events.Select(x => x.Data).OfType<QuestStarted>().Any(x => x.Id == id1).ShouldBeTrue();
+                events.Select(x => x.Data).OfType<QuestStarted>().Any(x => x.Id == id2).ShouldBeTrue();
+
             }
 
             using (var session = store.LightweightSession())

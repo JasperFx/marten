@@ -9,7 +9,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events
 {
-    public class EventStreamStorage : IDocumentStorage, IDocumentUpsert, IdAssignment<EventStream>
+    public class EventStreamStorage : IDocumentUpsert, IdAssignment<EventStream>
     {
         private readonly EventGraph _graph;
 

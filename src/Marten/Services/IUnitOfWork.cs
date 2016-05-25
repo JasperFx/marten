@@ -64,8 +64,7 @@ namespace Marten.Services
         IEnumerable<T> AllChangedFor<T>();
 
         /// <summary>
-        /// All of the event streams with pending events to be appended when this
-        /// session is saved
+        /// All of the pending events for the event store in this unit of work
         /// </summary>
         /// <returns></returns>
         IEnumerable<EventStream> Streams();

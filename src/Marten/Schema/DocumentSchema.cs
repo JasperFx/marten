@@ -114,7 +114,7 @@ namespace Marten.Schema
             // TODO -- HACK! Do something later that's more systematic
             if (documentType == typeof(StreamState)) return;
 
-            StorageFor(documentType);
+            buildSchemaObjectsIfNecessary(MappingFor(documentType));
         }
 
         public IDocumentStorage StorageFor(Type documentType)

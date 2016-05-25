@@ -51,7 +51,7 @@ namespace Marten.Events
 
         public IDocumentStorage BuildStorage(IDocumentSchema schema)
         {
-            return new EventStreamStorage(this);
+            throw new NotImplementedException();
         }
 
         public IDocumentSchemaObjects SchemaObjects => this;
@@ -79,8 +79,7 @@ namespace Marten.Events
 
         public IDocumentUpsert BuildUpsert(IDocumentSchema schema)
         {
-            // TODO -- temporary
-            return BuildStorage(schema).As<IDocumentUpsert>();
+            return new EventStreamStorage(this);
         }
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,

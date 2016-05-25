@@ -19,7 +19,7 @@ namespace Marten.Events.Projections
         public void Apply(IDocumentSession session)
         {
             session
-                .PendingChanges.AllChangedFor<EventStream>()
+                .PendingChanges.Streams()
                 .SelectMany(x => x.Events)
                 .OfType<Event<TEvent>>()
                 .Select(x => _transform.Transform(x))
@@ -29,7 +29,7 @@ namespace Marten.Events.Projections
         public Task ApplyAsync(IDocumentSession session, CancellationToken token)
         {
             session
-                .PendingChanges.AllChangedFor<EventStream>()
+                .PendingChanges.Streams()
                 .SelectMany(x => x.Events)
                 .OfType<Event<TEvent>>()
                 .Select(x => _transform.Transform(x))

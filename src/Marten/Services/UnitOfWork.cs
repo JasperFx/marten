@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -18,7 +19,9 @@ namespace Marten.Services
         private readonly IDocumentSchema _schema;
         private readonly ConcurrentDictionary<Type, IEnumerable> _updates = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Type, IEnumerable> _inserts = new ConcurrentDictionary<Type, IEnumerable>();
-        private readonly ConcurrentDictionary<Type, IList<Delete>> _deletes = new ConcurrentDictionary<Type, IList<Delete>>(); 
+        private readonly ConcurrentDictionary<Type, IList<Delete>> _deletes = new ConcurrentDictionary<Type, IList<Delete>>();
+        private readonly ConcurrentDictionary<Guid, EventStream> _events = new ConcurrentDictionary<Guid, EventStream>();
+
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>(); 
 
         public UnitOfWork(IDocumentSchema schema)
@@ -57,6 +60,21 @@ namespace Marten.Services
         public void Delete<T>(string id)
         {
             delete<T>(id);
+        }
+
+        public void StoreStream(EventStream stream)
+        {
+            _events[stream.Id] = stream;
+        }
+
+        public bool HasStream(Guid id)
+        {
+            return _events.ContainsKey(id);
+        }
+
+        public EventStream StreamFor(Guid id)
+        {
+            return _events[id];
         }
 
         public void StoreUpdates<T>(params T[] documents)
@@ -118,6 +136,7 @@ namespace Marten.Services
             changes.Updated.Fill(Updates());
             changes.Inserted.Fill(Inserts());
             changes.Deleted.AddRange(Deletions());
+            changes.Streams.AddRange(_events.Values);
 
             return changes;
         }
@@ -162,6 +181,8 @@ namespace Marten.Services
                 _deletes[type].Each(id => id.Configure(_schema.Parser, storage, mapping, batch));
             });
 
+            writeEvents(batch);
+
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
             {
@@ -174,6 +195,12 @@ namespace Marten.Services
             });
 
             return changes;
+        }
+
+        private void writeEvents(UpdateBatch batch)
+        {
+            var upsert = _schema.UpsertFor(typeof(EventStream));
+            _events.Values.Each(stream => { upsert.RegisterUpdate(batch, stream); });
         }
 
         private IEnumerable<Type> GetTypeDependencies(Type type)
@@ -217,7 +244,7 @@ namespace Marten.Services
 
         public IEnumerable<EventStream> Streams()
         {
-            return AllChangedFor<EventStream>();
+            return _events.Values;
         }
 
         public void Delete<T>(IWhereFragment where)

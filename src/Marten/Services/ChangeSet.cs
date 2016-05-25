@@ -10,12 +10,14 @@ namespace Marten.Services
         public readonly IList<object> Updated = new List<object>();
         public readonly IList<object> Inserted = new List<object>();
         public readonly IList<Delete> Deleted = new List<Delete>();
+        public readonly IList<EventStream> Streams = new List<EventStream>();
 
         IEnumerable<object> IChangeSet.Updated => Updated;
 
         IEnumerable<object> IChangeSet.Inserted => Inserted;
 
         IEnumerable<Delete> IChangeSet.Deleted => Deleted;
+        
 
         public DocumentChange[] Changes;
 
@@ -27,9 +29,7 @@ namespace Marten.Services
 
         public IEnumerable<IEvent> GetEvents()
         {
-            return Updated.Concat(Inserted)
-                .OfType<EventStream>()
-                .SelectMany(s => s.Events);
+            return Streams.SelectMany(s => s.Events);
         }
     }
 }

@@ -285,10 +285,5 @@ namespace Marten.Testing.Schema
             theSchema.MappingFor(typeof(EventStream)).ShouldBeOfType<EventGraph>();
         }
 
-        [Fact]
-        public void resolve_storage_for_stream_type()
-        {
-            theSchema.StorageFor(typeof(EventStream)).ShouldBeOfType<EventStreamStorage>();
-        }
     }
 }

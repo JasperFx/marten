@@ -49,7 +49,7 @@ namespace Marten.Events.Projections
 
         public EventStream[] MatchingStreams(IDocumentSession session)
         {
-            return session.PendingChanges.AllChangedFor<EventStream>()
+            return session.PendingChanges.Streams()
                 .Where(_aggregator.AppliesTo).ToArray();
         }
 
