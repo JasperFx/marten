@@ -41,6 +41,8 @@ namespace Marten.Schema.Identity
         /// </summary>
         public static Guid NewGuid(DateTime timestamp) => Create(Guid.NewGuid(), timestamp);
 
+        public static Guid NewGuid() => Create(Guid.NewGuid(), DateTime.UtcNow);
+
         private static byte[] DateTimeToBytes(DateTime timestamp)
         {
             if (timestamp < _minCombDate)

@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Schema.Identity;
 
 namespace Marten.Events
 {
     public class EventStream
     {
+
         public static IEvent ToEvent(object @event)
         {
             if (@event == null) throw new ArgumentNullException(nameof(@event));
@@ -38,7 +40,7 @@ namespace Marten.Events
         public EventStream AddEvents(IEnumerable<IEvent> events)
         {
             _events.AddRange(events);
-            _events.Where(x => x.Id == Guid.Empty).Each(x => x.Id = Guid.NewGuid());
+            _events.Where(x => x.Id == Guid.Empty).Each(x => x.Id = CombGuidIdGeneration.NewGuid());
 
             return this;
         }
@@ -53,7 +55,7 @@ namespace Marten.Events
         /// <returns></returns>
         public EventStream Add<T>(T @event)
         {
-            _events.Add(new Event<T>(@event) {Id = Guid.NewGuid()});
+            _events.Add(new Event<T>(@event) {Id = CombGuidIdGeneration.NewGuid() });
             return this;
         }
 
