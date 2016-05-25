@@ -112,6 +112,11 @@ namespace Marten.Schema
             return this;
         }
 
+        public IDocumentUpsert BuildUpsert(IDocumentSchema schema)
+        {
+            return Parent.BuildUpsert(schema);
+        }
+
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members,
             Action<TOther> callback) where TOther : class
         {

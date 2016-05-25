@@ -77,6 +77,12 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
+        public IDocumentUpsert BuildUpsert(IDocumentSchema schema)
+        {
+            // TODO -- temporary
+            return BuildStorage(schema).As<IDocumentUpsert>();
+        }
+
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,
             Action<string> executeSql)
         {

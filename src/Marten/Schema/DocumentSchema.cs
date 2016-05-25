@@ -84,7 +84,7 @@ namespace Marten.Schema
 
             return _upserts.GetOrAdd(documentType, type =>
             {
-                return StorageFor(documentType).As<IDocumentUpsert>();
+                return MappingFor(documentType).BuildUpsert(this);
             });
         }
 

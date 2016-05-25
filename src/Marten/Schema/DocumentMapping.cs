@@ -138,6 +138,12 @@ namespace Marten.Schema
             return this;
         }
 
+        public IDocumentUpsert BuildUpsert(IDocumentSchema schema)
+        {
+            // TODO -- temporary
+            return this.As<IDocumentMapping>().BuildStorage(schema).As<IDocumentUpsert>();
+        }
+
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback) where TOther : class
         {
             var joinOperator = joinType == JoinType.Inner ? "INNER JOIN" : "LEFT OUTER JOIN";

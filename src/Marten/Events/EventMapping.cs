@@ -101,6 +101,12 @@ namespace Marten.Events
             return this;
         }
 
+        public IDocumentUpsert BuildUpsert(IDocumentSchema schema)
+        {
+            // TODO -- temporary!
+            return BuildStorage(schema).As<IDocumentUpsert>();
+        }
+
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback) where TOther : class
         {
             return _inner.JoinToInclude<TOther>(joinType, other, members, callback);
