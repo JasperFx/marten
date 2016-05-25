@@ -79,7 +79,7 @@ namespace Marten.Events
 
         public IDocumentUpsert BuildUpsert(IDocumentSchema schema)
         {
-            return new EventStreamStorage(this);
+            return new EventStreamAppender(this);
         }
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,

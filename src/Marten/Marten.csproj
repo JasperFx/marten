@@ -222,7 +222,7 @@
     <Compile Include="Events\ProjectionTiming.cs" />
     <Compile Include="Events\ProjectionType.cs" />
     <Compile Include="Events\ProjectionUsage.cs" />
-    <Compile Include="Events\EventStreamStorage.cs" />
+    <Compile Include="Events\EventStreamAppender.cs" />
     <Compile Include="Generation\TableColumn.cs" />
     <Compile Include="Generation\TableDefinition.cs" />
     <Compile Include="Services\DirtyTrackingIdentityMap.cs" />
