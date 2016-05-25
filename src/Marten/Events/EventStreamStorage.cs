@@ -24,15 +24,7 @@ namespace Marten.Events
                 throw new NotSupportedException("Marten does not yet support Javascript projections");
             }
 
-
-            if (_graph.AsyncProjectionsEnabled)
-            {
-                AppendEventFunction = new FunctionName(_graph.DatabaseSchemaName, "mt_append_event_with_buffering");
-            }
-            else
-            {
-                AppendEventFunction = new FunctionName(_graph.DatabaseSchemaName, "mt_append_event");
-            }
+            AppendEventFunction = new FunctionName(_graph.DatabaseSchemaName, "mt_append_event");
         }
 
         public Type DocumentType { get; } = typeof (EventStream);

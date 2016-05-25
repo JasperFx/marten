@@ -10,23 +10,10 @@ namespace Marten.Testing.Events
         private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
 
         [Fact]
-        public void async_projections_are_not_enabled_by_default()
-        {
-            theGraph.AsyncProjectionsEnabled.ShouldBeFalse();
-        }
-
-        [Fact]
         public void javascript_projections_are_not_enabled_by_default()
         {
             theGraph.JavascriptProjectionsEnabled.ShouldBeFalse();
         }
-
-        [Fact]
-        public void default_rolling_buffer_size()
-        {
-            theGraph.AsyncProjectionBufferTableSize.ShouldBe(1000);
-        }
-
 
         [Fact]
         public void find_stream_mapping_initially()
@@ -69,7 +56,6 @@ namespace Marten.Testing.Events
         [Fact]
         public void derives_the_stream_type_name()
         {
-
             theGraph.AggregateFor<HouseRemodeling>().Alias.ShouldBe("house_remodeling");
             theGraph.AggregateFor<Quest>().Alias.ShouldBe("quest");
         }

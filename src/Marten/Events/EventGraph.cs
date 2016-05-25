@@ -42,7 +42,6 @@ namespace Marten.Events
         }
 
         internal StoreOptions Options { get; }
-        public TableName RollingBufferTable => new TableName(DatabaseSchemaName, "mt_rolling_buffer");
 
         public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
 
@@ -224,11 +223,8 @@ namespace Marten.Events
             Inlines.Add(projection);
         }
 
-        public bool AsyncProjectionsEnabled { get; set; }
         public bool JavascriptProjectionsEnabled { get; set; }
 
-
-        public int AsyncProjectionBufferTableSize { get; set; } = 1000;
 
         public IList<IProjection> Inlines { get; } = new List<IProjection>();
 
@@ -238,7 +234,6 @@ namespace Marten.Events
             writer.WriteSql(DatabaseSchemaName, "mt_initialize_projections");
             writer.WriteSql(DatabaseSchemaName, "mt_apply_transform");
             writer.WriteSql(DatabaseSchemaName, "mt_apply_aggregation");
-            writer.WriteSql(DatabaseSchemaName, "mt_rolling_buffer");
         }
 
         public IField FieldFor(IEnumerable<MemberInfo> members)

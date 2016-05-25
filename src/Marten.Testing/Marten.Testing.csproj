@@ -66,12 +66,9 @@
     <Compile Include="Bugs\Bug_xxx_problem_with_identity_map.cs" />
     <Compile Include="Bugs\Bug_382_bulk_insert_that_causes_multiple_batches.cs" />
     <Compile Include="Events\capturing_event_versions_on_existing_streams_after_append.cs" />
-    <Compile Include="Events\end_to_end_event_capture_and_fetching_the_stream_with_rolling_buffer_Tests.cs" />
-    <Compile Include="Events\EventStreamStorageTests.cs" />
     <Compile Include="Events\EventStreamTester.cs" />
     <Compile Include="Events\fetch_a_single_event_with_metadata.cs" />
     <Compile Include="Events\get_committed_events_from_listener_Tests.cs" />
-    <Compile Include="Events\insert_to_rolling_buffer_table.cs" />
     <Compile Include="Events\marking_stream_as_isnew_on_capture.cs" />
     <Compile Include="Events\Projections\AggregationStepTests.cs" />
     <Compile Include="Events\Projections\AggregatorTests.cs" />
@@ -80,7 +77,6 @@
     <Compile Include="Events\Projections\MonsterSlayed.cs" />
     <Compile Include="Events\Projections\QuestParty.cs" />
     <Compile Include="Events\Projections\AggregateFinderTests.cs" />
-    <Compile Include="Events\working_with_the_rolling_buffer_objects.cs" />
     <Compile Include="Examples\event_store_quickstart.cs" />
     <Compile Include="Events\fetching_stream_state.cs" />
     <Compile Include="Examples\ForeignKeyExamples.cs" />

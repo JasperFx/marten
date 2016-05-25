@@ -330,9 +330,6 @@
     <EmbeddedResource Include="Schema\SchemaObjects.sql" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Schema\SQL\mt_rolling_buffer.sql" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Schema\SQL\mt_transforms.sql" />
   </ItemGroup>
   <Choose>

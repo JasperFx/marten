@@ -21,7 +21,6 @@ namespace Marten.Events
         public FunctionName InitializeProjectionsFunction => new FunctionName(_options.Events.DatabaseSchemaName, "mt_initialize_projections");
         public FunctionName GetProjectionUsageFunction => new FunctionName(_options.Events.DatabaseSchemaName, "mt_get_projection_usage");
 
-        public FunctionName ResetRollingBufferSizeFunction => new FunctionName(_options.Events.DatabaseSchemaName, "mt_reset_rolling_buffer_size");
 
         public EventStoreAdmin(IDocumentSchema schema, IConnectionFactory connectionFactory, StoreOptions options, ISerializer serializer)
         {
@@ -91,15 +90,6 @@ namespace Marten.Events
                        .With("overwrite", overwrite).ExecuteNonQuery();
                 });
 
-                if (_schema.Events.AsyncProjectionsEnabled)
-                {
-                    connection.Execute(cmd =>
-                    {
-                        cmd.CallsSproc(ResetRollingBufferSizeFunction)
-                            .With("size", _schema.Events.AsyncProjectionBufferTableSize)
-                            .ExecuteNonQuery();
-                    });
-                }
             }
 
             return ProjectionUsages();
@@ -154,32 +144,5 @@ namespace Marten.Events
             }
         }
 
-        public void InitializeTheRollingBuffer()
-        {
-            runScript("mt_rolling_buffer");
-
-            var functionName = new FunctionName(_options.Events.DatabaseSchemaName, "mt_seed_rolling_buffer");
-
-            using (var conn = new ManagedConnection(_connectionFactory))
-            {
-                conn.Execute(cmd =>
-                {
-                    cmd.CallsSproc(functionName);
-                });
-            }
-        }
-
-        public void ResetTheRollingBufferSize(int size)
-        {
-            var functionName = new FunctionName(_options.Events.DatabaseSchemaName, "mt_reset_rolling_buffer_size");
-
-            using (var conn = new ManagedConnection(_connectionFactory))
-            {
-                conn.Execute(cmd =>
-                {
-                    cmd.CallsSproc(functionName).AddParameter("size", size);
-                });
-            }
-        }
     }
 }
