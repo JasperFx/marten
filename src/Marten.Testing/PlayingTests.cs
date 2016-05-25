@@ -19,7 +19,7 @@ namespace Marten.Testing
         {
             using (var runner = new SpecRunner<NulloSystem>())
             {
-                var results = runner.Run("Event Store/Projections/Inline Aggregation by Stream");
+                var results = runner.Run("Event Store/Event Capture/Version a stream as part of event capture");
 
 
                 runner.OpenResultsInBrowser();

@@ -131,7 +131,7 @@ namespace Marten.Services
 
         private ChangeSet buildChangeSet(UpdateBatch batch)
         {
-            var documentChanges = GetChanges(batch);
+            var documentChanges = determineChanges(batch);
             var changes = new ChangeSet(documentChanges);
             changes.Updated.Fill(Updates());
             changes.Inserted.Fill(Inserts());
@@ -152,7 +152,7 @@ namespace Marten.Services
             return changes;
         }
 
-        private DocumentChange[] GetChanges(UpdateBatch batch)
+        private DocumentChange[] determineChanges(UpdateBatch batch)
         {
             int index = 0;
             var order = _inserts.Keys.Union(_updates.Keys)
@@ -224,6 +224,7 @@ namespace Marten.Services
             _deletes.Clear();
             _updates.Clear();
             _inserts.Clear();
+            _events.Clear();
             changes.Each(x => x.ChangeCommitted());
         }
 

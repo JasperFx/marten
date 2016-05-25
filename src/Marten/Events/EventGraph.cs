@@ -1,22 +1,19 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Events.Projections;
-using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
-using Marten.Services;
 
 namespace Marten.Events
 {
     // TODO -- try to eliminate the IDocumentMapping implementation here
-    // just making things ugly
+    // just making things ugly. If you could inject the IDatabaseSchemaObjects directly....
     public class EventGraph : IDocumentMapping, IEventStoreConfiguration, IProjections
     {
         private readonly ConcurrentDictionary<string, IAggregator> _aggregateByName =
@@ -28,9 +25,7 @@ namespace Marten.Events
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
 
-        
 
-        
         private string _databaseSchemaName;
 
         public EventGraph(StoreOptions options)
@@ -45,7 +40,6 @@ namespace Marten.Events
 
         internal StoreOptions Options { get; }
 
-        public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
 
         public Type DocumentType { get; } = typeof(EventStream);
 
@@ -53,14 +47,14 @@ namespace Marten.Events
 
         public IDocumentStorage BuildStorage(IDocumentSchema schema)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IDocumentSchemaObjects SchemaObjects { get; }
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
@@ -83,7 +77,6 @@ namespace Marten.Events
         {
             return new EventStreamAppender(this);
         }
-
 
 
         public EventMapping EventMappingFor(Type eventType)
@@ -172,7 +165,6 @@ namespace Marten.Events
 
 
         public IList<IProjection> Inlines { get; } = new List<IProjection>();
-
 
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
