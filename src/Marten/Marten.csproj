@@ -56,6 +56,7 @@
     <Compile Include="Events\EventSelector.cs" />
     <Compile Include="Events\EventStore.cs" />
     <Compile Include="Events\EventStoreAdmin.cs" />
+    <Compile Include="Events\EventStoreDatabaseObjects.cs" />
     <Compile Include="Events\EventStream.cs" />
     <Compile Include="Events\EventStreamVersioningCallback.cs" />
     <Compile Include="Events\IEventStoreConfiguration.cs" />

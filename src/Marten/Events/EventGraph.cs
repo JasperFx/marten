@@ -17,7 +17,7 @@ namespace Marten.Events
 {
     // TODO -- try to eliminate the IDocumentMapping implementation here
     // just making things ugly
-    public class EventGraph : IDocumentMapping, IEventStoreConfiguration, IProjections, IDocumentSchemaObjects
+    public class EventGraph : IDocumentMapping, IEventStoreConfiguration, IProjections
     {
         private readonly ConcurrentDictionary<string, IAggregator> _aggregateByName =
             new ConcurrentDictionary<string, IAggregator>();
@@ -28,9 +28,9 @@ namespace Marten.Events
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
 
-        private readonly object _locker = new object();
+        
 
-        private bool _checkedSchema;
+        
         private string _databaseSchemaName;
 
         public EventGraph(StoreOptions options)
@@ -39,6 +39,8 @@ namespace Marten.Events
             _events.OnMissing = eventType => typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
+
+            SchemaObjects = new EventStoreDatabaseObjects(this);
         }
 
         internal StoreOptions Options { get; }
@@ -54,7 +56,7 @@ namespace Marten.Events
             throw new NotImplementedException();
         }
 
-        public IDocumentSchemaObjects SchemaObjects => this;
+        public IDocumentSchemaObjects SchemaObjects { get; }
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
@@ -82,69 +84,7 @@ namespace Marten.Events
             return new EventStreamAppender(this);
         }
 
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,
-            Action<string> executeSql)
-        {
-            if (_checkedSchema) return;
 
-            _checkedSchema = true;
-
-            var schemaExists = schema.DbObjects.TableExists(Table);
-
-            if (schemaExists) return;
-
-            if (autoCreateSchemaObjectsMode == AutoCreate.None)
-            {
-                throw new InvalidOperationException(
-                    "The EventStore schema objects do not exist and the AutoCreateSchemaObjects is configured as " +
-                    autoCreateSchemaObjectsMode);
-            }
-
-            lock (_locker)
-            {
-                if (!schema.DbObjects.TableExists(Table))
-                {
-                    var writer = new StringWriter();
-
-                    writeBasicTables(schema, writer);
-
-                    executeSql(writer.ToString());
-
-
-                    // This is going to have to be done separately
-                    // TODO -- doesn't work anyway. Do this differently somehow.
-
-
-                    //var js = SchemaBuilder.GetJavascript("mt_transforms").Replace("'", "\"").Replace("\n", "").Replace("\r", "");
-                    //var sql = $"insert into mt_modules (name, definition) values ('mt_transforms', '{js}');";
-                    //executeSql(sql);
-
-                    //executeSql("select mt_initialize_projections();");
-                }
-            }
-        }
-
-        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
-        {
-            writeBasicTables(schema, writer);
-
-            // TODO -- need to load the projection and initialize
-        }
-
-        public void RemoveSchemaObjects(IManagedConnection connection)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ResetSchemaExistenceChecks()
-        {
-            _checkedSchema = false;
-        }
-
-        public TableDefinition StorageTable()
-        {
-            throw new NotSupportedException();
-        }
 
         public EventMapping EventMappingFor(Type eventType)
         {
@@ -233,13 +173,7 @@ namespace Marten.Events
 
         public IList<IProjection> Inlines { get; } = new List<IProjection>();
 
-        private void writeBasicTables(IDocumentSchema schema, StringWriter writer)
-        {
-            writer.WriteSql(DatabaseSchemaName, "mt_stream");
-            writer.WriteSql(DatabaseSchemaName, "mt_initialize_projections");
-            writer.WriteSql(DatabaseSchemaName, "mt_apply_transform");
-            writer.WriteSql(DatabaseSchemaName, "mt_apply_aggregation");
-        }
+
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {

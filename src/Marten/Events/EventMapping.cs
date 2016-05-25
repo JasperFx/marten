@@ -62,11 +62,6 @@ namespace Marten.Events
             return new[] {"id", "data"};
         }
 
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
-        {
-            _parent.GenerateSchemaObjectsIfNecessary(autoCreateSchemaObjectsMode, schema, executeSql);
-        }
-
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             return _inner.FieldFor(members);
@@ -103,8 +98,7 @@ namespace Marten.Events
 
         public IDocumentUpsert BuildUpsert(IDocumentSchema schema)
         {
-            // TODO -- temporary!
-            return BuildStorage(schema).As<IDocumentUpsert>();
+            return _parent.BuildUpsert(schema);
         }
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback) where TOther : class
