@@ -1,6 +1,6 @@
 CREATE OR REPLACE FUNCTION {databaseSchema}.mt_initialize_projections(overwrite boolean) RETURNS VOID AS $$
 
-if (plv8.transforms && !overwrite){
+if (plv8.projections && !overwrite){
 	return;
 }
 
@@ -50,7 +50,7 @@ for (var i = 0; i < results.length; i++){
 }
 
 
-plv8.transforms = transforms;
+plv8.projections = transforms;
 
 
 
@@ -60,11 +60,11 @@ $$ LANGUAGE plv8;
 
 CREATE OR REPLACE FUNCTION {databaseSchema}.mt_get_projection_usage() RETURNS JSON AS $$
 
-	if (!plv8.transforms){
+	if (!plv8.projections){
 		plv8.execute('select {databaseSchema}.mt_initialize_projections(true)');
 	}
 
-	return plv8.transforms.usages();
+	return plv8.projections.usages();
 		
 
 $$ LANGUAGE plv8;

@@ -7,15 +7,15 @@ using Baseline;
 using Marten.Generation;
 using Marten.Services;
 using Marten.Util;
-using NpgsqlTypes;
 
 namespace Marten.Schema
 {
     public class DbObjects : IDbObjects
     {
+        private static readonly string SchemaObjectsSQL;
         private readonly IConnectionFactory _factory;
         private readonly DocumentSchema _schema;
-        private static readonly string SchemaObjectsSQL;
+
         static DbObjects()
         {
             SchemaObjectsSQL =
@@ -99,7 +99,8 @@ WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system tabl
 
 ";
 
-            Func<DbDataReader, ActualIndex> transform = r => new ActualIndex(TableName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
+            Func<DbDataReader, ActualIndex> transform =
+                r => new ActualIndex(TableName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
 
             return _factory.Fetch(sql, transform);
         }
@@ -129,37 +130,10 @@ FROM pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid WHERE ns.n
             return new TableDefinition(documentMapping.Table, pkName, columns);
         }
 
-        private IEnumerable<TableColumn> findTableColumns(IDocumentMapping documentMapping)
-        {
-            Func<DbDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));
-
-            var sql =
-                "select column_name, data_type from information_schema.columns where table_schema = ? and table_name = ? order by ordinal_position";
-
-            return _factory.Fetch(sql, transform, documentMapping.Table.Schema, documentMapping.Table.Name);
-        }
-
-        private string[] primaryKeysFor(IDocumentMapping documentMapping)
-        {
-            var sql = @"
-select a.attname, format_type(a.atttypid, a.atttypmod) as data_type
-from pg_index i
-join   pg_attribute a on a.attrelid = i.indrelid and a.attnum = ANY(i.indkey)
-where attrelid = (select pg_class.oid 
-                  from pg_class 
-                  join pg_catalog.pg_namespace n ON n.oid = pg_class.relnamespace
-                  where n.nspname = ? and relname = ?)
-and i.indisprimary; 
-";
-
-            return _factory.GetStringList(sql, documentMapping.Table.Schema, documentMapping.Table.Name).ToArray();
-        }
-
 
         // TODO -- Really need to add some QueryHandlers for all this stuff to eliminate the duplication
         public SchemaObjects FindSchemaObjects(DocumentMapping mapping)
         {
-
             using (var connection = new ManagedConnection(_factory))
             {
                 return connection.Execute(cmd =>
@@ -211,6 +185,32 @@ and i.indisprimary;
                     return new SchemaObjects(mapping.DocumentType, table, indices.ToArray(), upsertDefinition, drops);
                 });
             }
+        }
+
+        private IEnumerable<TableColumn> findTableColumns(IDocumentMapping documentMapping)
+        {
+            Func<DbDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));
+
+            var sql =
+                "select column_name, data_type from information_schema.columns where table_schema = ? and table_name = ? order by ordinal_position";
+
+            return _factory.Fetch(sql, transform, documentMapping.Table.Schema, documentMapping.Table.Name);
+        }
+
+        private string[] primaryKeysFor(IDocumentMapping documentMapping)
+        {
+            var sql = @"
+select a.attname, format_type(a.atttypid, a.atttypmod) as data_type
+from pg_index i
+join   pg_attribute a on a.attrelid = i.indrelid and a.attnum = ANY(i.indkey)
+where attrelid = (select pg_class.oid 
+                  from pg_class 
+                  join pg_catalog.pg_namespace n ON n.oid = pg_class.relnamespace
+                  where n.nspname = ? and relname = ?)
+and i.indisprimary; 
+";
+
+            return _factory.GetStringList(sql, documentMapping.Table.Schema, documentMapping.Table.Name).ToArray();
         }
     }
 }

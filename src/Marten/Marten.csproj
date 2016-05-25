@@ -283,6 +283,7 @@
     <Compile Include="Services\VersionTracker.cs" />
     <Compile Include="StoreOptions.cs" />
     <Compile Include="QueryableExtensions.cs" />
+    <Compile Include="Transforms\JavascriptModule.cs" />
     <Compile Include="Util\EnumerableExtensions.cs" />
     <Compile Include="Util\LambdaBuilder.cs" />
     <Compile Include="Util\SerializerExtensions.cs" />
@@ -330,6 +331,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Schema\SQL\mt_rolling_buffer.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Schema\SQL\mt_transforms.sql" />
   </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1' Or $(TargetFrameworkVersion) == 'v4.6.2')">
