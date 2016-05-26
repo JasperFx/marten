@@ -5,8 +5,6 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
-using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
@@ -17,53 +15,54 @@ namespace Marten
 {
     public class AdvancedOptions
     {
-        private readonly ISerializer _serializer;
         private readonly IDocumentSchema _schema;
 
-        /// <summary>
-        /// The original StoreOptions used to configure the current DocumentStore
-        /// </summary>
-        public StoreOptions Options { get; }
-
-        public AdvancedOptions(IDocumentCleaner cleaner, StoreOptions options, ISerializer serializer, IDocumentSchema schema)
+        public AdvancedOptions(IDocumentCleaner cleaner, StoreOptions options, ISerializer serializer,
+            IDocumentSchema schema)
         {
-            _serializer = serializer;
+            Serializer = serializer;
             _schema = schema;
             Options = options;
             Clean = cleaner;
         }
 
         /// <summary>
-        /// Used to remove document data and tables from the current Postgresql database
+        ///     The original StoreOptions used to configure the current DocumentStore
+        /// </summary>
+        public StoreOptions Options { get; }
+
+        /// <summary>
+        ///     Used to remove document data and tables from the current Postgresql database
         /// </summary>
         public IDocumentCleaner Clean { get; }
 
 
-        public ISerializer Serializer => _serializer;
+        public ISerializer Serializer { get; }
 
         /// <summary>
-        /// Directly open a managed connection to the underlying Postgresql database
+        ///     Directly open a managed connection to the underlying Postgresql database
         /// </summary>
         /// <param name="mode"></param>
         /// <param name="isolationLevel"></param>
         /// <returns></returns>
-        public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             return new ManagedConnection(Options.ConnectionFactory(), mode, isolationLevel);
         }
 
         /// <summary>
-        /// Creates an UpdateBatch object for low level batch updates
+        ///     Creates an UpdateBatch object for low level batch updates
         /// </summary>
         /// <returns></returns>
         public UpdateBatch CreateUpdateBatch()
         {
-            return new UpdateBatch(Options, _serializer, OpenConnection(), new VersionTracker());
+            return new UpdateBatch(Options, Serializer, OpenConnection(), new VersionTracker());
         }
 
         /// <summary>
-        /// Creates a new Marten UnitOfWork that could be used to express
-        /// a transaction
+        ///     Creates a new Marten UnitOfWork that could be used to express
+        ///     a transaction
         /// </summary>
         /// <returns></returns>
         public UnitOfWork CreateUnitOfWork()
@@ -72,7 +71,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Compiles all of the IDocumentStorage classes upfront for all known document types
+        ///     Compiles all of the IDocumentStorage classes upfront for all known document types
         /// </summary>
         /// <returns></returns>
         public IList<IDocumentStorage> PrecompileAllStorage()
@@ -81,7 +80,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Fetch the entity version and last modified time from the database
+        ///     Fetch the entity version and last modified time from the database
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
@@ -89,33 +88,33 @@ namespace Marten
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var handler = new EntityMetadataQueryHandler(entity, _schema.StorageFor(typeof(T)), _schema.MappingFor(typeof(T)));
+            var handler = new EntityMetadataQueryHandler(entity, _schema.StorageFor(typeof(T)),
+                _schema.MappingFor(typeof(T)));
 
             using (var connection = OpenConnection())
             {
                 return connection.Fetch(handler, null);
             }
         }
-
     }
 
     public class EntityMetadata
     {
-        public DateTime LastModified { get; }
-        public Guid CurrentVersion { get; }
-
         public EntityMetadata(DateTime lastModified, Guid currentVersion)
         {
             LastModified = lastModified;
             CurrentVersion = currentVersion;
         }
+
+        public DateTime LastModified { get; }
+        public Guid CurrentVersion { get; }
     }
 
     public class EntityMetadataQueryHandler : IQueryHandler<EntityMetadata>
     {
-        private readonly IDocumentStorage _storage;
-        private readonly IDocumentMapping _mapping;
         private readonly object _id;
+        private readonly IDocumentMapping _mapping;
+        private readonly IDocumentStorage _storage;
 
         public EntityMetadataQueryHandler(object entity, IDocumentStorage storage, IDocumentMapping mapping)
         {
@@ -136,6 +135,7 @@ namespace Marten
         }
 
         public Type SourceType => _storage.DocumentType;
+
         public EntityMetadata Handle(DbDataReader reader, IIdentityMap map)
         {
             if (!reader.Read()) return null;

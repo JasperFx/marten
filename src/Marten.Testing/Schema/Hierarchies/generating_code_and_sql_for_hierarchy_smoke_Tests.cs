@@ -21,7 +21,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteFunctionSql(PostgresUpsertType.Standard, writer);
+            new UpsertFunction(theHierarchy).WriteFunctionSql(writer);
 
             var sql = writer.ToString();
 
@@ -33,7 +33,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteFunctionSql(PostgresUpsertType.Legacy, writer);
+            new UpsertFunction(theHierarchy).WriteFunctionSql(writer);
 
             var sql = writer.ToString();
 
@@ -46,7 +46,7 @@ namespace Marten.Testing.Schema.Hierarchies
             var writer = new StringWriter();
 
             theHierarchy.UseOptimisticConcurrency = true;
-            new UpsertFunction(theHierarchy).WriteFunctionSql(PostgresUpsertType.Standard, writer);
+            new UpsertFunction(theHierarchy).WriteFunctionSql(writer);
 
             var sql = writer.ToString();
 
@@ -59,7 +59,7 @@ namespace Marten.Testing.Schema.Hierarchies
             var writer = new StringWriter();
 
             theHierarchy.UseOptimisticConcurrency = true;
-            new UpsertFunction(theHierarchy).WriteFunctionSql(PostgresUpsertType.Legacy, writer);
+            new UpsertFunction(theHierarchy).WriteFunctionSql(writer);
 
             var sql = writer.ToString();
 
@@ -85,7 +85,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteFunctionSql(PostgresUpsertType.Standard, writer);
+            new UpsertFunction(theHierarchy).WriteFunctionSql(writer);
 
             var sql = writer.ToString();
 
@@ -97,7 +97,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteFunctionSql(PostgresUpsertType.Legacy, writer);
+            new UpsertFunction(theHierarchy).WriteFunctionSql(writer);
 
             var sql = writer.ToString();
 

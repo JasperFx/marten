@@ -75,17 +75,5 @@ var store = DocumentStore.For(_ =>
 
 
 
-    // SAMPLE: setting_upsert_style
-    public class SettingUpsertStyle : StoreOptions
-    {
-        public SettingUpsertStyle()
-        {
-            // To use the traditional upsert style for 9.4 and below:
-            UpsertType = PostgresUpsertType.Legacy;
 
-            // To opt into the new 9.5 capabilities
-            UpsertType = PostgresUpsertType.Standard;
-        }
-    }
-    // ENDSAMPLE
 }

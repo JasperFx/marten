@@ -78,10 +78,6 @@ namespace Marten.Testing.Examples
 
                 // Override the JSON Serialization
                 _.Serializer<JilSerializer>();
-
-                // We're getting ahead of ourselves, but this
-                // opts into Postgresql 9.5 style upserts
-                _.UpsertType = PostgresUpsertType.Standard;
             });
             // ENDSAMPLE
         }

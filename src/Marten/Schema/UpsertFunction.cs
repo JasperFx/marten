@@ -55,7 +55,7 @@ namespace Marten.Schema
 
         }
 
-        public void WriteFunctionSql(PostgresUpsertType upsertType, StringWriter writer)
+        public void WriteFunctionSql(StringWriter writer)
         {
             var ordered = OrderedArguments();
 
@@ -71,77 +71,25 @@ namespace Marten.Schema
             var updateWhere = "";
             if (Arguments.Any(x => x is CurrentVersionArgument))
             {
-                updateWhere = $" and {_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version or current_version is null";
-                if (upsertType == PostgresUpsertType.Standard)
-                {
-                    updates += $" where {_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version or current_version is null";
-                }
+                updates += $" where {_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version or current_version is null";
             }
 
-            if (upsertType == PostgresUpsertType.Legacy)
-            {
-                if (Arguments.Any(x => x is CurrentVersionArgument))
-                {
-                    writer.WriteLine($@"
+            writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql AS $function$
 DECLARE
   final_version uuid;
-  old_version uuid;
 BEGIN
-  SELECT {DocumentMapping.VersionColumn} into old_version FROM {_tableName.QualifiedName} WHERE id = docId;
-  IF old_version IS NOT NULL AND old_version != current_version THEN
-    RETURN old_version;
-  END IF;
-
-  LOCK TABLE {_tableName.QualifiedName} IN SHARE ROW EXCLUSIVE MODE;
-  WITH upsert AS (UPDATE {_tableName.QualifiedName} SET {updates} WHERE id=docId {updateWhere} RETURNING *) 
-  INSERT INTO {_tableName.QualifiedName} ({inserts})
-  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);
+INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
+  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}
+  DO UPDATE SET {updates};
 
   SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId;
   RETURN final_version;
 END;
 $function$;
 ");
-                }
-                else
-                {
-                    writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql AS $function$
-DECLARE
-  final_version uuid;
-BEGIN
-  LOCK TABLE {_tableName.QualifiedName} IN SHARE ROW EXCLUSIVE MODE;
-  WITH upsert AS (UPDATE {_tableName.QualifiedName} SET {updates} WHERE id=docId RETURNING *) 
-  INSERT INTO {_tableName.QualifiedName} ({inserts})
-  SELECT {valueList} WHERE NOT EXISTS (SELECT * FROM upsert);
-
-  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId;
-  RETURN final_version;
-END;
-$function$;
-");
-                }
 
 
-
-
-            }
-            else
-            {
-                writer.WriteLine($"CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql AS $function$");
-                writer.WriteLine("DECLARE");
-                writer.WriteLine("  final_version uuid;");
-                writer.WriteLine("BEGIN");
-                writer.WriteLine($"INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})");
-                writer.WriteLine($"  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}");
-                writer.WriteLine($"  DO UPDATE SET {updates};");
-                writer.WriteLine("");
-                writer.WriteLine($"  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId;");
-                writer.WriteLine("   RETURN final_version;");
-                writer.WriteLine("END;");
-                writer.WriteLine("$function$;");
-            }
         }
 
         public UpsertArgument[] OrderedArguments()

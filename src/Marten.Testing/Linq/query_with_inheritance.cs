@@ -45,7 +45,6 @@ namespace Marten.Testing.Linq
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
 
-                _.UpsertType = PostgresUpsertType.Legacy;
                 _.Schema.For<ISmurf>().GinIndexJsonData();
             });
         }
@@ -84,7 +83,6 @@ namespace Marten.Testing.Linq
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
 
-                _.UpsertType = PostgresUpsertType.Legacy;
                 _.Schema.For<ISmurf>().GinIndexJsonData();
             });
         }

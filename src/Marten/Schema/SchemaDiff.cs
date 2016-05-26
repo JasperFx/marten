@@ -70,7 +70,7 @@ namespace Marten.Schema
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(_mapping).WriteFunctionSql(_schema.StoreOptions.UpsertType, writer);
+            new UpsertFunction(_mapping).WriteFunctionSql(writer);
 
             return writer.ToString();
         }

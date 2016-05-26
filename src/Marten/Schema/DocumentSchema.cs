@@ -50,7 +50,6 @@ namespace Marten.Schema
             DbObjects = new DbObjects(_factory, this);
         }
 
-        public PostgresUpsertType UpsertType => StoreOptions.UpsertType;
 
 
         public void Dispose()

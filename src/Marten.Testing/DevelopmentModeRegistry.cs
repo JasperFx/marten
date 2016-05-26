@@ -21,9 +21,6 @@ namespace Marten.Testing
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                
-                _.UpsertType = UpsertType;
-
                 optionsHandler?.Invoke(_);
             });
 
@@ -49,7 +46,6 @@ namespace Marten.Testing
 
         }
 
-        public static PostgresUpsertType UpsertType { get; set; } = PostgresUpsertType.Legacy;
     }
 
     // SAMPLE: MartenServices

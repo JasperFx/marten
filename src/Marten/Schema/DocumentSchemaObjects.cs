@@ -35,8 +35,7 @@ namespace Marten.Schema
             writer.WriteLine();
             writer.WriteLine();
 
-            new UpsertFunction(_mapping).WriteFunctionSql(schema?.StoreOptions?.UpsertType ?? PostgresUpsertType.Legacy,
-                writer);
+            new UpsertFunction(_mapping).WriteFunctionSql(writer);
 
             _mapping.ForeignKeys.Each(x =>
             {
