@@ -280,6 +280,7 @@
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="TrackingSession\document_session_update_existing_documents_in_collection_Tests.cs" />
     <Compile Include="TrackingSession\document_session_update_existing_document_Tests.cs" />
+    <Compile Include="Transforms\TransformFunctionTests.cs" />
     <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="UnitOfWorkTests.cs" />
     <Compile Include="UnitOfWork_PendingChanges_Functionality_Tests.cs" />
@@ -331,6 +332,9 @@
     <Content Include="Events\fake_aggregate.js" />
     <Content Include="Events\location.js" />
     <Content Include="Events\party.js" />
+    <Content Include="get_fullname.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
