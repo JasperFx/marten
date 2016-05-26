@@ -15,5 +15,6 @@ namespace Marten.Schema
 
         void ResetSchemaExistenceChecks();
         TableDefinition StorageTable();
+        void WritePatch(IDocumentSchema schema, StringWriter writer);
     }
 }

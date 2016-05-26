@@ -161,6 +161,32 @@ namespace Marten.Schema
             new FileSystem().WriteStringToFile(filename, sql);
         }
 
+        public void WritePatch(string filename)
+        {
+            var sql = ToPatch();
+            new FileSystem().WriteStringToFile(filename, sql);
+        }
+
+        public string ToPatch()
+        {
+            var writer = new StringWriter();
+
+            var allSchemaNames = AllSchemaNames();
+            DatabaseSchemaGenerator.WriteSql(allSchemaNames, writer);
+
+            StoreOptions.AllDocumentMappings.Each(x =>
+            {
+                x.SchemaObjects.WritePatch(this, writer);
+            });
+
+            if (Events.IsActive && !StoreOptions.AllDocumentMappings.Contains(Events.As<IDocumentMapping>()))
+            {
+                Events.As<IDocumentMapping>().SchemaObjects.WritePatch(this, writer);
+            }
+
+            return writer.ToString();
+        }
+
         public void WriteDDLByType(string directory)
         {
             var system = new FileSystem();

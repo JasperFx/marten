@@ -207,6 +207,20 @@ namespace Marten.Schema
 
             return table;
         }
+
+        public void WritePatch(IDocumentSchema schema, StringWriter writer)
+        {
+            var diff = CreateSchemaDiff(schema);
+            if (!diff.HasDifferences()) return;
+
+            if (diff.CanPatch())
+            {
+                writer.WriteLine($"-- Patch for Document {_mapping.DocumentType.FullName}");
+                diff.CreatePatch(writer.WriteLine);
+                writer.WriteLine("");
+                writer.WriteLine("");
+            }
+        }
     }
 
 }

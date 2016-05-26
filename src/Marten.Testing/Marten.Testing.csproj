@@ -185,6 +185,7 @@
     <Compile Include="Linq\query_with_nested_boolean_logic_Tests.cs" />
     <Compile Include="Linq\query_with_nullable_types_Tests.cs" />
     <Compile Include="Schema\BulkLoaderConstructionTests.cs" />
+    <Compile Include="Schema\creating_a_full_patch.cs" />
     <Compile Include="Schema\DbObjectsTests.cs" />
     <Compile Include="Schema\Identity\GuidIdGeneratorTests.cs" />
     <Compile Include="Schema\Identity\IdAssignerTests.cs" />

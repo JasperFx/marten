@@ -108,5 +108,19 @@ namespace Marten.Schema
 
         IBulkLoader<T> BulkLoaderFor<T>();
         IDocumentUpsert UpsertFor(Type documentType);
+
+        /// <summary>
+        /// Tries to write a "patch" SQL file to upgrade the database
+        /// to the current Marten schema configuration
+        /// </summary>
+        /// <param name="filename"></param>
+        void WritePatch(string filename);
+
+        /// <summary>
+        /// Tries to write a "patch" SQL text to upgrade the database
+        /// to the current Marten schema configuration
+        /// </summary>
+        /// <returns></returns>
+        string ToPatch();
     }
 }
