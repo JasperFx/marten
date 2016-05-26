@@ -71,10 +71,5 @@ namespace Marten
         /// <param name="batchSize"></param>
         void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000);
 
-
-        /// <summary>
-        /// Administration functionality for managing the event store
-        /// </summary>
-        IEventStoreAdmin EventStore { get; }
     }
 }

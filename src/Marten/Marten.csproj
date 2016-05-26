@@ -55,7 +55,6 @@
     <Compile Include="Events\EventQueryHandler.cs" />
     <Compile Include="Events\EventSelector.cs" />
     <Compile Include="Events\EventStore.cs" />
-    <Compile Include="Events\EventStoreAdmin.cs" />
     <Compile Include="Events\EventStoreDatabaseObjects.cs" />
     <Compile Include="Events\EventStream.cs" />
     <Compile Include="Events\EventStreamVersioningCallback.cs" />
@@ -284,7 +283,6 @@
     <Compile Include="Services\VersionTracker.cs" />
     <Compile Include="StoreOptions.cs" />
     <Compile Include="QueryableExtensions.cs" />
-    <Compile Include="Transforms\JavascriptModule.cs" />
     <Compile Include="Util\EnumerableExtensions.cs" />
     <Compile Include="Util\LambdaBuilder.cs" />
     <Compile Include="Util\SerializerExtensions.cs" />
@@ -310,28 +308,14 @@
   <ItemGroup>
     <EmbeddedResource Include="Schema\SQL\mt_stream.sql" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Schema\Javascript\" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Schema\SQL\mt_initialize_projections.sql" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="..\..\javascript\mt_transforms.js">
       <Link>Schema\SQL\mt_transforms.js</Link>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Schema\SQL\mt_apply_transform.sql" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Schema\SQL\mt_apply_aggregation.sql" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Schema\SchemaObjects.sql" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Schema\SQL\mt_transforms.sql" />
   </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1' Or $(TargetFrameworkVersion) == 'v4.6.2')">

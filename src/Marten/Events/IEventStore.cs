@@ -156,16 +156,5 @@ namespace Marten.Events
         }
     }
 
-    public interface IEventStoreAdmin
-    {
-        void LoadProjections(string directory);
 
-        void LoadProjection(string file);
-
-        void ClearAllProjections();
-
-        IEnumerable<ProjectionUsage> InitializeEventStoreInDatabase(bool overwrite = false);
-
-        IEnumerable<ProjectionUsage> ProjectionUsages();
-    }
 }

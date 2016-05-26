@@ -64,9 +64,6 @@ namespace Marten.Events
             var schemaName = _parent.DatabaseSchemaName;
 
             writer.WriteSql(schemaName, "mt_stream");
-            writer.WriteSql(schemaName, "mt_initialize_projections");
-            writer.WriteSql(schemaName, "mt_apply_transform");
-            writer.WriteSql(schemaName, "mt_apply_aggregation");
         }
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)

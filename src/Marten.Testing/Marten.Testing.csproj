@@ -107,9 +107,7 @@
     <Compile Include="Events\end_to_end_event_capture_and_fetching_the_stream_Tests.cs" />
     <Compile Include="Events\EventGraphTests.cs" />
     <Compile Include="Events\EventMappingTests.cs" />
-    <Compile Include="Events\event_administration_Tests.cs" />
     <Compile Include="Events\FakeAggregate.cs" />
-    <Compile Include="Events\plv8_transformation_functions_Tests.cs" />
     <Compile Include="Events\query_against_event_documents_Tests.cs" />
     <Compile Include="Events\QuestTypes.cs" />
     <Compile Include="Events\using_the_schema_objects_Tests.cs" />
@@ -281,7 +279,6 @@
     <Compile Include="SpecificationExtensions.cs" />
     <Compile Include="TrackingSession\document_session_update_existing_documents_in_collection_Tests.cs" />
     <Compile Include="TrackingSession\document_session_update_existing_document_Tests.cs" />
-    <Compile Include="Transforms\JavascriptModule_storage_Tests.cs" />
     <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="UnitOfWorkTests.cs" />
     <Compile Include="UnitOfWork_PendingChanges_Functionality_Tests.cs" />

@@ -84,7 +84,6 @@ namespace Marten
 
             Diagnostics = new Diagnostics(Schema);
 
-            EventStore = new EventStoreAdmin(Schema, _connectionFactory, _options, _serializer);
 
             CreateDatabaseObjects();
 
@@ -111,11 +110,6 @@ namespace Marten
             var allSchemaNames = Schema.AllSchemaNames();
             var generator = new DatabaseSchemaGenerator(Advanced);
             generator.Generate(allSchemaNames);
-
-            if (Schema.Events.IsActive)
-            {
-                EventStore.InitializeEventStoreInDatabase();
-            }
         }
 
         public void BulkInsert<T>(T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
@@ -174,7 +168,6 @@ namespace Marten
             }
         }
 
-        public IEventStoreAdmin EventStore { get; }
 
         internal interface IBulkInserter
         {
