@@ -63,8 +63,8 @@
     <Compile Include="Bugs\Bug_261_double_take_or_skip.cs" />
     <Compile Include="Bugs\Bug_276_Query_by_abstract_type_in_hierarchy.cs" />
     <Compile Include="Bugs\Bug_336_completely_remove_crosses_schema_lines.cs" />
-    <Compile Include="Bugs\Bug_xxx_problem_with_identity_map.cs" />
     <Compile Include="Bugs\Bug_382_bulk_insert_that_causes_multiple_batches.cs" />
+    <Compile Include="Bugs\Bug_393_issue_with_identity_map.cs" />
     <Compile Include="Events\capturing_event_versions_on_existing_streams_after_append.cs" />
     <Compile Include="Events\EventStreamTester.cs" />
     <Compile Include="Events\fetch_a_single_event_with_metadata.cs" />
