@@ -50,9 +50,6 @@ namespace Marten.Schema
 
             if (MemberType.IsEnum)
             {
-                typeof(EnumRegistrar<>).CloseAndBuildAs<IEnumRegistrar>(MemberType).Register();
-
-                
 
                 _parseObject = expression =>
                 {
@@ -68,18 +65,6 @@ namespace Marten.Schema
             
         }
 
-        internal interface IEnumRegistrar
-        {
-            void Register();
-        }
-
-        internal class EnumRegistrar<T> : IEnumRegistrar where T : struct
-        {
-            public void Register()
-            {
-                NpgsqlConnection.RegisterEnumGlobally<T>();
-            }
-        }
 
         public string ColumnName
         {

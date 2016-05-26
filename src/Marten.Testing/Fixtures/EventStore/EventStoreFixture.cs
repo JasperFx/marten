@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Baseline;
 using Marten.Testing.Events;
 using Marten.Testing.Events.Projections;
 using Marten.Util;
@@ -9,7 +10,6 @@ using NpgsqlTypes;
 using StoryTeller;
 using StoryTeller.Grammars.Tables;
 using StructureMap;
-using StructureMap.Util;
 
 namespace Marten.Testing.Fixtures.EventStore
 {

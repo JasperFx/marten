@@ -10,7 +10,7 @@ namespace Marten.Testing.Fixtures.EventStore
 {
     public class InlineAggregationFixture : Fixture
     {
-        private readonly StructureMap.Util.Cache<string, Guid> _streams = new StructureMap.Util.Cache<string, Guid>();
+        private readonly Cache<string, Guid> _streams = new Cache<string, Guid>();
         private IDocumentStore _store;
         private Guid _lastStream;
 

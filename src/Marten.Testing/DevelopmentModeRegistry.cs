@@ -4,7 +4,7 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Remotion.Linq.Parsing.Structure;
-using StructureMap.Configuration.DSL;
+using StructureMap;
 using StructureMap.Pipeline;
 
 namespace Marten.Testing
