@@ -3,10 +3,12 @@ using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Services;
+using Marten.Util;
 
 namespace Marten.Transforms
 {
-    public class TransformFunction
+    public class TransformFunction : ISchemaObjects
     {
         public static readonly string Prefix = "mt_transform_";
 
@@ -19,27 +21,13 @@ namespace Marten.Transforms
             Name = name;
             Body = body;
 
-            Function = new FunctionName(options.DatabaseSchemaName, $"{Prefix}{name.ToLower().Replace(".", "_")}");
+            Function = new FunctionName(_options.DatabaseSchemaName, $"{Prefix}{Name.ToLower().Replace(".", "_")}");
         }
 
         public string Name { get; set; }
         public string Body { get; set; }
 
         public FunctionName Function { get; }
-
-        public void ResetSchemaCheck()
-        {
-            _checked = false;
-        }
-
-        public void LoadIfNecessary(IDocumentSchema schema, Action<string> executeSql)
-        {
-            if (!schema.DbObjects.SchemaFunctionNames().Contains(Function))
-            {
-                executeSql(GenerateFunction());
-                _checked = true;
-            }
-        }
 
         public string GenerateFunction()
         {
@@ -62,12 +50,65 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
         }
 
 
-        public static TransformFunction ForFile(StoreOptions options, string file)
+        public static TransformFunction ForFile(StoreOptions options, string file, string name = null)
         {
             var body = new FileSystem().ReadStringFromFile(file);
-            var name = Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
+            name = name ?? Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
 
             return new TransformFunction(options, name, body);
+        }
+
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        {
+            if (_checked) return;
+
+
+            bool shouldReload = functionShouldBeReloaded(schema);
+            if (!shouldReload)
+            {
+                _checked = true;
+                return;
+            }
+
+
+            if (autoCreateSchemaObjectsMode == AutoCreate.None)
+            {
+                string message =
+                    $"The transform function {Function.QualifiedName} and cannot be created dynamically unless the {nameof(StoreOptions)}.{nameof(StoreOptions.AutoCreateSchemaObjects)} is higher than \"None\". See http://jasperfx.github.io/marten/documentation/documents/ for more information";
+                throw new InvalidOperationException(message);
+            }
+
+            executeSql(GenerateFunction());
+        }
+
+        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
+        {
+            writer.WriteLine(GenerateFunction());
+        }
+
+        public void RemoveSchemaObjects(IManagedConnection connection)
+        {
+            var dropSql = $"DROP FUNCTION IF EXISTS {Function.QualifiedName}(JSONB)";
+            connection.Execute(cmd => cmd.Sql(dropSql).ExecuteNonQuery());
+        }
+
+        public void ResetSchemaExistenceChecks()
+        {
+            _checked = false;
+        }
+
+        private bool functionShouldBeReloaded(IDocumentSchema schema)
+        {
+            var definition = schema.DbObjects.DefinitionForFunction(Function);
+            return definition.IsEmpty() || !definition.Contains(Body);
+        }
+
+        public void WritePatch(IDocumentSchema schema, StringWriter writer)
+        {
+            if (functionShouldBeReloaded(schema))
+            {
+                writer.WriteLine(GenerateFunction());
+            }
         }
     }
 }

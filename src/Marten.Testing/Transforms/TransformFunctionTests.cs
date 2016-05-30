@@ -70,19 +70,82 @@ namespace Marten.Testing.Transforms
         }
 
         [Fact]
-        public void rebuilds_if_it_does_not_exist_in_the_schema()
+        public void rebuilds_if_it_does_not_exist_in_the_schema_if_auto_create_is_all()
         {
             var schema = Substitute.For<IDocumentSchema>();
             var dbobjects = Substitute.For<IDbObjects>();
             schema.DbObjects.Returns(dbobjects);
 
-            var func = TransformFunction.ForFile(new StoreOptions(), "get_fullname.js");
+            var func = TransformFunction.ForFile(new StoreOptions {AutoCreateSchemaObjects = AutoCreate.All}, "get_fullname.js");
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
             var executeSql = Substitute.For<Action<string>>();
 
-            func.LoadIfNecessary(schema, executeSql);
+
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, executeSql);
+
+            var generated = func.GenerateFunction();
+
+            executeSql.Received().Invoke(generated);
+        }
+
+        [Fact]
+        public void rebuilds_if_it_does_not_exist_in_the_schema_if_auto_create_is_create_only()
+        {
+            var schema = Substitute.For<IDocumentSchema>();
+            var dbobjects = Substitute.For<IDbObjects>();
+            schema.DbObjects.Returns(dbobjects);
+
+            var func = TransformFunction.ForFile(new StoreOptions {AutoCreateSchemaObjects = AutoCreate.CreateOnly}, "get_fullname.js");
+
+            dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
+
+            var executeSql = Substitute.For<Action<string>>();
+
+
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOnly, schema, executeSql);
+
+            var generated = func.GenerateFunction();
+
+            executeSql.Received().Invoke(generated);
+        }
+
+        [Fact]
+        public void throws_exception_if_auto_create_is_none_and_the_function_does_not_exist()
+        {
+            var schema = Substitute.For<IDocumentSchema>();
+            var dbobjects = Substitute.For<IDbObjects>();
+            schema.DbObjects.Returns(dbobjects);
+
+            var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.None }, "get_fullname.js");
+
+            dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
+
+            var executeSql = Substitute.For<Action<string>>();
+
+
+            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+            {
+                func.GenerateSchemaObjectsIfNecessary(AutoCreate.None, schema, executeSql);
+            });
+        }
+
+        [Fact]
+        public void rebuilds_if_it_does_not_exist_in_the_schema_if_auto_create_is_create_or_update()
+        {
+            var schema = Substitute.For<IDocumentSchema>();
+            var dbobjects = Substitute.For<IDbObjects>();
+            schema.DbObjects.Returns(dbobjects);
+
+            var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate }, "get_fullname.js");
+
+            dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
+
+            var executeSql = Substitute.For<Action<string>>();
+
+
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOrUpdate, schema, executeSql);
 
             var generated = func.GenerateFunction();
 
@@ -98,11 +161,11 @@ namespace Marten.Testing.Transforms
 
             var func = TransformFunction.ForFile(new StoreOptions(), "get_fullname.js");
 
-            dbobjects.SchemaFunctionNames().Returns(new FunctionName[] {func.Function});
+            dbobjects.DefinitionForFunction(func.Function).Returns(func.GenerateFunction());
 
             var executeSql = Substitute.For<Action<string>>();
 
-            func.LoadIfNecessary(schema, executeSql);
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, executeSql);
 
             var generated = func.GenerateFunction();
 
@@ -135,5 +198,9 @@ namespace Marten.Testing.Transforms
                 
             }
         }
+
+
     }
+
+
 }

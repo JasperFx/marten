@@ -137,7 +137,7 @@ namespace Marten.Schema
                 var propName = nameof(StoreOptions.AutoCreateSchemaObjects);
 
                 string message =
-                    $"No document storage exists for type {_mapping.DocumentType.FullName} and cannot be created dynamically unless the {className}.{propName} = true. See http://jasperfx.github.io/marten/documentation/documents/ for more information";
+                    $"No document storage exists for type {_mapping.DocumentType.FullName} and cannot be created dynamically unless the {className}.{propName} is greater than \"None\". See http://jasperfx.github.io/marten/documentation/documents/ for more information";
                 throw new InvalidOperationException(message);
             }
 
