@@ -207,17 +207,14 @@ namespace Marten.Schema
             return table;
         }
 
-        // TODO -- take in IDDLRunner instead
-        public void WritePatch(IDocumentSchema schema, StringWriter writer)
+        public void WritePatch(IDocumentSchema schema, IDDLRunner runner)
         {
             var diff = CreateSchemaDiff(schema);
             if (!diff.HasDifferences()) return;
 
             if (diff.CanPatch())
             {
-                var recorder = new DDLRecorder(writer);
-
-                diff.CreatePatch(recorder);
+                diff.CreatePatch(runner);
             }
         }
 

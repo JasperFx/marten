@@ -103,11 +103,11 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
             return definition.IsEmpty() || !definition.Contains(Body);
         }
 
-        public void WritePatch(IDocumentSchema schema, StringWriter writer)
+        public void WritePatch(IDocumentSchema schema, IDDLRunner runner)
         {
             if (functionShouldBeReloaded(schema))
             {
-                writer.WriteLine(GenerateFunction());
+                runner.Apply(this, GenerateFunction());
             }
         }
 

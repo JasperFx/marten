@@ -14,6 +14,6 @@ namespace Marten.Schema
 
         void ResetSchemaExistenceChecks();
 
-        void WritePatch(IDocumentSchema schema, StringWriter writer);
+        void WritePatch(IDocumentSchema schema, IDDLRunner runner);
     }
 }

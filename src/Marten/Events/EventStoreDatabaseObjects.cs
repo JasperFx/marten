@@ -79,7 +79,7 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        public void WritePatch(IDocumentSchema schema, StringWriter writer)
+        public void WritePatch(IDocumentSchema schema, IDDLRunner runner)
         {
             // Nothing yet.
         }

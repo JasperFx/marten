@@ -174,14 +174,16 @@ namespace Marten.Schema
             var allSchemaNames = AllSchemaNames();
             DatabaseSchemaGenerator.WriteSql(allSchemaNames, writer);
 
+            var recorder = new DDLRecorder(writer);
+
             StoreOptions.AllDocumentMappings.Each(x =>
             {
-                x.SchemaObjects.WritePatch(this, writer);
+                x.SchemaObjects.WritePatch(this, recorder);
             });
 
             if (Events.IsActive && !StoreOptions.AllDocumentMappings.Contains(Events.As<IDocumentMapping>()))
             {
-                Events.As<IDocumentMapping>().SchemaObjects.WritePatch(this, writer);
+                Events.As<IDocumentMapping>().SchemaObjects.WritePatch(this, recorder);
             }
 
             return writer.ToString();
