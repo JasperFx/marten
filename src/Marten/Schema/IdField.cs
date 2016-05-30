@@ -19,7 +19,7 @@ namespace Marten.Schema
         public string MemberName => _idMember.Name;
         public string SqlLocator { get; } = "d.id";
         public string ColumnName { get; } = "id";
-        public void WritePatch(DocumentMapping mapping, Action<string> writer)
+        public void WritePatch(DocumentMapping mapping, IDDLRunner runner)
         {
             // Nothing
         }

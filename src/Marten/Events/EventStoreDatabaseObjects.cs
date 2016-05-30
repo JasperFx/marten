@@ -17,8 +17,7 @@ namespace Marten.Events
             _parent = parent;
         }
 
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,
-            Action<string> executeSql)
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, IDDLRunner runner)
         {
             if (_checkedSchema) return;
 
@@ -43,20 +42,14 @@ namespace Marten.Events
 
                     writeBasicTables(schema, writer);
 
-                    executeSql(writer.ToString());
-
-
-                    // This is going to have to be done separately
-                    // TODO -- doesn't work anyway. Do this differently somehow.
-
-
-                    //var js = SchemaBuilder.GetJavascript("mt_transforms").Replace("'", "\"").Replace("\n", "").Replace("\r", "");
-                    //var sql = $"insert into mt_modules (name, definition) values ('mt_transforms', '{js}');";
-                    //executeSql(sql);
-
-                    //executeSql("select mt_initialize_projections();");
+                    runner.Apply(this, writer.ToString());
                 }
             }
+        }
+
+        public override string ToString()
+        {
+            return "Event Store";
         }
 
         private void writeBasicTables(IDocumentSchema schema, StringWriter writer)
@@ -69,8 +62,6 @@ namespace Marten.Events
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             writeBasicTables(schema, writer);
-
-            // TODO -- need to load the projection and initialize
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)

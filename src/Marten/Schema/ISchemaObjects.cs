@@ -6,7 +6,7 @@ namespace Marten.Schema
 {
     public interface ISchemaObjects
     {
-        void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql);
+        void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, IDDLRunner runner);
 
         void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer);
 

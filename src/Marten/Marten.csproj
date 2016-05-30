@@ -155,6 +155,7 @@
     <Compile Include="Schema\DocumentSchemaObjects.cs" />
     <Compile Include="Schema\Arguments\DotNetTypeArgument.cs" />
     <Compile Include="Schema\IDbObjects.cs" />
+    <Compile Include="Schema\IDDLRunner.cs" />
     <Compile Include="Schema\IdentityAttribute.cs" />
     <Compile Include="Schema\Identity\GuidIdGenerator.cs" />
     <Compile Include="Schema\Identity\IdAssigner.cs" />

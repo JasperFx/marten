@@ -87,8 +87,7 @@ namespace Marten.Schema
             _hasCheckedSchema = false;
         }
 
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,
-            Action<string> executeSql)
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, IDDLRunner runner)
         {
             if (_hasCheckedSchema) return;
 
@@ -107,7 +106,7 @@ namespace Marten.Schema
             {
                 if (_hasCheckedSchema) return;
 
-                buildOrModifySchemaObjects(diff, autoCreateSchemaObjectsMode, schema, executeSql);
+                buildOrModifySchemaObjects(diff, autoCreateSchemaObjectsMode, schema, runner);
 
                 _hasCheckedSchema = true;
             }
@@ -119,17 +118,17 @@ namespace Marten.Schema
             return new SchemaDiff(schema, objects, _mapping);
         }
 
-        private void runDependentScripts(Action<string> executeSql)
+        private void runDependentScripts(IDDLRunner runner)
         {
             DependentScripts.Each(script =>
             {
                 var sql = SchemaBuilder.GetSqlScript(_mapping.DatabaseSchemaName, script);
-                executeSql(sql);
+                runner.Apply(this, sql);
             });
         }
 
         private void buildOrModifySchemaObjects(SchemaDiff diff, AutoCreate autoCreateSchemaObjectsMode,
-            IDocumentSchema schema, Action<string> executeSql)
+            IDocumentSchema schema, IDDLRunner runner)
         {
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
             {
@@ -143,9 +142,9 @@ namespace Marten.Schema
 
             if (diff.AllMissing)
             {
-                rebuildTableAndUpsertFunction(schema, executeSql);
+                rebuildTableAndUpsertFunction(schema, runner);
 
-                runDependentScripts(executeSql);
+                runDependentScripts(runner);
 
                 return;
             }
@@ -158,12 +157,12 @@ namespace Marten.Schema
 
             if (diff.CanPatch())
             {
-                diff.CreatePatch(executeSql);
+                diff.CreatePatch(runner);
             }
             else if (autoCreateSchemaObjectsMode == AutoCreate.All)
             {
                 // TODO -- better evaluation here against the auto create mode
-                rebuildTableAndUpsertFunction(schema, executeSql);
+                rebuildTableAndUpsertFunction(schema, runner);
             }
             else
             {
@@ -171,16 +170,16 @@ namespace Marten.Schema
                     $"The table for document type {_mapping.DocumentType.FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{autoCreateSchemaObjectsMode}'");
             }
 
-            runDependentScripts(executeSql);
+            runDependentScripts(runner);
         }
 
-        private void rebuildTableAndUpsertFunction(IDocumentSchema schema, Action<string> executeSql)
+        private void rebuildTableAndUpsertFunction(IDocumentSchema schema, IDDLRunner runner)
         {
             var writer = new StringWriter();
             WriteSchemaObjects(schema, writer);
 
             var sql = writer.ToString();
-            executeSql(sql);
+            runner.Apply(this, sql);
         }
 
 
@@ -208,6 +207,7 @@ namespace Marten.Schema
             return table;
         }
 
+        // TODO -- take in IDDLRunner instead
         public void WritePatch(IDocumentSchema schema, StringWriter writer)
         {
             var diff = CreateSchemaDiff(schema);
@@ -215,11 +215,15 @@ namespace Marten.Schema
 
             if (diff.CanPatch())
             {
-                writer.WriteLine($"-- Patch for Document {_mapping.DocumentType.FullName}");
-                diff.CreatePatch(writer.WriteLine);
-                writer.WriteLine("");
-                writer.WriteLine("");
+                var recorder = new DDLRecorder(writer);
+
+                diff.CreatePatch(recorder);
             }
+        }
+
+        public override string ToString()
+        {
+            return "Storage Table and Upsert Function for " + _mapping.DocumentType.FullName;
         }
     }
 

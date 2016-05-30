@@ -77,16 +77,16 @@ namespace Marten.Schema
         }
 
         // TODO -- think this one might have to change w/ FK's
-        public void WritePatch(DocumentMapping mapping, Action<string> executeSql)
+        public void WritePatch(DocumentMapping mapping, IDDLRunner runner)
         {
-            executeSql($"ALTER TABLE {mapping.Table.QualifiedName} ADD COLUMN {ColumnName} {PgType};");
+            runner.Apply(mapping, $"ALTER TABLE {mapping.Table.QualifiedName} ADD COLUMN {ColumnName} {PgType};");
 
             var jsonField = new JsonLocatorField(_enumStorage, Members);
 
             // HOKEY, but I'm letting it pass for now.
             var sqlLocator = jsonField.SqlLocator.Replace("d.", "");
 
-            executeSql($"update {mapping.Table.QualifiedName} set {ColumnName} = {sqlLocator}");
+            runner.Apply(mapping, $"update {mapping.Table.QualifiedName} set {ColumnName} = {sqlLocator}");
 
         }
 

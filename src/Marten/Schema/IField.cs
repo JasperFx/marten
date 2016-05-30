@@ -14,7 +14,7 @@ namespace Marten.Schema
 
         string ColumnName { get; }
 
-        void WritePatch(DocumentMapping mapping, Action<string> writer);
+        void WritePatch(DocumentMapping mapping, IDDLRunner runner);
         object GetValue(Expression valueExpression);
 
         Type MemberType { get; }

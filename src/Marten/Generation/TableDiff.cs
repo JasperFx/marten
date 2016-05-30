@@ -37,7 +37,7 @@ namespace Marten.Generation
             return !Different.Any();
         }
 
-        public void CreatePatch(DocumentMapping mapping, Action<string> executeSql)
+        public void CreatePatch(DocumentMapping mapping, IDDLRunner runner)
         {
             var systemFields = new string[] {DocumentMapping.LastModifiedColumn, DocumentMapping.DotNetTypeColumn, DocumentMapping.VersionColumn};
 
@@ -57,12 +57,17 @@ namespace Marten.Generation
                     var patch =
                         $"alter table {_tableName.QualifiedName} add column {col.ToDeclaration(col.Name.Length + 1)}";
 
-                    executeSql(patch);
+                    runner.Apply(this, patch);
                 });
             }
 
 
-            fields.Each(x => x.WritePatch(mapping, executeSql));
+            fields.Each(x => x.WritePatch(mapping, runner));
+        }
+
+        public override string ToString()
+        {
+            return $"TableDiff for {_tableName}";
         }
     }
 }

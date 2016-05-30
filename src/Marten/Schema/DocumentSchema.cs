@@ -15,7 +15,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class DocumentSchema : IDocumentSchema, IDisposable
+    public class DocumentSchema : IDocumentSchema, IDDLRunner, IDisposable
     {
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
             new ConcurrentDictionary<Type, IDocumentStorage>();
@@ -194,7 +194,7 @@ namespace Marten.Schema
             system.DeleteDirectory(directory);
             system.CreateDirectory(directory);
 
-            WriteDatabaseSchemaGenerationScript(directory, system);
+            writeDatabaseSchemaGenerationScript(directory, system);
 
             _mappings.Values.OfType<DocumentMapping>().Each(mapping =>
             {
@@ -273,7 +273,7 @@ namespace Marten.Schema
         }
 
 
-        private void WriteDatabaseSchemaGenerationScript(string directory, FileSystem system)
+        private void writeDatabaseSchemaGenerationScript(string directory, FileSystem system)
         {
             var allSchemaNames = AllSchemaNames();
             var script = DatabaseSchemaGenerator.GenerateScript(allSchemaNames);
@@ -290,20 +290,21 @@ namespace Marten.Schema
             return SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo");
         }
 
+        void IDDLRunner.Apply(object subject, string ddl)
+        {
+            try
+            {
+                _factory.RunSql(ddl);
+                _logger.SchemaChange(ddl);
+            }
+            catch (Exception e)
+            {
+                throw new MartenSchemaException(subject, ddl, e);
+            }
+        }
+
         private void buildSchemaObjectsIfNecessary(IDocumentMapping mapping)
         {
-            Action<string> executeSql = sql =>
-            {
-                try
-                {
-                    _factory.RunSql(sql);
-                    _logger.SchemaChange(sql);
-                }
-                catch (Exception e)
-                {
-                    throw new MartenSchemaException(mapping.DocumentType, sql, e);
-                }
-            };
 
             var sortedMappings = new[] {mapping}.TopologicalSort(x =>
             {
@@ -319,7 +320,7 @@ namespace Marten.Schema
             });
 
             sortedMappings.Each(
-                x => x.SchemaObjects.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, executeSql));
+                x => x.SchemaObjects.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, this));
         }
 
         private void assertNoDuplicateDocumentAliases()

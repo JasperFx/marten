@@ -11,7 +11,6 @@ namespace Marten.Schema
     public class SchemaDiff
     {
         private readonly DocumentMapping _mapping;
-        private readonly IDocumentSchema _schema;
         private readonly SchemaObjects _existing;
 
         public SchemaDiff(IDocumentSchema schema, SchemaObjects existing, DocumentMapping mapping)
@@ -47,7 +46,6 @@ namespace Marten.Schema
 
             _existing = existing;
             _mapping = mapping;
-            _schema = schema;
 
 
         }
@@ -91,21 +89,23 @@ namespace Marten.Schema
 
         public readonly IList<string> IndexChanges = new List<string>();
 
-        public void CreatePatch(Action<string> executeSql)
+        public void CreatePatch(IDDLRunner runner)
         {
-            TableDiff.CreatePatch(_mapping, executeSql);
+            TableDiff.CreatePatch(_mapping, runner);
 
             if (HasFunctionChanged())
             {
-                _existing.FunctionDropStatements.Each(executeSql);
+                _existing.FunctionDropStatements.Each(x => runner.Apply(this, x));
 
-                // TODO -- need to drop the existing function somehow?
-                executeSql(expectedUpsertFunction());
+                runner.Apply(this, expectedUpsertFunction());
             }
 
-            IndexChanges.Each(executeSql);
+            IndexChanges.Each(x => runner.Apply(this, x));
         }
 
-        
+        public override string ToString()
+        {
+            return $"SchemaDiff for {_mapping.DocumentType.FullName}";
+        }
     }
 }

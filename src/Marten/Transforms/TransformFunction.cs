@@ -58,7 +58,7 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
             return new TransformFunction(options, name, body);
         }
 
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, Action<string> executeSql)
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, IDDLRunner runner)
         {
             if (_checked) return;
 
@@ -78,7 +78,7 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
                 throw new InvalidOperationException(message);
             }
 
-            executeSql(GenerateFunction());
+            runner.Apply(this, GenerateFunction());
         }
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
@@ -109,6 +109,11 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
             {
                 writer.WriteLine(GenerateFunction());
             }
+        }
+
+        public override string ToString()
+        {
+            return $"Transform Function '{Name}'";
         }
     }
 }

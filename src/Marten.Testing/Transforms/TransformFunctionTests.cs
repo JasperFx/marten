@@ -80,14 +80,14 @@ namespace Marten.Testing.Transforms
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
-            var executeSql = Substitute.For<Action<string>>();
+            var runner = Substitute.For<IDDLRunner>();
 
 
-            func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, executeSql);
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, runner);
 
             var generated = func.GenerateFunction();
 
-            executeSql.Received().Invoke(generated);
+            runner.Received().Apply(func, generated);
         }
 
         [Fact]
@@ -97,18 +97,18 @@ namespace Marten.Testing.Transforms
             var dbobjects = Substitute.For<IDbObjects>();
             schema.DbObjects.Returns(dbobjects);
 
-            var func = TransformFunction.ForFile(new StoreOptions {AutoCreateSchemaObjects = AutoCreate.CreateOnly}, "get_fullname.js");
+            var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.CreateOnly }, "get_fullname.js");
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
-            var executeSql = Substitute.For<Action<string>>();
+            var runner = Substitute.For<IDDLRunner>();
 
 
-            func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOnly, schema, executeSql);
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOnly, schema, runner);
 
             var generated = func.GenerateFunction();
 
-            executeSql.Received().Invoke(generated);
+            runner.Received().Apply(func, generated);
         }
 
         [Fact]
@@ -122,12 +122,12 @@ namespace Marten.Testing.Transforms
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
-            var executeSql = Substitute.For<Action<string>>();
+            var runner = Substitute.For<IDDLRunner>();
 
 
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
-                func.GenerateSchemaObjectsIfNecessary(AutoCreate.None, schema, executeSql);
+                func.GenerateSchemaObjectsIfNecessary(AutoCreate.None, schema, runner);
             });
         }
 
@@ -142,14 +142,14 @@ namespace Marten.Testing.Transforms
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
-            var executeSql = Substitute.For<Action<string>>();
+            var runner = Substitute.For<IDDLRunner>();
 
 
-            func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOrUpdate, schema, executeSql);
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOrUpdate, schema, runner);
 
             var generated = func.GenerateFunction();
 
-            executeSql.Received().Invoke(generated);
+            runner.Received().Apply(func, generated);
         }
 
         [Fact]
@@ -163,13 +163,13 @@ namespace Marten.Testing.Transforms
 
             dbobjects.DefinitionForFunction(func.Function).Returns(func.GenerateFunction());
 
-            var executeSql = Substitute.For<Action<string>>();
+            var runner = Substitute.For<IDDLRunner>();
 
-            func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, executeSql);
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, runner);
 
             var generated = func.GenerateFunction();
 
-            executeSql.DidNotReceive().Invoke(generated);
+            runner.DidNotReceive().Apply(func, generated);
         }
 
         [Fact]
