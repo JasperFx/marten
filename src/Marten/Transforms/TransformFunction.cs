@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
@@ -29,41 +28,13 @@ namespace Marten.Transforms
 
         public FunctionName Function { get; }
 
-        public string GenerateFunction()
-        {
-            var defaultExport = "{export: {}}";
-
-            return
-                $@"
-CREATE OR REPLACE FUNCTION {Function.QualifiedName}(doc JSONB) RETURNS JSONB AS $$
-
-  var module = {defaultExport};
-
-  {Body}
-
-  var func = module.exports;
-
-  return func(doc);
-
-$$ LANGUAGE plv8 IMMUTABLE STRICT;
-";
-        }
-
-
-        public static TransformFunction ForFile(StoreOptions options, string file, string name = null)
-        {
-            var body = new FileSystem().ReadStringFromFile(file);
-            name = name ?? Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
-
-            return new TransformFunction(options, name, body);
-        }
-
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, IDDLRunner runner)
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,
+            IDDLRunner runner)
         {
             if (_checked) return;
 
 
-            bool shouldReload = functionShouldBeReloaded(schema);
+            var shouldReload = functionShouldBeReloaded(schema);
             if (!shouldReload)
             {
                 _checked = true;
@@ -97,18 +68,47 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
             _checked = false;
         }
 
-        private bool functionShouldBeReloaded(IDocumentSchema schema)
-        {
-            var definition = schema.DbObjects.DefinitionForFunction(Function);
-            return definition.IsEmpty() || !definition.Contains(Body);
-        }
-
         public void WritePatch(IDocumentSchema schema, IDDLRunner runner)
         {
             if (functionShouldBeReloaded(schema))
             {
                 runner.Apply(this, GenerateFunction());
             }
+        }
+
+        public string GenerateFunction()
+        {
+            var defaultExport = "{export: {}}";
+
+            return
+                $@"
+CREATE OR REPLACE FUNCTION {Function.QualifiedName}(doc JSONB) RETURNS JSONB AS $$
+
+  var module = {defaultExport};
+
+  {Body}
+
+  var func = module.exports;
+
+  return func(doc);
+
+$$ LANGUAGE plv8 IMMUTABLE STRICT;
+";
+        }
+
+
+        public static TransformFunction ForFile(StoreOptions options, string file, string name = null)
+        {
+            var body = new FileSystem().ReadStringFromFile(file);
+            name = name ?? Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
+
+            return new TransformFunction(options, name, body);
+        }
+
+        private bool functionShouldBeReloaded(IDocumentSchema schema)
+        {
+            var definition = schema.DbObjects.DefinitionForFunction(Function);
+            return definition.IsEmpty() || !definition.Contains(Body);
         }
 
         public override string ToString()

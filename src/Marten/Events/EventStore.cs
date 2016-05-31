@@ -31,7 +31,6 @@ namespace Marten.Events
 
             _selector = new EventSelector(_schema.Events.As<EventGraph>(), serializer);
 
-            Transforms = new Transforms(schema, serializer, connection);
         }
 
         public void Append(Guid stream, params object[] events)
@@ -98,9 +97,6 @@ namespace Marten.Events
 
             return _connection.FetchAsync(handler, null, token);
         }
-
-
-        public ITransforms Transforms { get; }
 
 
         public IMartenQueryable<T> Query<T>()

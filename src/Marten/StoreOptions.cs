@@ -8,6 +8,7 @@ using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services;
+using Marten.Transforms;
 using Npgsql;
 
 namespace Marten
@@ -52,6 +53,7 @@ namespace Marten
         {
             Events = new EventGraph(this);
             Schema = new MartenRegistry(this);
+            Transforms = new Transforms.Transforms(this);
         }
 
         public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Values;
@@ -163,6 +165,8 @@ namespace Marten
         {
             _serializer = new T();
         }
+
+        public ITransforms Transforms { get; } 
 
         /// <summary>
         ///     Force Marten to create document mappings for type T

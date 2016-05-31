@@ -72,7 +72,6 @@ namespace Marten.Events
         /// <returns></returns>
         Task<T> AggregateStreamAsync<T>(Guid streamId, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken)) where T : class, new();
 
-        ITransforms Transforms { get; }
 
         /// <summary>
         /// Query directly against the raw event data
@@ -128,33 +127,4 @@ namespace Marten.Events
         /// <returns></returns>
         Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = default(CancellationToken));
     }
-
-    public interface ITransforms
-    {
-        string Transform(string projectionName, Guid streamId, IEvent @event);
-
-        TAggregate ApplySnapshot<TAggregate>(Guid streamId, TAggregate aggregate, IEvent @event)
-            where TAggregate : class, new();
-
-        TAggregate StartSnapshot<TAggregate>(Guid streamId, IEvent @event) where TAggregate : class, new();
-    }
-
-    public class StreamState
-    {
-        public Guid Id { get; }
-        public int Version { get; }
-        public Type AggregateType { get; }
-
-        public DateTime LastTimestamp { get; }
-
-        public StreamState(Guid id, int version, Type aggregateType, DateTime lastTimestamp)
-        {
-            Id = id;
-            Version = version;
-            AggregateType = aggregateType;
-            LastTimestamp = lastTimestamp;
-        }
-    }
-
-
 }
