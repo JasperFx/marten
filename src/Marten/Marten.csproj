@@ -291,6 +291,7 @@
     <Compile Include="Transforms\TransformExtensions.cs" />
     <Compile Include="Transforms\TransformFunction.cs" />
     <Compile Include="Transforms\TransformToJsonSelector.cs" />
+    <Compile Include="Transforms\TransformToTypeSelector.cs" />
     <Compile Include="Util\EnumerableExtensions.cs" />
     <Compile Include="Util\LambdaBuilder.cs" />
     <Compile Include="Util\SerializerExtensions.cs" />

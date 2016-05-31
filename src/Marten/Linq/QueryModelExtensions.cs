@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Transforms;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
@@ -93,6 +94,12 @@ namespace Marten.Linq
 
         public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, IQueryableDocument mapping, QueryModel query)
         {
+            var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
+            if (selectable != null)
+            {
+                return selectable.BuildSelector<T>(schema, mapping);
+            }
+
             if (query.SelectClause.Selector.Type == query.SourceType())
             {
                 if (typeof (T) == typeof (string))
@@ -103,6 +110,7 @@ namespace Marten.Linq
                 var resolver = schema.ResolverFor<T>();
                 return new WholeDocumentSelector<T>(mapping, resolver);
             }
+
 
             var visitor = new SelectorParser(query);
             visitor.Visit(query.SelectClause.Selector);

@@ -16,7 +16,8 @@ namespace Marten.Linq
             r.Register(ToJsonArrayExpressionNode.SupportedMethods, typeof (ToJsonArrayExpressionNode));
             r.Register(IncludeExpressionNode.SupportedMethods, typeof (IncludeExpressionNode));
             r.Register(StatsExpressionNode.SupportedMethods, typeof (StatsExpressionNode));
-            //r.Register(TransformExpressionNode.SupportedMethods, typeof (TransformExpressionNode));
+            r.Register(TransformToJsonNode.SupportedMethods, typeof (TransformToJsonNode));
+            r.Register(TransformToOtherTypeNode.SupportedMethods, typeof(TransformToOtherTypeNode));
             
         });
 

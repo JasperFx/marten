@@ -60,10 +60,17 @@ namespace Marten.Linq
             }
 
 
-            if (method.DeclaringType == typeof(TransformExtensions) &&
-                method.Name == nameof(TransformExtensions.TransformToJson))
+            if (method.DeclaringType == typeof(TransformExtensions))
             {
-                return SelectionType.TransformToJson;
+                if (method.Name == nameof(TransformExtensions.TransformToJson))
+                {
+                    return SelectionType.TransformToJson;
+                }
+
+                if (method.Name == nameof(TransformExtensions.TransformTo))
+                {
+                    return SelectionType.TransformTo;
+                }
             }
 
             return SelectionType.WholeDoc;
@@ -119,8 +126,17 @@ namespace Marten.Linq
                 return new TransformToJsonSelector(transform, mapping).As<ISelector<T>>();
             }
 
+            if (_selectionType == SelectionType.TransformTo)
+            {
+                var transform = schema.TransformFor(_transformName);
+
+                return new TransformToTypeSelector<T>(transform, mapping );
+            }
+
             if (_target == null || _target.Type != typeof(T))
+            {
                 return new SingleFieldSelector<T>(mapping, _currentField.Members.Reverse().ToArray());
+            }
 
             return _target.ToSelector<T>(mapping);
         }
@@ -139,7 +155,7 @@ namespace Marten.Linq
                 return null;
             }
 
-            if (selectionType == SelectionType.TransformToJson)
+            if (selectionType == SelectionType.TransformToJson || selectionType == SelectionType.TransformTo)
             {
                 var transformName = node.Arguments.Last() as ConstantExpression;
 

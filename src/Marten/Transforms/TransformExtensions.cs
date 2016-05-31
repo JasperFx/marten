@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Baseline;
 using Marten.Linq;
+using Marten.Schema;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Clauses.StreamedData;
@@ -16,7 +16,7 @@ namespace Marten.Transforms
     public static class TransformExtensions
     {
         /// <summary>
-        /// Placeholder for Linq expressions
+        ///     Placeholder for Linq expressions
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="doc"></param>
@@ -27,8 +27,6 @@ namespace Marten.Transforms
             return "";
         }
 
-
-        
 
         public static IQueryable<string> TransformToJson<T>(this IQueryable<T> queryable, string transformName)
         {
@@ -46,52 +44,131 @@ namespace Marten.Transforms
         }
     }
 
-    /*
-    public class TransformExpressionNode : ResultOperatorExpressionNodeBase
+    
+    public class TransformToJsonNode : ResultOperatorExpressionNodeBase
     {
         public static MethodInfo[] SupportedMethods =
-            typeof(TransformExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static).ToArray();
+            typeof(TransformExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(x => x.Name == nameof(TransformExtensions.TransformToJson)).ToArray();
 
-        public TransformExpressionNode(MethodCallExpressionParseInfo parseInfo, LambdaExpression optionalPredicate, LambdaExpression optionalSelector) : base(parseInfo, optionalPredicate, optionalSelector)
+        private readonly TransformToJsonResultOperator _operator;
+
+
+        public TransformToJsonNode(MethodCallExpressionParseInfo parseInfo, Expression transform, Expression optionalSelector) : base(parseInfo, transform as LambdaExpression, optionalSelector as LambdaExpression)
         {
-            Debug.WriteLine("Foo");
+            var name = transform.As<ConstantExpression>().Value.As<string>();
+            _operator = new TransformToJsonResultOperator(name);
         }
 
         protected override ResultOperatorBase CreateResultOperator(ClauseGenerationContext clauseGenerationContext)
         {
-            throw new System.NotImplementedException();
+            return _operator;
         }
 
         public override Expression Resolve(ParameterExpression inputParameter, Expression expressionToBeResolved,
             ClauseGenerationContext clauseGenerationContext)
         {
-            throw new System.NotImplementedException();
+            return Source.Resolve(
+                inputParameter,
+                expressionToBeResolved,
+                clauseGenerationContext);
         }
     }
 
-    public class TransformToJsonResultOperator : SequenceTypePreservingResultOperatorBase
+    public class TransformToOtherTypeNode : ResultOperatorExpressionNodeBase
     {
-        public Expression Parameter { get; set; }
+        public static MethodInfo[] SupportedMethods =
+            typeof(TransformExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(x => x.Name == nameof(TransformExtensions.TransformTo)).ToArray();
 
-        public TransformToJsonResultOperator(Expression parameter)
+        private readonly TransformToOtherTypeOperator _operator;
+
+
+        public TransformToOtherTypeNode(MethodCallExpressionParseInfo parseInfo, Expression transform, Expression optionalSelector) : base(parseInfo, transform as LambdaExpression, optionalSelector as LambdaExpression)
         {
-            Parameter = parameter;
+            var name = transform.As<ConstantExpression>().Value.As<string>();
+            _operator = new TransformToOtherTypeOperator(name);
+        }
+
+        protected override ResultOperatorBase CreateResultOperator(ClauseGenerationContext clauseGenerationContext)
+        {
+            return _operator;
+        }
+
+        public override Expression Resolve(ParameterExpression inputParameter, Expression expressionToBeResolved,
+            ClauseGenerationContext clauseGenerationContext)
+        {
+            return Source.Resolve(
+                inputParameter,
+                expressionToBeResolved,
+                clauseGenerationContext);
+        }
+    }
+
+    public interface ISelectableOperator
+    {
+        ISelector<T> BuildSelector<T>(IDocumentSchema schema, IQueryableDocument document);
+    }
+
+    public class TransformToJsonResultOperator : SequenceTypePreservingResultOperatorBase, ISelectableOperator
+    {
+        private readonly string _transformName;
+
+        public TransformToJsonResultOperator(string transformName)
+        {
+            _transformName = transformName;
         }
 
         public override ResultOperatorBase Clone(CloneContext cloneContext)
         {
-            return new TransformToJsonResultOperator(Parameter);
+            return new TransformToJsonResultOperator(_transformName);
         }
 
         public override void TransformExpressions(Func<Expression, Expression> transformation)
         {
-            Parameter = transformation(Parameter);
+            // no-op;
         }
 
         public override StreamedSequence ExecuteInMemory<T>(StreamedSequence input)
         {
             return input;
         }
+
+        public ISelector<T> BuildSelector<T>(IDocumentSchema schema, IQueryableDocument document)
+        {
+            var transform = schema.TransformFor(_transformName);
+            return new TransformToJsonSelector(transform, document).As<ISelector<T>>();
+        }
     }
-    */
+
+    public class TransformToOtherTypeOperator : SequenceTypePreservingResultOperatorBase, ISelectableOperator
+    {
+        private readonly string _transformName;
+
+        public TransformToOtherTypeOperator(string transformName)
+        {
+            _transformName = transformName;
+        }
+
+        public override ResultOperatorBase Clone(CloneContext cloneContext)
+        {
+            return new TransformToJsonResultOperator(_transformName);
+        }
+
+        public override void TransformExpressions(Func<Expression, Expression> transformation)
+        {
+            // no-op;
+        }
+
+        public override StreamedSequence ExecuteInMemory<T>(StreamedSequence input)
+        {
+            return input;
+        }
+
+        public ISelector<T> BuildSelector<T>(IDocumentSchema schema, IQueryableDocument document)
+        {
+            var transform = schema.TransformFor(_transformName);
+
+            return new TransformToTypeSelector<T>(transform, document);
+        }
+    }
+
 }
