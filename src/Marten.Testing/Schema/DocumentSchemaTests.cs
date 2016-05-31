@@ -64,6 +64,18 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void events_are_part_of_the_all_schema_objects_if_they_are_active()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.AddEventType(typeof(MembersJoined));
+            });
+
+            var objects = theSchema.AllSchemaObjects().ToArray();
+            objects.OfType<EventStoreDatabaseObjects>().Any().ShouldBeTrue();
+        }
+
+        [Fact]
         public void can_create_a_new_storage_for_a_document_type_without_subclasses()
         {
             var storage = theSchema.StorageFor(typeof(User));

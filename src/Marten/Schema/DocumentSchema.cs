@@ -91,6 +91,11 @@ namespace Marten.Schema
             {
                 yield return transform;
             }
+
+            if (Events.IsActive)
+            {
+                yield return Events.As<EventGraph>().SchemaObjects;
+            }
         }
 
         public IDbObjects DbObjects { get; }
@@ -213,14 +218,9 @@ namespace Marten.Schema
 
             var recorder = new DDLRecorder(writer);
 
-            StoreOptions.AllDocumentMappings.Each(x =>
+            foreach (var schemaObject in AllSchemaObjects())
             {
-                x.SchemaObjects.WritePatch(this, recorder);
-            });
-
-            if (Events.IsActive && !StoreOptions.AllDocumentMappings.Contains(Events.As<IDocumentMapping>()))
-            {
-                Events.As<IDocumentMapping>().SchemaObjects.WritePatch(this, recorder);
+                schemaObject.WritePatch(this, recorder);
             }
 
             return writer.ToString();
@@ -266,14 +266,10 @@ namespace Marten.Schema
             var allSchemaNames = AllSchemaNames();
             DatabaseSchemaGenerator.WriteSql(allSchemaNames, writer);
 
-            StoreOptions.AllDocumentMappings.Each(x => x.SchemaObjects.WriteSchemaObjects(this, writer));
-
-            if (Events.IsActive && !StoreOptions.AllDocumentMappings.Contains(Events.As<IDocumentMapping>()))
+            foreach (var schemaObject in AllSchemaObjects())
             {
-                Events.As<IDocumentMapping>().SchemaObjects.WriteSchemaObjects(this, writer);
+                schemaObject.WriteSchemaObjects(this, writer);
             }
-
-            writer.WriteLine(SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo"));
 
             return writer.ToString();
         }
