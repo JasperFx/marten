@@ -65,6 +65,34 @@ namespace Marten.Schema
         {
         }
 
+        public IEnumerable<ISchemaObjects> AllSchemaObjects()
+        {
+            var mappings = AllDocumentMaps().TopologicalSort(m =>
+            {
+                var documentMapping = m as DocumentMapping;
+                if (documentMapping == null)
+                {
+                    return Enumerable.Empty<IDocumentMapping>();
+                }
+
+                return documentMapping.ForeignKeys
+                    .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
+                    .Select(MappingFor);
+            });
+
+            foreach (var mapping in mappings)
+            {
+                yield return mapping.SchemaObjects;
+            }
+
+            yield return _sequences.Value;
+
+            foreach (var transform in StoreOptions.Transforms.AllFunctions())
+            {
+                yield return transform;
+            }
+        }
+
         public IDbObjects DbObjects { get; }
         public IBulkLoader<T> BulkLoaderFor<T>()
         {

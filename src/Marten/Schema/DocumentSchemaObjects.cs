@@ -28,6 +28,8 @@ namespace Marten.Schema
         public readonly IList<Type> DependentTypes = new List<Type>();
         public readonly IList<string> DependentScripts = new List<string>();
 
+        public Type DocumentType => _mapping.DocumentType;
+
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             var table = StorageTable();

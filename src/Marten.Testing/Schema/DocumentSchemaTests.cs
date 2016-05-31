@@ -6,9 +6,11 @@ using Baseline;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.Hierarchies;
+using Marten.Schema.Identity.Sequences;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
 using Marten.Testing.Schema.Hierarchies;
+using Marten.Transforms;
 using Shouldly;
 using StructureMap;
 using Xunit;
@@ -19,8 +21,47 @@ namespace Marten.Testing.Schema
     [Collection("DefaultSchema")]
     public class DocumentSchemaTests : IntegratedFixture
     {
-        private IDocumentSchema theSchema => theStore.Schema;
+        private DocumentSchema theSchema => theStore.Schema.As<DocumentSchema>();
 
+        [Fact]
+        public void sorts_the_mappings_in_all_schema_objects()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId);
+            });
+
+            var objects = theSchema.AllSchemaObjects().ToArray();
+
+            objects[0].ShouldBeOfType<DocumentSchemaObjects>().DocumentType.ShouldBe(typeof(User));
+            objects[1].ShouldBeOfType<DocumentSchemaObjects>().DocumentType.ShouldBe(typeof(Issue));
+        }
+
+        [Fact]
+        public void does_have_the_sequence_factory_when_it_is_used()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<IntDoc>();
+            });
+
+            var objects = theSchema.AllSchemaObjects().ToArray();
+
+            objects.OfType<SequenceFactory>().Any().ShouldBeTrue();
+        }
+
+        [Fact]
+        public void transforms_are_part_of_all_schema_object()
+        {
+            StoreOptions(_ =>
+            {
+                _.Transforms.LoadFile("get_fullname.js");
+            });
+
+            var objects = theSchema.AllSchemaObjects().ToArray();
+
+            objects.OfType<TransformFunction>().Any(x => x.Name == "get_fullname").ShouldBeTrue();
+        }
 
         [Fact]
         public void can_create_a_new_storage_for_a_document_type_without_subclasses()
