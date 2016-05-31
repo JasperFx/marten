@@ -124,7 +124,21 @@ namespace Marten
             /// <param name="pgType">Optional, overrides the Postgresql column type for the duplicated field</param>
             /// <param name="configure">Optional, allows you to customize the Postgresql database index configured for the duplicated field</param>
             /// <returns></returns>
+            [Obsolete("Prefer Index() if you just want to optimize querying, or choose Duplicate() if you really want a duplicated field")]
             public DocumentMappingExpression<T> Searchable(Expression<Func<T, object>> expression, string pgType = null, Action<IndexDefinition> configure = null)
+            {
+                return Duplicate(expression, pgType, configure);
+            }
+
+            /// <summary>
+            /// Marks a property or field on this document type as a searchable field that is also duplicated in the 
+            /// database document table
+            /// </summary>
+            /// <param name="expression"></param>
+            /// <param name="pgType">Optional, overrides the Postgresql column type for the duplicated field</param>
+            /// <param name="configure">Optional, allows you to customize the Postgresql database index configured for the duplicated field</param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string pgType, Action<IndexDefinition> configure)
             {
                 var visitor = new FindMembers();
                 visitor.Visit(expression);
@@ -134,6 +148,20 @@ namespace Marten
                     var duplicateField = mapping.DuplicateField(visitor.Members.ToArray(), pgType);
                     var indexDefinition = mapping.AddIndex(duplicateField.ColumnName);
                     configure?.Invoke(indexDefinition);
+                };
+
+                return this;
+            }
+
+            public DocumentMappingExpression<T> Index(Expression<Func<T, object>> expression)
+            {
+                var visitor = new FindMembers();
+                visitor.Visit(expression);
+
+                alter = mapping =>
+                {
+                    var index = new ComputedIndex(mapping, visitor.Members.ToArray());
+                    mapping.Indexes.Add(index);
                 };
 
                 return this;

@@ -44,6 +44,7 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Acceptance\computed_indexes.cs" />
     <Compile Include="Acceptance\document_transforms.cs" />
     <Compile Include="Acceptance\fetching_entity_metadata.cs" />
     <Compile Include="Acceptance\optimistic_concurrency.cs" />

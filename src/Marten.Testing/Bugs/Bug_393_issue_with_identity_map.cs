@@ -10,7 +10,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void load_non_existing_with_a_store_shoudl_return_new_added_document()
         {
-            var routeId = CombGuidIdGeneration.New();
+            var routeId = CombGuidIdGeneration.NewGuid();
 
             using (var session = theStore.OpenSession())
             {
@@ -32,7 +32,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void load_non_existing_with_a_store_shoudl_return_new_added_document()
         {
-            var routeId = CombGuidIdGeneration.New();
+            var routeId = CombGuidIdGeneration.NewGuid();
 
             using (var session = theStore.OpenSession())
             {

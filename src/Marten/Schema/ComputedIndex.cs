@@ -1,19 +1,22 @@
-﻿using Baseline;
+﻿using System.Reflection;
+using Baseline;
 using Marten.Util;
 
 namespace Marten.Schema
 {
     public class ComputedIndex : IIndexDefinition
     {
-        private readonly TableName _table;
         private readonly string _locator;
+        private readonly TableName _table;
 
-        public ComputedIndex(TableName table, string memberName, string locator)
+
+        public ComputedIndex(DocumentMapping mapping, MemberInfo[] members)
         {
-            _table = table;
-            _locator = locator;
+            var field = mapping.FieldFor(members);
+            _locator = field.SqlLocator.Replace("d.", "");
+            _table = mapping.Table;
 
-            IndexName = $"{table.Name}_idx_{memberName.ToTableAlias()}";
+            IndexName = $"{mapping.Table.Name}_idx_{members.ToTableAlias()}";
         }
 
         public string IndexName { get; }
@@ -25,7 +28,7 @@ namespace Marten.Schema
 
         public bool Matches(ActualIndex index)
         {
-            return index.DDL.EqualsIgnoreCase(ToDDL());
+            return index != null;
         }
     }
 }
