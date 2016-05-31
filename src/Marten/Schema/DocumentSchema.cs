@@ -233,28 +233,18 @@ namespace Marten.Schema
             system.DeleteDirectory(directory);
             system.CreateDirectory(directory);
 
-            writeDatabaseSchemaGenerationScript(directory, system);
+            var schemaObjects = AllSchemaObjects().ToArray();
+            writeDatabaseSchemaGenerationScript(directory, system, schemaObjects);
 
-            _mappings.Values.OfType<DocumentMapping>().Each(mapping =>
+            var fileSystem = new FileSystem();
+
+            foreach (var schemaObject in schemaObjects)
             {
                 var writer = new StringWriter();
-                mapping.SchemaObjects.WriteSchemaObjects(this, writer);
+                schemaObject.WriteSchemaObjects(this, writer);
 
-                var filename = directory.AppendPath(mapping.Alias + ".sql");
-                system.WriteStringToFile(filename, writer.ToString());
-            });
-
-            var hiloScript = getHiloScript();
-            system.WriteStringToFile(directory.AppendPath("mt_hilo.sql"), hiloScript);
-
-            if (Events.IsActive)
-            {
-                var filename = directory.AppendPath("mt_streams.sql");
-                var writer = new StringWriter();
-
-                Events.As<IDocumentMapping>().SchemaObjects.WriteSchemaObjects(this, writer);
-
-                system.WriteStringToFile(filename, writer.ToString());
+                var file = directory.AppendPath(schemaObject.Name + ".sql");
+                fileSystem.WriteStringToFile(file, writer.ToString());
             }
         }
 
@@ -308,21 +298,27 @@ namespace Marten.Schema
         }
 
 
-        private void writeDatabaseSchemaGenerationScript(string directory, FileSystem system)
+        private void writeDatabaseSchemaGenerationScript(string directory, FileSystem system, ISchemaObjects[] schemaObjects)
         {
             var allSchemaNames = AllSchemaNames();
             var script = DatabaseSchemaGenerator.GenerateScript(allSchemaNames);
 
+            var writer = new StringWriter();
+
             if (script.IsNotEmpty())
             {
-                var filename = directory.AppendPath("database_schemas.sql");
-                system.WriteStringToFile(filename, script);
-            }
-        }
+                writer.WriteLine(script);
 
-        private string getHiloScript()
-        {
-            return SchemaBuilder.GetSqlScript(StoreOptions.DatabaseSchemaName, "mt_hilo");
+                writer.WriteLine();
+            }
+
+            foreach (var schemaObject in schemaObjects)
+            {
+                writer.WriteLine($"\\i {schemaObject.Name}.sql");
+            }
+
+            var filename = directory.AppendPath("all.sql");
+            system.WriteStringToFile(filename, writer.ToString());
         }
 
         void IDDLRunner.Apply(object subject, string ddl)

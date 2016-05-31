@@ -83,5 +83,7 @@ namespace Marten.Events
         {
             // Nothing yet.
         }
+
+        public string Name { get; } = "eventstore";
     }
 }

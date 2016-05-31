@@ -220,6 +220,8 @@ namespace Marten.Schema
             }
         }
 
+        public string Name => _mapping.Alias.ToLowerInvariant();
+
         public override string ToString()
         {
             return "Storage Table and Upsert Function for " + _mapping.DocumentType.FullName;

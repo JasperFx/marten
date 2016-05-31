@@ -11,10 +11,16 @@ namespace Marten.Schema
     {
         private readonly StringWriter _writer;
 
+        public DDLRecorder() : this(new StringWriter())
+        {
+        }
+
         public DDLRecorder(StringWriter writer)
         {
             _writer = writer;
         }
+
+        public StringWriter Writer => _writer;
 
         public void Apply(object subject, string ddl)
         {

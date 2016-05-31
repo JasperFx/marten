@@ -148,7 +148,7 @@ namespace Marten.Testing.Schema
                 .Where(x => x != "all.sql" && x != "database_schemas.sql").OrderBy(x => x)
                 .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "user.sql");
 
-            files.Each(file =>
+            files.Where(x => !x.Contains("all.sql")).Each(file =>
             {
                 var contents = fileSystem.ReadStringFromFile(file);
 
@@ -176,7 +176,7 @@ namespace Marten.Testing.Schema
                 store.Schema.WriteDDLByType("allsql");
             }
 
-            const string filename = @"allsql\database_schemas.sql";
+            const string filename = @"allsql\all.sql";
 
             var fileSystem = new FileSystem();
             fileSystem.FileExists(filename).ShouldBeTrue();
@@ -187,6 +187,42 @@ namespace Marten.Testing.Schema
             contents.ShouldContain("CREATE SCHEMA other");
             contents.ShouldContain("CREATE SCHEMA yet_another");
         }
+
+        [Fact]
+        public void write_ddl_by_type_generates_the_all_sql_script()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.RegisterDocumentType<User>();
+                _.RegisterDocumentType<Company>();
+                _.RegisterDocumentType<Issue>();
+
+                _.DatabaseSchemaName = "yet_another";
+                _.Schema.For<User>().DatabaseSchemaName("other");
+
+                _.Events.AddEventType(typeof(MembersJoined));
+
+                _.Connection(ConnectionSource.ConnectionString);
+            }))
+            {
+                store.Schema.WriteDDLByType("allsql");
+            }
+
+            var filename = "allsql".AppendPath("all.sql");
+
+            var lines = new FileSystem().ReadStringFromFile(filename).ReadLines().Select(x => x.Trim()).ToArray();
+
+            // should create the schemas too
+            lines.ShouldContain("EXECUTE 'CREATE SCHEMA yet_another';");
+            lines.ShouldContain("EXECUTE 'CREATE SCHEMA other';");
+
+            lines.ShouldContain("\\i user.sql");
+            lines.ShouldContain("\\i company.sql");
+            lines.ShouldContain("\\i issue.sql");
+            lines.ShouldContain("\\i mt_hilo.sql");
+            lines.ShouldContain("\\i eventstore.sql");
+        }
+
 
         [Fact]
         public void write_ddl_by_type_with_no_events()
@@ -228,7 +264,7 @@ namespace Marten.Testing.Schema
             }
 
             var fileSystem = new FileSystem();
-            fileSystem.FindFiles("allsql", FileSet.Shallow("*mt_streams.sql"))
+            fileSystem.FindFiles("allsql", FileSet.Shallow("eventstore.sql"))
                 .Any().ShouldBeTrue();
 
             fileSystem.FindFiles("allsql", FileSet.Shallow(".sql"))

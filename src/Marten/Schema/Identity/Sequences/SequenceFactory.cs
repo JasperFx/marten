@@ -77,5 +77,7 @@ namespace Marten.Schema.Identity.Sequences
                 runner.Apply(this, sqlScript);
             }
         }
+
+        public string Name { get; } = "mt_hilo";
     }
 }

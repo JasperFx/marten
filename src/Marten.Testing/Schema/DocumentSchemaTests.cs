@@ -276,13 +276,72 @@ namespace Marten.Testing.Schema
             files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x)
                 .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "user.sql");
 
-            files.Each(file =>
+            files.Where(x => !x.Contains("all.sql")).Each(file =>
             {
                 var contents = fileSystem.ReadStringFromFile(file);
 
                 contents.ShouldContain("CREATE TABLE");
                 contents.ShouldContain("CREATE OR REPLACE FUNCTION");
             });
+        }
+
+        [Fact]
+        public void write_ddl_by_type_generates_the_all_sql_script()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.RegisterDocumentType<User>();
+                _.RegisterDocumentType<Company>();
+                _.RegisterDocumentType<Issue>();
+
+                _.Events.AddEventType(typeof(MembersJoined));
+
+                _.Connection(ConnectionSource.ConnectionString);
+
+                _.Transforms.LoadFile("get_fullname.js");
+            }))
+            {
+                store.Schema.WriteDDLByType("allsql");
+            }
+
+            var filename = "allsql".AppendPath("all.sql");
+
+            var lines = new FileSystem().ReadStringFromFile(filename).ReadLines().ToArray();
+
+            lines.ShouldContain("\\i user.sql");
+            lines.ShouldContain("\\i company.sql");
+            lines.ShouldContain("\\i issue.sql");
+            lines.ShouldContain("\\i mt_hilo.sql");
+            lines.ShouldContain("\\i eventstore.sql");
+            lines.ShouldContain("\\i get_fullname.sql");
+
+
+        }
+
+        [Fact]
+        public void writes_transform_function()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.RegisterDocumentType<User>();
+                _.RegisterDocumentType<Company>();
+                _.RegisterDocumentType<Issue>();
+
+                _.Events.AddEventType(typeof(MembersJoined));
+
+                _.Connection(ConnectionSource.ConnectionString);
+
+                _.Transforms.LoadFile("get_fullname.js");
+            }))
+            {
+                store.Schema.WriteDDLByType("allsql");
+            }
+
+            var file = "allsql".AppendPath("get_fullname.sql");
+            var lines = new FileSystem().ReadStringFromFile(file).ReadLines().ToArray();
+
+
+            lines.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
         }
 
         [Fact]
@@ -325,7 +384,7 @@ namespace Marten.Testing.Schema
             }
 
             var fileSystem = new FileSystem();
-            fileSystem.FindFiles("allsql", FileSet.Shallow("*mt_streams.sql"))
+            fileSystem.FindFiles("allsql", FileSet.Shallow("eventstore.sql"))
                 .Any().ShouldBeTrue();
         }
 
