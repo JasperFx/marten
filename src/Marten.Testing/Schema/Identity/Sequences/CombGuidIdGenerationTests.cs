@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Baseline;
@@ -11,6 +12,20 @@ namespace Marten.Testing.Schema.Identity.Sequences
 {
     public class CombGuidIdGenerationTests
     {
+        [Fact]
+        public void generate_lots_of_guids()
+        {
+            var seed = Guid.NewGuid();
+
+            var list = new List<Guid>();
+            for (int i = 0; i < 20; i++)
+            {
+                list.Add(CombGuidIdGeneration.Create(seed, DateTime.UtcNow));
+            }
+
+            list.OrderBy(x => x).ShouldHaveTheSameElementsAs(list);
+        }
+
         [Fact]
         public void When_ids_are_generated_the_first_id_should_be_less_than_the_second()
         {

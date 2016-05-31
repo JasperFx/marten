@@ -76,7 +76,7 @@ namespace Marten.Schema
 
         public bool UseOptimisticConcurrency { get; set; } = false;
 
-        public IList<IndexDefinition> Indexes { get; } = new List<IndexDefinition>();
+        public IList<IIndexDefinition> Indexes { get; } = new List<IIndexDefinition>();
 
         public IList<ForeignKeyDefinition> ForeignKeys { get; } = new List<ForeignKeyDefinition>();
 
@@ -290,7 +290,7 @@ namespace Marten.Schema
 
         public IndexDefinition AddIndex(params string[] columns)
         {
-            var existing = Indexes.FirstOrDefault(x => x.Columns.SequenceEqual(columns));
+            var existing = Indexes.OfType<IndexDefinition>().FirstOrDefault(x => x.Columns.SequenceEqual(columns));
             if (existing != null)
             {
                 return existing;
@@ -450,9 +450,10 @@ namespace Marten.Schema
             return duplicatedField;
         }
 
+        [Obsolete("Don't think this is going to be necessary")]
         public IEnumerable<IndexDefinition> IndexesFor(string column)
         {
-            return Indexes.Where(x => x.Columns.Contains(column));
+            return Indexes.OfType<IndexDefinition>().Where(x => x.Columns.Contains(column));
         }
     }
 }

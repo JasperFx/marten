@@ -148,6 +148,7 @@
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\Arguments\CurrentVersionArgument.cs" />
     <Compile Include="Schema\BulkLoading\BulkLoader.cs" />
+    <Compile Include="Schema\ComputedIndex.cs" />
     <Compile Include="Schema\DbObjects.cs" />
     <Compile Include="Schema\Arguments\DocJsonBodyArgument.cs" />
     <Compile Include="Schema\Arguments\DocTypeArgument.cs" />
@@ -164,6 +165,7 @@
     <Compile Include="Schema\ActualIndex.cs" />
     <Compile Include="Schema\IDocumentSchemaObjects.cs" />
     <Compile Include="Schema\IInitialData.cs" />
+    <Compile Include="Schema\IIndexDefinition.cs" />
     <Compile Include="Schema\IQueryableDocument.cs" />
     <Compile Include="Schema\ISchemaObjects.cs" />
     <Compile Include="Schema\QualifiedDatabaseName.cs" />

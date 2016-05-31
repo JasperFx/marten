@@ -4,7 +4,7 @@ using Baseline;
 
 namespace Marten.Schema
 {
-    public class IndexDefinition
+    public class IndexDefinition : IIndexDefinition
     {
         private readonly DocumentMapping _parent;
         private readonly string[] _columns;
