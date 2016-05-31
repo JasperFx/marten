@@ -44,6 +44,7 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Acceptance\document_transforms.cs" />
     <Compile Include="Acceptance\fetching_entity_metadata.cs" />
     <Compile Include="Acceptance\optimistic_concurrency.cs" />
     <Compile Include="Acceptance\optimistic_concurrency_with_subclass_hierarchies.cs" />
@@ -333,6 +334,9 @@
     <Content Include="Events\fake_aggregate.js" />
     <Content Include="Events\location.js" />
     <Content Include="Events\party.js" />
+    <Content Include="default_username.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="get_fullname.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -285,6 +285,8 @@
     <Compile Include="Services\VersionTracker.cs" />
     <Compile Include="StoreOptions.cs" />
     <Compile Include="QueryableExtensions.cs" />
+    <Compile Include="Transforms\DocumentTransforms.cs" />
+    <Compile Include="Transforms\IDocumentTransforms.cs" />
     <Compile Include="Transforms\ITransforms.cs" />
     <Compile Include="Transforms\TransformFunction.cs" />
     <Compile Include="Util\EnumerableExtensions.cs" />

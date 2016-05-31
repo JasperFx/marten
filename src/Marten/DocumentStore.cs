@@ -10,6 +10,7 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Services;
+using Marten.Transforms;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Parsing.Structure;
@@ -86,6 +87,8 @@ namespace Marten
 
 
             CreateDatabaseObjects();
+
+            Transform = new DocumentTransforms(this);
 
             options.InitialData.Each(x => x.Populate(this));
         }
@@ -304,5 +307,7 @@ namespace Marten
 
             return session;
         }
+
+        public IDocumentTransforms Transform { get; }
     }
 }
