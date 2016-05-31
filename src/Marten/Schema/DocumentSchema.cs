@@ -31,6 +31,7 @@ namespace Marten.Schema
         private readonly ConcurrentDictionary<Type, IDocumentUpsert> _upserts = new ConcurrentDictionary<Type, IDocumentUpsert>();
         private readonly ConcurrentDictionary<Type, object> _identityAssignments = new ConcurrentDictionary<Type, object>();
 
+        private readonly Lazy<SequenceFactory> _sequences;
 
         public DocumentSchema(StoreOptions options, IConnectionFactory factory, IMartenLogger logger)
         {
@@ -41,7 +42,15 @@ namespace Marten.Schema
 
             options.AllDocumentMappings.Each(x => _mappings[x.DocumentType] = x);
 
-            Sequences = new SequenceFactory(this, _factory, options, _logger);
+            _sequences = new Lazy<SequenceFactory>(() =>
+            {
+                var sequences = new SequenceFactory(this, _factory, options, _logger);
+
+                sequences.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, this);
+
+                return sequences;
+            });
+
 
             Parser = new MartenExpressionParser(StoreOptions.Serializer(), StoreOptions);
 
@@ -153,7 +162,7 @@ namespace Marten.Schema
             return schemaNames;
         }
 
-        public ISequences Sequences { get; }
+        public ISequences Sequences => _sequences.Value;
 
         public void WriteDDL(string filename)
         {
