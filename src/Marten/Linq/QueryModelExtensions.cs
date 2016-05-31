@@ -107,7 +107,7 @@ namespace Marten.Linq
             var visitor = new SelectorParser(query);
             visitor.Visit(query.SelectClause.Selector);
 
-            return visitor.ToSelector<T>(mapping);
+            return visitor.ToSelector<T>(schema, mapping);
         }
 
         public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, QueryModel query)

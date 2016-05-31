@@ -1,4 +1,4 @@
-﻿using System.CodeDom.Compiler;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,15 +8,66 @@ using System.Runtime.CompilerServices;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Schema;
+using Marten.Transforms;
 using Remotion.Linq;
 using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
 {
+
+    public enum SelectionType
+    {
+        AsJson,
+        WholeDoc,
+        Select,
+        SingleField,
+        TransformToJson,
+        TransformTo
+    }
+
+
     public class SelectorParser : RelinqExpressionVisitor
     {
+        private static readonly string _methodName = nameof(CompiledQueryExtensions.AsJson);
         private SelectedField _currentField = new SelectedField();
+        private SelectionType _selectionType = SelectionType.WholeDoc;
         private TargetObject _target;
+        private string _transformName;
+
+
+        public SelectorParser(QueryModel query)
+        {
+            if (query.HasOperator<AsJsonResultOperator>())
+            {
+                _selectionType = SelectionType.AsJson;
+            }
+
+
+
+            if (query.SelectClause.Selector is MethodCallExpression)
+            {
+                var method = query.SelectClause.Selector.As<MethodCallExpression>().Method;
+                _selectionType = DetermineSelectionType(method);
+            }
+        }
+
+        public SelectionType DetermineSelectionType(MethodInfo method)
+        {
+            if (method.DeclaringType == typeof(CompiledQueryExtensions) &&
+                method.Name == nameof(CompiledQueryExtensions.AsJson))
+            {
+                return SelectionType.AsJson;
+            }
+
+
+            if (method.DeclaringType == typeof(TransformExtensions) &&
+                method.Name == nameof(TransformExtensions.TransformToJson))
+            {
+                return SelectionType.TransformToJson;
+            }
+
+            return SelectionType.WholeDoc;
+        }
 
         protected override Expression VisitNew(NewExpression expression)
         {
@@ -55,63 +106,63 @@ namespace Marten.Linq
             return base.VisitMemberBinding(node);
         }
 
-        public ISelector<T> ToSelector<T>(IQueryableDocument mapping)
+        public ISelector<T> ToSelector<T>(IDocumentSchema schema, IQueryableDocument mapping)
         {
-            if (_isJson && _target == null) return new JsonSelector().As<ISelector<T>>();
+            if (_selectionType == SelectionType.AsJson && _target == null) return new JsonSelector().As<ISelector<T>>();
 
-            if (_isJson && _target != null) return _target.ToJsonSelector<T>(mapping);
+            if (_selectionType == SelectionType.AsJson && _target != null) return _target.ToJsonSelector<T>(mapping);
 
 
-            if (_target == null || _target.Type != typeof(T)) return new SingleFieldSelector<T>(mapping, _currentField.Members.Reverse().ToArray());
+            if (_selectionType == SelectionType.TransformToJson)
+            {
+                var transform = schema.TransformFor(_transformName);
+                return new TransformToJsonSelector(transform, mapping).As<ISelector<T>>();
+            }
+
+            if (_target == null || _target.Type != typeof(T))
+                return new SingleFieldSelector<T>(mapping, _currentField.Members.Reverse().ToArray());
 
             return _target.ToSelector<T>(mapping);
-        }
-
-        private static string _methodName = nameof(CompiledQueryExtensions.AsJson);
-        private bool _isJson;
-
-        public SelectorParser(QueryModel query)
-        {
-            _isJson = query.HasOperator<AsJsonResultOperator>();
-
-            if (query.SelectClause.Selector is MethodCallExpression)
-            {
-                _isJson = isAsJson(query.SelectClause.Selector.As<MethodCallExpression>().Method);
-            }
-            
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
             var method = node.Method;
-            if (isAsJson(method))
+            var selectionType = DetermineSelectionType(method);
+
+            if (selectionType == SelectionType.AsJson)
             {
-                _isJson = true;
+                _selectionType = SelectionType.AsJson;
 
                 node.Arguments.Each(arg => Visit(arg));
 
                 return null;
             }
 
+            if (selectionType == SelectionType.TransformToJson)
+            {
+                var transformName = node.Arguments.Last() as ConstantExpression;
+
+                if (transformName != null)
+                {
+                    _transformName = transformName.Value.As<string>();
+                }
+            }
+
             return base.VisitMethodCall(node);
         }
 
-        private static bool isAsJson(MethodInfo method)
-        {
-            return method.Name == _methodName && method.DeclaringType.Equals(typeof (CompiledQueryExtensions));
-        }
     }
 
     public class SetterBinding
     {
-        public MemberInfo Setter { get; }
-        public SelectedField Field { get; } = new SelectedField();
-
         public SetterBinding(MemberInfo setter)
         {
             Setter = setter;
-
         }
+
+        public MemberInfo Setter { get; }
+        public SelectedField Field { get; } = new SelectedField();
 
         public string ToJsonBuildObjectPair(IQueryableDocument mapping)
         {
@@ -123,7 +174,5 @@ namespace Marten.Linq
     public class SelectedField
     {
         public readonly IList<MemberInfo> Members = new List<MemberInfo>();
-
-
     }
 }

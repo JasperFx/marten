@@ -30,6 +30,7 @@ namespace Marten.Linq
         Task<TResult> MaxAsync<TResult>(CancellationToken token);
         Task<double> AverageAsync(CancellationToken token);
         QueryPlan Explain(FetchType fetchType = FetchType.FetchMany);
+        IQueryable<TDoc> TransformTo<TDoc>(string transformName);
     }
 
 

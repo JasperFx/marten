@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -10,9 +9,9 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Includes;
+using Marten.Transforms;
 using Npgsql;
 using Remotion.Linq;
-using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
 {
@@ -26,6 +25,10 @@ namespace Marten.Linq
         {
         }
 
+        public IDocumentSchema Schema => Executor.Schema;
+
+        public MartenQueryExecutor Executor => Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+
         public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany)
         {
             var model = MartenQueryParser.Flyweight.GetParsedQuery(Expression);
@@ -35,6 +38,11 @@ namespace Marten.Linq
             handler.ConfigureCommand(cmd);
 
             return Executor.As<MartenQueryExecutor>().Connection.ExplainQuery(cmd);
+        }
+
+        public IQueryable<TDoc> TransformTo<TDoc>(string transformName)
+        {
+            return this.Select(x => x.TransformTo<T, TDoc>(transformName));
         }
 
 
@@ -62,10 +70,10 @@ namespace Marten.Linq
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var schema = executor.Schema;
 
-            schema.EnsureStorageExists(typeof (TInclude));
+            schema.EnsureStorageExists(typeof(TInclude));
 
-            var mapping = schema.MappingFor(typeof (T)).ToQueryableDocument();
-            var included = schema.MappingFor(typeof (TInclude)).ToQueryableDocument();
+            var mapping = schema.MappingFor(typeof(T)).ToQueryableDocument();
+            var included = schema.MappingFor(typeof(TInclude)).ToQueryableDocument();
 
             var visitor = new FindMembers();
             visitor.Visit(idSource);
@@ -91,7 +99,7 @@ namespace Marten.Linq
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var schema = executor.Schema;
 
-            var storage = schema.StorageFor(typeof (TInclude));
+            var storage = schema.StorageFor(typeof(TInclude));
 
             return Include<TInclude>(idSource, x =>
             {
@@ -110,58 +118,6 @@ namespace Marten.Linq
             executor.Statistics = stats;
 
             return this;
-        }
-
-        public IDocumentSchema Schema => Executor.Schema;
-
-        public MartenQueryExecutor Executor => Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-
-        public QueryModel ToQueryModel()
-        {
-            return MartenQueryParser.Flyweight.GetParsedQuery(Expression);
-        }
-
-        private IQueryHandler toDiagnosticHandler(QueryModel model, FetchType fetchType)
-        {
-            switch (fetchType)
-            {
-                case FetchType.Count:
-                    return new CountQueryHandler<int>(model, Schema);
-
-                case FetchType.Any:
-                    return new AnyQueryHandler(model, Schema);
-
-                case FetchType.FetchMany:
-                    return new LinqQueryHandler<T>(Schema, model, Includes.ToArray(), Statistics);
-
-                case FetchType.FetchOne:
-                    return OneResultHandler<T>.First(Schema, model, Includes.ToArray());
-            }
-
-            throw new ArgumentOutOfRangeException(nameof(fetchType));
-        }
-
-        public NpgsqlCommand BuildCommand(FetchType fetchType)
-        {
-            // Need to do each fetch type
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-
-            var handler = toDiagnosticHandler(model, fetchType);
-            var cmd = new NpgsqlCommand();
-            handler.ConfigureCommand(cmd);
-
-            return cmd;
-        }
-
-
-        private Task<TResult> executeAsync<TResult>(Func<QueryModel, IQueryHandler<TResult>> source, CancellationToken token)
-        {
-            var query = ToQueryModel();
-            Schema.EnsureStorageExists(query.SourceType());
-
-            var handler = source(query);
-
-            return Executor.Connection.FetchAsync(handler, Executor.IdentityMap.ForQuery(), token);
         }
 
         public Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token)
@@ -222,6 +178,55 @@ namespace Marten.Linq
         public Task<double> AverageAsync(CancellationToken token)
         {
             return executeAsync(q => AggregateQueryHandler<double>.Average(Schema, q), token);
+        }
+
+        public QueryModel ToQueryModel()
+        {
+            return MartenQueryParser.Flyweight.GetParsedQuery(Expression);
+        }
+
+        private IQueryHandler toDiagnosticHandler(QueryModel model, FetchType fetchType)
+        {
+            switch (fetchType)
+            {
+                case FetchType.Count:
+                    return new CountQueryHandler<int>(model, Schema);
+
+                case FetchType.Any:
+                    return new AnyQueryHandler(model, Schema);
+
+                case FetchType.FetchMany:
+                    return new LinqQueryHandler<T>(Schema, model, Includes.ToArray(), Statistics);
+
+                case FetchType.FetchOne:
+                    return OneResultHandler<T>.First(Schema, model, Includes.ToArray());
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(fetchType));
+        }
+
+        public NpgsqlCommand BuildCommand(FetchType fetchType)
+        {
+            // Need to do each fetch type
+            var model = new MartenQueryParser().GetParsedQuery(Expression);
+
+            var handler = toDiagnosticHandler(model, fetchType);
+            var cmd = new NpgsqlCommand();
+            handler.ConfigureCommand(cmd);
+
+            return cmd;
+        }
+
+
+        private Task<TResult> executeAsync<TResult>(Func<QueryModel, IQueryHandler<TResult>> source,
+            CancellationToken token)
+        {
+            var query = ToQueryModel();
+            Schema.EnsureStorageExists(query.SourceType());
+
+            var handler = source(query);
+
+            return Executor.Connection.FetchAsync(handler, Executor.IdentityMap.ForQuery(), token);
         }
     }
 }

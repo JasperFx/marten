@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
+using Marten.Transforms;
 using Remotion.Linq;
 using Remotion.Linq.Parsing.ExpressionVisitors.Transformation;
 using Remotion.Linq.Parsing.Structure;
@@ -15,6 +16,8 @@ namespace Marten.Linq
             r.Register(ToJsonArrayExpressionNode.SupportedMethods, typeof (ToJsonArrayExpressionNode));
             r.Register(IncludeExpressionNode.SupportedMethods, typeof (IncludeExpressionNode));
             r.Register(StatsExpressionNode.SupportedMethods, typeof (StatsExpressionNode));
+            //r.Register(TransformExpressionNode.SupportedMethods, typeof (TransformExpressionNode));
+            
         });
 
         private readonly QueryParser _parser;
