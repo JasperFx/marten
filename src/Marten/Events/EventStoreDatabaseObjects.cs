@@ -3,6 +3,7 @@ using System.IO;
 using Marten.Generation;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Util;
 
 namespace Marten.Events
 {
@@ -23,9 +24,9 @@ namespace Marten.Events
 
             _checkedSchema = true;
 
-            var schemaExists = schema.DbObjects.TableExists(_parent.Table);
+            var tableExists = schema.DbObjects.TableExists(_parent.Table);
 
-            if (schemaExists) return;
+            if (tableExists) return;
 
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
             {
@@ -66,7 +67,9 @@ namespace Marten.Events
 
         public void RemoveSchemaObjects(IManagedConnection connection)
         {
-            throw new NotImplementedException();
+            var sql = $"drop table if exists {_parent.DatabaseSchemaName}.mt_streams cascade;drop table if exists {_parent.DatabaseSchemaName}.mt_events cascade;";
+
+            connection.Execute(cmd => cmd.Sql(sql).ExecuteNonQuery());
         }
 
         public void ResetSchemaExistenceChecks()
@@ -81,7 +84,11 @@ namespace Marten.Events
 
         public void WritePatch(IDocumentSchema schema, IDDLRunner runner)
         {
-            // Nothing yet.
+            var tableExists = schema.DbObjects.TableExists(_parent.Table);
+
+            if (tableExists) return;
+
+            runner.Apply(this, SchemaBuilder.GetSqlScript(_parent.DatabaseSchemaName, "mt_stream"));
         }
 
         public string Name { get; } = "eventstore";

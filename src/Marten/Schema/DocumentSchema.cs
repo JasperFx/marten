@@ -291,8 +291,10 @@ namespace Marten.Schema
 
         public void ResetSchemaExistenceChecks()
         {
-            AllDocumentMaps().Each(x => x.SchemaObjects.ResetSchemaExistenceChecks());
-            Events.As<EventGraph>().SchemaObjects.ResetSchemaExistenceChecks();
+            foreach (var schemaObject in AllSchemaObjects())
+            {
+                schemaObject.ResetSchemaExistenceChecks();
+            }
 
             _documentTypes.Clear();
         }

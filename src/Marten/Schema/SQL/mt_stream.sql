@@ -20,18 +20,6 @@ CREATE TABLE {databaseSchema}.mt_events (
 	CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version)
 );
 
-DROP TABLE IF EXISTS {databaseSchema}.mt_projections CASCADE;
-CREATE TABLE {databaseSchema}.mt_projections (
-	name			varchar(100) CONSTRAINT pk_mt_projections PRIMARY KEY,
-	definition		varchar(30000) NOT NULL
-);
-
-DROP TABLE IF EXISTS {databaseSchema}.mt_modules CASCADE;
-CREATE TABLE {databaseSchema}.mt_modules (
-	name			varchar(100) CONSTRAINT pk_mt_modules PRIMARY KEY,
-	definition		varchar(30000) NOT NULL
-);
-
 
 CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_event(stream uuid, stream_type varchar, event_ids uuid[], event_types varchar[], bodies jsonb[]) RETURNS int AS $$
 DECLARE
@@ -71,13 +59,6 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-
-CREATE OR REPLACE FUNCTION {databaseSchema}.mt_load_projection_body(proj_name varchar, body varchar) RETURNS VOID AS $$
-BEGIN
-  delete from {databaseSchema}.mt_projections where name = proj_name;
-  insert into {databaseSchema}.mt_projections (name, definition) values (proj_name, body);
-END
-$$ LANGUAGE plpgsql;
 
 
 
