@@ -6,6 +6,7 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Transforms;
 
 namespace Marten.Schema
 {
@@ -86,7 +87,7 @@ namespace Marten.Schema
         IdAssignment<T> IdAssignmentFor<T>();
 
 
-
+        TransformFunction TransformFor(string name);
 
 
             /// <summary>

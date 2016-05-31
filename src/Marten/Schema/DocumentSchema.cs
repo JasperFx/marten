@@ -11,6 +11,7 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Transforms;
 using Marten.Util;
 
 namespace Marten.Schema
@@ -30,6 +31,7 @@ namespace Marten.Schema
         private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new ConcurrentDictionary<Type, object>();
         private readonly ConcurrentDictionary<Type, IDocumentUpsert> _upserts = new ConcurrentDictionary<Type, IDocumentUpsert>();
         private readonly ConcurrentDictionary<Type, object> _identityAssignments = new ConcurrentDictionary<Type, object>();
+        private readonly ConcurrentDictionary<string, TransformFunction> _transforms = new ConcurrentDictionary<string, TransformFunction>();
 
         private readonly Lazy<SequenceFactory> _sequences;
 
@@ -286,6 +288,18 @@ namespace Marten.Schema
             }).As<IdAssignment<T>>();
         }
 
+        public TransformFunction TransformFor(string name)
+        {
+            return _transforms.GetOrAdd(name, key =>
+            {
+                var transform = StoreOptions.Transforms.For(key);
+
+                transform.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, this);
+
+                return transform;
+            });
+        }
+
 
         public IQueryHandlerFactory HandlerFactory { get; }
 
@@ -297,6 +311,7 @@ namespace Marten.Schema
             }
 
             _documentTypes.Clear();
+            _transforms.Clear();
         }
 
 

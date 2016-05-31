@@ -281,6 +281,7 @@
     <Compile Include="TrackingSession\document_session_update_existing_documents_in_collection_Tests.cs" />
     <Compile Include="TrackingSession\document_session_update_existing_document_Tests.cs" />
     <Compile Include="Transforms\TransformFunctionTests.cs" />
+    <Compile Include="Transforms\TransformFunction_ISchemaObjects_Implementation.cs" />
     <Compile Include="TypeMappingsTests.cs" />
     <Compile Include="UnitOfWorkTests.cs" />
     <Compile Include="UnitOfWork_PendingChanges_Functionality_Tests.cs" />
