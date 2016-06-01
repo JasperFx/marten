@@ -37,4 +37,39 @@ describe('Patching API', () => {
      
      expect(Patch(doc, patch)).to.deep.equal({quest: {member: {name: 'Bilbo'}}}); 
   });
+  
+  it('can increment int first level', () => {
+    var doc = {count: 5};
+    var patch = {type: 'increment', path: 'count', increment: 1};
+    
+    expect(Patch(doc, patch)).to.deep.equal({count: 6});
+  });
+  
+  it('can increment int first level, non default increment', () => {
+    var doc = {count: 5};
+    var patch = {type: 'increment', path: 'count', increment: 3};
+    
+    expect(Patch(doc, patch)).to.deep.equal({count: 8});
+  });
+  
+  it('can increment int first level default increment', () => {
+    var doc = {count: 5};
+    var patch = {type: 'increment', path: 'count'};
+    
+    expect(Patch(doc, patch)).to.deep.equal({count: 6});
+  });
+  
+  it('can increment int 2 deep', () => {
+    var doc = {summary: {count: 5}};
+    var patch = {type: 'increment', path: 'summary.count'};
+    
+    expect(Patch(doc, patch)).to.deep.equal({summary: {count: 6}});
+  });
+  
+  it('can increment int 3 deep', () => {
+    var doc = {region: {summary: {count: 5}}};
+    var patch = {type: 'increment', path: 'region.summary.count'};
+    
+    expect(Patch(doc, patch)).to.deep.equal({region: {summary: {count: 6}}});
+  });
 });
