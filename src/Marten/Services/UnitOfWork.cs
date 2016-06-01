@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Linq;
+using Marten.Patching;
 using Marten.Schema;
 using Marten.Util;
 
@@ -21,6 +22,7 @@ namespace Marten.Services
         private readonly ConcurrentDictionary<Type, IEnumerable> _inserts = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Type, IList<Delete>> _deletes = new ConcurrentDictionary<Type, IList<Delete>>();
         private readonly ConcurrentDictionary<Guid, EventStream> _events = new ConcurrentDictionary<Guid, EventStream>();
+        private readonly IList<PatchOperation> _patches = new List<PatchOperation>();
 
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>(); 
 
@@ -75,6 +77,11 @@ namespace Marten.Services
         public EventStream StreamFor(Guid id)
         {
             return _events[id];
+        }
+
+        public void Patch(PatchOperation patch)
+        {
+            _patches.Add(patch);
         }
 
         public void StoreUpdates<T>(params T[] documents)
@@ -137,6 +144,7 @@ namespace Marten.Services
             changes.Inserted.Fill(Inserts());
             changes.Deleted.AddRange(Deletions());
             changes.Streams.AddRange(_events.Values);
+            changes.Patched.AddRange(_patches);
 
             return changes;
         }
@@ -182,6 +190,11 @@ namespace Marten.Services
             });
 
             writeEvents(batch);
+
+            foreach (var patch in _patches)
+            {
+                patch.RegisterUpdate(batch);
+            }
 
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
@@ -246,6 +259,11 @@ namespace Marten.Services
         public IEnumerable<EventStream> Streams()
         {
             return _events.Values;
+        }
+
+        public IEnumerable<PatchOperation> Patches()
+        {
+            return _patches;
         }
 
         public void Delete<T>(IWhereFragment where)

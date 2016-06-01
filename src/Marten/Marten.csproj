@@ -145,6 +145,7 @@
     <Compile Include="Linq\ToJsonArrayResultOperator.cs" />
     <Compile Include="Linq\WhereClauseVisitor.cs" />
     <Compile Include="Linq\WholeDocumentSelector.cs" />
+    <Compile Include="Patching\PatchClasses.cs" />
     <Compile Include="QuerySession.cs" />
     <Compile Include="Schema\Arguments\CurrentVersionArgument.cs" />
     <Compile Include="Schema\BulkLoading\BulkLoader.cs" />

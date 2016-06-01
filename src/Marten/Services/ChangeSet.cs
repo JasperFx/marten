@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Events;
+using Marten.Patching;
 
 namespace Marten.Services
 {
@@ -11,6 +12,7 @@ namespace Marten.Services
         public readonly IList<object> Inserted = new List<object>();
         public readonly IList<Delete> Deleted = new List<Delete>();
         public readonly IList<EventStream> Streams = new List<EventStream>();
+        public readonly IList<PatchOperation> Patched = new List<PatchOperation>();
 
         IEnumerable<object> IChangeSet.Updated => Updated;
 
@@ -31,5 +33,7 @@ namespace Marten.Services
         {
             return Streams.SelectMany(s => s.Events);
         }
+
+        IEnumerable<PatchOperation> IChangeSet.Patches => Patched;
     }
 }

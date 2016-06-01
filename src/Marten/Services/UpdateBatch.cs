@@ -44,6 +44,14 @@ namespace Marten.Services
 
         public VersionTracker Versions { get; }
 
+        public void AddCall(Func<BatchCommand, ICall> source, ICallback callback = null)
+        {
+            var batch = Current();
+            var call = source(batch);
+
+            batch.AddCall(call, callback);
+        }
+
         public SprocCall Sproc(FunctionName function, ICallback callback = null)
         {
             if (function == null) throw new ArgumentNullException(nameof(function));

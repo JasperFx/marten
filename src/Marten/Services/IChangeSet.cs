@@ -1,5 +1,6 @@
 using Marten.Events;
 using System.Collections.Generic;
+using Marten.Patching;
 
 namespace Marten.Services
 {
@@ -9,5 +10,7 @@ namespace Marten.Services
         IEnumerable<object> Inserted { get; }
         IEnumerable<Delete> Deleted { get; }
         IEnumerable<IEvent> GetEvents();
+
+        IEnumerable<PatchOperation> Patches { get; }
     }
 }

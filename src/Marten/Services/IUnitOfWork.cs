@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Marten.Events;
+using Marten.Patching;
 
 namespace Marten.Services
 {
@@ -68,5 +69,12 @@ namespace Marten.Services
         /// </summary>
         /// <returns></returns>
         IEnumerable<EventStream> Streams();
+
+        /// <summary>
+        /// All of the pending patch operations in this unit of work
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<PatchOperation> Patches();
+    
     }
 }

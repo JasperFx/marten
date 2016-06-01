@@ -15,7 +15,6 @@ namespace Marten.Services
     {
         public ISerializer Serializer { get; }
         private int _counter = 0;
-        private readonly NpgsqlCommand _command = new NpgsqlCommand();
         private readonly IList<ICall> _calls = new List<ICall>();
         private readonly IList<ICallback> _callbacks = new List<ICallback>();
 
@@ -24,12 +23,14 @@ namespace Marten.Services
             Serializer = serializer;
         }
 
+        public NpgsqlCommand Command { get; } = new NpgsqlCommand();
+
         public int Count => _calls.Count;
 
         public NpgsqlParameter AddParameter(object value, NpgsqlDbType dbType)
         {
             var name = "p" + _counter++;
-            var param = _command.AddParameter(name, value);
+            var param = Command.AddParameter(name, value);
             param.NpgsqlDbType = dbType;
 
             return param;
@@ -46,9 +47,9 @@ namespace Marten.Services
                 builder.Append(";");
             });
 
-            _command.CommandText = builder.ToString();
+            Command.CommandText = builder.ToString();
 
-            return _command;
+            return Command;
         }
 
         public void AddCall(ICall call, ICallback callback = null)
@@ -80,7 +81,7 @@ namespace Marten.Services
             if (table == null) throw new ArgumentNullException(nameof(table));
             if (@where == null) throw new ArgumentNullException(nameof(@where));
 
-            var whereClause = @where.ToSql(_command);
+            var whereClause = @where.ToSql(Command);
             var call = new DeleteWhereCall(table, whereClause);
             AddCall(call);
         }
