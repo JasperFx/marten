@@ -80,11 +80,21 @@ function appendElement(doc, patch, location){
     return doc;
 }
 
+function rename(doc, patch, location){
+    var actual = location.element[location.prop];
+    delete location.element[location.prop];
+    
+    location.element[patch.to] = actual;
+    
+    return doc;
+}
+
 var ops = {
     'set': setValue,
     'increment': incrementValue,
     'increment_float': incrementFloat,
-    'append': appendElement
+    'append': appendElement,
+    'rename': rename
     
 }
 

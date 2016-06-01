@@ -147,4 +147,28 @@ describe('Patching API', () => {
     
     expect(Patch(doc, patch)).to.deep.equal({division: {region: {numbers: [3, 4, 5]}}});
   });
+  
+  it('can rename a prop shallow', () => {
+    var doc = {number: 1};
+    
+    var patch = {type: 'rename', path: 'number', to: 'value'};
+    
+    expect(Patch(doc, patch)).to.deep.equal({value: 1});
+  });
+  
+  it('can rename a prop 2 deep', () => {
+    var doc = {region: {number: 1}};
+    
+    var patch = {type: 'rename', path: 'region.number', to: 'value'};
+    
+    expect(Patch(doc, patch)).to.deep.equal({region: {value: 1}});
+  });
+  
+  it('can rename a prop 3 deep', () => {
+    var doc = {country: {region: {number: 1}}};
+    
+    var patch = {type: 'rename', path: 'country.region.number', to: 'value'};
+    
+    expect(Patch(doc, patch)).to.deep.equal({country: {region: {value: 1}}});
+  });
 });
