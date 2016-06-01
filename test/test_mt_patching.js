@@ -107,4 +107,44 @@ describe('Patching API', () => {
     
     expect(Patch(doc, patch)).to.deep.equal({region: {summary: {count: 6.4}}});
   });
+  
+  it('can append to a first level array', () => {
+    var doc = {numbers: []};
+    
+    var patch = {type: 'append', path: 'numbers', value: 5};
+    
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [5]});
+  });
+  
+  it('can append to a first level array with existing elements', () => {
+    var doc = {numbers: [3, 4]};
+    
+    var patch = {type: 'append', path: 'numbers', value: 5};
+    
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [3, 4, 5]});
+  });
+  
+  it('can append to a first level array when the array does not already exist', () => {
+    var doc = {};
+    
+    var patch = {type: 'append', path: 'numbers', value: 5};
+    
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [5]});
+  });
+  
+  it('can append to a 2nd level array when the array does not already exist', () => {
+    var doc = {};
+    
+    var patch = {type: 'append', path: 'region.numbers', value: 5};
+    
+    expect(Patch(doc, patch)).to.deep.equal({region: {numbers: [5]}});
+  });
+  
+  it('can append to a 3rd level array when the array does not already exist', () => {
+    var doc = {division: {region: {numbers: [3, 4]}}};
+    
+    var patch = {type: 'append', path: 'division.region.numbers', value: 5};
+    
+    expect(Patch(doc, patch)).to.deep.equal({division: {region: {numbers: [3, 4, 5]}}});
+  });
 });

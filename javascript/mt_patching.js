@@ -30,8 +30,7 @@ function locate(doc, patch){
     return {element: element, prop: prop};
 }
 
-function setValue(doc, patch){
-    var location = locate(doc, patch);
+function setValue(doc, patch, location){
     location.element[location.prop] = patch.value;
     
     return doc;
@@ -39,15 +38,11 @@ function setValue(doc, patch){
 
 
 
-function incrementValue(doc, patch){
-    var parts = patch.path.split('.');
-    
+function incrementValue(doc, patch, location){
     var interval = 1;
     if (patch.increment){
         interval = parseInt(patch.increment);
     }
-    
-    var location = locate(doc, patch);
     
     var existing = 0;
     if (location.element[location.prop]){
@@ -59,15 +54,11 @@ function incrementValue(doc, patch){
     return doc;
 }
 
-function incrementFloat(doc, patch){
-    var parts = patch.path.split('.');
-    
+function incrementFloat(doc, patch, location){
     var interval = 1;
     if (patch.increment){
         interval = parseFloat(patch.increment);
     }
-    
-    var location = locate(doc, patch);
     
     var existing = 0;
     if (location.element[location.prop]){
@@ -79,10 +70,21 @@ function incrementFloat(doc, patch){
     return doc;
 }
 
+function appendElement(doc, patch, location){
+    if (!location.element[location.prop]){
+        location.element[location.prop] = [];
+    }
+    
+    location.element[location.prop].push(patch.value);
+    
+    return doc;
+}
+
 var ops = {
     'set': setValue,
     'increment': incrementValue,
-    'increment_float': incrementFloat
+    'increment_float': incrementFloat,
+    'append': appendElement
     
 }
 
@@ -90,5 +92,7 @@ module.exports = function(doc, patch){
     // TODO -- throw if not a handler
     var handler = ops[patch.type];
     
-    return handler(doc, patch);    
+    var location = locate(doc, patch);
+    
+    return handler(doc, patch, location);    
 }
