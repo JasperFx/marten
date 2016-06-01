@@ -246,10 +246,10 @@ namespace Marten
             }
             else if (mode == BulkInsertMode.OverwriteExisting)
             {
-                var copy = loader.CopyNewDocumentsFromTempTable();
                 var overwrite = loader.OverwriteDuplicatesFromTempTable();
-
-                conn.RunSql(copy, overwrite);
+                var copy = loader.CopyNewDocumentsFromTempTable();
+                
+                conn.RunSql(overwrite, copy);
             }
         }
 
