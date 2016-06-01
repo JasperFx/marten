@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
@@ -27,6 +29,13 @@ namespace Marten.Transforms
         public string Body { get; set; }
 
         public FunctionName Function { get; }
+
+        public readonly IList<string> OtherArgs = new List<string>();
+
+        private IEnumerable<string> allArgs()
+        {
+            return new string[] {"doc"}.Concat(OtherArgs);
+        }
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,
             IDDLRunner runner)
@@ -59,7 +68,8 @@ namespace Marten.Transforms
 
         public void RemoveSchemaObjects(IManagedConnection connection)
         {
-            var dropSql = $"DROP FUNCTION IF EXISTS {Function.QualifiedName}(JSONB)";
+            var signature = allArgs().Select(x => "JSONB").Join(", ");
+            var dropSql = $"DROP FUNCTION IF EXISTS {Function.QualifiedName}({signature})";
             connection.Execute(cmd => cmd.Sql(dropSql).ExecuteNonQuery());
         }
 
@@ -80,9 +90,12 @@ namespace Marten.Transforms
         {
             var defaultExport = "{export: {}}";
 
+            var signature = allArgs().Select(x => $"{x} JSONB").Join(", ");
+            var args = allArgs().Join(", ");
+
             return
                 $@"
-CREATE OR REPLACE FUNCTION {Function.QualifiedName}(doc JSONB) RETURNS JSONB AS $$
+CREATE OR REPLACE FUNCTION {Function.QualifiedName}({signature}) RETURNS JSONB AS $$
 
   var module = {defaultExport};
 
@@ -90,7 +103,7 @@ CREATE OR REPLACE FUNCTION {Function.QualifiedName}(doc JSONB) RETURNS JSONB AS 
 
   var func = module.exports;
 
-  return func(doc);
+  return func({args});
 
 $$ LANGUAGE plv8 IMMUTABLE STRICT;
 ";
