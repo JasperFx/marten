@@ -77,12 +77,8 @@ namespace Marten.Schema.BulkLoading
             var columns = table.Columns.Select(x => $"\"{x.Name}\"").Join(", ");
             var selectColumns = table.Columns.Select(x => $"{_tempTableName}.\"{x.Name}\"").Join(", ");
 
-
-
             return $@"insert into {storageTable} ({columns}) (select {selectColumns} from {_tempTableName} 
                          left join {storageTable} on {_tempTableName}.id = {storageTable}.id where {storageTable}.id is null)";
-
-
         }
 
         public string OverwriteDuplicatesFromTempTable()
@@ -90,18 +86,10 @@ namespace Marten.Schema.BulkLoading
             var table = _mapping.SchemaObjects.StorageTable();
             var storageTable = table.Table.QualifiedName;
 
-
-
             var updates = table.Columns.Where(x => x.Name != "id")
-                .Select(x => $"\"{x.Name}\"").Join(", ");
+                .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
 
-            var values = table.Columns.Where(x => x.Name != "id")
-                .Select(x => $"temp.\"{x.Name}\"").Join(", ");
-
-
-            return $@"update {storageTable} as docs set ({updates}) = ({values}) 
-                         from {_tempTableName} as temp where temp.id in (select id from {storageTable})";
-
+            return $@"update {storageTable} target SET {updates} FROM {_tempTableName} source WHERE source.id = target.id";
         }
 
         public string CreateTempTableForCopying()
@@ -130,3 +118,4 @@ namespace Marten.Schema.BulkLoading
         }
     }
 }
+ 
