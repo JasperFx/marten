@@ -171,4 +171,28 @@ describe('Patching API', () => {
     
     expect(Patch(doc, patch)).to.deep.equal({country: {region: {value: 1}}});
   });
+  
+  it('can insert into a child collection with default', () => {
+    var doc = {numbers: [3, 4]};
+    
+    var patch = {type: 'insert', path: 'numbers', value: 5};
+    
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [5, 3, 4]});
+  });
+  
+  it('can insert into a child collection with designated index', () => {
+    var doc = {numbers: [3, 4]};
+    
+    var patch = {type: 'insert', path: 'numbers', value: 5, index: 1};
+    
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [3, 5, 4]});
+  });
+  
+  it('can insert into a 2 deep child collection with designated index', () => {
+    var doc = {region: {numbers: [3, 4]}};
+    
+    var patch = {type: 'insert', path: 'region.numbers', value: 5, index: 1};
+    
+    expect(Patch(doc, patch)).to.deep.equal({region: {numbers: [3, 5, 4]}});
+  });
 });

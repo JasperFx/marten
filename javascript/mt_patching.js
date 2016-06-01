@@ -80,6 +80,23 @@ function appendElement(doc, patch, location){
     return doc;
 }
 
+function insertElement(doc, patch, location){
+    if (!location.element[location.prop]){
+        location.element[location.prop] = [];
+    }
+    
+    var array = location.element[location.prop];
+    
+    var index = 0;
+    if (patch.index){
+        index = parseInt(patch.index);
+    }
+    
+    array.splice(index, 0, patch.value);
+    
+    return doc;
+}
+
 function rename(doc, patch, location){
     var actual = location.element[location.prop];
     delete location.element[location.prop];
@@ -89,12 +106,15 @@ function rename(doc, patch, location){
     return doc;
 }
 
+
+
 var ops = {
     'set': setValue,
     'increment': incrementValue,
     'increment_float': incrementFloat,
     'append': appendElement,
-    'rename': rename
+    'rename': rename,
+    'insert': insertElement
     
 }
 
