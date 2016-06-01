@@ -59,9 +59,30 @@ function incrementValue(doc, patch){
     return doc;
 }
 
+function incrementFloat(doc, patch){
+    var parts = patch.path.split('.');
+    
+    var interval = 1;
+    if (patch.increment){
+        interval = parseFloat(patch.increment);
+    }
+    
+    var location = locate(doc, patch);
+    
+    var existing = 0;
+    if (location.element[location.prop]){
+        existing = parseFloat(location.element[location.prop]);
+    }
+    
+    location.element[location.prop] = existing + interval;
+    
+    return doc;
+}
+
 var ops = {
     'set': setValue,
-    'increment': incrementValue
+    'increment': incrementValue,
+    'increment_float': incrementFloat
     
 }
 

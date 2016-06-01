@@ -72,4 +72,39 @@ describe('Patching API', () => {
     
     expect(Patch(doc, patch)).to.deep.equal({region: {summary: {count: 6}}});
   });
+  
+  it('can increment float first level', () => {
+    var doc = {count: 5.1};
+    var patch = {type: 'increment_float', path: 'count', increment: 1};
+    
+    expect(Patch(doc, patch)).to.deep.equal({count: 6.1});
+  });
+  
+  it('can increment float first level, non default increment', () => {
+    var doc = {count: 5.1};
+    var patch = {type: 'increment_float', path: 'count', increment: 3.2};
+    
+    expect(Patch(doc, patch)).to.deep.equal({count: 8.3});
+  });
+  
+  it('can increment float first level default increment', () => {
+    var doc = {count: 5.1};
+    var patch = {type: 'increment_float', path: 'count'};
+    
+    expect(Patch(doc, patch)).to.deep.equal({count: 6.1});
+  });
+  
+  it('can increment float 2 deep', () => {
+    var doc = {summary: {count: 5.1}};
+    var patch = {type: 'increment_float', path: 'summary.count'};
+    
+    expect(Patch(doc, patch)).to.deep.equal({summary: {count: 6.1}});
+  });
+  
+  it('can increment float 3 deep', () => {
+    var doc = {region: {summary: {count: 5.3}}};
+    var patch = {type: 'increment_float', path: 'region.summary.count', increment: 1.1};
+    
+    expect(Patch(doc, patch)).to.deep.equal({region: {summary: {count: 6.4}}});
+  });
 });
