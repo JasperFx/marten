@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Linq;
-using Marten.Schema;
+using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
