@@ -90,5 +90,6 @@ namespace Marten.Services
         {
             return _callbacks.Any(x => x != null);
         }
+
     }
 }
