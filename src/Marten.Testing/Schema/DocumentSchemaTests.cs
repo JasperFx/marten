@@ -274,9 +274,9 @@ namespace Marten.Testing.Schema
             files.ShouldNotContain("database_schemas.sql");
 
             files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x)
-                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "user.sql");
+                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "patch_doc.sql", "user.sql");
 
-            files.Where(x => !x.Contains("all.sql")).Each(file =>
+            files.Where(x => !x.Contains("all.sql") && !x.Contains("patch_doc.sql")).Each(file =>
             {
                 var contents = fileSystem.ReadStringFromFile(file);
 

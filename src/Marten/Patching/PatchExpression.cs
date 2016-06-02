@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
-using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
@@ -18,14 +17,6 @@ namespace Marten.Patching
         public PatchExpression(IWhereFragment fragment, IDocumentSchema schema, IUnitOfWork unitOfWork)
         {
             _schema = schema;
-        }
-
-        private string toPath(Expression expression)
-        {
-            var visitor = new FindMembers();
-            visitor.Visit(expression);
-
-            return visitor.Members.Select(x => x.Name).Join(".");
         }
 
         public void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value)
@@ -95,10 +86,17 @@ namespace Marten.Patching
             Patch.Add("path", path);
         }
 
+        private string toPath(Expression expression)
+        {
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            return visitor.Members.Select(x => x.Name).Join(".");
+        }
+
         private void addPatch()
         {
             var transform = _schema.TransformFor(StoreOptions.PatchDoc);
-
         }
     }
 }
