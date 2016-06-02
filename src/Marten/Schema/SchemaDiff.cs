@@ -33,7 +33,7 @@ namespace Marten.Schema
                         var actualIndex = existing.ActualIndices[index.IndexName];
                         if (!index.Matches(actualIndex))
                         {
-                            IndexChanges.Add($"drop index {expectedTable.Table.Schema}.{index.IndexName};{index.ToDDL()}");
+                            IndexChanges.Add($"drop index {expectedTable.Table.Schema}.{index.IndexName};{Environment.NewLine}{index.ToDDL()};");
                         }
                     }
                     else

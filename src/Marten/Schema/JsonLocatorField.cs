@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -88,7 +87,7 @@ namespace Marten.Schema
 
         public string ToComputedIndex(TableName tableName)
         {
-            return $"CREATE INDEX {tableName.Name}_{MemberName.ToTableAlias()} ON {tableName.QualifiedName} (({SqlLocator}))";
+            return $"CREATE INDEX {tableName.Name}_{MemberName.ToTableAlias()} ON {tableName.QualifiedName} (({SqlLocator}));";
         }
 
         public string SqlLocator { get; }
