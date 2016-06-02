@@ -25,6 +25,8 @@ namespace Marten
         /// </summary>
         public const string DefaultDatabaseSchemaName = "public";
 
+        public const string PatchDoc = "patch_doc";
+
         private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
             new ConcurrentDictionary<Type, DocumentMapping>();
 
@@ -55,7 +57,7 @@ namespace Marten
             Schema = new MartenRegistry(this);
             Transforms = new Transforms.Transforms(this);
 
-            var patching = new TransformFunction(this, "patch_doc", SchemaBuilder.GetJavascript(this, "mt_patching"));
+            var patching = new TransformFunction(this, PatchDoc, SchemaBuilder.GetJavascript(this, "mt_patching"));
             patching.OtherArgs.Add("patch");
 
             Transforms.Load(patching);
