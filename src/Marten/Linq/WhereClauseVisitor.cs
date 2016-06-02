@@ -97,6 +97,12 @@ namespace Marten.Linq
                 return base.VisitUnary(node);
             }
 
+            protected override Expression VisitConstant(ConstantExpression node)
+            {
+                if (node.Type == typeof(bool) && (bool)node.Value) _top = new WhereFragment("true");
+                return base.VisitConstant(node);
+            }
+
             public class NotVisitor : RelinqExpressionVisitor
             {
                 private readonly WhereClauseVisitor _parent;
