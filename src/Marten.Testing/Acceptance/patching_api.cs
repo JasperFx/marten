@@ -1,4 +1,5 @@
-﻿using Marten.Services;
+﻿using System.Linq;
+using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
@@ -166,6 +167,48 @@ namespace Marten.Testing.Acceptance
             using (var query = theStore.QuerySession())
             {
                 query.Load<Target>(target.Id).Float.ShouldBe(13.6F);
+            }
+        }
+
+        [Fact]
+        public void append_to_a_primitive_array()
+        {
+            var target = Target.Random();
+            target.NumberArray = new[] {1, 2, 3};
+
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            theSession.Patch<Target>(target.Id).Append(x => x.NumberArray, 4);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<Target>(target.Id).NumberArray
+                    .ShouldHaveTheSameElementsAs(1, 2, 3, 4);
+            }
+        }
+
+        [Fact]
+        public void append_complex_element()
+        {
+            var target = Target.Random(true);
+            var initialCount = target.Children.Length;
+
+            var child = Target.Random();
+
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var target2 = query.Load<Target>(target.Id);
+                target2.Children.Length.ShouldBe(initialCount + 1);
+
+                target2.Children.Last().Id.ShouldBe(child.Id);
             }
         }
     }
