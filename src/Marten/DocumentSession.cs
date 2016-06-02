@@ -7,44 +7,46 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Linq;
-using Marten.Linq.QueryHandlers;
+using Marten.Patching;
 using Marten.Schema;
-using Marten.Schema.Identity;
 using Marten.Services;
-using Marten.Services.Includes;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
     public class DocumentSession : QuerySession, IDocumentSession
     {
-        private readonly IIdentityMap _identityMap;
+        private readonly IList<IChangeSet> _changes = new List<IChangeSet>();
         private readonly IManagedConnection _connection;
-        private readonly ISerializer _serializer;
         private readonly StoreOptions _options;
         private readonly IDocumentSchema _schema;
+        private readonly ISerializer _serializer;
         private readonly UnitOfWork _unitOfWork;
 
-        public DocumentSession(IDocumentStore store, StoreOptions options, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap) : base(store, schema, serializer, connection, parser, identityMap, options)
+        public DocumentSession(IDocumentStore store, StoreOptions options, IDocumentSchema schema,
+            ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
+            : base(store, schema, serializer, connection, parser, identityMap, options)
         {
             _options = options;
             _schema = schema;
             _serializer = serializer;
             _connection = connection;
 
-            _identityMap = identityMap;
+            IdentityMap = identityMap;
 
 
             _unitOfWork = new UnitOfWork(_schema);
 
-            if (_identityMap is IDocumentTracker)
+            if (IdentityMap is IDocumentTracker)
             {
-                _unitOfWork.AddTracker(_identityMap.As<IDocumentTracker>());
+                _unitOfWork.AddTracker(IdentityMap.As<IDocumentTracker>());
             }
 
             Events = new EventStore(this, schema, _serializer, _connection, _unitOfWork);
-
         }
+
+        // This is here for testing purposes, not part of IDocumentSession
+        public IIdentityMap IdentityMap { get; }
 
         public void Delete<T>(T entity)
         {
@@ -52,8 +54,8 @@ namespace Marten
 
             _unitOfWork.DeleteEntity(entity);
 
-            var storage = _schema.StorageFor(typeof (T));
-            storage.Remove(_identityMap, entity);
+            var storage = _schema.StorageFor(typeof(T));
+            storage.Remove(IdentityMap, entity);
         }
 
         public void Delete<T>(ValueType id)
@@ -61,7 +63,7 @@ namespace Marten
             _unitOfWork.Delete<T>(id);
 
             var storage = _schema.StorageFor(typeof(T));
-            storage.Delete(_identityMap, id);
+            storage.Delete(IdentityMap, id);
         }
 
         public void Delete<T>(string id)
@@ -69,7 +71,7 @@ namespace Marten
             _unitOfWork.Delete<T>(id);
 
             var storage = _schema.StorageFor(typeof(T));
-            storage.Delete(_identityMap, id);
+            storage.Delete(IdentityMap, id);
         }
 
         public void DeleteWhere<T>(Expression<Func<T, bool>> expression)
@@ -80,11 +82,11 @@ namespace Marten
             _unitOfWork.Delete<T>(where);
         }
 
-        public void Store<T>(params T[] entities) 
+        public void Store<T>(params T[] entities)
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
 
-            if (typeof (T) == typeof (object))
+            if (typeof(T) == typeof(object))
             {
                 StoreObjects(entities.OfType<object>());
             }
@@ -98,7 +100,7 @@ namespace Marten
                     var assigned = false;
                     var id = idAssignment.Assign(entity, out assigned);
 
-                    storage.Store(_identityMap, id, entity);
+                    storage.Store(IdentityMap, id, entity);
                     if (assigned)
                     {
                         _unitOfWork.StoreInserts(entity);
@@ -109,8 +111,6 @@ namespace Marten
                     }
                 }
             }
-
-
         }
 
         public void Store<T>(T entity, Guid version)
@@ -118,20 +118,18 @@ namespace Marten
             var storage = _schema.StorageFor(typeof(T));
             var id = storage.Identity(entity);
 
-            _identityMap.Versions.Store<T>(id, version);
+            IdentityMap.Versions.Store<T>(id, version);
 
             Store(entity);
         }
 
-        // This is here for testing purposes, not part of IDocumentSession
-        public IIdentityMap IdentityMap => _identityMap;
-
         public IUnitOfWork PendingChanges => _unitOfWork;
+
         public void StoreObjects(IEnumerable<object> documents)
         {
             documents.Where(x => x != null).GroupBy(x => x.GetType()).Each(group =>
             {
-                var handler = typeof (Handler<>).CloseAndBuildAs<IHandler>(group.Key);
+                var handler = typeof(Handler<>).CloseAndBuildAs<IHandler>(group.Key);
                 handler.Store(this, group);
             });
         }
@@ -144,7 +142,7 @@ namespace Marten
 
             _options.Listeners.Each(x => x.BeforeSaveChanges(this));
 
-            var batch = new UpdateBatch(_options, _serializer, _connection, _identityMap.Versions);
+            var batch = new UpdateBatch(_options, _serializer, _connection, IdentityMap.Versions);
             var changes = _unitOfWork.ApplyChanges(batch);
             _changes.Add(changes);
 
@@ -156,13 +154,6 @@ namespace Marten
             _options.Listeners.Each(x => x.AfterCommit(this));
         }
 
-        private void applyProjections()
-        {
-            var projections = _schema.Events.As<IProjections>();
-
-            projections.Inlines.Each(x => x.Apply(this));
-        }
-
         public async Task SaveChangesAsync(CancellationToken token)
         {
             await applyProjectionsAsync(token).ConfigureAwait(false);
@@ -172,7 +163,7 @@ namespace Marten
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
             }
 
-            var batch = new UpdateBatch(_options, _serializer, _connection, _identityMap.Versions);
+            var batch = new UpdateBatch(_options, _serializer, _connection, IdentityMap.Versions);
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
 
             _changes.Add(changes);
@@ -187,6 +178,50 @@ namespace Marten
             }
         }
 
+        public IEnumerable<IChangeSet> Commits => _changes;
+        public IChangeSet LastCommit => _changes.LastOrDefault();
+        public IPatchExpression<T> Patch<T>(int id)
+        {
+            return patchById<T>(id);
+        }
+
+        public IPatchExpression<T> Patch<T>(long id)
+        {
+            return patchById<T>(id);
+        }
+
+        public IPatchExpression<T> Patch<T>(string id)
+        {
+            return patchById<T>(id);
+        }
+
+        public IPatchExpression<T> Patch<T>(Guid id)
+        {
+            return patchById<T>(id);
+        }
+
+        private IPatchExpression<T> patchById<T>(object id)
+        {
+            var @where = new WhereFragment("d.id = ?", id);
+            return new PatchExpression<T>(@where, _schema, _unitOfWork);
+        }
+
+        public IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> @where)
+        {
+            var model = Query<T>().Where(@where).As<MartenQueryable<T>>().ToQueryModel();
+
+            var fragment = _schema.BuildWhereFragment(model);
+
+            return new PatchExpression<T>(fragment, _schema, _unitOfWork);
+        }
+
+        private void applyProjections()
+        {
+            var projections = _schema.Events.As<IProjections>();
+
+            projections.Inlines.Each(x => x.Apply(this));
+        }
+
         private async Task applyProjectionsAsync(CancellationToken token)
         {
             var projections = _schema.Events.As<IProjections>();
@@ -196,11 +231,6 @@ namespace Marten
                 await projection.ApplyAsync(this, token).ConfigureAwait(false);
             }
         }
-
-        private readonly IList<IChangeSet> _changes = new List<IChangeSet>();
-
-        public IEnumerable<IChangeSet> Commits => _changes;
-        public IChangeSet LastCommit => _changes.LastOrDefault();
 
         internal interface IHandler
         {

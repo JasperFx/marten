@@ -12,12 +12,11 @@ namespace Marten.Testing.Patching
     {
         private PatchExpression<Target> expression;
         private IDocumentSchema schema = Substitute.For<IDocumentSchema>();
-        private IUnitOfWork uow = Substitute.For<IUnitOfWork>();
         
 
         public PatchExpressionTests()
         {
-            expression = new PatchExpression<Target>(null, schema, uow);
+            expression = new PatchExpression<Target>(null, schema, new UnitOfWork(schema));
         }
 
         [Fact]

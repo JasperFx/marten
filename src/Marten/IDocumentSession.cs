@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Linq.QueryHandlers;
+using Marten.Patching;
 using Marten.Services;
 
 namespace Marten
@@ -102,6 +103,12 @@ namespace Marten
         /// The last set of changes committed, if any
         /// </summary>
         IChangeSet LastCommit { get; }
+
+        IPatchExpression<T> Patch<T>(int id);
+        IPatchExpression<T> Patch<T>(long id);
+        IPatchExpression<T> Patch<T>(string id);
+        IPatchExpression<T> Patch<T>(Guid id);
+        IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> where);
     }
 
     public interface ILoadByKeys<TDoc>

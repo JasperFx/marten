@@ -49,6 +49,7 @@
     <Compile Include="Acceptance\fetching_entity_metadata.cs" />
     <Compile Include="Acceptance\optimistic_concurrency.cs" />
     <Compile Include="Acceptance\optimistic_concurrency_with_subclass_hierarchies.cs" />
+    <Compile Include="Acceptance\patching_api.cs" />
     <Compile Include="Acceptance\select_with_transformation.cs" />
     <Compile Include="Acceptance\using_natural_identity_keys.cs" />
     <Compile Include="auto_assign_missing_guid_ids_Tests.cs" />

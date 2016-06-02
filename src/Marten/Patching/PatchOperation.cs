@@ -41,7 +41,7 @@ namespace Marten.Patching
                 var where = _fragment.ToSql(cmd.Command);
 
                 _sql =
-                    $"update {_document.Table.QualifiedName} set data = {_transform.Function.QualifiedName}(data, :{patchParam.ParameterName}) where {where}";
+                    $"update {_document.Table.QualifiedName} as d set data = {_transform.Function.QualifiedName}(data, :{patchParam.ParameterName}) where {where}";
 
                 return this;
             });
