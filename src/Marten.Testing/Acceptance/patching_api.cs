@@ -273,5 +273,47 @@ namespace Marten.Testing.Acceptance
             }
         }
 
+        [Fact]
+        public void rename_shallow_prop()
+        {
+            var target = Target.Random(true);
+            target.String = "Foo";
+            target.AnotherString = "Bar";
+
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            theSession.Patch<Target>(target.Id).Rename("String", x => x.AnotherString);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var target2 = query.Load<Target>(target.Id);
+                target2.AnotherString.ShouldBe("Foo");
+                target2.String.ShouldBeNull();
+            }
+        }
+
+        [Fact]
+        public void rename_deep_prop()
+        {
+            var target = Target.Random(true);
+            target.Inner.String = "Foo";
+            target.Inner.AnotherString = "Bar";
+
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            theSession.Patch<Target>(target.Id).Rename("String", x => x.Inner.AnotherString);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var target2 = query.Load<Target>(target.Id);
+                target2.Inner.AnotherString.ShouldBe("Foo");
+                target2.Inner.String.ShouldBeNull();
+            }
+        }
+
     }
 }
