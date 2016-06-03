@@ -203,6 +203,7 @@ artifacts
 src/CommonAssemblyInfo.cs
 paket.exe
 .idea/
+*.iml
 
 *.DotSettings
 

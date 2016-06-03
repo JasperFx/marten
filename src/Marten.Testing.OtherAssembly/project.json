@@ -1,0 +1,8 @@
+﻿{
+  "description": "Dummy project for test scenario",
+  "authors": [ "Jeremy D. Miller", "Tim Cools", "Jeff Doolittle" ],
+  "frameworks": {
+    "net46": {
+    }
+  }
+}

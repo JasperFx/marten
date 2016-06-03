@@ -92,8 +92,6 @@ namespace Marten.Services
                     {
                         list.Add(selector.Resolve(reader, selectMap));
                     }
-
-                    reader.Close();
                 }
 
                 return list.As<IList<T>>();

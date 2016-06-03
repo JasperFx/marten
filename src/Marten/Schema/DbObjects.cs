@@ -18,8 +18,9 @@ namespace Marten.Schema
 
         static DbObjects()
         {
+            var typeInfo = typeof(DbObjects).GetTypeInfo();
             SchemaObjectsSQL =
-                Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(DbObjects), "SchemaObjects.sql")
+                typeInfo.Assembly.GetManifestResourceStream($"{typeInfo.Namespace}.SchemaObjects.sql")
                     .ReadAllText();
         }
 

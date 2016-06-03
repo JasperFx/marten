@@ -14,7 +14,7 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
 
         protected static PropertyInfo GetPropertyInfo(PropertyInfo property, IncludeResultOperator @operator)
         {
-            var target = Expression.Parameter(property.ReflectedType, "target");
+            var target = Expression.Parameter(property.DeclaringType, "target");
             var method = property.GetGetMethod();
 
             var callGetMethod = Expression.Call(target, method);

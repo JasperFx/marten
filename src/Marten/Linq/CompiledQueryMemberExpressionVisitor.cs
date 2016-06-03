@@ -30,7 +30,7 @@ namespace Marten.Linq
         {
             _lastMember = _mapping.FieldFor(new MemberInfo[] {node.Member});
 
-            if (node.NodeType == ExpressionType.MemberAccess && node.Member.ReflectedType == _queryType)
+            if (node.NodeType == ExpressionType.MemberAccess && node.Member.DeclaringType == _queryType)
             {
                 var property = (PropertyInfo)node.Member;
                 var method = GetType().GetMethod(nameof(CreateParameterSetter), BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(_queryType, property.PropertyType);
@@ -63,7 +63,7 @@ namespace Marten.Linq
         private IDbParameterSetter CreateParameterSetter<TObject, TProperty>(PropertyInfo property)
         {
             var getter = LambdaBuilder.GetProperty<TObject, object>(property);
-            if (property.PropertyType.IsEnum && _enumStorage == EnumStorage.AsString)
+            if (property.PropertyType.GetTypeInfo().IsEnum && _enumStorage == EnumStorage.AsString)
             {
                 getter = o =>
                 {

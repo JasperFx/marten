@@ -42,7 +42,7 @@ namespace Marten.Util
 
         public static string GetPrettyName(this Type t)
         {
-            if (!t.IsGenericType)
+            if (!t.GetTypeInfo().IsGenericType)
                 return t.Name;
 
             var sb = new StringBuilder();
@@ -58,7 +58,7 @@ namespace Marten.Util
         {
             var typeName = type.Name;
 
-            if (type.IsGenericType)
+            if (type.GetTypeInfo().IsGenericType)
             {
                 typeName = GetPrettyName(type);                
             }
@@ -77,7 +77,7 @@ namespace Marten.Util
 
         public static bool IsGenericDictionary(this Type type)
         {
-            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof (IDictionary<,>);
+            return type.GetTypeInfo().IsGenericType && type.GetGenericTypeDefinition() == typeof (IDictionary<,>);
         }
     }
 }

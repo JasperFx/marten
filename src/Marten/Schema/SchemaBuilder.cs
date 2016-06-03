@@ -36,7 +36,7 @@ namespace Marten.Schema
 
         private static string ReadFromStream(string name, string databaseSchemaName)
         {
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
+            var stream = typeof(SchemaBuilder).GetTypeInfo().Assembly.GetManifestResourceStream(name);
             if (stream == null)
             {
                 throw new InvalidOperationException("Could not find embedded resource: " + name);

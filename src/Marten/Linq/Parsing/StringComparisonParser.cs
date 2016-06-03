@@ -50,7 +50,11 @@ namespace Marten.Linq.Parsing
         {
             var comparison = expression.Arguments.OfType<ConstantExpression>().Where(a => a.Type == typeof(StringComparison)).Select(c => (StringComparison)c.Value).FirstOrDefault();
 
-            var ignoreCaseComparisons = new[] { StringComparison.CurrentCultureIgnoreCase, StringComparison.InvariantCultureIgnoreCase, StringComparison.OrdinalIgnoreCase };
+            var ignoreCaseComparisons = new[] { StringComparison.CurrentCultureIgnoreCase,
+#if NET46
+                StringComparison.InvariantCultureIgnoreCase,
+#endif
+                StringComparison.OrdinalIgnoreCase };
             if (ignoreCaseComparisons.Contains(comparison)) return true;
 
             return false;

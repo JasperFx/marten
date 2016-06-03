@@ -49,7 +49,7 @@ namespace Marten.Schema.Arguments
 
             var value = LambdaBuilder.ToExpression(enumStorage, Members, document);
 
-            if (memberType.IsEnum)
+            if (memberType.GetTypeInfo().IsEnum)
             {
                 memberType = typeof(string);
                 value = LambdaBuilder.ToExpression(EnumStorage.AsString, Members, document);
@@ -69,7 +69,7 @@ namespace Marten.Schema.Arguments
 
             var memberType = Members.Last().GetMemberType();
             var body = LambdaBuilder.ToExpression(enumStorage, Members, doc);
-            if (!memberType.IsClass)
+            if (!memberType.GetTypeInfo().IsClass)
             {
                 body = Expression.Convert(body, typeof(object));
             }

@@ -1,0 +1,686 @@
+{
+  "locked": false,
+  "version": 1,
+  "targets": {
+    ".NETFramework,Version=v4.6": {
+      "Baseline/0.5.1-alpha-29": {
+        "frameworkAssemblies": [
+          "System.Xml"
+        ],
+        "compile": {
+          "lib/net451/Baseline.dll": {}
+        },
+        "runtime": {
+          "lib/net451/Baseline.dll": {}
+        }
+      },
+      "HtmlTags/3.0.0.186": {
+        "compile": {
+          "lib/4.0/HtmlTags.dll": {}
+        },
+        "runtime": {
+          "lib/4.0/HtmlTags.dll": {}
+        }
+      },
+      "Jil/2.14.3": {
+        "dependencies": {
+          "Sigil": "4.6.1"
+        },
+        "frameworkAssemblies": [
+          "System.Runtime.Serialization"
+        ],
+        "compile": {
+          "lib/net45/Jil.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Jil.dll": {}
+        }
+      },
+      "Newtonsoft.Json/8.0.3": {
+        "compile": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        }
+      },
+      "Npgsql/3.1.3": {
+        "compile": {
+          "lib/net451/Npgsql.dll": {}
+        },
+        "runtime": {
+          "lib/net451/Npgsql.dll": {}
+        }
+      },
+      "NSubstitute/1.10.0": {
+        "compile": {
+          "lib/net45/NSubstitute.dll": {}
+        },
+        "runtime": {
+          "lib/net45/NSubstitute.dll": {}
+        }
+      },
+      "Octokit/0.19.0": {
+        "frameworkAssemblies": [
+          "System",
+          "System.Net.Http"
+        ],
+        "compile": {
+          "lib/net45/Octokit.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Octokit.dll": {}
+        }
+      },
+      "Remotion.Linq/2.0.2": {
+        "compile": {
+          "lib/net45/Remotion.Linq.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Remotion.Linq.dll": {}
+        }
+      },
+      "Shouldly/2.7.0": {
+        "compile": {
+          "lib/net40/Shouldly.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Shouldly.dll": {}
+        }
+      },
+      "Sigil/4.6.1": {
+        "frameworkAssemblies": [
+          "Microsoft.CSharp",
+          "System",
+          "System.Core",
+          "mscorlib"
+        ],
+        "compile": {
+          "lib/net45/Sigil.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Sigil.dll": {}
+        }
+      },
+      "Storyteller/3.0.0.329-rc": {
+        "compile": {
+          "lib/net45/StoryTeller.dll": {}
+        },
+        "runtime": {
+          "lib/net45/StoryTeller.dll": {}
+        }
+      },
+      "structuremap/4.2.0.402": {
+        "compile": {
+          "lib/net40/StructureMap.Net4.dll": {},
+          "lib/net40/StructureMap.dll": {}
+        },
+        "runtime": {
+          "lib/net40/StructureMap.Net4.dll": {},
+          "lib/net40/StructureMap.dll": {}
+        }
+      },
+      "xunit/2.1.0": {
+        "dependencies": {
+          "xunit.assert": "[2.1.0]",
+          "xunit.core": "[2.1.0]"
+        }
+      },
+      "xunit.abstractions/2.0.0": {
+        "compile": {
+          "lib/net35/xunit.abstractions.dll": {}
+        },
+        "runtime": {
+          "lib/net35/xunit.abstractions.dll": {}
+        }
+      },
+      "xunit.assert/2.1.0": {
+        "compile": {
+          "lib/dotnet/xunit.assert.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet/xunit.assert.dll": {}
+        }
+      },
+      "xunit.core/2.1.0": {
+        "dependencies": {
+          "xunit.extensibility.core": "[2.1.0]",
+          "xunit.extensibility.execution": "[2.1.0]"
+        }
+      },
+      "xunit.extensibility.core/2.1.0": {
+        "dependencies": {
+          "xunit.abstractions": "[2.0.0]"
+        },
+        "compile": {
+          "lib/dotnet/xunit.core.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet/xunit.core.dll": {}
+        }
+      },
+      "xunit.extensibility.execution/2.1.0": {
+        "dependencies": {
+          "xunit.extensibility.core": "[2.1.0]"
+        },
+        "compile": {
+          "lib/net45/xunit.execution.desktop.dll": {}
+        },
+        "runtime": {
+          "lib/net45/xunit.execution.desktop.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.6/win": {
+      "Baseline/0.5.1-alpha-29": {
+        "frameworkAssemblies": [
+          "System.Xml"
+        ],
+        "compile": {
+          "lib/net451/Baseline.dll": {}
+        },
+        "runtime": {
+          "lib/net451/Baseline.dll": {}
+        }
+      },
+      "HtmlTags/3.0.0.186": {
+        "compile": {
+          "lib/4.0/HtmlTags.dll": {}
+        },
+        "runtime": {
+          "lib/4.0/HtmlTags.dll": {}
+        }
+      },
+      "Jil/2.14.3": {
+        "dependencies": {
+          "Sigil": "4.6.1"
+        },
+        "frameworkAssemblies": [
+          "System.Runtime.Serialization"
+        ],
+        "compile": {
+          "lib/net45/Jil.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Jil.dll": {}
+        }
+      },
+      "Newtonsoft.Json/8.0.3": {
+        "compile": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        }
+      },
+      "Npgsql/3.1.3": {
+        "compile": {
+          "lib/net451/Npgsql.dll": {}
+        },
+        "runtime": {
+          "lib/net451/Npgsql.dll": {}
+        }
+      },
+      "NSubstitute/1.10.0": {
+        "compile": {
+          "lib/net45/NSubstitute.dll": {}
+        },
+        "runtime": {
+          "lib/net45/NSubstitute.dll": {}
+        }
+      },
+      "Octokit/0.19.0": {
+        "frameworkAssemblies": [
+          "System",
+          "System.Net.Http"
+        ],
+        "compile": {
+          "lib/net45/Octokit.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Octokit.dll": {}
+        }
+      },
+      "Remotion.Linq/2.0.2": {
+        "compile": {
+          "lib/net45/Remotion.Linq.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Remotion.Linq.dll": {}
+        }
+      },
+      "Shouldly/2.7.0": {
+        "compile": {
+          "lib/net40/Shouldly.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Shouldly.dll": {}
+        }
+      },
+      "Sigil/4.6.1": {
+        "frameworkAssemblies": [
+          "Microsoft.CSharp",
+          "System",
+          "System.Core",
+          "mscorlib"
+        ],
+        "compile": {
+          "lib/net45/Sigil.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Sigil.dll": {}
+        }
+      },
+      "Storyteller/3.0.0.329-rc": {
+        "compile": {
+          "lib/net45/StoryTeller.dll": {}
+        },
+        "runtime": {
+          "lib/net45/StoryTeller.dll": {}
+        }
+      },
+      "structuremap/4.2.0.402": {
+        "compile": {
+          "lib/net40/StructureMap.Net4.dll": {},
+          "lib/net40/StructureMap.dll": {}
+        },
+        "runtime": {
+          "lib/net40/StructureMap.Net4.dll": {},
+          "lib/net40/StructureMap.dll": {}
+        }
+      },
+      "xunit/2.1.0": {
+        "dependencies": {
+          "xunit.assert": "[2.1.0]",
+          "xunit.core": "[2.1.0]"
+        }
+      },
+      "xunit.abstractions/2.0.0": {
+        "compile": {
+          "lib/net35/xunit.abstractions.dll": {}
+        },
+        "runtime": {
+          "lib/net35/xunit.abstractions.dll": {}
+        }
+      },
+      "xunit.assert/2.1.0": {
+        "compile": {
+          "lib/dotnet/xunit.assert.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet/xunit.assert.dll": {}
+        }
+      },
+      "xunit.core/2.1.0": {
+        "dependencies": {
+          "xunit.extensibility.core": "[2.1.0]",
+          "xunit.extensibility.execution": "[2.1.0]"
+        }
+      },
+      "xunit.extensibility.core/2.1.0": {
+        "dependencies": {
+          "xunit.abstractions": "[2.0.0]"
+        },
+        "compile": {
+          "lib/dotnet/xunit.core.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet/xunit.core.dll": {}
+        }
+      },
+      "xunit.extensibility.execution/2.1.0": {
+        "dependencies": {
+          "xunit.extensibility.core": "[2.1.0]"
+        },
+        "compile": {
+          "lib/net45/xunit.execution.desktop.dll": {}
+        },
+        "runtime": {
+          "lib/net45/xunit.execution.desktop.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Baseline/0.5.1-alpha-29": {
+      "sha512": "2caN4KiGjAExeNHpRmjkVkfgh12xtfS0KTZlvZgmYNfW442eQVTqMYCL8jBpWeurvCxXQqSj0um9KOdyZ1kFOA==",
+      "type": "package",
+      "files": [
+        "Baseline.0.5.1-alpha-29.nupkg.sha512",
+        "Baseline.nuspec",
+        "lib/net451/Baseline.dll",
+        "lib/netstandard1.3/Baseline.dll"
+      ]
+    },
+    "HtmlTags/3.0.0.186": {
+      "sha512": "evY3jSmu4M0zUE2YBxjkrVdXfHGavgarxFSV/v6adQ2ZQRlWLaoTb/6Gc7xQ+OXLULi8pnSFIDVwCzPTqmoTnQ==",
+      "type": "package",
+      "files": [
+        "HtmlTags.3.0.0.186.nupkg.sha512",
+        "HtmlTags.nuspec",
+        "lib/4.0/HtmlTags.dll"
+      ]
+    },
+    "Jil/2.14.3": {
+      "sha512": "q+QRiF7HHYvmnHNxGznlXlPEUAinD5tSCDw+/TIpKsI58OG+sj1imv19s6FuXF+mylrmAyiqsCmvw4TVd0svaw==",
+      "type": "package",
+      "files": [
+        "Jil.2.14.3.nupkg.sha512",
+        "Jil.nuspec",
+        "lib/net45/Jil.XML",
+        "lib/net45/Jil.dll",
+        "lib/net45/Jil.pdb"
+      ]
+    },
+    "Newtonsoft.Json/8.0.3": {
+      "sha512": "KGsYQdS2zLH+H8x2cZaSI7e+YZ4SFIbyy1YJQYl6GYBWjf5o4H1A68nxyq+WTyVSOJQ4GqS/DiPE+UseUizgMg==",
+      "type": "package",
+      "files": [
+        "Newtonsoft.Json.8.0.3.nupkg.sha512",
+        "Newtonsoft.Json.nuspec",
+        "lib/net20/Newtonsoft.Json.dll",
+        "lib/net20/Newtonsoft.Json.xml",
+        "lib/net35/Newtonsoft.Json.dll",
+        "lib/net35/Newtonsoft.Json.xml",
+        "lib/net40/Newtonsoft.Json.dll",
+        "lib/net40/Newtonsoft.Json.xml",
+        "lib/net45/Newtonsoft.Json.dll",
+        "lib/net45/Newtonsoft.Json.xml",
+        "lib/portable-net40+sl5+wp80+win8+wpa81/Newtonsoft.Json.dll",
+        "lib/portable-net40+sl5+wp80+win8+wpa81/Newtonsoft.Json.xml",
+        "lib/portable-net45+wp80+win8+wpa81+dnxcore50/Newtonsoft.Json.dll",
+        "lib/portable-net45+wp80+win8+wpa81+dnxcore50/Newtonsoft.Json.xml",
+        "tools/install.ps1"
+      ]
+    },
+    "Npgsql/3.1.3": {
+      "sha512": "9wPBk7N53LH7yCVqETdJKYNiihcF5509ujeYJiYmpNrQ4RLBHx3ee+K7I7Ktqf4R9Prh85EGMKIvX/wHHwpr6Q==",
+      "type": "package",
+      "files": [
+        "Npgsql.3.1.3.nupkg.sha512",
+        "Npgsql.nuspec",
+        "lib/net45/Npgsql.dll",
+        "lib/net45/Npgsql.xml",
+        "lib/net451/Npgsql.dll",
+        "lib/net451/Npgsql.xml",
+        "lib/netstandard1.3/Npgsql.dll",
+        "lib/netstandard1.3/Npgsql.xml"
+      ]
+    },
+    "NSubstitute/1.10.0": {
+      "sha512": "EjtltQLY+h9Q5k+Qr/8rnR0/MUlTizF+LOHA8Y5uy4SzLAL1Yubuz1gW9qfisJEhsS2DPWoBym/1f3Huwr0E8w==",
+      "type": "package",
+      "files": [
+        "BreakingChanges.txt",
+        "CHANGELOG.txt",
+        "LICENSE.txt",
+        "NSubstitute.1.10.0.nupkg.sha512",
+        "NSubstitute.nuspec",
+        "README.txt",
+        "acknowledgements.txt",
+        "lib/net35/NSubstitute.XML",
+        "lib/net35/NSubstitute.dll",
+        "lib/net40/NSubstitute.XML",
+        "lib/net40/NSubstitute.dll",
+        "lib/net45/NSubstitute.XML",
+        "lib/net45/NSubstitute.dll"
+      ]
+    },
+    "Octokit/0.19.0": {
+      "sha512": "7o3Yp7HvsAZeZdPdhs9F92RZeDQn2S5WOfBpwsXiMYfBpZ/pBCeirkqxUDPalxzAyBX/uvYh05+Iei/nMumDug==",
+      "type": "package",
+      "files": [
+        "LICENSE.txt",
+        "Octokit.0.19.0.nupkg.sha512",
+        "Octokit.nuspec",
+        "README.md",
+        "ReleaseNotes.md",
+        "lib/net45/Octokit.XML",
+        "lib/net45/Octokit.dll",
+        "lib/net45/Octokit.pdb",
+        "lib/netcore451/Octokit.XML",
+        "lib/netcore451/Octokit.dll",
+        "lib/netcore451/Octokit.pdb",
+        "lib/portable-net45+wp80+win+wpa81/Octokit.XML",
+        "lib/portable-net45+wp80+win+wpa81/Octokit.dll",
+        "lib/portable-net45+wp80+win+wpa81/Octokit.pdb",
+        "linqpad-samples/1-introducing-octokit.linq",
+        "linqpad-samples/10-search-issues.linq",
+        "linqpad-samples/2-releases.linq",
+        "linqpad-samples/3-browse-repositories.linq",
+        "linqpad-samples/4-observable-browse-repositories.linq",
+        "linqpad-samples/5-interact-with-git-database.linq",
+        "linqpad-samples/6-create-repository.linq",
+        "linqpad-samples/7-search-for-repos.linq",
+        "linqpad-samples/8-gists.linq",
+        "linqpad-samples/9-issues.linq"
+      ]
+    },
+    "Remotion.Linq/2.0.2": {
+      "sha512": "q3+x6KOsT2no9gB85hCTCY60hoez6G7/YugdZbJUZwoWdQlOhxLcJw+cdOUrhoL5Ondz0Aa8mupfH7hjzG8FxQ==",
+      "type": "package",
+      "files": [
+        "Remotion.Linq.2.0.2.nupkg.sha512",
+        "Remotion.Linq.nuspec",
+        "lib/net35/Remotion.Linq.XML",
+        "lib/net35/Remotion.Linq.dll",
+        "lib/net40/Remotion.Linq.XML",
+        "lib/net40/Remotion.Linq.dll",
+        "lib/net45/Remotion.Linq.XML",
+        "lib/net45/Remotion.Linq.dll",
+        "lib/portable-net45+win+wpa81+wp80/Remotion.Linq.dll",
+        "lib/portable-net45+win+wpa81+wp80/Remotion.Linq.xml"
+      ]
+    },
+    "Shouldly/2.7.0": {
+      "sha512": "46cT7ncxsLf/p5nnHuED9Ep5tsq3UmyQpS3JET2KxksN5bqA1Hj+NBGTGmmjFhFWPQ9cw3MC2KZV5B8MfFq4ig==",
+      "type": "package",
+      "files": [
+        "Shouldly.2.7.0.nupkg.sha512",
+        "Shouldly.nuspec",
+        "lib/dotnet/Shouldly.dll",
+        "lib/dotnet/Shouldly.pdb",
+        "lib/net35/Shouldly.dll",
+        "lib/net35/Shouldly.pdb",
+        "lib/net40/Shouldly.dll",
+        "lib/net40/Shouldly.pdb",
+        "lib/portable-net45+netcore45+wp8+wpa81/Shouldly.dll",
+        "lib/portable-net45+netcore45+wp8+wpa81/Shouldly.pdb"
+      ]
+    },
+    "Sigil/4.6.1": {
+      "sha512": "fzDYPopgLQcWn/LPLx2WoeapTQ8qFVhavymurodgiFaf00O1GcKHJCfAJrr1jfvD5hYUejuoopqekST5qrllkA==",
+      "type": "package",
+      "files": [
+        "Sigil.4.6.1.nupkg.sha512",
+        "Sigil.nuspec",
+        "lib/dotnet5.2/Sigil.dll",
+        "lib/dotnet5.2/Sigil.xml",
+        "lib/dotnet5.4/Sigil.dll",
+        "lib/dotnet5.4/Sigil.xml",
+        "lib/net20/Sigil.dll",
+        "lib/net20/Sigil.xml",
+        "lib/net30/Sigil.dll",
+        "lib/net30/Sigil.xml",
+        "lib/net35/Sigil.dll",
+        "lib/net35/Sigil.xml",
+        "lib/net40/Sigil.dll",
+        "lib/net40/Sigil.xml",
+        "lib/net45/Sigil.dll",
+        "lib/net45/Sigil.xml"
+      ]
+    },
+    "Storyteller/3.0.0.329-rc": {
+      "sha512": "/dbZD3cbYXjpqBhGnvFWPH3vtCaEp1UdoXeegaCDtUWoBOjoe8BkTvvofd7Y2HJYJOZJWiwS3a/S8rbpwMqycA==",
+      "type": "package",
+      "files": [
+        "Storyteller.3.0.0.329-rc.nupkg.sha512",
+        "Storyteller.nuspec",
+        "lib/net45/StoryTeller.dll",
+        "lib/net45/Storyteller.pdb",
+        "tools/CommonMark.dll",
+        "tools/Fleck.dll",
+        "tools/FubuCore.dll",
+        "tools/FubuLocalization.dll",
+        "tools/FubuMVC.Core.dll",
+        "tools/HtmlTags.dll",
+        "tools/Newtonsoft.Json.dll",
+        "tools/Nowin.dll",
+        "tools/Owin.dll",
+        "tools/ST.exe",
+        "tools/StoryTeller.dll",
+        "tools/StructureMap.Net4.dll",
+        "tools/StructureMap.dll",
+        "tools/batch-bundle.js",
+        "tools/bundle.js",
+        "tools/embed.js",
+        "tools/topics.js"
+      ]
+    },
+    "structuremap/4.2.0.402": {
+      "sha512": "KVANHSAE77vwEE9K0iroD/JyEUX/Xoxby6ME+i+n9UhRyO3UjTm88/sbA8oI/iM0xZOuqb36RGeOwRhVJjwIAg==",
+      "type": "package",
+      "files": [
+        "lib/dotnet/StructureMap.dll",
+        "lib/dotnet/StructureMap.pdb",
+        "lib/net40/StructureMap.Net4.dll",
+        "lib/net40/StructureMap.Net4.pdb",
+        "lib/net40/StructureMap.dll",
+        "lib/net40/StructureMap.pdb",
+        "lib/net40/StructureMap.xml",
+        "lib/portable-net40+wp8+win8/StructureMap.dll",
+        "lib/portable-net40+wp8+win8/StructureMap.pdb",
+        "lib/portable-net40+wp8+win8/StructureMap.xml",
+        "lib/portable-net45+wp81+win81/StructureMap.dll",
+        "lib/portable-net45+wp81+win81/StructureMap.pdb",
+        "lib/portable-net45+wp81+win81/StructureMap.xml",
+        "structuremap.4.2.0.402.nupkg.sha512",
+        "structuremap.nuspec"
+      ]
+    },
+    "xunit/2.1.0": {
+      "sha512": "u/7VQSOSXa7kSG4iK6Lcn7RqKZQ3hk7cnyMNVMpXHSP0RI5VQEtc44hvkG3LyWOVsx1dhUDD3rPAHAxyOUDQJw==",
+      "type": "package",
+      "files": [
+        "xunit.2.1.0.nupkg.sha512",
+        "xunit.nuspec"
+      ]
+    },
+    "xunit.abstractions/2.0.0": {
+      "sha512": "NAdxKQRzuLnCZ0g++x6i87/8rMBpQoRiRlRNLAqfODm2zJPbteHRoSER3DXfxnqrHXyBJT8rFaZ8uveBeQyaMA==",
+      "type": "package",
+      "files": [
+        "lib/net35/xunit.abstractions.dll",
+        "lib/net35/xunit.abstractions.xml",
+        "lib/portable-net45+win+wpa81+wp80+monotouch+monoandroid+Xamarin.iOS/xunit.abstractions.dll",
+        "lib/portable-net45+win+wpa81+wp80+monotouch+monoandroid+Xamarin.iOS/xunit.abstractions.xml",
+        "xunit.abstractions.2.0.0.nupkg.sha512",
+        "xunit.abstractions.nuspec"
+      ]
+    },
+    "xunit.assert/2.1.0": {
+      "sha512": "Hhhw+YaTe+BGhbr57dxVE+6VJk8BfThqFFii1XIsSZ4qx+SSCixprJC10JkiLRVSTfWyT8W/4nAf6NQgIrmBxA==",
+      "type": "package",
+      "files": [
+        "lib/dotnet/xunit.assert.dll",
+        "lib/dotnet/xunit.assert.pdb",
+        "lib/dotnet/xunit.assert.xml",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.assert.dll",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.assert.pdb",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.assert.xml",
+        "xunit.assert.2.1.0.nupkg.sha512",
+        "xunit.assert.nuspec"
+      ]
+    },
+    "xunit.core/2.1.0": {
+      "sha512": "jlbYdPbnkPIRwJllcT/tQZCNsSElVDEymdpJfH79uTUrPARkELVYw9o/zhAjKZXmeikGqGK5C2Yny4gTNoEu0Q==",
+      "type": "package",
+      "files": [
+        "build/_desktop/xunit.execution.desktop.dll",
+        "build/dnx451/_._",
+        "build/monoandroid/_._",
+        "build/monotouch/_._",
+        "build/net45/_._",
+        "build/portable-net45+win8+wp8+wpa81/xunit.core.props",
+        "build/win8/_._",
+        "build/win81/xunit.core.props",
+        "build/wp8/_._",
+        "build/wpa81/xunit.core.props",
+        "build/xamarinios/_._",
+        "xunit.core.2.1.0.nupkg.sha512",
+        "xunit.core.nuspec"
+      ]
+    },
+    "xunit.extensibility.core/2.1.0": {
+      "sha512": "ANWM3WxeaeHjACLRlmrv+xOc0WAcr3cvIiJE+gqbdzTv1NCH4p1VDyT+8WmmdCc9db0WFiJLaDy4YTYsL1wWXw==",
+      "type": "package",
+      "files": [
+        "lib/dotnet/xunit.core.dll",
+        "lib/dotnet/xunit.core.dll.tdnet",
+        "lib/dotnet/xunit.core.pdb",
+        "lib/dotnet/xunit.core.xml",
+        "lib/dotnet/xunit.runner.tdnet.dll",
+        "lib/dotnet/xunit.runner.utility.desktop.dll",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.core.dll",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.core.dll.tdnet",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.core.pdb",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.core.xml",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.runner.tdnet.dll",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.runner.utility.desktop.dll",
+        "xunit.extensibility.core.2.1.0.nupkg.sha512",
+        "xunit.extensibility.core.nuspec"
+      ]
+    },
+    "xunit.extensibility.execution/2.1.0": {
+      "sha512": "tAoNafoVknKa3sZJPMvtZRnhOSk3gasEGeceSm7w/gyGwsR/OXFxndWJB1xSHeoy33d3Z6jFqn4A3j+pWCF0Ew==",
+      "type": "package",
+      "files": [
+        "lib/dnx451/xunit.execution.dotnet.dll",
+        "lib/dnx451/xunit.execution.dotnet.pdb",
+        "lib/dnx451/xunit.execution.dotnet.xml",
+        "lib/dotnet/xunit.execution.dotnet.dll",
+        "lib/dotnet/xunit.execution.dotnet.pdb",
+        "lib/dotnet/xunit.execution.dotnet.xml",
+        "lib/monoandroid/xunit.execution.dotnet.dll",
+        "lib/monoandroid/xunit.execution.dotnet.pdb",
+        "lib/monoandroid/xunit.execution.dotnet.xml",
+        "lib/monotouch/xunit.execution.dotnet.dll",
+        "lib/monotouch/xunit.execution.dotnet.pdb",
+        "lib/monotouch/xunit.execution.dotnet.xml",
+        "lib/net45/xunit.execution.desktop.dll",
+        "lib/net45/xunit.execution.desktop.pdb",
+        "lib/net45/xunit.execution.desktop.xml",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.execution.dotnet.dll",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.execution.dotnet.pdb",
+        "lib/portable-net45+win8+wp8+wpa81/xunit.execution.dotnet.xml",
+        "lib/win8/xunit.execution.dotnet.dll",
+        "lib/win8/xunit.execution.dotnet.pdb",
+        "lib/win8/xunit.execution.dotnet.xml",
+        "lib/wp8/xunit.execution.dotnet.dll",
+        "lib/wp8/xunit.execution.dotnet.pdb",
+        "lib/wp8/xunit.execution.dotnet.xml",
+        "lib/wpa81/xunit.execution.dotnet.dll",
+        "lib/wpa81/xunit.execution.dotnet.pdb",
+        "lib/wpa81/xunit.execution.dotnet.xml",
+        "lib/xamarinios/xunit.execution.dotnet.dll",
+        "lib/xamarinios/xunit.execution.dotnet.pdb",
+        "lib/xamarinios/xunit.execution.dotnet.xml",
+        "xunit.extensibility.execution.2.1.0.nupkg.sha512",
+        "xunit.extensibility.execution.nuspec"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    "": [
+      "HtmlTags >= 3.0.0.186",
+      "Jil >= 2.14.3",
+      "NSubstitute >= 1.10.0",
+      "Octokit >= 0.19.0",
+      "Shouldly >= 2.7.0",
+      "Storyteller >= 3.0.0.329-rc",
+      "structuremap >= 4.2.0.402",
+      "xunit >= 2.1.0"
+    ],
+    ".NETFramework,Version=v4.6": []
+  }
+}

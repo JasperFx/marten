@@ -64,7 +64,7 @@ namespace Marten.Schema
 
         private void applyAnyMartenAttributes(Type documentType)
         {
-            documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
+            documentType.GetTypeInfo().ForAttribute<MartenAttribute>(att => att.Modify(this));
 
             documentType.GetProperties()
                 .Where(x => TypeMappings.HasTypeMapping(x.PropertyType))
@@ -229,7 +229,7 @@ namespace Marten.Schema
 
         private static PropertyInfo[] GetProperties(Type type)
         {
-            return type.IsInterface
+            return type.GetTypeInfo().IsInterface
                 ? new[] {type}
                     .Concat(type.GetInterfaces())
                     .SelectMany(i => i.GetProperties()).ToArray()
@@ -389,14 +389,14 @@ namespace Marten.Schema
 
         public bool IsHierarchy()
         {
-            return _subClasses.Any() || DocumentType.IsAbstract || DocumentType.IsInterface;
+            return _subClasses.Any() || DocumentType.GetTypeInfo().IsAbstract || DocumentType.GetTypeInfo().IsInterface;
         }
 
 
         private static string defaultDocumentAliasName(Type documentType)
         {
             var nameToAlias = documentType.Name;
-            if (documentType.IsGenericType)
+            if (documentType.GetTypeInfo().IsGenericType)
             {
                 nameToAlias = _aliasSanitizer.Replace(documentType.GetPrettyName(), string.Empty);
             }

@@ -26,7 +26,7 @@ namespace Marten.Schema
 
             ColumnName = MemberName.ToTableAlias();
 
-            if (MemberType.IsEnum)
+            if (MemberType.GetTypeInfo().IsEnum)
             {
                 _parseObject = expression =>
                 {

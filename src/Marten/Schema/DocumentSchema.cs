@@ -489,29 +489,37 @@ namespace Marten.Schema
         }
     }
 
+#if SERIALIZE
     [Serializable]
+#endif
     public class AmbiguousDocumentTypeAliasesException : Exception
     {
         public AmbiguousDocumentTypeAliasesException(string message) : base(message)
         {
         }
 
+#if SERIALIZE
         protected AmbiguousDocumentTypeAliasesException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
+#endif
     }
-    
 
+
+#if SERIALIZE
     [Serializable]
+#endif
     public class SchemaValidationException : Exception
     {
         public SchemaValidationException(string ddl) : base("Configuration to Schema Validation Failed! These changes detected:\n\n" + ddl)
         {
         }
 
+#if SERIALIZE
         protected SchemaValidationException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+#endif
     }
 }

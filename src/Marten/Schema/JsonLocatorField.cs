@@ -24,7 +24,7 @@ namespace Marten.Schema
         {
             var memberType = member.GetMemberType();
 
-            var isStringEnum = memberType.IsEnum && enumStyle == EnumStorage.AsString;
+            var isStringEnum = memberType.GetTypeInfo().IsEnum && enumStyle == EnumStorage.AsString;
             if (memberType == typeof (string) || isStringEnum)
             {
                 SqlLocator = $"d.data ->> '{member.Name}'";
@@ -75,7 +75,7 @@ namespace Marten.Schema
             SqlLocator = MemberType == typeof (string) ? locator : locator.ApplyCastToLocator(enumStyle, MemberType);
 
 
-            var isStringEnum = MemberType.IsEnum && enumStyle == EnumStorage.AsString;
+            var isStringEnum = MemberType.GetTypeInfo().IsEnum && enumStyle == EnumStorage.AsString;
             if (isStringEnum)
             {
                 _parseObject = expression =>

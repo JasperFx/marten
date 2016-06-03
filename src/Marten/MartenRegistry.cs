@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
@@ -272,7 +273,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> AddSubClassHierarchy(params MappedType[] allSubclassTypes)
             {
-                alter = mapping => Array.ForEach(allSubclassTypes, subclassType => 
+                alter = mapping => allSubclassTypes.Each(subclassType => 
                     mapping.AddSubClass(
                         subclassType.Type, 
                         allSubclassTypes.Except(new [] {subclassType}), 
@@ -289,8 +290,8 @@ namespace Marten
             public DocumentMappingExpression<T> AddSubClassHierarchy()
             {
                 var baseType = typeof (T);
-                var allSubclassTypes = baseType.Assembly.GetTypes()
-                    .Where(t => t.IsSubclassOf(baseType) || baseType.IsInterface && t.GetInterfaces().Contains(baseType))
+                var allSubclassTypes = baseType.GetTypeInfo().Assembly.GetTypes()
+                    .Where(t => t.GetTypeInfo().IsSubclassOf(baseType) || baseType.GetTypeInfo().IsInterface && t.GetInterfaces().Contains(baseType))
                     .Select(t=>(MappedType)t).ToList();
                 alter = mapping => allSubclassTypes.Each<MappedType>(subclassType => 
                     mapping.AddSubClass(

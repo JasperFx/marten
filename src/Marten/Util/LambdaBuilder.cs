@@ -11,7 +11,7 @@ namespace Marten.Util
     {
         public static Func<TTarget, TProperty> GetProperty<TTarget, TProperty>(PropertyInfo property)
         {
-            var target = Expression.Parameter(property.ReflectedType, "target");
+            var target = Expression.Parameter(property.DeclaringType, "target");
             var method = property.GetGetMethod();
 
             var callGetMethod = Expression.Call(target, method);
@@ -26,7 +26,7 @@ namespace Marten.Util
 
         public static Action<TTarget, TProperty> SetProperty<TTarget, TProperty>(PropertyInfo property)
         {
-            var target = Expression.Parameter(property.ReflectedType, "target");
+            var target = Expression.Parameter(property.DeclaringType, "target");
             var value = Expression.Parameter(property.PropertyType, "value");
 
             var method = property.SetMethod;
@@ -122,7 +122,7 @@ namespace Marten.Util
                 }
 
                 var memberType = members.Last().GetMemberType();
-                if (memberType.IsEnum && enumStorage == EnumStorage.AsString)
+                if (memberType.GetTypeInfo().IsEnum && enumStorage == EnumStorage.AsString)
                 {
                     body = Expression.Call(_getName, Expression.Constant(memberType), Expression.Convert(body, typeof(object)));
                 }

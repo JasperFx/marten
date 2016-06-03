@@ -1,5 +1,7 @@
 using System;
 using System.Data.Common;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -47,7 +49,11 @@ namespace Marten.Linq.QueryHandlers
 
             if (typeof (T).Closes(typeof (Nullable<>)))
             {
-                var inner = typeof (T).GetGenericArguments()[0];
+                var typeInfo = typeof(T).GetTypeInfo();
+                var arguments = typeInfo.IsGenericTypeDefinition
+                    ? typeInfo.GenericTypeParameters
+                    : typeInfo.GenericTypeArguments;
+                var inner = arguments.First();
                 _selector = typeof (NullableScalarSelector<>).CloseAndBuildAs<ISelector<T>>(inner);
             }
             else

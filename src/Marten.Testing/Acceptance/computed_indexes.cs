@@ -179,7 +179,7 @@ namespace Marten.Testing.Acceptance
 
                 // Inserting the same original string should throw
                 session.Store(item2);
-                Assert.Throws<NpgsqlException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
+                Assert.Throws<PostgresException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
             }
         }
 
@@ -260,7 +260,7 @@ namespace Marten.Testing.Acceptance
                 // Inserting the same string but all uppercase should throw because
                 // the index is stored with lowcased value
                 session.Store(item);
-                Assert.Throws<NpgsqlException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
+                Assert.Throws<PostgresException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
             }
         }
 

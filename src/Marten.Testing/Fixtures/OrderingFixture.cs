@@ -7,7 +7,6 @@ using Marten.Linq;
 using StoryTeller;
 using StoryTeller.Grammars.Tables;
 using StructureMap;
-using StructureMap.Util;
 
 namespace Marten.Testing.Fixtures
 {

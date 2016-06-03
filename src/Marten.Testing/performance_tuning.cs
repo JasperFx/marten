@@ -11,7 +11,6 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Fixtures;
 using StructureMap;
-using StructureMap.Util;
 
 namespace Marten.Testing
 {

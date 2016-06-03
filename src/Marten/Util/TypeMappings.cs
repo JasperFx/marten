@@ -98,7 +98,7 @@ namespace Marten.Util
 
         public static string GetPgType(Type memberType)
         {
-            if (memberType.IsEnum) return "integer";
+            if (memberType.GetTypeInfo().IsEnum) return "integer";
 
             if (memberType.IsNullable())
             {
@@ -111,12 +111,12 @@ namespace Marten.Util
         public static bool HasTypeMapping(Type memberType)
         {
             // more complicated later
-            return PgTypes.ContainsKey(memberType) || memberType.IsEnum;
+            return PgTypes.ContainsKey(memberType) || memberType.GetTypeInfo().IsEnum;
         }
 
         public static string ApplyCastToLocator(this string locator, EnumStorage enumStyle, Type memberType)
         {
-            if (memberType.IsEnum)
+            if (memberType.GetTypeInfo().IsEnum)
             {
                 return enumStyle == EnumStorage.AsInteger ? "({0})::int".ToFormat(locator) : locator;
             }

@@ -32,8 +32,8 @@ namespace Marten.Schema
             Aliases = otherSubclassTypes
                 .Where(
                     t =>
-                        t.Type.IsSubclassOf(documentType) ||
-                        (documentType.IsInterface && t.Type.GetInterfaces().Contains(documentType)) ||
+                        t.Type.GetTypeInfo().IsSubclassOf(documentType) ||
+                        (documentType.GetTypeInfo().IsInterface && t.Type.GetInterfaces().Contains(documentType)) ||
                         t.Type == documentType)
                 .Select(GetTypeMartenAlias).Concat(Aliases).ToArray();
         }
