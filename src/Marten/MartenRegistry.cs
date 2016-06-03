@@ -138,7 +138,7 @@ namespace Marten
             /// <param name="pgType">Optional, overrides the Postgresql column type for the duplicated field</param>
             /// <param name="configure">Optional, allows you to customize the Postgresql database index configured for the duplicated field</param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string pgType, Action<IndexDefinition> configure)
+            public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string pgType = null, Action<IndexDefinition> configure = null)
             {
                 var visitor = new FindMembers();
                 visitor.Visit(expression);
@@ -153,7 +153,7 @@ namespace Marten
                 return this;
             }
 
-            public DocumentMappingExpression<T> Index(Expression<Func<T, object>> expression)
+            public DocumentMappingExpression<T> Index(Expression<Func<T, object>> expression, Action<ComputedIndex> configure = null)
             {
                 var visitor = new FindMembers();
                 visitor.Visit(expression);
@@ -161,6 +161,7 @@ namespace Marten
                 alter = mapping =>
                 {
                     var index = new ComputedIndex(mapping, visitor.Members.ToArray());
+                    configure?.Invoke(index);
                     mapping.Indexes.Add(index);
                 };
 
