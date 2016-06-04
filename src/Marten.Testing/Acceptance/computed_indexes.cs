@@ -47,7 +47,48 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void create_unique()
+        public void create_unique_index_on_string_with_mixed_casing()
+        {
+            StoreOptions(_ => _.Schema.For<Target>().Index(x => x.String, x =>
+            {
+                x.IsUnique = true;
+            }));
+
+            var testString = "MiXeD cAsE sTrInG";
+
+            using (var session = theStore.LightweightSession())
+            {
+                var item = Target.GenerateRandomData(1).First();
+                item.String = testString;
+                session.Store(item);
+                session.SaveChanges();
+            }
+
+            theStore.Schema.DbObjects.AllIndexes().Select(x => x.Name)
+                    .ShouldContain("mt_doc_target_uidx_string");
+            
+            using (var session = theStore.LightweightSession())
+            {
+                var item = Target.GenerateRandomData(1).First();
+
+                item.String = testString.ToLower();
+
+                // Inserting the same string but all lowercase should be OK
+                session.Store(item);
+                session.SaveChanges();
+
+                var item2 = Target.GenerateRandomData(1).First();
+
+                item2.String = testString;
+
+                // Inserting the same original string should throw
+                session.Store(item2);
+                Assert.Throws<NpgsqlException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
+            }
+        }
+
+        [Fact]
+        public void create_unique_index_with_lower_case_constraint()
         {
             StoreOptions(_ => _.Schema.For<Target>().Index(x => x.String, x =>
             {
@@ -55,23 +96,27 @@ namespace Marten.Testing.Acceptance
                 x.Casing = ComputedIndex.Casings.Lower;
             }));
 
-            var data = Target.GenerateRandomData(10).ToArray();
-            data.Each(x => x.String += Guid.NewGuid().ToString());
-            theStore.BulkInsert(data.ToArray());
+            var testString = "MiXeD cAsE sTrInG";
+
+            using (var session = theStore.LightweightSession())
+            {
+                var item = Target.GenerateRandomData(1).First();
+                item.String = testString;
+                session.Store(item);
+                session.SaveChanges();
+            }
 
             theStore.Schema.DbObjects.AllIndexes().Select(x => x.Name)
                     .ShouldContain("mt_doc_target_uidx_string");
-            
+
             using (var session = theStore.LightweightSession())
             {
-                var item = session.Query<Target>().First(x => x.Number > 0);
+                var item = Target.GenerateRandomData(1).First();
 
-                var newItem = Target.GenerateRandomData(1).First();
+                item.String = testString.ToUpper();
 
-                newItem.String = item.String;
-
-                session.Store(newItem);
-
+                // Inserting the same string but all lowercase should be OK
+                session.Store(item);
                 Assert.Throws<NpgsqlException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
             }
         }
