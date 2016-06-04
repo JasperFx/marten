@@ -55,7 +55,7 @@ namespace Marten.Generation
                 missingSystemColumns.Each(col =>
                 {
                     var patch =
-                        $"alter table {_tableName.QualifiedName} add column {col.ToDeclaration(col.Name.Length + 1)}";
+                        $"alter table {_tableName.QualifiedName} add column {col.ToDeclaration(col.Name.Length + 1)};";
 
                     runner.Apply(this, patch);
                 });
