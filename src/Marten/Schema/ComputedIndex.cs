@@ -34,7 +34,15 @@ namespace Marten.Schema
         /// </summary>
         public string IndexName
         {
-            get { return _indexName ?? GenerateIndexName(); }
+            get
+            {
+                if (_indexName.IsNotEmpty())
+                {
+                    return "mt_" + _indexName;
+                }
+
+                return GenerateIndexName();
+            }
             set { _indexName = value; }
         }
 
@@ -51,6 +59,7 @@ namespace Marten.Schema
         public string ToDDL()
         {
             var index = IsUnique ? "CREATE UNIQUE INDEX" : "CREATE INDEX";
+
             if (IsConcurrent)
             {
                 index += " CONCURRENTLY";
@@ -73,7 +82,7 @@ namespace Marten.Schema
 
             if (Where.IsNotEmpty())
             {
-                index += $" ({Where})";
+                index += $" WHERE ({Where})";
             }
 
             return index + ";";

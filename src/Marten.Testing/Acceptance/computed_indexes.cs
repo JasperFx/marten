@@ -1,15 +1,13 @@
 ﻿using System.Linq;
-using Baseline;
+using Marten.Schema;
 using Marten.Testing.Fixtures;
+using Npgsql;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Marten.Testing.Acceptance
 {
-    using System;
-    using Marten.Schema;
-    using Npgsql;
 
     public class computed_indexes : IntegratedFixture
     {
@@ -88,6 +86,52 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
+        public void create_index_with_custom_name()
+        {
+            StoreOptions(_ => _.Schema.For<Target>().Index(x => x.String, x =>
+            {
+                x.IndexName = "banana_index_created_by_nigel";
+            }));
+
+            var testString = "MiXeD cAsE sTrInG";
+
+            using (var session = theStore.LightweightSession())
+            {
+                var item = Target.GenerateRandomData(1).First();
+                item.String = testString;
+                session.Store(item);
+                session.SaveChanges();
+            }
+            
+            theStore.Schema.DbObjects.AllIndexes().Select(x => x.Name)
+                    .ShouldContain("mt_banana_index_created_by_nigel");
+        }
+
+        [Fact]
+        public void create_index_with_where_clause()
+        {
+            StoreOptions(_ => _.Schema.For<Target>().Index(x => x.String, x =>
+            {
+                x.Where = "(data ->> 'Number')::int > 10";
+            }));
+
+            var testString = "MiXeD cAsE sTrInG";
+
+            using (var session = theStore.LightweightSession())
+            {
+                var item = Target.GenerateRandomData(1).First();
+                item.String = testString;
+                session.Store(item);
+                session.SaveChanges();
+            }
+            
+            theStore.Schema.DbObjects.AllIndexes()
+                    .Where(x => x.Name == "mt_doc_target_idx_string")
+                    .Select(x => x.DDL)
+                    .ShouldContain(x => x.Contains("WHERE (((data ->> 'Number'::text))::integer > 10)"));
+        }
+
+        [Fact]
         public void create_unique_index_with_lower_case_constraint()
         {
             StoreOptions(_ => _.Schema.For<Target>().Index(x => x.String, x =>
@@ -115,7 +159,8 @@ namespace Marten.Testing.Acceptance
 
                 item.String = testString.ToUpper();
 
-                // Inserting the same string but all lowercase should be OK
+                // Inserting the same string but all uppercase should throw because
+                // the index is stored with lowcased value
                 session.Store(item);
                 Assert.Throws<NpgsqlException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
             }
