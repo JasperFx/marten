@@ -98,11 +98,11 @@ namespace Marten.Testing.Events.Projections
 
             monsterEvents.Length.ShouldBe(2); // precondition
 
-            monsterEvents.Each(async e =>
+            foreach (var e in monsterEvents)
             {
                 var doc = await theSession.LoadAsync<MonsterDefeated>(e.Id);
                 doc.Monster.ShouldBe(e.Data.Name);
-            });
+            }
         }
 
     }
