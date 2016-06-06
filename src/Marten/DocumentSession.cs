@@ -97,7 +97,7 @@ namespace Marten
 
                 foreach (var entity in entities)
                 {
-                    var assigned = false;
+                    bool assigned;
                     var id = idAssignment.Assign(entity, out assigned);
 
                     storage.Store(IdentityMap, id, entity);
@@ -202,13 +202,13 @@ namespace Marten
 
         private IPatchExpression<T> patchById<T>(object id)
         {
-            var @where = new WhereFragment("d.id = ?", id);
-            return new PatchExpression<T>(@where, _schema, _unitOfWork);
+            var where = new WhereFragment("d.id = ?", id);
+            return new PatchExpression<T>(where, _schema, _unitOfWork);
         }
 
-        public IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> @where)
+        public IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> where)
         {
-            var model = Query<T>().Where(@where).As<MartenQueryable<T>>().ToQueryModel();
+            var model = Query<T>().Where(where).As<MartenQueryable<T>>().ToQueryModel();
 
             var fragment = _schema.BuildWhereFragment(model);
 

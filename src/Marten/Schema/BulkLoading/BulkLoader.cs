@@ -107,7 +107,7 @@ namespace Marten.Schema.BulkLoading
             {
                 foreach (var document in documents)
                 {
-                    var assigned = false;
+                    bool assigned;
                     _assignment.Assign(document, out assigned);
 
                     writer.StartRow();

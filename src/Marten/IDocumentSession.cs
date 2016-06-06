@@ -62,7 +62,7 @@ namespace Marten
         /// Explicitly marks a document as needing to be inserted or updated upon the next call to SaveChanges()
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="entity"></param>
+        /// <param name="entities"></param>
         void Store<T>(params T[] entities);
 
         /// <summary>

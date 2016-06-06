@@ -11,7 +11,7 @@ namespace Marten.Schema.Identity.Sequences
         private readonly IConnectionFactory _factory;
         private readonly StoreOptions _options;
         private readonly IMartenLogger _logger;
-        private bool _checked = false;
+        private bool _checked;
 
         private TableName Table => new TableName(_options.DatabaseSchemaName, "mt_hilo");
 

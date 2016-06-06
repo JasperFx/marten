@@ -38,6 +38,7 @@ namespace Marten
         ///     "IdentityOnly" is the default.
         /// </summary>
         /// <param name="tracking"></param>
+        /// <param name="isolationLevel"></param>
         /// <returns></returns>
         IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);

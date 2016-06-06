@@ -54,11 +54,12 @@ namespace Marten.Generation
             writer.WriteLine("CREATE TABLE {0} (", Table.QualifiedName);
 
             var length = Columns.Select(x => x.Name.Length).Max() + 4;
+            var lastColumn = Columns[Columns.Count - 1];
 
             Columns.Each(col =>
             {
                 writer.Write($"    {col.ToDeclaration(length)}");
-                if (col == Columns.Last())
+                if (ReferenceEquals(col, lastColumn))
                 {
                     writer.WriteLine();
                 }

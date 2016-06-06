@@ -82,7 +82,7 @@ namespace Marten.Schema
             var parts = qualifiedName.Split('.');
             if (parts.Length == 1)
             {
-                return new string[] {StoreOptions.DefaultDatabaseSchemaName, qualifiedName};
+                return new [] {StoreOptions.DefaultDatabaseSchemaName, qualifiedName};
             }
 
             if (parts.Length != 2)

@@ -9,7 +9,7 @@ namespace Marten.Linq.Parsing
         public bool Matches(MethodCallExpression expression)
         {
             return expression.Method.Name == nameof(LinqExtensions.IsOneOf)
-                   && expression.Method.DeclaringType.Equals(typeof (LinqExtensions));
+                   && expression.Method.DeclaringType == typeof(LinqExtensions);
         }
 
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)

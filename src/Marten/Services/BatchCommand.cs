@@ -14,7 +14,7 @@ namespace Marten.Services
     public class BatchCommand
     {
         public ISerializer Serializer { get; }
-        private int _counter = 0;
+        private int _counter;
         private readonly IList<ICall> _calls = new List<ICall>();
         private readonly IList<ICallback> _callbacks = new List<ICallback>();
 

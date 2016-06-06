@@ -34,7 +34,7 @@ namespace Marten.Transforms
 
         private IEnumerable<string> allArgs()
         {
-            return new string[] {"doc"}.Concat(OtherArgs);
+            return new [] {"doc"}.Concat(OtherArgs);
         }
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,

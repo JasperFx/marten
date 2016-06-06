@@ -35,6 +35,7 @@ namespace Marten.Events
             var dataJson = reader.GetString(3);
 
             var mapping = _events.EventMappingFor(eventTypeName);
+            if (mapping == null) throw new InvalidOperationException($"Mapping not found for event type name \"{eventTypeName}\".");
 
             if (mapping == null)
             {
@@ -42,7 +43,6 @@ namespace Marten.Events
             }
 
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
-
 
             var @event = EventStream.ToEvent(data);
             @event.Version = version;
@@ -77,7 +77,7 @@ namespace Marten.Events
 
         public string[] SelectFields()
         {
-            return new[] {"id", "type", "version", "data"};
+            return new[] { "id", "type", "version", "data" };
         }
 
         public string ToSelectClause(IQueryableDocument mapping)

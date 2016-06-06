@@ -30,7 +30,7 @@ namespace Marten.Generation
 
         public TableColumn[] Missing { get; set; }
 
-        public bool Matches => Missing.Count() + Extras.Count() + Different.Count() == 0;
+        public bool Matches => Missing.Length + Extras.Length + Different.Length == 0;
 
         public bool CanPatch()
         {
@@ -39,7 +39,7 @@ namespace Marten.Generation
 
         public void CreatePatch(DocumentMapping mapping, IDDLRunner runner)
         {
-            var systemFields = new string[] {DocumentMapping.LastModifiedColumn, DocumentMapping.DotNetTypeColumn, DocumentMapping.VersionColumn};
+            var systemFields = new [] {DocumentMapping.LastModifiedColumn, DocumentMapping.DotNetTypeColumn, DocumentMapping.VersionColumn};
 
             var missingNonSystemFields = Missing.Where(x => !systemFields.Contains(x.Name)).ToArray();
             var fields = missingNonSystemFields.Select(x => mapping.FieldForColumn(x.Name)).ToArray();

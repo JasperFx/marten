@@ -71,7 +71,8 @@ namespace Marten.Schema
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
-            return Parent.FieldFor(members) ?? _inner.FieldFor(members);
+            MemberInfo[] memberArray = members as MemberInfo[] ?? members.ToArray();
+            return Parent.FieldFor(memberArray) ?? _inner.FieldFor(memberArray);
         }
 
         public IWhereFragment FilterDocuments(IWhereFragment query)

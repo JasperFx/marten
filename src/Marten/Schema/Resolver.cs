@@ -64,10 +64,8 @@ namespace Marten.Schema
             var block = Expression.Block(arguments);
 
             var lambda = Expression.Lambda<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid>>(block,
-                new ParameterExpression[]
-                {
                     call, doc, batch, mappingParam, currentVersion, newVersion
-                });
+                );
 
 
             return lambda.Compile();
@@ -206,7 +204,7 @@ namespace Marten.Schema
 
         public void Store(IIdentityMap map, object id, object entity)
         {
-            map.Store<T>(id, (T) entity);
+            map.Store(id, (T) entity);
         }
     }
 }
