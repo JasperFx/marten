@@ -195,7 +195,10 @@ namespace Marten.Schema
             {
                 Directive = "DEFAULT transaction_timestamp()"
             });
-            table.Columns.Add(new TableColumn(DocumentMapping.VersionColumn, "uuid") {Directive = "NOT NULL"});
+            table.Columns.Add(new TableColumn(DocumentMapping.VersionColumn, "uuid")
+            {
+                Directive = "NOT NULL default(md5(random()::text || clock_timestamp()::text)::uuid)"
+            });
             table.Columns.Add(new TableColumn(DocumentMapping.DotNetTypeColumn, "varchar"));
 
             _mapping.DuplicatedFields.Select(x => x.ToColumn()).Each(x => table.Columns.Add(x));
