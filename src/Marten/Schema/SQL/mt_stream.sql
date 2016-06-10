@@ -76,6 +76,12 @@ $$ LANGUAGE plpgsql;
 
 
 
+DROP TABLE IF EXISTS {databaseSchema}.mt_event_progression CASCADE;
+CREATE TABLE {databaseSchema}.mt_event_progression (
+	name				varchar CONSTRAINT pk_mt_event_progression PRIMARY KEY,
+	last_seq_id			bigint NULL
+);
+
 
 
 
