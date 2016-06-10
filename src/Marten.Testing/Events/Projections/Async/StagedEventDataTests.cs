@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Baseline;
 using Marten.Events;
 using Marten.Events.Projections.Async;
 using Marten.Util;
@@ -9,9 +12,13 @@ namespace Marten.Testing.Events.Projections.Async
 {
     public class StagedEventDataTests : IntegratedFixture
     {
+        private readonly StagedEventOptions theOptions = new StagedEventOptions {Name = "something"};
+
         public StagedEventDataTests()
         {
             theStore.Schema.EnsureStorageExists(typeof(EventStream));
+
+            
         }
 
         [Fact]
@@ -19,11 +26,12 @@ namespace Marten.Testing.Events.Projections.Async
         {
             var factory = new ConnectionSource();
 
-            var data = new StagedEventData(factory, new EventGraph(new StoreOptions()), new JilSerializer());
+            using (var data = new StagedEventData(theOptions, factory, new EventGraph(new StoreOptions()), new JilSerializer()))
+            {
+                var lastEncountered = await data.LastEventProgression();
 
-            var lastEncountered = await data.LastEventProgression("something");
-
-            lastEncountered.ShouldBe(0);
+                lastEncountered.ShouldBe(0);
+            }
         }
 
         [Fact]
@@ -43,9 +51,9 @@ namespace Marten.Testing.Events.Projections.Async
                 }
             }
 
-            using (var data = new StagedEventData(factory, new EventGraph(new StoreOptions()), new JilSerializer()))
+            using (var data = new StagedEventData(theOptions, factory, new EventGraph(new StoreOptions()), new JilSerializer()) )
             {
-                var lastEncountered = await data.LastEventProgression("something");
+                var lastEncountered = await data.LastEventProgression();
 
                 lastEncountered.ShouldBe(121);
             }
@@ -55,11 +63,11 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public async Task can_register_progress_initial()
         {
-            using (var data = new StagedEventData(new ConnectionSource(), new EventGraph(new StoreOptions()), new JilSerializer()))
+            using (var data = new StagedEventData(theOptions, new ConnectionSource(), new EventGraph(new StoreOptions()), new JilSerializer()) )
             {
-                await data.RegisterProgress("something", 111);
+                await data.RegisterProgress(111);
 
-                var lastEncountered = await data.LastEventProgression("something");
+                var lastEncountered = await data.LastEventProgression();
 
                 lastEncountered.ShouldBe(111);
             }
@@ -68,15 +76,39 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public async Task can_register_subsequent_progress()
         {
-            using (var data = new StagedEventData(new ConnectionSource(), new EventGraph(new StoreOptions()), new JilSerializer()))
+            using (var data = new StagedEventData(theOptions, new ConnectionSource(), new EventGraph(new StoreOptions()), new JilSerializer()))
             {
-                await data.RegisterProgress("something", 111);
-                await data.RegisterProgress("something", 211);
-                await data.RegisterProgress("else", 333);
+                await data.RegisterProgress(111);
+                await data.RegisterProgress(211);
 
-                var lastEncountered = await data.LastEventProgression("something");
+                var lastEncountered = await data.LastEventProgression();
 
                 lastEncountered.ShouldBe(211);
+            }
+        }
+
+        [Fact]
+        public async Task smoke_test_able_to_fetch_a_page_of_events()
+        {
+            var list = new List<MembersJoined>();
+
+            for (int i = 0; i < 500; i++)
+            {
+                list.Add(new MembersJoined {Day = i, Location = Guid.NewGuid().ToString(), Members = new string[] {Guid.NewGuid().ToString()}});
+            }
+
+            using (var session = theStore.LightweightSession())
+            {
+                session.Events.Append(Guid.NewGuid(), list.ToArray());
+                await session.SaveChangesAsync();
+            }
+
+            using (var data = new StagedEventData(theOptions, new ConnectionSource(), theStore.Schema.Events.As<EventGraph>(), new JilSerializer()))
+            {
+                var events = await data.FetchNextPage();
+
+                events.Count.ShouldBe(theOptions.PageSize);
+                events.Each(x => x.ShouldBeOfType<Event<MembersJoined>>());
             }
         }
     }
