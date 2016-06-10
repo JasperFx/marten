@@ -63,7 +63,7 @@
     <Compile Include="Events\Projections\AggregationProjection.cs" />
     <Compile Include="Events\Projections\AggregationStep.cs" />
     <Compile Include="Events\Projections\Aggregator.cs" />
-    <Compile Include="Events\Projections\Async\AsyncProjectionClasses.cs" />
+    <Compile Include="Events\Projections\Async\AsyncDaemonClasses.cs" />
     <Compile Include="Events\Projections\IAggregation.cs" />
     <Compile Include="Events\Projections\IAggregationFinder.cs" />
     <Compile Include="Events\Projections\IAggregator.cs" />
