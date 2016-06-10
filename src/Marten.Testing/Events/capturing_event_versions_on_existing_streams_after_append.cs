@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Baseline;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
@@ -20,8 +22,13 @@ namespace Marten.Testing.Events
                 session.Events.StartStream<Quest>(streamId, joined, departed);
                 session.SaveChanges();
 
-                session.LastCommit.GetEvents().Select(x => x.Version)
+                var events = session.LastCommit.GetEvents().ToArray();
+                events.Select(x => x.Version)
                     .ShouldHaveTheSameElementsAs(1, 2);
+
+                events.Each(x => x.Sequence.ShouldBeGreaterThan(0L));
+
+                events.Select(x => x.Sequence).Distinct().Count().ShouldBe(2);
             }
 
             using (var session = theStore.OpenSession())
@@ -86,8 +93,13 @@ namespace Marten.Testing.Events
                 session.Events.Append(streamId, joined3, departed3);
                 await session.SaveChangesAsync();
 
-                session.LastCommit.GetEvents().Select(x => x.Version)
+                var events = session.LastCommit.GetEvents().ToArray();
+                events.Select(x => x.Version)
                     .ShouldHaveTheSameElementsAs(5, 6);
+
+                events.Each(x => x.Sequence.ShouldBeGreaterThan(0L));
+
+                events.Select(x => x.Sequence).Distinct().Count().ShouldBe(2);
             }
         }
     }

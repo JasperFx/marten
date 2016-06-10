@@ -321,6 +321,8 @@ namespace Marten.Testing.Events
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
+
+                streamEvents.Each(x => x.Sequence.ShouldBeGreaterThan(0L));
             }
         }
 

@@ -45,7 +45,7 @@ BEGIN
 
 
 	index := 1;
-	return_value := ARRAY[0];
+	return_value := ARRAY[event_version + array_length(event_ids, 1)];
 
 	foreach event_id in ARRAY event_ids
 	loop
@@ -67,7 +67,6 @@ BEGIN
 
 	update {databaseSchema}.mt_streams set version = event_version, timestamp = now() where id = stream;
 
-	return_value[0] := event_version;
 
 	return return_value;
 END

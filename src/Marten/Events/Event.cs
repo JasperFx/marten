@@ -9,6 +9,8 @@ namespace Marten.Events
         Guid Id { get; set; }
         int Version { get; set; }
 
+        long Sequence { get; set; }
+
         /// <summary>
         /// The actual event data body
         /// </summary>
@@ -27,6 +29,7 @@ namespace Marten.Events
 
         public Guid Id { get; set; }
         public int Version { get; set; }
+        public long Sequence { get; set; }
         public T Data { get; set; }
 
         object IEvent.Data => Data;

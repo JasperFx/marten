@@ -1,11 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Threading;
-using System.Threading.Tasks;
-using Marten.Linq;
 using Marten.Linq.QueryHandlers;
-using Marten.Services;
 using Marten.Util;
 using Npgsql;
 
@@ -15,8 +9,8 @@ namespace Marten.Events
     {
         private readonly EventSelector _selector;
         private readonly Guid _streamId;
-        private readonly int _version;
         private readonly DateTime? _timestamp;
+        private readonly int _version;
 
         public EventQueryHandler(EventSelector selector, Guid streamId, int version = 0, DateTime? timestamp = null)
             : base(selector)
@@ -31,6 +25,8 @@ namespace Marten.Events
             _version = version;
             _timestamp = timestamp;
         }
+
+        public override Type SourceType => typeof(IEvent);
 
         public override void ConfigureCommand(NpgsqlCommand command)
         {
@@ -55,7 +51,5 @@ namespace Marten.Events
 
             command.AppendQuery(sql);
         }
-
-        public override Type SourceType => typeof (IEvent);
     }
 }
