@@ -8,26 +8,34 @@ CREATE TABLE {databaseSchema}.mt_streams (
 	snapshot_version	integer	
 );
 
+DROP SEQUENCE IF EXISTS {databaseSchema}.mt_events_sequence;
+CREATE SEQUENCE {databaseSchema}.mt_events_sequence;
 
 DROP TABLE IF EXISTS {databaseSchema}.mt_events;
 CREATE TABLE {databaseSchema}.mt_events (
-	id 			uuid CONSTRAINT pk_mt_events PRIMARY KEY,
+    seq_id		    bigint CONSTRAINT pk_mt_events PRIMARY KEY,
+	id 	uuid NOT NULL,
 	stream_id	uuid REFERENCES {databaseSchema}.mt_streams ON DELETE CASCADE,
 	version		integer NOT NULL,
 	data		jsonb NOT NULL,
 	type 		varchar(100) NOT NULL,
 	timestamp	timestamp without time zone default (now() at time zone 'utc') NOT NULL,
-	CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version)
+	CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version),
+	CONSTRAINT pk_mt_events_id_unique UNIQUE(id)
 );
 
+ALTER SEQUENCE {databaseSchema}.mt_events_sequence OWNED BY {databaseSchema}.mt_events.seq_id;
 
-CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_event(stream uuid, stream_type varchar, event_ids uuid[], event_types varchar[], bodies jsonb[]) RETURNS int AS $$
+
+CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_event(stream uuid, stream_type varchar, event_ids uuid[], event_types varchar[], bodies jsonb[]) RETURNS int[] AS $$
 DECLARE
 	event_version int;
 	event_type varchar;
 	event_id uuid;
 	body jsonb;
 	index int;
+	seq int;
+	return_value int[];
 BEGIN
 	select version into event_version from {databaseSchema}.mt_streams where id = stream;
 	if event_version IS NULL then
@@ -37,17 +45,21 @@ BEGIN
 
 
 	index := 1;
+	return_value := ARRAY[0];
 
 	foreach event_id in ARRAY event_ids
 	loop
+	    seq := nextval('{databaseSchema}.mt_events_sequence');
+		return_value := array_append(return_value, seq);
+
 	    event_version := event_version + 1;
 		event_type = event_types[index];
 		body = bodies[index];
 
 		insert into {databaseSchema}.mt_events 
-			(id, stream_id, version, data, type) 
+			(seq_id, id, stream_id, version, data, type) 
 		values 
-			(event_id, stream, event_version, body, event_type);
+			(seq, event_id, stream, event_version, body, event_type);
 
 		
 		index := index + 1;
@@ -55,7 +67,9 @@ BEGIN
 
 	update {databaseSchema}.mt_streams set version = event_version, timestamp = now() where id = stream;
 
-	return event_version;
+	return_value[0] := event_version;
+
+	return return_value;
 END
 $$ LANGUAGE plpgsql;
 

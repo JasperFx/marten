@@ -19,18 +19,20 @@ namespace Marten.Events
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             reader.Read();
-            var current = reader.GetFieldValue<int>(0);
+            var values = reader.GetFieldValue<int[]>(0);
 
-            _stream.ApplyLatestVersion(current);
+            // TODO -- write the sequences too
+            _stream.ApplyLatestVersion(values[0]);
         }
 
         public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
         {
             await reader.ReadAsync(token).ConfigureAwait(false);
 
-            var current = await reader.GetFieldValueAsync<int>(0, token).ConfigureAwait(false);
+            var values = await reader.GetFieldValueAsync<int[]>(0, token).ConfigureAwait(false);
 
-            _stream.ApplyLatestVersion(current);
+            // TODO -- write the sequences too
+            _stream.ApplyLatestVersion(values[0]);
         }
     }
 }
