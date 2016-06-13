@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Util;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace Marten.Linq
 {
@@ -29,7 +31,10 @@ namespace Marten.Linq
         public string ToSql(NpgsqlCommand command)
         {
             var json = _serializer.ToCleanJson(_dictionary);
-            return $"d.data @> '{json}'";
+            var param = command.AddParameter(json);
+            param.NpgsqlDbType = NpgsqlDbType.Jsonb;
+
+            return $"d.data @> :{param.ParameterName}";
         }
 
         public static void CreateDictionaryForSearch(BinaryExpression binary, IDictionary<string, object> dict)

@@ -42,7 +42,7 @@ namespace Marten.Testing.Bugs
 
 
 
-                cmd1.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where d.data @> \'{\"Flag\":false}\'");
+                cmd1.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where d.data @> :arg0");
             }
         }
     }

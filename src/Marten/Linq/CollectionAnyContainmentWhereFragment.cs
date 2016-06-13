@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Util;
 using Npgsql;
+using NpgsqlTypes;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 
@@ -82,8 +84,11 @@ namespace Marten.Linq
 
 
             var json = _serializer.ToCleanJson(dictionary);
+            var param = command.AddParameter(json);
+            param.NpgsqlDbType = NpgsqlDbType.Jsonb;
 
-            return $"d.data @> '{json}'";
+
+            return $"d.data @> :{param.ParameterName}";
         }
 
         private static void gatherSearch(BinaryExpression x, Dictionary<string, object> search)
