@@ -31,7 +31,7 @@ namespace Marten.Util
             _getNgpsqlDbTypeMethod = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
                 .FirstOrDefault(
                     x =>
-                        x.Name == "ToNpgsqlDbType" && x.GetParameters().Count() == 1 &&
+                        x.Name == "ToNpgsqlDbType" && x.GetParameters().Length == 1 &&
                         x.GetParameters().Single().ParameterType == typeof (Type));
         }
 

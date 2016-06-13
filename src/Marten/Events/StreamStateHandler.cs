@@ -81,7 +81,7 @@ namespace Marten.Events
 
         public string[] SelectFields()
         {
-            return new string[] { "id", "version", "type", "timestamp" };
+            return new [] { "id", "version", "type", "timestamp" };
         }
 
         public string ToSelectClause(IQueryableDocument mapping)

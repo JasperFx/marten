@@ -16,7 +16,7 @@ namespace Marten.Linq.QueryHandlers
         private readonly string _operator;
         private readonly IDocumentSchema _schema;
         private readonly QueryModel _query;
-        private ISelector<T> _selector;
+        private readonly ISelector<T> _selector;
 
         public static AggregateQueryHandler<T> Min(IDocumentSchema schema, QueryModel query)
         {

@@ -291,10 +291,10 @@ namespace Marten
                 var allSubclassTypes = baseType.Assembly.GetTypes()
                     .Where(t => t.IsSubclassOf(baseType) || baseType.IsInterface && t.GetInterfaces().Contains(baseType))
                     .Select(t=>(MappedType)t).ToList();
-                alter = mapping => allSubclassTypes.Each<MappedType>(subclassType => 
+                alter = mapping => allSubclassTypes.Each(subclassType => 
                     mapping.AddSubClass(
                         subclassType.Type, 
-                        allSubclassTypes.Except<MappedType>(new [] {subclassType}),
+                        allSubclassTypes.Except(new [] {subclassType}),
                         null
                     )
                 );

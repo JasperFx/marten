@@ -28,13 +28,13 @@ namespace Marten.Linq
 
         protected override Expression VisitMember(MemberExpression node)
         {
-            _lastMember = _mapping.FieldFor(new MemberInfo[] {node.Member});
+            _lastMember = _mapping.FieldFor(new [] {node.Member});
 
             if (node.NodeType == ExpressionType.MemberAccess && node.Member.ReflectedType == _queryType)
             {
                 var property = (PropertyInfo)node.Member;
                 var method = GetType().GetMethod(nameof(CreateParameterSetter), BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(_queryType, property.PropertyType);
-                var result = (IDbParameterSetter)method.Invoke(this, new []{property});
+                var result = (IDbParameterSetter)method.Invoke(this, new object[]{property});
                 _parameterSetters.Add(result);              
             }
             return base.VisitMember(node);

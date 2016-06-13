@@ -103,7 +103,7 @@ namespace Marten.Events
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback) where TOther : class
         {
-            return _inner.JoinToInclude<TOther>(joinType, other, members, callback);
+            return _inner.JoinToInclude(joinType, other, members, callback);
         }
 
     }

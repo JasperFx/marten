@@ -22,10 +22,10 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
         public Action<TInclude> Resolve(PropertyInfo property, IncludeTypeContainer typeContainer)
         {
             typeContainer.IncludeType = typeContainer.IncludeType.GenericTypeArguments[1];
-            return GetJoinDictionaryCallback<TKey, TInclude>(property, _includeOperator, _query);
+            return GetJoinDictionaryCallback(property, _includeOperator, _query);
         }
 
-        private Action<TInclude> GetJoinDictionaryCallback<TKey, TInclude>(PropertyInfo property, IncludeResultOperator @operator, ICompiledQuery<TDoc, TOut> query)
+        private Action<TInclude> GetJoinDictionaryCallback(PropertyInfo property, IncludeResultOperator @operator, ICompiledQuery<TDoc, TOut> query)
         {
             var queryProperty = GetPropertyInfo(property, @operator);
 

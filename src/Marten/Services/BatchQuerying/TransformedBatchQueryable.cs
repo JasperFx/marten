@@ -29,12 +29,12 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IList<TValue>> ToList()
         {
-            return _parent.Query<TValue>(_inner);
+            return _parent.Query(_inner);
         }
 
         public Task<TValue> First()
         {
-            return _parent.First<TValue>(_inner);
+            return _parent.First(_inner);
         }
 
         public Task<TValue> First(Expression<Func<TValue, bool>> filter)
@@ -44,18 +44,18 @@ namespace Marten.Services.BatchQuerying
 
         public Task<TValue> FirstOrDefault()
         {
-            return _parent.FirstOrDefault<TValue>(_inner);
+            return _parent.FirstOrDefault(_inner);
         }
 
 
         public Task<TValue> Single()
         {
-            return _parent.Single<TValue>(_inner);
+            return _parent.Single(_inner);
         }
 
         public Task<TValue> SingleOrDefault()
         {
-            return _parent.SingleOrDefault<TValue>(_inner);
+            return _parent.SingleOrDefault(_inner);
         }
 
     }

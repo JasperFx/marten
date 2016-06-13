@@ -42,7 +42,7 @@ namespace Marten.Schema
             _mapping.ForeignKeys.Each(x =>
             {
                 writer.WriteLine();
-                writer.WriteLine((string) x.ToDDL());
+                writer.WriteLine(x.ToDDL());
             });
 
             _mapping.Indexes.Each(x =>

@@ -27,7 +27,7 @@ namespace Marten.Linq.QueryHandlers
 
         public static IQueryHandler<T> Single(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins)
         {
-            return new OneResultHandler<T>(2, schema, query, joins, canBeNull:false, canBeMultiples:false);
+            return new OneResultHandler<T>(2, schema, query, joins, canBeNull:false, canBeMultiples: false);
         }
 
         public static IQueryHandler<T> SingleOrDefault(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins)

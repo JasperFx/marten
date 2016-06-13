@@ -28,7 +28,7 @@ namespace Marten.Services
             {
                 var version = reader.GetFieldValue<Guid>(0);
                 success = version == _newVersion;
-            };
+            }
 
             if (success)
             {

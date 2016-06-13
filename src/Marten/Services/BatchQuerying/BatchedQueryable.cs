@@ -106,47 +106,47 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IList<T>> ToList()
         {
-            return _parent.Query<T>(_inner);
+            return _parent.Query(_inner);
         }
 
         public Task<T> First()
         {
-            return _parent.First<T>(_inner);
+            return _parent.First(_inner);
         }
 
         public Task<T> First(Expression<Func<T, bool>> filter)
         {
-            return _parent.First<T>(_inner.Where(filter).As<IMartenQueryable<T>>());
+            return _parent.First(_inner.Where(filter).As<IMartenQueryable<T>>());
         }
 
         public Task<T> FirstOrDefault()
         {
-            return _parent.FirstOrDefault<T>(_inner);
+            return _parent.FirstOrDefault(_inner);
         }
 
         public Task<T> FirstOrDefault(Expression<Func<T, bool>> filter)
         {
-            return _parent.FirstOrDefault<T>(_inner.Where(filter).As<IMartenQueryable<T>>());
+            return _parent.FirstOrDefault(_inner.Where(filter).As<IMartenQueryable<T>>());
         }
 
         public Task<T> Single()
         {
-            return _parent.Single<T>(_inner);
+            return _parent.Single(_inner);
         }
 
         public Task<T> Single(Expression<Func<T, bool>> filter)
         {
-            return _parent.Single<T>(_inner.Where(filter).As<IMartenQueryable<T>>());
+            return _parent.Single(_inner.Where(filter).As<IMartenQueryable<T>>());
         }
 
         public Task<T> SingleOrDefault()
         {
-            return _parent.SingleOrDefault<T>(_inner);
+            return _parent.SingleOrDefault(_inner);
         }
 
         public Task<T> SingleOrDefault(Expression<Func<T, bool>> filter)
         {
-            return _parent.SingleOrDefault<T>(_inner.Where(filter).As<IMartenQueryable<T>>());
+            return _parent.SingleOrDefault(_inner.Where(filter).As<IMartenQueryable<T>>());
         }
 
         public Task<TResult> Min<TResult>(Expression<Func<T, TResult>> expression)

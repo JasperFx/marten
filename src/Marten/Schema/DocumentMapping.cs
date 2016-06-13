@@ -14,9 +14,6 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-
-
-
     public class DocumentMapping : IDocumentMapping, IQueryableDocument
     {
         public const string BaseAlias = "BASE";
@@ -181,14 +178,15 @@ namespace Marten.Schema
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
-            if (members.Count() == 1)
+            MemberInfo[] memberArray = members as MemberInfo[] ?? members.ToArray();
+            if (memberArray.Length == 1)
             {
-                return FieldFor(members.Single());
+                return FieldFor(memberArray[0]);
             }
 
-            var key = members.Select(x => x.Name).Join("");
+            var key = memberArray.Select(x => x.Name).Join("");
             return _fields.GetOrAdd(key,
-                _ => new JsonLocatorField(_storeOptions.Serializer().EnumStorage, members.ToArray()));
+                _ => new JsonLocatorField(_storeOptions.Serializer().EnumStorage, memberArray));
         }
 
         public IWhereFragment FilterDocuments(IWhereFragment query)

@@ -61,14 +61,13 @@ namespace Marten.Schema
 
             var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");
 
-            var systemUpdates = new string[] {$"{DocumentMapping.LastModifiedColumn} = transaction_timestamp()" };
+            var systemUpdates = new [] {$"{DocumentMapping.LastModifiedColumn} = transaction_timestamp()"};
             var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
                 .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
             var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new [] {DocumentMapping.LastModifiedColumn}).Join(", ");
             var valueList = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).Concat(new [] { "transaction_timestamp()" }).Join(", ");
 
-            var updateWhere = "";
             if (Arguments.Any(x => x is CurrentVersionArgument))
             {
                 updates += $" where {_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version or current_version is null";

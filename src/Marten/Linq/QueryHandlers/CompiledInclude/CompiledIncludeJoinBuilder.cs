@@ -48,7 +48,7 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
         private IIncludeJoin GetDictionaryJoin<TKey,TInclude>(ICompiledQuery<TDoc, TOut> query, IncludeResultOperator includeOperator) where TInclude : class
         {
             var resolver = new DictionaryIncludeCallbackResolver<TKey, TInclude, TDoc, TOut>(query, includeOperator, _schema);
-            return doGetJoin<TInclude>(query, includeOperator, resolver);
+            return doGetJoin(query, includeOperator, resolver);
         }
 
         private IIncludeJoin GetJoin<TInclude>(ICompiledQuery<TDoc, TOut> query, IncludeResultOperator includeOperator) where TInclude : class

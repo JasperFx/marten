@@ -62,7 +62,8 @@ namespace Marten.Linq.QueryHandlers
             {
                 handlerType = typeof (EnumerableQueryHandler<>);
             }
-            return Activator.CreateInstance(handlerType.MakeGenericType(elementType), new object[] {_schema, model, joins, stats}).As<IQueryHandler<T>>();
+            return Activator.CreateInstance(handlerType.MakeGenericType(elementType), _schema, model, joins, stats)
+                .As<IQueryHandler<T>>();
         }
 
         public IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model)
@@ -149,7 +150,7 @@ namespace Marten.Linq.QueryHandlers
             CachedQuery cachedQuery;
             if (!_cache.Has(queryType))
             {
-                cachedQuery = buildCachedQuery<TDoc, TOut>(queryType, query);
+                cachedQuery = buildCachedQuery(queryType, query);
 
                 _cache[queryType] = cachedQuery;
             }
@@ -203,7 +204,7 @@ namespace Marten.Linq.QueryHandlers
             var propExp = (MemberExpression) statsOperator.Stats.Body;
             var prop = ((PropertyInfo) propExp.Member).SetMethod;
             Stats = new QueryStatistics();
-            prop.Invoke(query, new[] {Stats});
+            prop.Invoke(query, new object[] {Stats});
         }
 
         private static IList<IDbParameterSetter> findSetters(IQueryableDocument mapping, Type queryType, Expression expression, EnumStorage enumStorage)
