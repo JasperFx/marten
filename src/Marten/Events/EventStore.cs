@@ -85,7 +85,13 @@ namespace Marten.Events
             var aggregator = _schema.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner);
 
-            return _connection.Fetch(handler, null);
+            var aggregate = _connection.Fetch(handler, null);
+
+            var assignment = _schema.IdAssignmentFor<T>();
+            assignment.Assign(aggregate, streamId);
+
+
+            return aggregate;
         }
 
         public Task<T> AggregateStreamAsync<T>(Guid streamId, int version = 0, DateTime? timestamp = null,

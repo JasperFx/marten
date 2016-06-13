@@ -9,6 +9,13 @@ using Marten.Services;
 
 namespace Marten.Events
 {
+    public class UnknownEventTypeException : Exception
+    {
+        public UnknownEventTypeException(string eventTypeName) : base($"Unknown event type name alias '{eventTypeName}.' You may need to register this event type through StoreOptions.Events.AddEventType(type)")
+        {
+        }
+    }
+
     internal class EventSelector : ISelector<IEvent>
     {
         private readonly EventGraph _events;
@@ -29,6 +36,11 @@ namespace Marten.Events
 
             var mapping = _events.EventMappingFor(eventTypeName);
 
+            if (mapping == null)
+            {
+                throw new UnknownEventTypeException(eventTypeName);
+            }
+
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
 
 
@@ -47,6 +59,11 @@ namespace Marten.Events
             var dataJson = await reader.GetFieldValueAsync<string>(3, token).ConfigureAwait(false);
 
             var mapping = _events.EventMappingFor(eventTypeName);
+
+            if (mapping == null)
+            {
+                throw new UnknownEventTypeException(eventTypeName);
+            }
 
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
 
