@@ -42,8 +42,8 @@ namespace Marten.Transforms
             if (_checked) return;
 
 
-            var shouldReload = functionShouldBeReloaded(schema);
-            if (!shouldReload)
+            var diff  = functionDiff(schema);
+            if (!diff.HasChanged)
             {
                 _checked = true;
                 return;
@@ -57,7 +57,7 @@ namespace Marten.Transforms
                 throw new InvalidOperationException(message);
             }
 
-            patch.Updates.Apply(this, GenerateFunction());
+            diff.WritePatch(patch);
         }
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
@@ -79,10 +79,18 @@ namespace Marten.Transforms
 
         public void WritePatch(IDocumentSchema schema, SchemaPatch patch)
         {
-            if (functionShouldBeReloaded(schema))
+            var diff = functionDiff(schema);
+
+            if (diff.AllNew || !diff.Actual.Body.Contains(Body))
             {
-                patch.Updates.Apply(this, GenerateFunction());
+                diff.WritePatch(patch);
             }
+        }
+
+        public string ToDropSignature()
+        {
+            var signature = allArgs().Select(x => $"JSONB").Join(", ");
+            return $"DROP FUNCTION IF EXISTS {Function.QualifiedName}({signature});";
         }
 
         public string GenerateFunction()
@@ -117,10 +125,12 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
             return new TransformFunction(options, name, body);
         }
 
-        private bool functionShouldBeReloaded(IDocumentSchema schema)
+        private FunctionDiff functionDiff(IDocumentSchema schema)
         {
-            var definition = schema.DbObjects.DefinitionForFunction(Function);
-            return definition.IsEmpty() || !definition.Contains(Body);
+            var body = schema.DbObjects.DefinitionForFunction(Function);
+            var expected = new FunctionBody(Function, new string[] {ToDropSignature()}, GenerateFunction());
+
+            return new FunctionDiff(expected, body);
         }
 
         public override string ToString()

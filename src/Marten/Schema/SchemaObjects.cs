@@ -10,22 +10,21 @@ namespace Marten.Schema
     {
         public Type DocumentType { get; }
         public TableDefinition Table { get; }
+        public FunctionBody Function { get; set; }
         public IDictionary<string, ActualIndex> ActualIndices { get; } = new Dictionary<string, ActualIndex>();
-        public string UpsertFunction { get; }
 
-        public SchemaObjects(Type documentType, TableDefinition table, ActualIndex[] actualIndices, string upsertFunction, List<string> drops)
+        public SchemaObjects(Type documentType, TableDefinition table, ActualIndex[] actualIndices, FunctionBody function)
         {
             DocumentType = documentType;
             Table = table;
+            Function = function;
 
             actualIndices.Each(x => ActualIndices.Add(x.Name, x));
 
-            UpsertFunction = upsertFunction?.CanonicizeSql();
 
-            FunctionDropStatements = drops;
+
         }
 
-        public List<string> FunctionDropStatements { get; }
 
         public bool HasNone()
         {

@@ -47,7 +47,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void function_should_not_have_changed()
         {
-            diff.HasFunctionChanged().ShouldBeFalse();
+            diff.FunctionDiff.HasChanged.ShouldBeFalse();
         }
 
         [Fact]
@@ -107,7 +107,7 @@ namespace Marten.Testing.Schema
 
             diff.AllMissing.ShouldBeFalse();
 
-            diff.HasFunctionChanged().ShouldBeFalse();
+            diff.FunctionDiff.HasChanged.ShouldBeFalse();
 
             diff.HasDifferences().ShouldBeFalse();
 
@@ -140,7 +140,7 @@ namespace Marten.Testing.Schema
 
             diff.AllMissing.ShouldBeFalse();
 
-            diff.HasFunctionChanged().ShouldBeTrue();
+            diff.FunctionDiff.HasChanged.ShouldBeTrue();
 
         }
 
@@ -162,7 +162,7 @@ namespace Marten.Testing.Schema
             }
 
             store1.Schema.DbObjects.FindSchemaObjects(documentMapping)
-                .UpsertFunction.ShouldBeNull();
+                .Function.ShouldBeNull();
 
             // Don't use TestingDocumentStore because it cleans everything upfront.
             var store2 = DocumentStore.For(_ =>
@@ -179,7 +179,7 @@ namespace Marten.Testing.Schema
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
             var objects = store2.Schema.DbObjects.FindSchemaObjects(mapping);
 
-            objects.UpsertFunction.ShouldNotBeNull();
+            objects.Function.ShouldNotBeNull();
 
         }
 
@@ -215,7 +215,7 @@ namespace Marten.Testing.Schema
 
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
             var schemaDiff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
-            schemaDiff.HasFunctionChanged().ShouldBeFalse();
+            schemaDiff.FunctionDiff.HasChanged.ShouldBeFalse();
 
 
             schemaDiff.IndexChanges.Any().ShouldBeFalse();

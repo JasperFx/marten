@@ -98,5 +98,15 @@ $function$;
         }
 
 
+        public FunctionBody ToBody()
+        {
+            var argList = OrderedArguments().Select(x => x.PostgresType).Join(", ");
+            var dropSql = $"drop function if exists {_functionName.QualifiedName}({argList});";
+
+            var writer = new StringWriter();
+            WriteFunctionSql(writer);
+
+            return new FunctionBody(_functionName, new string[] {dropSql}, writer.ToString());
+        }
     }
 }

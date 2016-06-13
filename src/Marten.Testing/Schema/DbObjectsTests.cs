@@ -62,9 +62,9 @@ namespace Marten.Testing.Schema
 
             var upsert = store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>().UpsertFunction;
 
-            var ddl = store1.Schema.DbObjects.DefinitionForFunction(upsert);
+            var functionBody = store1.Schema.DbObjects.DefinitionForFunction(upsert);
 
-            ddl.ShouldContain("mt_doc_user");
+            functionBody.Body.ShouldContain("mt_doc_user");
         }
 
 
@@ -87,7 +87,7 @@ namespace Marten.Testing.Schema
             objects.Table.Columns.OrderBy(x => x.Name).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("data", "id", "internal", DocumentMapping.DotNetTypeColumn, DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, "user_name");
 
-            objects.UpsertFunction.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
+            objects.Function.Body.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
 
 
             objects.ActualIndices.Select(x => x.Value).OrderBy(x => x.Name).Select(x => x.Name)
@@ -112,7 +112,7 @@ namespace Marten.Testing.Schema
             objects.Table.Columns.OrderBy(x => x.Name).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("data", "id", "internal", DocumentMapping.DotNetTypeColumn, DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, "user_name");
 
-            objects.UpsertFunction.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
+            objects.Function.Body.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
 
 
             objects.ActualIndices.Select(x => x.Value).OrderBy(x => x.Name).Select(x => x.Name)
@@ -134,7 +134,7 @@ namespace Marten.Testing.Schema
             objects.HasNone().ShouldBeTrue();
             objects.Table.ShouldBeNull();
             objects.ActualIndices.Any().ShouldBeFalse();
-            objects.UpsertFunction.ShouldBeNull();
+            objects.Function.ShouldBeNull();
 
         }
     }

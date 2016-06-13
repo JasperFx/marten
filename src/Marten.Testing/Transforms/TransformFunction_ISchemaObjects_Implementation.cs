@@ -79,6 +79,7 @@ namespace Marten.Testing.Transforms
 
 
                 store2.Schema.DbObjects.DefinitionForFunction(transform2.Function)
+                    .Body
                     .ShouldContain(transform2.Body);
             }
         }

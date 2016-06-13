@@ -110,14 +110,56 @@ WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system tabl
             return AllIndexes().Where(x => x.Table.Equals(table)).ToArray();
         }
 
-        public string DefinitionForFunction(FunctionName function)
+        public FunctionBody DefinitionForFunction(FunctionName function)
         {
             var sql = @"
 SELECT pg_get_functiondef(pg_proc.oid) 
-FROM pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid WHERE ns.nspname = ? and proname = ?;
+FROM pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid WHERE ns.nspname = :schema and proname = :function;
+SELECT format('DROP FUNCTION %s.%s(%s);'
+             ,n.nspname
+             ,p.proname
+             ,pg_get_function_identity_arguments(p.oid))
+FROM   pg_proc p
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
+WHERE  p.proname = :function
+AND    n.nspname = :schema;
 ";
 
-            return _factory.Fetch(sql, r => r.GetString(0), function.Schema, function.Name).FirstOrDefault();
+            using (var conn = _factory.Create())
+            {
+                conn.Open();
+
+
+                try
+                {
+                    var cmd = conn.CreateCommand().Sql(sql)
+                        .With("schema", function.Schema)
+                        .With("function", function.Name);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (!reader.Read()) return null;
+   
+                        var definition = reader.GetString(0);
+
+                        reader.NextResult();
+
+                        var drops = new List<string>();
+                        while (reader.Read())
+                        {
+                            drops.Add(reader.GetString(0));
+                        }
+
+                        return new FunctionBody(function, drops.ToArray(), definition);
+                    }
+                }
+                finally
+                {
+                    conn.Close();
+                }
+            }
+
+
         }
 
         public TableDefinition TableSchema(IDocumentMapping documentMapping)
@@ -182,7 +224,8 @@ FROM pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid WHERE ns.n
                         drops.Add(reader.GetString(0));
                     }
 
-                    return new SchemaObjects(mapping.DocumentType, table, indices.ToArray(), upsertDefinition, drops);
+                    FunctionBody functionBody = upsertDefinition.IsEmpty() ? null : new FunctionBody(mapping.UpsertFunction, drops.ToArray(), upsertDefinition);
+                    return new SchemaObjects(mapping.DocumentType, table, indices.ToArray(), functionBody);
                 });
             }
         }

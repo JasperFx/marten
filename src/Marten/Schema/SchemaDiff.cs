@@ -44,6 +44,9 @@ namespace Marten.Schema
                     }
                 });
 
+                var expectedFunction = new UpsertFunction(mapping);
+
+                FunctionDiff = new FunctionDiff(expectedFunction.ToBody(), existing.Function);
             }
 
             _existing = existing;
@@ -52,11 +55,13 @@ namespace Marten.Schema
 
         }
 
+        public FunctionDiff FunctionDiff { get; set; }
+
         public bool HasDifferences()
         {
             if (AllMissing) return true;
             if (!TableDiff.Matches) return true;
-            if (HasFunctionChanged()) return true;
+            if (FunctionDiff.HasChanged) return true;
 
             return IndexChanges.Any();
         }
@@ -64,24 +69,6 @@ namespace Marten.Schema
         public bool CanPatch()
         {
             return AllMissing || TableDiff.CanPatch();
-        }
-
-        private string expectedUpsertFunction()
-        {
-            var writer = new StringWriter();
-
-            new UpsertFunction(_mapping).WriteFunctionSql(writer);
-
-            return writer.ToString();
-        }
-
-        public bool HasFunctionChanged()
-        {
-            if (_existing.UpsertFunction.IsEmpty()) return true;
-
-            var expected = expectedUpsertFunction().CanonicizeSql();
-
-            return !expected.Equals(_existing.UpsertFunction, StringComparison.OrdinalIgnoreCase);
         }
 
 
@@ -92,19 +79,14 @@ namespace Marten.Schema
         public readonly IList<string> IndexChanges = new List<string>();
         public readonly IList<string> IndexRollbacks = new List<string>();
 
-        public void CreatePatch(SchemaPatch runner)
+        public void CreatePatch(SchemaPatch patch)
         {
-            TableDiff.CreatePatch(_mapping, runner);
+            TableDiff.CreatePatch(_mapping, patch);
 
-            if (HasFunctionChanged())
-            {
-                _existing.FunctionDropStatements.Each(x => runner.Updates.Apply(this, x));
+            FunctionDiff.WritePatch(patch);
 
-                runner.Updates.Apply(this, expectedUpsertFunction());
-            }
-
-            IndexChanges.Each(x => runner.Updates.Apply(this, x));
-            IndexRollbacks.Each(x => runner.Rollbacks.Apply(this, x));
+            IndexChanges.Each(x => patch.Updates.Apply(this, x));
+            IndexRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
         }
 
         public override string ToString()

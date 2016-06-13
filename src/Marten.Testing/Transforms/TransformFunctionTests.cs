@@ -160,7 +160,9 @@ namespace Marten.Testing.Transforms
 
             var func = TransformFunction.ForFile(new StoreOptions(), "get_fullname.js");
 
-            dbobjects.DefinitionForFunction(func.Function).Returns(func.GenerateFunction());
+            var body = new FunctionBody(func.Function, new string[0], func.GenerateFunction());
+
+            dbobjects.DefinitionForFunction(func.Function).Returns(body);
 
             var patch = new SchemaPatch();
 

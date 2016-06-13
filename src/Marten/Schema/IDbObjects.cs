@@ -34,7 +34,7 @@ namespace Marten.Schema
 
         IEnumerable<ActualIndex> IndexesFor(TableName table);
 
-        string DefinitionForFunction(FunctionName function);
+        FunctionBody DefinitionForFunction(FunctionName function);
 
 
         /// <summary>
