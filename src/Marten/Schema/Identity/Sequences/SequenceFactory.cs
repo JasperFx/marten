@@ -76,7 +76,7 @@ namespace Marten.Schema.Identity.Sequences
                 var sqlScript = SchemaBuilder.GetSqlScript(Table.Schema, "mt_hilo");
                 patch.Updates.Apply(this, sqlScript);
 
-                patch.DownRunner.Drop(this, Table);
+                patch.Rollbacks.Drop(this, Table);
             }
         }
 

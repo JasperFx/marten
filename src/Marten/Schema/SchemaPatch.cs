@@ -33,7 +33,7 @@ namespace Marten.Schema
         public StringWriter UpWriter => _up.Writer;
 
         public IDDLRunner Updates => _liveRunner ?? _up;
-        public IDDLRunner DownRunner => _down;
+        public IDDLRunner Rollbacks => _down;
 
         public string UpdateDDL => _up.Writer.ToString();
         public string RollbackDDL => _down.Writer.ToString();

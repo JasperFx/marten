@@ -221,7 +221,7 @@ namespace Marten.Schema
 
             if (diff.AllMissing)
             {
-                patch.DownRunner.Drop(this, _mapping.Table);
+                patch.Rollbacks.Drop(this, _mapping.Table);
                 WriteSchemaObjects(schema, patch.UpWriter);
             }
             else if (diff.CanPatch())

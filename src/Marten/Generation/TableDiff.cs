@@ -58,11 +58,16 @@ namespace Marten.Generation
                         $"alter table {_tableName.QualifiedName} add column {col.ToDeclaration(col.Name.Length + 1)};";
 
                     runner.Updates.Apply(this, patch);
+                    runner.Rollbacks.RemoveColumn(this, mapping.Table, col.Name);
                 });
             }
 
 
-            fields.Each(x => x.WritePatch(mapping, runner));
+            fields.Each(x =>
+            {
+                x.WritePatch(mapping, runner);
+                runner.Rollbacks.RemoveColumn(this, mapping.Table, x.ColumnName);
+            });
         }
 
         public override string ToString()

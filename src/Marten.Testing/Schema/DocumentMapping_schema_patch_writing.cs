@@ -63,5 +63,22 @@ namespace Marten.Testing.Schema
 
             patch.RollbackDDL.ShouldNotContain("drop table if exists public.mt_doc_user cascade;");
         }
+
+        [Fact]
+        public void can_drop_added_columns_in_document_storage()
+        {
+            theStore.Schema.EnsureStorageExists(typeof(User));
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<User>().Duplicate(x => x.UserName);
+            }))
+            {
+                var patch = store.Schema.ToPatch();
+
+                patch.RollbackDDL.ShouldContain("alter table if exists public.mt_doc_user drop column if exists user_name;");
+            }
+        }
     }
 }
