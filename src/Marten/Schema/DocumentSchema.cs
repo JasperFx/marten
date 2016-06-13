@@ -213,7 +213,11 @@ namespace Marten.Schema
         public void WritePatch(string filename)
         {
             var patch = ToPatch();
-            new FileSystem().WriteStringToFile(filename, patch.UpdateDDL);
+            var fileSystem = new FileSystem();
+
+
+            fileSystem.WriteStringToFile(filename, patch.UpdateDDL);
+
         }
 
         public SchemaPatch ToPatch()

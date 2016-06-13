@@ -107,7 +107,18 @@ namespace Marten.Schema
         /// </summary>
         IDbObjects DbObjects { get; }
 
+        /// <summary>
+        /// Retrieve a configured IBulkLoader for a document type
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         IBulkLoader<T> BulkLoaderFor<T>();
+
+        /// <summary>
+        /// Retrieve the IDocumentUpsert object for the given document type
+        /// </summary>
+        /// <param name="documentType"></param>
+        /// <returns></returns>
         IDocumentUpsert UpsertFor(Type documentType);
 
         /// <summary>

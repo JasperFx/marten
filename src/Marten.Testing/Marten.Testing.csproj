@@ -204,6 +204,7 @@
     <Compile Include="Schema\Identity\Sequences\IntHiloGeneratorTests.cs" />
     <Compile Include="Schema\Identity\Sequences\LongHiloGeneratorTests.cs" />
     <Compile Include="Schema\Identity\StringIdGenerationTester.cs" />
+    <Compile Include="Schema\SchemaPatchTester.cs" />
     <Compile Include="Schema\TableNameTests.cs" />
     <Compile Include="Schema\UpsertFunctionTests.cs" />
     <Compile Include="Services\IdentityMap_Version_Tracking.cs" />
