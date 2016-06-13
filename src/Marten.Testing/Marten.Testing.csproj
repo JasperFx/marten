@@ -209,6 +209,7 @@
     <Compile Include="Schema\SchemaPatchTester.cs" />
     <Compile Include="Schema\TableNameTests.cs" />
     <Compile Include="Schema\UpsertFunctionTests.cs" />
+    <Compile Include="Schema\WritePatch_smoke_tests.cs" />
     <Compile Include="Services\IdentityMap_Version_Tracking.cs" />
     <Compile Include="Services\Includes\end_to_end_query_with_compiled_include_Tests.cs" />
     <Compile Include="Services\OptimisticConcurrencyCallbackTests.cs" />

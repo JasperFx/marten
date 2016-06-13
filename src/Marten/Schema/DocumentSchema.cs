@@ -218,6 +218,9 @@ namespace Marten.Schema
 
             fileSystem.WriteStringToFile(filename, patch.UpdateDDL);
 
+            var dropFile = SchemaPatch.ToDropFileName(filename);
+            fileSystem.WriteStringToFile(dropFile, patch.RollbackDDL);
+
         }
 
         public SchemaPatch ToPatch()

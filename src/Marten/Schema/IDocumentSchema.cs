@@ -123,7 +123,8 @@ namespace Marten.Schema
 
         /// <summary>
         /// Tries to write a "patch" SQL file to upgrade the database
-        /// to the current Marten schema configuration
+        /// to the current Marten schema configuration. Also writes a corresponding
+        /// rollback file as well.
         /// </summary>
         /// <param name="filename"></param>
         void WritePatch(string filename);
