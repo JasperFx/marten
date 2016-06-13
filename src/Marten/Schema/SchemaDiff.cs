@@ -44,6 +44,13 @@ namespace Marten.Schema
                     }
                 });
 
+                existing.ActualIndices.Values.Where(x => !mapping.Indexes.Any(_ => _.IndexName == x.Name)).Each(
+                    index =>
+                    {
+                        IndexRollbacks.Add(index.DDL);
+                        IndexChanges.Add($"drop index concurrently if exists {mapping.Table.Schema}.{index.Name} cascade;");
+                    });
+
                 var expectedFunction = new UpsertFunction(mapping);
 
                 FunctionDiff = new FunctionDiff(expectedFunction.ToBody(), existing.Function);
