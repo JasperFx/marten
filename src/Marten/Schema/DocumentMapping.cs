@@ -455,5 +455,10 @@ namespace Marten.Schema
         {
             return Indexes.OfType<IndexDefinition>().Where(x => x.Columns.Contains(column));
         }
+
+        public override string ToString()
+        {
+            return $"Storage for {DocumentType}, Table: {Table}";
+        }
     }
 }
