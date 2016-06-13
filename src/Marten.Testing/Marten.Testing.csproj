@@ -196,6 +196,7 @@
     <Compile Include="Schema\BulkLoaderConstructionTests.cs" />
     <Compile Include="Schema\creating_a_full_patch.cs" />
     <Compile Include="Schema\DbObjectsTests.cs" />
+    <Compile Include="Schema\DocumentMapping_schema_patch_writing.cs" />
     <Compile Include="Schema\Identity\GuidIdGeneratorTests.cs" />
     <Compile Include="Schema\Identity\IdAssignerTests.cs" />
     <Compile Include="Schema\Identity\IdentityKeyGenerationTests.cs" />

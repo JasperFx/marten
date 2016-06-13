@@ -13,7 +13,7 @@ namespace Marten.Schema
         private readonly DocumentMapping _mapping;
         private readonly SchemaObjects _existing;
 
-        public SchemaDiff(IDocumentSchema schema, SchemaObjects existing, DocumentMapping mapping)
+        public SchemaDiff(SchemaObjects existing, DocumentMapping mapping)
         {
             if (existing.HasNone())
             {
@@ -61,7 +61,7 @@ namespace Marten.Schema
 
         public bool CanPatch()
         {
-            return TableDiff.CanPatch();
+            return AllMissing || TableDiff.CanPatch();
         }
 
         private string expectedUpsertFunction()

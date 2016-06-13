@@ -117,7 +117,7 @@ namespace Marten.Schema
         public SchemaDiff CreateSchemaDiff(IDocumentSchema schema)
         {
             var objects = schema.DbObjects.FindSchemaObjects(_mapping);
-            return new SchemaDiff(schema, objects, _mapping);
+            return new SchemaDiff(objects, _mapping);
         }
 
         private void runDependentScripts(SchemaPatch runner)
@@ -219,7 +219,12 @@ namespace Marten.Schema
             var diff = CreateSchemaDiff(schema);
             if (!diff.HasDifferences()) return;
 
-            if (diff.CanPatch())
+            if (diff.AllMissing)
+            {
+                patch.DownRunner.Drop(this, _mapping.Table);
+                WriteSchemaObjects(schema, patch.UpWriter);
+            }
+            else if (diff.CanPatch())
             {
                 diff.CreatePatch(patch);
             }
