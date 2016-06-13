@@ -92,7 +92,7 @@ namespace Marten.Schema
                 yield return mapping.SchemaObjects;
             }
 
-            yield return _sequences.Value;
+            yield return new SequenceFactory(this, _factory, StoreOptions, _logger);
 
             foreach (var transform in StoreOptions.Transforms.AllFunctions())
             {
