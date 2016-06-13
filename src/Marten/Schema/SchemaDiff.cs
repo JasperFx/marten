@@ -34,11 +34,13 @@ namespace Marten.Schema
                         if (!index.Matches(actualIndex))
                         {
                             IndexChanges.Add($"drop index {expectedTable.Table.Schema}.{index.IndexName};{Environment.NewLine}{index.ToDDL()};");
+                            IndexRollbacks.Add($"drop index {expectedTable.Table.Schema}.{index.IndexName};{Environment.NewLine}{actualIndex.DDL};");
                         }
                     }
                     else
                     {
                         IndexChanges.Add(index.ToDDL());
+                        IndexRollbacks.Add($"drop index concurrently if exists {expectedTable.Table.Schema}.{index.IndexName} cascade;");
                     }
                 });
 
@@ -88,6 +90,7 @@ namespace Marten.Schema
         public bool AllMissing { get; }
 
         public readonly IList<string> IndexChanges = new List<string>();
+        public readonly IList<string> IndexRollbacks = new List<string>();
 
         public void CreatePatch(SchemaPatch runner)
         {
@@ -101,6 +104,7 @@ namespace Marten.Schema
             }
 
             IndexChanges.Each(x => runner.Updates.Apply(this, x));
+            IndexRollbacks.Each(x => runner.Rollbacks.Apply(this, x));
         }
 
         public override string ToString()

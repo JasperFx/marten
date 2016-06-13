@@ -1,4 +1,5 @@
-﻿using Marten.Testing.Documents;
+﻿using Marten.Schema;
+using Marten.Testing.Documents;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -78,6 +79,48 @@ namespace Marten.Testing.Schema
                 var patch = store.Schema.ToPatch();
 
                 patch.RollbackDDL.ShouldContain("alter table if exists public.mt_doc_user drop column if exists user_name;");
+            }
+        }
+
+        [Fact]
+        public void can_drop_indexes_that_were_added()
+        {
+            theStore.Schema.EnsureStorageExists(typeof(User));
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<User>().Index(x => x.UserName);
+            }))
+            {
+                var patch = store.Schema.ToPatch();
+
+                patch.RollbackDDL.ShouldContain("drop index concurrently if exists public.mt_doc_user_idx_user_name cascade;");
+            }
+        }
+
+        [Fact]
+        public void can_revert_indexes_that_changed()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<User>()
+                    .Duplicate(x => x.UserName, configure: i => i.Method = IndexMethod.btree);
+            });
+            theStore.Schema.EnsureStorageExists(typeof(User));
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<User>()
+                    .Duplicate(x => x.UserName, configure: i => i.Method = IndexMethod.hash);
+            }))
+            {
+                var patch = store.Schema.ToPatch();
+
+                patch.RollbackDDL.ShouldContain("drop index public.mt_doc_user_idx_user_name;");
+                patch.RollbackDDL.ShouldContain("CREATE INDEX mt_doc_user_idx_user_name ON mt_doc_user USING btree (user_name);");
+
             }
         }
     }

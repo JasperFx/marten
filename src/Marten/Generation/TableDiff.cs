@@ -8,7 +8,6 @@ namespace Marten.Generation
     public class TableDiff
     {
         private readonly TableName _tableName;
-        private TableDefinition _expected;
 
         public TableDiff(TableDefinition expected, TableDefinition actual)
         {
@@ -19,7 +18,6 @@ namespace Marten.Generation
                 expected.Columns.Where(x => actual.HasColumn(x.Name) && !x.Equals(actual.Column(x.Name))).ToArray();
 
             _tableName = expected.Table;
-            _expected = expected;
         }
 
         public TableColumn[] Different { get; set; }
