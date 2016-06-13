@@ -89,6 +89,8 @@ namespace Marten.Events
             if (tableExists) return;
 
             patch.Updates.Apply(this, SchemaBuilder.GetSqlScript(_parent.DatabaseSchemaName, "mt_stream"));
+
+            patch.DownRunner.Drop(this, new TableName(schema.Events.DatabaseSchemaName, "mt_streams"));
         }
 
         public string Name { get; } = "eventstore";
