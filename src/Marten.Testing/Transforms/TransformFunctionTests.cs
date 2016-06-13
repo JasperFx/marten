@@ -149,6 +149,10 @@ namespace Marten.Testing.Transforms
             var generated = func.GenerateFunction();
             
             patch.UpdateDDL.ShouldContain(generated);
+
+
+
+            patch.RollbackDDL.ShouldContain("DROP FUNCTION IF EXISTS public.mt_transform_get_fullname(JSONB);");
         }
 
         [Fact]
@@ -171,6 +175,7 @@ namespace Marten.Testing.Transforms
             var generated = func.GenerateFunction();
 
             patch.UpdateDDL.ShouldNotContain(generated);
+            patch.RollbackDDL.ShouldNotContain(func.Function.QualifiedName);
         }
 
         [Fact]
