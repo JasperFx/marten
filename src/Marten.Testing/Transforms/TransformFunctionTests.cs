@@ -80,14 +80,13 @@ namespace Marten.Testing.Transforms
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
-            var runner = Substitute.For<IDDLRunner>();
 
-
-            func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, runner);
+            var patch = new SchemaPatch();
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, patch);
 
             var generated = func.GenerateFunction();
 
-            runner.Received().Apply(func, generated);
+            patch.UpdateDDL.ShouldContain(generated);
         }
 
         [Fact]
@@ -101,14 +100,14 @@ namespace Marten.Testing.Transforms
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
-            var runner = Substitute.For<IDDLRunner>();
+            var patch = new SchemaPatch();
 
 
-            func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOnly, schema, runner);
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOnly, schema, patch);
 
             var generated = func.GenerateFunction();
 
-            runner.Received().Apply(func, generated);
+            patch.UpdateDDL.ShouldContain(generated);
         }
 
         [Fact]
@@ -122,12 +121,12 @@ namespace Marten.Testing.Transforms
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
-            var runner = Substitute.For<IDDLRunner>();
+            var patch = new SchemaPatch();
 
 
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
-                func.GenerateSchemaObjectsIfNecessary(AutoCreate.None, schema, runner);
+                func.GenerateSchemaObjectsIfNecessary(AutoCreate.None, schema, patch);
             });
         }
 
@@ -142,14 +141,14 @@ namespace Marten.Testing.Transforms
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
-            var runner = Substitute.For<IDDLRunner>();
+            var patch = new SchemaPatch();
 
 
-            func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOrUpdate, schema, runner);
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOrUpdate, schema, patch);
 
             var generated = func.GenerateFunction();
-
-            runner.Received().Apply(func, generated);
+            
+            patch.UpdateDDL.ShouldContain(generated);
         }
 
         [Fact]
@@ -163,13 +162,13 @@ namespace Marten.Testing.Transforms
 
             dbobjects.DefinitionForFunction(func.Function).Returns(func.GenerateFunction());
 
-            var runner = Substitute.For<IDDLRunner>();
+            var patch = new SchemaPatch();
 
-            func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, runner);
+            func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, patch);
 
             var generated = func.GenerateFunction();
 
-            runner.DidNotReceive().Apply(func, generated);
+            patch.UpdateDDL.ShouldNotContain(generated);
         }
 
         [Fact]

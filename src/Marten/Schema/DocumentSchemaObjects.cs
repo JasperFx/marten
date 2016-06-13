@@ -89,7 +89,7 @@ namespace Marten.Schema
             _hasCheckedSchema = false;
         }
 
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, IDDLRunner runner)
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
         {
             if (_hasCheckedSchema) return;
 
@@ -108,7 +108,7 @@ namespace Marten.Schema
             {
                 if (_hasCheckedSchema) return;
 
-                buildOrModifySchemaObjects(diff, autoCreateSchemaObjectsMode, schema, runner);
+                buildOrModifySchemaObjects(diff, autoCreateSchemaObjectsMode, schema, patch);
 
                 _hasCheckedSchema = true;
             }
@@ -120,17 +120,17 @@ namespace Marten.Schema
             return new SchemaDiff(schema, objects, _mapping);
         }
 
-        private void runDependentScripts(IDDLRunner runner)
+        private void runDependentScripts(SchemaPatch runner)
         {
             DependentScripts.Each(script =>
             {
                 var sql = SchemaBuilder.GetSqlScript(_mapping.DatabaseSchemaName, script);
-                runner.Apply(this, sql);
+                runner.Updates.Apply(this, sql);
             });
         }
 
         private void buildOrModifySchemaObjects(SchemaDiff diff, AutoCreate autoCreateSchemaObjectsMode,
-            IDocumentSchema schema, IDDLRunner runner)
+            IDocumentSchema schema, SchemaPatch runner)
         {
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
             {
@@ -175,13 +175,13 @@ namespace Marten.Schema
             runDependentScripts(runner);
         }
 
-        private void rebuildTableAndUpsertFunction(IDocumentSchema schema, IDDLRunner runner)
+        private void rebuildTableAndUpsertFunction(IDocumentSchema schema, SchemaPatch runner)
         {
             var writer = new StringWriter();
             WriteSchemaObjects(schema, writer);
 
             var sql = writer.ToString();
-            runner.Apply(this, sql);
+            runner.Updates.Apply(this, sql);
         }
 
 
@@ -195,10 +195,12 @@ namespace Marten.Schema
             {
                 Directive = "DEFAULT transaction_timestamp()"
             });
+
             table.Columns.Add(new TableColumn(DocumentMapping.VersionColumn, "uuid")
             {
                 Directive = "NOT NULL default(md5(random()::text || clock_timestamp()::text)::uuid)"
             });
+
             table.Columns.Add(new TableColumn(DocumentMapping.DotNetTypeColumn, "varchar"));
 
             _mapping.DuplicatedFields.Select(x => x.ToColumn()).Each(x => table.Columns.Add(x));
@@ -212,14 +214,14 @@ namespace Marten.Schema
             return table;
         }
 
-        public void WritePatch(IDocumentSchema schema, IDDLRunner runner)
+        public void WritePatch(IDocumentSchema schema, SchemaPatch patch)
         {
             var diff = CreateSchemaDiff(schema);
             if (!diff.HasDifferences()) return;
 
             if (diff.CanPatch())
             {
-                diff.CreatePatch(runner);
+                diff.CreatePatch(patch);
             }
         }
 

@@ -193,6 +193,7 @@
     <Compile Include="Schema\Identity\Sequences\IntHiloGenerator.cs" />
     <Compile Include="Schema\Identity\Sequences\LongHiloGenerator.cs" />
     <Compile Include="Schema\Identity\NoOpIdGeneration.cs" />
+    <Compile Include="Schema\SchemaPatch.cs" />
     <Compile Include="Schema\SubClassMapping.cs" />
     <Compile Include="Schema\DatabaseSchemaGenerator.cs" />
     <Compile Include="Schema\UpsertFunction.cs" />

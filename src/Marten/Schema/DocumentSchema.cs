@@ -48,7 +48,12 @@ namespace Marten.Schema
             {
                 var sequences = new SequenceFactory(this, _factory, options, _logger);
 
-                sequences.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, this);
+
+                var patch = new SchemaPatch();
+
+                sequences.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
+
+                apply(sequences, patch);
 
                 return sequences;
             });
@@ -207,25 +212,23 @@ namespace Marten.Schema
 
         public void WritePatch(string filename)
         {
-            var sql = ToPatch();
-            new FileSystem().WriteStringToFile(filename, sql);
+            var patch = ToPatch();
+            new FileSystem().WriteStringToFile(filename, patch.UpdateDDL);
         }
 
-        public string ToPatch()
+        public SchemaPatch ToPatch()
         {
-            var writer = new StringWriter();
+            var patch = new SchemaPatch();
 
             var allSchemaNames = AllSchemaNames();
-            DatabaseSchemaGenerator.WriteSql(allSchemaNames, writer);
-
-            var recorder = new DDLRecorder(writer);
+            DatabaseSchemaGenerator.WriteSql(allSchemaNames, patch.UpWriter);
 
             foreach (var schemaObject in AllSchemaObjects())
             {
-                schemaObject.WritePatch(this, recorder);
+                schemaObject.WritePatch(this, patch);
             }
 
-            return writer.ToString();
+            return patch;
         }
 
         public void WriteDDLByType(string directory)
@@ -294,7 +297,11 @@ namespace Marten.Schema
             {
                 var transform = StoreOptions.Transforms.For(key);
 
-                transform.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, this);
+                var patch = new SchemaPatch();
+
+                transform.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
+
+                apply(transform, patch);
 
                 return transform;
             });
@@ -338,6 +345,7 @@ namespace Marten.Schema
             system.WriteStringToFile(filename, writer.ToString());
         }
 
+
         void IDDLRunner.Apply(object subject, string ddl)
         {
             try
@@ -350,6 +358,23 @@ namespace Marten.Schema
                 throw new MartenSchemaException(subject, ddl, e);
             }
         }
+
+        private void apply(object subject, SchemaPatch patch)
+        {
+            var ddl = patch.UpdateDDL.Trim();
+            if (ddl.IsEmpty()) return;
+
+            try
+            {
+                _factory.RunSql(ddl);
+                _logger.SchemaChange(ddl);
+            }
+            catch (Exception e)
+            {
+                throw new MartenSchemaException(subject, ddl, e);
+            }
+        }
+
 
         private void buildSchemaObjectsIfNecessary(IDocumentMapping mapping)
         {
@@ -367,8 +392,11 @@ namespace Marten.Schema
                     .Select(MappingFor);
             });
 
+            var patch = new SchemaPatch(this);
+
             sortedMappings.Each(
-                x => x.SchemaObjects.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, this));
+                x => x.SchemaObjects.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch));
+            
         }
 
         private void assertNoDuplicateDocumentAliases()

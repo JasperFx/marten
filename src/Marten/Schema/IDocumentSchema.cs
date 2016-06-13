@@ -122,6 +122,6 @@ namespace Marten.Schema
         /// to the current Marten schema configuration
         /// </summary>
         /// <returns></returns>
-        string ToPatch();
+        SchemaPatch ToPatch();
     }
 }

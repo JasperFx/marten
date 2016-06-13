@@ -37,8 +37,7 @@ namespace Marten.Transforms
             return new string[] {"doc"}.Concat(OtherArgs);
         }
 
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,
-            IDDLRunner runner)
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
         {
             if (_checked) return;
 
@@ -58,7 +57,7 @@ namespace Marten.Transforms
                 throw new InvalidOperationException(message);
             }
 
-            runner.Apply(this, GenerateFunction());
+            patch.Updates.Apply(this, GenerateFunction());
         }
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
@@ -78,11 +77,11 @@ namespace Marten.Transforms
             _checked = false;
         }
 
-        public void WritePatch(IDocumentSchema schema, IDDLRunner runner)
+        public void WritePatch(IDocumentSchema schema, SchemaPatch patch)
         {
             if (functionShouldBeReloaded(schema))
             {
-                runner.Apply(this, GenerateFunction());
+                patch.Updates.Apply(this, GenerateFunction());
             }
         }
 

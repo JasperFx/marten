@@ -35,7 +35,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<Issue>().UseOptimisticConcurrency(true);
             }))
             {
-                var patch = store2.Schema.ToPatch();
+                var patch = store2.Schema.ToPatch().UpdateDDL;
 
                 // don't patch Target and Company because they don't change
                 patch.ShouldNotContain("mt_doc_company");

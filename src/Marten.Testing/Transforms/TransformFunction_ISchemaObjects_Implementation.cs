@@ -39,12 +39,12 @@ namespace Marten.Testing.Transforms
         [Fact]
         public void patch_if_it_does_not_exist()
         {
-            var recorder = new DDLRecorder();
+            var patch = new SchemaPatch();
 
             theStore.Advanced.Options.Transforms.For("get_fullname")
-                .WritePatch(theStore.Schema, recorder);
+                .WritePatch(theStore.Schema, patch);
 
-            recorder.Writer.ToString().ShouldContain("CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
+            patch.UpdateDDL.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
         }
 
         [Fact]
@@ -52,12 +52,12 @@ namespace Marten.Testing.Transforms
         {
             var transform = theStore.Schema.TransformFor("get_fullname");
 
-            var recorder = new DDLRecorder();
+            var patch = new SchemaPatch();
 
             theStore.Advanced.Options.Transforms.For("get_fullname")
-                .WritePatch(theStore.Schema, recorder);
+                .WritePatch(theStore.Schema, patch);
 
-            recorder.Writer.ToString().ShouldNotContain("CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
+            patch.UpdateDDL.ShouldNotContain("CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
         }
 
         [Fact]

@@ -18,7 +18,7 @@ namespace Marten.Events
             _parent = parent;
         }
 
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, IDDLRunner runner)
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
         {
             if (_checkedSchema) return;
 
@@ -43,7 +43,7 @@ namespace Marten.Events
 
                     writeBasicTables(schema, writer);
 
-                    runner.Apply(this, writer.ToString());
+                    patch.Updates.Apply(this, writer.ToString());
                 }
             }
         }
@@ -82,13 +82,13 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        public void WritePatch(IDocumentSchema schema, IDDLRunner runner)
+        public void WritePatch(IDocumentSchema schema, SchemaPatch patch)
         {
             var tableExists = schema.DbObjects.TableExists(_parent.Table);
 
             if (tableExists) return;
 
-            runner.Apply(this, SchemaBuilder.GetSqlScript(_parent.DatabaseSchemaName, "mt_stream"));
+            patch.Updates.Apply(this, SchemaBuilder.GetSqlScript(_parent.DatabaseSchemaName, "mt_stream"));
         }
 
         public string Name { get; } = "eventstore";

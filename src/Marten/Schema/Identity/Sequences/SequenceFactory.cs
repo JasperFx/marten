@@ -28,7 +28,7 @@ namespace Marten.Schema.Identity.Sequences
             return new HiloSequence(_factory, _options, documentType.Name, settings);
         }
 
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, IDDLRunner runner)
+        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
         {
             if (_checked) return;
 
@@ -41,7 +41,7 @@ namespace Marten.Schema.Identity.Sequences
                     throw new InvalidOperationException($"Hilo table is missing, but {nameof(StoreOptions.AutoCreateSchemaObjects)} is {_options.AutoCreateSchemaObjects}");
                 }
 
-                WritePatch(schema, runner);
+                WritePatch(schema, patch);
             }
         }
 
@@ -69,12 +69,12 @@ namespace Marten.Schema.Identity.Sequences
             _checked = false;
         }
 
-        public void WritePatch(IDocumentSchema schema, IDDLRunner runner)
+        public void WritePatch(IDocumentSchema schema, SchemaPatch patch)
         {
             if (!schema.DbObjects.TableExists(Table))
             {
                 var sqlScript = SchemaBuilder.GetSqlScript(Table.Schema, "mt_hilo");
-                runner.Apply(this, sqlScript);
+                patch.Updates.Apply(this, sqlScript);
             }
         }
 

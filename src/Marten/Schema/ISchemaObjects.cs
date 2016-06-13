@@ -6,7 +6,7 @@ namespace Marten.Schema
 {
     public interface ISchemaObjects
     {
-        void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, IDDLRunner runner);
+        void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch);
 
         void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer);
 
@@ -14,7 +14,7 @@ namespace Marten.Schema
 
         void ResetSchemaExistenceChecks();
 
-        void WritePatch(IDocumentSchema schema, IDDLRunner runner);
+        void WritePatch(IDocumentSchema schema, SchemaPatch patch);
 
         string Name { get; }
     }

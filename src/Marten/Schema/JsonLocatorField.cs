@@ -92,7 +92,7 @@ namespace Marten.Schema
 
         public string SqlLocator { get; }
         public string ColumnName => String.Empty;
-        public void WritePatch(DocumentMapping mapping, IDDLRunner runner)
+        public void WritePatch(DocumentMapping mapping, SchemaPatch patch)
         {
             throw new NotSupportedException();
         }

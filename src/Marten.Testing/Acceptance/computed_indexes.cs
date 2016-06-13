@@ -184,7 +184,7 @@ namespace Marten.Testing.Acceptance
             {
                 var patch = store2.Schema.ToPatch();
 
-                patch.ShouldContain("mt_doc_target_idx_number");
+                patch.UpdateDDL.ShouldContain("mt_doc_target_idx_number");
             }
         }
 
@@ -209,7 +209,7 @@ namespace Marten.Testing.Acceptance
             {
                 var patch = store2.Schema.ToPatch();
 
-                patch.ShouldNotContain("mt_doc_target_idx_number");
+                patch.UpdateDDL.ShouldNotContain("mt_doc_target_idx_number");
             }
         }
     }

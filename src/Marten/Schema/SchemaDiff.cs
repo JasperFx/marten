@@ -89,18 +89,18 @@ namespace Marten.Schema
 
         public readonly IList<string> IndexChanges = new List<string>();
 
-        public void CreatePatch(IDDLRunner runner)
+        public void CreatePatch(SchemaPatch runner)
         {
             TableDiff.CreatePatch(_mapping, runner);
 
             if (HasFunctionChanged())
             {
-                _existing.FunctionDropStatements.Each(x => runner.Apply(this, x));
+                _existing.FunctionDropStatements.Each(x => runner.Updates.Apply(this, x));
 
-                runner.Apply(this, expectedUpsertFunction());
+                runner.Updates.Apply(this, expectedUpsertFunction());
             }
 
-            IndexChanges.Each(x => runner.Apply(this, x));
+            IndexChanges.Each(x => runner.Updates.Apply(this, x));
         }
 
         public override string ToString()
