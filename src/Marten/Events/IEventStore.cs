@@ -74,7 +74,7 @@ namespace Marten.Events
 
 
         /// <summary>
-        /// Query directly against the raw event data
+        /// Query directly against ONLY the raw event data. Use IQuerySession.Query() for aggregated documents!
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
