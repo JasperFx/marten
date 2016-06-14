@@ -219,7 +219,7 @@ namespace Marten
         {
             var projections = _schema.Events.As<IProjections>();
 
-            projections.Inlines.Each(x => x.Apply(this));
+            projections.Inlines.Each(x => x.Apply(this, PendingChanges.Streams().ToArray()));
         }
 
         private async Task applyProjectionsAsync(CancellationToken token)
@@ -228,7 +228,7 @@ namespace Marten
 
             foreach (var projection in projections.Inlines)
             {
-                await projection.ApplyAsync(this, token).ConfigureAwait(false);
+                await projection.ApplyAsync(this, PendingChanges.Streams().ToArray(), token).ConfigureAwait(false);
             }
         }
 

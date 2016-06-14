@@ -1,9 +1,7 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Schema;
 
 namespace Marten.Events.Projections
 {
@@ -16,20 +14,18 @@ namespace Marten.Events.Projections
             _transform = transform;
         }
 
-        public void Apply(IDocumentSession session)
+        public void Apply(IDocumentSession session, EventStream[] streams)
         {
-            session
-                .PendingChanges.Streams()
+            streams
                 .SelectMany(x => x.Events)
                 .OfType<Event<TEvent>>()
                 .Select(x => _transform.Transform(x))
                 .Each(x => session.Store(x));
         }
 
-        public Task ApplyAsync(IDocumentSession session, CancellationToken token)
+        public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
         {
-            session
-                .PendingChanges.Streams()
+            streams
                 .SelectMany(x => x.Events)
                 .OfType<Event<TEvent>>()
                 .Select(x => _transform.Transform(x))

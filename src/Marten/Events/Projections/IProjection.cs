@@ -5,7 +5,7 @@ namespace Marten.Events.Projections
 {
     public interface IProjection
     {
-        void Apply(IDocumentSession session);
-        Task ApplyAsync(IDocumentSession session, CancellationToken token);
+        void Apply(IDocumentSession session, EventStream[] streams);
+        Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token);
     }
 }

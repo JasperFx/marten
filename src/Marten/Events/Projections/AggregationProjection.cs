@@ -17,9 +17,9 @@ namespace Marten.Events.Projections
             _aggregator = aggregator;
         }
 
-        public void Apply(IDocumentSession session)
+        public void Apply(IDocumentSession session, EventStream[] streams)
         {
-            MatchingStreams(session).Each(stream =>
+            MatchingStreams(streams).Each(stream =>
             {
                 var state = _finder.Find(stream, session);
 
@@ -34,9 +34,9 @@ namespace Marten.Events.Projections
             stream.Events.Each(x => x.Apply(state, _aggregator));
         }
 
-        public async Task ApplyAsync(IDocumentSession session, CancellationToken token)
+        public async Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
         {
-            foreach (var stream in MatchingStreams(session))
+            foreach (var stream in MatchingStreams(streams))
             {
                 var state = await _finder.FindAsync(stream, session, token).ConfigureAwait(false) ?? new T();
                 update(state, stream);
@@ -47,10 +47,9 @@ namespace Marten.Events.Projections
 
 
 
-        public EventStream[] MatchingStreams(IDocumentSession session)
+        public EventStream[] MatchingStreams(EventStream[] streams)
         {
-            return session.PendingChanges.Streams()
-                .Where(_aggregator.AppliesTo).ToArray();
+            return streams.Where(_aggregator.AppliesTo).ToArray();
         }
     }
 }
