@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Linq;
-using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
@@ -14,6 +12,43 @@ using NpgsqlTypes;
 
 namespace Marten.Events.Projections.Async
 {
+    public class EventPage
+    {
+        public long From { get; set; }
+        public long To { get; set; }
+        public EventStream[] Streams { get; set; }
+
+        public EventPage(long from, long to, EventStream[] streams)
+        {
+            From = @from;
+            To = to;
+            Streams = streams;
+        }
+    }
+
+    public class ProjectionTrack
+    {
+        private readonly IProjection _projection;
+        private readonly IDocumentSession _session;
+
+        public ProjectionTrack(IProjection projection, IDocumentSession session)
+        {
+            _projection = projection;
+            _session = session;
+        }
+
+        public async Task ExecutePage(EventPage page, CancellationToken cancellation)
+        {
+            // TODO -- track the From and To, make sure we don't have any gaps. From would need to be equal to Last
+
+            await _projection.ApplyAsync(_session, page.Streams, cancellation).ConfigureAwait(false);
+
+            // TODO -- do something to mark the progress of the staged event options
+
+            await _session.SaveChangesAsync(cancellation).ConfigureAwait(false);
+        }
+    }
+
     public class StagedEventOptions
     {
         public string Name { get; set; } = Guid.NewGuid().ToString();
@@ -23,43 +58,53 @@ namespace Marten.Events.Projections.Async
 
     public interface IStagedEventData
     {
-
         Task<long> LastEventProgression();
 
         Task RegisterProgress(long lastEncountered);
 
 
-        Task<IList<IEvent>> FetchNextPage();
-
+        Task<EventPage> FetchNextPage(long lastEncountered);
     }
 
     public class StagedEventData : IStagedEventData, IDisposable
     {
-        private readonly StagedEventOptions _options;
+        private readonly NpgsqlConnection _conn;
         private readonly EventGraph _events;
-        private readonly ISerializer _serializer;
+        private readonly StagedEventOptions _options;
+        private readonly EventSelector _selector;
+        private readonly FunctionName _sproc;
 
-        public StagedEventData(StagedEventOptions options, IConnectionFactory factory, EventGraph events, ISerializer serializer)
+        public readonly CancellationToken Cancellation = new CancellationToken();
+        private readonly NulloIdentityMap _map;
+
+        public StagedEventData(StagedEventOptions options, IConnectionFactory factory, EventGraph events,
+            ISerializer serializer)
         {
             _options = options;
             _events = events;
-            _serializer = serializer;
             _conn = factory.Create();
 
             _conn.Open();
 
             _selector = new EventSelector(events, serializer);
+            _map = new NulloIdentityMap(serializer);
 
             _sproc = new FunctionName(events.DatabaseSchemaName, "mt_mark_event_progression");
         }
 
-        public readonly CancellationToken Cancellation = new CancellationToken();
-        private readonly NpgsqlConnection _conn;
-        private readonly FunctionName _sproc;
-        private readonly EventSelector _selector;
+        public StagedEventOptions Options => _options;
 
 
         public string[] EventTypeNames { get; set; } = new string[0];
+
+        public long LastEncountered { get; set; } = -1;
+
+
+        public void Dispose()
+        {
+            _conn.Close();
+            _conn.Dispose();
+        }
 
         public async Task<long> LastEventProgression()
         {
@@ -75,8 +120,6 @@ namespace Marten.Events.Projections.Async
             }
         }
 
-        public long LastEncountered { get; set; } = -1;
-
         public async Task RegisterProgress(long lastEncountered)
         {
             var cmd = _conn.CreateCommand()
@@ -90,58 +133,44 @@ namespace Marten.Events.Projections.Async
             LastEncountered = lastEncountered;
         }
 
-        public async Task<IList<IEvent>> FetchNextPage()
+        public async Task<EventPage> FetchNextPage(long lastEncountered)
         {
-            var cmd = await BuildPageFetchCommand();
+            var lastPossible = lastEncountered + _options.PageSize;
+            var sql = $@"
+select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
+{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) order by seq_id;       
+";
 
-            var events = await fetchEvents(cmd);
+            var cmd = _conn.CreateCommand().Sql(sql)
+                .With("last", lastEncountered)
+                .With("limit", lastPossible)
+                .With("types", _options.EventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
 
-            return events;
-        }
 
-        private async Task<IList<IEvent>> fetchEvents(NpgsqlCommand cmd)
-        {
+
+            long furthestExtant;
+            IList<IEvent> events = null;
+
             using (var reader = await cmd.ExecuteReaderAsync(Cancellation).ConfigureAwait(false))
             {
-                return await _selector.ReadAsync(reader, new NulloIdentityMap(_serializer), Cancellation).ConfigureAwait(false);
+                await reader.ReadAsync(Cancellation).ConfigureAwait(false);
+
+                furthestExtant = await reader.GetFieldValueAsync<long>(0, Cancellation).ConfigureAwait(false);
+
+                await reader.NextResultAsync(Cancellation).ConfigureAwait(false);
+
+                events = await _selector.ReadAsync(reader, _map, Cancellation).ConfigureAwait(false);
             }
-        }
 
-        private async Task<NpgsqlCommand> BuildPageFetchCommand()
-        {
-            var sql = _selector.ToSelectClause(null);
 
-            if (LastEncountered < 0)
+            var streams = events.GroupBy(x => x.StreamId).Select(group =>
             {
-                LastEncountered = await LastEventProgression().ConfigureAwait(false);
-            }
+                return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
+            }).ToArray();
 
-            var cmd = _conn.CreateCommand();
-            cmd.AddParameter("last", LastEncountered);
-            cmd.AddParameter("limit", _options.PageSize);
-
-            sql += " where seq_id > :last";
-            if (_options.EventTypeNames.Any())
-            {
-                cmd.With("types", _options.EventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
-
-                sql += " and type = ANY(:types)";
-            }
-
-            sql += " LIMIT :limit";
-
-            cmd.CommandText = sql;
-
-            return cmd;
+            return new EventPage(lastEncountered, furthestExtant, streams);
         }
 
 
-        public void Dispose()
-        {
-            _conn.Close();
-            _conn.Dispose();
-        }
     }
-
-
 }

@@ -42,6 +42,8 @@ namespace Marten.Events
             _events.AddRange(events);
             _events.Where(x => x.Id == Guid.Empty).Each(x => x.Id = CombGuidIdGeneration.NewGuid());
 
+            _events.Each(x => x.StreamId = Id);
+
             return this;
         }
 

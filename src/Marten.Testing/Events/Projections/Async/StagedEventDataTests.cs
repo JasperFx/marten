@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
@@ -12,7 +13,7 @@ namespace Marten.Testing.Events.Projections.Async
 {
     public class StagedEventDataTests : IntegratedFixture
     {
-        private readonly StagedEventOptions theOptions = new StagedEventOptions {Name = "something"};
+        private readonly StagedEventOptions theOptions = new StagedEventOptions {Name = "something", EventTypeNames = new [] {"members_joined"}};
 
         public StagedEventDataTests()
         {
@@ -105,10 +106,12 @@ namespace Marten.Testing.Events.Projections.Async
 
             using (var data = new StagedEventData(theOptions, new ConnectionSource(), theStore.Schema.Events.As<EventGraph>(), new JilSerializer()))
             {
-                var events = await data.FetchNextPage();
+                var page = await data.FetchNextPage(0);
 
-                events.Count.ShouldBe(theOptions.PageSize);
-                events.Each(x => x.ShouldBeOfType<Event<MembersJoined>>());
+                page.From.ShouldBe(0);
+                page.To.ShouldBe(data.Options.PageSize);
+
+                page.Streams.SelectMany(x => x.Events).Count().ShouldBe(100);
             }
         }
     }

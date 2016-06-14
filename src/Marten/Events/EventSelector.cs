@@ -34,6 +34,7 @@ namespace Marten.Events
             var version = reader.GetInt32(2);
             var dataJson = reader.GetString(3);
 
+
             var mapping = _events.EventMappingFor(eventTypeName);
 
             if (mapping == null)
@@ -44,11 +45,13 @@ namespace Marten.Events
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
 
             var sequence = reader.GetFieldValue<long>(4);
+            var stream = reader.GetFieldValue<Guid>(5);
 
             var @event = EventStream.ToEvent(data);
             @event.Version = version;
             @event.Id = id;
             @event.Sequence = sequence;
+            @event.StreamId = stream;
 
             return @event;
         }
@@ -69,24 +72,26 @@ namespace Marten.Events
 
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
 
-            var sequence = await reader.GetFieldValueAsync<long>(4, token);
+            var sequence = await reader.GetFieldValueAsync<long>(4, token).ConfigureAwait(false);
+            var stream = await reader.GetFieldValueAsync<Guid>(5, token).ConfigureAwait(false);
 
             var @event = EventStream.ToEvent(data);
             @event.Version = version;
             @event.Id = id;
             @event.Sequence = sequence;
+            @event.StreamId = stream;
 
             return @event;
         }
 
         public string[] SelectFields()
         {
-            return new[] {"id", "type", "version", "data", "seq_id"};
+            return new[] {"id", "type", "version", "data", "seq_id", "stream_id"};
         }
 
         public string ToSelectClause(IQueryableDocument mapping)
         {
-            return $"select id, type, version, data, seq_id from {_events.DatabaseSchemaName}.mt_events";
+            return $"select id, type, version, data, seq_id, stream_id from {_events.DatabaseSchemaName}.mt_events";
         }
     }
 }

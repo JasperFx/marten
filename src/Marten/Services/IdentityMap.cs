@@ -11,6 +11,7 @@ namespace Marten.Services
     {
         private readonly IEnumerable<IDocumentSessionListener> _listeners;
 
+        // TODO -- need to replace Cache with something lighterweight. 
         protected Cache<Type, ConcurrentDictionary<object, TCacheValue>> Cache { get; }
             = new Cache<Type, ConcurrentDictionary<object, TCacheValue>>(_ => new ConcurrentDictionary<object, TCacheValue>());
 

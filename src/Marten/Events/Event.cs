@@ -16,6 +16,8 @@ namespace Marten.Events
         /// </summary>
         object Data { get; }
 
+        Guid StreamId { get; set; }
+
         void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new();
     }
@@ -26,6 +28,8 @@ namespace Marten.Events
         {
             Data = data;
         }
+
+        public Guid StreamId { get; set; }
 
         public Guid Id { get; set; }
         public int Version { get; set; }
