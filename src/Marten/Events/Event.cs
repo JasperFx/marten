@@ -16,7 +16,7 @@ namespace Marten.Events
         /// </summary>
         object Data { get; }
 
-        void Apply<TAggregate>(TAggregate state, Aggregator<TAggregate> aggregator)
+        void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new();
     }
 
@@ -34,7 +34,7 @@ namespace Marten.Events
 
         object IEvent.Data => Data;
 
-        public virtual void Apply<TAggregate>(TAggregate state, Aggregator<TAggregate> aggregator)
+        public virtual void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new()
         {
             aggregator.AggregatorFor<T>()?.Apply(state, Data);

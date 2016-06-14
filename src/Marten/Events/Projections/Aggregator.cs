@@ -7,7 +7,7 @@ using Marten.Util;
 
 namespace Marten.Events.Projections
 {
-    public class Aggregator<T> : IAggregator where T : class, new()
+    public class Aggregator<T> : IAggregator<T> where T : class, new()
     {
         public static readonly string ApplyMethod = "Apply";
 
@@ -34,7 +34,7 @@ namespace Marten.Events.Projections
 
         public string Alias { get; }
 
-        public T Build(IEnumerable<IEvent> events)
+        public T Build(IEnumerable<IEvent> events, IDocumentSession session)
         {
             var state = new T();
 

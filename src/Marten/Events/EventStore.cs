@@ -83,7 +83,7 @@ namespace Marten.Events
         {
             var inner = new EventQueryHandler(_selector, streamId, version, timestamp);
             var aggregator = _schema.Events.AggregateFor<T>();
-            var handler = new AggregationQueryHandler<T>(aggregator, inner);
+            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
 
             var aggregate = _connection.Fetch(handler, null);
 
@@ -99,7 +99,7 @@ namespace Marten.Events
         {
             var inner = new EventQueryHandler(_selector, streamId, version, timestamp);
             var aggregator = _schema.Events.AggregateFor<T>();
-            var handler = new AggregationQueryHandler<T>(aggregator, inner);
+            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
 
             return _connection.FetchAsync(handler, null, token);
         }

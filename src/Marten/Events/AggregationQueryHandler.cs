@@ -11,13 +11,15 @@ namespace Marten.Events
 {
     internal class AggregationQueryHandler<T> : IQueryHandler<T> where T : class, new()
     {
-        private readonly Aggregator<T> _aggregator;
+        private readonly IAggregator<T> _aggregator;
         private readonly EventQueryHandler _inner;
+        private readonly IDocumentSession _session;
 
-        public AggregationQueryHandler(Aggregator<T> aggregator, EventQueryHandler inner)
+        public AggregationQueryHandler(IAggregator<T> aggregator, EventQueryHandler inner, IDocumentSession session = null)
         {
             _aggregator = aggregator;
             _inner = inner;
+            _session = session;
         }
 
         public void ConfigureCommand(NpgsqlCommand command)
@@ -31,14 +33,14 @@ namespace Marten.Events
         {
             var @events = _inner.Handle(reader, map);
 
-            return _aggregator.Build(@events);
+            return _aggregator.Build(@events, _session);
         }
 
         public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             var @events = await _inner.HandleAsync(reader, map, token).ConfigureAwait(false);
 
-            return _aggregator.Build(@events);
+            return _aggregator.Build(@events, _session);
         }
     }
 }

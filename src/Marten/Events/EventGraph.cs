@@ -124,11 +124,16 @@ namespace Marten.Events
         }
 
 
-        public Aggregator<T> AggregateFor<T>() where T : class, new()
+        public void AggregateFor<T>(IAggregator<T> aggregator) where T : class, new()
+        {
+            _aggregates.AddOrUpdate(typeof (T), aggregator, (type, previous) => aggregator);
+        }
+
+        public IAggregator<T> AggregateFor<T>() where T : class, new()
         {
             return _aggregates
-                .GetOrAdd(typeof(T), type => new Aggregator<T>())
-                .As<Aggregator<T>>();
+                .GetOrAdd(typeof (T), type => new Aggregator<T>())
+                .As<IAggregator<T>>();
         }
 
 
@@ -139,7 +144,7 @@ namespace Marten.Events
                     name => { return AllAggregates().FirstOrDefault(x => x.Alias == name); }).AggregateType;
         }
 
-        public Aggregator<T> AggregateStreamsInlineWith<T>() where T : class, new()
+        public IAggregator<T> AggregateStreamsInlineWith<T>() where T : class, new()
         {
             var aggregator = AggregateFor<T>();
             var finder = new AggregateFinder<T>();

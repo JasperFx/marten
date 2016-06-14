@@ -304,4 +304,5 @@ namespace Marten.Services.BatchQuerying
             return AddItem(handler);
         }
     }
+
 }

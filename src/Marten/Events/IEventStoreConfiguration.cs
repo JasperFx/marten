@@ -17,9 +17,11 @@ namespace Marten.Events
         IEnumerable<IAggregator> AllAggregates();
         EventMapping EventMappingFor(string eventType);
         bool IsActive { get; }
-        Aggregator<T> AggregateFor<T>() where T : class, new();
+
+        void AggregateFor<T>(IAggregator<T> aggregator) where T : class, new();
+        IAggregator<T> AggregateFor<T>() where T : class, new();
         Type AggregateTypeFor(string aggregateTypeName);
-        Aggregator<T> AggregateStreamsInlineWith<T>() where T : class, new();
+        IAggregator<T> AggregateStreamsInlineWith<T>() where T : class, new();
 
         void TransformEventsInlineWith<TEvent, TView>(ITransform<TEvent, TView> transform);
         void InlineTransformation(IProjection projection);
