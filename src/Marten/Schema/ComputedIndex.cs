@@ -56,6 +56,11 @@ namespace Marten.Schema
         /// </summary>
         public Casings Casing { get; set; }
 
+        /// <summary>
+        /// Specifies the type of index to create
+        /// </summary>
+        public IndexMethod Method { get; set; } = IndexMethod.btree;
+
         public string ToDDL()
         {
             var index = IsUnique ? "CREATE UNIQUE INDEX" : "CREATE INDEX";
@@ -66,6 +71,11 @@ namespace Marten.Schema
             }
 
             index += $" {IndexName} ON {_table.QualifiedName}";
+            
+            if (Method != IndexMethod.btree)
+            {
+                index += $" USING {Method}";
+            }
 
             switch (Casing)
             {

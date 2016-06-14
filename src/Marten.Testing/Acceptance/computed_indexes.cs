@@ -8,7 +8,6 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.Acceptance
 {
-
     public class computed_indexes : IntegratedFixture
     {
         private readonly ITestOutputHelper _output;
@@ -42,6 +41,24 @@ namespace Marten.Testing.Acceptance
                 session.Query<Target>().Where(x => x.Number == data.First().Number)
                        .Select(x => x.Id).ToList().ShouldContain(data.First().Id);
             }
+        }
+        
+        [Fact]
+        public void specifying_an_index_type_should_create_the_index_with_that_type()
+        {
+            StoreOptions(_ => _.Schema.For<Target>().Index(x => x.Number, x =>
+            {
+                x.Method = IndexMethod.brin;
+            }));
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data.ToArray());
+
+            theStore.Schema.DbObjects.AllIndexes()
+                .Where(x => x.Name == "mt_doc_target_idx_number")
+                .Select(x => x.DDL.ToLower())
+                .First()
+                .ShouldContain("mt_doc_target_idx_number on mt_doc_target using brin");
         }
 
         [Fact]

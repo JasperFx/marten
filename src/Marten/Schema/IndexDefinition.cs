@@ -102,6 +102,7 @@ namespace Marten.Schema
         btree,
         hash,
         gist,
-        gin
+        gin,
+        brin
     }
 }
