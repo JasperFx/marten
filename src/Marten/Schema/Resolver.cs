@@ -5,8 +5,8 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Schema.Identity;
 using Marten.Services;
+using Marten.Services.Deletes;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -207,6 +207,16 @@ namespace Marten.Schema
         public void Store(IIdentityMap map, object id, object entity)
         {
             map.Store<T>(id, (T) entity);
+        }
+
+        public IStorageOperation DeletionForId(object id)
+        {
+            return new DeleteById(_mapping.As<IQueryableDocument>(), this, id);
+        }
+
+        public IStorageOperation DeletionForEntity(object entity)
+        {
+            return new DeleteById(_mapping.As<IQueryableDocument>(), this, Identity(entity), entity);
         }
     }
 }

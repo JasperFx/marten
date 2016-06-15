@@ -173,6 +173,16 @@ namespace Marten.Events
             throw new InvalidOperationException("Use IDocumentSession.Events for all persistence of IEvent objects");
         }
 
+        public IStorageOperation DeletionForId(object id)
+        {
+            throw new NotSupportedException("You cannot delete events at this time");
+        }
+
+        public IStorageOperation DeletionForEntity(object entity)
+        {
+            throw new NotSupportedException("You cannot delete events at this time");
+        }
+
         public T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
             var id = reader.GetGuid(startingIndex);

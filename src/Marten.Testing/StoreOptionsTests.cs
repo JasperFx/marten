@@ -122,6 +122,16 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
+            public IStorageOperation DeletionForId(object id)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IStorageOperation DeletionForEntity(object entity)
+            {
+                throw new NotImplementedException();
+            }
+
             public object Assign(User document, out bool assigned)
             {
                 throw new NotImplementedException();
@@ -183,6 +193,16 @@ namespace Marten.Testing
             }
 
             public void Store(IIdentityMap map, object id, object entity)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IStorageOperation DeletionForId(object id)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IStorageOperation DeletionForEntity(object entity)
             {
                 throw new NotImplementedException();
             }

@@ -76,6 +76,16 @@ namespace Marten.Schema.Hierarchies
             _parent.Store(map, id, entity);
         }
 
+        public IStorageOperation DeletionForId(object id)
+        {
+            return _parent.DeletionForId(id);
+        }
+
+        public IStorageOperation DeletionForEntity(object entity)
+        {
+            return _parent.DeletionForEntity(entity);
+        }
+
         public T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
             var json = reader.GetString(startingIndex);

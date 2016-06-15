@@ -29,6 +29,8 @@ namespace Marten.Schema
 
         void Store(IIdentityMap map, object id, object entity);
 
+        IStorageOperation DeletionForId(object id);
+        IStorageOperation DeletionForEntity(object entity);
     }
 
 }

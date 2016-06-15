@@ -53,12 +53,9 @@ namespace Marten
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var mapping = _schema.MappingFor(typeof(T));
             var storage = _schema.StorageFor(typeof(T));
+            var deletion = storage.DeletionForEntity(entity);
 
-            var id = storage.Identity(entity);
-
-            var deletion = new DeleteById(mapping.As<IQueryableDocument>(), storage, id, entity);
             _unitOfWork.Add(deletion);
 
             storage.Remove(IdentityMap, entity);
@@ -71,10 +68,8 @@ namespace Marten
 
         private void delete<T>(object id)
         {
-            var mapping = _schema.MappingFor(typeof(T));
             var storage = _schema.StorageFor(typeof(T));
-
-            var deletion = new DeleteById(mapping.As<IQueryableDocument>(), storage, id);
+            var deletion = storage.DeletionForId(id);
             _unitOfWork.Add(deletion);
 
             storage.Delete(IdentityMap, id);
