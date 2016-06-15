@@ -17,7 +17,7 @@ namespace Marten.Testing.Session
             theSession.Store(issue);
             theSession.SaveChanges();
 
-            var json = theSession.FindJsonById<Issue>(issue.Id);
+            var json = theSession.Json.FindById<Issue>(issue.Id);
             json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
         }
         // ENDSAMPLE
@@ -25,7 +25,7 @@ namespace Marten.Testing.Session
         [Fact]
         public void when_find_then_a_null_should_be_returned()
         {
-            var json = theSession.FindJsonById<Issue>(Guid.NewGuid());
+            var json = theSession.Json.FindById<Issue>(Guid.NewGuid());
             json.ShouldBeNull();
         }
     }

@@ -79,78 +79,6 @@ namespace Marten
         Task<T> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class;
 
 
-
-        /// <summary>
-        /// Load or find only the document json by string id for a document of type T
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        string FindJsonById<T>(string id) where T : class;
-
-        /// <summary>
-        /// Load or find only the document json by numeric or Guid id for a document of type T
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        string FindJsonById<T>(int id) where T : class;
-
-        /// <summary>
-        /// Load or find only the document json by numeric or Guid id for a document of type T
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        string FindJsonById<T>(long id) where T : class;
-
-        /// <summary>
-        /// Load or find only the document json by numeric or Guid id for a document of type T
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        string FindJsonById<T>(Guid id) where T : class;
-
-
-        /// <summary>
-        /// Asynchronously load or find only the document json by string id for a document of type T
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task<string> FindJsonByIdAsync<T>(string id, CancellationToken token = default(CancellationToken)) where T : class;
-
-        /// <summary>
-        /// Asynchronously load or find only the document json by numeric or Guid id for a document of type T
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task<string> FindJsonByIdAsync<T>(int id, CancellationToken token = default(CancellationToken)) where T : class;
-
-        /// <summary>
-        /// Asynchronously load or find only the document json by numeric or Guid id for a document of type T
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task<string> FindJsonByIdAsync<T>(long id, CancellationToken token = default(CancellationToken)) where T : class;
-
-        /// <summary>
-        /// Asynchronously load or find only the document json by numeric or Guid id for a document of type T
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task<string> FindJsonByIdAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class;
-
-
-
         // SAMPLE: querying_with_linq
         /// <summary>
         /// Use Linq operators to query the documents
@@ -313,6 +241,11 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids) where T : class;
+
+        /// <summary>
+        /// Directly load the persisted JSON data for documents by Id
+        /// </summary>
+        IJsonLoader Json { get; }
 
     }
 }

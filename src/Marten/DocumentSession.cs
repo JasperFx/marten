@@ -26,7 +26,7 @@ namespace Marten
 
         public DocumentSession(IDocumentStore store, StoreOptions options, IDocumentSchema schema,
             ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
-            : base(store, schema, serializer, connection, parser, identityMap, options)
+            : base(store, schema, serializer, connection, parser, identityMap)
         {
             _options = options;
             _schema = schema;

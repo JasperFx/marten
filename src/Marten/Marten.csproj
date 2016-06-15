@@ -81,8 +81,10 @@
     <Compile Include="Generation\TableDiff.cs" />
     <Compile Include="IDiagnostics.cs" />
     <Compile Include="IDocumentSessionListener.cs" />
+    <Compile Include="IJsonLoader.cs" />
     <Compile Include="IMartenLogger.cs" />
     <Compile Include="IQuerySession.cs" />
+    <Compile Include="JsonLoader.cs" />
     <Compile Include="LambdaConnectionFactory.cs" />
     <Compile Include="LinqExtensions.cs" />
     <Compile Include="Linq\AsJsonExpressionNode.cs" />

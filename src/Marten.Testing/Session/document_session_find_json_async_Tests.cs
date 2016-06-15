@@ -18,7 +18,7 @@ namespace Marten.Testing.Session
             theSession.Store(issue);
             await theSession.SaveChangesAsync();
 
-            var json = await theSession.FindJsonByIdAsync<Issue>(issue.Id);
+            var json = await theSession.Json.FindByIdAsync<Issue>(issue.Id);
             json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
         }
         // ENDSAMPLE
@@ -26,7 +26,7 @@ namespace Marten.Testing.Session
         [Fact]
         public async Task when_find_then_a_null_should_be_returned()
         {
-            var json = await theSession.FindJsonByIdAsync<Issue>(Guid.NewGuid());
+            var json = await theSession.Json.FindByIdAsync<Issue>(Guid.NewGuid());
             json.ShouldBeNull();
         }
     }

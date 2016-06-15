@@ -28,8 +28,7 @@ namespace Marten
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
 
-        public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer,
-            IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, StoreOptions options)
+        public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
         {
             DocumentStore = store;
             _schema = schema;
@@ -40,6 +39,8 @@ namespace Marten
         }
 
         public IDocumentStore DocumentStore { get; }
+
+        public IJsonLoader Json => new JsonLoader(_connection, _schema);
 
         public IMartenQueryable<T> Query<T>()
         {
@@ -132,41 +133,7 @@ namespace Marten
             return new LoadByKeys<T>(this);
         }
 
-        public string FindJsonById<T>(string id) where T : class
-        {
-            return findJsonById<T>(id);
-        }
 
-
-        public Task<string> FindJsonByIdAsync<T>(string id, CancellationToken token) where T : class
-        {
-            return findJsonByIdAsync<T>(id, token);
-        }
-
-        public Task<string> FindJsonByIdAsync<T>(ValueType id, CancellationToken token) where T : class
-        {
-            return findJsonByIdAsync<T>(id, token);
-        }
-
-        private string findJsonById<T>(object id)
-        {
-            var storage = _schema.StorageFor(typeof (T));
-
-            var loader = storage.LoaderCommand(id);
-            return _connection.Execute(loader, c => loader.ExecuteScalar() as string);
-        }
-
-        private Task<string> findJsonByIdAsync<T>(object id, CancellationToken token)
-        {
-            var storage = _schema.StorageFor(typeof (T));
-
-            var loader = storage.LoaderCommand(id);
-            return _connection.ExecuteAsync(loader, async (conn, executeAsyncToken) =>
-            {
-                var result = await loader.ExecuteScalarAsync(executeAsyncToken).ConfigureAwait(false);
-                return result as string; // Maybe do this as a stream later for big docs?
-            }, token);
-        }
 
 
         public IList<T> LoadMany<T>(params string[] ids) where T : class
@@ -390,34 +357,6 @@ namespace Marten
             return loadAsync<T>(id, token);
         }
 
-        public string FindJsonById<T>(int id) where T : class
-        {
-            return findJsonById<T>(id);
-        }
 
-        public string FindJsonById<T>(long id) where T : class
-        {
-            return findJsonById<T>(id);
-        }
-
-        public string FindJsonById<T>(Guid id) where T : class
-        {
-            return findJsonById<T>(id);
-        }
-
-        public Task<string> FindJsonByIdAsync<T>(int id, CancellationToken token = new CancellationToken()) where T : class
-        {
-            return findJsonByIdAsync<T>(id, token);
-        }
-
-        public Task<string> FindJsonByIdAsync<T>(long id, CancellationToken token = new CancellationToken()) where T : class
-        {
-            return findJsonByIdAsync<T>(id, token);
-        }
-
-        public Task<string> FindJsonByIdAsync<T>(Guid id, CancellationToken token = new CancellationToken()) where T : class
-        {
-            return findJsonByIdAsync<T>(id, token);
-        }
     }
 }

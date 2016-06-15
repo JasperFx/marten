@@ -301,7 +301,7 @@ namespace Marten
 
             var session = new QuerySession(this, Schema, _serializer,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser,
-                new NulloIdentityMap(_serializer), _options);
+                new NulloIdentityMap(_serializer));
 
             session.Logger = _logger.StartSession(session);
 
