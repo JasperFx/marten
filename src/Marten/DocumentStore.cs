@@ -17,6 +17,8 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
+    using Schema.Helpers;
+
     /// <summary>
     /// The main entry way to using Marten
     /// </summary>
@@ -76,6 +78,11 @@ namespace Marten
             _logger = options.Logger();
 
             Schema = new DocumentSchema(_options, _connectionFactory, _logger);
+
+            //var thing = new SchemaPatch();
+            //var immutableTimeStampFactory = new ImmutableTimestampFactory();
+            //immutableTimeStampFactory.GenerateSchemaObjectsIfNecessary(_options.AutoCreateSchemaObjects, Schema, thing);
+            //(immutableTimeStampFactory, thing);
 
 
             _serializer = options.Serializer();
@@ -147,10 +154,9 @@ namespace Marten
         {
             var groups =
                 documents.Where(x => x != null)
-                    .GroupBy(x => x.GetType())
-                    .Select(
-                        group => typeof (BulkInserter<>).CloseAndBuildAs<IBulkInserter>(@group, @group.Key))
-                    .ToArray();
+                         .GroupBy(x => x.GetType())
+                         .Select(group => typeof(BulkInserter<>).CloseAndBuildAs<IBulkInserter>(@group, @group.Key))
+                         .ToArray();
 
             using (var conn = _connectionFactory.Create())
             {

@@ -23,15 +23,16 @@ namespace Marten.Schema
         public JsonLocatorField(EnumStorage enumStyle, MemberInfo member) : base(member)
         {
             var memberType = member.GetMemberType();
-
-            
-
             var isStringEnum = memberType.IsEnum && enumStyle == EnumStorage.AsString;
+
             if (memberType == typeof (string) || isStringEnum)
             {
                 SqlLocator = $"d.data ->> '{member.Name}'";
             }
-
+            else if (memberType == typeof(DateTime))
+            {
+                SqlLocator = $"mt_immutable_timestamp(d.data ->> '{member.Name}')";
+            }
             else
             {
                 SqlLocator = $"CAST(d.data ->> '{member.Name}' as {PgType})";
@@ -45,8 +46,6 @@ namespace Marten.Schema
                     return Enum.GetName(MemberType, raw);
                 };
             }
-
-
         }
 
         public JsonLocatorField(EnumStorage enumStyle, MemberInfo[] members) : base(members)

@@ -170,6 +170,7 @@
     <Compile Include="Schema\Arguments\DotNetTypeArgument.cs" />
     <Compile Include="Schema\FunctionBody.cs" />
     <Compile Include="Schema\FunctionDiff.cs" />
+    <Compile Include="Schema\Helpers\ImmutableTimestampFunctionSchema.cs" />
     <Compile Include="Schema\IDbObjects.cs" />
     <Compile Include="Schema\IDDLRunner.cs" />
     <Compile Include="Schema\IdentityAttribute.cs" />
