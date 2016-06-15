@@ -24,6 +24,8 @@ namespace Marten.Schema
         public const string LastModifiedColumn = "mt_last_modified";
         public const string DotNetTypeColumn = "mt_dotnet_type";
         public const string VersionColumn = "mt_version";
+        public const string DeletedColumn = "mt_deleted";
+        public const string DeletedAtColumn = "mt_deleted_at";
 
         private static readonly Regex _aliasSanitizer = new Regex("<|>", RegexOptions.Compiled);
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();

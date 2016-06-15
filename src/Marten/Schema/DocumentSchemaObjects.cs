@@ -211,6 +211,19 @@ namespace Marten.Schema
                 table.Columns.Add(new TableColumn(DocumentMapping.DocumentTypeColumn, "varchar"));
             }
 
+            if (_mapping.DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                table.Columns.Add(new TableColumn(DocumentMapping.DeletedColumn, "boolean")
+                {
+                    Directive = "DEFAULT FALSE"
+                });
+
+                table.Columns.Add(new TableColumn(DocumentMapping.DeletedAtColumn, "timestamp with time zone")
+                {
+                    Directive = "NULL"
+                });
+            }
+
             return table;
         }
 

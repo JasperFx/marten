@@ -51,6 +51,7 @@
     <Compile Include="Acceptance\optimistic_concurrency_with_subclass_hierarchies.cs" />
     <Compile Include="Acceptance\patching_api.cs" />
     <Compile Include="Acceptance\select_with_transformation.cs" />
+    <Compile Include="Acceptance\soft_deletes.cs" />
     <Compile Include="Acceptance\using_natural_identity_keys.cs" />
     <Compile Include="auto_assign_missing_guid_ids_Tests.cs" />
     <Compile Include="Bugs\ability_to_persist_generic_types.cs" />
@@ -211,6 +212,7 @@
     <Compile Include="Schema\SchemaPatchTester.cs" />
     <Compile Include="Schema\TableNameTests.cs" />
     <Compile Include="Schema\UpsertFunctionTests.cs" />
+    <Compile Include="Schema\when_generating_a_table_for_soft_deletes.cs" />
     <Compile Include="Schema\WritePatch_smoke_tests.cs" />
     <Compile Include="Services\IdentityMap_Version_Tracking.cs" />
     <Compile Include="Services\Includes\end_to_end_query_with_compiled_include_Tests.cs" />
