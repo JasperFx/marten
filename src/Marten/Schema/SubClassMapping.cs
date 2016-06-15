@@ -77,6 +77,16 @@ namespace Marten.Schema
 
         public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
         {
+            if (Parent.DeleteStyle == DeleteStyle.Remove)
+            {
+                return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
+            }
+
+            if (query.Contains(DocumentMapping.DeletedColumn))
+            {
+                return new CompoundWhereFragment("and", toBasicWhere(), query);
+            }
+
             return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
         }
 

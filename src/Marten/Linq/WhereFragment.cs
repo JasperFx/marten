@@ -27,5 +27,10 @@ namespace Marten.Linq
 
             return sql;
         }
+
+        public bool Contains(string sqlText)
+        {
+            return _sql.Contains(sqlText);
+        }
     }
 }

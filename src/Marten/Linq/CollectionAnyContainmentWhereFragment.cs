@@ -91,6 +91,11 @@ namespace Marten.Linq
             return $"d.data @> :{param.ParameterName}";
         }
 
+        public bool Contains(string sqlText)
+        {
+            return false;
+        }
+
         private static void gatherSearch(BinaryExpression x, Dictionary<string, object> search)
         {
             if (x.NodeType == ExpressionType.AndAlso)

@@ -34,5 +34,10 @@ namespace Marten.Linq
         {
             return _children.Select(x => $"({x.ToSql(command)})").Join(" " + _separator + " ");
         }
+
+        public bool Contains(string sqlText)
+        {
+            return _children.Any(x => x.Contains(sqlText));
+        }
     }
 }

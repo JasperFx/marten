@@ -11,6 +11,7 @@ using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services.Includes;
 using Marten.Util;
+using Npgsql;
 using Remotion.Linq;
 
 namespace Marten.Schema
@@ -113,7 +114,7 @@ namespace Marten.Schema
 
         public static IWhereFragment ExcludeSoftDeletedDocuments()
         {
-            return new WhereFragment($"{DocumentMapping.DeletedColumn} = False");
+            return new WhereFragment($"{DeletedColumn} = False");
         }
 
         IDocumentStorage IDocumentMapping.BuildStorage(IDocumentSchema schema)
@@ -202,6 +203,8 @@ namespace Marten.Schema
         public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
         {
             if (DeleteStyle == DeleteStyle.Remove) return query;
+
+            if (query.Contains(DeletedColumn)) return query;
 
             return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
         }

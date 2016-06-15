@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
 using Marten.Linq.Parsing;
+using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 using Marten.Util;
 
@@ -64,7 +65,11 @@ namespace Marten.Linq
 
             // Added
             new IsOneOf(),
-            new IsInGenericEnumerable()
+            new IsInGenericEnumerable(),
+
+            // soft deletes
+            new MaybeDeletedParser(),
+            new IsDeletedParser()
         };
 
 

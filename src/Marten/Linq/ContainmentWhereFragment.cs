@@ -37,6 +37,11 @@ namespace Marten.Linq
             return $"d.data @> :{param.ParameterName}";
         }
 
+        public bool Contains(string sqlText)
+        {
+            return false;
+        }
+
         public static void CreateDictionaryForSearch(BinaryExpression binary, IDictionary<string, object> dict)
         {
             var expressionValue = binary.Right.Value();

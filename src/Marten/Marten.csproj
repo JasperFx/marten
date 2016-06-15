@@ -143,6 +143,10 @@
     <Compile Include="Linq\SelectorParser.cs" />
     <Compile Include="Linq\SelectTransformer.cs" />
     <Compile Include="Linq\SingleFieldSelector.cs" />
+    <Compile Include="Linq\SoftDeletes\IsDeletedParser.cs" />
+    <Compile Include="Linq\SoftDeletes\MaybeDeletedParser.cs" />
+    <Compile Include="Linq\SoftDeletes\SoftDeleteClasses.cs" />
+    <Compile Include="Linq\SoftDeletes\SoftDeletedExtensions.cs" />
     <Compile Include="Linq\StatsExpressionNode.cs" />
     <Compile Include="Linq\StatsResultOperator.cs" />
     <Compile Include="Linq\StringSelector.cs" />
