@@ -46,8 +46,16 @@ namespace Marten.Schema
 
             _upsertName = mapping.UpsertFunction;
 
-            DeleteByIdSql = $"delete from {_mapping.Table.QualifiedName} where id = ?";
-            DeleteByWhereSql = $"delete from {_mapping.Table.QualifiedName} as d where ?";
+            if (mapping.DeleteStyle == DeleteStyle.Remove)
+            {
+                DeleteByIdSql = $"delete from {_mapping.Table.QualifiedName} where id = ?";
+                DeleteByWhereSql = $"delete from {_mapping.Table.QualifiedName} as d where ?";
+            }
+            else
+            {
+                DeleteByIdSql = $"update {_mapping.Table.QualifiedName} set deleted = True, deleted_at = now where id = ?";
+                DeleteByWhereSql = $"update {_mapping.Table.QualifiedName} as d set deleted = True, deleted_at = now where ?";
+            }
         }
 
         public string DeleteByWhereSql { get; }
