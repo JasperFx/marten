@@ -40,7 +40,7 @@ namespace Marten.Schema
                     else
                     {
                         IndexChanges.Add(index.ToDDL());
-                        IndexRollbacks.Add($"drop index concurrently if exists {expectedTable.Table.Schema}.{index.IndexName} cascade;");
+                        IndexRollbacks.Add($"drop index concurrently if exists {expectedTable.Table.Schema}.{index.IndexName};");
                     }
                 });
 
@@ -48,7 +48,7 @@ namespace Marten.Schema
                     index =>
                     {
                         IndexRollbacks.Add(index.DDL);
-                        IndexChanges.Add($"drop index concurrently if exists {mapping.Table.Schema}.{index.Name} cascade;");
+                        IndexChanges.Add($"drop index concurrently if exists {mapping.Table.Schema}.{index.Name};");
                     });
 
                 var expectedFunction = new UpsertFunction(mapping);

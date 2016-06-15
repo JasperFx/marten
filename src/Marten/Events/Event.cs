@@ -43,6 +43,24 @@ namespace Marten.Events
         {
             aggregator.AggregatorFor<T>()?.Apply(state, Data);
         }
+
+        protected bool Equals(Event<T> other)
+        {
+            return Id.Equals(other.Id);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((Event<T>) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
     }
     // ENDSAMPLE
 }

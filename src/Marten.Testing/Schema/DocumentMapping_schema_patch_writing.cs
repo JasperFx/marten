@@ -95,7 +95,7 @@ namespace Marten.Testing.Schema
             {
                 var patch = store.Schema.ToPatch();
 
-                patch.RollbackDDL.ShouldContain("drop index concurrently if exists public.mt_doc_user_idx_user_name cascade;");
+                patch.RollbackDDL.ShouldContain("drop index concurrently if exists public.mt_doc_user_idx_user_name;");
             }
         }
 

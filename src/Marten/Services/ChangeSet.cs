@@ -35,5 +35,9 @@ namespace Marten.Services
         }
 
         IEnumerable<PatchOperation> IChangeSet.Patches => Patched;
+        public IEnumerable<EventStream> GetStreams()
+        {
+            return Streams;
+        }
     }
 }

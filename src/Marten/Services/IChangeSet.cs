@@ -12,5 +12,6 @@ namespace Marten.Services
         IEnumerable<IEvent> GetEvents();
 
         IEnumerable<PatchOperation> Patches { get; }
+        IEnumerable<EventStream> GetStreams();
     }
 }
