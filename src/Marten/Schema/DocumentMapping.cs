@@ -450,7 +450,6 @@ namespace Marten.Schema
             return duplicatedField;
         }
 
-        [Obsolete("Don't think this is going to be necessary")]
         public IEnumerable<IndexDefinition> IndexesFor(string column)
         {
             return Indexes.OfType<IndexDefinition>().Where(x => x.Columns.Contains(column));

@@ -45,14 +45,6 @@ namespace Marten.Services
 
         public VersionTracker Versions { get; }
 
-        [Obsolete("Going to replace this with the new IStorageOperation model")]
-        public void AddCall(Func<BatchCommand, ICall> source, ICallback callback = null)
-        {
-            var batch = Current();
-            var call = source(batch);
-
-            batch.AddCall(call, callback);
-        }
 
         public void Add(IStorageOperation operation)
         {
