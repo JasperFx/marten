@@ -32,6 +32,7 @@ namespace Marten.Testing.Schema
             string id { get; set; }
         }
 
+
         [Fact]
         public void concrete_type_with_subclasses_is_hierarchy()
         {

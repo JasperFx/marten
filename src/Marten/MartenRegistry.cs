@@ -317,6 +317,16 @@ namespace Marten
                 alter = m => m.UseOptimisticConcurrency = enabled;
                 return this;
             }
+
+            /// <summary>
+            /// Directs Marten to apply "soft deletes" to this document type
+            /// </summary>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> SoftDeleted()
+            {
+                alter = m => m.DeleteStyle = DeleteStyle.SoftDelete;
+                return this;
+            }
         }
     }
 

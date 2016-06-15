@@ -195,6 +195,7 @@
     <Compile Include="Patching\can_build_the_patching_function.cs" />
     <Compile Include="Patching\PatchExpressionTests.cs" />
     <Compile Include="Schema\BulkLoaderConstructionTests.cs" />
+    <Compile Include="Schema\configuring_mapping_deletion_style.cs" />
     <Compile Include="Schema\creating_a_full_patch.cs" />
     <Compile Include="Schema\DbObjectsTests.cs" />
     <Compile Include="Schema\DocumentMapping_schema_patch_writing.cs" />
