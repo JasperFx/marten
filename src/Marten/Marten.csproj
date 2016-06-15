@@ -219,9 +219,7 @@
     <Compile Include="Services\BatchQuerying\TransformedBatchQueryable.cs" />
     <Compile Include="Services\ChangeSet.cs" />
     <Compile Include="Services\CommandRunnerMode.cs" />
-    <Compile Include="Services\DeleteCall.cs" />
     <Compile Include="Services\Deletes\DeleteClasses.cs" />
-    <Compile Include="Services\DeleteWhereCall.cs" />
     <Compile Include="Services\FetchResult.cs" />
     <Compile Include="Services\ICall.cs" />
     <Compile Include="Services\ICallback.cs" />
@@ -293,7 +291,6 @@
     <Compile Include="Schema\Identity\Sequences\SequenceFactory.cs" />
     <Compile Include="Schema\Arguments\UpsertArgument.cs" />
     <Compile Include="Services\NulloIdentityMap.cs" />
-    <Compile Include="Services\Delete.cs" />
     <Compile Include="Services\OptimisticConcurrencyCallback.cs" />
     <Compile Include="Services\SprocCall.cs" />
     <Compile Include="Services\TrackedEntity.cs" />

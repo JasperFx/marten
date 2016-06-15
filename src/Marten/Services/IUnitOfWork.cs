@@ -12,7 +12,7 @@ namespace Marten.Services
         /// when this session is committed
         /// </summary>
         /// <returns></returns>
-        IEnumerable<Delete> Deletions();
+        IEnumerable<IDeletion> Deletions();
 
         /// <summary>
         /// All the pending deletions of documents of type T that will be processed

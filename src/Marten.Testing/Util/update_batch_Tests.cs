@@ -71,7 +71,9 @@ namespace Marten.Testing.Util
             batch.Sproc(theMapping.UpsertFunction).Param("docId", target1.Id).JsonEntity("doc", target1).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
             batch.Sproc(theMapping.UpsertFunction).Param("docId", target2.Id).JsonEntity("doc", target2).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
             batch.Sproc(theMapping.UpsertFunction).Param("docId", target3.Id).JsonEntity("doc", target3).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
-            batch.Delete(theMapping.Table, initialTarget.Id, NpgsqlDbType.Uuid);
+
+            throw new NotImplementedException("NWO");
+            //batch.Delete(theMapping.Table, initialTarget.Id, NpgsqlDbType.Uuid);
 
             batch.Execute();
             batch.Connection.Dispose();
@@ -108,7 +110,9 @@ namespace Marten.Testing.Util
             batch.Sproc(upsert).Param("docId", target1.Id).JsonBody("doc", serializer.ToJson(target1)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
             batch.Sproc(upsert).Param("docId", target2.Id).JsonBody("doc", serializer.ToJson(target2)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
             batch.Sproc(upsert).Param("docId", target3.Id).JsonBody("doc", serializer.ToJson(target3)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
-            batch.Delete(theMapping.Table, initialTarget.Id, NpgsqlDbType.Uuid);
+
+            throw new NotImplementedException();
+            //batch.Delete(theMapping.Table, initialTarget.Id, NpgsqlDbType.Uuid);
 
             batch.Execute();
             batch.Connection.Dispose();

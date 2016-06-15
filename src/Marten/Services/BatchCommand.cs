@@ -75,24 +75,6 @@ namespace Marten.Services
             return call;
         }
 
-        public void Delete(TableName table, object id, NpgsqlDbType dbType)
-        {
-            var param = AddParameter(id, dbType);
-            var call = new DeleteCall(table, param.ParameterName);
-            AddCall(call);
-        }
-
-
-        public void DeleteWhere(TableName table, IWhereFragment @where)
-        {
-            if (table == null) throw new ArgumentNullException(nameof(table));
-            if (@where == null) throw new ArgumentNullException(nameof(@where));
-
-            var whereClause = @where.ToSql(Command);
-            var call = new DeleteWhereCall(table, whereClause);
-            AddCall(call);
-        }
-
         public bool HasCallbacks()
         {
             return _callbacks.Any(x => x != null);

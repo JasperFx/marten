@@ -52,7 +52,7 @@ namespace Marten
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            _unitOfWork.DeleteEntity(entity);
+            throw new NotImplementedException("Need to create a storage operation here");
 
             var storage = _schema.StorageFor(typeof(T));
             storage.Remove(IdentityMap, entity);
@@ -60,7 +60,7 @@ namespace Marten
 
         public void Delete<T>(ValueType id)
         {
-            _unitOfWork.Delete<T>(id);
+            throw new NotImplementedException("Need to create a storage operation here");
 
             var storage = _schema.StorageFor(typeof(T));
             storage.Delete(IdentityMap, id);
@@ -68,7 +68,7 @@ namespace Marten
 
         public void Delete<T>(string id)
         {
-            _unitOfWork.Delete<T>(id);
+            throw new NotImplementedException("Need to create a storage operation here");
 
             var storage = _schema.StorageFor(typeof(T));
             storage.Delete(IdentityMap, id);
@@ -79,7 +79,7 @@ namespace Marten
             var model = Query<T>().Where(expression).As<MartenQueryable<T>>().ToQueryModel();
 
             var where = _schema.BuildWhereFragment(model);
-            _unitOfWork.Delete<T>(where);
+            throw new NotImplementedException("Need to create a storage operation here");
         }
 
         public void Store<T>(params T[] entities)

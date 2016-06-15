@@ -19,7 +19,6 @@ namespace Marten.Services
         private readonly IDocumentSchema _schema;
         private readonly ConcurrentDictionary<Type, IEnumerable> _updates = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Type, IEnumerable> _inserts = new ConcurrentDictionary<Type, IEnumerable>();
-        private readonly ConcurrentDictionary<Type, IList<Delete>> _deletes = new ConcurrentDictionary<Type, IList<Delete>>();
         private readonly ConcurrentDictionary<Guid, EventStream> _events = new ConcurrentDictionary<Guid, EventStream>();
         private readonly IList<IStorageOperation> _operations = new List<IStorageOperation>();
 
@@ -40,28 +39,6 @@ namespace Marten.Services
             _trackers.Remove(tracker);
         }
 
-        private void delete<T>(object id)
-        {
-            var list = _deletes.GetOrAdd(typeof (T), _ => new List<Delete>());
-            list.Add(new Delete(typeof(T), id));
-        }
-
-        public void DeleteEntity<T>(T entity)
-        {
-            var id = _schema.StorageFor(typeof(T)).Identity(entity);
-            var list = _deletes.GetOrAdd(typeof(T), _ => new List<Delete>());
-            list.Add(new Delete(typeof(T), id, entity));
-        }
-
-        public void Delete<T>(ValueType id)
-        {
-            delete<T>(id);
-        }
-
-        public void Delete<T>(string id)
-        {
-            delete<T>(id);
-        }
 
         public void StoreStream(EventStream stream)
         {
@@ -97,9 +74,9 @@ namespace Marten.Services
             list.AddRange(documents);
         }
 
-        public IEnumerable<Delete> Deletions()
+        public IEnumerable<IDeletion> Deletions()
         {
-            return _deletes.Values.SelectMany(x => x);
+            return _operations.OfType<IDeletion>();
         }
 
         public IEnumerable<IDeletion> DeletionsFor<T>()
@@ -179,14 +156,6 @@ namespace Marten.Services
                 _updates[type].Each(o => upsert.RegisterUpdate(batch, o));
             });
 
-            _deletes.Keys.Each(type =>
-            {
-                var storage = _schema.StorageFor(type);
-                var mapping = _schema.MappingFor(type).ToQueryableDocument();
-
-                _deletes[type].Each(id => id.Configure(_schema.Parser, storage, mapping, batch));
-            });
-
             writeEvents(batch);
 
 
@@ -230,7 +199,7 @@ namespace Marten.Services
 
         private void ClearChanges(DocumentChange[] changes)
         {
-            _deletes.Clear();
+            _operations.Clear();
             _updates.Clear();
             _inserts.Clear();
             _events.Clear();
@@ -262,11 +231,5 @@ namespace Marten.Services
             return _operations.OfType<PatchOperation>();
         }
 
-        public void Delete<T>(IWhereFragment where)
-        {
-            var delete = new Delete(typeof(T), where);
-            var list = _deletes.GetOrAdd(typeof(T), _ => new List<Delete>());
-            list.Add(delete);
-        }
     }
 }

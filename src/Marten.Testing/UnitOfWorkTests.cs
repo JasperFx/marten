@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -78,10 +79,17 @@ namespace Marten.Testing
 
 
             var uow2 = theStore.Advanced.CreateUnitOfWork();
+
+            throw new NotImplementedException("NWO");
+
+            /*
             uow2.DeleteEntity(stringDoc2);
             uow2.DeleteEntity(user2);
             uow2.DeleteEntity(int2);
             uow2.DeleteEntity(long2);
+            */
+
+
             var batch2 = theStore.Advanced.CreateUpdateBatch();
             uow2.ApplyChanges(batch2);
 
@@ -120,10 +128,17 @@ namespace Marten.Testing
             batch1.Connection.Dispose();
 
             var uow2 = theStore.Advanced.CreateUnitOfWork();
+
+
+            throw new NotImplementedException("NWO");
+
+            /*
             uow2.Delete<StringDoc>(stringDoc2.Id);
             uow2.Delete<User>(user2.Id);
             uow2.Delete<IntDoc>(int2.Id);
             uow2.Delete<LongDoc>(long2.Id);
+            */
+
             var batch2 = theStore.Advanced.CreateUpdateBatch();
             uow2.ApplyChanges(batch2);
 
