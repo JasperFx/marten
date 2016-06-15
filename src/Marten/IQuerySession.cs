@@ -33,7 +33,23 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(ValueType id) where T : class;
+        T Load<T>(int id) where T : class;
+
+        /// <summary>
+        /// Load or find a single document of type T with either a numeric or Guid id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        T Load<T>(long id) where T : class;
+
+        /// <summary>
+        /// Load or find a single document of type T with either a numeric or Guid id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        T Load<T>(Guid id) where T : class;
 
         /// <summary>
         /// Asynchronously load or find a single document of type T with either a numeric or Guid id
@@ -42,7 +58,27 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(ValueType id, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<T> LoadAsync<T>(int id, CancellationToken token = default(CancellationToken)) where T : class;
+
+        /// <summary>
+        /// Asynchronously load or find a single document of type T with either a numeric or Guid id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<T> LoadAsync<T>(long id, CancellationToken token = default(CancellationToken)) where T : class;
+
+        /// <summary>
+        /// Asynchronously load or find a single document of type T with either a numeric or Guid id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<T> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class;
+
+
 
         /// <summary>
         /// Load or find only the document json by string id for a document of type T
@@ -58,7 +94,24 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        string FindJsonById<T>(ValueType id) where T : class;
+        string FindJsonById<T>(int id) where T : class;
+
+        /// <summary>
+        /// Load or find only the document json by numeric or Guid id for a document of type T
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        string FindJsonById<T>(long id) where T : class;
+
+        /// <summary>
+        /// Load or find only the document json by numeric or Guid id for a document of type T
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        string FindJsonById<T>(Guid id) where T : class;
+
 
         /// <summary>
         /// Asynchronously load or find only the document json by string id for a document of type T
@@ -76,7 +129,27 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<string> FindJsonByIdAsync<T>(ValueType id, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<string> FindJsonByIdAsync<T>(int id, CancellationToken token = default(CancellationToken)) where T : class;
+
+        /// <summary>
+        /// Asynchronously load or find only the document json by numeric or Guid id for a document of type T
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<string> FindJsonByIdAsync<T>(long id, CancellationToken token = default(CancellationToken)) where T : class;
+
+        /// <summary>
+        /// Asynchronously load or find only the document json by numeric or Guid id for a document of type T
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<string> FindJsonByIdAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class;
+
+
 
         // SAMPLE: querying_with_linq
         /// <summary>

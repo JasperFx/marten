@@ -28,7 +28,21 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
-        void Delete<T>(ValueType id);
+        void Delete<T>(int id);
+
+        /// <summary>
+        /// Mark an entity of type T with either a numeric or Guid id for deletion upon the next call to SaveChanges()
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        void Delete<T>(long id);
+
+        /// <summary>
+        /// Mark an entity of type T with either a numeric or Guid id for deletion upon the next call to SaveChanges()
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        void Delete<T>(Guid id);
 
         /// <summary>
         /// Mark an entity of type T with a string id for deletion upon the next call to SaveChanges()
@@ -104,10 +118,44 @@ namespace Marten
         /// </summary>
         IChangeSet LastCommit { get; }
 
+        /// <summary>
+        /// Patch a single document of type T with the given id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <returns></returns>
         IPatchExpression<T> Patch<T>(int id);
+
+        /// <summary>
+        /// Patch a single document of type T with the given id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <returns></returns>
         IPatchExpression<T> Patch<T>(long id);
+
+        /// <summary>
+        /// Patch a single document of type T with the given id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <returns></returns>
         IPatchExpression<T> Patch<T>(string id);
+
+        /// <summary>
+        /// Patch a single document of type T with the given id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <returns></returns>
         IPatchExpression<T> Patch<T>(Guid id);
+
+        /// <summary>
+        /// Patch a single document of type T with the given id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        /// <returns></returns>
         IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> where);
     }
 

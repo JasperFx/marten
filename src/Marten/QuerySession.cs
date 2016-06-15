@@ -117,11 +117,6 @@ namespace Marten
             return load<T>(id);
         }
 
-        public Task<T> LoadAsync<T>(ValueType id, CancellationToken token) where T : class
-        {
-            return loadAsync<T>(id, token);
-        }
-
         private T load<T>(object id) where T : class
         {
             return storage<T>().As<IResolver<T>>().Resolve(_identityMap, this, id);
@@ -142,10 +137,6 @@ namespace Marten
             return findJsonById<T>(id);
         }
 
-        public string FindJsonById<T>(ValueType id) where T : class
-        {
-            return findJsonById<T>(id);
-        }
 
         public Task<string> FindJsonByIdAsync<T>(string id, CancellationToken token) where T : class
         {
@@ -367,6 +358,66 @@ namespace Marten
         public void Dispose()
         {
             _connection.Dispose();
+        }
+
+        public T Load<T>(int id) where T : class
+        {
+            return load<T>(id);
+        }
+
+        public T Load<T>(long id) where T : class
+        {
+            return load<T>(id);
+        }
+
+        public T Load<T>(Guid id) where T : class
+        {
+            return load<T>(id);
+        }
+
+        public Task<T> LoadAsync<T>(int id, CancellationToken token = new CancellationToken()) where T : class
+        {
+            return loadAsync<T>(id, token);
+        }
+
+        public Task<T> LoadAsync<T>(long id, CancellationToken token = new CancellationToken()) where T : class
+        {
+            return loadAsync<T>(id, token);
+        }
+
+        public Task<T> LoadAsync<T>(Guid id, CancellationToken token = new CancellationToken()) where T : class
+        {
+            return loadAsync<T>(id, token);
+        }
+
+        public string FindJsonById<T>(int id) where T : class
+        {
+            return findJsonById<T>(id);
+        }
+
+        public string FindJsonById<T>(long id) where T : class
+        {
+            return findJsonById<T>(id);
+        }
+
+        public string FindJsonById<T>(Guid id) where T : class
+        {
+            return findJsonById<T>(id);
+        }
+
+        public Task<string> FindJsonByIdAsync<T>(int id, CancellationToken token = new CancellationToken()) where T : class
+        {
+            return findJsonByIdAsync<T>(id, token);
+        }
+
+        public Task<string> FindJsonByIdAsync<T>(long id, CancellationToken token = new CancellationToken()) where T : class
+        {
+            return findJsonByIdAsync<T>(id, token);
+        }
+
+        public Task<string> FindJsonByIdAsync<T>(Guid id, CancellationToken token = new CancellationToken()) where T : class
+        {
+            return findJsonByIdAsync<T>(id, token);
         }
     }
 }

@@ -64,26 +64,35 @@ namespace Marten
             storage.Remove(IdentityMap, entity);
         }
 
-        public void Delete<T>(ValueType id)
+        public void Delete<T>(int id)
+        {
+            delete<T>(id);
+        }
+
+        private void delete<T>(object id)
         {
             var mapping = _schema.MappingFor(typeof(T));
             var storage = _schema.StorageFor(typeof(T));
 
             var deletion = new DeleteById(mapping.As<IQueryableDocument>(), storage, id);
             _unitOfWork.Add(deletion);
-            
+
             storage.Delete(IdentityMap, id);
+        }
+
+        public void Delete<T>(long id)
+        {
+            delete<T>(id);
+        }
+
+        public void Delete<T>(Guid id)
+        {
+            delete<T>(id);
         }
 
         public void Delete<T>(string id)
         {
-            var mapping = _schema.MappingFor(typeof(T));
-            var storage = _schema.StorageFor(typeof(T));
-
-            var deletion = new DeleteById(mapping.As<IQueryableDocument>(), storage, id);
-            _unitOfWork.Add(deletion);
-
-            storage.Delete(IdentityMap, id);
+            delete<T>(id);
         }
 
         public void DeleteWhere<T>(Expression<Func<T, bool>> expression)

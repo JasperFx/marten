@@ -58,7 +58,7 @@ namespace Marten.Testing
 
             using (var session = theStore.OpenSession())
             {
-                session.Delete<LongDoc>(LongDoc.Id);
+                session.Delete<LongDoc>((int) LongDoc.Id);
                 session.SaveChanges();
             }
 
