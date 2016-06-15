@@ -5,4 +5,6 @@ namespace Marten.Services
     {
         void AddParameters(IBatchCommand batch);
     }
+
+    public interface IDeletion : IStorageOperation { }
 }
