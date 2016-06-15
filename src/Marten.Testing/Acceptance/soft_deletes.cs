@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Marten.Util;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
@@ -108,5 +110,108 @@ namespace Marten.Testing.Acceptance
                 userIsMarkedAsDeleted(session, user3.Id);
             }
         }
+
+        [Fact]
+        public void query_soft_deleted_docs()
+        {
+            var user1 = new User { UserName = "foo" };
+            var user2 = new User { UserName = "bar" };
+            var user3 = new User { UserName = "baz" };
+            var user4 = new User { UserName = "jack" };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(user1, user2, user3, user4);
+                session.SaveChanges();
+
+                session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+                session.SaveChanges();
+
+                // no where clause
+                session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+                    .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+
+                // with a where clause
+                session.Query<User>().Where(x => x.UserName != "jack")
+                    .ToList().Single().UserName.ShouldBe("foo");
+            }
+        }
+
+        [Fact]
+        public void top_level_of_hierarchy()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<User>()
+                    .SoftDeleted()
+                    .AddSubclass<AdminUser>()
+                    .AddSubclass<SuperUser>();
+            });
+
+            var user1 = new User { UserName = "foo" };
+            var user2 = new User { UserName = "bar" };
+            var user3 = new User { UserName = "baz" };
+            var user4 = new User { UserName = "jack" };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(user1, user2, user3, user4);
+                session.SaveChanges();
+
+                session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+                session.SaveChanges();
+
+                // no where clause
+                session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+                    .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+
+                // with a where clause
+                session.Query<User>().Where(x => x.UserName != "jack")
+                    .ToList().Single().UserName.ShouldBe("foo");
+            }
+        }
+
+
+        [Fact]
+        public void sub_level_of_hierarchy()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<User>()
+                    .SoftDeleted()
+                    .AddSubclass<AdminUser>()
+                    .AddSubclass<SuperUser>();
+            });
+
+            var user1 = new SuperUser { UserName = "foo" };
+            var user2 = new SuperUser { UserName = "bar" };
+            var user3 = new SuperUser { UserName = "baz" };
+            var user4 = new SuperUser { UserName = "jack" };
+            var user5 = new AdminUser { UserName = "admin" };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.StoreObjects(new User[] { user1, user2, user3, user4, user5 });
+                session.SaveChanges();
+
+                session.DeleteWhere<SuperUser>(x => x.UserName.StartsWith("b"));
+                session.SaveChanges();
+
+                // no where clause
+                session.Query<SuperUser>().OrderBy(x => x.UserName).Select(x => x.UserName)
+                    .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+
+                // with a where clause
+                session.Query<SuperUser>().Where(x => x.UserName != "jack")
+                    .ToList().Single().UserName.ShouldBe("foo");
+            }
+        }
+
+
+        /*
+
+         * 3.) Hierarcy doc by top level
+         * 
+         */
     }
 }

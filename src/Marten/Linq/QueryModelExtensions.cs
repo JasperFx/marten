@@ -69,7 +69,7 @@ namespace Marten.Linq
                 ? schema.Parser.ParseWhereFragment(mapping, wheres.Single().Predicate)
                 : new CompoundWhereFragment(schema.Parser, mapping, "and", wheres);
 
-            return mapping.FilterDocuments(where);
+            return mapping.FilterDocuments(query, @where);
         }
 
         public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, QueryModel query)

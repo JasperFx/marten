@@ -66,7 +66,7 @@ namespace Marten.Transforms
 
 
                 var whereFragment = _store.Schema.Parser.ParseWhereFragment(mapping.ToQueryableDocument(), wheres.First().Predicate);
-                whereFragment = mapping.ToQueryableDocument().FilterDocuments(whereFragment);
+                whereFragment = mapping.ToQueryableDocument().FilterDocuments(queryModel, whereFragment);
 
                 var cmd = session.Connection.CreateCommand();
 

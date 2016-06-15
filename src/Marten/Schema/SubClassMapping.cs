@@ -8,6 +8,7 @@ using Marten.Schema.Hierarchies;
 using Marten.Schema.Identity;
 using Marten.Services.Includes;
 using Marten.Util;
+using Remotion.Linq;
 
 namespace Marten.Schema
 {
@@ -74,16 +75,30 @@ namespace Marten.Schema
             return Parent.FieldFor(members) ?? _inner.FieldFor(members);
         }
 
-        public IWhereFragment FilterDocuments(IWhereFragment query)
+        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
         {
             return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
         }
 
         public IWhereFragment DefaultWhereFragment()
         {
-            return
-                new WhereFragment(
-                    Aliases.Select(a => $"d.{DocumentMapping.DocumentTypeColumn} = '{a}'").ToArray().Join(" or "));
+            var basicWhere = toBasicWhere();
+
+            if (Parent.DeleteStyle == DeleteStyle.Remove)
+            {
+                return basicWhere;
+            }
+            else
+            {
+                return new CompoundWhereFragment(" and ", basicWhere, DocumentMapping.ExcludeSoftDeletedDocuments());
+            }
+        }
+
+        private WhereFragment toBasicWhere()
+        {
+            var aliasValues = Aliases.Select(a => $"d.{DocumentMapping.DocumentTypeColumn} = '{a}'").ToArray().Join(" or ");
+            var basicWhere = new WhereFragment(aliasValues);
+            return basicWhere;
         }
 
         public IDocumentStorage BuildStorage(IDocumentSchema schema)

@@ -14,6 +14,7 @@ using Marten.Services.Includes;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
+using Remotion.Linq;
 
 namespace Marten.Events
 {
@@ -67,7 +68,7 @@ namespace Marten.Events
             return _inner.FieldFor(members);
         }
 
-        public IWhereFragment FilterDocuments(IWhereFragment query)
+        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
         {
             return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
         }

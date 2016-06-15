@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Reflection;
 using Marten.Linq;
 using Marten.Services.Includes;
+using Remotion.Linq;
 
 namespace Marten.Schema
 {
     public interface IQueryableDocument
     {
-        IWhereFragment FilterDocuments(IWhereFragment query);
+        IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query);
 
         IWhereFragment DefaultWhereFragment();
 

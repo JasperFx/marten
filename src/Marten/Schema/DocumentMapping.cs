@@ -11,6 +11,7 @@ using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services.Includes;
 using Marten.Util;
+using Remotion.Linq;
 
 namespace Marten.Schema
 {
@@ -105,7 +106,14 @@ namespace Marten.Schema
 
         public IWhereFragment DefaultWhereFragment()
         {
-            return null;
+            if (DeleteStyle == DeleteStyle.Remove) return null;
+
+            return ExcludeSoftDeletedDocuments();
+        }
+
+        public static IWhereFragment ExcludeSoftDeletedDocuments()
+        {
+            return new WhereFragment($"{DocumentMapping.DeletedColumn} = False");
         }
 
         IDocumentStorage IDocumentMapping.BuildStorage(IDocumentSchema schema)
@@ -191,9 +199,11 @@ namespace Marten.Schema
                 _ => new JsonLocatorField(_storeOptions.Serializer().EnumStorage, members.ToArray()));
         }
 
-        public IWhereFragment FilterDocuments(IWhereFragment query)
+        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
         {
-            return query;
+            if (DeleteStyle == DeleteStyle.Remove) return query;
+
+            return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
         }
 
         public static DocumentMapping For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName,
