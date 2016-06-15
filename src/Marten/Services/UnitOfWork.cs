@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -22,7 +21,7 @@ namespace Marten.Services
         private readonly ConcurrentDictionary<Type, IEnumerable> _inserts = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Type, IList<Delete>> _deletes = new ConcurrentDictionary<Type, IList<Delete>>();
         private readonly ConcurrentDictionary<Guid, EventStream> _events = new ConcurrentDictionary<Guid, EventStream>();
-        private readonly IList<PatchOperation> _patches = new List<PatchOperation>();
+        private readonly IList<IStorageOperation> _operations = new List<IStorageOperation>();
 
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>(); 
 
@@ -81,7 +80,7 @@ namespace Marten.Services
 
         public void Patch(PatchOperation patch)
         {
-            _patches.Add(patch);
+            _operations.Add(patch);
         }
 
         public void StoreUpdates<T>(params T[] documents)
@@ -103,14 +102,14 @@ namespace Marten.Services
             return _deletes.Values.SelectMany(x => x);
         }
 
-        public IEnumerable<Delete> DeletionsFor<T>()
+        public IEnumerable<IDeletion> DeletionsFor<T>()
         {
-            return Deletions().Where(x => x.DocumentType == typeof(T));
+            return _operations.OfType<IDeletion>().Where(x => x.DocumentType == typeof(T));
         }
 
-        public IEnumerable<Delete> DeletionsFor(Type documentType)
+        public IEnumerable<IDeletion> DeletionsFor(Type documentType)
         {
-            return Deletions().Where(x => x.DocumentType == documentType);
+            return _operations.OfType<IDeletion>().Where(x => x.DocumentType == documentType);
         } 
 
         public IEnumerable<object> Updates()
@@ -142,9 +141,8 @@ namespace Marten.Services
             var changes = new ChangeSet(documentChanges);
             changes.Updated.Fill(Updates());
             changes.Inserted.Fill(Inserts());
-            changes.Deleted.AddRange(Deletions());
             changes.Streams.AddRange(_events.Values);
-            changes.Patched.AddRange(_patches);
+            changes.Operations.AddRange(_operations);
 
             return changes;
         }
@@ -192,7 +190,7 @@ namespace Marten.Services
             writeEvents(batch);
 
 
-            batch.Add(_patches);
+            batch.Add(_operations);
 
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
@@ -261,7 +259,7 @@ namespace Marten.Services
 
         public IEnumerable<PatchOperation> Patches()
         {
-            return _patches;
+            return _operations.OfType<PatchOperation>();
         }
 
         public void Delete<T>(IWhereFragment where)

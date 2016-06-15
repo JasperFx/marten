@@ -10,15 +10,14 @@ namespace Marten.Services
     {
         public readonly IList<object> Updated = new List<object>();
         public readonly IList<object> Inserted = new List<object>();
-        public readonly IList<Delete> Deleted = new List<Delete>();
         public readonly IList<EventStream> Streams = new List<EventStream>();
-        public readonly IList<PatchOperation> Patched = new List<PatchOperation>();
+        public readonly IList<IStorageOperation> Operations = new List<IStorageOperation>();
 
         IEnumerable<object> IChangeSet.Updated => Updated;
 
         IEnumerable<object> IChangeSet.Inserted => Inserted;
 
-        IEnumerable<Delete> IChangeSet.Deleted => Deleted;
+        IEnumerable<IDeletion> IChangeSet.Deleted => Operations.OfType<IDeletion>();
         
 
         public DocumentChange[] Changes;
@@ -34,7 +33,7 @@ namespace Marten.Services
             return Streams.SelectMany(s => s.Events);
         }
 
-        IEnumerable<PatchOperation> IChangeSet.Patches => Patched;
+        IEnumerable<PatchOperation> IChangeSet.Patches => Operations.OfType<PatchOperation>();
         public IEnumerable<EventStream> GetStreams()
         {
             return Streams;

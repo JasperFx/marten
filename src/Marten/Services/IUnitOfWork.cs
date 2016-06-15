@@ -20,7 +20,7 @@ namespace Marten.Services
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IEnumerable<Delete> DeletionsFor<T>();
+        IEnumerable<IDeletion> DeletionsFor<T>();
 
         /// <summary>
         /// All the pending deletions of documents of type documentType that will be processed
@@ -28,7 +28,7 @@ namespace Marten.Services
         /// </summary>
         /// <param name="documentType"></param>
         /// <returns></returns>
-        IEnumerable<Delete> DeletionsFor(Type documentType);
+        IEnumerable<IDeletion> DeletionsFor(Type documentType);
 
         /// <summary>
         /// All the documents that will be updated when this session is committed

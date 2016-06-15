@@ -8,7 +8,7 @@ namespace Marten.Services
     {
         IEnumerable<object> Updated { get; } 
         IEnumerable<object> Inserted { get; }
-        IEnumerable<Delete> Deleted { get; }
+        IEnumerable<IDeletion> Deleted { get; }
         IEnumerable<IEvent> GetEvents();
 
         IEnumerable<PatchOperation> Patches { get; }

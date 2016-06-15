@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Baseline;
+using Marten.Services.Deletes;
 using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Shouldly;
@@ -71,12 +72,12 @@ namespace Marten.Testing
                 session.Delete(target1);
 
                 session.PendingChanges.Deletions().Count().ShouldBe(3);
-                session.PendingChanges.DeletionsFor(typeof(Target)).Single().Id.ShouldBe(target1.Id);
-                session.PendingChanges.DeletionsFor(typeof(Target)).Single().Document.ShouldBe(target1);
+                session.PendingChanges.DeletionsFor(typeof(Target)).OfType<DeleteById>().Single().Id.ShouldBe(target1.Id);
+                session.PendingChanges.DeletionsFor(typeof(Target)).OfType<DeleteById>().Single().Document.ShouldBe(target1);
 
                 session.PendingChanges.DeletionsFor<User>().Count().ShouldBe(2);
-                session.PendingChanges.DeletionsFor<User>().Any(x => x.Document == user1).ShouldBeTrue();
-                session.PendingChanges.DeletionsFor<User>().Any(x => x.Id.As<Guid>() == user2.Id).ShouldBeTrue();
+                session.PendingChanges.DeletionsFor<User>().OfType<DeleteById>().Any(x => x.Document == user1).ShouldBeTrue();
+                session.PendingChanges.DeletionsFor<User>().OfType<DeleteById>().Any(x => x.Id.As<Guid>() == user2.Id).ShouldBeTrue();
             }
         }
 

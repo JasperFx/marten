@@ -1,3 +1,5 @@
+using System;
+
 namespace Marten.Services
 {
     // If it's an ICallback, register itself as the ICallback
@@ -6,5 +8,8 @@ namespace Marten.Services
         void AddParameters(IBatchCommand batch);
     }
 
-    public interface IDeletion : IStorageOperation { }
+    public interface IDeletion : IStorageOperation
+    {
+        Type DocumentType { get; }
+    }
 }

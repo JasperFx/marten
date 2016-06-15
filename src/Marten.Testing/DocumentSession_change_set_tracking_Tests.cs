@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Services.Deletes;
 using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
@@ -32,7 +33,7 @@ namespace Marten.Testing
             theSession.PendingChanges.InsertsFor<Target>()
                 .ShouldHaveTheSameElementsAs(newDoc1, newDoc2);
 
-            theSession.PendingChanges.DeletionsFor<Target>().Select(x => x.Id)
+            theSession.PendingChanges.DeletionsFor<Target>().OfType<DeleteById>().Select(x => x.Id)
                 .ShouldHaveTheSameElementsAs(id1, id2);
 
             theSession.LastCommit.ShouldBeNull();
@@ -45,7 +46,7 @@ namespace Marten.Testing
 
             theSession.LastCommit.Updated.ShouldHaveTheSameElementsAs(target1, target2, target3);
             theSession.LastCommit.Inserted.ShouldHaveTheSameElementsAs(newDoc1, newDoc2);
-            theSession.LastCommit.Deleted.Select(x => x.Id).ShouldHaveTheSameElementsAs(id1, id2);
+            theSession.LastCommit.Deleted.OfType<DeleteById>().Select(x => x.Id).ShouldHaveTheSameElementsAs(id1, id2);
 
             theSession.Store(new Target());
             theSession.SaveChanges();
