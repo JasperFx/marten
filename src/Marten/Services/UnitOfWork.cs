@@ -191,10 +191,8 @@ namespace Marten.Services
 
             writeEvents(batch);
 
-            foreach (var patch in _patches)
-            {
-                patch.RegisterUpdate(batch);
-            }
+
+            batch.Add(_patches);
 
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>

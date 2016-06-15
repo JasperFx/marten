@@ -9,7 +9,7 @@ using NpgsqlTypes;
 
 namespace Marten.Patching
 {
-    public class PatchOperation : ICall
+    public class PatchOperation : IStorageOperation
     {
         private readonly IQueryableDocument _document;
         private readonly IWhereFragment _fragment;
@@ -32,19 +32,15 @@ namespace Marten.Patching
             builder.Append(_sql);
         }
 
-        public void RegisterUpdate(UpdateBatch batch)
+        public void AddParameters(IBatchCommand batch)
         {
-            batch.AddCall(cmd =>
-            {
-                var patchJson = batch.Serializer.ToCleanJson(_patch);
-                var patchParam = cmd.AddParameter(patchJson, NpgsqlDbType.Jsonb);
-                var where = _fragment.ToSql(cmd.Command);
+            var patchJson = batch.Serializer.ToCleanJson(_patch);
+            var patchParam = batch.AddParameter(patchJson, NpgsqlDbType.Jsonb);
+            var where = _fragment.ToSql(batch.Command);
 
-                _sql =
-                    $"update {_document.Table.QualifiedName} as d set data = {_transform.Function.QualifiedName}(data, :{patchParam.ParameterName}) where {where}";
+            _sql =
+                $"update {_document.Table.QualifiedName} as d set data = {_transform.Function.QualifiedName}(data, :{patchParam.ParameterName}) where {where}";
 
-                return this;
-            });
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Patching;
 using Marten.Schema;
 using Npgsql;
 using NpgsqlTypes;
@@ -44,12 +45,22 @@ namespace Marten.Services
 
         public VersionTracker Versions { get; }
 
+        [Obsolete("Going to replace this with the new IStorageOperation model")]
         public void AddCall(Func<BatchCommand, ICall> source, ICallback callback = null)
         {
             var batch = Current();
             var call = source(batch);
 
             batch.AddCall(call, callback);
+        }
+
+        public void Add(IStorageOperation operation)
+        {
+            var batch = Current();
+
+            operation.AddParameters(batch);
+
+            batch.AddCall(operation, operation as ICallback);
         }
 
         public SprocCall Sproc(FunctionName function, ICallback callback = null)
@@ -174,6 +185,14 @@ namespace Marten.Services
         public void Dispose()
         {
             Connection.Dispose();
+        }
+
+        public void Add(IEnumerable<IStorageOperation> operations)
+        {
+            foreach (var op in operations)
+            {
+                Add(op);
+            }
         }
     }
 }

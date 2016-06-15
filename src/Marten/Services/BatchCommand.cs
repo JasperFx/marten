@@ -11,7 +11,14 @@ using NpgsqlTypes;
 
 namespace Marten.Services
 {
-    public class BatchCommand
+    public interface IBatchCommand
+    {
+        NpgsqlParameter AddParameter(object value, NpgsqlDbType dbType);
+        ISerializer Serializer { get; }
+        NpgsqlCommand Command { get; }
+    }
+
+    public class BatchCommand : IBatchCommand
     {
         public ISerializer Serializer { get; }
         private int _counter = 0;

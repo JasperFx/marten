@@ -229,6 +229,7 @@
     <Compile Include="Services\Includes\IncludeSelector.cs" />
     <Compile Include="Services\Includes\IncludeJoin.cs" />
     <Compile Include="Services\Includes\JoinType.cs" />
+    <Compile Include="Services\IStorageOperation.cs" />
     <Compile Include="Services\IUnitOfWork.cs" />
     <Compile Include="Services\ManagedConnection.cs" />
     <Compile Include="Services\CommandRunnerExtensions.cs" />
