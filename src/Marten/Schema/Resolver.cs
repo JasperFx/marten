@@ -53,8 +53,8 @@ namespace Marten.Schema
             }
             else
             {
-                DeleteByIdSql = $"update {_mapping.Table.QualifiedName} set deleted = True, deleted_at = now where id = ?";
-                DeleteByWhereSql = $"update {_mapping.Table.QualifiedName} as d set deleted = True, deleted_at = now where ?";
+                DeleteByIdSql = $"update {_mapping.Table.QualifiedName} set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where id = ?";
+                DeleteByWhereSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where ?";
             }
         }
 

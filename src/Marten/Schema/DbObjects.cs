@@ -172,6 +172,12 @@ AND    n.nspname = :schema;
             return new TableDefinition(documentMapping.Table, pkName, columns);
         }
 
+        public TableDefinition TableSchema(Type documentType)
+        {
+            var mapping = _schema.MappingFor(documentType);
+            return TableSchema(mapping);
+        }
+
 
         // TODO -- Really need to add some QueryHandlers for all this stuff to eliminate the duplication
         public SchemaObjects FindSchemaObjects(DocumentMapping mapping)

@@ -26,7 +26,7 @@ namespace Marten.Testing.Schema
 
             var resolver = new Resolver<User>(new JilSerializer(), mapping);
 
-            resolver.DeleteByIdSql.ShouldBe("update public.mt_doc_user set deleted = True, deleted_at = now where id = ?");
+            resolver.DeleteByIdSql.ShouldBe("update public.mt_doc_user set mt_deleted = True, mt_deleted_at = now() where id = ?");
         }
 
         [Fact]
@@ -49,7 +49,7 @@ namespace Marten.Testing.Schema
 
             var resolver = new Resolver<User>(new JilSerializer(), mapping);
 
-            resolver.DeleteByWhereSql.ShouldBe("update public.mt_doc_user as d set deleted = True, deleted_at = now where ?");
+            resolver.DeleteByWhereSql.ShouldBe("update public.mt_doc_user as d set mt_deleted = True, mt_deleted_at = now() where ?");
         }
     }
 }

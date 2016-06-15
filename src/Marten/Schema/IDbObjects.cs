@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Marten.Generation;
 
 namespace Marten.Schema
@@ -43,6 +44,8 @@ namespace Marten.Schema
         /// <param name="documentMapping"></param>
         /// <returns></returns>
         TableDefinition TableSchema(IDocumentMapping documentMapping);
+
+        TableDefinition TableSchema(Type documentType);
 
         SchemaObjects FindSchemaObjects(DocumentMapping mapping);
     }
