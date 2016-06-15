@@ -96,9 +96,7 @@ namespace Marten
 
             var where = _schema.BuildWhereFragment(model);
 
-            var mapping = _schema.MappingFor(typeof(T));
-
-            var deletion = new DeleteWhere(typeof(T), mapping.Table, where);
+            var deletion = _schema.StorageFor(typeof(T)).DeletionForWhere(where);
 
             _unitOfWork.Add(deletion);
         }

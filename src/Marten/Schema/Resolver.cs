@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq;
 using Marten.Services;
 using Marten.Services.Deletes;
 using Marten.Util;
@@ -217,6 +218,11 @@ namespace Marten.Schema
         public IStorageOperation DeletionForEntity(object entity)
         {
             return new DeleteById(_mapping.As<IQueryableDocument>(), this, Identity(entity), entity);
+        }
+
+        public IStorageOperation DeletionForWhere(IWhereFragment @where)
+        {
+            return new DeleteWhere(typeof(T), _mapping.Table, @where);
         }
     }
 }

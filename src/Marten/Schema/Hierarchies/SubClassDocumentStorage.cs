@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq;
 using Marten.Services;
 using Npgsql;
 using NpgsqlTypes;
@@ -84,6 +85,11 @@ namespace Marten.Schema.Hierarchies
         public IStorageOperation DeletionForEntity(object entity)
         {
             return _parent.DeletionForEntity(entity);
+        }
+
+        public IStorageOperation DeletionForWhere(IWhereFragment @where)
+        {
+            return _parent.DeletionForWhere(@where);
         }
 
         public T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)

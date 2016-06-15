@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;
@@ -132,6 +133,11 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
+            public IStorageOperation DeletionForWhere(IWhereFragment @where)
+            {
+                throw new NotImplementedException();
+            }
+
             public object Assign(User document, out bool assigned)
             {
                 throw new NotImplementedException();
@@ -203,6 +209,11 @@ namespace Marten.Testing
             }
 
             public IStorageOperation DeletionForEntity(object entity)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IStorageOperation DeletionForWhere(IWhereFragment @where)
             {
                 throw new NotImplementedException();
             }

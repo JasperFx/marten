@@ -183,6 +183,11 @@ namespace Marten.Events
             throw new NotSupportedException("You cannot delete events at this time");
         }
 
+        public IStorageOperation DeletionForWhere(IWhereFragment @where)
+        {
+            throw new NotSupportedException("You cannot delete events at this time");
+        }
+
         public T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
             var id = reader.GetGuid(startingIndex);

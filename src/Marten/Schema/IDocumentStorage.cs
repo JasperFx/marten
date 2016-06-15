@@ -1,4 +1,5 @@
 ﻿using System;
+using Marten.Linq;
 using Marten.Services;
 using Npgsql;
 using NpgsqlTypes;
@@ -31,6 +32,8 @@ namespace Marten.Schema
 
         IStorageOperation DeletionForId(object id);
         IStorageOperation DeletionForEntity(object entity);
+
+        IStorageOperation DeletionForWhere(IWhereFragment @where);
     }
 
 }
