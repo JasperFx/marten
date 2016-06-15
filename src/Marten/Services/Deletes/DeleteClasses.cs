@@ -58,13 +58,13 @@ namespace Marten.Services.Deletes
 
         void ICall.WriteToSql(StringBuilder builder)
         {
-            throw new NotImplementedException();
+            builder.Append(Sql);
         }
 
         void IStorageOperation.AddParameters(IBatchCommand batch)
         {
             var whereClause = _where.ToSql(batch.Command);
-            Sql = $"delete from {_table.QualifiedName} where {whereClause}";
+            Sql = $"delete from {_table.QualifiedName} as d where {whereClause}";
         }
 
         public string Sql { get; private set; }

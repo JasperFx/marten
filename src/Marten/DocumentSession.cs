@@ -10,6 +10,7 @@ using Marten.Linq;
 using Marten.Patching;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Deletes;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
@@ -52,25 +53,36 @@ namespace Marten
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            throw new NotImplementedException("Need to create a storage operation here");
-
+            var mapping = _schema.MappingFor(typeof(T));
             var storage = _schema.StorageFor(typeof(T));
+
+            var id = storage.Identity(entity);
+
+            var deletion = new DeleteById(mapping.As<IQueryableDocument>(), storage, id, entity);
+            _unitOfWork.Add(deletion);
+
             storage.Remove(IdentityMap, entity);
         }
 
         public void Delete<T>(ValueType id)
         {
-            throw new NotImplementedException("Need to create a storage operation here");
-
+            var mapping = _schema.MappingFor(typeof(T));
             var storage = _schema.StorageFor(typeof(T));
+
+            var deletion = new DeleteById(mapping.As<IQueryableDocument>(), storage, id);
+            _unitOfWork.Add(deletion);
+            
             storage.Delete(IdentityMap, id);
         }
 
         public void Delete<T>(string id)
         {
-            throw new NotImplementedException("Need to create a storage operation here");
-
+            var mapping = _schema.MappingFor(typeof(T));
             var storage = _schema.StorageFor(typeof(T));
+
+            var deletion = new DeleteById(mapping.As<IQueryableDocument>(), storage, id);
+            _unitOfWork.Add(deletion);
+
             storage.Delete(IdentityMap, id);
         }
 
@@ -79,7 +91,12 @@ namespace Marten
             var model = Query<T>().Where(expression).As<MartenQueryable<T>>().ToQueryModel();
 
             var where = _schema.BuildWhereFragment(model);
-            throw new NotImplementedException("Need to create a storage operation here");
+
+            var mapping = _schema.MappingFor(typeof(T));
+
+            var deletion = new DeleteWhere(typeof(T), mapping.Table, where);
+
+            _unitOfWork.Add(deletion);
         }
 
         public void Store<T>(params T[] entities)

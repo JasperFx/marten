@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Deletes;
 using Marten.Testing.Fixtures;
 using Marten.Util;
 using NpgsqlTypes;
@@ -72,8 +73,14 @@ namespace Marten.Testing.Util
             batch.Sproc(theMapping.UpsertFunction).Param("docId", target2.Id).JsonEntity("doc", target2).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
             batch.Sproc(theMapping.UpsertFunction).Param("docId", target3.Id).JsonEntity("doc", target3).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
 
-            throw new NotImplementedException("NWO");
-            //batch.Delete(theMapping.Table, initialTarget.Id, NpgsqlDbType.Uuid);
+
+
+            var document = theStore.Schema.MappingFor(typeof(Target)).As<IQueryableDocument>();
+            var storage = theStore.Schema.StorageFor(typeof(Target));
+
+            var deletion = new DeleteById(document, storage, initialTarget.Id, initialTarget);
+
+            batch.Add(deletion);
 
             batch.Execute();
             batch.Connection.Dispose();
@@ -111,8 +118,13 @@ namespace Marten.Testing.Util
             batch.Sproc(upsert).Param("docId", target2.Id).JsonBody("doc", serializer.ToJson(target2)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
             batch.Sproc(upsert).Param("docId", target3.Id).JsonBody("doc", serializer.ToJson(target3)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
 
-            throw new NotImplementedException();
-            //batch.Delete(theMapping.Table, initialTarget.Id, NpgsqlDbType.Uuid);
+
+            var mapping = theStore.Schema.MappingFor(typeof(Target)).As<IQueryableDocument>();
+            var storage = theStore.Schema.StorageFor(typeof(Target));
+
+
+            var deletion = new DeleteById(mapping, storage, initialTarget.Id, initialTarget);
+            batch.Add(deletion);
 
             batch.Execute();
             batch.Connection.Dispose();

@@ -1,14 +1,12 @@
 ﻿using Marten.Services;
 using Marten.Testing.Documents;
-using Shouldly;
 using Xunit;
 
 namespace Marten.Testing
 {
-    public abstract class document_session_delete_a_single_document_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
+    public abstract class document_session_delete_a_single_document_Tests<T> : DocumentSessionFixture<T>
+        where T : IIdentityMap
     {
-
-
         [Fact]
         public void persist_and_delete_a_document_by_entity()
         {
@@ -22,7 +20,7 @@ namespace Marten.Testing
                 session.Delete(user);
                 session.SaveChanges();
             }
-            
+
             using (var session = theStore.OpenSession())
             {
                 session.Load<User>(user.Id).ShouldBeNull();
@@ -32,7 +30,7 @@ namespace Marten.Testing
         [Fact]
         public void persist_and_delete_a_document_by_id()
         {
-            var user = new User { FirstName = "Mychal", LastName = "Thompson" };
+            var user = new User {FirstName = "Mychal", LastName = "Thompson"};
             theSession.Store(user);
             theSession.SaveChanges();
 
@@ -49,7 +47,16 @@ namespace Marten.Testing
         }
     }
 
-    public class delete_with_nullo_Tests : document_session_delete_a_single_document_Tests<NulloIdentityMap> { }
-    public class delete_with_identity_map_Tests : document_session_delete_a_single_document_Tests<IdentityMap> { }
-    public class delete_with_dirty_tracking_identity_map_Tests : document_session_delete_a_single_document_Tests<DirtyTrackingIdentityMap> { }
+    public class delete_with_nullo_Tests : document_session_delete_a_single_document_Tests<NulloIdentityMap>
+    {
+    }
+
+    public class delete_with_identity_map_Tests : document_session_delete_a_single_document_Tests<IdentityMap>
+    {
+    }
+
+    public class delete_with_dirty_tracking_identity_map_Tests :
+        document_session_delete_a_single_document_Tests<DirtyTrackingIdentityMap>
+    {
+    }
 }

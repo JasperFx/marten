@@ -197,6 +197,11 @@ namespace Marten.Services
             return _trackers.SelectMany(x => x.DetectChanges()).ToArray();
         }
 
+        public void Add(IStorageOperation operation)
+        {
+            _operations.Add(operation);
+        }
+
         private void ClearChanges(DocumentChange[] changes)
         {
             _operations.Clear();

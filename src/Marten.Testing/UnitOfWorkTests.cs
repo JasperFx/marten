@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Linq;
+using Baseline;
 using Marten.Linq;
+using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Deletes;
 using Marten.Testing.Documents;
 using Marten.Testing.Schema;
 using Shouldly;
@@ -51,6 +54,16 @@ namespace Marten.Testing
         }
 
 
+        private DeleteById deletionFor<T>(T doc)
+        {
+            var mapping = theStore.Schema.MappingFor(typeof(T));
+            var storage = theStore.Schema.StorageFor(typeof(T));
+
+            var id = storage.Identity(doc);
+
+            return new DeleteById(mapping.As<IQueryableDocument>(), storage, id, doc);
+        }
+
         [Fact]
         public void apply_updates_via_the_actual_document()
         {
@@ -80,14 +93,10 @@ namespace Marten.Testing
 
             var uow2 = theStore.Advanced.CreateUnitOfWork();
 
-            throw new NotImplementedException("NWO");
-
-            /*
-            uow2.DeleteEntity(stringDoc2);
-            uow2.DeleteEntity(user2);
-            uow2.DeleteEntity(int2);
-            uow2.DeleteEntity(long2);
-            */
+            uow2.Add(deletionFor(stringDoc2));
+            uow2.Add(deletionFor(user2));
+            uow2.Add(deletionFor(int2));
+            uow2.Add(deletionFor(long2));
 
 
             var batch2 = theStore.Advanced.CreateUpdateBatch();
@@ -102,7 +111,15 @@ namespace Marten.Testing
         }
 
 
+        private DeleteById deletionByIdFor<T>(T doc)
+        {
+            var mapping = theStore.Schema.MappingFor(typeof(T));
+            var storage = theStore.Schema.StorageFor(typeof(T));
 
+            var id = storage.Identity(doc);
+
+            return new DeleteById(mapping.As<IQueryableDocument>(), storage, id);
+        }
 
         [Fact]
         public void apply_updates_via_the_id()
@@ -130,14 +147,11 @@ namespace Marten.Testing
             var uow2 = theStore.Advanced.CreateUnitOfWork();
 
 
-            throw new NotImplementedException("NWO");
+            uow2.Add(deletionByIdFor(stringDoc2));
+            uow2.Add(deletionByIdFor(user2));
+            uow2.Add(deletionByIdFor(int2));
+            uow2.Add(deletionByIdFor(long2));
 
-            /*
-            uow2.Delete<StringDoc>(stringDoc2.Id);
-            uow2.Delete<User>(user2.Id);
-            uow2.Delete<IntDoc>(int2.Id);
-            uow2.Delete<LongDoc>(long2.Id);
-            */
 
             var batch2 = theStore.Advanced.CreateUpdateBatch();
             uow2.ApplyChanges(batch2);
