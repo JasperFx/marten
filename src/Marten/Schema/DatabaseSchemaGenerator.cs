@@ -12,7 +12,8 @@ namespace Marten.Schema
         private const string BeginScript = @"DO $$
 BEGIN";
         private const string EndScript = @"END
-$$;";
+$$;
+";
 
         private readonly AdvancedOptions _advanced;
 
@@ -59,7 +60,7 @@ $$;";
         {
             writer.Write(BeginScript);
             schemaNames.Each(name => WriteSql(name, writer));
-            writer.Write(EndScript);
+            writer.WriteLine(EndScript);
         }
 
         private static void WriteSql(string databaseSchemaName, StringWriter writer)
