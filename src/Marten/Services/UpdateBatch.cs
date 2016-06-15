@@ -156,6 +156,7 @@ namespace Marten.Services
             }
         }
 
+        [Obsolete]
         public void Delete(TableName table, object id, NpgsqlDbType dbType)
         {
             if (table == null) throw new ArgumentNullException(nameof(table));
@@ -166,6 +167,7 @@ namespace Marten.Services
 
         public IManagedConnection Connection { get; }
 
+        [Obsolete]
         public void DeleteWhere(TableName table, IWhereFragment @where)
         {
             if (table == null) throw new ArgumentNullException(nameof(table));

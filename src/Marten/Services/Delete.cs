@@ -6,6 +6,7 @@ using Marten.Schema;
 
 namespace Marten.Services
 {
+    [Obsolete]
     public class Delete
     {
         public Type DocumentType { get; }

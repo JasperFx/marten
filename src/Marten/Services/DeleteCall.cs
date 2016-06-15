@@ -4,6 +4,7 @@ using Marten.Schema;
 
 namespace Marten.Services
 {
+    [Obsolete]
     public class DeleteCall : ICall
     {
         private readonly TableName _table;
