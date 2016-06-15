@@ -45,7 +45,14 @@ namespace Marten.Schema
             
 
             _upsertName = mapping.UpsertFunction;
+
+            DeleteByIdSql = $"delete from {_mapping.Table.QualifiedName} where id = ?";
+            DeleteByWhereSql = $"delete from {_mapping.Table.QualifiedName} as d where ?";
         }
+
+        public string DeleteByWhereSql { get; }
+
+        public string DeleteByIdSql { get; }
 
         private Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid> buildSprocWriter(DocumentMapping mapping)
         {
@@ -212,17 +219,17 @@ namespace Marten.Schema
 
         public IStorageOperation DeletionForId(object id)
         {
-            return new DeleteById(_mapping.As<IQueryableDocument>(), this, id);
+            return new DeleteById(DeleteByIdSql, this, id);
         }
 
         public IStorageOperation DeletionForEntity(object entity)
         {
-            return new DeleteById(_mapping.As<IQueryableDocument>(), this, Identity(entity), entity);
+            return new DeleteById(DeleteByIdSql, this, Identity(entity), entity);
         }
 
         public IStorageOperation DeletionForWhere(IWhereFragment @where)
         {
-            return new DeleteWhere(typeof(T), _mapping.Table, @where);
+            return new DeleteWhere(typeof(T), DeleteByWhereSql, @where);
         }
     }
 }

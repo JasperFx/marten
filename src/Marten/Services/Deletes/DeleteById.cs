@@ -7,15 +7,14 @@ namespace Marten.Services.Deletes
 {
     public class DeleteById : IDeletion
     {
-        private readonly IQueryableDocument _queryable;
         private readonly IDocumentStorage _storage;
         private NpgsqlParameter _param;
         public object Id { get; }
         public object Document { get; }
 
-        public DeleteById(IQueryableDocument queryable, IDocumentStorage storage, object id, object document = null)
+        public DeleteById(string sql, IDocumentStorage storage, object id, object document = null)
         {
-            _queryable = queryable;
+            Sql = sql;
             _storage = storage;
             if (id == null) throw new ArgumentNullException(nameof(id));
 
@@ -24,11 +23,13 @@ namespace Marten.Services.Deletes
 
         }
 
+        public string Sql { get; }
+
         public Type DocumentType => _storage.DocumentType;
 
         void ICall.WriteToSql(StringBuilder builder)
         {
-            builder.AppendFormat("delete from {0} where id = :{1}", _queryable.Table.QualifiedName, _param.ParameterName);
+            builder.Append(Sql.Replace("?", ":" + _param.ParameterName));
         }
 
         void IStorageOperation.AddParameters(IBatchCommand batch)
@@ -38,7 +39,7 @@ namespace Marten.Services.Deletes
 
         public override string ToString()
         {
-            return $"Delete {DocumentType} with Id {Id}";
+            return $"Delete {DocumentType} with Id {Id}: {Sql}";
         }
     }
 }

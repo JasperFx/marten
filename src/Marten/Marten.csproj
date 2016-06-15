@@ -227,6 +227,7 @@
     <Compile Include="Services\ICall.cs" />
     <Compile Include="Services\ICallback.cs" />
     <Compile Include="Services\IChangeSet.cs" />
+    <Compile Include="Services\IDeletion.cs" />
     <Compile Include="Services\Includes\IIncludeJoin.cs" />
     <Compile Include="Services\Includes\IncludeSelector.cs" />
     <Compile Include="Services\Includes\IncludeJoin.cs" />

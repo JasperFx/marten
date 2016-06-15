@@ -11,11 +11,11 @@ namespace Marten.Services.Deletes
         private readonly IWhereFragment _where;
         public Type DocumentType { get; set; }
 
-        public DeleteWhere(Type documentType, TableName table, IWhereFragment @where)
+        public DeleteWhere(Type documentType, string sql, IWhereFragment @where)
         {
-            _table = table;
             _where = @where;
             DocumentType = documentType;
+            Sql = sql;
         }
 
         void ICall.WriteToSql(StringBuilder builder)
@@ -26,7 +26,8 @@ namespace Marten.Services.Deletes
         void IStorageOperation.AddParameters(IBatchCommand batch)
         {
             var whereClause = _where.ToSql(batch.Command);
-            Sql = $"delete from {_table.QualifiedName} as d where {whereClause}";
+
+            Sql = Sql.Replace("?", whereClause);
         }
 
         public string Sql { get; private set; }

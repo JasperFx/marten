@@ -25,7 +25,7 @@ namespace Marten.Schema
         object Identity(object document);
 
         void Remove(IIdentityMap map, object entity);
-
+        
         void Delete(IIdentityMap map, object id);
 
         void Store(IIdentityMap map, object id, object entity);

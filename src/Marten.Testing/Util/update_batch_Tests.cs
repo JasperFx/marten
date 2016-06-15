@@ -55,46 +55,6 @@ namespace Marten.Testing.Util
             }
         }
 
-        [Fact]
-        public void write_multiple_calls()
-        {
-            // Just forcing the table and schema objects to be created
-            var initialTarget = Target.Random();
-            theSession.Store(initialTarget);
-            theSession.SaveChanges();
-
-            var batch = theStore.Advanced.CreateUpdateBatch();
-
-            var target1 = Target.Random();
-            var target2 = Target.Random();
-            var target3 = Target.Random();
-
-            batch.Sproc(theMapping.UpsertFunction).Param("docId", target1.Id).JsonEntity("doc", target1).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
-            batch.Sproc(theMapping.UpsertFunction).Param("docId", target2.Id).JsonEntity("doc", target2).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
-            batch.Sproc(theMapping.UpsertFunction).Param("docId", target3.Id).JsonEntity("doc", target3).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
-
-
-
-            var document = theStore.Schema.MappingFor(typeof(Target)).As<IQueryableDocument>();
-            var storage = theStore.Schema.StorageFor(typeof(Target));
-
-            var deletion = new DeleteById(document, storage, initialTarget.Id, initialTarget);
-
-            batch.Add(deletion);
-
-            batch.Execute();
-            batch.Connection.Dispose();
-
-            var targets = theSession.Query<Target>().ToArray();
-            targets.Count().ShouldBe(3);
-
-            targets.Any(x => x.Id == target1.Id).ShouldBeTrue();
-            targets.Any(x => x.Id == target2.Id).ShouldBeTrue();
-            targets.Any(x => x.Id == target3.Id).ShouldBeTrue();
-
-            targets.Any(x => x.Id == initialTarget.Id).ShouldBeFalse();
-        }
-
 
         [Fact]
         public void write_multiple_calls_with_json_supplied()
@@ -119,24 +79,16 @@ namespace Marten.Testing.Util
             batch.Sproc(upsert).Param("docId", target3.Id).JsonBody("doc", serializer.ToJson(target3)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
 
 
-            var mapping = theStore.Schema.MappingFor(typeof(Target)).As<IQueryableDocument>();
-            var storage = theStore.Schema.StorageFor(typeof(Target));
-
-
-            var deletion = new DeleteById(mapping, storage, initialTarget.Id, initialTarget);
-            batch.Add(deletion);
 
             batch.Execute();
             batch.Connection.Dispose();
 
             var targets = theSession.Query<Target>().ToArray();
-            targets.Count().ShouldBe(3);
 
             targets.Any(x => x.Id == target1.Id).ShouldBeTrue();
             targets.Any(x => x.Id == target2.Id).ShouldBeTrue();
             targets.Any(x => x.Id == target3.Id).ShouldBeTrue();
 
-            targets.Any(x => x.Id == initialTarget.Id).ShouldBeFalse();
         }
     }
 }
