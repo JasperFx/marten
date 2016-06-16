@@ -71,6 +71,7 @@
     <Compile Include="Bugs\Bug_382_bulk_insert_that_causes_multiple_batches.cs" />
     <Compile Include="Bugs\Bug_393_issue_with_identity_map.cs" />
     <Compile Include="Bugs\Bug_415_containment_operator_with_values_with_quotes.cs" />
+    <Compile Include="Bugs\Bug_416_cannot_create_index_on_datetime_field.cs" />
     <Compile Include="bulk_loader_overwrite_sql_tests.cs" />
     <Compile Include="Events\capturing_event_versions_on_existing_streams_after_append.cs" />
     <Compile Include="Events\EventStreamTester.cs" />
