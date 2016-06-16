@@ -9,6 +9,7 @@ using Marten.Events;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.BulkLoading;
+using Marten.Schema.Helpers;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Transforms;
@@ -16,7 +17,6 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    using Helpers;
 
     public class DocumentSchema : IDocumentSchema, IDDLRunner, IDisposable
     {
@@ -46,7 +46,7 @@ namespace Marten.Schema
 
 
             //TODO: Figure out where / how to write out the function
-            var patch2 = new SchemaPatch();
+            var patch2 = new SchemaPatch(this);
             var immutableTimeStampFactory = new ImmutableTimestampFactory();
 
             immutableTimeStampFactory.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch2);

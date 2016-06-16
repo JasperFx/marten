@@ -68,7 +68,8 @@ namespace Marten.Testing.Acceptance
                 _.Schema.For<Target>().Index(x => x.Date);
             });
 
-            theStore.Schema.WritePatch(@"g:\a\test-patch.sql");
+            //TODO: Phillip to finish proving his code works
+            //theStore.Schema.WritePatch(@"g:\a\test-patch.sql");
             //theStore.Schema.WriteDDLByType(@"g:\a\");
 
             var data = Target.GenerateRandomData(100).ToArray();

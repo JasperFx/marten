@@ -9,10 +9,15 @@ namespace Marten.Schema.Helpers
 {
     public class ImmutableTimestampFactory : ISchemaObjects
     {
+        private bool _checked;
         private static readonly string DropFunctionSql = "drop function if exists public.mt_immutable_timestamp";
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
         {
+            if (_checked) return;
+
+            _checked = true;
+
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
             {
                 throw new InvalidOperationException($"mt_immutable_timestamp function is missing, but {nameof(StoreOptions.AutoCreateSchemaObjects)} is {autoCreateSchemaObjectsMode}");
@@ -36,7 +41,7 @@ namespace Marten.Schema.Helpers
 
         public void ResetSchemaExistenceChecks()
         {
-            
+            _checked = false;
         }
 
         public void WritePatch(IDocumentSchema schema, SchemaPatch patch)

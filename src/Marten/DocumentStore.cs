@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using Baseline;
-using Marten.Events;
 using Marten.Linq;
 using Marten.Schema;
-using Marten.Schema.BulkLoading;
 using Marten.Services;
 using Marten.Transforms;
 using Marten.Util;
@@ -17,7 +13,6 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
-    using Schema.Helpers;
 
     /// <summary>
     /// The main entry way to using Marten
@@ -78,13 +73,7 @@ namespace Marten
             _logger = options.Logger();
 
             Schema = new DocumentSchema(_options, _connectionFactory, _logger);
-
-            //var thing = new SchemaPatch();
-            //var immutableTimeStampFactory = new ImmutableTimestampFactory();
-            //immutableTimeStampFactory.GenerateSchemaObjectsIfNecessary(_options.AutoCreateSchemaObjects, Schema, thing);
-            //(immutableTimeStampFactory, thing);
-
-
+            
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_connectionFactory, Schema.As<DocumentSchema>());

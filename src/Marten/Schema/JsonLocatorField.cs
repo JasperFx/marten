@@ -31,7 +31,7 @@ namespace Marten.Schema
             }
             else if (memberType == typeof(DateTime))
             {
-                SqlLocator = $"mt_immutable_timestamp(d.data ->> '{member.Name}')";
+                SqlLocator = $"public.mt_immutable_timestamp(d.data ->> '{member.Name}')";
             }
             else
             {
