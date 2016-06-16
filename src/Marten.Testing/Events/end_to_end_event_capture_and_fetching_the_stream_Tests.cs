@@ -130,7 +130,7 @@ namespace Marten.Testing.Events
             //GetAll
             using (var session = store.OpenSession())
             {
-                var parties = session.Events.Query<QuestParty>().ToArray();
+                var parties = session.Events.QueryRawEventDataOnly<QuestParty>().ToArray();
                 foreach (var party in parties)
                 {
                     party.ShouldNotBeNull();

@@ -78,7 +78,7 @@ namespace Marten.Events
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IMartenQueryable<T> Query<T>();
+        IMartenQueryable<T> QueryRawEventDataOnly<T>();
 
         /// <summary>
         /// Load a single event by its id knowing the event type upfront

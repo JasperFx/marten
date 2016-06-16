@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -105,9 +106,18 @@ namespace Marten.Events
         }
 
 
-        public IMartenQueryable<T> Query<T>()
+        public IMartenQueryable<T> QueryRawEventDataOnly<T>()
         {
-            _schema.Events.AddEventType(typeof (T));
+            if (_schema.Events.AllAggregates().Any(x => x.AggregateType == typeof(T)))
+            {
+                return _session.Query<T>();
+            }
+
+            if (_schema.AllMappings.All(x => x.DocumentType != typeof(T)))
+            {
+                _schema.Events.AddEventType(typeof(T));
+            }
+            
 
             return _session.Query<T>();
         }

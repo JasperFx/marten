@@ -24,12 +24,12 @@ namespace Marten.Testing.Events
 
             theSession.SaveChanges();
 
-            theSession.Events.Query<MembersJoined>().Count().ShouldBe(2);
-            theSession.Events.Query<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+            theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+            theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
                 .OrderBy(x => x)
                 .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-            theSession.Events.Query<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
+            theSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
                 .Single().Id.ShouldBe(departed2.Id);
         }
         // ENDSAMPLE
@@ -37,7 +37,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void will_not_blow_up_if_searching_for_events_before_event_store_is_warmed_up()
         {
-            theSession.Events.Query<MembersJoined>().Any().ShouldBeFalse();
+            theSession.Events.QueryRawEventDataOnly<MembersJoined>().Any().ShouldBeFalse();
         }
 
         [Fact]
@@ -59,12 +59,12 @@ namespace Marten.Testing.Events
 
             theSession.SaveChanges();
 
-            theSession.Events.Query<MembersJoined>().Count().ShouldBe(2);
-            theSession.Events.Query<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+            theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+            theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
                 .OrderBy(x => x)
                 .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-            theSession.Events.Query<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
+            theSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
                 .Single().Id.ShouldBe(departed2.Id);
         }
     }

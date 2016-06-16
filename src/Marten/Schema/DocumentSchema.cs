@@ -106,6 +106,8 @@ namespace Marten.Schema
         }
 
         public IDbObjects DbObjects { get; }
+        public IEnumerable<IDocumentMapping> AllMappings => _mappings.Values;
+
         public IBulkLoader<T> BulkLoaderFor<T>()
         {
             EnsureStorageExists(typeof(T));

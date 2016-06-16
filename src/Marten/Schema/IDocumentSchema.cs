@@ -107,6 +107,8 @@ namespace Marten.Schema
         /// </summary>
         IDbObjects DbObjects { get; }
 
+        IEnumerable<IDocumentMapping> AllMappings { get; }
+
         /// <summary>
         /// Retrieve a configured IBulkLoader for a document type
         /// </summary>

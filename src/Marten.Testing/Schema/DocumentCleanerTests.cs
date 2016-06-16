@@ -138,7 +138,7 @@ namespace Marten.Testing.Schema
 
             theCleaner.DeleteAllEventData();
 
-            theSession.Events.Query<QuestStarted>().ShouldBeEmpty();
+            theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
             theSession.Events.FetchStream(streamId).ShouldBeEmpty();
 
         }
