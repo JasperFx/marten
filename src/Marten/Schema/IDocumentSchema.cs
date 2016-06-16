@@ -134,6 +134,19 @@ namespace Marten.Schema
         /// to the current Marten schema configuration
         /// </summary>
         /// <returns></returns>
-        SchemaPatch ToPatch();
+        SchemaPatch ToPatch(bool withSchemas = true);
+
+        /// <summary>
+        /// Validates the Marten configuration of documents and transforms against
+        /// the current database schema. Will throw an exception if any differences are
+        /// detected. Useful for "environment tests"
+        /// </summary>
+        void AssertDatabaseMatchesConfiguration();
+
+        /// <summary>
+        /// Executes all detected DDL patches to the schema based on current configuration
+        /// upfront at one time
+        /// </summary>
+        void ApplyAllConfiguredChangesToDatabase();
     }
 }

@@ -224,6 +224,7 @@
     <Compile Include="Services\BatchQuerying\TransformedBatchQueryable.cs" />
     <Compile Include="Services\ChangeSet.cs" />
     <Compile Include="Services\CommandRunnerMode.cs" />
+    <Compile Include="Services\ConcurrencyException.cs" />
     <Compile Include="Services\Deletes\DeleteById.cs" />
     <Compile Include="Services\Deletes\DeleteWhere.cs" />
     <Compile Include="Services\FetchResult.cs" />

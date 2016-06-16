@@ -223,12 +223,15 @@ namespace Marten.Schema
 
         }
 
-        public SchemaPatch ToPatch()
+        public SchemaPatch ToPatch(bool withSchemas = true)
         {
             var patch = new SchemaPatch();
 
-            var allSchemaNames = AllSchemaNames();
-            DatabaseSchemaGenerator.WriteSql(allSchemaNames, patch.UpWriter);
+            if (withSchemas)
+            {
+                var allSchemaNames = AllSchemaNames();
+                DatabaseSchemaGenerator.WriteSql(allSchemaNames, patch.UpWriter);
+            }
 
             foreach (var schemaObject in AllSchemaObjects())
             {
@@ -236,6 +239,26 @@ namespace Marten.Schema
             }
 
             return patch;
+        }
+        
+        public void AssertDatabaseMatchesConfiguration()
+        {
+            var patch = ToPatch(false);
+
+            if (patch.UpdateDDL.Trim().IsNotEmpty())
+            {
+                throw new SchemaValidationException(patch.UpdateDDL);
+            }
+        }
+
+        public void ApplyAllConfiguredChangesToDatabase()
+        {
+            var patch = new SchemaPatch(this);
+
+            foreach (var schemaObject in AllSchemaObjects())
+            {
+                schemaObject.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
+            }
         }
 
         public void WriteDDLByType(string directory)
@@ -431,6 +454,19 @@ namespace Marten.Schema
 
         protected AmbiguousDocumentTypeAliasesException(SerializationInfo info, StreamingContext context)
             : base(info, context)
+        {
+        }
+    }
+    
+
+    [Serializable]
+    public class SchemaValidationException : Exception
+    {
+        public SchemaValidationException(string ddl) : base("Configuration to Schema Validation Failed! These changes detected:\n\n" + ddl)
+        {
+        }
+
+        protected SchemaValidationException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }
