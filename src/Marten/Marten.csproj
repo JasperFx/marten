@@ -170,6 +170,7 @@
     <Compile Include="Schema\Arguments\DotNetTypeArgument.cs" />
     <Compile Include="Schema\FunctionBody.cs" />
     <Compile Include="Schema\FunctionDiff.cs" />
+    <Compile Include="Schema\Helpers\ImmutableTimestampFunctionSchema.cs" />
     <Compile Include="Schema\IDbObjects.cs" />
     <Compile Include="Schema\IDDLRunner.cs" />
     <Compile Include="Schema\IdentityAttribute.cs" />
@@ -350,6 +351,9 @@
     <EmbeddedResource Include="..\..\javascript\mt_patching.js">
       <Link>Schema\SQL\mt_patching.js</Link>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Schema\SQL\mt_immutable_timestamp.sql" />
   </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1' Or $(TargetFrameworkVersion) == 'v4.6.2')">

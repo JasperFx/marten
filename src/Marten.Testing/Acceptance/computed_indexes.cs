@@ -28,7 +28,6 @@ namespace Marten.Testing.Acceptance
             theStore.Schema.DbObjects.AllIndexes().Select(x => x.Name)
                 .ShouldContain("mt_doc_target_idx_number");
 
-
             using (var session = theStore.QuerySession())
             {
                 var cmd = session.Query<Target>().Where(x => x.Number == 3)
@@ -59,6 +58,28 @@ namespace Marten.Testing.Acceptance
                 .Select(x => x.DDL.ToLower())
                 .First()
                 .ShouldContain("mt_doc_target_idx_number on mt_doc_target using brin");
+        }
+        
+        [Fact]
+        public void creating_index_using_date_should_work()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Target>().Index(x => x.Date);
+            });
+
+            //TODO: Phillip to finish proving his code works
+            //theStore.Schema.WritePatch(@"g:\a\test-patch.sql");
+            //theStore.Schema.WriteDDLByType(@"g:\a\");
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data.ToArray());
+
+            theStore.Schema.DbObjects.AllIndexes()
+                .Where(x => x.Name == "mt_doc_target_idx_date")
+                .Select(x => x.DDL.ToLower())
+                .First()
+                .ShouldContain("mt_doc_target_idx_date on mt_doc_target");
         }
 
         [Fact]

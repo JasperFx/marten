@@ -9,6 +9,7 @@ using Marten.Events;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.BulkLoading;
+using Marten.Schema.Helpers;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Transforms;
@@ -16,6 +17,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
+
     public class DocumentSchema : IDocumentSchema, IDDLRunner, IDisposable
     {
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
@@ -42,13 +44,26 @@ namespace Marten.Schema
 
             StoreOptions = options;
 
+
+            //TODO: Figure out where / how to write out the function
+            var patch2 = new SchemaPatch(this);
+            var immutableTimeStampFactory = new ImmutableTimestampFactory();
+
+            immutableTimeStampFactory.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch2);
+            apply(immutableTimeStampFactory, patch2);
+
+            var schemaNames = AllSchemaNames();
+            DatabaseSchemaGenerator.WriteSql(schemaNames, patch2.UpWriter);
+
+
+
+
             options.AllDocumentMappings.Each(x => _mappings[x.DocumentType] = x);
 
             _sequences = new Lazy<SequenceFactory>(() =>
             {
                 var sequences = new SequenceFactory(this, _factory, options, _logger);
-
-
+                
                 var patch = new SchemaPatch();
 
                 sequences.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
@@ -57,7 +72,6 @@ namespace Marten.Schema
 
                 return sequences;
             });
-
 
             Parser = new MartenExpressionParser(StoreOptions.Serializer(), StoreOptions);
 

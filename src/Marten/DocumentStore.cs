@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using Baseline;
-using Marten.Events;
 using Marten.Linq;
 using Marten.Schema;
-using Marten.Schema.BulkLoading;
 using Marten.Services;
 using Marten.Transforms;
 using Marten.Util;
@@ -17,6 +13,7 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
+
     /// <summary>
     /// The main entry way to using Marten
     /// </summary>
@@ -76,8 +73,7 @@ namespace Marten
             _logger = options.Logger();
 
             Schema = new DocumentSchema(_options, _connectionFactory, _logger);
-
-
+            
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_connectionFactory, Schema.As<DocumentSchema>());
@@ -147,10 +143,9 @@ namespace Marten
         {
             var groups =
                 documents.Where(x => x != null)
-                    .GroupBy(x => x.GetType())
-                    .Select(
-                        group => typeof (BulkInserter<>).CloseAndBuildAs<IBulkInserter>(@group, @group.Key))
-                    .ToArray();
+                         .GroupBy(x => x.GetType())
+                         .Select(group => typeof(BulkInserter<>).CloseAndBuildAs<IBulkInserter>(@group, @group.Key))
+                         .ToArray();
 
             using (var conn = _connectionFactory.Create())
             {

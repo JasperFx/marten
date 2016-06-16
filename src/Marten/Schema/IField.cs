@@ -8,6 +8,7 @@ namespace Marten.Schema
     public interface IField
     {
         MemberInfo[] Members { get; }
+
         string MemberName { get; }
 
         string SqlLocator { get; }
@@ -15,9 +16,11 @@ namespace Marten.Schema
         string ColumnName { get; }
 
         void WritePatch(DocumentMapping mapping, SchemaPatch patch);
+
         object GetValue(Expression valueExpression);
 
         Type MemberType { get; }
+
         bool ShouldUseContainmentOperator();
     }
 }

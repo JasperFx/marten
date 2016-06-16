@@ -68,7 +68,7 @@ namespace Marten.Testing.Fixtures
             target.Double = _random.NextDouble();
             target.Long = _random.Next()*10000;
 
-            target.Date = DateTime.Today.AddDays(_random.Next(1, 100));
+            target.Date = DateTime.Today.AddDays(_random.Next(-10000, 10000));
 
             if (deep)
             {
