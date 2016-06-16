@@ -412,7 +412,7 @@ namespace Marten.Schema
         public IField FieldFor(MemberInfo member)
         {
             return _fields.GetOrAdd(member.Name,
-                name => new JsonLocatorField(_storeOptions.Serializer().EnumStorage, member));
+                name => new JsonLocatorField(_storeOptions, _storeOptions.Serializer().EnumStorage, member));
         }
 
         public IField FieldFor(string memberName)
@@ -424,7 +424,7 @@ namespace Marten.Schema
 
                 if (member == null) return null;
 
-                return new JsonLocatorField(_storeOptions.Serializer().EnumStorage, member);
+                return new JsonLocatorField(_storeOptions, _storeOptions.Serializer().EnumStorage, member);
             });
         }
 

@@ -150,5 +150,7 @@ namespace Marten.Schema
         /// upfront at one time
         /// </summary>
         void ApplyAllConfiguredChangesToDatabase();
+
+        void EnsureFunctionExists(string functionName);
     }
 }

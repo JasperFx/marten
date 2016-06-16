@@ -86,6 +86,7 @@ AND    n.nspname = '{1}';";
                 connection.Commit();
 
                 _schema.ResetSchemaExistenceChecks();
+                _schema.RebuildSystemFunctions();
             }
         }
 

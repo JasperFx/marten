@@ -93,6 +93,7 @@
     <Compile Include="Events\fetching_stream_state.cs" />
     <Compile Include="Examples\ForeignKeyExamples.cs" />
     <Compile Include="Fixtures\EventStore\InlineAggregationFixture.cs" />
+    <Compile Include="Fixtures\Target.cs" />
     <Compile Include="Generation\creating_diffs_when_system_columns_are_missing.cs" />
     <Compile Include="IntDoc.cs" />
     <Compile Include="IntegratedFixture.cs" />
@@ -145,7 +146,6 @@
     <Compile Include="Fixtures\LinqFixture.cs" />
     <Compile Include="Fixtures\OrderingFixture.cs" />
     <Compile Include="Fixtures\ResultSet.cs" />
-    <Compile Include="Fixtures\Target.cs" />
     <Compile Include="Generation\TableDefinitionTests.cs" />
     <Compile Include="Generation\TableDiffTests.cs" />
     <Compile Include="Github\Documents.cs" />
@@ -214,6 +214,7 @@
     <Compile Include="Schema\Identity\Sequences\LongHiloGeneratorTests.cs" />
     <Compile Include="Schema\Identity\StringIdGenerationTester.cs" />
     <Compile Include="Schema\SchemaPatchTester.cs" />
+    <Compile Include="Schema\SystemFunctionTests.cs" />
     <Compile Include="Schema\TableNameTests.cs" />
     <Compile Include="Schema\UpsertFunctionTests.cs" />
     <Compile Include="Schema\when_generating_a_table_for_soft_deletes.cs" />

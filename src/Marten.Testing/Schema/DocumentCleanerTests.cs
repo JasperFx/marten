@@ -125,7 +125,7 @@ namespace Marten.Testing.Schema
             var schema = theStore.Schema;
 
             ShouldBeEmpty(schema.DbObjects.DocumentTables());
-            ShouldBeEmpty(schema.DbObjects.SchemaFunctionNames());
+            ShouldBeEmpty(schema.DbObjects.SchemaFunctionNames().Where(x => x.Name != "mt_immutable_timestamp").ToArray());
         }
 
         [Fact]

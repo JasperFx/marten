@@ -47,7 +47,7 @@ namespace Marten.Testing.Fixtures
 
             target.Float = float.Parse(_random.NextDouble().ToString());
 
-            target.NumberArray = new[] {_random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10)};
+            target.NumberArray = new[] { _random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) };
 
             switch (_random.Next(0, 2))
             {
@@ -64,11 +64,11 @@ namespace Marten.Testing.Fixtures
                     break;
             }
 
-            target.Long = 100*_random.Next();
+            target.Long = 100 * _random.Next();
             target.Double = _random.NextDouble();
-            target.Long = _random.Next()*10000;
+            target.Long = _random.Next() * 10000;
 
-            target.Date = DateTime.Today.AddDays(_random.Next(1, 100));
+            target.Date = DateTime.Today.AddDays(_random.Next(-10000, 10000));
 
             if (deep)
             {

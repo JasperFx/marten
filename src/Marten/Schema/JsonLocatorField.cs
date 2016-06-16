@@ -15,23 +15,24 @@ namespace Marten.Schema
             var property = ReflectionHelper.GetProperty(expression);
 
 
-            return new JsonLocatorField(enumStyle, property);
+            return new JsonLocatorField(new StoreOptions(), enumStyle, property);
         }
 
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
 
-        public JsonLocatorField(EnumStorage enumStyle, MemberInfo member) : base(member)
+        public JsonLocatorField(StoreOptions options, EnumStorage enumStyle, MemberInfo member) : base(member)
         {
             var memberType = member.GetMemberType();
-
-            
 
             var isStringEnum = memberType.IsEnum && enumStyle == EnumStorage.AsString;
             if (memberType == typeof (string) || isStringEnum)
             {
                 SqlLocator = $"d.data ->> '{member.Name}'";
             }
-
+            else if (memberType == typeof(DateTime) || memberType == typeof(DateTime?))
+            {
+                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp(d.data ->> '{member.Name}')";
+            }
             else
             {
                 SqlLocator = $"CAST(d.data ->> '{member.Name}' as {PgType})";

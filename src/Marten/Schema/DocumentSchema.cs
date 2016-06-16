@@ -16,6 +16,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
+
     public class DocumentSchema : IDocumentSchema, IDDLRunner, IDisposable
     {
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
@@ -35,6 +36,8 @@ namespace Marten.Schema
 
         private readonly Lazy<SequenceFactory> _sequences;
 
+        private readonly IDictionary<string, SystemFunction> _systemFunctions = new Dictionary<string, SystemFunction>();
+
         public DocumentSchema(StoreOptions options, IConnectionFactory factory, IMartenLogger logger)
         {
             _factory = factory;
@@ -47,8 +50,7 @@ namespace Marten.Schema
             _sequences = new Lazy<SequenceFactory>(() =>
             {
                 var sequences = new SequenceFactory(this, _factory, options, _logger);
-
-
+                
                 var patch = new SchemaPatch();
 
                 sequences.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
@@ -58,18 +60,35 @@ namespace Marten.Schema
                 return sequences;
             });
 
-
             Parser = new MartenExpressionParser(StoreOptions.Serializer(), StoreOptions);
 
             HandlerFactory = new QueryHandlerFactory(this, options.Serializer());
 
             DbObjects = new DbObjects(_factory, this);
+
+
+            addSystemFunction(options, "mt_immutable_timestamp");
+        }
+
+        private void addSystemFunction(StoreOptions options, string functionName)
+        {
+            _systemFunctions.Add(functionName, new SystemFunction(options, functionName));
         }
 
 
 
         public void Dispose()
         {
+        }
+
+        public void EnsureFunctionExists(string functionName)
+        {
+            var systemFunction = _systemFunctions[functionName];
+
+            if (!systemFunction.Checked)
+            {
+                systemFunction.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, new SchemaPatch(this));
+            }
         }
 
         public IEnumerable<ISchemaObjects> AllSchemaObjects()
@@ -86,6 +105,11 @@ namespace Marten.Schema
                     .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
                     .Select(MappingFor);
             });
+
+            foreach (var function in _systemFunctions.Values)
+            {
+                yield return function;
+            }
 
             foreach (var mapping in mappings)
             {
@@ -257,6 +281,11 @@ namespace Marten.Schema
         {
             var patch = new SchemaPatch(this);
 
+            var allSchemaNames = AllSchemaNames();
+            DatabaseSchemaGenerator.WriteSql(allSchemaNames, patch.UpWriter);
+
+            patch.Updates.Apply(this, patch.UpdateDDL);
+
             foreach (var schemaObject in AllSchemaObjects())
             {
                 schemaObject.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
@@ -341,9 +370,15 @@ namespace Marten.Schema
 
 
         public IQueryHandlerFactory HandlerFactory { get; }
+        public IEnumerable<SystemFunction> SystemFunctions => _systemFunctions.Values;
 
         public void ResetSchemaExistenceChecks()
         {
+            if (_sequences.IsValueCreated)
+            {
+                _sequences.Value.ResetSchemaExistenceChecks();
+            }
+
             foreach (var schemaObject in AllSchemaObjects())
             {
                 schemaObject.ResetSchemaExistenceChecks();
@@ -444,6 +479,13 @@ namespace Marten.Schema
 
                 throw new AmbiguousDocumentTypeAliasesException(message);
             }
+        }
+
+        public void RebuildSystemFunctions()
+        {
+            _systemFunctions.Values.Each(
+                x =>
+                    x.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, new SchemaPatch(this)));
         }
     }
 

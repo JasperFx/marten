@@ -23,7 +23,7 @@ namespace Marten.Testing.Schema
             // SAMPLE: marten-registry-to-override-document-alias
             var store = DocumentStore.For(_ =>
             {
-                _.Connection("something");
+                _.Connection(ConnectionSource.ConnectionString);
 
                 _.Schema.For<User>().DocumentAlias("folks");
             });

@@ -146,9 +146,9 @@ namespace Marten.Testing.Schema
 
             files.Select(Path.GetFileName)
                 .Where(x => x != "all.sql" && x != "database_schemas.sql").OrderBy(x => x)
-                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "patch_doc.sql", "user.sql");
+                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "mt_immutable_timestamp.sql", "patch_doc.sql", "user.sql");
 
-            files.Where(x => !x.Contains("all.sql") && !x.Contains("patch_doc.sql")).Each(file =>
+            files.Where(x => !x.Contains("all.sql") && !x.Contains("patch_doc.sql") && !x.Contains("mt_immutable_timestamp.sql")).Each(file =>
             {
                 var contents = fileSystem.ReadStringFromFile(file);
 
