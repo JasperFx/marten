@@ -8,6 +8,7 @@ namespace Marten.Testing.Acceptance
 {
     public class patching_api : DocumentSessionFixture<NulloIdentityMap>
     {
+        // SAMPLE: set_an_immediate_property_by_id
         [Fact]
         public void set_an_immediate_property_by_id()
         {
@@ -27,6 +28,7 @@ namespace Marten.Testing.Acceptance
                 query.Load<Target>(target.Id).Number.ShouldBe(10);
             }
         }
+        // ENDSAMPLE
 
         [Fact]
         public void set_a_deep_property_by_id()
@@ -48,8 +50,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
+        
         [Fact]
-        public void set_an_immediate_project_by_where_clause()
+        public void set_an_immediate_property_by_where_clause()
         {
             var target1 = new Target {Color = Colors.Blue, Number = 1};
             var target2 = new Target {Color = Colors.Blue, Number = 1};
@@ -61,7 +64,11 @@ namespace Marten.Testing.Acceptance
             theSession.Store(target1, target2, target3, target4, target5, target6);
             theSession.SaveChanges();
 
-            theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
+            // SAMPLE: set_an_immediate_property_by_where_clause
+            // Change every Target document where the Color is Blue
+    theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
+            // ENDSAMPLE
+
             theSession.SaveChanges();
 
 
@@ -79,42 +86,46 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [Fact]
-        public void increment_for_int()
+        // SAMPLE: increment_for_int
+    [Fact]
+    public void increment_for_int()
+    {
+        var target = Target.Random();
+        target.Number = 6;
+
+        theSession.Store(target);
+        theSession.SaveChanges();
+
+        theSession.Patch<Target>(target.Id).Increment(x => x.Number);
+        theSession.SaveChanges();
+
+        using (var query = theStore.QuerySession())
         {
-            var target = Target.Random();
-            target.Number = 6;
-
-            theSession.Store(target);
-            theSession.SaveChanges();
-
-            theSession.Patch<Target>(target.Id).Increment(x => x.Number);
-            theSession.SaveChanges();
-
-            using (var query = theStore.QuerySession())
-            {
-                query.Load<Target>(target.Id).Number.ShouldBe(7);
-            }
+            query.Load<Target>(target.Id).Number.ShouldBe(7);
         }
+    }
+        // ENDSAMPLE
 
 
-        [Fact]
-        public void increment_for_int_with_explicit_increment()
+        // SAMPLE: increment_for_int_with_explicit_increment
+    [Fact]
+    public void increment_for_int_with_explicit_increment()
+    {
+        var target = Target.Random();
+        target.Number = 6;
+
+        theSession.Store(target);
+        theSession.SaveChanges();
+
+        theSession.Patch<Target>(target.Id).Increment(x => x.Number, 3);
+        theSession.SaveChanges();
+
+        using (var query = theStore.QuerySession())
         {
-            var target = Target.Random();
-            target.Number = 6;
-
-            theSession.Store(target);
-            theSession.SaveChanges();
-
-            theSession.Patch<Target>(target.Id).Increment(x => x.Number, 3);
-            theSession.SaveChanges();
-
-            using (var query = theStore.QuerySession())
-            {
-                query.Load<Target>(target.Id).Number.ShouldBe(9);
-            }
+            query.Load<Target>(target.Id).Number.ShouldBe(9);
         }
+    }
+        // ENDSAMPLE
 
         [Fact]
         public void increment_for_long()
@@ -189,28 +200,30 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [Fact]
-        public void append_complex_element()
+        // SAMPLE: append_complex_element
+    [Fact]
+    public void append_complex_element()
+    {
+        var target = Target.Random(true);
+        var initialCount = target.Children.Length;
+
+        var child = Target.Random();
+
+        theSession.Store(target);
+        theSession.SaveChanges();
+
+        theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
+        theSession.SaveChanges();
+
+        using (var query = theStore.QuerySession())
         {
-            var target = Target.Random(true);
-            var initialCount = target.Children.Length;
+            var target2 = query.Load<Target>(target.Id);
+            target2.Children.Length.ShouldBe(initialCount + 1);
 
-            var child = Target.Random();
-
-            theSession.Store(target);
-            theSession.SaveChanges();
-
-            theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
-            theSession.SaveChanges();
-
-            using (var query = theStore.QuerySession())
-            {
-                var target2 = query.Load<Target>(target.Id);
-                target2.Children.Length.ShouldBe(initialCount + 1);
-
-                target2.Children.Last().Id.ShouldBe(child.Id);
-            }
+            target2.Children.Last().Id.ShouldBe(child.Id);
         }
+    }
+        // ENDSAMPLE
 
         [Fact]
         public void insert_first_to_a_primitive_array()
@@ -250,28 +263,30 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [Fact]
-        public void insert_first_complex_element()
+        // SAMPLE: insert_first_complex_element
+    [Fact]
+    public void insert_first_complex_element()
+    {
+        var target = Target.Random(true);
+        var initialCount = target.Children.Length;
+
+        var child = Target.Random();
+
+        theSession.Store(target);
+        theSession.SaveChanges();
+
+        theSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
+        theSession.SaveChanges();
+
+        using (var query = theStore.QuerySession())
         {
-            var target = Target.Random(true);
-            var initialCount = target.Children.Length;
+            var target2 = query.Load<Target>(target.Id);
+            target2.Children.Length.ShouldBe(initialCount + 1);
 
-            var child = Target.Random();
-
-            theSession.Store(target);
-            theSession.SaveChanges();
-
-            theSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
-            theSession.SaveChanges();
-
-            using (var query = theStore.QuerySession())
-            {
-                var target2 = query.Load<Target>(target.Id);
-                target2.Children.Length.ShouldBe(initialCount + 1);
-
-                target2.Children.First().Id.ShouldBe(child.Id);
-            }
+            target2.Children.First().Id.ShouldBe(child.Id);
         }
+    }
+        // ENDSAMPLE
 
         [Fact]
         public void rename_shallow_prop()
@@ -294,26 +309,28 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [Fact]
-        public void rename_deep_prop()
+        // SAMPLE: rename_deep_prop
+    [Fact]
+    public void rename_deep_prop()
+    {
+        var target = Target.Random(true);
+        target.Inner.String = "Foo";
+        target.Inner.AnotherString = "Bar";
+
+        theSession.Store(target);
+        theSession.SaveChanges();
+
+        theSession.Patch<Target>(target.Id).Rename("String", x => x.Inner.AnotherString);
+        theSession.SaveChanges();
+
+        using (var query = theStore.QuerySession())
         {
-            var target = Target.Random(true);
-            target.Inner.String = "Foo";
-            target.Inner.AnotherString = "Bar";
-
-            theSession.Store(target);
-            theSession.SaveChanges();
-
-            theSession.Patch<Target>(target.Id).Rename("String", x => x.Inner.AnotherString);
-            theSession.SaveChanges();
-
-            using (var query = theStore.QuerySession())
-            {
-                var target2 = query.Load<Target>(target.Id);
-                target2.Inner.AnotherString.ShouldBe("Foo");
-                target2.Inner.String.ShouldBeNull();
-            }
+            var target2 = query.Load<Target>(target.Id);
+            target2.Inner.AnotherString.ShouldBe("Foo");
+            target2.Inner.String.ShouldBeNull();
         }
+    }
+        // ENDSAMPLE
 
     }
 }
