@@ -6,11 +6,19 @@ table. When you issue a Linq query using this duplicated property or field, Mart
 query to run against the duplicated field instead of using JSONB operators. This of course only helps for 
 queries using the duplicated field.
 
-To create a searchable field, you can use the `[DuplicateField]` attribute like this:
+To create a duplicated field, you can use the `[DuplicateField]` attribute like this:
 
 <[sample:using_attributes_on_document]>
 
-By default, Marten adds a [btree index](http://www.postgresql.org/docs/9.4/static/indexes-types.html) (the Postgresql default) to a searchable index, but you can also 
-customize the generated index with the syntax shown below:
+Or by using the fluent interface off of `StoreOptions`:
 
 <[sample:IndexExamples]>
+
+By default, Marten adds a [btree index](http://www.postgresql.org/docs/9.4/static/indexes-types.html) (the Postgresql default) to a searchable index, but you can also 
+customize the generated index with the syntax shown above: The second [nested closure](http://martinfowler.com/dslCatalog/nestedClosure.html) argument is an optional
+mechanism to customize the database index generated for the duplicated field.
+
+In the case above, Marten would add an extra column to the generated `mt_doc_user` table called
+`first_name`. Some users find duplicated fields to be useful for user supplied SQL queries.
+
+

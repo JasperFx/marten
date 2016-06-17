@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Marten.Schema;
+using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Npgsql;
 using Shouldly;
@@ -18,11 +19,39 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
+        public void example()
+        {
+            // SAMPLE: using-a-simple-calculated-index
+    var store = DocumentStore.For(_ =>
+    {
+        _.Connection(ConnectionSource.ConnectionString);
+
+        // This creates 
+        _.Schema.For<User>().Index(x => x.UserName);
+    });
+
+            
+
+    using (var session = store.QuerySession())
+    {
+        // Postgresql will be able to use the computed
+        // index generated from above
+        var somebody = session.Query<User>()
+            .Where(x => x.UserName == "somebody")
+            .FirstOrDefault();
+    }
+            // ENDSAMPLE
+
+            _output.WriteLine(store.Schema.ToDDL());
+            store.Dispose();
+        }
+
+        [Fact]
         public void smoke_test()
         {
             StoreOptions(_ => _.Schema.For<Target>().Index(x => x.Number));
 
-            var data = Target.GenerateRandomData(100).ToArray();
+                        var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data.ToArray());
 
             theStore.Schema.DbObjects.AllIndexes().Select(x => x.Name)
@@ -41,6 +70,54 @@ namespace Marten.Testing.Acceptance
                 session.Query<Target>().Where(x => x.Number == data.First().Number)
                        .Select(x => x.Id).ToList().ShouldContain(data.First().Id);
             }
+        }
+
+        [Fact]
+        public void specify_a_deep_index()
+        {
+            // SAMPLE: deep-calculated-index
+    var store = DocumentStore.For(_ =>
+    {
+        _.Connection(ConnectionSource.ConnectionString);
+
+        _.Schema.For<Target>().Index(x => x.Inner.Color);
+    });
+            // ENDSAMPLE
+
+            _output.WriteLine(store.Schema.ToDDL());
+        }
+
+        [Fact]
+        public void specify_a_different_mechanism_to_customize_the_index()
+        {
+            // SAMPLE: customizing-calculated-index
+    var store = DocumentStore.For(_ =>
+    {
+        _.Connection(ConnectionSource.ConnectionString);
+
+        // The second, optional argument to Index()
+        // allows you to customize the calculated index
+        _.Schema.For<Target>().Index(x => x.Number, x =>
+        {
+            // Change the index method to "brin"
+            x.Method = IndexMethod.brin;
+
+            // Force the index to be generated with casing rules
+            x.Casing = ComputedIndex.Casings.Lower;
+
+            // Override the index name if you want
+            x.IndexName = "mt_my_name";
+
+            // Toggle whether or not the index is concurrent
+            // Default is false
+            x.IsConcurrent = true;
+
+            // Toggle whether or not the index is a UNIQUE
+            // index
+            x.IsUnique = true;
+        });
+    });
+            // ENDSAMPLE
         }
         
         [Fact]
