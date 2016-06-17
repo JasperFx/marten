@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Services.Deletes;
 using Marten.Util;
@@ -190,7 +191,7 @@ namespace Marten.Schema
 
         public void RegisterUpdate(UpdateBatch batch, object entity, string json)
         {
-            var newVersion = Guid.NewGuid();
+            var newVersion = CombGuidIdGeneration.NewGuid();
             var currentVersion = batch.Versions.Version<T>(Identity(entity));
 
             ICallback callback = null;

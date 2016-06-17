@@ -84,7 +84,7 @@ namespace Marten
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        public EntityMetadata MetadataFor<T>(T entity)
+        public DocumentMetadata MetadataFor<T>(T entity)
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
@@ -98,9 +98,9 @@ namespace Marten
         }
     }
 
-    public class EntityMetadata
+    public class DocumentMetadata
     {
-        public EntityMetadata(DateTime lastModified, Guid currentVersion)
+        public DocumentMetadata(DateTime lastModified, Guid currentVersion)
         {
             LastModified = lastModified;
             CurrentVersion = currentVersion;
@@ -110,7 +110,7 @@ namespace Marten
         public Guid CurrentVersion { get; }
     }
 
-    public class EntityMetadataQueryHandler : IQueryHandler<EntityMetadata>
+    public class EntityMetadataQueryHandler : IQueryHandler<DocumentMetadata>
     {
         private readonly object _id;
         private readonly IDocumentMapping _mapping;
@@ -136,17 +136,17 @@ namespace Marten
 
         public Type SourceType => _storage.DocumentType;
 
-        public EntityMetadata Handle(DbDataReader reader, IIdentityMap map)
+        public DocumentMetadata Handle(DbDataReader reader, IIdentityMap map)
         {
             if (!reader.Read()) return null;
 
             var version = reader.GetFieldValue<Guid>(0);
             var timestamp = reader.GetFieldValue<DateTime>(1);
 
-            return new EntityMetadata(timestamp, version);
+            return new DocumentMetadata(timestamp, version);
         }
 
-        public async Task<EntityMetadata> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             var hasAny = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!hasAny) return null;
@@ -154,7 +154,7 @@ namespace Marten
             var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var timestamp = await reader.GetFieldValueAsync<DateTime>(1, token).ConfigureAwait(false);
 
-            return new EntityMetadata(timestamp, version);
+            return new DocumentMetadata(timestamp, version);
         }
     }
 }

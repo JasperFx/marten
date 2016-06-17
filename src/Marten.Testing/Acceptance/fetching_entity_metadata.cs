@@ -15,22 +15,24 @@ namespace Marten.Testing.Acceptance
                 .ShouldBeNull();
         }
 
-        [Fact]
-        public void hit_returns_values()
+        // SAMPLE: resolving_metadata
+    [Fact]
+    public void hit_returns_values()
+    {
+        var shop = new CoffeeShop();
+
+        using (var session = theStore.OpenSession())
         {
-            var shop = new CoffeeShop();
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(shop);
-                session.SaveChanges();
-            }
-
-            var metadata = theStore.Advanced.MetadataFor(shop);
-
-            metadata.ShouldNotBeNull();
-            metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
-            metadata.LastModified.ShouldNotBe(default(DateTime));
+            session.Store(shop);
+            session.SaveChanges();
         }
+
+        var metadata = theStore.Advanced.MetadataFor(shop);
+
+        metadata.ShouldNotBeNull();
+        metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
+        metadata.LastModified.ShouldNotBe(default(DateTime));
+    }
+        // ENDSAMPLE
     }
 }
