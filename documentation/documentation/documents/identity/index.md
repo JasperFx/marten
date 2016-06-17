@@ -13,11 +13,21 @@ Besides being serializable, Marten's only other requirement for a .Net type to b
 1. When the ID member of a document is not settable or not-public a `NoOpIdGeneration` strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.
 1. A `Custom` ID generator strategy is used to implement the ID generation strategy yourself.
 
+See these topics for more information about specific Id types:
+
+<[TableOfContents]>
+
 You can see some example id usages below:
 
 <[sample:id_samples]>
 
+## Overriding the Choice of Id Property/Field
 
+If you really want to -- or you're migrating existing document types from another document database -- Marten provides
+the `[Identity]` attribute to force Marten to use a property or field as the identifier that doesn't match
+the "id" or "Id" convention:
+
+<[sample:IdentityAttribute]>
 
 
 

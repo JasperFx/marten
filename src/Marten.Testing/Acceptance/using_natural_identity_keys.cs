@@ -38,11 +38,13 @@ namespace Marten.Testing.Acceptance
         }
     }
 
+    // SAMPLE: IdentityAttribute
     public class NonStandardDoc
     {
         [Identity]
         public string Name;
     }
+    // ENDSAMPLE
 
     public class NonStandardWithProp
     {

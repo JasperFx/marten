@@ -1,10 +1,18 @@
 ﻿using Marten.Schema;
 using Marten.Testing.Documents;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Examples
 {
     public class MartenRegistryExamples
     {
+        private readonly ITestOutputHelper _output;
+
+        public MartenRegistryExamples(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
         public void building_document_store()
         {
 // SAMPLE: using_marten_registry_to_bootstrap_document_store
