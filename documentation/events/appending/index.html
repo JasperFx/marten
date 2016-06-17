@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.9.2</h3>
+		      	<h3>Marten 1.0-alpha</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -93,7 +93,8 @@
 <!--Url:appending-->
 <p>Marten's event sourcing support &quot;appends&quot; event data documents to a single table <code>mt_events.</code> Events must be captured against a stream id, with a second table called <code>mt_streams</code> that Marten uses to
 keep metadata describing the state of an individual stream. Appending events to either a new or existing stream is done within the same Marten transaction as any other document updates or deletions. See</p>
-<p class="bg-warning" style="padding:5px"><b>Unknown topic key &#39;documents/persisting&#39;</b><small> -- CTRL+SHIFT+R to force refresh the topic tree</small></p> for more information on Marten transactions.
+<p class="bg-warning" style="padding:5px"><b>Unknown topic key &#39;documents/basics/persisting&#39;</b><small> -- CTRL+SHIFT+R to force refresh the topic tree</small></p> for more information on Marten transactions.
+<p>TODO(link to the new topic about Unit of Work and Transactions when it's available)</p>
 <h2>Event Types</h2>
 <p>The only requirement that Marten makes on types used as events is that they are:</p>
 <ol>
@@ -123,16 +124,16 @@ you could just supply either a string to mark the &quot;stream type&quot; or wor
 <p>As usual, our sample problem domain is the Lord of the Rings style &quot;Quest.&quot; For now, you can either start a new stream and let Marten assign the Guid
 id for the stream:</p>
 <pre><code class="language-csharp">
-                var joined = new MembersJoined {Members = new[] {&quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot;}};
-                var departed = new MembersDeparted {Members = new[] {&quot;Thom&quot;}};
+                var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };
+                var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };
 
                 var id = session.Events.StartStream&lt;Quest&gt;(joined, departed);
                 session.SaveChanges();
 </code></pre>
 <p>Or have Marten use a Guid value that you provide yourself:</p>
 <pre><code class="language-csharp">
-                var joined = new MembersJoined {Members = new[] {&quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot;}};
-                var departed = new MembersDeparted {Members = new[] {&quot;Thom&quot;}};
+                var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };
+                var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream&lt;Quest&gt;(id, joined, departed);
@@ -142,8 +143,8 @@ id for the stream:</p>
 <h2>Appending Events</h2>
 <p>If you have an existing stream, you can later append additional events with <code>IEventStore.Append()</code> as shown below:</p>
 <pre><code class="language-csharp">
-                var joined = new MembersJoined {Members = new[] {&quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot;}};
-                var departed = new MembersDeparted {Members = new[] {&quot;Thom&quot;}};
+                var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };
+                var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };
 
                 session.Events.Append(id, joined, departed);
 

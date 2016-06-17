@@ -44,7 +44,7 @@
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
 		      	<li><a href="/marten/documentation/schema" title="Marten and the Postgresql Schema">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/document_ids" title="Document Id's">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/identity" title="Document Identity">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -69,14 +69,14 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.9.2</h3>
+		      	<h3>Marten 1.0-alpha</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/document_ids">Document Id's</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/identity">Document Identity</a></p>
 		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/schema">Marten and the Postgresql Schema</a></p>
 
 		        </ul>
@@ -97,8 +97,8 @@ for RavenDb in several existing applications. As such, you may clearly see some 
 <p>To use Marten as a document database, you first need a Postgresql schema that will store your documents. Once you have that, getting started
 with Marten can be as simple as opening a <code>DocumentStore</code> to your new Postgresql schema:</p>
 <pre><code class="language-csharp">
-            var store = DocumentStore
-                .For(&quot;host=localhost;database=marten_test;password=mypassword;username=someuser&quot;);
+    var store = DocumentStore
+        .For(&quot;host=localhost;database=marten_test;password=mypassword;username=someuser&quot;);
 </code></pre>
 <p>The code sample above sets up document storage against the Postgresql at the connection string you supplied. In this &quot;quickstart&quot; configuration,
 Marten will build new database tables and functions for each new document type as needed <strong>if those database schema objects do not already exist</strong>.</p>
@@ -115,22 +115,17 @@ Marten will build new database tables and functions for each new document type a
 
                 // Override the JSON Serialization
                 _.Serializer&lt;JilSerializer&gt;();
-
-                // We&#39;re getting ahead of ourselves, but this
-                // opts into Postgresql 9.5 style upserts
-                _.UpsertType = PostgresUpsertType.Standard;
             });
 </code></pre>
 <p>For more information on using the <code>IDocumentStore</code> and configuring document storage, see:</p>
 <ul>
-<li><a href="/marten/documentation/documents/customizing">Customizing Document Storage and Querying</a></li>
+<li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li>
 <li><a href="/marten/documentation/documents/json">Json Serialization</a></li>
-<li><a href="/marten/documentation/documents/bulk_insert">Bulk Insert</a></li>
-<li><a href="/marten/documentation/documents/versioning">Versioned Documents</a></li>
+<li><a href="/marten/documentation/documents/basics/bulk_insert">Bulk Insert</a></li>
+<li><a href="/marten/documentation/documents/advanced/optimistic_concurrency">Optimistic Concurrency</a></li>
 <li><a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a></li>
-<li><a href="/marten/documentation/documents/text_search">Full Text Searching</a></li>
-<li><a href="/marten/documentation/documents/cleaning">Tearing Down Document Storage</a></li>
-<li><a href="/marten/documentation/documents/hierarchies">Document Hierarchies</a></li>
+<li><a href="/marten/documentation/documents/advanced/cleaning">Tearing Down Document Storage</a></li>
+<li><a href="/marten/documentation/documents/advanced/hierarchies">Document Hierarchies</a></li>
 </ul>
 <h2>Querying and Loading Documents</h2>
 <p>Now that we've got a document store, we can use that to create a new <code>IQuerySession</code> object just for querying or loading documents from the database:</p>
@@ -143,12 +138,12 @@ Marten will build new database tables and functions for each new document type a
 </code></pre>
 <p>For more information on the query support within Marten, see:</p>
 <ul>
-<li><a href="/marten/documentation/documents/linq">Querying Documents with Linq</a></li>
-<li><a href="/marten/documentation/documents/loading">Loading Documents by Id</a></li>
-<li><a href="/marten/documentation/documents/sql">Querying Documents with Postgresql SQL</a></li>
-<li><a href="/marten/documentation/documents/batched_queries">Batched Queries</a></li>
-<li><a href="/marten/documentation/documents/query_json">Query for Raw JSON</a></li>
-<li><a href="/marten/documentation/documents/compiled_queries">Compiled Queries</a></li>
+<li><a href="/marten/documentation/documents/querying/linq">Querying Documents with Linq</a></li>
+<li><a href="/marten/documentation/documents/basics/loading">Loading Documents by Id</a></li>
+<li><a href="/marten/documentation/documents/querying/sql">Querying with Postgresql SQL</a></li>
+<li><a href="/marten/documentation/documents/querying/batched_queries">Batched Queries</a></li>
+<li><a href="/marten/documentation/documents/querying/query_json">Query for Raw JSON</a></li>
+<li><a href="/marten/documentation/documents/querying/compiled_queries">Compiled Queries</a></li>
 </ul>
 <h2>Persisting Documents</h2>
 <p>The main service for updating and persisting documents is the <code>IDocumentSession</code>. An <code>IDocumentSession</code> is created by your <code>IDocumentStore</code> from above
@@ -185,9 +180,9 @@ in one of three ways:</p>
 <p>In all cases, <code>IDocumentSession</code> has the same query and loading functions as the read only <code>IQuerySession</code>.</p>
 <p>For more information on persisting documents and the different underlying behavior of the three flavors of <code>IDocumentSession</code> above, see:</p>
 <ul>
-<li><a href="/marten/documentation/documents/persisting">Persisting Documents and Unit Of Work</a></li>
-<li><a href="/marten/documentation/documents/partial_updates">Partial Document Updates</a></li>
-<li><a href="/marten/documentation/documents/deleting">Deleting Documents</a></li>
+<li><a href="/marten/documentation/documents/basics/persisting">Storing Documents and Unit Of Work</a></li>
+<li><a href="/marten/documentation/documents/advanced/patch_api">The Patching API</a></li>
+<li><a href="/marten/documentation/documents/basics/deleting">Deleting Documents</a></li>
 </ul>
 
 
@@ -202,7 +197,7 @@ in one of three ways:</p>
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/document_ids">Document Id's</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/identity">Document Identity</a>
 
 				        </span>
 			      	</nav>

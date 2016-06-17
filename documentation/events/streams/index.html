@@ -69,7 +69,7 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.9.2</h3>
+		      	<h3>Marten 1.0-alpha</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -127,12 +127,16 @@
         Guid Id { get; set; }
         int Version { get; set; }
 
+        long Sequence { get; set; }
+
         /// &lt;summary&gt;
         /// The actual event data body
         /// &lt;/summary&gt;
         object Data { get; }
 
-        void Apply&lt;TAggregate&gt;(TAggregate state, Aggregator&lt;TAggregate&gt; aggregator)
+        Guid StreamId { get; set; }
+
+        void Apply&lt;TAggregate&gt;(TAggregate state, IAggregator&lt;TAggregate&gt; aggregator)
             where TAggregate : class, new();
     }
 
@@ -143,16 +147,37 @@
             Data = data;
         }
 
+        public Guid StreamId { get; set; }
+
         public Guid Id { get; set; }
         public int Version { get; set; }
+        public long Sequence { get; set; }
         public T Data { get; set; }
 
         object IEvent.Data =&gt; Data;
 
-        public virtual void Apply&lt;TAggregate&gt;(TAggregate state, Aggregator&lt;TAggregate&gt; aggregator)
+        public virtual void Apply&lt;TAggregate&gt;(TAggregate state, IAggregator&lt;TAggregate&gt; aggregator)
             where TAggregate : class, new()
         {
             aggregator.AggregatorFor&lt;T&gt;()?.Apply(state, Data);
+        }
+
+        protected bool Equals(Event&lt;T&gt; other)
+        {
+            return Id.Equals(other.Id);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((Event&lt;T&gt;) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
         }
     }
 </code></pre>
@@ -250,12 +275,12 @@ any specific event type, use the <code>IEventStore.Query&lt;T&gt;()</code> metho
 
             theSession.SaveChanges();
 
-            theSession.Events.Query&lt;MembersJoined&gt;().Count().ShouldBe(2);
-            theSession.Events.Query&lt;MembersJoined&gt;().ToArray().SelectMany(x =&gt; x.Members).Distinct()
+            theSession.Events.QueryRawEventDataOnly&lt;MembersJoined&gt;().Count().ShouldBe(2);
+            theSession.Events.QueryRawEventDataOnly&lt;MembersJoined&gt;().ToArray().SelectMany(x =&gt; x.Members).Distinct()
                 .OrderBy(x =&gt; x)
                 .ShouldHaveTheSameElementsAs(&quot;Egwene&quot;, &quot;Matt&quot;, &quot;Nynaeve&quot;, &quot;Perrin&quot;, &quot;Rand&quot;, &quot;Thom&quot;);
 
-            theSession.Events.Query&lt;MembersDeparted&gt;().Where(x =&gt; x.Members.Contains(&quot;Matt&quot;))
+            theSession.Events.QueryRawEventDataOnly&lt;MembersDeparted&gt;().Where(x =&gt; x.Members.Contains(&quot;Matt&quot;))
                 .Single().Id.ShouldBe(departed2.Id);
         }
 </code></pre>

@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Customizing Document Storage and Querying</title>
+		<title>Marten - Customizing Document Storage</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/versioning" title="Versioned Documents">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/text_search" title="Full Text Searching">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/querying" title="Querying Documents">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/customizing/computed_index" title="Calculated Index">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Customizing Document Storage and Querying</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Customizing Document Storage</li></ol>
 		  	</nav>
 		  </div>
 
@@ -69,38 +69,39 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.9.2</h3>
+		      	<h3>Marten 1.0-alpha</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/text_search">Full Text Searching</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/versioning">Versioned Documents</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/querying">Querying Documents</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Customizing Document Storage and Querying <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/customizing.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Customizing Document Storage <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/configuration/index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title:Customizing Document Storage and Querying-->
+			      		<!--Title:Customizing Document Storage-->
 <!--Url:customizing-->
 <p>While you can certainly write your own <a href="https://en.wikipedia.org/wiki/Data_definition_language">DDL</a>
 and SQL queries for optimizing data fetching, Marten gives you a couple options for speeding up queries --
 which all come at the cost of slower inserts because it's an imperfect world. Marten supports the ability to configure:</p>
 <ul>
 <li>Indexes on the JSONB data field itself</li>
-<li>Opt into a more efficient &quot;upsert&quot; style for Postgresql 9.5</li>
 <li>Duplicate properties into separate database fields with a matching index for optimized querying</li>
 <li>Choose how Postgresql will search within JSONB documents</li>
 </ul>
-<p>At some point in the future Marten may support document hierarchies and more table customizations (foreign keys? table names?).</p>
+<p>The configuration options you'll most likely use are:</p>
+<ul class="table-of-contents"><li><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></li><li><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></li><li><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a></li><li><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></li></ul>
+<p>TODO(talk about writing a custom StoreOptions class to make it easier to reuse configuration)</p>
 <h2>MartenRegistry</h2>
 <p>While there are some limited abilities to configure storage with attributes, the most complete option right now
 is a fluent interface implemented by the <code>MartenRegistry</code>. To configure a Marten document store, first write
@@ -131,97 +132,6 @@ var store = DocumentStore.For(_ =&gt;
 </code></pre>
 <p>Do note that you could happily use multiple <code>MartenRegistry</code> classes in larger applications if that is advantageous.</p>
 <p>If you dislike using infrastructure attributes in your application code, you will probably prefer to use MartenRegistry.</p>
-<h2>Searchable Fields</h2>
-<p>According to our testing, the single best thing you can do to speed up queries against the JSONB documents
-is to duplicate a property or field within the JSONB structure as a separate database column on the document
-table. When you issue a Linq query using this duplicated property or field, Marten is able to write the SQL
-query to run against the duplicated field instead of using JSONB operators. This of course only helps for
-queries using the duplicated field.</p>
-<p>To create a searchable field, you can use the <code>[Searchable]</code> attribute like this:</p>
-<pre><code class="language-csharp">
-    [PropertySearching(PropertySearching.ContainmentOperator)]
-    public class Employee
-    {
-        public int Id;
-
-        // You can optionally override the Postgresql
-        // type for the duplicated column in the document
-        // storage table
-        [Searchable(PgType = &quot;text&quot;)]
-        public string Category;
-    }
-</code></pre>
-<p>By default, Marten adds a <a href="http://www.postgresql.org/docs/9.4/static/indexes-types.html">btree index</a> (the Postgresql default) to a searchable index, but you can also
-customize the generated index with the syntax shown below:</p>
-<pre><code class="language-csharp">
-    public class IndexExamples : MartenRegistry
-    {
-        public IndexExamples()
-        {
-            // Add a gin index to the User document type
-            For&lt;User&gt;().GinIndexJsonData();
-
-            // Adds a basic btree index to the duplicated
-            // field for this property that also overrides
-            // the Postgresql database type for the column
-            For&lt;User&gt;().Searchable(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);
-
-            // Customize the index on the duplicated field
-            // for FirstName 
-            For&lt;User&gt;().Searchable(x =&gt; x.FirstName, configure:idx =&gt;
-            {
-                idx.IndexName = &quot;idx_special&quot;;
-                idx.Method = IndexMethod.hash;
-            });
-
-        }
-    }
-</code></pre>
-<h2>Gin Indexes</h2>
-<p>To optimize a wider range of adhoc queries against the document JSONB, you can apply a <a href="http://www.postgresql.org/docs/9.4/static/gin.html">Gin index</a> to
-the JSON field in the database:</p>
-<pre><code class="language-csharp">
-    public class IndexExamples : MartenRegistry
-    {
-        public IndexExamples()
-        {
-            // Add a gin index to the User document type
-            For&lt;User&gt;().GinIndexJsonData();
-
-            // Adds a basic btree index to the duplicated
-            // field for this property that also overrides
-            // the Postgresql database type for the column
-            For&lt;User&gt;().Searchable(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);
-
-            // Customize the index on the duplicated field
-            // for FirstName 
-            For&lt;User&gt;().Searchable(x =&gt; x.FirstName, configure:idx =&gt;
-            {
-                idx.IndexName = &quot;idx_special&quot;;
-                idx.Method = IndexMethod.hash;
-            });
-
-        }
-    }
-</code></pre>
-<p><strong>Marten may be changed to make the Gin index on the data field be automatic in the future.</strong></p>
-<h2>&quot;UpsertStyle&quot;</h2>
-<p>Marten started with the assumption that we would target Postgresql 9.5 and its <a href="https://wiki.postgresql.org/wiki/What%27s_new_in_PostgreSQL_9.5">new &quot;upsert&quot; functionality</a>,
-but we have since backed off to making the older Postgresql upsert style the default with an &quot;opt-in&quot; choice
-to use the 9.5 syntax:</p>
-<pre><code class="language-csharp">
-    public class SettingUpsertStyle : StoreOptions
-    {
-        public SettingUpsertStyle()
-        {
-            // To use the traditional upsert style for 9.4 and below:
-            UpsertType = PostgresUpsertType.Legacy;
-
-            // To opt into the new 9.5 capabilities
-            UpsertType = PostgresUpsertType.Standard;
-        }
-    }
-</code></pre>
 <h2>Custom Attributes</h2>
 <p>If there's some kind of customization you'd like to use attributes for that isn't already supported by Marten,
 you're still in luck. If you write a subclass of the <code>MartenAttribute</code> shown below:</p>
@@ -264,12 +174,12 @@ would look like this:</p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/versioning">Versioned Documents</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/querying">Querying Documents</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/text_search">Full Text Searching</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a>
 
 				        </span>
 			      	</nav>

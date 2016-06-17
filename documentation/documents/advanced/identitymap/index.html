@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Json Serialization</title>
+		<title>Marten - Identity Map Mechanics</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/customizing" title="Customizing Document Storage">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/json/jil" title="Serializing with Jil">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/advanced/customizing_linq" title="Extending Marten's Linq Support">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/advanced/javascript_transformations" title="Javascript Transformations">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Json Serialization</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/advanced">Advanced Topics</a></li><li class="active">Identity Map Mechanics</li></ol>
 		  	</nav>
 		  </div>
 
@@ -76,68 +76,43 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/json/jil">Serializing with Jil</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/advanced/javascript_transformations">Javascript Transformations</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced/customizing_linq">Extending Marten's Linq Support</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Json Serialization <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/json/index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Identity Map Mechanics <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/advanced/identitymap.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title:Json Serialization-->
-<!--Url:json-->
-<p>An absolutely essential ingredient in Marten's persistence strategy is JSON serialization of the document objects. Marten aims to make the
-JSON serialization extensible and configurable through the native mechanisms in each JSON serialization library. For the purposes of having
-a smooth &quot;getting started&quot; story, Marten comes out of the box with support for a very basic usage of Newtonsoft.Json as the main JSON serializer.</p>
-<p>Internally, Marten uses an adapter interface for JSON serialization:</p>
+			      		<!--title:Identity Map Mechanics-->
+<p><strong>Identity Map:</strong></p>
+<p><em>Ensures that each object gets loaded only once by keeping every loaded object in a map. Looks up objects using the map when referring to them.</em></p>
+<p><a href="http://martinfowler.com/eaaCatalog/identityMap.html">Martin Fowler</a></p>
+<p>Marten's <code>IDocumentSession</code> implements the <a href="https://en.wikipedia.org/wiki/Identity_map_pattern"><em>Identity Map</em></a> pattern that seeks to cache documents loaded by id. This behavior can be very valuable, for example, in handling web requests or service bus messages when many different objects or functions may need to access the same logical document. Using the identity map mechanics allows the application to easily share data and avoid the extra database access hits -- as long as the <code>IDocumentSession</code> is scoped to the web request.</p>
 <pre><code class="language-csharp">
-    public interface ISerializer
-    {
-        /// &lt;summary&gt;
-        /// Serialize the document object into a JSON string
-        /// &lt;/summary&gt;
-        /// &lt;param name=&quot;document&quot;&gt;&lt;/param&gt;
-        /// &lt;returns&gt;&lt;/returns&gt;
-        string ToJson(object document);
+        public void using_identity_map()
+        {
+            var container = Container.For&lt;DevelopmentModeRegistry&gt;();
+            var store = container.GetInstance&lt;IDocumentStore&gt;();
 
-        /// &lt;summary&gt;
-        /// Deserialize a JSON string into an object of type T
-        /// &lt;/summary&gt;
-        /// &lt;typeparam name=&quot;T&quot;&gt;&lt;/typeparam&gt;
-        /// &lt;param name=&quot;json&quot;&gt;&lt;/param&gt;
-        /// &lt;returns&gt;&lt;/returns&gt;
-        T FromJson&lt;T&gt;(string json);
+            var user = new User {FirstName = &quot;Tamba&quot;, LastName = &quot;Hali&quot;};
+            store.BulkInsert(new [] {user});
 
-        /// &lt;summary&gt;
-        /// Deserialize a JSON string into the supplied Type
-        /// &lt;/summary&gt;
-        /// &lt;param name=&quot;type&quot;&gt;&lt;/param&gt;
-        /// &lt;param name=&quot;json&quot;&gt;&lt;/param&gt;
-        /// &lt;returns&gt;&lt;/returns&gt;
-        object FromJson(Type type, string json);
-
-        /// &lt;summary&gt;
-        /// Serialize a document without any extra
-        /// type handling metadata
-        /// &lt;/summary&gt;
-        /// &lt;param name=&quot;document&quot;&gt;&lt;/param&gt;
-        /// &lt;returns&gt;&lt;/returns&gt;
-        string ToCleanJson(object document);
-
-        /// &lt;summary&gt;
-        /// Just gotta tell Marten if enum&#39;s are stored
-        /// as int&#39;s or string&#39;s in the JSON
-        /// &lt;/summary&gt;
-        EnumStorage EnumStorage { get; }
-    }
+            // Open a document session with the identity map
+            using (var session = store.OpenSession())
+            {
+                session.Load&lt;User&gt;(user.Id)
+                    .ShouldBeTheSameAs(session.Load&lt;User&gt;(user.Id));
+            }
+        } 
 </code></pre>
-<p>To support a new serialization library or customize the JSON serialization options, you can write a new version of <code>ISerializer</code> and plug it
-into the <code>DocumentStore</code> (there's an example of doing that in the section on using Jil).</p>
+<p>Do note that using the identity map functionality can be wasteful if you aren't able to take advantage of the identity map caching in a session. In those cases, you may want to either use the <code>IDocumentStore.LightweightSession()</code> which forgos the identity map functionality, or use the read only <code>IQuerySession</code> alternative. RavenDb users will note that Marten does not (yet) support any notion of <code>Evict()</code> to manually remove documents from identity map tracking to avoid memory usage problems. Our hope is that the existence of the lightweight session and the read only interface will alleviate the memory explosion problems that you can run into with naive usage of identity maps or the dirty checking when fetching a large number of documents.</p>
+<p>The Identity Map functionality is applied to all documents loaded by Id or Linq queries with <code>IQuerySession/IDocumentSession.Query&lt;T&gt;()</code>. <strong>Documents loaded by user-supplied SQL in the <code>IQuerySession.Query&lt;T&gt;(sql)</code> mechanism bypass the Identity Map functionality.</strong></p>
 
 
 			      	</div>
@@ -146,12 +121,12 @@ into the <code>DocumentStore</code> (there's an example of doing that in the sec
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/advanced/customizing_linq">Extending Marten's Linq Support</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/json/jil">Serializing with Jil</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/advanced/javascript_transformations">Javascript Transformations</a>
 
 				        </span>
 			      	</nav>

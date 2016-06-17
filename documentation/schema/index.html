@@ -44,7 +44,7 @@
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
 		      	<li><a href="/marten/documentation" title="Documentation">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents" title="Marten as Document Db">Next</a></li>
+		      	<li><a href="/marten/documentation/schema/storage" title="How Documents are Stored">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -69,14 +69,14 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 0.9.2</h3>
+		      	<h3>Marten 1.0-alpha</h3>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents">Marten as Document Db</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/schema/storage">How Documents are Stored</a></p>
 		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation">Documentation</a></p>
 
 		        </ul>
@@ -84,14 +84,14 @@
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Marten and the Postgresql Schema <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/schema.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Marten and the Postgresql Schema <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/schema/index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
 			      		<!--Title:Marten and the Postgresql Schema-->
 <!--Url:schema-->
-<p>Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a Postgresql schema. Marten will generate and add a table and matching &quot;upsert&quot; function for each unique document type as needed. It also adds some other tables and functions for the <a href="/marten/documentation/events">event store functionality</a> and <a href="/marten/documentation/documents/document_ids">HiLo id generation</a></p>
+<p>Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a Postgresql schema. Marten will generate and add a table and matching &quot;upsert&quot; function for each unique document type as needed. It also adds some other tables and functions for the <a href="/marten/documentation/events">event store functionality</a> and <a href="/marten/documentation/documents/identity/sequential">HiLo id generation</a></p>
 <p>In all cases, the Marten schema objects are all prefixed with &quot;mt_.&quot;</p>
 <p>As of Marten v0.8, you have much finer grained ability to control the automatic generation or updates of schema objects through the
 <code>StoreOptions.AutoCreateSchemaObjects</code> like so:</p>
@@ -135,10 +135,22 @@ what is configured in the document store, and attempts to update these objects i
 All/None/CreateOnly/CreateOrUpdate rules as the table storage.</strong></p>
 <h2>Overriding Schema Name</h2>
 <p>By default marten will use the default <code>public</code> database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:</p>
-<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;override_schema_name&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
+<pre><code class="language-csharp">
+                _.DatabaseSchemaName = &quot;other&quot;;
+</code></pre>
 <p>The <code>Hilo</code> sequence table is always created in this document store database schema.</p>
 <p>If you wish to assign certain document tables to different (new or existing) schemas, you can do so like that:</p>
-<p class="bg-warning" style="padding:10px"><b>Missing code sample &#39;override_schema_per_table&#39;</b><small> -- Wait for ST to catch up reading samples or CTRL+SHIFT+R to force refresh</small></p>
+<pre><code class="language-csharp">
+            StoreOptions(_ =&gt;
+            {
+                _.MappingFor(typeof(User)).DatabaseSchemaName = &quot;other&quot;;
+                _.MappingFor(typeof(Issue)).DatabaseSchemaName = &quot;overriden&quot;;
+                _.MappingFor(typeof(Company));
+
+                // this will tell marten to use the default &#39;public&#39; schema name.
+                _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
+            });
+</code></pre>
 <p>This will create the following tables in your database: <code>other.mt_doc_user</code>, <code>overriden.mt_doc_issue</code> and <code>public.mt_doc_company</code>. When a schema doesn't exist it will be generated in the database.</p>
 <h3>Event Store</h3>
 <p>The EventStore database object are by default created in the document store DatabaseSchemaName. This can be overridden by setting the DatabaseSchemaName property of the event store options.</p>
@@ -272,7 +284,7 @@ $$ LANGUAGE plpgsql;</p>
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents">Marten as Document Db</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/schema/storage">How Documents are Stored</a>
 
 				        </span>
 			      	</nav>

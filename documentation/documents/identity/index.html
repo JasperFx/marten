@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Marten as Event Store</title>
+		<title>Marten - Document Identity</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -44,7 +44,7 @@
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
 		      	<li><a href="/marten/documentation/documents" title="Marten as Document Db">Previous</a></li>
-		      	<li><a href="/marten/documentation/events/appending" title="Appending Events">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/identity/custom" title="Custom Identity Strategies">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li class="active">Marten as Event Store</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Document Identity</li></ol>
 		  	</nav>
 		  </div>
 
@@ -76,7 +76,7 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/appending">Appending Events</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/identity/custom">Custom Identity Strategies</a></p>
 		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents">Marten as Document Db</a></p>
 
 		        </ul>
@@ -84,115 +84,58 @@
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Marten as Event Store <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/events/index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Document Identity <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/identity/index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title:Marten as Event Store-->
-<!--Url:events-->
-<p>Marten's Event Store functionality is a powerful way to utilize Postgresql in the <a href="http://martinfowler.com/eaaDev/EventSourcing.html">event sourcing</a> style of persistence in your application. Beyond simple event capture and access to the raw event
-stream data, Marten also helps you create &quot;read side&quot; views of the raw event data through its support for projections.</p>
-<h2>Event Store Documentation</h2>
-<ul class="table-of-contents"><li><a href="/marten/documentation/events/appending">Appending Events</a></li><li><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a></li><li><a href="/marten/documentation/events/projections">Projections</a><ul><li><a href="/marten/documentation/events/projections/async_daemon">Async Projections Daemon</a></li><li><a href="/marten/documentation/events/projections/custom">Custom Projections</a></li></ul></li></ul>
-<h2>Event Store Quickstart</h2>
-<p>There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in <a href="/marten/documentation/schema">Marten and the Postgresql Schema</a>. Marten is just a client library,
-and there's nothing to install other than the Marten nuget.</p>
-<p>Because I’ve read way too much epic fantasy series, my sample problem domain is an application that records, analyses, and visualizes the status of quests. During a quest,  you may want to record events like:</p>
+			      		<!--title:Document Identity-->
+<p>Besides being serializable, Marten's only other requirement for a .Net type to be a document is the existence of an identifier field or property that Marten can use as the primary key for the document type. The <code>Id</code> can be either a public field or property, and the name must be either <code>id</code> or <code>Id</code>. As of this time, Marten supports these <code>Id</code> types:</p>
+<ol>
+<li><code>String</code>. It might be valuable to use a <a href="https://en.wikipedia.org/wiki/Natural_key">natural key</a> as the identifier, especially if it is valuable within the
+<a href="/marten/documentation/documents/advanced/identitymap">Identity Map</a> feature of Marten Db. In this case, the user will
+be responsible for supplying the identifier.</li>
+<li><code>Guid</code>. If the id is a Guid, Marten will assign a new value for you when you persist the document for the first time if the id is empty.
+<em>And for the record, it's pronounced &quot;gwid&quot;</em>.</li>
+<li><code>CombGuid</code> is a <a href="https://en.wikipedia.org/wiki/Globally_unique_identifier#Sequential_algorithms">sequential Guid algorithm</a>. It can improve performance over the default Guid as it reduces fragmentation of the PK index. (More info soon)</li>
+<li><code>Int</code> or <code>Long</code>. As of right now, Marten uses a <a href="http://stackoverflow.com/questions/282099/whats-the-hi-lo-algorithm">HiLo generator</a> approach to assigning numeric identifiers by document type.
+Marten may support Postgresql sequences or star-based algorithms as later alternatives.</li>
+<li>When the ID member of a document is not settable or not-public a <code>NoOpIdGeneration</code> strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.</li>
+<li>A <code>Custom</code> ID generator strategy is used to implement the ID generation strategy yourself.</li>
+</ol>
+<p>See these topics for more information about specific Id types:</p>
+<ul class="table-of-contents"><li><a href="/marten/documentation/documents/identity/custom">Custom Identity Strategies</a></li><li><a href="/marten/documentation/documents/identity/guid">Guid Identifiers</a></li><li><a href="/marten/documentation/documents/identity/sequential">Sequential Identifiers with Hilo</a></li></ul>
+<p>You can see some example id usages below:</p>
 <pre><code class="language-csharp">
-    public class ArrivedAtLocation
+    public class Division
     {
-
-        public int Day { get; set; }
-
-        public string Location { get; set; }
-
-        public override string ToString()
-        {
-            return $&quot;Arrived at {Location} on Day {Day}&quot;;
-        }
+        // String property as Id
+        public string Id { get; set; }
     }
 
-    public class MembersJoined
+    public class Category
     {
-        public MembersJoined()
-        {
-        }
-
-        public MembersJoined(int day, string location, params string[] members)
-        {
-            Day = day;
-            Location = location;
-            Members = members;
-        }
-
-        public int Day { get; set; }
-
-        public string Location { get; set; }
-
-        public string[] Members { get; set; }
-
-        public override string ToString()
-        {
-            return $&quot;Members {Members.Join(&quot;, &quot;)} joined at {Location} on Day {Day}&quot;;
-        }
+        // Guid&#39;s work, fields too
+        public Guid Id;
     }
 
-
-    public class QuestStarted
+    public class Invoide
     {
-        public string Name { get; set; }
-        public Guid Id { get; set; }
-
-        public override string ToString()
-        {
-            return $&quot;Quest {Name} started&quot;;
-        }
-    }
-
-    public class MembersDeparted
-    {
-        public Guid Id { get; set; }
-
-        public int Day { get; set; }
-
-        public string Location { get; set; }
-
-        public string[] Members { get; set; }
-
-        public override string ToString()
-        {
-            return $&quot;Members {Members.Join(&quot;, &quot;)} departed at {Location} on Day {Day}&quot;;
-        }
+        // int&#39;s and long&#39;s can be the Id
+        // &quot;id&quot; is accepted
+        public int id { get; set; }
     }
 </code></pre>
-<p>Now, let's say that we're starting a new &quot;quest&quot; with the first couple events, then appending a couple more as other quest party members join up:</p>
+<h2>Overriding the Choice of Id Property/Field</h2>
+<p>If you really want to -- or you're migrating existing document types from another document database -- Marten provides
+the <code>[Identity]</code> attribute to force Marten to use a property or field as the identifier that doesn't match
+the &quot;id&quot; or &quot;Id&quot; convention:</p>
 <pre><code class="language-csharp">
-var store = DocumentStore.For(_ =&gt;
-{
-    _.Connection(ConnectionSource.ConnectionString);
-    _.Events.AggregateStreamsInlineWith&lt;QuestParty&gt;();
-});
-
-var questId = Guid.NewGuid();
-
-using (var session = store.OpenSession())
-{
-    var started = new QuestStarted {Name = &quot;Destroy the One Ring&quot;};
-    var joined1 = new MembersJoined(1, &quot;Hobbiton&quot;, &quot;Frodo&quot;, &quot;Merry&quot;);
-
-    // Start a brand new stream and commit the new events as 
-    // part of a transaction
-    session.Events.StartStream&lt;Quest&gt;(questId, started, joined1);
-    session.SaveChanges();
-
-    // Append more events to the same stream
-    var joined2 = new MembersJoined(3, &quot;Buckland&quot;, &quot;Merry&quot;, &quot;Pippen&quot;);
-    var joined3 = new MembersJoined(10, &quot;Bree&quot;, &quot;Aragorn&quot;);
-    var arrived = new ArrivedAtLocation { Day = 15, Location = &quot;Rivendell&quot; };
-    session.Events.Append(questId, joined2, joined3, arrived);
-    session.SaveChanges();
-}
+    public class NonStandardDoc
+    {
+        [Identity]
+        public string Name;
+    }
 </code></pre>
 
 
@@ -207,7 +150,7 @@ using (var session = store.OpenSession())
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/events/appending">Appending Events</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/identity/custom">Custom Identity Strategies</a>
 
 				        </span>
 			      	</nav>
