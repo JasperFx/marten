@@ -5,7 +5,7 @@ customizing_linq
 sql
 compiled_queries
 persisting
-partial_updates
+patch_api
 bulk_insert
 identitymap
 loading
