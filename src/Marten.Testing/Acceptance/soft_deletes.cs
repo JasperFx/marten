@@ -7,13 +7,17 @@ using Marten.Testing.Fixtures;
 using Marten.Util;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Acceptance
 {
     public class soft_deletes : IntegratedFixture
     {
-        public soft_deletes()
+        private readonly ITestOutputHelper _output;
+
+        public soft_deletes(ITestOutputHelper output)
         {
+            _output = output;
             StoreOptions(_ =>
             {
                 _.Schema.For<User>().SoftDeleted();
@@ -112,89 +116,99 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [Fact]
-        public void query_soft_deleted_docs()
+        // SAMPLE: query_soft_deleted_docs
+    [Fact]
+    public void query_soft_deleted_docs()
+    {
+        var user1 = new User { UserName = "foo" };
+        var user2 = new User { UserName = "bar" };
+        var user3 = new User { UserName = "baz" };
+        var user4 = new User { UserName = "jack" };
+
+        using (var session = theStore.OpenSession())
         {
-            var user1 = new User { UserName = "foo" };
-            var user2 = new User { UserName = "bar" };
-            var user3 = new User { UserName = "baz" };
-            var user4 = new User { UserName = "jack" };
+            session.Store(user1, user2, user3, user4);
+            session.SaveChanges();
 
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(user1, user2, user3, user4);
-                session.SaveChanges();
+            // Deleting 'bar' and 'baz'
+            session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+            session.SaveChanges();
 
-                session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-                session.SaveChanges();
+            // no where clause, deleted docs should be filtered out
+            session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+                .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
 
-                // no where clause
-                session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-                    .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+            var sql = session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName).ToCommand().CommandText;
+                _output.WriteLine(sql);
 
-                // with a where clause
+            // with a where clause
                 session.Query<User>().Where(x => x.UserName != "jack")
-                    .ToList().Single().UserName.ShouldBe("foo");
-            }
+                .ToList().Single().UserName.ShouldBe("foo");
         }
+    }
+        // ENDSAMPLE
 
-        [Fact]
-        public void query_maybe_soft_deleted_docs()
+        // SAMPLE: query_maybe_soft_deleted_docs
+    [Fact]
+    public void query_maybe_soft_deleted_docs()
+    {
+        var user1 = new User { UserName = "foo" };
+        var user2 = new User { UserName = "bar" };
+        var user3 = new User { UserName = "baz" };
+        var user4 = new User { UserName = "jack" };
+
+        using (var session = theStore.OpenSession())
         {
-            var user1 = new User { UserName = "foo" };
-            var user2 = new User { UserName = "bar" };
-            var user3 = new User { UserName = "baz" };
-            var user4 = new User { UserName = "jack" };
+            session.Store(user1, user2, user3, user4);
+            session.SaveChanges();
 
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(user1, user2, user3, user4);
-                session.SaveChanges();
+            session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+            session.SaveChanges();
 
-                session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-                session.SaveChanges();
+            // no where clause, all documents are returned
+            session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+                .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
 
-                // no where clause
-                session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-                    .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
-
-                // with a where clause
-                session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
-                    .OrderBy(x => x.UserName)
-                    .ToList()
-                    .Select(x => x.UserName)
-                    .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
-            }
+            // with a where clause, all documents are returned
+            session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
+                .OrderBy(x => x.UserName)
+                .ToList()
+                .Select(x => x.UserName)
+                .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
         }
+    }
+        // ENDSAMPLE
 
-        [Fact]
-        public void query_is_soft_deleted_docs()
+        // SAMPLE: query_is_soft_deleted_docs
+    [Fact]
+    public void query_is_soft_deleted_docs()
+    {
+        var user1 = new User { UserName = "foo" };
+        var user2 = new User { UserName = "bar" };
+        var user3 = new User { UserName = "baz" };
+        var user4 = new User { UserName = "jack" };
+
+        using (var session = theStore.OpenSession())
         {
-            var user1 = new User { UserName = "foo" };
-            var user2 = new User { UserName = "bar" };
-            var user3 = new User { UserName = "baz" };
-            var user4 = new User { UserName = "jack" };
+            session.Store(user1, user2, user3, user4);
+            session.SaveChanges();
 
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(user1, user2, user3, user4);
-                session.SaveChanges();
+            session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+            session.SaveChanges();
 
-                session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-                session.SaveChanges();
+            // no where clause
+            session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+                .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
 
-                // no where clause
-                session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-                    .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
-
-                // with a where clause
-                session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
-                    .OrderBy(x => x.UserName)
-                    .ToList()
-                    .Select(x => x.UserName)
-                    .Single().ShouldBe("bar");
-            }
+            // with a where clause
+            session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
+                .OrderBy(x => x.UserName)
+                .ToList()
+                .Select(x => x.UserName)
+                .Single().ShouldBe("bar");
         }
+    }
+        // ENDSAMPLE
 
         [Fact]
         public void top_level_of_hierarchy()

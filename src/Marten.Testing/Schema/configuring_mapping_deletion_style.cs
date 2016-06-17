@@ -17,11 +17,13 @@ namespace Marten.Testing.Schema
                 .DeleteStyle.ShouldBe(DeleteStyle.Remove);
         }
 
-        [SoftDeleted]
-        public class SoftDeletedDoc
-        {
-            public Guid Id;
-        }
+        // SAMPLE: SoftDeletedAttribute
+    [SoftDeleted]
+    public class SoftDeletedDoc
+    {
+        public Guid Id;
+    }
+        // ENDSAMPLE
 
         [Fact]
         public void can_be_configured_by_attribute()
@@ -30,9 +32,23 @@ namespace Marten.Testing.Schema
                 .DeleteStyle.ShouldBe(DeleteStyle.SoftDelete);
         }
 
+        public void example_of_using_fi_to_configure()
+        {
+            // SAMPLE: soft-delete-configuration-via-fi
+    var store = DocumentStore.For(_ =>
+    {
+        _.Connection(ConnectionSource.ConnectionString);
+        _.Schema.For<User>().SoftDeleted();
+    });
+
+    store.Dispose();
+            // ENDSAMPLE
+        }
+
         [Fact]
         public void can_configure_deletion_style_by_fluent_interface()
         {
+            
             using (var store = TestingDocumentStore.For(_ =>
             {
                 _.Schema.For<User>().SoftDeleted();
@@ -41,6 +57,7 @@ namespace Marten.Testing.Schema
                 store.Schema.MappingFor(typeof(User)).As<DocumentMapping>()
                     .DeleteStyle.ShouldBe(DeleteStyle.SoftDelete);
             }
+            
         }
     }
 }
