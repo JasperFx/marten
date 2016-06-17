@@ -44,16 +44,16 @@ namespace Marten.Testing.Schema
         {
             public Guid Id { get; set; }
 
-            [Searchable]
+            [DuplicateField]
             public string Name { get; set; }
 
-            [Searchable]
+            [DuplicateField]
             public string OtherName;
 
-            [Searchable(PgType = "timestamp")]
+            [DuplicateField(PgType = "timestamp")]
             public DateTime Time { get; set; }
 
-            [Searchable]
+            [DuplicateField]
             public DateTime Time2 { get; set; }
 
             public string OtherProp;

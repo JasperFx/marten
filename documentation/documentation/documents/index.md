@@ -22,14 +22,13 @@ While the default "auto-create" database schema objects is fantastic for a devel
 
 For more information on using the `IDocumentStore` and configuring document storage, see:
 
-* <[linkto:documentation/documents/customizing]>
+* <[linkto:documentation/documents/configuration]>
 * <[linkto:documentation/documents/json]>
-* <[linkto:documentation/documents/bulk_insert]>
-* <[linkto:documentation/documents/versioning]>
+* <[linkto:documentation/documents/basics/bulk_insert]>
+* <[linkto:documentation/documents/advanced/optimistic_concurrency]>
 * <[linkto:documentation/documents/diagnostics]>
-* <[linkto:documentation/documents/text_search]>
-* <[linkto:documentation/documents/cleaning]>
-* <[linkto:documentation/documents/hierarchies]>
+* <[linkto:documentation/documents/advanced/cleaning]>
+* <[linkto:documentation/documents/advanced/hierarchies]>
 
 
 ## Querying and Loading Documents
@@ -40,12 +39,12 @@ Now that we've got a document store, we can use that to create a new `IQuerySess
 
 For more information on the query support within Marten, see:
 
-* <[linkto:documentation/documents/linq]>
-* <[linkto:documentation/documents/loading]>
-* <[linkto:documentation/documents/sql]>
-* <[linkto:documentation/documents/batched_queries]>
-* <[linkto:documentation/documents/query_json]>
-* <[linkto:documentation/documents/compiled_queries]>
+* <[linkto:documentation/documents/querying/linq]>
+* <[linkto:documentation/documents/basics/loading]>
+* <[linkto:documentation/documents/querying/sql]>
+* <[linkto:documentation/documents/querying/batched_queries]>
+* <[linkto:documentation/documents/querying/query_json]>
+* <[linkto:documentation/documents/querying/compiled_queries]>
 
 
 ## Persisting Documents
@@ -59,8 +58,8 @@ In all cases, `IDocumentSession` has the same query and loading functions as the
 
 For more information on persisting documents and the different underlying behavior of the three flavors of `IDocumentSession` above, see:
 
-* <[linkto:documentation/documents/persisting]>
-* <[linkto:documentation/documents/partial_updates]>
-* <[linkto:documentation/documents/deleting]>
+* <[linkto:documentation/documents/basics/persisting]>
+* <[linkto:documentation/documents/advanced/patch_api]>
+* <[linkto:documentation/documents/basics/deleting]>
 
 

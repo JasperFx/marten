@@ -20,8 +20,8 @@ namespace Marten.Testing.Examples
         public void start_a_basic_store()
         {
             // SAMPLE: start_a_store
-            var store = DocumentStore
-                .For("host=localhost;database=marten_test;password=mypassword;username=someuser");
+    var store = DocumentStore
+        .For("host=localhost;database=marten_test;password=mypassword;username=someuser");
             // ENDSAMPLE
 
             // SAMPLE: start_a_query_session

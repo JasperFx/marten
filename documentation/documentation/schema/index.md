@@ -1,7 +1,7 @@
 <!--Title:Marten and the Postgresql Schema-->
 <!--Url:schema-->
 
-Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a Postgresql schema. Marten will generate and add a table and matching "upsert" function for each unique document type as needed. It also adds some other tables and functions for the <[linkto:documentation/events;title=event store functionality]> and <[linkto:documentation/documents/document_ids;title=HiLo id generation]>
+Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a Postgresql schema. Marten will generate and add a table and matching "upsert" function for each unique document type as needed. It also adds some other tables and functions for the <[linkto:documentation/events;title=event store functionality]> and <[linkto:documentation/documents/identity/sequential;title=HiLo id generation]>
 
 In all cases, the Marten schema objects are all prefixed with "mt_."
 

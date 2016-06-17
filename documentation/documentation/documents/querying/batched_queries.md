@@ -16,7 +16,7 @@ This functionality is demonstrated below:
 
 ## Combining Compiled Queries and Batch Queries
 
-As of v0.8.10, Marten allows you to incorporate <[linkto:documentation/documents/compiled_queries;title=compiled queries]> as part of a batch query. The Marten team is hoping that this combination will make it easier to create performant applications where you may need to aggregate many documents in a single HTTP request or other operation.
+As of v0.8.10, Marten allows you to incorporate <[linkto:documentation/documents/querying/compiled_queries;title=compiled queries]> as part of a batch query. The Marten team is hoping that this combination will make it easier to create performant applications where you may need to aggregate many documents in a single HTTP request or other operation.
 
 Say you have a compiled query that finds the first user with a given first name:
 

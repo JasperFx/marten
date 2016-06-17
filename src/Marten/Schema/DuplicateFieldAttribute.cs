@@ -8,7 +8,7 @@ namespace Marten.Schema
     /// for optimized searching
     /// </summary>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class SearchableAttribute : MartenAttribute
+    public class DuplicateFieldAttribute : MartenAttribute
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {

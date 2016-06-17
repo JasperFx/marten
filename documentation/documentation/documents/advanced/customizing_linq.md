@@ -1,10 +1,11 @@
 <!--Title:Extending Marten's Linq Support-->
 
-**The Linq parsing and translation to Postgresql JSONB queries, not to mention Marten's own helpers and model, are not going
-to be easily approachable for many people and this guide isn't exhaustive. Please feel free to ask for help in Marten's
-Gitter room linked above.""
+<div class="alert alert-info" role="alert">
+The Linq parsing and translation to Postgresql JSONB queries, not to mention Marten's own helpers and model, are pretty involved and this guide isn't exhaustive. Please feel free to ask for help in Marten's
+Gitter room linked above if there's any Linq customization or extension that you need.
+</div>
 
-New for v0.8, Marten allows you to add Linq parsing and querying support for your own custom methods.
+Marten allows you to add Linq parsing and querying support for your own custom methods.
 Using the (admittedly contrived) example from Marten's tests, say that you want to reuse a small part of a `Where()` clause across
 different queries for "IsBlue()." First, write the method you want to be recognized by Marten's Linq support:
 

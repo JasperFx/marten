@@ -1,1 +1,16 @@
-<!--Title: Sequential Identifiers with the Hilo Algorithm-->
+<!--Title: Sequential Identifiers with Hilo-->
+
+The _Hilo_ sequence generation can be customized with either global defaults or document type specific overrides. By default, the Hilo sequence generation in Marten increments by 1 and uses a "maximum lo" number of 1000.
+
+To set different global defaults, use the `StoreOptions.HiloSequenceDefaults` property like this sample:
+
+<[sample:configuring-global-hilo-defaults]>
+
+To override the Hilo configuration for a specific document type, you can decorate the document type with the `[HiloSequence]` attribute
+as in this example:
+
+<[sample:overriding-hilo-with-attribute]>
+
+You can also use the `MartenRegistry` fluent interface to override the Hilo configuration for a document type as in this example:
+
+<[sample:overriding-hilo-with-marten-registry]>

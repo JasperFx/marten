@@ -14,7 +14,7 @@ namespace Marten.Testing.Examples
     {
         public int Id { get; set; }
 
-        [Searchable]
+        [DuplicateField]
         public double Value { get; set; }
     }
 

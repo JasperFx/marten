@@ -15,7 +15,7 @@ Or, using paket:
 paket add nuget Marten
 </pre>
 
-The next step is to get access to a Postgresql 9.4+ database schema. If you want to let Marten build database schema objects on the fly at development time, 
+The next step is to get access to a Postgresql **9.5+** database schema. If you want to let Marten build database schema objects on the fly at development time, 
 make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` statements. 
 
 Marten uses the [Npgsql](http://www.npgsql.org) library to access Postgresql from .Net, so you'll likely want to read their [documentation on connection string syntax](http://www.npgsql.org/doc/connection-string-parameters.html).
@@ -31,7 +31,7 @@ Now, for your first document type, let's represent the users in our system:
 
 <[sample:user_document]>
 
-_For more information on document id's, see <[linkto:documentation/documents/document_ids]>._
+_For more information on document id's, see <[linkto:documentation/documents/identity]>._
 
 And now that we've got a Postgresql schema and an `IDocumentStore`, let's start persisting and loading user documents:
 

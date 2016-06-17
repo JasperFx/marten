@@ -40,6 +40,6 @@ Marten supports Include within an asynchronous context. The query will be run as
 
 And so on...
 
-Marten also supports running an Include query within <[linkto:documentation/documents/batched_queries]>:
+Marten also supports running an Include query within <[linkto:documentation/documents/querying/batched_queries]>:
 
 <[sample:batch_include]>

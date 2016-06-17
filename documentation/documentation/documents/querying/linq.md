@@ -1,6 +1,8 @@
 <!--Title:Querying Documents with Linq-->
 <!--Url:linq-->
 
+TODO(Split this topic up, and use ST specs)
+
 Marten uses the [Relinq library](https://github.com/re-motion/Relinq) to support a subset of the normal Linq operators. Linq queries are done with
 Marten using the `IQuerySession.Query<T>()` or `IDocumentSession.Query<T>()` method to return an [IQueryable](https://msdn.microsoft.com/en-us/library/system.linq.iqueryable(v=vs.100).aspx) for the document type `T`.
 

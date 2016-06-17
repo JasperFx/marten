@@ -39,7 +39,7 @@ On subsequent usages, Marten will just reuse the existing SQL command and rememb
 
 ## What is supported?
 
-To the best of our knowledge and testing, you may use any <[linkto:documentation/documents/linq;title=Linq feature that Marten supports]> within a compiled query. So any combination of:
+To the best of our knowledge and testing, you may use any <[linkto:documentation/documents/querying/linq;title=Linq feature that Marten supports]> within a compiled query. So any combination of:
 
 * `Select()` transforms
 * `First/FirstOrDefault()`

@@ -767,10 +767,10 @@ namespace Marten.Testing.Schema
         {
             public Guid Id { get; set; }
 
-            [Searchable]
+            [DuplicateField]
             public string Name { get; set; }
 
-            [Searchable] public string OtherName;
+            [DuplicateField] public string OtherName;
 
             public string OtherProp;
             public string OtherField { get; set; }

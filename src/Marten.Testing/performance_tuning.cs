@@ -55,13 +55,13 @@ namespace Marten.Testing
         public static void Build_With_Jil()
         {
             // SAMPLE: replacing_serializer_with_jil
-            var store = DocumentStore.For(_ =>
-            {
-                _.Connection("the connection string");
+var store = DocumentStore.For(_ =>
+{
+    _.Connection("the connection string");
 
-                // Replace the ISerializer w/ the JilSerializer
-                _.Serializer<JilSerializer>();
-            });
+    // Replace the ISerializer w/ the JilSerializer
+    _.Serializer<JilSerializer>();
+});
             // ENDSAMPLE
         }
 

@@ -291,7 +291,7 @@
     <Compile Include="Schema\PropertySearching.cs" />
     <Compile Include="Schema\PropertySearchingAttribute.cs" />
     <Compile Include="Schema\SchemaBuilder.cs" />
-    <Compile Include="Schema\SearchableAttribute.cs" />
+    <Compile Include="Schema\DuplicateFieldAttribute.cs" />
     <Compile Include="Schema\Identity\Sequences\HiloSettings.cs" />
     <Compile Include="Schema\Identity\Sequences\HiLoSequence.cs" />
     <Compile Include="Schema\Identity\Sequences\ISequence.cs" />

@@ -1,4 +1,4 @@
-<!--Title:Querying Documents with Postgresql SQL-->
+<!--Title:Querying with Postgresql SQL-->
 <!--Url:sql-->
 
 It's not too hard to imagine a scenario where the Linq querying support is either inadequate or you just want full control over the SQL for the purpose of optimizing a query. For that reason, Marten supports the `IQuerySession/IDocumentSession.Query<T>(sql)` method that allows you to supply the SQL yourself.
@@ -21,3 +21,8 @@ The `Query<T>(sql)` mechanism will also allow you to use parameterized sql like 
 The best resource for this topic might just be [the unit tests](https://github.com/JasperFx/Marten/blob/master/src/Marten.Testing/query_by_sql_where_clause_Tests.cs).
 
 
+## Asynchronous Queries
+
+You can also query asynchronously with user supplied SQL:
+
+<[sample:using-queryasync]>

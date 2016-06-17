@@ -43,7 +43,7 @@ var store = DocumentStore.For(_ =>
         // You can optionally override the Postgresql
         // type for the duplicated column in the document
         // storage table
-        [Searchable(PgType = "text")]
+        [DuplicateField(PgType = "text")]
         public string Category;
     }
     // ENDSAMPLE

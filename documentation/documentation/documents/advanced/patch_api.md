@@ -1,5 +1,5 @@
-<!--Title:Partial Document Updates-->
-<!--Url:partial_updates-->
+<!--Title:Partial Document Updates with the Patching API-->
 
-Postgresql does have some support for partial updates of JSON data fields by merging JSON. Marten does not yet support that, 
-but [it might in the future](https://github.com/JasperFx/Marten/issues/18).
+**This is done, just catching up on documentation**
+
+TODO(write some content!)

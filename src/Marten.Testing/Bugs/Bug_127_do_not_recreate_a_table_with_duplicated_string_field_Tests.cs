@@ -47,7 +47,7 @@ namespace Marten.Testing.Bugs
     {
         public Guid Id { get; set; }
 
-        [Searchable]
+        [DuplicateField]
         public string Name { get; set; }
     }
 }

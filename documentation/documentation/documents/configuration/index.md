@@ -1,4 +1,4 @@
-<!--Title:Customizing Document Storage and Querying-->
+<!--Title:Customizing Document Storage-->
 <!--Url:customizing-->
 
 While you can certainly write your own [DDL](https://en.wikipedia.org/wiki/Data_definition_language) 
@@ -6,13 +6,15 @@ and SQL queries for optimizing data fetching, Marten gives you a couple options 
 which all come at the cost of slower inserts because it's an imperfect world. Marten supports the ability to configure:
 
 * Indexes on the JSONB data field itself
-* Opt into a more efficient "upsert" style for Postgresql 9.5
 * Duplicate properties into separate database fields with a matching index for optimized querying
 * Choose how Postgresql will search within JSONB documents
 
-At some point in the future Marten may support document hierarchies and more table customizations (foreign keys? table names?).
+The configuration options you'll most likely use are:
+
+<[TableOfContents]>
 
 
+TODO(talk about writing a custom StoreOptions class to make it easier to reuse configuration)
 
 ## MartenRegistry
 
@@ -29,46 +31,6 @@ To apply your new `MartenRegistry`, just include it when you bootstrap the `IDoc
 Do note that you could happily use multiple `MartenRegistry` classes in larger applications if that is advantageous.
 
 If you dislike using infrastructure attributes in your application code, you will probably prefer to use MartenRegistry.
-
-
-
-## Searchable Fields
-
-According to our testing, the single best thing you can do to speed up queries against the JSONB documents
-is to duplicate a property or field within the JSONB structure as a separate database column on the document
-table. When you issue a Linq query using this duplicated property or field, Marten is able to write the SQL
-query to run against the duplicated field instead of using JSONB operators. This of course only helps for 
-queries using the duplicated field.
-
-To create a searchable field, you can use the `[Searchable]` attribute like this:
-
-<[sample:using_attributes_on_document]>
-
-By default, Marten adds a [btree index](http://www.postgresql.org/docs/9.4/static/indexes-types.html) (the Postgresql default) to a searchable index, but you can also 
-customize the generated index with the syntax shown below:
-
-<[sample:IndexExamples]>
-
-
-## Gin Indexes
-
-To optimize a wider range of adhoc queries against the document JSONB, you can apply a [Gin index](http://www.postgresql.org/docs/9.4/static/gin.html) to
-the JSON field in the database:
-
-<[sample:IndexExamples]>
-
-**Marten may be changed to make the Gin index on the data field be automatic in the future.**
-
-
-
-## "UpsertStyle"
-
-Marten started with the assumption that we would target Postgresql 9.5 and its [new "upsert" functionality](https://wiki.postgresql.org/wiki/What's_new_in_PostgreSQL_9.5),
-but we have since backed off to making the older Postgresql upsert style the default with an "opt-in" choice
-to use the 9.5 syntax:
-
-<[sample:setting_upsert_style]>
-
 
 
 ## Custom Attributes
