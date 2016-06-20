@@ -1,4 +1,5 @@
-﻿using Marten.Testing.Documents;
+﻿using System;
+using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 
@@ -13,6 +14,43 @@ namespace Marten.Testing.Acceptance
                 _.Transforms.LoadFile("default_username.js");
             });
         }
+
+
+        public void example()
+        {
+            // SAMPLE: loading_js_transform_files
+    var store = DocumentStore.For(_ =>
+    {
+        _.Connection(ConnectionSource.ConnectionString);
+
+        // Let Marten derive the transform name from the filename
+        _.Transforms.LoadFile("get_fullname.js");
+
+        // Explicitly define the transform name yourself
+        _.Transforms.LoadFile("default_username.js", "set_default_username");
+    });
+            // ENDSAMPLE
+
+    
+    transform_example(store);
+
+            store.Dispose();
+        }
+
+        // SAMPLE: transform_example
+        private static void transform_example(IDocumentStore store)
+        {
+            // Transform User documents with a filter
+            store.Transform.Where<User>("default_username", x => x.UserName == null);
+
+            // Transform a single User document by Id
+            store.Transform.Document<User>("default_username", Guid.NewGuid());
+
+            // Transform all User documents
+            store.Transform.All<User>("default_username");
+        }
+        // ENDSAMPLE
+
 
         [Fact]
         public void transform_all_documents()

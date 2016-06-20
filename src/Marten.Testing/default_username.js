@@ -1,3 +1,7 @@
-﻿module.exports = function(doc) {
-    return {UserName: (doc.FirstName + '.' + doc.LastName).toLowerCase()};
+﻿// SAMPLE: default_username
+module.exports = function (doc) {
+    doc.UserName = (doc.FirstName + '.' + doc.LastName).toLowerCase();
+
+    return doc;
 }
+// ENDSAMPLE

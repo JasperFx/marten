@@ -17,16 +17,35 @@ namespace Marten.Testing.Acceptance
             StoreOptions(_ => _.Transforms.LoadFile("get_fullname.js"));
         }
 
+        public void load_transformation()
+        {
+    var store = DocumentStore.For(_ =>
+    {
+        _.Connection(ConnectionSource.ConnectionString);
 
+        // Let Marten derive the transform name
+        // from the file name
+        _.Transforms.LoadFile("get_fullname.js");
+
+        // or override the transform name
+        _.Transforms.LoadFile("get_fullname.js", "fullname");
+    });
+
+            store.Dispose();
+        }
+
+        // SAMPLE: transform_to_json_in_compiled_query
         public class JsonQuery : ICompiledQuery<User, string>
         {
             public Expression<Func<IQueryable<User>, string>> QueryIs()
             {
-                return _ => _.Where(x => x.FirstName == FirstName).TransformToJson("get_fullname").Single();
+                return _ => _.Where(x => x.FirstName == FirstName)
+                .TransformToJson("get_fullname").Single();
             }
 
             public string FirstName { get; set; }
         }
+        // ENDSAMPLE
 
         [Fact]
         public void transform_to_json_in_compiled_query()
@@ -44,23 +63,25 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [Fact]
-        public void can_transform_to_json()
+        // SAMPLE: using_transform_to_json
+    [Fact]
+    public void can_transform_to_json()
+    {
+        var user = new User {FirstName = "Eric", LastName = "Berry"};
+
+        using (var session = theStore.OpenSession())
         {
-            var user = new User {FirstName = "Eric", LastName = "Berry"};
+            session.Store(user);
+            session.SaveChanges();
 
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(user);
-                session.SaveChanges();
+            var json = session.Query<User>()
+                .Where(x => x.Id == user.Id)
+                .TransformToJson("get_fullname").Single();
 
-                var json = session.Query<User>()
-                    .Where(x => x.Id == user.Id)
-                    .TransformToJson("get_fullname").Single();
-
-                json.ShouldBe("{\"fullname\": \"Eric Berry\"}");
-            }
+            json.ShouldBe("{\"fullname\": \"Eric Berry\"}");
         }
+    }
+        // ENDSAMPLE
 
         [Fact]
         public async Task can_transform_to_json_async()
@@ -80,6 +101,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
+        // SAMPLE: transform_to_another_type
         public class FullNameView
         {
             public string fullname { get; set; }
@@ -102,6 +124,7 @@ namespace Marten.Testing.Acceptance
                 view.fullname.ShouldBe("Eric Berry");
             }
         }
+        // ENDSAMPLE
 
         [Fact]
         public async Task can_transform_to_another_doc_async()

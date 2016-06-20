@@ -30,6 +30,14 @@ namespace Marten.Linq
         Task<TResult> MaxAsync<TResult>(CancellationToken token);
         Task<double> AverageAsync(CancellationToken token);
         QueryPlan Explain(FetchType fetchType = FetchType.FetchMany);
+
+        /// <summary>
+        /// Applies a pre-loaded Javascript transformation to the documents
+        /// returned by this query
+        /// </summary>
+        /// <typeparam name="TDoc"></typeparam>
+        /// <param name="transformName"></param>
+        /// <returns></returns>
         IQueryable<TDoc> TransformTo<TDoc>(string transformName);
     }
 
