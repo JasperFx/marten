@@ -90,7 +90,160 @@
 
 			      	<div id="main-pane">
 			      		<!--title: Javascript Transformations-->
-<p>TODO(write some content!)</p>
+<p>The <a href="/marten/documentation/documents/advanced/patch_api">Patch API</a> provides some out of the box recipes for common document transforms and
+the <a href="/marten/documentation/documents/querying/projections">Select() projections</a> in the Linq support gives you
+the ability to do some basic transformations of the persisted JSON data in the database as part of querying. If your needs fall
+outside of these simple built in mechanism, you're still in luck because you can resort to using custom Javascript functions that will run inside of Postgresql
+itself to do more advanced document transformations.</p>
+<p>At this point, Marten supports these use cases:</p>
+<ol>
+<li>Transforming the data in one or more documents to apply some kind of structural migration to persisted documents, like you would need to do if
+the application code no longer matches the JSON previously stored</li>
+<li>Creating a &quot;readside&quot; view of a persisted document as part of a Linq query.</li>
+<li>Transform the raw document data to a completely different .Net type as part of a Linq query</li>
+</ol>
+<h2>Creating and Loading a Javascript Function</h2>
+<p>Javascript transformations work in Marten by first allowing you to write your Javascript function into a single file like this one:</p>
+<pre><code class="language-javascript">
+module.exports = function (doc) {
+    return {fullname: doc.FirstName + &#39; &#39; + doc.LastName};
+}
+</code></pre>
+<p>You'll notice a couple things:</p>
+<ul>
+<li>Marten requires you to export the transformation function with the <code>module.exports =</code> syntax familiar from <a href="http://wiki.commonjs.org/wiki/CommonJS">CommonJS</a> or Node.js development.
+ES6 modules are not supported at this time.</li>
+<li>Marten expects the transformation function to take in a single argument for the current JSON data and return the new JSON data</li>
+</ul>
+<div class="alert alert-info">
+There is some thought and even infrastructure for doing Javascript transformations with multiple, related documents, but that feature will not likely make it into Marten 1.0.
+</div>
+<p>To load a Javascript function into your Marten-ized Postgresql database, use this syntax as part of bootstrapping
+your Marten <code>IDocumentStore</code>:</p>
+<pre><code class="language-csharp">
+    var store = DocumentStore.For(_ =&gt;
+    {
+        _.Connection(ConnectionSource.ConnectionString);
+
+        // Let Marten derive the transform name from the filename
+        _.Transforms.LoadFile(&quot;get_fullname.js&quot;);
+
+        // Explicitly define the transform name yourself
+        _.Transforms.LoadFile(&quot;default_username.js&quot;, &quot;set_default_username&quot;);
+    });
+</code></pre>
+<p>Behind the scenes, Marten creates a <code>TransformFunction</code> object in the document store that knows how governs the construction and update
+of a <a href="http://pgxn.org/dist/plv8/doc/plv8.html">PLV8 function</a> that will wrap your raw Javascript function to expose it to Postgresql:</p>
+<pre>
+CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc jsonb)
+  RETURNS jsonb AS
+$BODY$
+<p>var module = {export: {}};</p>
+<p>module.exports = function (doc) {
+return {fullname: doc.FirstName + ' ' + doc.LastName};
+}</p>
+<p>var func = module.exports;</p>
+<p>return func(doc);</p>
+<p>$BODY$
+LANGUAGE plv8 IMMUTABLE STRICT
+COST 100;</p>
+</pre>
+<p>The Javascript functions are managed roughly the same way as all other schema objects. If you are running your <code>IDocumentStore</code> with
+the <code>StoreOptions.AutoCreateSchemaObjects</code> option set to anything but <code>None</code>, Marten will attempt to automatically update
+your database schema with the current version of the Javascript wrapper function. It does this on only the first usage of the
+named transform, and works by just doing a <code>string.Contains()</code> check against the existing function in the database schema.</p>
+<p>In the case of <code>StoreOptions.AutoCreateSchemaObjects = None</code>, the Javascript transform functions are evaluated and output through
+the <a href="/marten/documentation/schema/migrations">Schema Migrations and Patches</a>.</p>
+<h2>Using a Javascript Transform in Linq Queries</h2>
+<p>Once you have a Javascript transform loaded into the <code>IDocumentStore</code>, you can do live transformations inside
+of Linq queries. If you only care about the transformed JSON, you use this syntax:</p>
+<pre><code class="language-csharp">
+    [Fact]
+    public void can_transform_to_json()
+    {
+        var user = new User {FirstName = &quot;Eric&quot;, LastName = &quot;Berry&quot;};
+
+        using (var session = theStore.OpenSession())
+        {
+            session.Store(user);
+            session.SaveChanges();
+
+            var json = session.Query&lt;User&gt;()
+                .Where(x =&gt; x.Id == user.Id)
+                .TransformToJson(&quot;get_fullname&quot;).Single();
+
+            json.ShouldBe(&quot;{\&quot;fullname\&quot;: \&quot;Eric Berry\&quot;}&quot;);
+        }
+    }
+</code></pre>
+<p>If you want to retrieve the results deserialized to another type, you can use the <code>TransformTo&lt;T&gt;(transformName)</code>
+method shown below:</p>
+<pre><code class="language-csharp">
+        public class FullNameView
+        {
+            public string fullname { get; set; }
+        }
+
+        [Fact]
+        public void can_transform_to_another_doc()
+        {
+            var user = new User { FirstName = &quot;Eric&quot;, LastName = &quot;Berry&quot; };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(user);
+                session.SaveChanges();
+
+                var view = session.Query&lt;User&gt;()
+                    .Where(x =&gt; x.Id == user.Id)
+                    .TransformTo&lt;FullNameView&gt;(&quot;get_fullname&quot;).Single();
+
+                view.fullname.ShouldBe(&quot;Eric Berry&quot;);
+            }
+        }
+</code></pre>
+<p>You can also use <code>TransformToJson()</code> inside of a <a href="/marten/documentation/documents/querying/compiled_queries">compiled query</a>:</p>
+<pre><code class="language-csharp">
+        public class JsonQuery : ICompiledQuery&lt;User, string&gt;
+        {
+            public Expression&lt;Func&lt;IQueryable&lt;User&gt;, string&gt;&gt; QueryIs()
+            {
+                return _ =&gt; _.Where(x =&gt; x.FirstName == FirstName)
+                .TransformToJson(&quot;get_fullname&quot;).Single();
+            }
+
+            public string FirstName { get; set; }
+        }
+</code></pre>
+<h2>Document Transformations</h2>
+<p>The persisted JSON documents in Marten are a reflection of your .Net classes. Great, that makes it absurdly easy to keep the database schema
+in synch with your application code at development time -- especially compared to the typical development process against a relational database.
+However, what happens when you really do need to make breaking changes or additions to a document type but you already have loads of
+persisted documents in your Marten database with the old structure?</p>
+<p>To that end, Marten allows you to use Javascript functions to alter the existing documents in the database. As an example,
+let's go back to the User document type and assume for some crazy reason that we didn't immediately issue a user name to some subset of users.
+As a default, we might just assign their user names by combining their first and last names like so:</p>
+<pre><code class="language-javascript">
+module.exports = function (doc) {
+    doc.UserName = (doc.FirstName + &#39;.&#39; + doc.LastName).toLowerCase();
+
+    return doc;
+}
+</code></pre>
+<p>To apply this transformation to existing rows in the database, Marten exposes this syntax:</p>
+<pre><code class="language-csharp">
+        private static void transform_example(IDocumentStore store)
+        {
+            // Transform User documents with a filter
+            store.Transform.Where&lt;User&gt;(&quot;default_username&quot;, x =&gt; x.UserName == null);
+
+            // Transform a single User document by Id
+            store.Transform.Document&lt;User&gt;(&quot;default_username&quot;, Guid.NewGuid());
+
+            // Transform all User documents
+            store.Transform.All&lt;User&gt;(&quot;default_username&quot;);
+        }
+</code></pre>
 
 
 			      	</div>

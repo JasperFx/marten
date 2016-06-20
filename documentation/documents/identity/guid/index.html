@@ -90,6 +90,10 @@
 
 			      	<div id="main-pane">
 			      		<!--Title: Guid Identifiers-->
+<div class="alert alert-info">
+As of Marten 1.0-alpha, the default Guid mechanism is a sequential or "Comb" Guid. While more expensive to
+generate, this makes inserts into the underlying document tables more efficient.
+</div>
 <h2>CombGuid</h2>
 <p>To use <em>CombGuid</em> generation you should enabled it when configuring the document store. This defines that the <em>CombGuid</em> generation strategy will be used for all the documents types.</p>
 <pre><code class="language-csharp">
