@@ -208,7 +208,10 @@ namespace Marten.Schema
 
             if (_mapping.IsHierarchy())
             {
-                table.Columns.Add(new TableColumn(DocumentMapping.DocumentTypeColumn, "varchar"));
+                table.Columns.Add(new TableColumn(DocumentMapping.DocumentTypeColumn, "varchar")
+                {
+                    Directive = $"DEFAULT '{_mapping.AliasFor(_mapping.DocumentType)}'"
+                });
             }
 
             if (_mapping.DeleteStyle == DeleteStyle.SoftDelete)

@@ -37,7 +37,15 @@ namespace Marten.Generation
 
         public void CreatePatch(DocumentMapping mapping, SchemaPatch runner)
         {
-            var systemFields = new string[] {DocumentMapping.LastModifiedColumn, DocumentMapping.DotNetTypeColumn, DocumentMapping.VersionColumn, DocumentMapping.DeletedColumn, DocumentMapping.DeletedAtColumn};
+            var systemFields = new string[]
+            {
+                DocumentMapping.LastModifiedColumn,
+                DocumentMapping.DotNetTypeColumn,
+                DocumentMapping.VersionColumn,
+                DocumentMapping.DeletedColumn,
+                DocumentMapping.DeletedAtColumn,
+                DocumentMapping.DocumentTypeColumn
+            };
 
             var missingNonSystemFields = Missing.Where(x => !systemFields.Contains(x.Name)).ToArray();
             var fields = missingNonSystemFields.Select(x => mapping.FieldForColumn(x.Name)).ToArray();

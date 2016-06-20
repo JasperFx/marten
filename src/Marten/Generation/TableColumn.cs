@@ -1,16 +1,10 @@
 using System;
-using System.Diagnostics.Contracts;
-using System.IO;
 using Marten.Util;
 
 namespace Marten.Generation
 {
     public class TableColumn
     {
-        public string Name { get; }
-        public string Type { get; }
-        public string Directive { get; set; }
-
         public TableColumn(string name, string type)
         {
             if (string.IsNullOrEmpty(name)) throw new ArgumentOutOfRangeException(nameof(name));
@@ -19,9 +13,14 @@ namespace Marten.Generation
             Type = type.ToLower();
         }
 
+        public string Name { get; }
+        public string Type { get; }
+        public string Directive { get; set; }
+
         protected bool Equals(TableColumn other)
         {
-            return string.Equals(Name, other.Name) && string.Equals(TypeMappings.ConvertSynonyms(Type), TypeMappings.ConvertSynonyms(other.Type));
+            return string.Equals(Name, other.Name) &&
+                   string.Equals(TypeMappings.ConvertSynonyms(Type), TypeMappings.ConvertSynonyms(other.Type));
         }
 
         public override bool Equals(object obj)
@@ -36,7 +35,7 @@ namespace Marten.Generation
         {
             unchecked
             {
-                return (Name.GetHashCode() * 397) ^ (Type.GetHashCode());
+                return (Name.GetHashCode()*397) ^ Type.GetHashCode();
             }
         }
 
@@ -44,6 +43,5 @@ namespace Marten.Generation
         {
             return $"{Name.PadRight(length)}{Type} {Directive}";
         }
-
     }
 }
