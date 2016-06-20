@@ -15,7 +15,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<Shop>().AddSubclass<CoffeeShop>();
+                _.Schema.For<Shop>().AddSubClass<CoffeeShop>();
             });
         }
 
