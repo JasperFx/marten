@@ -87,7 +87,7 @@ namespace Marten.Testing.Schema
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<Squad>().AddSubclass<FootballTeam>().AddSubclass<BaseballTeam>();
+                _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
             theSchema.StorageFor(typeof(Squad)).ShouldNotBeNull();
@@ -98,7 +98,7 @@ namespace Marten.Testing.Schema
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<Squad>().AddSubclass<FootballTeam>().AddSubclass<BaseballTeam>();
+                _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
             var mapping = theSchema.MappingFor(typeof(BaseballTeam)).ShouldBeOfType<SubClassMapping>();
@@ -113,7 +113,7 @@ namespace Marten.Testing.Schema
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<Squad>().AddSubclass<FootballTeam>().AddSubclass<BaseballTeam>();
+                _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
             theSchema.StorageFor(typeof(BaseballTeam))

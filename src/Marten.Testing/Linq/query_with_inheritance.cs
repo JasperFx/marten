@@ -33,7 +33,7 @@ namespace Marten.Testing.Linq
             {
                 // SAMPLE: add-subclass-hierarchy-with-aliases
                 _.Schema.For<ISmurf>()
-                    .AddSubclassHierarchy(
+                    .AddSubClassHierarchy(
                         typeof(Smurf), 
                         new MappedType(typeof(PapaSmurf), "papa"), 
                         typeof(PapySmurf), 
@@ -71,10 +71,10 @@ namespace Marten.Testing.Linq
             StoreOptions(_ =>
             {
                 _.Schema.For<ISmurf>()
-                    .AddSubclassHierarchy(typeof(Smurf), typeof(PapaSmurf), typeof(PapySmurf), typeof(IPapaSmurf), typeof(BrainySmurf));
+                    .AddSubClassHierarchy(typeof(Smurf), typeof(PapaSmurf), typeof(PapySmurf), typeof(IPapaSmurf), typeof(BrainySmurf));
 
                 // Alternatively, you can use the following:
-                // _.Schema.For<ISmurf>().AddSubclassHierarchy();
+                // _.Schema.For<ISmurf>().AddSubClassHierarchy();
                 // this, however, will use the assembly
                 // of type ISmurf to get all its' subclasses/implementations. 
                 // In projects with many types, this approach will be undvisable.

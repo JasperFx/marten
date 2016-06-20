@@ -86,7 +86,7 @@ namespace Marten.Testing.Services.BatchedQuerying
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<User>().AddSubclass(typeof (AdminUser)).AddSubclass(typeof (SuperUser))
+                _.Schema.For<User>().AddSubClass(typeof (AdminUser)).AddSubClass(typeof (SuperUser))
                     .Searchable(x => x.FirstName).Searchable(x => x.LastName);
             });
 
@@ -108,10 +108,10 @@ namespace Marten.Testing.Services.BatchedQuerying
 
                 _.Schema.For<User>()
                     // generic version
-                    .AddSubclass<AdminUser>()
+                    .AddSubClass<AdminUser>()
 
                     // By document type object
-                    .AddSubclass(typeof (SuperUser));
+                    .AddSubClass(typeof (SuperUser));
             });
 
             using (var session = store.QuerySession())
