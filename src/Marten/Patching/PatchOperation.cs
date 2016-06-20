@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Transforms;
 using NpgsqlTypes;
@@ -36,10 +37,14 @@ namespace Marten.Patching
         {
             var patchJson = batch.Serializer.ToCleanJson(_patch);
             var patchParam = batch.AddParameter(patchJson, NpgsqlDbType.Jsonb);
+            var versionParam = batch.AddParameter(CombGuidIdGeneration.NewGuid(), NpgsqlDbType.Uuid);
+
             var where = _fragment.ToSql(batch.Command);
 
-            _sql =
-                $"update {_document.Table.QualifiedName} as d set data = {_transform.Function.QualifiedName}(data, :{patchParam.ParameterName}) where {where}";
+            _sql = $@"
+update {_document.Table.QualifiedName} as d 
+set data = {_transform.Function.QualifiedName}(data, :{patchParam.ParameterName}), {DocumentMapping.LastModifiedColumn} = (now() at time zone 'utc'), {DocumentMapping.VersionColumn} = :{versionParam.ParameterName}
+where {where}";
 
         }
     }

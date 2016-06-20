@@ -44,7 +44,8 @@ namespace Marten.Transforms
 
         private static string toBasicSql(IDocumentMapping mapping, TransformFunction transform)
         {
-            return $"update {mapping.Table.QualifiedName} as d set data = {transform.Function.QualifiedName}(data), {DocumentMapping.LastModifiedColumn} = (now() at time zone 'utc')";
+            var version = Guid.NewGuid();
+            return $"update {mapping.Table.QualifiedName} as d set data = {transform.Function.QualifiedName}(data), {DocumentMapping.LastModifiedColumn} = (now() at time zone 'utc'), {DocumentMapping.VersionColumn} = '{version}'";
         }
 
         public void Where<T>(string transformName, Expression<Func<T, bool>> @where)
