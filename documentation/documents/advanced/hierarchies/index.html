@@ -104,10 +104,10 @@ called <code>SuperUser</code> and <code>AdminUser</code>. To use the document hi
 
                 _.Schema.For&lt;User&gt;()
                     // generic version
-                    .AddSubclass&lt;AdminUser&gt;()
+                    .AddSubClass&lt;AdminUser&gt;()
 
                     // By document type object
-                    .AddSubclass(typeof (SuperUser));
+                    .AddSubClass(typeof (SuperUser));
             });
 
             using (var session = store.QuerySession())
@@ -161,10 +161,10 @@ first you will need to map the hierarchy like so:</p>
             StoreOptions(_ =&gt;
             {
                 _.Schema.For&lt;ISmurf&gt;()
-                    .AddSubclassHierarchy(typeof(Smurf), typeof(PapaSmurf), typeof(PapySmurf), typeof(IPapaSmurf), typeof(BrainySmurf));
+                    .AddSubClassHierarchy(typeof(Smurf), typeof(PapaSmurf), typeof(PapySmurf), typeof(IPapaSmurf), typeof(BrainySmurf));
 
                 // Alternatively, you can use the following:
-                // _.Schema.For&lt;ISmurf&gt;().AddSubclassHierarchy();
+                // _.Schema.For&lt;ISmurf&gt;().AddSubClassHierarchy();
                 // this, however, will use the assembly
                 // of type ISmurf to get all its&#39; subclasses/implementations. 
                 // In projects with many types, this approach will be undvisable.
@@ -182,7 +182,7 @@ and its alias. Since <code>Type</code> implicitly converts to <code>MappedType</
 use a mix of both like so:</p>
 <pre><code class="language-csharp">
                 _.Schema.For&lt;ISmurf&gt;()
-                    .AddSubclassHierarchy(
+                    .AddSubClassHierarchy(
                         typeof(Smurf), 
                         new MappedType(typeof(PapaSmurf), &quot;papa&quot;), 
                         typeof(PapySmurf), 
