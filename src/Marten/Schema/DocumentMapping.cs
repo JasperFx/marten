@@ -354,7 +354,7 @@ namespace Marten.Schema
             }
             if (idType == typeof(Guid))
             {
-                return new GuidIdGeneration();
+                return new CombGuidIdGeneration();
             }
             if (idType == typeof(int) || idType == typeof(long))
             {

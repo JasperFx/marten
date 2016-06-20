@@ -23,7 +23,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             var schema = _container.GetInstance<IDocumentSchema>();
 
             schema.MappingFor(typeof(DocumentWithNonPublicId)).As<DocumentMapping>().IdStrategy
-                .ShouldBeOfType<GuidIdGeneration>();
+                .ShouldBeOfType<CombGuidIdGeneration>();
         }
 
         public class DocumentWithNonPublicId

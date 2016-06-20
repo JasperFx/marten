@@ -17,8 +17,7 @@ namespace Marten.Schema.Identity
 
         public IIdGenerator<T> Build<T>(IDocumentSchema schema)
         {
-            var guid = Guid.NewGuid();
-            return (IIdGenerator<T>) new GuidIdGenerator(() => Create(guid, DateTime.UtcNow));
+            return (IIdGenerator<T>) new GuidIdGenerator(() => Create(Guid.NewGuid(), DateTime.UtcNow));
         }
 
         /*
