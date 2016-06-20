@@ -15,7 +15,7 @@ namespace Marten.Testing.Bugs
             StoreOptions(_ =>
             {
                 _.Schema.For<Activity>()
-                    .AddSubclass<StatusActivity>();
+                    .AddSubClass<StatusActivity>();
             });
         }
 

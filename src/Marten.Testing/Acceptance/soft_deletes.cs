@@ -217,8 +217,8 @@ namespace Marten.Testing.Acceptance
             {
                 _.Schema.For<User>()
                     .SoftDeleted()
-                    .AddSubclass<AdminUser>()
-                    .AddSubclass<SuperUser>();
+                    .AddSubClass<AdminUser>()
+                    .AddSubClass<SuperUser>();
             });
 
             var user1 = new User { UserName = "foo" };
@@ -252,8 +252,8 @@ namespace Marten.Testing.Acceptance
             {
                 _.Schema.For<User>()
                     .SoftDeleted()
-                    .AddSubclass<AdminUser>()
-                    .AddSubclass<SuperUser>();
+                    .AddSubClass<AdminUser>()
+                    .AddSubClass<SuperUser>();
             });
 
             var user1 = new SuperUser { UserName = "foo" };
@@ -287,8 +287,8 @@ namespace Marten.Testing.Acceptance
             {
                 _.Schema.For<User>()
                     .SoftDeleted()
-                    .AddSubclass<AdminUser>()
-                    .AddSubclass<SuperUser>();
+                    .AddSubClass<AdminUser>()
+                    .AddSubClass<SuperUser>();
             });
 
             var user1 = new SuperUser { UserName = "foo" };
@@ -325,8 +325,8 @@ namespace Marten.Testing.Acceptance
             {
                 _.Schema.For<User>()
                     .SoftDeleted()
-                    .AddSubclass<AdminUser>()
-                    .AddSubclass<SuperUser>();
+                    .AddSubClass<AdminUser>()
+                    .AddSubClass<SuperUser>();
             });
 
             var user1 = new SuperUser { UserName = "foo" };

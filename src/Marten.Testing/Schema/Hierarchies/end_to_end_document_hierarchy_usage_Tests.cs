@@ -325,7 +325,7 @@ namespace Marten.Testing.Schema.Hierarchies
             StoreOptions(
                 _ =>
                 {
-                    _.Schema.For<User>().AddSubclass<SuperUser>().AddSubclass<AdminUser>().Searchable(x => x.UserName);
+                    _.Schema.For<User>().AddSubClass<SuperUser>().AddSubClass<AdminUser>().Searchable(x => x.UserName);
                 });
         }
 

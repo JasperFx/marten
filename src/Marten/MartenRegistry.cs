@@ -264,7 +264,7 @@ namespace Marten
             /// <param name="subclassType"></param>
             /// <param name="alias"></param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> AddSubclass(Type subclassType, string alias = null)
+            public DocumentMappingExpression<T> AddSubClass(Type subclassType, string alias = null)
             {
                 alter = mapping => mapping.AddSubClass(subclassType, alias);
                 return this;
@@ -276,7 +276,7 @@ namespace Marten
             /// <param name="allSubclassTypes">All the subclass types of <cref name="T"/> that you wish to map. 
             /// You can use either params of <see cref="Type"/> or <see cref="MappedType"/> or a mix, since Type can implicitly convert to MappedType (without an alias)</param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> AddSubclassHierarchy(params MappedType[] allSubclassTypes)
+            public DocumentMappingExpression<T> AddSubClassHierarchy(params MappedType[] allSubclassTypes)
             {
                 alter = mapping => Array.ForEach(allSubclassTypes, subclassType => 
                     mapping.AddSubClass(
@@ -292,7 +292,7 @@ namespace Marten
             /// Programmatically directs Marten to map all the subclasses of <cref name="T"/> to a hierarchy of types. <c>Unadvised in projects with many types.</c>
             /// </summary>
             /// <returns></returns>
-            public DocumentMappingExpression<T> AddSubclassHierarchy()
+            public DocumentMappingExpression<T> AddSubClassHierarchy()
             {
                 var baseType = typeof (T);
                 var allSubclassTypes = baseType.Assembly.GetTypes()
@@ -309,9 +309,9 @@ namespace Marten
             }
 
 
-            public DocumentMappingExpression<T> AddSubclass<TSubclass>(string alias = null) where TSubclass : T
+            public DocumentMappingExpression<T> AddSubClass<TSubclass>(string alias = null) where TSubclass : T
             {
-                return AddSubclass(typeof(TSubclass), alias);
+                return AddSubClass(typeof(TSubclass), alias);
             }
 
             /// <summary>

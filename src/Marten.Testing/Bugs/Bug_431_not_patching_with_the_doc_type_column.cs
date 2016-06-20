@@ -26,7 +26,7 @@ namespace Marten.Testing.Bugs
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<User>().AddSubclass<SuperUser>();
+                _.Schema.For<User>().AddSubClass<SuperUser>();
             }))
             {
                 var patch = store2.Schema.ToPatch();
