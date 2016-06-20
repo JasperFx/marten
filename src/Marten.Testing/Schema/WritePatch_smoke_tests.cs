@@ -10,12 +10,47 @@ namespace Marten.Testing.Schema
 {
     public class WritePatch_smoke_tests : IntegratedFixture
     {
+        private void configure()
+        {
+            // SAMPLE: configure-document-types-upfront
+    var store = DocumentStore.For(_ =>
+    {
+        // This is enough to tell Marten that the User
+        // document is persisted and needs schema objects
+        _.Schema.For<User>();
+
+        // Lets Marten know that the event store is active
+        _.Events.AddEventType(typeof(MembersJoined));
+
+        // Tell Marten about all the javascript functions
+        _.Transforms.LoadFile("default_username.js");
+    });
+            // ENDSAMPLE
+
+            // SAMPLE: WritePatch
+    store.Schema.WritePatch("1.initial.sql");
+            // ENDSAMPLE
+
+            // SAMPLE: ApplyAllConfiguredChangesToDatabase
+    store.Schema.ApplyAllConfiguredChangesToDatabase();
+            // ENDSAMPLE
+
+            // SAMPLE: AssertDatabaseMatchesConfiguration
+    store.Schema.AssertDatabaseMatchesConfiguration();
+            // ENDSAMPLE
+            store.Dispose();
+        }
+
         [Fact]
         public void writes_both_the_update_and_rollback_files()
         {
             StoreOptions(_ =>
             {
+                // This is enough to tell Marten that the User
+                // document is persisted and needs schema objects
                 _.Schema.For<User>();
+
+                // Lets Marten know that the event store is active
                 _.Events.AddEventType(typeof(MembersJoined));
             });
 
@@ -23,7 +58,10 @@ namespace Marten.Testing.Schema
             fileSystem.DeleteDirectory("patches");
             fileSystem.CreateDirectory("patches");
 
+            // SAMPLE: write-patch
+            // Write the patch SQL file to the "patches" directory
             theStore.Schema.WritePatch("patches".AppendPath("1.initial.sql"));
+            // ENDSAMPLE
 
             fileSystem.FileExists("patches".AppendPath("1.initial.sql"));
             fileSystem.FileExists("patches".AppendPath("1.initial.drop.sql"));
