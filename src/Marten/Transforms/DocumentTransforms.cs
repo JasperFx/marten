@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Schema.Identity;
 using Marten.Util;
 using Remotion.Linq.Clauses;
 
@@ -44,7 +45,7 @@ namespace Marten.Transforms
 
         private static string toBasicSql(IDocumentMapping mapping, TransformFunction transform)
         {
-            var version = Guid.NewGuid();
+            var version = CombGuidIdGeneration.NewGuid();
             return $"update {mapping.Table.QualifiedName} as d set data = {transform.Function.QualifiedName}(data), {DocumentMapping.LastModifiedColumn} = (now() at time zone 'utc'), {DocumentMapping.VersionColumn} = '{version}'";
         }
 

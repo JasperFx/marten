@@ -34,6 +34,16 @@ namespace Marten.Services.BatchQuerying
         /// <param name="streamId"></param>
         /// <returns></returns>
         Task<StreamState> FetchStreamState(Guid streamId);
+
+
+        /// <summary>
+        /// Fetch all the events for a single event stream
+        /// </summary>
+        /// <param name="streamId"></param>
+        /// <param name="version"></param>
+        /// <param name="timestamp"></param>
+        /// <returns></returns>
+        Task<IList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null);
     }
 
     public interface IBatchedQuery

@@ -59,6 +59,20 @@ namespace Marten.Testing.Events
             state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
 
         }
+
+        [Fact]
+        public async Task can_fetch_the_stream_events_through_batch_query()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var eventsTask = batch.Events.FetchStream(theStreamId);
+
+            await batch.Execute();
+
+            var events = await eventsTask;
+
+            events.Count.ShouldBe(2);
+        }
     }
     // ENDSAMPLE
 }

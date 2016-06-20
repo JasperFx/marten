@@ -303,6 +303,14 @@ namespace Marten.Services.BatchQuerying
             var handler = new StreamStateHandler(_schema.Events.As<EventGraph>(), streamId);
             return AddItem(handler);
         }
+
+        public Task<IList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
+        {
+            var selector = new EventSelector(_schema.Events.As<EventGraph>(), _serializer);
+            var handler = new EventQueryHandler(selector, streamId, version, timestamp);
+
+            return AddItem(handler);
+        }
     }
 
 }
