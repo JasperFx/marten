@@ -58,14 +58,35 @@ namespace Marten.Util
 
         public static string CanonicizeSql(this string sql)
         {
-            return sql
+            var replaced = sql
                 .Trim()
                 .Replace('\n', ' ')
                 .Replace('\r', ' ')
                 .Replace("  ", " ")
                 .Replace("character varying", "varchar")
                 .Replace("Boolean", "boolean")
-                .Replace("numeric", "decimal").TrimEnd().TrimEnd(';');
+                .Replace("numeric", "decimal").TrimEnd(';').TrimEnd();
+
+            if (replaced.Contains("PLV8", StringComparison.OrdinalIgnoreCase))
+            {
+                replaced = replaced
+                    .Replace("LANGUAGE plv8 IMMUTABLE STRICT AS $function$", "AS $$");
+
+             
+
+                var languagePlv8ImmutableStrict = "$$ LANGUAGE plv8 IMMUTABLE STRICT";
+                var functionMarker = "$function$";
+                if (replaced.EndsWith(functionMarker))
+                {
+                    replaced = replaced.Substring(0, replaced.LastIndexOf(functionMarker) - 1) + languagePlv8ImmutableStrict;
+                };
+
+                
+            }
+
+
+            return replaced
+                .Replace("  ", " ").TrimEnd().TrimEnd(';');
         }
 
         public static NpgsqlDbType ToDbType(Type type)

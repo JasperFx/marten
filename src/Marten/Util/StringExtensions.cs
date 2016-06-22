@@ -16,6 +16,7 @@ namespace Marten.Util
             return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
         }
 
+
         public static string UseParameter(this string text, NpgsqlParameter parameter)
         {
             return text.ReplaceFirst("?", ":" + parameter.ParameterName);

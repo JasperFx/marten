@@ -52,6 +52,24 @@ namespace Marten.Testing.Acceptance
         // ENDSAMPLE
 
 
+
+        [Fact]
+        public void use_transform_in_production_mode()
+        {
+            theStore.Schema.EnsureStorageExists(typeof(User));
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Transforms.LoadFile("default_username.js");
+                _.AutoCreateSchemaObjects = AutoCreate.None;
+            }))
+            {
+                store.Transform.All<User>("default_username");
+            }
+        }
+
         [Fact]
         public void transform_all_documents()
         {

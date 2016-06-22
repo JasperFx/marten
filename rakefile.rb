@@ -1,6 +1,6 @@
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '0.9.9'
+BUILD_VERSION = '0.9.10'
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
@@ -35,7 +35,7 @@ task :version do
   options = {
 	:description => 'Postgresql as a Document Db and Event Store for .Net Development',
 	:product_name => 'Marten',
-	:copyright => 'Copyright 2015 Jeremy D. Miller et al. All rights reserved.',
+	:copyright => 'Copyright 2016 Jeremy D. Miller et al. All rights reserved.',
 	:trademark => commit,
 	:version => asm_version,
 	:file_version => build_number,
