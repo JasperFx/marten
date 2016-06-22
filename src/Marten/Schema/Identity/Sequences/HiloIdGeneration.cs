@@ -15,7 +15,6 @@ namespace Marten.Schema.Identity.Sequences
 
         public Type DocumentType { get; }
 
-        public int Increment => _hiloSettings.Increment;
         public int MaxLo => _hiloSettings.MaxLo;
 
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(int), typeof(long)};

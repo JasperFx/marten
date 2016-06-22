@@ -15,7 +15,6 @@ namespace Marten.Schema.Identity.Sequences
             _hiloSettings = hiloSettings;
         }
 
-        public int Increment => _hiloSettings.Increment;
         public int MaxLo => _hiloSettings.MaxLo;
 
 

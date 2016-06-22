@@ -23,7 +23,6 @@ namespace Marten.Schema.Identity.Sequences
             CurrentHi = -1;
             CurrentLo = 1;
             MaxLo = settings.MaxLo;
-            Increment = settings.Increment;
         }
 
         public string EntityName => _entityName;
@@ -32,7 +31,6 @@ namespace Marten.Schema.Identity.Sequences
         public int CurrentLo { get; private set; }
 
         public int MaxLo { get; }
-        public int Increment { get; private set; }
 
         public int NextInt()
         {
