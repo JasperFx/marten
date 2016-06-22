@@ -7,7 +7,6 @@ namespace Marten.Services.Deletes
 {
     public class DeleteWhere : IDeletion
     {
-        private readonly TableName _table;
         private readonly IWhereFragment _where;
         public Type DocumentType { get; set; }
 

@@ -28,7 +28,6 @@ namespace Marten.Linq
 
     public class SelectorParser : RelinqExpressionVisitor
     {
-        private static readonly string _methodName = nameof(CompiledQueryExtensions.AsJson);
         private SelectedField _currentField = new SelectedField();
         private SelectionType _selectionType = SelectionType.WholeDoc;
         private TargetObject _target;

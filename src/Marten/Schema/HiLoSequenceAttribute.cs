@@ -11,11 +11,6 @@ namespace Marten.Schema
     {
         private readonly HiloSettings _settings = new HiloSettings();
 
-        public int Increment
-        {
-            set { _settings.Increment = value; }
-            get { return _settings.Increment; }
-        }
 
         public int MaxLo
         {
