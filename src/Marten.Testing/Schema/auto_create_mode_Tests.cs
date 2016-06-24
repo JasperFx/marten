@@ -55,7 +55,7 @@ var store = DocumentStore.For(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<User>().Searchable(x => x.FirstName);
+                _.Schema.For<User>().Duplicate(x => x.FirstName);
             }))
             {
                 var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() =>

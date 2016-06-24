@@ -171,7 +171,7 @@ throw new NotImplementedException("No longer have an Alter() mechanism to add th
     {
         public IndexedDuplicatedField()
         {
-            For<Target>().Searchable(x => x.Date);
+            For<Target>().Duplicate(x => x.Date);
         }
     }
 

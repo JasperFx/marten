@@ -12,7 +12,7 @@ namespace Marten.Testing.Bugs
             StoreOptions(_ =>
             {
                 _.Schema.For<Issue>()
-                .Searchable(x => x.AssigneeId)
+                .Duplicate(x => x.AssigneeId)
                 .ForeignKey<User>(x => x.AssigneeId);
             });
 

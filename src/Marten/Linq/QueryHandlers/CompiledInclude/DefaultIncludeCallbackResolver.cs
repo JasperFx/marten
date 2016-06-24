@@ -23,23 +23,23 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
             if (typeContainer.IncludeType.IsGenericEnumerable())
             {
                 typeContainer.IncludeType = typeContainer.IncludeType.GenericTypeArguments[0];
-                callback = GetJoinListCallback<TInclude>(property, _includeOperator, _query);
+                callback = GetJoinListCallback(property, _includeOperator, _query);
             }
             else
             {
-                callback = GetJoinCallback<TInclude>(property, _includeOperator, _query);
+                callback = GetJoinCallback(property, _includeOperator, _query);
             }
             return callback;
         }
 
-        private static Action<TInclude> GetJoinCallback<TInclude>(PropertyInfo property, IncludeResultOperator @operator, ICompiledQuery<TDoc, TOut> query)
+        private static Action<TInclude> GetJoinCallback(PropertyInfo property, IncludeResultOperator @operator, ICompiledQuery<TDoc, TOut> query)
         {
             var queryProperty = GetPropertyInfo(property, @operator);
 
             return x => queryProperty.SetValue(query, x);
         }
 
-        private static Action<TInclude> GetJoinListCallback<TInclude>(PropertyInfo property, IncludeResultOperator @operator, ICompiledQuery<TDoc, TOut> query)
+        private static Action<TInclude> GetJoinListCallback(PropertyInfo property, IncludeResultOperator @operator, ICompiledQuery<TDoc, TOut> query)
         {
             var queryProperty = GetPropertyInfo(property, @operator);
 

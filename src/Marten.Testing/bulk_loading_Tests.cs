@@ -120,7 +120,7 @@ namespace Marten.Testing
         [Fact]
         public void load_with_small_batch_and_duplicated_fields()
         {
-            StoreOptions(_ => { _.Schema.For<Target>().Searchable(x => x.String); });
+            StoreOptions(_ => { _.Schema.For<Target>().Duplicate(x => x.String); });
 
             var data = Target.GenerateRandomData(100).ToArray();
 

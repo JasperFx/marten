@@ -288,7 +288,7 @@ public class DateIsSearchable : MartenRegistry
     {
         // This can also be done with attributes
         // This automatically adds a "BTree" index
-        For<Target>().Searchable(x => x.Date);
+        For<Target>().Duplicate(x => x.Date);
     }
 }
 

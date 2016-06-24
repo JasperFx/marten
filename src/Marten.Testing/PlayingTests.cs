@@ -65,7 +65,7 @@ namespace Marten.Testing
         {
             using (var store = TestingDocumentStore.For(_ =>
             {
-                _.Schema.For<User>().Searchable(x => x.UserName);
+                _.Schema.For<User>().Duplicate(x => x.UserName);
             }))
             {
                 store.BulkInsert(new User[] {new User {UserName = "foo"}, new User { UserName = "bar" }, });

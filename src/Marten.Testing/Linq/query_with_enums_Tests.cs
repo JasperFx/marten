@@ -74,7 +74,7 @@ namespace Marten.Testing.Linq
             StoreOptions(_ =>
             {
                 _.Serializer<JilSerializer>();
-                _.Schema.For<Target>().Searchable(x => x.Color);
+                _.Schema.For<Target>().Duplicate(x => x.Color);
             });
 
             theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
@@ -98,7 +98,7 @@ namespace Marten.Testing.Linq
             StoreOptions(_ =>
             {
                 _.Serializer<JsonNetSerializer>();
-                _.Schema.For<Target>().Searchable(x => x.Color);
+                _.Schema.For<Target>().Duplicate(x => x.Color);
             });
 
             theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
@@ -125,7 +125,7 @@ namespace Marten.Testing.Linq
             StoreOptions(_ =>
             {
                 _.Serializer<JilSerializer>();
-                _.Schema.For<Target>().Searchable(x => x.Color);
+                _.Schema.For<Target>().Duplicate(x => x.Color);
             });
 
             var targets = new Target[]
@@ -152,7 +152,7 @@ namespace Marten.Testing.Linq
             StoreOptions(_ =>
             {
                 _.Serializer<JsonNetSerializer>();
-                _.Schema.For<Target>().Searchable(x => x.Color);
+                _.Schema.For<Target>().Duplicate(x => x.Color);
             });
 
             var targets = new Target[]

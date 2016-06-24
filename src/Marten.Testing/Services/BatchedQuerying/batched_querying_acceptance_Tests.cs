@@ -87,7 +87,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             StoreOptions(_ =>
             {
                 _.Schema.For<User>().AddSubClass(typeof (AdminUser)).AddSubClass(typeof (SuperUser))
-                    .Searchable(x => x.FirstName).Searchable(x => x.LastName);
+                    .Duplicate(x => x.FirstName).Duplicate(x => x.LastName);
             });
 
 

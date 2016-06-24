@@ -18,7 +18,7 @@ namespace DinnerParty.Models.Marten
             For<Dinner>().GinIndexJsonData();
 
             // Make the LastModified column searchable
-            For<Dinner>().Searchable(d => d.LastModified);
+            For<Dinner>().Duplicate(d => d.LastModified);
         }
     }
 }

@@ -33,7 +33,7 @@ var store = DocumentStore.For(_ =>
             // I'm going to search for user by UserName
             // pretty frequently, so I want that to be 
             // a duplicated, searchable field
-            For<User>().Searchable(x => x.UserName);
+            For<User>().Duplicate(x => x.UserName);
 
 
             // Add a gin index to Company's json data storage
@@ -67,11 +67,11 @@ var store = DocumentStore.For(_ =>
             // Adds a basic btree index to the duplicated
             // field for this property that also overrides
             // the Postgresql database type for the column
-            For<User>().Searchable(x => x.FirstName, pgType: "varchar(50)");
+            For<User>().Duplicate(x => x.FirstName, pgType: "varchar(50)");
 
             // Customize the index on the duplicated field
             // for FirstName 
-            For<User>().Searchable(x => x.FirstName, configure:idx =>
+            For<User>().Duplicate(x => x.FirstName, configure:idx =>
             {
                 idx.IndexName = "idx_special";
                 idx.Method = IndexMethod.hash;

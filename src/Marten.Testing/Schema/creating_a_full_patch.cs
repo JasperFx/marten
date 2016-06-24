@@ -31,7 +31,7 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
 
-                _.Schema.For<User>().Searchable(x => x.UserName);
+                _.Schema.For<User>().Duplicate(x => x.UserName);
                 _.Schema.For<Issue>().UseOptimisticConcurrency(true);
             }))
             {

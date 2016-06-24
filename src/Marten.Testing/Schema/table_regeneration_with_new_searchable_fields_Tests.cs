@@ -27,7 +27,7 @@ namespace Marten.Testing.Schema
             using (var store2 = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<User>().Searchable(x => x.FirstName);
+                _.Schema.For<User>().Duplicate(x => x.FirstName);
             }))
             {
                 using (var session = store2.QuerySession())
@@ -76,7 +76,7 @@ namespace Marten.Testing.Schema
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<User>().Searchable(x => x.FirstName);
+                _.Schema.For<User>().Duplicate(x => x.FirstName);
             }))
             {
                 using (var session = store2.QuerySession())

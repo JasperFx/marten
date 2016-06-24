@@ -31,11 +31,11 @@ namespace Marten.Testing.Github
                 history.Contributors = t.Result.Select(x => new GhUser(x)).ToArray();
             });
 
-            var lookups = client.Repository.Commits.GetAll(owner, repoName).ContinueWith(t =>
+            var lookups = client.Repository.Commit.GetAll(owner, repoName).ContinueWith(t =>
             {
                 return t.Result.Take(500).Select(c =>
                 {
-                    return client.Repository.Commits.Get(owner, repoName, c.Sha);
+                    return client.Repository.Commit.Get(owner, repoName, c.Sha);
                 });
             });
 

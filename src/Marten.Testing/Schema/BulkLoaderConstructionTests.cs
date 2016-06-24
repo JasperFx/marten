@@ -9,7 +9,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_build_a_bulk_loader_with_searchable_fields()
         {
-            StoreOptions(_ => _.Schema.For<Target>().Searchable(x => x.Number).Searchable(x => x.StringField));
+            StoreOptions(_ => _.Schema.For<Target>().Duplicate(x => x.Number).Duplicate(x => x.StringField));
 
 
             var loader = theStore.Schema.BulkLoaderFor<Target>();

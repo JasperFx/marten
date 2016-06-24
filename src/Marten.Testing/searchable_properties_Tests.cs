@@ -13,8 +13,8 @@ namespace Marten.Testing
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<Target>().Searchable(x => x.String)
-                    .Searchable(x => x.AnotherString);
+                _.Schema.For<Target>().Duplicate(x => x.String)
+                    .Duplicate(x => x.AnotherString);
             });
 
             var data = Target.GenerateRandomData(1).First();

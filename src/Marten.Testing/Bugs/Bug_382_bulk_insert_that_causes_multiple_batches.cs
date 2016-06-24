@@ -13,7 +13,7 @@ namespace Marten.Testing.Bugs
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<Target>().Searchable(x => x.Date);
+                _.Schema.For<Target>().Duplicate(x => x.Date);
             });
 
             var data = Target.GenerateRandomData(11).ToArray();

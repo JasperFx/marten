@@ -15,7 +15,7 @@ namespace Marten.Testing.Schema
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<Target>().Searchable(expression);
+                _.Schema.For<Target>().Duplicate(expression);
             });
 
             theStore.Schema.StorageFor(typeof(Target)).ShouldNotBeNull();

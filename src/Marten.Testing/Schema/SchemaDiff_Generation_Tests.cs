@@ -20,7 +20,7 @@ namespace Marten.Testing.Schema
             var store1 = TestingDocumentStore.For(_ =>
             {
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
             store1.Schema.EnsureStorageExists(typeof(User));
@@ -31,7 +31,7 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
             mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
@@ -88,7 +88,7 @@ namespace Marten.Testing.Schema
             var store1 = TestingDocumentStore.For(_ =>
             {
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
             store1.Schema.EnsureStorageExists(typeof(User));
@@ -99,7 +99,7 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
@@ -121,7 +121,7 @@ namespace Marten.Testing.Schema
             var store1 = TestingDocumentStore.For(_ =>
             {
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                //_.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                //_.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
             store1.Schema.EnsureStorageExists(typeof(User));
@@ -132,7 +132,7 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
@@ -151,7 +151,7 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
 
@@ -169,7 +169,7 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
 
@@ -192,7 +192,7 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal).UseOptimisticConcurrency(true);
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal).UseOptimisticConcurrency(true);
             });
 
             store1.Advanced.Clean.CompletelyRemoveAll();
@@ -206,7 +206,7 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
 
@@ -228,7 +228,7 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                //_.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                //_.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
             store1.Advanced.Clean.CompletelyRemoveAll();
@@ -242,7 +242,7 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
@@ -271,7 +271,7 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName).Searchable(x => x.Internal);
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
             store1.Advanced.Clean.CompletelyRemoveAll();
@@ -285,8 +285,8 @@ namespace Marten.Testing.Schema
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-                _.Schema.For<User>().Searchable(x => x.UserName)
-                    .Searchable(x => x.Internal, configure: i => i.Method = IndexMethod.hash);
+                _.Schema.For<User>().Duplicate(x => x.UserName)
+                    .Duplicate(x => x.Internal, configure: i => i.Method = IndexMethod.hash);
             });
 
             var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();

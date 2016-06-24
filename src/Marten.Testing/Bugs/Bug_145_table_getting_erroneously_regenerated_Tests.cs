@@ -15,8 +15,8 @@ namespace Marten.Testing.Bugs
             {
                 _.Schema.For<Login>()
                 .GinIndexJsonData()
-                .Searchable(x => x.Email)
-                .Searchable(x => x.Identifier);
+                .Duplicate(x => x.Email)
+                .Duplicate(x => x.Identifier);
             });
 
 

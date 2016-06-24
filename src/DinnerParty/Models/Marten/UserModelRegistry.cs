@@ -15,10 +15,10 @@ namespace DinnerParty.Models.Marten
         public UserModelRegistry()
         {
             // Generate a searchable index for UserModel.Username
-            For<UserModel>().Searchable(u => u.Username);
+            For<UserModel>().Duplicate(u => u.Username);
             
             // Generate a searchable index for UserModel.EMailAddress
-            For<UserModel>().Searchable(u => u.EMailAddress);
+            For<UserModel>().Duplicate(u => u.EMailAddress);
         }
     }
 }

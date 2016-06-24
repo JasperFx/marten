@@ -87,7 +87,7 @@ namespace Marten.Testing
             public TestRegistry()
             {
                 For<Organization>()
-                    .Searchable(x => x.Name).Searchable(x => x.OtherName, configure:x =>
+                    .Duplicate(x => x.Name).Duplicate(x => x.OtherName, configure:x =>
                     {
                         x.IndexName = "mt_special";
                     })

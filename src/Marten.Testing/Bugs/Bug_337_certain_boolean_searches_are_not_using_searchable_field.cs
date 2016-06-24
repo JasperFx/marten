@@ -12,7 +12,7 @@ namespace Marten.Testing.Bugs
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<Target>().Searchable(x => x.Flag).GinIndexJsonData();
+                _.Schema.For<Target>().Duplicate(x => x.Flag).GinIndexJsonData();
             });
 
             using (var session = theStore.OpenSession())
@@ -33,7 +33,7 @@ namespace Marten.Testing.Bugs
             StoreOptions(_ =>
             {
                 _.Schema.For<Target>().GinIndexJsonData();
-                //_.Schema.For<Target>().Searchable(x => x.Flag);
+                //_.Schema.For<Target>().Duplicate(x => x.Flag);
             });
 
             using (var session = theStore.OpenSession())
