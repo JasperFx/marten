@@ -68,7 +68,6 @@ namespace Marten.Schema
             var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new [] {DocumentMapping.LastModifiedColumn}).Join(", ");
             var valueList = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).Concat(new [] { "transaction_timestamp()" }).Join(", ");
 
-            var updateWhere = "";
             if (Arguments.Any(x => x is CurrentVersionArgument))
             {
                 updates += $" where {_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version or current_version is null";

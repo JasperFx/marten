@@ -32,7 +32,6 @@ namespace Marten.Testing.Schema.Identity.Sequences
         public void default_values()
         {
             _theSequence.CurrentHi.ShouldBe(-1);
-            _theSequence.Increment.ShouldBe(1);
             _theSequence.MaxLo.ShouldBe(1000);
         }
 

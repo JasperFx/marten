@@ -702,13 +702,12 @@ namespace Marten.Testing.Schema
         {
             var mapping = DocumentMapping.For<LongId>();
 
-            var newDef = new HiloSettings {Increment = 3, MaxLo = 33};
+            var newDef = new HiloSettings {MaxLo = 33};
 
             mapping.HiloSettings(newDef);
 
             var sequence = mapping.IdStrategy.ShouldBeOfType<HiloIdGeneration>();
             sequence.MaxLo.ShouldBe(newDef.MaxLo);
-            sequence.Increment.ShouldBe(newDef.Increment);
 
         }
 
