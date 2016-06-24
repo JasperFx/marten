@@ -110,7 +110,7 @@ namespace Marten.Testing.Linq
         [Fact]
         public async Task a_filtered_list_compiled_query_AsJson_async()
         {
-            var user = await theSession.QueryAsync(new FindJsonUsersByUsername() {FirstName = "Jeremy" });
+            var user = await theSession.QueryAsync(new FindJsonUsersByUsername() {FirstName = "Jeremy" }).ConfigureAwait(false);
 
             user.ShouldNotBeNull();
             user.ShouldNotBeEmpty();
@@ -132,7 +132,7 @@ namespace Marten.Testing.Linq
         {
             UserByUsername.Count = 0;
 
-            var user = await theSession.QueryAsync(new UserByUsername {UserName = "myusername"});
+            var user = await theSession.QueryAsync(new UserByUsername {UserName = "myusername"}).ConfigureAwait(false);
             user.ShouldNotBeNull();
             var differentUser = await theSession.QueryAsync(new UserByUsername {UserName = "jdm"});
             differentUser.UserName.ShouldBe("jdm");
@@ -158,7 +158,7 @@ namespace Marten.Testing.Linq
         {
             UsersByFirstName.Count = 0;
 
-            var users = await theSession.QueryAsync(new UsersByFirstName {FirstName = "Jeremy"});
+            var users = await theSession.QueryAsync(new UsersByFirstName {FirstName = "Jeremy"}).ConfigureAwait(false);
             users.Count().ShouldBe(2);
             users.ElementAt(0).UserName.ShouldBe("jdm");
             users.ElementAt(1).UserName.ShouldBe("shadetreedev");

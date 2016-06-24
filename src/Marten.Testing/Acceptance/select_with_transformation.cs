@@ -91,11 +91,11 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.OpenSession())
             {
                 session.Store(user);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
 
                 var json = await session.Query<User>()
                     .Where(x => x.Id == user.Id)
-                    .TransformToJson("get_fullname").SingleAsync();
+                    .TransformToJson("get_fullname").SingleAsync().ConfigureAwait(false);
 
                 json.ShouldBe("{\"fullname\": \"Eric Berry\"}");
             }
@@ -134,11 +134,11 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.OpenSession())
             {
                 session.Store(user);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
 
                 var view = await session.Query<User>()
                     .Where(x => x.Id == user.Id)
-                    .TransformTo<FullNameView>("get_fullname").SingleAsync();
+                    .TransformTo<FullNameView>("get_fullname").SingleAsync().ConfigureAwait(false);
 
                 view.fullname.ShouldBe("Eric Berry");
             }

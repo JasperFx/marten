@@ -13,11 +13,9 @@ namespace Marten.Testing.Acceptance
 {
     public class soft_deletes : IntegratedFixture
     {
-        private readonly ITestOutputHelper _output;
 
-        public soft_deletes(ITestOutputHelper output)
+        public soft_deletes()
         {
-            _output = output;
             StoreOptions(_ =>
             {
                 _.Schema.For<User>().SoftDeleted();
@@ -137,9 +135,6 @@ namespace Marten.Testing.Acceptance
             // no where clause, deleted docs should be filtered out
             session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
                 .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
-
-            var sql = session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName).ToCommand().CommandText;
-                _output.WriteLine(sql);
 
             // with a where clause
                 session.Query<User>().Where(x => x.UserName != "jack")

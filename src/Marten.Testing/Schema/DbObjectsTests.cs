@@ -1,23 +1,13 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Testing.Documents;
-using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Schema
 {
     public class DbObjectsTests : IntegratedFixture
     {
-        private readonly ITestOutputHelper _output;
-
-        public DbObjectsTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
         [Fact]
         public void can_fetch_indexes_for_a_table_in_public()
         {
@@ -45,26 +35,6 @@ namespace Marten.Testing.Schema
 
             indices.Any(x => Equals(x.Table, store2.Schema.MappingFor(typeof(User)).ToQueryableDocument().Table))
                 .ShouldBeTrue();
-
-
-        }
-
-        [Fact]
-        public void can_fetch_the_function_ddl()
-        {
-            var store1 = TestingDocumentStore.For(_ =>
-            {
-                _.DatabaseSchemaName = "other";
-                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
-            });
-
-            store1.Schema.EnsureStorageExists(typeof(User));
-
-            var upsert = store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>().UpsertFunction;
-
-            var functionBody = store1.Schema.DbObjects.DefinitionForFunction(upsert);
-
-            functionBody.Body.ShouldContain("mt_doc_user");
         }
 
 
@@ -80,12 +50,13 @@ namespace Marten.Testing.Schema
             store1.Schema.EnsureStorageExists(typeof(User));
 
 
-            var objects = store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
-
+            var objects =
+                store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
 
 
             objects.Table.Columns.OrderBy(x => x.Name).Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("data", "id", "internal", DocumentMapping.DotNetTypeColumn, DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, "user_name");
+                .ShouldHaveTheSameElementsAs("data", "id", "internal", DocumentMapping.DotNetTypeColumn,
+                    DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, "user_name");
 
             objects.Function.Body.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
 
@@ -106,17 +77,37 @@ namespace Marten.Testing.Schema
             store1.Schema.EnsureStorageExists(typeof(User));
 
 
-            var objects = store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
+            var objects =
+                store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
 
 
             objects.Table.Columns.OrderBy(x => x.Name).Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("data", "id", "internal", DocumentMapping.DotNetTypeColumn, DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, "user_name");
+                .ShouldHaveTheSameElementsAs("data", "id", "internal", DocumentMapping.DotNetTypeColumn,
+                    DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, "user_name");
 
             objects.Function.Body.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
 
 
             objects.ActualIndices.Select(x => x.Value).OrderBy(x => x.Name).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("mt_doc_user_idx_internal", "mt_doc_user_idx_user_name");
+        }
+
+        [Fact]
+        public void can_fetch_the_function_ddl()
+        {
+            var store1 = TestingDocumentStore.For(_ =>
+            {
+                _.DatabaseSchemaName = "other";
+                _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
+            });
+
+            store1.Schema.EnsureStorageExists(typeof(User));
+
+            var upsert = store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>().UpsertFunction;
+
+            var functionBody = store1.Schema.DbObjects.DefinitionForFunction(upsert);
+
+            functionBody.Body.ShouldContain("mt_doc_user");
         }
 
         [Fact]
@@ -129,13 +120,13 @@ namespace Marten.Testing.Schema
             });
 
 
-            var objects = store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
+            var objects =
+                store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
 
             objects.HasNone().ShouldBeTrue();
             objects.Table.ShouldBeNull();
             objects.ActualIndices.Any().ShouldBeFalse();
             objects.Function.ShouldBeNull();
-
         }
     }
 }

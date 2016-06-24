@@ -1,19 +1,11 @@
 ﻿using Marten.Schema;
 using Marten.Testing.Documents;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Schema
 {
     public class DocumentMapping_schema_patch_writing : IntegratedFixture
     {
-        private readonly ITestOutputHelper _output;
-
-        public DocumentMapping_schema_patch_writing(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
         [Fact]
         public void creates_the_table_in_update_ddl_if_all_new()
         {

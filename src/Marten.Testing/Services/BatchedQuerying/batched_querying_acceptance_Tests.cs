@@ -22,7 +22,7 @@ namespace Marten.Testing.Services.BatchedQuerying
         public async Task can_run_aggregate_functions()
         {
             theSession.Store(new IntDoc(1), new IntDoc(3), new IntDoc(5), new IntDoc(6));
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             var batch = theSession.CreateBatchQuery();
 
@@ -31,7 +31,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var sum = batch.Query<IntDoc>().Sum(x => x.Id);
             var average = batch.Query<IntDoc>().Average(x => x.Id);
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
             (await min).ShouldBe(1);
             (await max).ShouldBe(6);
@@ -146,7 +146,7 @@ var batch = theSession.CreateBatchQuery();
 var justin = batch.Query(new FindByFirstName {FirstName = "Justin"});
 var tamba = batch.Query(new FindByFirstName {FirstName = "Tamba"});
 
-await batch.Execute();
+await batch.Execute().ConfigureAwait(false);
 
 (await justin).Id.ShouldBe(user1.Id);
 (await tamba).Id.ShouldBe(user2.Id);
@@ -175,7 +175,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             // SAMPLE: using-compiled-query
             var justin = theSession.Query(new FindByFirstName {FirstName = "Justin"});
 
-            var tamba = await theSession.QueryAsync(new FindByFirstName {FirstName = "Tamba"});
+            var tamba = await theSession.QueryAsync(new FindByFirstName {FirstName = "Tamba"}).ConfigureAwait(false);
             // ENDSAMPLE
         }
 
@@ -187,7 +187,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var justin = batch.Query<User>("where first_name = ?", "Justin");
             var tamba = batch.Query<User>("where first_name = ? and last_name = ?", "Tamba", "Hali");
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
             (await justin).Single().Id.ShouldBe(user1.Id);
             (await tamba).Single().Id.ShouldBe(user2.Id);
@@ -201,7 +201,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var firstUser = batch.Query<User>().OrderBy(_ => _.FirstName).First();
             var firstAdmin = batch.Query<SuperUser>().OrderBy(_ => _.FirstName).First();
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
             (await firstUser).UserName.ShouldBe("A2");
             (await firstAdmin).UserName.ShouldBe("A3");
@@ -216,7 +216,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var firstAdmin = batch.Query<SuperUser>().OrderBy(_ => _.FirstName).FirstOrDefault();
             var noneUser = batch.Query<User>().FirstOrDefault(_ => _.FirstName == "not me");
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
             (await firstUser).UserName.ShouldBe("A2");
             (await firstAdmin).UserName.ShouldBe("A3");
@@ -233,7 +233,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
 
             var noneUser = batch.Query<User>().SingleOrDefault(_ => _.FirstName == "not me");
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
             (await tamba).FirstName.ShouldBe("Tamba");
             (await justin).FirstName.ShouldBe("Justin");
@@ -252,7 +252,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var aUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("A")).ToList();
             var cUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("C")).ToList();
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
             (await anyUsers).OrderBy(x => x.FirstName).Select(x => x.Id)
                 .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, admin2.Id, user1.Id, super2.Id, user2.Id);
@@ -279,7 +279,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var aUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("A")).ToList();
             var cUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("C")).ToList();
 
-            batch.Execute();
+            batch.Execute().ConfigureAwait(false);
 
             anyUsers.Result.OrderBy(x => x.FirstName).Select(x => x.Id)
                 .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, admin2.Id, user1.Id, super2.Id, user2.Id);
@@ -307,7 +307,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var aUsers = batch.Query<User>().Any(_ => _.UserName.StartsWith("A"));
             var cUsers = batch.Query<User>().Any(_ => _.UserName.StartsWith("C"));
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
             (await anyUsers).ShouldBeTrue();
             (await anyAdmins).ShouldBeTrue();
@@ -327,7 +327,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var aUsers = batch.Query<User>().Count(_ => _.UserName.StartsWith("A"));
             var cUsers = batch.Query<User>().Count(_ => _.UserName.StartsWith("C"));
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
             (await anyUsers).ShouldBe(6);
             (await anyAdmins).ShouldBe(2);
@@ -343,7 +343,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var task1 = batch.Load<Target>(target1.Id);
             var task3 = batch.Load<Target>(target3.Id);
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
             (await task1).ShouldBeOfType<Target>().ShouldNotBeNull();
             (await task3).ShouldBeOfType<Target>().ShouldNotBeNull();
@@ -356,7 +356,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var task1 = batch1.Load<Target>(target1.Id);
             var task3 = batch1.Load<Target>(target3.Id);
 
-            await batch1.Execute();
+            await batch1.Execute().ConfigureAwait(false);
 
             var batch2 = theSession.CreateBatchQuery();
             var task21 = batch2.Load<Target>(target1.Id);
@@ -374,7 +374,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var batch1 = theSession.CreateBatchQuery();
             var task = batch1.LoadMany<Target>().ById(target1.Id, target3.Id);
 
-            await batch1.Execute();
+            await batch1.Execute().ConfigureAwait(false);
 
             var list = await task;
 
@@ -389,7 +389,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var batch1 = theSession.CreateBatchQuery();
             var task1 = batch1.LoadMany<Target>().ById(target1.Id, target3.Id);
 
-            await batch1.Execute();
+            await batch1.Execute().ConfigureAwait(false);
 
             var batch2 = theSession.CreateBatchQuery();
             var task2 = batch2.LoadMany<Target>().ById(target1.Id, target3.Id);
@@ -405,7 +405,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var batch1 = theSession.CreateBatchQuery();
             var task = batch1.LoadMany<Target>().ByIdList(new List<Guid> {target1.Id, target3.Id});
 
-            await batch1.Execute();
+            await batch1.Execute().ConfigureAwait(false);
 
             var list = await task;
 
@@ -420,7 +420,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var batch1 = theSession.CreateBatchQuery();
             var task1 = batch1.LoadMany<Target>().ByIdList(new List<Guid> {target1.Id, target3.Id});
 
-            await batch1.Execute();
+            await batch1.Execute().ConfigureAwait(false);
 
             var batch2 = theSession.CreateBatchQuery();
             var task2 = batch2.LoadMany<Target>().ByIdList(new List<Guid> {target1.Id, target3.Id});
@@ -448,7 +448,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
             var singleOrDefault =
                 batch1.Query<User>().Where(x => x.FirstName == "nobody").Select(x => x.FirstName).SingleOrDefault();
 
-            await batch1.Execute();
+            await batch1.Execute().ConfigureAwait(false);
 
             (await toList).ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
             (await first).ShouldBe("Derrick");
@@ -478,7 +478,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
                     .Select(x => new {Name = x.FirstName})
                     .SingleOrDefault();
 
-            await batch1.Execute();
+            await batch1.Execute().ConfigureAwait(false);
 
             (await toList).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
@@ -515,7 +515,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
                     .Select(x => new UserName {Name = x.FirstName})
                     .SingleOrDefault();
 
-            await batch1.Execute();
+            await batch1.Execute().ConfigureAwait(false);
 
             (await toList).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");

@@ -54,7 +54,7 @@ namespace Marten.Testing.Services.Includes
                 var toDict = batch.Query<Issue>()
                     .Include(x => x.AssigneeId, dict).ToList();
 
-                await batch.Execute();
+                await batch.Execute().ConfigureAwait(false);
 
 
                 (await found).Id.ShouldBe(issue1.Id);
@@ -261,7 +261,7 @@ namespace Marten.Testing.Services.Includes
             var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
             theSession.Store<object>(user, issue);
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             using (var query = theStore.QuerySession())
             {
@@ -269,7 +269,7 @@ namespace Marten.Testing.Services.Includes
                 var issue2 = await query.Query<Issue>()
                     .Include<User>(x => x.AssigneeId, x => included = x)
                     .Where(x => x.Title == issue.Title)
-                    .SingleAsync();
+                    .SingleAsync().ConfigureAwait(false);
 
                 included.ShouldNotBeNull();
                 included.Id.ShouldBe(user.Id);
@@ -290,13 +290,13 @@ namespace Marten.Testing.Services.Includes
 
             theSession.Store(user1, user2);
             theSession.Store(issue1, issue2, issue3);
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             using (var query = theStore.QuerySession())
             {
                 var list = new List<User>();
 
-                await query.Query<Issue>().Include(x => x.AssigneeId, list).ToListAsync();
+                await query.Query<Issue>().Include(x => x.AssigneeId, list).ToListAsync().ConfigureAwait(false);
 
                 list.Count.ShouldBe(2);
 
@@ -317,7 +317,7 @@ namespace Marten.Testing.Services.Includes
 
             theSession.Store(user1, user2);
             theSession.Store(issue1, issue2, issue3);
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             using (var query = theStore.QuerySession())
             {
@@ -325,7 +325,7 @@ namespace Marten.Testing.Services.Includes
 
                 await query.Query<Issue>().Include(x => x.AssigneeId, list)
                            .OrderByDescending(x => x.Id)
-                           .ToListAsync();
+                           .ToListAsync().ConfigureAwait(false);
 
                 list.Count.ShouldBe(2);
 
@@ -346,7 +346,7 @@ namespace Marten.Testing.Services.Includes
 
             theSession.Store(user1, user2);
             theSession.Store(issue1, issue2, issue3);
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             using (var query = theStore.QuerySession())
             {
@@ -354,7 +354,7 @@ namespace Marten.Testing.Services.Includes
 
                 await query.Query<Issue>().Include(x => x.AssigneeId, list)
                            .OrderBy(x => x.Id)
-                           .ToListAsync();
+                           .ToListAsync().ConfigureAwait(false);
 
                 list.Count.ShouldBe(2);
 
@@ -375,13 +375,13 @@ namespace Marten.Testing.Services.Includes
 
             theSession.Store(user1, user2);
             theSession.Store(issue1, issue2, issue3);
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             using (var query = theStore.QuerySession())
             {
                 var dict = new Dictionary<Guid, User>();
 
-                await query.Query<Issue>().Include(x => x.AssigneeId, dict).ToListAsync();
+                await query.Query<Issue>().Include(x => x.AssigneeId, dict).ToListAsync().ConfigureAwait(false);
 
                 dict.Count.ShouldBe(2);
                 dict.ContainsKey(user1.Id).ShouldBeTrue();

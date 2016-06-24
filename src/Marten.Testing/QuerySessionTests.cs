@@ -50,7 +50,7 @@ namespace Marten.Testing
 
             using (var query = store.QuerySession().As<QuerySession>())
             {
-                (await query.LoadDocumentAsync<FryGuy>(guy2.id, new CancellationTokenSource().Token)).ShouldNotBeNull();
+                (await query.LoadDocumentAsync<FryGuy>(guy2.id, new CancellationTokenSource().Token).ConfigureAwait(false)).ShouldNotBeNull();
             }
         }
 

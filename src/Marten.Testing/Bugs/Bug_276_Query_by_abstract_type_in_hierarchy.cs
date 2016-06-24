@@ -7,11 +7,9 @@ namespace Marten.Testing.Bugs
 {
     public class Bug_276_Query_by_abstract_type_in_hierarchy : DocumentSessionFixture<IdentityMap>
     {
-        private readonly ITestOutputHelper _output;
 
-        public Bug_276_Query_by_abstract_type_in_hierarchy(ITestOutputHelper output)
+        public Bug_276_Query_by_abstract_type_in_hierarchy()
         {
-            _output = output;
             StoreOptions(_ =>
             {
                 _.Schema.For<Activity>()

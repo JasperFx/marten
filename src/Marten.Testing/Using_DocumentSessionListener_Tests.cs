@@ -68,7 +68,7 @@ namespace Marten.Testing
                 {
                     session.Store(new User(), new User());
 
-                    await session.SaveChangesAsync();
+                    await session.SaveChangesAsync().ConfigureAwait(false);
 
                     stub1.SaveChangesSession.ShouldBeTheSameAs(session);
                     stub1.AfterCommitSession.ShouldBeTheSameAs(session);

@@ -29,7 +29,7 @@ namespace Marten.Testing.Events.Projections.Async
 
             using (var data = new StagedEventData(theOptions, factory, new EventGraph(new StoreOptions()), new JilSerializer()))
             {
-                var lastEncountered = await data.LastEventProgression();
+                var lastEncountered = await data.LastEventProgression().ConfigureAwait(false);
 
                 lastEncountered.ShouldBe(0);
             }
@@ -47,14 +47,14 @@ namespace Marten.Testing.Events.Projections.Async
                 {
                     cmd.Sql("insert into mt_event_progression (name, last_seq_id) values ('something', 121)");
 
-                    await cmd.ExecuteNonQueryAsync();
+                    await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
 
                 }
             }
 
             using (var data = new StagedEventData(theOptions, factory, new EventGraph(new StoreOptions()), new JilSerializer()) )
             {
-                var lastEncountered = await data.LastEventProgression();
+                var lastEncountered = await data.LastEventProgression().ConfigureAwait(false);
 
                 lastEncountered.ShouldBe(121);
             }
@@ -66,9 +66,9 @@ namespace Marten.Testing.Events.Projections.Async
         {
             using (var data = new StagedEventData(theOptions, new ConnectionSource(), new EventGraph(new StoreOptions()), new JilSerializer()) )
             {
-                await data.RegisterProgress(111);
+                await data.RegisterProgress(111).ConfigureAwait(false);
 
-                var lastEncountered = await data.LastEventProgression();
+                var lastEncountered = await data.LastEventProgression().ConfigureAwait(false);
 
                 lastEncountered.ShouldBe(111);
             }
@@ -79,10 +79,10 @@ namespace Marten.Testing.Events.Projections.Async
         {
             using (var data = new StagedEventData(theOptions, new ConnectionSource(), new EventGraph(new StoreOptions()), new JilSerializer()))
             {
-                await data.RegisterProgress(111);
-                await data.RegisterProgress(211);
+                await data.RegisterProgress(111).ConfigureAwait(false);
+                await data.RegisterProgress(211).ConfigureAwait(false);
 
-                var lastEncountered = await data.LastEventProgression();
+                var lastEncountered = await data.LastEventProgression().ConfigureAwait(false);
 
                 lastEncountered.ShouldBe(211);
             }
@@ -101,12 +101,12 @@ namespace Marten.Testing.Events.Projections.Async
             using (var session = theStore.LightweightSession())
             {
                 session.Events.Append(Guid.NewGuid(), list.ToArray());
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
             using (var data = new StagedEventData(theOptions, new ConnectionSource(), theStore.Schema.Events.As<EventGraph>(), new JilSerializer()))
             {
-                var page = await data.FetchNextPage(0);
+                var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
                 page.From.ShouldBe(0);
                 page.To.ShouldBe(data.Options.PageSize);
@@ -136,7 +136,7 @@ namespace Marten.Testing.Events.Projections.Async
                     session.Events.Append(Guid.NewGuid(), joined, departed, reached);
                 }
 
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
             var events = theStore.Schema.Events.As<EventGraph>();
@@ -148,7 +148,7 @@ namespace Marten.Testing.Events.Projections.Async
 
             using (var data = new StagedEventData(theOptions, new ConnectionSource(), events, new JilSerializer()))
             {
-                var page = await data.FetchNextPage(0);
+                var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
                 var all = page.Streams.SelectMany(x => x.Events).ToArray();
 
@@ -182,7 +182,7 @@ namespace Marten.Testing.Events.Projections.Async
                     session.Events.Append(Guid.NewGuid(), joined, departed, reached);
                 }
 
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
 
                 streams.AddRange(session.LastCommit.GetStreams());
             }
@@ -199,7 +199,7 @@ namespace Marten.Testing.Events.Projections.Async
 
             using (var data = new StagedEventData(theOptions, new ConnectionSource(), events, new JilSerializer()))
             {
-                var page = await data.FetchNextPage(0);
+                var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
                 foreach (var stream in page.Streams)
                 {
@@ -226,14 +226,14 @@ namespace Marten.Testing.Events.Projections.Async
             using (var session = theStore.LightweightSession())
             {
                 session.Events.Append(Guid.NewGuid(), list.ToArray());
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
             using (var data = new StagedEventData(theOptions, new ConnectionSource(), theStore.Schema.Events.As<EventGraph>(), new JilSerializer()))
             {
-                var events1 = (await data.FetchNextPage(0)).Streams.SelectMany(x => x.Events).ToArray();
-                var events2 = (await data.FetchNextPage(100)).Streams.SelectMany(x => x.Events).ToArray();
-                var events3 = (await data.FetchNextPage(200)).Streams.SelectMany(x => x.Events).ToArray();
+                var events1 = (await data.FetchNextPage(0).ConfigureAwait(false)).Streams.SelectMany(x => x.Events).ToArray();
+                var events2 = (await data.FetchNextPage(100).ConfigureAwait(false)).Streams.SelectMany(x => x.Events).ToArray();
+                var events3 = (await data.FetchNextPage(200).ConfigureAwait(false)).Streams.SelectMany(x => x.Events).ToArray();
 
                 events1.Intersect(events2).Any().ShouldBeFalse();
                 events1.Intersect(events3).Any().ShouldBeFalse();

@@ -46,20 +46,20 @@ namespace Marten.Testing.Events
         {
 
             var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             var events = theSession.Events.FetchStream(streamId);
 
-            (await theSession.Events.LoadAsync(Guid.NewGuid())).ShouldBeNull();
-            (await theSession.Events.LoadAsync<MonsterSlayed>(Guid.NewGuid())).ShouldBeNull();
+            (await theSession.Events.LoadAsync(Guid.NewGuid()).ConfigureAwait(false)).ShouldBeNull();
+            (await theSession.Events.LoadAsync<MonsterSlayed>(Guid.NewGuid()).ConfigureAwait(false)).ShouldBeNull();
 
             // Knowing the event type
-            var slayed1_2 = await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id);
+            var slayed1_2 = await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id).ConfigureAwait(false);
             slayed1_2.Version.ShouldBe(3);
             slayed1_2.Data.Name.ShouldBe("Troll");
 
             // Not knowing the event type
-            var slayed1_3 = (await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id)).ShouldBeOfType<Event<MonsterSlayed>>();
+            var slayed1_3 = (await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id).ConfigureAwait(false)).ShouldBeOfType<Event<MonsterSlayed>>();
             slayed1_3.Version.ShouldBe(3);
             slayed1_3.Data.Name.ShouldBe("Troll");
         }
@@ -68,7 +68,7 @@ namespace Marten.Testing.Events
         public async Task fetch_in_batch_query()
         {
             var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             var events = theSession.Events.FetchStream(streamId);
 
@@ -80,13 +80,13 @@ namespace Marten.Testing.Events
 
             await batch.Execute();
 
-            (await slayed1_2).ShouldBeOfType<Event<MonsterSlayed>>()
+            (await slayed1_2.ConfigureAwait(false)).ShouldBeOfType<Event<MonsterSlayed>>()
                 .Data.Name.ShouldBe("Troll");
 
-            (await slayed2_2).ShouldBeOfType<Event<MonsterSlayed>>()
+            (await slayed2_2.ConfigureAwait(false)).ShouldBeOfType<Event<MonsterSlayed>>()
                 .Data.Name.ShouldBe("Dragon");
 
-            (await missing).ShouldBeNull();
+            (await missing.ConfigureAwait(false)).ShouldBeNull();
         }
     }
 }

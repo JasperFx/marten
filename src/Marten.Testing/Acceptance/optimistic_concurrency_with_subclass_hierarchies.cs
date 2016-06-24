@@ -39,9 +39,9 @@ namespace Marten.Testing.Acceptance
             {
                 var coffeeShop = new CoffeeShop();
                 session.Store(coffeeShop);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
 
-                (await session.LoadAsync<CoffeeShop>(coffeeShop.Id)).ShouldNotBeNull();
+                (await session.LoadAsync<CoffeeShop>(coffeeShop.Id).ConfigureAwait(false)).ShouldNotBeNull();
             }
         }
 
@@ -80,21 +80,21 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.OpenSession())
             {
                 session.Store(doc1);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
             using (var session = theStore.OpenSession())
             {
-                var doc2 = await session.LoadAsync<Shop>(doc1.Id);
+                var doc2 = await session.LoadAsync<Shop>(doc1.Id).ConfigureAwait(false);
                 doc2.As<CoffeeShop>().Name = "Mozart's";
 
                 session.Store(doc2);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
             using (var session = theStore.QuerySession())
             {
-                (await session.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Mozart's");
+                (await session.LoadAsync<CoffeeShop>(doc1.Id).ConfigureAwait(false)).Name.ShouldBe("Mozart's");
             }
         }
 
@@ -153,14 +153,14 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.OpenSession())
             {
                 session.Store(doc1);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
             var session1 = theStore.DirtyTrackedSession();
             var session2 = theStore.DirtyTrackedSession();
 
-            var session1Copy = await session1.LoadAsync<CoffeeShop>(doc1.Id);
-            var session2Copy = await session2.LoadAsync<CoffeeShop>(doc1.Id);
+            var session1Copy = await session1.LoadAsync<CoffeeShop>(doc1.Id).ConfigureAwait(false);
+            var session2Copy = await session2.LoadAsync<CoffeeShop>(doc1.Id).ConfigureAwait(false);
 
             try
             {
@@ -168,12 +168,12 @@ namespace Marten.Testing.Acceptance
                 session2Copy.Name = "Dominican Joe's";
 
                 // Should go through just fine
-                await session2.SaveChangesAsync();
+                await session2.SaveChangesAsync().ConfigureAwait(false);
 
 
                 var ex = await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
                 {
-                    await session1.SaveChangesAsync();
+                    await session1.SaveChangesAsync().ConfigureAwait(false);
                 });
 
                 var concurrency = ex.InnerExceptions.OfType<ConcurrencyException>().Single();

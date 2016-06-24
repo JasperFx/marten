@@ -8,18 +8,11 @@ using Marten.Util;
 using NSubstitute;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Transforms
 {
     public class TransformFunctionTests
     {
-        private readonly ITestOutputHelper _output;
-
-        public TransformFunctionTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
 
         [Fact]
         public void derive_function_name_from_logical_name()

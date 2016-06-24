@@ -16,9 +16,9 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 3 });
             theSession.Store(new Target { Number = 4 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var result = await theSession.Query<Target>().CountAsync();
+            var result = await theSession.Query<Target>().CountAsync().ConfigureAwait(false);
             result.ShouldBe(4);
         }
 
@@ -29,9 +29,9 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 3 });
             theSession.Store(new Target { Number = 4 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var result = await theSession.Query<Target>().LongCountAsync();
+            var result = await theSession.Query<Target>().LongCountAsync().ConfigureAwait(false);
             result.ShouldBe(4);
         }
 
@@ -44,9 +44,9 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.Store(new Target { Number = 5 });
             theSession.Store(new Target { Number = 6 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var result = await theSession.Query<Target>().CountAsync(x => x.Number > 3);
+            var result = await theSession.Query<Target>().CountAsync(x => x.Number > 3).ConfigureAwait(false);
             result.ShouldBe(3);
         }
 
@@ -59,9 +59,9 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.Store(new Target { Number = 5 });
             theSession.Store(new Target { Number = 6 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var result = await theSession.Query<Target>().LongCountAsync(x => x.Number > 3);
+            var result = await theSession.Query<Target>().LongCountAsync(x => x.Number > 3).ConfigureAwait(false);
             result.ShouldBe(3);
         }
 
@@ -72,9 +72,9 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 3 });
             theSession.Store(new Target { Number = 4 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var result = await theSession.Query<Target>().SumAsync(x => x.Number);
+            var result = await theSession.Query<Target>().SumAsync(x => x.Number).ConfigureAwait(false);
             result.ShouldBe(10);
         }
 
@@ -85,9 +85,9 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { NullableNumber = 2 });
             theSession.Store(new Target { NullableNumber = 3 });
             theSession.Store(new Target { NullableNumber = 4 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var result = await theSession.Query<Target>().SumAsync(x => x.NullableNumber);
+            var result = await theSession.Query<Target>().SumAsync(x => x.NullableNumber).ConfigureAwait(false);
             result.ShouldBe(10);
         }
     }

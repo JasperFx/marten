@@ -113,13 +113,13 @@ namespace Marten.Testing.Schema.Hierarchies
             theSession.Store(admin1);
             theSession.SaveChanges();
 
-            (await theSession.LoadAsync<User>(admin1.Id)).ShouldBeTheSameAs(admin1);
-            (await theSession.LoadAsync<AdminUser>(admin1.Id)).ShouldBeTheSameAs(admin1);
+            (await theSession.LoadAsync<User>(admin1.Id).ConfigureAwait(false)).ShouldBeTheSameAs(admin1);
+            (await theSession.LoadAsync<AdminUser>(admin1.Id).ConfigureAwait(false)).ShouldBeTheSameAs(admin1);
 
             using (var session = theStore.QuerySession())
             {
-                (await session.LoadAsync<AdminUser>(admin1.Id)).ShouldNotBeTheSameAs(admin1).ShouldNotBeNull();
-                (await session.LoadAsync<User>(admin1.Id)).ShouldNotBeTheSameAs(admin1).ShouldNotBeNull();
+                (await session.LoadAsync<AdminUser>(admin1.Id).ConfigureAwait(false)).ShouldNotBeTheSameAs(admin1).ShouldNotBeNull();
+                (await session.LoadAsync<User>(admin1.Id).ConfigureAwait(false)).ShouldNotBeTheSameAs(admin1).ShouldNotBeNull();
             }
         }
 
@@ -170,7 +170,7 @@ namespace Marten.Testing.Schema.Hierarchies
         [Fact]
         public async Task load_by_id_with_mixed_results_from_identity_map_async()
         {
-            var users = await theSession.LoadManyAsync<User>(admin1.Id, super1.Id, user1.Id);
+            var users = await theSession.LoadManyAsync<User>(admin1.Id, super1.Id, user1.Id).ConfigureAwait(false);
             users.OrderBy(x => x.FirstName).ShouldHaveTheSameElementsAs(admin1, super1, user1);
         }
 
@@ -184,7 +184,7 @@ namespace Marten.Testing.Schema.Hierarchies
         [Fact]
         public async Task load_by_id_keys_from_base_class_resolved_from_identity_map_async()
         {
-            var users = await theSession.LoadManyAsync<AdminUser>(admin1.Id, admin2.Id);
+            var users = await theSession.LoadManyAsync<AdminUser>(admin1.Id, admin2.Id).ConfigureAwait(false);
             users.ShouldHaveTheSameElementsAs(admin1, admin2);
         }
 
@@ -217,7 +217,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             using (var session = theStore.QuerySession())
             {
-                var users = await session.LoadManyAsync<User>(admin1.Id, super1.Id, user1.Id);
+                var users = await session.LoadManyAsync<User>(admin1.Id, super1.Id, user1.Id).ConfigureAwait(false);
 
                 users.OrderBy(x => x.FirstName)
                     .Select(x => x.Id)

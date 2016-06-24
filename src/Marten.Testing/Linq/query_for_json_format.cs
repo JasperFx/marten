@@ -106,7 +106,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var listJson = await theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToJsonArrayAsync();
+            var listJson = await theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToJsonArrayAsync().ConfigureAwait(false);
             listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
         }
 
@@ -223,7 +223,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstAsync();
+            var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstAsync().ConfigureAwait(false);
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
@@ -254,7 +254,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().AsJson().FirstAsync();
+            var userJson = await theSession.Query<SimpleUser>().AsJson().FirstAsync().ConfigureAwait(false);
             userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
@@ -279,7 +279,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
             
             var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => 
-                theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().FirstAsync());
+                theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().FirstAsync()).ConfigureAwait(false);
             ex.Message.ShouldBe("Sequence contains no elements"); 
         }
 
@@ -372,7 +372,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstOrDefaultAsync();
+            var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
             userJson.ShouldBe($@"{user1.ToJson()}");
         }
 
@@ -403,7 +403,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().AsJson().FirstOrDefaultAsync();
+            var userJson = await theSession.Query<SimpleUser>().AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
             userJson.ShouldBe($@"{user0.ToJson()}");
         }
 
@@ -451,7 +451,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1,user2);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().Where(x=>x.Number != 5).AsJson().FirstOrDefaultAsync();
+            var userJson = await theSession.Query<SimpleUser>().Where(x=>x.Number != 5).AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
             userJson.ShouldBeNull();
         }
     }

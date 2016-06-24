@@ -28,7 +28,7 @@ namespace Marten.Testing
 
             theSession.Logger = logger;
 
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             logger.LastSession.ShouldBe(theSession);
         }

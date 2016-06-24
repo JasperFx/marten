@@ -4,7 +4,6 @@ using Baseline;
 using Marten.Testing.Events.Projections;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Events
 {
@@ -16,12 +15,6 @@ namespace Marten.Testing.Events
             DocumentTracking.DirtyTracking
         };
 
-        private readonly ITestOutputHelper _output;
-
-        public end_to_end_event_capture_and_fetching_the_stream_Tests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
 
         [Theory]
         [MemberData("SessionTypes")]

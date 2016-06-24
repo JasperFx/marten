@@ -40,13 +40,13 @@ namespace Marten.Testing
             var account = new Account { Id = "email@server.com" };
 
             theSession.Store(account);
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             using (var session = theStore.OpenSession())
             {
-                (await session.LoadAsync<Account>("email@server.com")).ShouldNotBeNull();
+                (await session.LoadAsync<Account>("email@server.com").ConfigureAwait(false)).ShouldNotBeNull();
 
-                (await session.LoadAsync<Account>("nonexistent@server.com")).ShouldBeNull();
+                (await session.LoadAsync<Account>("nonexistent@server.com").ConfigureAwait(false)).ShouldBeNull();
             }
         }
         // ENDSAMPLE

@@ -1,19 +1,11 @@
 ﻿using Marten.Testing.Documents;
 using Marten.Testing.Fixtures;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Schema
 {
     public class creating_a_full_patch
     {
-        private readonly ITestOutputHelper _output;
-
-        public creating_a_full_patch(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
         [Fact]
         public void patch_for_multiple_tables()
         {

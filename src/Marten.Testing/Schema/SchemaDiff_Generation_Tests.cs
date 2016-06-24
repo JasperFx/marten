@@ -73,15 +73,6 @@ namespace Marten.Testing.Schema
 
     public class SchemaDiff_Generation_Tests
     {
-        private readonly ITestOutputHelper _output;
-
-        public SchemaDiff_Generation_Tests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
-
-
         [Fact]
         public void no_changes_in_upsert_function_95_style()
         {

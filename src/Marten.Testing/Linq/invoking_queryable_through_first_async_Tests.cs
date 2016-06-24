@@ -17,9 +17,9 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 3 });
             theSession.Store(new Target { Number = 4 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var target = await theSession.Query<Target>().FirstAsync(x => x.Number == 3);
+            var target = await theSession.Query<Target>().FirstAsync(x => x.Number == 3).ConfigureAwait(false);
             target.ShouldNotBeNull();
         }
 
@@ -30,9 +30,9 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 3 });
             theSession.Store(new Target { Number = 4 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var target = await theSession.Query<Target>().FirstOrDefaultAsync(x => x.Number == 3);
+            var target = await theSession.Query<Target>().FirstOrDefaultAsync(x => x.Number == 3).ConfigureAwait(false);
             target.ShouldNotBeNull();
         }
 
@@ -43,9 +43,9 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 3 });
             theSession.Store(new Target { Number = 4 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var target = await theSession.Query<Target>().FirstOrDefaultAsync(x => x.Number == 11);
+            var target = await theSession.Query<Target>().FirstOrDefaultAsync(x => x.Number == 11).ConfigureAwait(false);
             target.ShouldBeNull();
         }
 
@@ -56,9 +56,9 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 2, Flag = true });
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 4 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var target = await theSession.Query<Target>().Where(x => x.Number == 2).FirstAsync();
+            var target = await theSession.Query<Target>().Where(x => x.Number == 2).FirstAsync().ConfigureAwait(false);
             target.Flag.ShouldBeTrue();
         }
 
@@ -69,9 +69,9 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 2, Flag = true });
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 4 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var target = await theSession.Query<Target>().Where(x => x.Number == 2).FirstOrDefaultAsync();
+            var target = await theSession.Query<Target>().Where(x => x.Number == 2).FirstOrDefaultAsync().ConfigureAwait(false);
             target.Flag.ShouldBeTrue();
         }
 
@@ -82,11 +82,11 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 3 });
             theSession.Store(new Target { Number = 4 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             await Exception<InvalidOperationException>.ShouldBeThrownByAsync(async () =>
             {
-                await theSession.Query<Target>().Where(x => x.Number == 11).FirstAsync();
+                await theSession.Query<Target>().Where(x => x.Number == 11).FirstAsync().ConfigureAwait(false);
             });
         }
     }

@@ -15,11 +15,9 @@ namespace Marten.Testing.Linq
 {
     public class invoking_query_with_statistics : DocumentSessionFixture<NulloIdentityMap>
     {
-        private readonly ITestOutputHelper _output;
 
-        public invoking_query_with_statistics(ITestOutputHelper output)
+        public invoking_query_with_statistics()
         {
-            _output = output;
             theStore.BulkInsert(Target.GenerateRandomData(100).ToArray());
         }
 
@@ -47,29 +45,20 @@ namespace Marten.Testing.Linq
             // Now, the total results data should
             // be available
             stats.TotalResults.ShouldBe(count);
-
-
-            var cmd = theSession
-                .Query<Target>()
-                .Stats(out stats)
-                .Where(x => x.Number > 10).Take(5)
-                .ToCommand();
-
-            _output.WriteLine(cmd.CommandText);
         }
         // ENDSAMPLE
 
         [Fact]
         public async Task can_get_the_total_in_results_async()
         {
-            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
+            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync().ConfigureAwait(false);
             count.ShouldBeGreaterThan(0);
 
 
             QueryStatistics stats = null;
 
             var list = await theSession.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
-                .ToListAsync();
+                .ToListAsync().ConfigureAwait(false);
 
             list.Any().ShouldBeTrue();
 
@@ -79,7 +68,7 @@ namespace Marten.Testing.Linq
         [Fact]
         public async Task can_get_the_total_in_batch_query()
         {
-            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
+            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync().ConfigureAwait(false);
             count.ShouldBeGreaterThan(0);
 
 
@@ -90,10 +79,10 @@ namespace Marten.Testing.Linq
             var list = batch.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
                 .ToList();
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
 
-            (await list).Any().ShouldBeTrue();
+            (await list.ConfigureAwait(false)).Any().ShouldBeTrue();
 
             stats.TotalResults.ShouldBe(count);
         }

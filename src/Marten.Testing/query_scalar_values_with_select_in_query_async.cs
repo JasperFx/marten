@@ -19,7 +19,7 @@ namespace Marten.Testing
             theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
 
             theSession.SaveChanges();
-            var sumResults = await theSession.QueryAsync<int>("select sum(CAST(d.data ->> 'Number' as integer)) as number from mt_doc_target as d");
+            var sumResults = await theSession.QueryAsync<int>("select sum(CAST(d.data ->> 'Number' as integer)) as number from mt_doc_target as d").ConfigureAwait(false);
             var sum = sumResults.Single();
             sum.ShouldBe(10);
         }
@@ -33,7 +33,7 @@ namespace Marten.Testing
             theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
 
             theSession.SaveChanges();
-            var sumResults = await theSession.QueryAsync<int>("select count(*) from mt_doc_target");
+            var sumResults = await theSession.QueryAsync<int>("select count(*) from mt_doc_target").ConfigureAwait(false);
             var sum = sumResults.Single();
             sum.ShouldBe(4);
         }

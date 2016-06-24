@@ -11,13 +11,6 @@ namespace Marten.Testing.Acceptance
 {
     public class computed_indexes : IntegratedFixture
     {
-        private readonly ITestOutputHelper _output;
-
-        public computed_indexes(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
         [Fact]
         public void example()
         {
@@ -42,7 +35,6 @@ namespace Marten.Testing.Acceptance
     }
             // ENDSAMPLE
 
-            _output.WriteLine(store.Schema.ToDDL());
             store.Dispose();
         }
 
@@ -62,10 +54,6 @@ namespace Marten.Testing.Acceptance
                 var cmd = session.Query<Target>().Where(x => x.Number == 3)
                                  .ToCommand();
 
-                // I used this to manually verify that the index was used in the query
-                // by doing Analyze in PGAdmin III
-                _output.WriteLine(cmd.CommandText);
-
                 session.Query<Target>().Where(x => x.Number == data.First().Number)
                        .Select(x => x.Id).ToList().ShouldContain(data.First().Id);
             }
@@ -83,7 +71,6 @@ namespace Marten.Testing.Acceptance
     });
             // ENDSAMPLE
 
-            _output.WriteLine(store.Schema.ToDDL());
         }
 
         [Fact]

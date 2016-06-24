@@ -67,7 +67,7 @@ namespace Marten.Testing.Events
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 session.Events.StartStream<Quest>(streamId, joined, departed);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
 
                 session.LastCommit.GetEvents().Select(x => x.Version)
                     .ShouldHaveTheSameElementsAs(1, 2);
@@ -79,7 +79,7 @@ namespace Marten.Testing.Events
                 var departed2 = new MembersDeparted { Members = new[] { "Perrin" } };
 
                 session.Events.Append(streamId, joined2, departed2);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
 
                 session.LastCommit.GetEvents().Select(x => x.Version)
                     .ShouldHaveTheSameElementsAs(3, 4);
@@ -91,7 +91,7 @@ namespace Marten.Testing.Events
                 var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
 
                 session.Events.Append(streamId, joined3, departed3);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
 
                 var events = session.LastCommit.GetEvents().ToArray();
                 events.Select(x => x.Version)

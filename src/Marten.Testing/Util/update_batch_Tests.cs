@@ -48,9 +48,9 @@ namespace Marten.Testing.Util
             using (var session = theStore.LightweightSession())
             {
                 session.Store(targets);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync().ConfigureAwait(false);
 
-                var t = await session.Query<Target>().CountAsync();
+                var t = await session.Query<Target>().CountAsync().ConfigureAwait(false);
                 t.ShouldBe(100);
             }
         }

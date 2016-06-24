@@ -49,9 +49,9 @@ namespace Marten.Testing.Events
 
             var stateTask = batch.Events.FetchStreamState(theStreamId);
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
-            var state = await stateTask;
+            var state = await stateTask.ConfigureAwait(false);
 
             state.Id.ShouldBe(theStreamId);
             state.Version.ShouldBe(2);
@@ -67,9 +67,9 @@ namespace Marten.Testing.Events
 
             var eventsTask = batch.Events.FetchStream(theStreamId);
 
-            await batch.Execute();
+            await batch.Execute().ConfigureAwait(false);
 
-            var events = await eventsTask;
+            var events = await eventsTask.ConfigureAwait(false);
 
             events.Count.ShouldBe(2);
         }

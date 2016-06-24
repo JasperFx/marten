@@ -16,16 +16,16 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 3 });
             theSession.Store(new Target { Number = 4 });
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var result = await theSession.Query<Target>().AnyAsync(x => x.Number == 11);
+            var result = await theSession.Query<Target>().AnyAsync(x => x.Number == 11).ConfigureAwait(false);
             result.ShouldBeFalse();
         }
 
         [Fact]
         public async Task naked_any_miss()
         {
-            var result = await theSession.Query<Target>().AnyAsync();
+            var result = await theSession.Query<Target>().AnyAsync().ConfigureAwait(false);
             result.ShouldBeFalse();
         }
         
@@ -38,7 +38,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            var result = await theSession.Query<Target>().AnyAsync();
+            var result = await theSession.Query<Target>().AnyAsync().ConfigureAwait(false);
             result.ShouldBeTrue();
         }
 
@@ -51,7 +51,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            var result = await theSession.Query<Target>().AnyAsync(x => x.Number == 3);
+            var result = await theSession.Query<Target>().AnyAsync(x => x.Number == 3).ConfigureAwait(false);
             result.ShouldBeTrue();
         }
         
@@ -64,7 +64,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            var result = await theSession.Query<Target>().Where(x => x.Number == 2).AnyAsync();
+            var result = await theSession.Query<Target>().Where(x => x.Number == 2).AnyAsync().ConfigureAwait(false);
             result.ShouldBeTrue();
         }
     }
