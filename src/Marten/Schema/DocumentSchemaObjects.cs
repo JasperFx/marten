@@ -67,7 +67,7 @@ namespace Marten.Schema
         {
             _hasCheckedSchema = false;
 
-            connection.Execute($"DROP TABLE IF EXISTS {_mapping.Table.QualifiedName} CASCADE;");
+            connection.Execute($"DROP TABLE IF EXISTS {_mapping.Table} CASCADE;");
 
             RemoveUpsertFunction(connection);
         }
@@ -144,9 +144,7 @@ namespace Marten.Schema
 
             if (diff.AllMissing)
             {
-                rebuildTableAndUpsertFunction(schema, runner);
-
-                runDependentScripts(runner);
+                rebuildAll(schema, runner);
 
                 return;
             }
@@ -160,17 +158,25 @@ namespace Marten.Schema
             if (diff.CanPatch())
             {
                 diff.CreatePatch(schema.StoreOptions, runner);
+                
             }
             else if (autoCreateSchemaObjectsMode == AutoCreate.All)
             {
-                // TODO -- better evaluation here against the auto create mode
-                rebuildTableAndUpsertFunction(schema, runner);
+                rebuildAll(schema, runner);
             }
             else
             {
                 throw new InvalidOperationException(
                     $"The table for document type {_mapping.DocumentType.FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{autoCreateSchemaObjectsMode}'");
             }
+
+            runDependentScripts(runner);
+        }
+
+
+        private void rebuildAll(IDocumentSchema schema, SchemaPatch runner)
+        {
+            rebuildTableAndUpsertFunction(schema, runner);
 
             runDependentScripts(runner);
         }
@@ -243,6 +249,12 @@ namespace Marten.Schema
             else if (diff.CanPatch())
             {
                 diff.CreatePatch(schema.StoreOptions, patch);
+            }
+
+            if (schema.StoreOptions.DatabaseOwnerName.IsNotEmpty())
+            {
+                var ownership = $"ALTER TABLE {_mapping.Table} OWNER TO \"{schema.StoreOptions.DatabaseOwnerName}\";";
+                patch.Updates.Apply(this, ownership);
             }
         }
 

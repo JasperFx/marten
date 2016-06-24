@@ -40,5 +40,6 @@ namespace Marten.Testing.Schema
                 patch.ShouldContain("update public.mt_doc_user set user_name = data ->> 'UserName'");
             }
         }
+
     }
 }
