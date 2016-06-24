@@ -114,7 +114,7 @@ namespace Marten
 
             var allSchemaNames = Schema.AllSchemaNames();
             var generator = new DatabaseSchemaGenerator(Advanced);
-            generator.Generate(allSchemaNames);
+            generator.Generate(_options, allSchemaNames);
         }
 
         public void BulkInsert<T>(T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)

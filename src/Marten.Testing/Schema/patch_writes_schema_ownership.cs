@@ -152,5 +152,46 @@ namespace Marten.Testing.Schema
 
 
         }
+
+
+        [Fact]
+        public void schema_gets_ownership_if_exists()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.DatabaseSchemaName = "events";
+                _.DatabaseSchemaName = "other";
+                _.DatabaseOwnerName = "george";
+                _.Events.AddEventType(typeof(MembersJoined));
+
+                
+            });
+
+            var patch = theStore.Schema.ToPatch();
+
+            patch.UpdateDDL.ShouldContain("ALTER SCHEMA events OWNER TO \"george\";");
+            patch.UpdateDDL.ShouldContain("ALTER SCHEMA other OWNER TO \"george\";");
+        }
+
+
+        [Fact]
+        public void schema_does_not_get_ownership_if_no_owner_exists()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.DatabaseSchemaName = "events";
+                _.DatabaseSchemaName = "other";
+                _.DatabaseOwnerName = null;
+                _.Events.AddEventType(typeof(MembersJoined));
+                
+
+            });
+
+            var patch = theStore.Schema.ToPatch();
+
+            patch.UpdateDDL.ShouldNotContain("ALTER SCHEMA events OWNER TO \"george\";");
+            patch.UpdateDDL.ShouldNotContain("ALTER SCHEMA other OWNER TO \"george\";");
+        }
+
     }
 }

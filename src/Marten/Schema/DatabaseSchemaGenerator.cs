@@ -24,11 +24,11 @@ $$;
             _advanced = advanced;
         }
 
-        public void Generate(string[] schemaNames)
+        public void Generate(StoreOptions options, string[] schemaNames)
         {
             if (schemaNames == null) throw new ArgumentNullException(nameof(schemaNames));
 
-            var sql = GenerateScript(schemaNames);
+            var sql = GenerateScript(options, schemaNames);
             if (sql != null)
             {
                 using (var runner = _advanced.OpenConnection())
@@ -38,7 +38,7 @@ $$;
             }
         }
 
-        public static string GenerateScript(IEnumerable<string> schemaNames)
+        public static string GenerateScript(StoreOptions options, IEnumerable<string> schemaNames)
         {
             if (schemaNames == null) throw new ArgumentNullException(nameof(schemaNames));
 
@@ -50,20 +50,20 @@ $$;
 
             using (var writer = new StringWriter())
             {
-                WriteSql(names, writer);
+                WriteSql(options, names, writer);
 
                 return writer.ToString();
             }
         }
 
-        public static void WriteSql(IEnumerable<string> schemaNames, StringWriter writer)
+        public static void WriteSql(StoreOptions options, IEnumerable<string> schemaNames, StringWriter writer)
         {
             writer.Write(BeginScript);
-            schemaNames.Each(name => WriteSql(name, writer));
+            schemaNames.Each(name => WriteSql(options, name, writer));
             writer.WriteLine(EndScript);
         }
 
-        private static void WriteSql(string databaseSchemaName, StringWriter writer)
+        private static void WriteSql(StoreOptions options, string databaseSchemaName, StringWriter writer)
         {
             writer.WriteLine($@"
     IF NOT EXISTS(
@@ -75,6 +75,11 @@ $$;
       EXECUTE 'CREATE SCHEMA {databaseSchemaName}';
     END IF;
 ");
+
+            if (options.DatabaseOwnerName.IsNotEmpty())
+            {
+                writer.WriteLine($"ALTER SCHEMA {databaseSchemaName} OWNER TO \"{options.DatabaseOwnerName}\";");
+            }
         }
     }
 }

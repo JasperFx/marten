@@ -256,7 +256,7 @@ namespace Marten.Schema
             if (withSchemas)
             {
                 var allSchemaNames = AllSchemaNames();
-                DatabaseSchemaGenerator.WriteSql(allSchemaNames, patch.UpWriter);
+                DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, patch.UpWriter);
             }
 
             foreach (var schemaObject in AllSchemaObjects())
@@ -282,7 +282,7 @@ namespace Marten.Schema
             var patch = new SchemaPatch(this);
 
             var allSchemaNames = AllSchemaNames();
-            DatabaseSchemaGenerator.WriteSql(allSchemaNames, patch.UpWriter);
+            DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, patch.UpWriter);
 
             patch.Updates.Apply(this, patch.UpdateDDL);
 
@@ -320,7 +320,7 @@ namespace Marten.Schema
             var writer = new StringWriter();
 
             var allSchemaNames = AllSchemaNames();
-            DatabaseSchemaGenerator.WriteSql(allSchemaNames, writer);
+            DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, writer);
 
             foreach (var schemaObject in AllSchemaObjects())
             {
@@ -392,7 +392,7 @@ namespace Marten.Schema
         private void writeDatabaseSchemaGenerationScript(string directory, FileSystem system, ISchemaObjects[] schemaObjects)
         {
             var allSchemaNames = AllSchemaNames();
-            var script = DatabaseSchemaGenerator.GenerateScript(allSchemaNames);
+            var script = DatabaseSchemaGenerator.GenerateScript(StoreOptions, allSchemaNames);
 
             var writer = new StringWriter();
 
