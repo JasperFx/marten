@@ -64,6 +64,13 @@ namespace Marten.Events
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             writeBasicTables(schema, writer);
+
+            if (schema.StoreOptions.OwnerName.IsNotEmpty())
+            {
+                var ddl = createOwnershipDDL(schema.StoreOptions);
+                writer.WriteLine();
+                writer.WriteLine(ddl);
+            }
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)
@@ -98,17 +105,24 @@ namespace Marten.Events
 
         private void writeOwnership(StoreOptions options, SchemaPatch patch)
         {
-            if (options.DatabaseOwnerName.IsEmpty()) return;
+            if (options.OwnerName.IsEmpty()) return;
 
-            patch.Updates.Apply(this, $@"
-ALTER TABLE {options.Events.DatabaseSchemaName}.mt_streams OWNER TO ""{options.DatabaseOwnerName}"";
-ALTER TABLE {options.Events.DatabaseSchemaName}.mt_events OWNER TO ""{ options.DatabaseOwnerName}"";
-ALTER TABLE { options.Events.DatabaseSchemaName}.mt_event_progression OWNER TO ""{options.DatabaseOwnerName}"";
-ALTER SEQUENCE { options.Events.DatabaseSchemaName}.mt_events_sequence OWNER TO ""{options.DatabaseOwnerName}"";
-ALTER FUNCTION { options.Events.DatabaseSchemaName}.mt_append_event(uuid, varchar, uuid[], varchar[], jsonb[]) OWNER TO ""{options.DatabaseOwnerName}"";
-ALTER FUNCTION { options.Events.DatabaseSchemaName}.mt_mark_event_progression(varchar, bigint) OWNER TO ""{options.DatabaseOwnerName}"";
+            var toOwnershipDdl = createOwnershipDDL(options);
+            patch.Updates.Apply(this, toOwnershipDdl);
+        }
 
-            ".Trim());
+        private static string createOwnershipDDL(StoreOptions options)
+        {
+            var toOwnershipDdl =
+                $@"
+ALTER TABLE {options.Events.DatabaseSchemaName}.mt_streams OWNER TO ""{options.OwnerName}"";
+ALTER TABLE {options.Events.DatabaseSchemaName}.mt_events OWNER TO ""{options.OwnerName}"";
+ALTER TABLE {options.Events.DatabaseSchemaName}.mt_event_progression OWNER TO ""{options.OwnerName}"";
+ALTER SEQUENCE {options.Events.DatabaseSchemaName}.mt_events_sequence OWNER TO ""{options.OwnerName}"";
+ALTER FUNCTION {options.Events.DatabaseSchemaName}.mt_append_event(uuid, varchar, uuid[], varchar[], jsonb[]) OWNER TO ""{options.OwnerName}"";
+ALTER FUNCTION {options.Events.DatabaseSchemaName}.mt_mark_event_progression(varchar, bigint) OWNER TO ""{options.OwnerName}"";
+            ".Trim();
+            return toOwnershipDdl;
         }
 
         public string Name { get; } = "eventstore";

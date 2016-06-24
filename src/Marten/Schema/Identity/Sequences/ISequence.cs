@@ -4,5 +4,6 @@
     {
         int NextInt();
         long NextLong();
+        int MaxLo { get; }
     }
 }

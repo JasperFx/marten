@@ -47,7 +47,7 @@ $BODY$
 
             var patch = new SchemaPatch();
 
-            var options = new StoreOptions {DatabaseOwnerName = null};
+            var options = new StoreOptions {OwnerName = null};
 
             var diff = new FunctionDiff(func, null);
 
@@ -66,7 +66,7 @@ $BODY$
 
             var patch = new SchemaPatch();
 
-            var options = new StoreOptions { DatabaseOwnerName = "bill" };
+            var options = new StoreOptions { OwnerName = "bill" };
 
             var diff = new FunctionDiff(func, null);
 

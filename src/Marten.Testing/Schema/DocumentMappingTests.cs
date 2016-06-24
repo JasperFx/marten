@@ -15,7 +15,7 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentMappingTests
+    public class DocumentMappingTests : IntegratedFixture
     {
         public class FieldId
         {
@@ -374,7 +374,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<MySpecialDocument>();
             var builder = new StringWriter();
 
-            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
 
             var sql = builder.ToString();
 
@@ -388,7 +388,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<MySpecialDocument>("other");
             var builder = new StringWriter();
 
-            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
 
             var sql = builder.ToString();
 
@@ -404,7 +404,7 @@ namespace Marten.Testing.Schema
 
             var builder = new StringWriter();
 
-            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
 
             var sql = builder.ToString();
 
@@ -421,7 +421,7 @@ namespace Marten.Testing.Schema
 
             var builder = new StringWriter();
 
-            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
 
             var sql = builder.ToString();
 
@@ -437,7 +437,7 @@ namespace Marten.Testing.Schema
 
             var builder = new StringWriter();
 
-            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
 
             var sql = builder.ToString();
 
@@ -479,7 +479,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<MySpecialDocument>();
             var builder = new StringWriter();
 
-            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
 
             var sql = builder.ToString();
 
@@ -493,7 +493,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<MySpecialDocument>("other");
             var builder = new StringWriter();
 
-            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
 
             var sql = builder.ToString();
 
@@ -509,7 +509,7 @@ namespace Marten.Testing.Schema
 
             var builder = new StringWriter();
 
-            mapping.SchemaObjects.WriteSchemaObjects(null, builder);
+            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
 
             var sql = builder.ToString();
 

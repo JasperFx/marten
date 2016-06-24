@@ -37,7 +37,9 @@ namespace Marten.Schema
             writer.WriteLine();
             writer.WriteLine();
 
-            new UpsertFunction(_mapping).WriteFunctionSql(writer);
+            var function = new UpsertFunction(_mapping);
+            function.WriteFunctionSql(writer);
+            
 
             _mapping.ForeignKeys.Each(x =>
             {
@@ -58,6 +60,15 @@ namespace Marten.Schema
 
                 writer.WriteSql(_mapping.DatabaseSchemaName, script);
             });
+
+            var ownerName = schema.StoreOptions.OwnerName;
+            if (ownerName.IsNotEmpty())
+            {
+                writer.WriteLine($"ALTER TABLE {_mapping.Table} OWNER TO \"{ownerName}\";");
+
+                var functionBody = function.ToBody();
+                writer.WriteLine(functionBody.ToOwnershipCommand(ownerName));
+            }
 
             writer.WriteLine();
             writer.WriteLine();
@@ -251,9 +262,9 @@ namespace Marten.Schema
                 diff.CreatePatch(schema.StoreOptions, patch);
             }
 
-            if (schema.StoreOptions.DatabaseOwnerName.IsNotEmpty())
+            if (schema.StoreOptions.OwnerName.IsNotEmpty())
             {
-                var ownership = $"ALTER TABLE {_mapping.Table} OWNER TO \"{schema.StoreOptions.DatabaseOwnerName}\";";
+                var ownership = $"ALTER TABLE {_mapping.Table} OWNER TO \"{schema.StoreOptions.OwnerName}\";";
                 patch.Updates.Apply(this, ownership);
             }
         }

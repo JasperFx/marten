@@ -20,9 +20,9 @@ namespace Marten.Schema
 
         public static void OwnershipToTable(this IDDLRunner runner, StoreOptions options, TableName table)
         {
-            if (options.DatabaseOwnerName.IsNotEmpty())
+            if (options.OwnerName.IsNotEmpty())
             {
-                runner.Apply(table, $"ALTER TABLE {table.QualifiedName} OWNER TO {options.DatabaseOwnerName};");
+                runner.Apply(table, $"ALTER TABLE {table.QualifiedName} OWNER TO {options.OwnerName};");
             }
         }
 

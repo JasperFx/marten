@@ -61,12 +61,10 @@ namespace Marten.Schema
 
         private void writeOwnership(StoreOptions options, SchemaPatch patch)
         {
-            if (options.DatabaseOwnerName.IsEmpty()) return;
+            if (options.OwnerName.IsEmpty()) return;
 
+            var ownership = Expected.ToOwnershipCommand(options.OwnerName);
 
-
-            var ownership =
-                $"ALTER FUNCTION {Expected.Signature()} OWNER TO \"{options.DatabaseOwnerName}\";";
             patch.Updates.Apply(this, ownership);
         }
 

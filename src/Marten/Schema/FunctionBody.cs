@@ -30,6 +30,11 @@ namespace Marten.Schema
             return $"{funcName}({args})";
         }
 
+        public string ToOwnershipCommand(string owner)
+        {
+            return $"ALTER FUNCTION {Signature()} OWNER TO \"{owner}\";";
+        }
+
         public FunctionBody(FunctionName function, string[] dropStatements, string body)
         {
             Function = function;

@@ -17,6 +17,8 @@ namespace Marten.Schema.Identity
             _setter = LambdaBuilder.Setter<TDoc, TId>(member);
         }
 
+        public IIdGenerator<TId> Generator => _generator;
+
         public object Assign(TDoc document, out bool assigned)
         {
             var original = _getter(document);

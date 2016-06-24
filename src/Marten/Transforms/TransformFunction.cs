@@ -63,6 +63,14 @@ namespace Marten.Transforms
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             writer.WriteLine(GenerateFunction());
+
+            if (schema.StoreOptions.OwnerName.IsNotEmpty())
+            {
+                writer.WriteLine();
+                var expected = new FunctionBody(Function, new string[] { ToDropSignature() }, GenerateFunction());
+
+                writer.WriteLine(expected.ToOwnershipCommand(schema.StoreOptions.OwnerName));
+            }
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)

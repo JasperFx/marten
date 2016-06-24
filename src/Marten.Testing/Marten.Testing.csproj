@@ -209,6 +209,7 @@
     <Compile Include="Schema\Identity\IdAssignerTests.cs" />
     <Compile Include="Schema\Identity\IdentityKeyGenerationTests.cs" />
     <Compile Include="Schema\Identity\NoOpIdGenerationTests.cs" />
+    <Compile Include="Schema\Identity\Sequences\hilo_configuration_overrides.cs" />
     <Compile Include="Schema\initial_data_loads_when_starting_up_the_document_store.cs" />
     <Compile Include="Schema\patch_writes_schema_ownership.cs" />
     <Compile Include="Schema\SchemaDiff_Generation_Tests.cs" />

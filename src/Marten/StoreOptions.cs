@@ -233,7 +233,7 @@ namespace Marten
         /// <summary>
         /// Optional. If set, adds the specified user as the owner of database tables created by Marten
         /// </summary>
-        public string DatabaseOwnerName { get; set; }
+        public string OwnerName { get; set; }
     }
 
     public class LinqCustomizations

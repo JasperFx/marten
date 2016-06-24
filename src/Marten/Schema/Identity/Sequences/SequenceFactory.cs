@@ -57,6 +57,12 @@ namespace Marten.Schema.Identity.Sequences
             writer.WriteLine(sqlScript);
             writer.WriteLine("");
             writer.WriteLine("");
+
+            if (schema.StoreOptions.OwnerName.IsNotEmpty())
+            {
+                writer.WriteLine($"ALTER TABLE {schema.StoreOptions.DatabaseSchemaName}.mt_hilo OWNER TO \"{schema.StoreOptions.OwnerName}\";");
+                writer.WriteLine($"ALTER FUNCTION {schema.StoreOptions.DatabaseSchemaName}.mt_get_next_hi(varchar) OWNER TO \"{schema.StoreOptions.OwnerName}\";");
+            }
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)
@@ -79,11 +85,18 @@ namespace Marten.Schema.Identity.Sequences
 
                 patch.Rollbacks.Drop(this, Table);
 
-                if (schema.StoreOptions.DatabaseOwnerName.IsNotEmpty())
-                {
-                    patch.Updates.Apply(this, $"ALTER TABLE {schema.StoreOptions.DatabaseSchemaName}.mt_hilo OWNER TO \"{schema.StoreOptions.DatabaseOwnerName}\";");
-                    patch.Updates.Apply(this, $"ALTER FUNCTION {schema.StoreOptions.DatabaseSchemaName}.mt_get_next_hi(varchar) OWNER TO \"{schema.StoreOptions.DatabaseOwnerName}\";");
-                }
+                writeOwnership(schema, patch);
+            }
+        }
+
+        private void writeOwnership(IDocumentSchema schema, SchemaPatch patch)
+        {
+            if (schema.StoreOptions.OwnerName.IsNotEmpty())
+            {
+                patch.Updates.Apply(this,
+                    $"ALTER TABLE {schema.StoreOptions.DatabaseSchemaName}.mt_hilo OWNER TO \"{schema.StoreOptions.OwnerName}\";");
+                patch.Updates.Apply(this,
+                    $"ALTER FUNCTION {schema.StoreOptions.DatabaseSchemaName}.mt_get_next_hi(varchar) OWNER TO \"{schema.StoreOptions.OwnerName}\";");
             }
         }
 
