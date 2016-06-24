@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Baseline;
 using Marten.Services;
 using Marten.Util;
 
@@ -77,6 +78,12 @@ namespace Marten.Schema.Identity.Sequences
                 patch.Updates.Apply(this, sqlScript);
 
                 patch.Rollbacks.Drop(this, Table);
+
+                if (schema.StoreOptions.DatabaseOwnerName.IsNotEmpty())
+                {
+                    patch.Updates.Apply(this, $"ALTER TABLE {schema.StoreOptions.DatabaseSchemaName}.mt_hilo OWNER TO \"{schema.StoreOptions.DatabaseOwnerName}\";");
+                    patch.Updates.Apply(this, $"ALTER FUNCTION {schema.StoreOptions.DatabaseSchemaName}.mt_get_next_hi(varchar) OWNER TO \"{schema.StoreOptions.DatabaseOwnerName}\";");
+                }
             }
         }
 

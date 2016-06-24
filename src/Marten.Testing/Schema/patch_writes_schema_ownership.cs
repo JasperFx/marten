@@ -135,5 +135,22 @@ namespace Marten.Testing.Schema
             patch.UpdateDDL.ShouldNotContain("ALTER FUNCTION events.mt_append_event(uuid, varchar, uuid[], varchar[], jsonb[]) OWNER TO \"george\";");
             patch.UpdateDDL.ShouldNotContain("ALTER FUNCTION events.mt_mark_event_progression(varchar, bigint) OWNER TO \"george\";");
         }
+
+        [Fact]
+        public void hilo_tables_get_ownership_if_schema_owner()
+        {
+            StoreOptions(_ =>
+            {
+                _.DatabaseOwnerName = "george";
+            });
+
+            var patch = theStore.Schema.ToPatch();
+
+            patch.UpdateDDL.ShouldContain("ALTER TABLE public.mt_hilo OWNER TO \"george\";");
+            patch.UpdateDDL.ShouldContain("ALTER FUNCTION public.mt_get_next_hi(varchar) OWNER TO \"george\";");
+
+
+
+        }
     }
 }
