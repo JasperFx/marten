@@ -6,10 +6,7 @@ namespace Marten.Testing.Schema
 {
     public class FunctionBodyTests
     {
-        [Fact]
-        public void derive_the_function_signature_from_the_body()
-        {
-            var body = @"
+        private string theFunctionBody = @"
 CREATE OR REPLACE FUNCTION public.mt_upsert_target(
     doc jsonb,
     docdotnettype character varying,
@@ -28,15 +25,55 @@ INSERT INTO public.mt_doc_target (""data"", ""mt_dotnet_type"", ""id"", ""mt_ver
   RETURN final_version;
 END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-ALTER FUNCTION public.mt_upsert_target(jsonb, character varying, uuid, uuid)
-  OWNER TO postgres;
+
 ";
 
-            var func = new FunctionBody(new FunctionName("public", "mt_upsert_target"), new string[0], body);
+        [Fact]
+        public void derive_the_function_signature_from_the_body()
+        {
+
+
+            var func = new FunctionBody(new FunctionName("public", "mt_upsert_target"), new string[0], theFunctionBody);
 
             func.Signature().ShouldBe("public.mt_upsert_target(jsonb, character varying, uuid, uuid)");
+        }
+
+
+        [Fact]
+        public void write_patch_without_designated_owner()
+        {
+            var func = new FunctionBody(new FunctionName("public", "mt_upsert_target"), new string[0], theFunctionBody);
+
+
+            var patch = new SchemaPatch();
+
+            var options = new StoreOptions {DatabaseOwnerName = null};
+
+            var diff = new FunctionDiff(func, null);
+
+            diff.WritePatch(options, patch);
+
+            patch.UpdateDDL.ShouldNotContain("OWNER TO");
+
+
+        }
+
+        [Fact]
+        public void write_patch_with_designated_owner()
+        {
+            var func = new FunctionBody(new FunctionName("public", "mt_upsert_target"), new string[0], theFunctionBody);
+
+
+            var patch = new SchemaPatch();
+
+            var options = new StoreOptions { DatabaseOwnerName = "bill" };
+
+            var diff = new FunctionDiff(func, null);
+
+            diff.WritePatch(options, patch);
+
+            patch.UpdateDDL.ShouldContain("ALTER FUNCTION public.mt_upsert_target(jsonb, character varying, uuid, uuid) OWNER TO \"bill\";");
+
         }
     }
 }

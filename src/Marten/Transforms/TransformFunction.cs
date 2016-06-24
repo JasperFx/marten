@@ -57,7 +57,7 @@ namespace Marten.Transforms
                 throw new InvalidOperationException(message);
             }
 
-            diff.WritePatch(patch);
+            diff.WritePatch(schema.StoreOptions, patch);
         }
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
@@ -83,7 +83,7 @@ namespace Marten.Transforms
 
             if (diff.AllNew || !diff.Actual.Body.Contains(Body))
             {
-                diff.WritePatch(patch);
+                diff.WritePatch(schema.StoreOptions, patch);
             }
         }
 

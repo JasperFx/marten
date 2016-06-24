@@ -4,14 +4,12 @@ using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Generation;
-using Marten.Util;
 
 namespace Marten.Schema
 {
     public class SchemaDiff
     {
         private readonly DocumentMapping _mapping;
-        private readonly SchemaObjects _existing;
 
         public SchemaDiff(SchemaObjects existing, DocumentMapping mapping)
         {
@@ -56,7 +54,6 @@ namespace Marten.Schema
                 FunctionDiff = new FunctionDiff(expectedFunction.ToBody(), existing.Function);
             }
 
-            _existing = existing;
             _mapping = mapping;
 
 
@@ -86,11 +83,11 @@ namespace Marten.Schema
         public readonly IList<string> IndexChanges = new List<string>();
         public readonly IList<string> IndexRollbacks = new List<string>();
 
-        public void CreatePatch(SchemaPatch patch)
+        public void CreatePatch(StoreOptions options, SchemaPatch patch)
         {
             TableDiff.CreatePatch(_mapping, patch);
 
-            FunctionDiff.WritePatch(patch);
+            FunctionDiff.WritePatch(options, patch);
 
             IndexChanges.Each(x => patch.Updates.Apply(this, x));
             IndexRollbacks.Each(x => patch.Rollbacks.Apply(this, x));

@@ -37,6 +37,8 @@ namespace Marten.Schema
             var parts = ParseQualifiedName(qualifiedName);
             return new FunctionName(parts[0], parts[1]);
         }
+
+
     }
 
     public abstract class QualifiedDatabaseName
@@ -92,5 +94,7 @@ namespace Marten.Schema
             }
             return parts;
         }
+
+
     }
 }

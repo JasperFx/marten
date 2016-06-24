@@ -159,7 +159,7 @@ namespace Marten.Schema
 
             if (diff.CanPatch())
             {
-                diff.CreatePatch(runner);
+                diff.CreatePatch(schema.StoreOptions, runner);
             }
             else if (autoCreateSchemaObjectsMode == AutoCreate.All)
             {
@@ -242,7 +242,7 @@ namespace Marten.Schema
             }
             else if (diff.CanPatch())
             {
-                diff.CreatePatch(patch);
+                diff.CreatePatch(schema.StoreOptions, patch);
             }
         }
 

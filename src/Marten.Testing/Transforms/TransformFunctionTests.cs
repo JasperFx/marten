@@ -66,6 +66,8 @@ namespace Marten.Testing.Transforms
         public void rebuilds_if_it_does_not_exist_in_the_schema_if_auto_create_is_all()
         {
             var schema = Substitute.For<IDocumentSchema>();
+            schema.StoreOptions.Returns(new StoreOptions());
+
             var dbobjects = Substitute.For<IDbObjects>();
             schema.DbObjects.Returns(dbobjects);
 
@@ -86,6 +88,7 @@ namespace Marten.Testing.Transforms
         public void rebuilds_if_it_does_not_exist_in_the_schema_if_auto_create_is_create_only()
         {
             var schema = Substitute.For<IDocumentSchema>();
+            schema.StoreOptions.Returns(new StoreOptions());
             var dbobjects = Substitute.For<IDbObjects>();
             schema.DbObjects.Returns(dbobjects);
 
@@ -107,6 +110,7 @@ namespace Marten.Testing.Transforms
         public void throws_exception_if_auto_create_is_none_and_the_function_does_not_exist()
         {
             var schema = Substitute.For<IDocumentSchema>();
+            schema.StoreOptions.Returns(new StoreOptions());
             var dbobjects = Substitute.For<IDbObjects>();
             schema.DbObjects.Returns(dbobjects);
 
@@ -127,6 +131,8 @@ namespace Marten.Testing.Transforms
         public void rebuilds_if_it_does_not_exist_in_the_schema_if_auto_create_is_create_or_update()
         {
             var schema = Substitute.For<IDocumentSchema>();
+            schema.StoreOptions.Returns(new StoreOptions());
+
             var dbobjects = Substitute.For<IDbObjects>();
             schema.DbObjects.Returns(dbobjects);
 

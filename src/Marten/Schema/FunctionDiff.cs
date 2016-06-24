@@ -18,7 +18,7 @@ namespace Marten.Schema
         public bool AllNew => Actual == null;
         public bool HasChanged => AllNew || !Expected.Body.CanonicizeSql().Equals(Actual.Body.CanonicizeSql(), StringComparison.OrdinalIgnoreCase);
 
-        public void WritePatch(SchemaPatch patch)
+        public void WritePatch(StoreOptions options, SchemaPatch patch)
         {
             if (AllNew)
             {
@@ -33,6 +33,8 @@ namespace Marten.Schema
 
                     patch.Rollbacks.Apply(this, drop);
                 });
+
+                writeOwnership(options, patch);
             }
             else if (HasChanged)
             {
@@ -52,7 +54,20 @@ namespace Marten.Schema
                 {
                     patch.Rollbacks.Apply(this, drop);
                 });
+
+                writeOwnership(options, patch);
             }
+        }
+
+        private void writeOwnership(StoreOptions options, SchemaPatch patch)
+        {
+            if (options.DatabaseOwnerName.IsEmpty()) return;
+
+
+
+            var ownership =
+                $"ALTER FUNCTION {Expected.Signature()} OWNER TO \"{options.DatabaseOwnerName}\";";
+            patch.Updates.Apply(this, ownership);
         }
 
         public override string ToString()

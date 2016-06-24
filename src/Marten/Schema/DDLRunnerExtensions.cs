@@ -26,13 +26,5 @@ namespace Marten.Schema
             }
         }
 
-        public static void OwnershipToFunction(this IDDLRunner runner, StoreOptions options, FunctionBody function)
-        {
-            if (options.DatabaseOwnerName.IsNotEmpty())
-            {
-                throw new NotImplementedException();
-                //runner.Apply(function, $"ALTER FUNCTION {function.Signature}  OWNER TO {options.DatabaseOwnerName};");
-            }
-        }
     }
 }

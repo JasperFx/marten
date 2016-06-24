@@ -35,7 +35,7 @@ namespace Marten.Schema
                 throw new InvalidOperationException($"{_function.QualifiedName} function is missing, but {nameof(StoreOptions.AutoCreateSchemaObjects)} is {autoCreateSchemaObjectsMode}");
             }
 
-            diff.WritePatch(patch);
+            diff.WritePatch(schema.StoreOptions, patch);
         }
 
         private FunctionDiff createFunctionDiff(IDocumentSchema schema)
@@ -71,7 +71,7 @@ namespace Marten.Schema
 
         public void WritePatch(IDocumentSchema schema, SchemaPatch patch)
         {
-            createFunctionDiff(schema).WritePatch(patch);
+            createFunctionDiff(schema).WritePatch(schema.StoreOptions, patch);
         }
 
         public string Name { get; }
