@@ -46,8 +46,7 @@ namespace Marten.Schema
 
             var expected = new FunctionBody(_function, new string[] { _dropSql }, expectedBody);
 
-            var diff = new FunctionDiff(expected, actual);
-            return diff;
+            return new FunctionDiff(expected, actual);
         }
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)

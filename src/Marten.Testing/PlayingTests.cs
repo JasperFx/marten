@@ -26,16 +26,7 @@ namespace Marten.Testing
             _output = output;
         }
 
-        public void run_st_spec()
-        {
-            using (var runner = new SpecRunner<NulloSystem>())
-            {
-                var results = runner.Run("Event Store/Event Capture/Version a stream as part of event capture");
 
-
-                runner.OpenResultsInBrowser();
-            }
-        }
 
         [Fact]
         public void can_generate_a_computed_index()

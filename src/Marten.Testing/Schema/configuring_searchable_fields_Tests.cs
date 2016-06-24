@@ -15,7 +15,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<Organization>();
             var duplicate = mapping.DuplicatedFields.Single(x => x.MemberName == "Time2");
 
-            duplicate.PgType.ShouldBe("timestamp without time zone");
+            duplicate.PgType.ShouldBe("timestamp with time zone");
         }
 
         [Fact]
@@ -31,7 +31,7 @@ namespace Marten.Testing.Schema
         public void can_override_with_MartenRegistry()
         {
             var storeOptions = new StoreOptions();
-            storeOptions.Schema.For<Organization>().Searchable(x => x.Time2, pgType: "timestamp");
+            storeOptions.Schema.For<Organization>().Duplicate(x => x.Time2, pgType: "timestamp");
 
             var schema = new DocumentSchema(storeOptions, null, new NulloMartenLogger());
 

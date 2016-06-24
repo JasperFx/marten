@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
@@ -10,34 +7,16 @@ using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema.Arguments;
 using Marten.Util;
-using Npgsql;
 using NpgsqlTypes;
-
 
 namespace Marten.Schema
 {
     public class DuplicatedField : Field, IField
     {
-        private string _columnName;
-        private readonly Func<Expression, object> _parseObject = expression => expression.Value();
-        private readonly EnumStorage _enumStorage;
         private readonly NpgsqlDbType _dbType;
-
-        public static DuplicatedField For<T>(EnumStorage enumStorage, Expression<Func<T, object>> expression)
-        {
-            var accessor = ReflectionHelper.GetAccessor(expression);
-
-            // Hokey, but it's just for testing for now.
-            if (accessor is PropertyChain)
-            {
-                throw new NotSupportedException("Not yet supporting deep properties yet. Soon.");
-            }
-
-
-            return new DuplicatedField(enumStorage, new MemberInfo[] {accessor.InnerProperty});
-
-            
-        }
+        private readonly EnumStorage _enumStorage;
+        private readonly Func<Expression, object> _parseObject = expression => expression.Value();
+        private string _columnName;
 
         public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath) : base(memberPath)
         {
@@ -45,12 +24,10 @@ namespace Marten.Schema
             _dbType = TypeMappings.ToDbType(MemberType);
 
 
-
             ColumnName = MemberName.ToTableAlias();
 
             if (MemberType.IsEnum)
             {
-
                 _parseObject = expression =>
                 {
                     var raw = expression.Value();
@@ -59,11 +36,24 @@ namespace Marten.Schema
 
                 _dbType = NpgsqlDbType.Varchar;
                 PgType = "varchar";
-
             }
-
-            
+            else if (MemberType.IsDateTime())
+            {
+                PgType = "timestamp with time zone";
+                _dbType = NpgsqlDbType.TimestampTZ;
+            }
         }
+
+        public DuplicatedFieldRole Role { get; set; } = DuplicatedFieldRole.Search;
+
+        public UpsertArgument UpsertArgument => new UpsertArgument
+        {
+            Arg = "arg_" + ColumnName.ToLower(),
+            Column = ColumnName.ToLower(),
+            PostgresType = PgType,
+            Members = Members,
+            DbType = _dbType
+        };
 
 
         public string ColumnName
@@ -87,7 +77,6 @@ namespace Marten.Schema
             var sqlLocator = jsonField.SqlLocator.Replace("d.", "");
 
             patch.Updates.Apply(mapping, $"update {mapping.Table.QualifiedName} set {ColumnName} = {sqlLocator};");
-
         }
 
         public object GetValue(Expression valueExpression)
@@ -100,25 +89,27 @@ namespace Marten.Schema
             return false;
         }
 
-        public DuplicatedFieldRole Role { get; set; } = DuplicatedFieldRole.Search;
 
-        public UpsertArgument UpsertArgument => new UpsertArgument
+        public string SqlLocator { get; private set; }
+
+        public static DuplicatedField For<T>(EnumStorage enumStorage, Expression<Func<T, object>> expression)
         {
-            Arg = "arg_" + ColumnName.ToLower(),
-            Column = ColumnName.ToLower(),
-            PostgresType = PgType,
-            Members = Members,
-            DbType = _dbType
-        };
+            var accessor = ReflectionHelper.GetAccessor(expression);
+
+            // Hokey, but it's just for testing for now.
+            if (accessor is PropertyChain)
+            {
+                throw new NotSupportedException("Not yet supporting deep properties yet. Soon.");
+            }
+
+
+            return new DuplicatedField(enumStorage, new MemberInfo[] {accessor.InnerProperty});
+        }
 
         // I say you don't need a ForeignKey 
         public virtual TableColumn ToColumn()
         {
             return new TableColumn(ColumnName, PgType);
         }
-
-
-        public string SqlLocator { get; private set; }
-
     }
 }

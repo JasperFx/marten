@@ -83,7 +83,7 @@ namespace Marten.Testing.Fixtures
             expression(x => x.Decimal <= 10);
             expression(x => x.Decimal >= 10);
 
-            var today = DateTime.Today;
+            var today = DateTime.Today.ToUniversalTime();
 
             expression(x => x.Date == today, "x.Date == Today");
             expression(x => x.Date != today, "x.Date != Today");
@@ -160,7 +160,11 @@ namespace Marten.Testing.Fixtures
 
                 });
 
-                _.Do(t => _session.Store(t));
+                _.Do(t =>
+                {
+                    t.Date = t.Date.ToUniversalTime();
+                    _session.Store(t);
+                });
             }).AsTable("If the documents are").After(() => _session.SaveChanges());
         }
 
@@ -169,8 +173,9 @@ namespace Marten.Testing.Fixtures
         {
             var expression = _wheres[WhereClause];
             var queryable = _session.Query<Target>().Where(expression);
-            var sql = queryable.ToCommand(FetchType.FetchMany).CommandText;
-            Debug.WriteLine(sql);
+            var command = queryable.ToCommand(FetchType.FetchMany);
+            var sql = command.CommandText;
+            Debug.WriteLine(sql + ", " + command.Parameters.Select(x => $"{x.ParameterName} = {x.Value}").Join(", "));
 
             Results = new ResultSet(queryable.ToArray().Select(x => _idToName[x.Id]).ToArray());
         }

@@ -127,5 +127,14 @@ namespace Marten.Util
 
             return "CAST({0} as {1})".ToFormat(locator, PgTypes[memberType]);
         }
+
+        public static bool IsDate(this object value)
+        {
+            if (value == null) return false;
+
+            var type = value.GetType();
+
+            return type == typeof(DateTime) || type == typeof(DateTime?);
+        }
     }
 }

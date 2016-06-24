@@ -39,7 +39,7 @@ namespace Marten.Testing.Schema
             var targets = Target.GenerateRandomData(10).ToArray();
             StoreOptions(_ =>
             {
-                _.Schema.For<Target>().Searchable(x => x.Inner.Date);
+                _.Schema.For<Target>().Duplicate(x => x.Inner.Date);
             });
 
             targets.Each(x => theSession.Store(x));

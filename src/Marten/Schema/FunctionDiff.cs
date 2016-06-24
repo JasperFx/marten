@@ -26,6 +26,11 @@ namespace Marten.Schema
 
                 Expected.DropStatements.Each(drop =>
                 {
+                    if (!drop.EndsWith("cascade", StringComparison.OrdinalIgnoreCase))
+                    {
+                        drop = drop.TrimEnd(';') + " cascade;";
+                    }
+
                     patch.Rollbacks.Apply(this, drop);
                 });
             }
@@ -33,6 +38,11 @@ namespace Marten.Schema
             {
                 Actual.DropStatements.Each(drop =>
                 {
+                    if (!drop.EndsWith("cascade", StringComparison.OrdinalIgnoreCase))
+                    {
+                        drop = drop.TrimEnd(';') + " cascade;";
+                    }
+
                     patch.Updates.Apply(this, drop);
                 });
 

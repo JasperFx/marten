@@ -159,12 +159,6 @@ namespace Marten
                 var visitor = new FindMembers();
                 visitor.Visit(expression);
 
-                var memberType = visitor.Members.Last().GetMemberType();
-                if (memberType == typeof(DateTime) || memberType == typeof(DateTime?))
-                {
-                    throw new ArgumentOutOfRangeException(nameof(expression), "Marten cannot support calculated indexes on DateTime fields yet, use Duplicate() for these fields");
-                }
-
                 alter = mapping =>
                 {
                     var index = new ComputedIndex(mapping, visitor.Members.ToArray());

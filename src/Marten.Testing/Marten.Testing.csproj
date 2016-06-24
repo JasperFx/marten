@@ -276,6 +276,7 @@
     <Compile Include="Session\get_raw_json_Tests.cs" />
     <Compile Include="StoreOptionsTests.cs" />
     <Compile Include="store_and_bulk_insert_by_mixed_bag_of_document_types_Tests.cs" />
+    <Compile Include="StorytellerHarness.cs" />
     <Compile Include="StringDoc.cs" />
     <Compile Include="TestingDocumentStore.cs" />
     <Compile Include="TrackingSession\document_session_load_already_loaded_document_Tests.cs" />

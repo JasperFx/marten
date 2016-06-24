@@ -152,7 +152,7 @@ namespace Marten.Testing.Transforms
 
 
 
-            patch.RollbackDDL.ShouldContain("DROP FUNCTION IF EXISTS public.mt_transform_get_fullname(JSONB);");
+            patch.RollbackDDL.ShouldContain("DROP FUNCTION IF EXISTS public.mt_transform_get_fullname(JSONB)");
         }
 
         [Fact]

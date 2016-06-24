@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Baseline;
+using Marten.Util;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,14 +18,14 @@ namespace Marten.Testing.Bugs
         }
 
         [Fact]
-        public void can_issue_queries_against_the_offset()
+        public void can_issue_queries_against_DateTime()
         {
 
 
             using (var session = theStore.LightweightSession())
             {
                 var now = DateTime.UtcNow.ToUniversalTime();
-                _output.WriteLine("now: " + now.ToString("F"));
+                _output.WriteLine("now: " + now.ToString("o"));
                 var testClass = new DateClass
                 {
                     Id = Guid.NewGuid(),
@@ -50,10 +51,20 @@ namespace Marten.Testing.Bugs
 
                 _output.WriteLine(cmd.CommandText);
 
+                var sql = "select public.mt_immutable_timestamp(d.data ->> \'DateTimeField\') as time from public.mt_doc_dateclass as d";
+
+                using (var reader = session.Connection.CreateCommand().Sql(sql).ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        _output.WriteLine("stored: " + reader.GetDateTime(0).ToString("o"));
+                    }
+                }
+
 
                 session.Query<DateClass>().ToList().Each(x =>
                 {
-                    _output.WriteLine(x.DateTimeField.ToString(""));
+                    _output.WriteLine(x.DateTimeField.ToString("o"));
                 });
 
                 session.Query<DateClass>()
@@ -63,13 +74,13 @@ namespace Marten.Testing.Bugs
         }
 
         [Fact]
-        public void can_issue_queries_against_the_offset_as_duplicated_column()
+        public void can_issue_queries_against_DateTime_as_duplicated_column()
         {
             StoreOptions(_ => _.Schema.For<DateClass>().Duplicate(x => x.DateTimeField));
 
             using (var session = theStore.LightweightSession())
             {
-                var now = DateTime.Now;
+                var now = DateTime.UtcNow;
                 _output.WriteLine("now: " + now.ToString("o"));
                 var testClass = new DateClass
                 {
