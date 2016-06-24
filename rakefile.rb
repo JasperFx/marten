@@ -1,6 +1,6 @@
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '0.9.10'
+BUILD_VERSION = '0.9.11'
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
