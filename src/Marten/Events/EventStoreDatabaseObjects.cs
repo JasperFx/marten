@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Baseline;
 using Marten.Generation;
 using Marten.Schema;
 using Marten.Services;
@@ -91,6 +92,23 @@ namespace Marten.Events
             patch.Updates.Apply(this, SchemaBuilder.GetSqlScript(_parent.DatabaseSchemaName, "mt_stream"));
 
             patch.Rollbacks.Drop(this, new TableName(schema.Events.DatabaseSchemaName, "mt_streams"));
+
+            writeOwnership(schema.StoreOptions, patch);
+        }
+
+        private void writeOwnership(StoreOptions options, SchemaPatch patch)
+        {
+            if (options.DatabaseOwnerName.IsEmpty()) return;
+
+            patch.Updates.Apply(this, $@"
+ALTER TABLE {options.Events.DatabaseSchemaName}.mt_streams OWNER TO ""{options.DatabaseOwnerName}"";
+ALTER TABLE {options.Events.DatabaseSchemaName}.mt_events OWNER TO ""{ options.DatabaseOwnerName}"";
+ALTER TABLE { options.Events.DatabaseSchemaName}.mt_event_progression OWNER TO ""{options.DatabaseOwnerName}"";
+ALTER SEQUENCE { options.Events.DatabaseSchemaName}.mt_events_sequence OWNER TO ""{options.DatabaseOwnerName}"";
+ALTER FUNCTION { options.Events.DatabaseSchemaName}.mt_append_event(uuid, varchar, uuid[], varchar[], jsonb[]) OWNER TO ""{options.DatabaseOwnerName}"";
+ALTER FUNCTION { options.Events.DatabaseSchemaName}.mt_mark_event_progression(varchar, bigint) OWNER TO ""{options.DatabaseOwnerName}"";
+
+            ".Trim());
         }
 
         public string Name { get; } = "eventstore";
