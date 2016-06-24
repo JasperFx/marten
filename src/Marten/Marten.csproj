@@ -164,6 +164,7 @@
     <Compile Include="Schema\DbObjects.cs" />
     <Compile Include="Schema\Arguments\DocJsonBodyArgument.cs" />
     <Compile Include="Schema\Arguments\DocTypeArgument.cs" />
+    <Compile Include="Schema\DDLRunnerExtensions.cs" />
     <Compile Include="Schema\DeleteStyle.cs" />
     <Compile Include="Schema\DocumentSchemaExtensions.cs" />
     <Compile Include="Schema\DocumentSchemaObjects.cs" />

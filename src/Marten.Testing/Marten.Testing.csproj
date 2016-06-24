@@ -204,6 +204,7 @@
     <Compile Include="Schema\DbObjectsTests.cs" />
     <Compile Include="Schema\deriving_delete_sql_for_document_type.cs" />
     <Compile Include="Schema\DocumentMapping_schema_patch_writing.cs" />
+    <Compile Include="Schema\FunctionBodyTests.cs" />
     <Compile Include="Schema\Identity\GuidIdGeneratorTests.cs" />
     <Compile Include="Schema\Identity\IdAssignerTests.cs" />
     <Compile Include="Schema\Identity\IdentityKeyGenerationTests.cs" />

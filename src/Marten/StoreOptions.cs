@@ -51,6 +51,7 @@ namespace Marten
         /// </summary>
         public AutoCreate AutoCreateSchemaObjects = AutoCreate.All;
 
+
         public StoreOptions()
         {
             Events = new EventGraph(this);
@@ -227,6 +228,12 @@ namespace Marten
 
 
         public readonly IList<IInitialData> InitialData = new List<IInitialData>();
+
+
+        /// <summary>
+        /// Optional. If set, adds the specified user as the owner of database tables created by Marten
+        /// </summary>
+        public string DatabaseOwnerName { get; set; }
     }
 
     public class LinqCustomizations
