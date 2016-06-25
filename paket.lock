@@ -61,7 +61,7 @@ NUGET
     NLog (4.3.4)
     Npgsql (3.0.4)
     NSubstitute (1.10)
-    Octokit (0.19)
+    Octokit (0.20)
       Microsoft.Net.Http  - framework: net10, net11, net20, net30, net35, net40, net40-full
     PagedList (1.17)
     Remotion.Linq (2.0.2)

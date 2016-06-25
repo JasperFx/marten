@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.Linq;
-using System.Security.Policy;
 using Octokit;
 
 namespace Marten.Testing.Github
@@ -17,7 +15,17 @@ namespace Marten.Testing.Github
             Message = commit.Commit.Message;
             if (commit.Author != null) Author = commit.Author.Id;
             if (commit.Files != null) Files = commit.Files.Select(x => new CommitFile(x)).ToArray();
+
+            Additions = commit.Stats.Additions;
+            Deletions = commit.Stats.Deletions;
+            Total = commit.Stats.Total;
         }
+
+        public int Total { get; set; }
+
+        public int Deletions { get; set; }
+
+        public int Additions { get; set; }
 
         public int Author { get; set; }
 
