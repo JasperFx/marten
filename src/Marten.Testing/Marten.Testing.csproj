@@ -53,6 +53,7 @@
     <Compile Include="Acceptance\select_with_transformation.cs" />
     <Compile Include="Acceptance\soft_deletes.cs" />
     <Compile Include="Acceptance\using_natural_identity_keys.cs" />
+    <Compile Include="AsyncDaemon\TestHarness.cs" />
     <Compile Include="auto_assign_missing_guid_ids_Tests.cs" />
     <Compile Include="Bugs\ability_to_persist_generic_types.cs" />
     <Compile Include="Bugs\ability_to_persist_nested_types_Tests.cs" />
@@ -320,6 +321,10 @@
     <Compile Include="Util\update_batch_Tests.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CodeTracker\CodeTracker.csproj">
+      <Project>{453068e2-5579-4450-b4e4-dfe129970b0f}</Project>
+      <Name>CodeTracker</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj">
       <Project>{ee53c3d3-65ae-42ef-92f4-116e8d6889dd}</Project>
       <Name>Marten.Testing.OtherAssembly</Name>

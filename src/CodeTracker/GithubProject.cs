@@ -3,68 +3,35 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten;
 using Newtonsoft.Json;
 using Octokit;
 using FileMode = System.IO.FileMode;
 
 namespace CodeTracker
 {
-    public class GithubDataRecorder
-    {
-        private readonly GitHubClient _client;
-        private readonly string _directory;
-
-        public GithubDataRecorder(Credentials credentials, string directory)
-        {
-            _directory = directory;
-            _client = new GitHubClient(new ProductHeaderValue("marten-testing")) {Credentials = credentials};
-        }
-
-        public async Task RecordProject(string organization, string projectName)
-        {
-            Debug.WriteLine($"Starting to fetch {organization}/{projectName}");
-
-            var repository = await _client.Repository.Get(organization, projectName).ConfigureAwait(false);
-
-            var project = new GithubProject(organization, projectName, repository.CreatedAt);
-
-            var issues = await _client.Issue.GetAllForRepository(organization, projectName).ConfigureAwait(false);
-
-            foreach (var issue in issues)
-            {
-                project.RecordIssue(issue);
-            }
-
-            Debug.WriteLine($"Done with issues for {organization}/{projectName}");
-
-
-            var commits = await _client.Repository.Commit.GetAll(organization, projectName, new ApiOptions {PageSize = 100, PageCount = 10}).ConfigureAwait(false);
-
-            foreach (var commit in commits)
-            {
-                var full =
-                    await _client.Repository.Commit.Get(organization, projectName, commit.Sha).ConfigureAwait(false);
-
-                project.RecordCommit(commit, full.Stats);
-            }
-
-            project.SaveTo(_directory);
-
-            Debug.WriteLine($"Persisted {organization}/{projectName}");
-        }
-
-
-    }
-
-
     public class GithubProject
     {
         private static readonly Random _random = new Random();
 
         private readonly IList<Timestamped> _events = new List<Timestamped>();
 
+        public static GithubProject LoadFrom(string file)
+        {
+            var serializer = new JsonSerializer
+            {
+                TypeNameHandling = TypeNameHandling.All
+            };
+
+            var json = new FileSystem().ReadStringFromFile(file);
+
+            return serializer.Deserialize<GithubProject>(new JsonTextReader(new StringReader(json)));
+
+
+        }
 
         public GithubProject()
         {
@@ -82,6 +49,8 @@ namespace CodeTracker
                 Timestamp = createdAt
             });
         }
+
+        public readonly Guid Id = Guid.NewGuid();
 
 
         public string OrganizationName { get; set; }
@@ -140,7 +109,10 @@ namespace CodeTracker
 
             using (var stream = new FileStream(file, FileMode.Create))
             {
-                serializer.Serialize(new JsonTextWriter(new StreamWriter(stream)), this);
+                var writer = new StreamWriter(stream);
+                serializer.Serialize(new JsonTextWriter(writer), this);
+
+                writer.Flush();
             }
         }
 
@@ -156,6 +128,31 @@ namespace CodeTracker
             };
 
             _events.Add(@event);
+        }
+
+        public async Task PublishEvents(IDocumentStore store, int pause)
+        {
+            var events = Events.OrderBy(x => x.Timestamp).ToArray();
+
+
+            var index = 0;
+            var page = events.Skip(index).Take(10).ToArray();
+
+            while (page.Length > 0)
+            {
+                using (var session = store.LightweightSession())
+                {
+                    session.Events.Append(Id, page);
+                    await session.SaveChangesAsync().ConfigureAwait(false);
+                }
+
+                index += 10;
+
+                page = events.Skip(index).Take(10).ToArray();
+
+                Thread.Sleep(pause);
+            }
+
         }
     }
 }

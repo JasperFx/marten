@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="ActiveProject.cs" />
     <Compile Include="BigBangRecorder.cs" />
+    <Compile Include="GithubDataRecorder.cs" />
     <Compile Include="UserAction.cs" />
     <Compile Include="CommitView.cs" />
     <Compile Include="Events.cs" />
