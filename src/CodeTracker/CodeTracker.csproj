@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CodeTracker</RootNamespace>
     <AssemblyName>CodeTracker</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,9 +41,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Aggregates.cs" />
+    <Compile Include="ActiveProject.cs" />
+    <Compile Include="BigBangRecorder.cs" />
+    <Compile Include="UserAction.cs" />
+    <Compile Include="CommitView.cs" />
     <Compile Include="Events.cs" />
     <Compile Include="GithubProject.cs" />
+    <Compile Include="IssueState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

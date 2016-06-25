@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 
 namespace Marten.Events.Projections
 {
@@ -16,20 +15,18 @@ namespace Marten.Events.Projections
 
         public void Apply(IDocumentSession session, EventStream[] streams)
         {
-            streams
-                .SelectMany(x => x.Events)
-                .OfType<Event<TEvent>>()
-                .Select(x => _transform.Transform(x))
-                .Each(x => session.Store(x));
+            foreach (var stream in streams)
+            {
+                foreach (var @event in stream.Events.OfType<Event<TEvent>>())
+                {
+                    session.Store(_transform.Transform(stream, @event));
+                }
+            }
         }
 
         public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
         {
-            streams
-                .SelectMany(x => x.Events)
-                .OfType<Event<TEvent>>()
-                .Select(x => _transform.Transform(x))
-                .Each(x => session.Store(x));
+            Apply(session, streams);
 
             return Task.CompletedTask;
         }

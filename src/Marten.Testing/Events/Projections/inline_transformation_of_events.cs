@@ -110,7 +110,7 @@ namespace Marten.Testing.Events.Projections
     // SAMPLE: MonsterDefeatedTransform
     public class MonsterDefeatedTransform : ITransform<MonsterSlayed, MonsterDefeated>
     {
-        public MonsterDefeated Transform(Event<MonsterSlayed> input)
+        public MonsterDefeated Transform(EventStream stream, Event<MonsterSlayed> input)
         {
             return new MonsterDefeated
             {
