@@ -84,12 +84,14 @@
     <Compile Include="Events\get_committed_events_from_listener_Tests.cs" />
     <Compile Include="Events\marking_stream_as_isnew_on_capture.cs" />
     <Compile Include="Events\patch_writing.cs" />
+    <Compile Include="Events\Projections\AggregationProjectionTests.cs" />
     <Compile Include="Events\Projections\AggregationStepTests.cs" />
     <Compile Include="Events\Projections\AggregatorTests.cs" />
     <Compile Include="Events\Projections\Async\StagedEventDataTests.cs" />
     <Compile Include="Events\Projections\inline_aggregation_by_stream_with_multiples.cs" />
     <Compile Include="Events\Projections\inline_transformation_of_events.cs" />
     <Compile Include="Events\Projections\MonsterSlayed.cs" />
+    <Compile Include="Events\Projections\OneForOneProjectionTests.cs" />
     <Compile Include="Events\Projections\QuestParty.cs" />
     <Compile Include="Events\Projections\AggregateFinderTests.cs" />
     <Compile Include="Examples\event_store_quickstart.cs" />

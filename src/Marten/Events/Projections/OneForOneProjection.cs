@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,6 +12,9 @@ namespace Marten.Events.Projections
         public OneForOneProjection(ITransform<TEvent, TView> transform)
         {
             _transform = transform;
+
+            Consumes = new[] {typeof(TEvent)};
+            Produces = new[] {typeof(TView)};
         }
 
         public void Apply(IDocumentSession session, EventStream[] streams)
@@ -30,5 +34,8 @@ namespace Marten.Events.Projections
 
             return Task.CompletedTask;
         }
+
+        public Type[] Consumes { get; }
+        public Type[] Produces { get; }
     }
 }

@@ -43,6 +43,8 @@ namespace Marten.Events.Projections
             return state;
         }
 
+        public Type[] EventTypes => _aggregations.Keys.ToArray();
+
         public Aggregator<T> Add<TEvent>(IAggregation<T, TEvent> aggregation)
         {
             if (_aggregations.ContainsKey(typeof (TEvent)))

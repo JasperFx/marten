@@ -12,6 +12,12 @@ namespace Marten.Testing.Events.Projections
         private readonly Aggregator<QuestParty> theAggregator = new Aggregator<QuestParty>();
 
         [Fact]
+        public void event_types()
+        {
+            theAggregator.EventTypes.ShouldHaveTheSameElementsAs(typeof(MembersJoined), typeof(MembersDeparted), typeof(QuestStarted));
+        }
+
+        [Fact]
         public void can_derive_steps_for_apply_methods()
         {
             theAggregator.AggregatorFor<MembersJoined>().ShouldNotBeNull();

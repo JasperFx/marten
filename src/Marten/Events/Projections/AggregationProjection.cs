@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,6 +46,8 @@ namespace Marten.Events.Projections
             }
         }
 
+        public Type[] Consumes => _aggregator.EventTypes;
+        public Type[] Produces => new[] {typeof(T)};
 
 
         public EventStream[] MatchingStreams(EventStream[] streams)
