@@ -87,6 +87,7 @@
     <Compile Include="Events\Projections\AggregationProjectionTests.cs" />
     <Compile Include="Events\Projections\AggregationStepTests.cs" />
     <Compile Include="Events\Projections\AggregatorTests.cs" />
+    <Compile Include="Events\Projections\Async\AccumulatorTests.cs" />
     <Compile Include="Events\Projections\Async\EventProgressWriteTests.cs" />
     <Compile Include="Events\Projections\Async\StagedEventDataTests.cs" />
     <Compile Include="Events\Projections\inline_aggregation_by_stream_with_multiples.cs" />

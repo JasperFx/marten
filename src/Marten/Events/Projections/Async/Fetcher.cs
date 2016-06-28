@@ -12,7 +12,7 @@ namespace Marten.Events.Projections.Async
 
     public interface IFetcher
     {
-        void Start();
+        void Start(IEventPageWorker worker);
         Task Pause();
         Task Stop();
         FetcherState State { get; }
@@ -21,7 +21,6 @@ namespace Marten.Events.Projections.Async
     public class Fetcher : IDisposable, IFetcher
     {
         private readonly IStagedEventData _eventData;
-        private readonly IEventPageWorker _worker;
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private FetcherState _state;
         private Task _fetchingTask;
@@ -29,14 +28,13 @@ namespace Marten.Events.Projections.Async
         private long _lastEncountered = 0;
         private Task _reset;
 
-        public Fetcher(IStagedEventData eventData, IEventPageWorker worker)
+        public Fetcher(IStagedEventData eventData)
         {
             _eventData = eventData;
-            _worker = worker;
             _state = FetcherState.Waiting;
         }
 
-        public void Start()
+        public void Start(IEventPageWorker worker)
         {
             _lock.Write(() =>
             {
@@ -51,12 +49,12 @@ namespace Marten.Events.Projections.Async
                         if (page.Count == 0)
                         {
                             // TODO -- make the cooldown time be configurable
-                            _reset = Task.Delay(1.Seconds(), _cancellation.Token).ContinueWith(t => Start());
+                            _reset = Task.Delay(1.Seconds(), _cancellation.Token).ContinueWith(t => Start(worker));
                             _state = FetcherState.Waiting;
                         }
                         else
                         {
-                            _worker.Receive(page);
+                            worker.Receive(page);
                         }
 
                         

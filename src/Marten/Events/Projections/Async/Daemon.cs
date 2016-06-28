@@ -9,40 +9,37 @@ namespace Marten.Events.Projections.Async
     {
         IProjectionTrack TrackFor(string viewType);
 
-        IProjectionTrack[] FirstLevelTracks { get; }
+        IProjectionTrack[] CoordinatedTracks { get; }
+
+        IProjectionTrack[] AllTracks { get; }
+
+        IProjectionTrack[] SelfGoverningTracks { get; set; }
     }
 
 
     // Will have a stream that feeds into Daemon
     public class Daemon
     {
+        private readonly IFetcher _fetcher;
         private readonly IDictionary<string, ProjectionTrack> _tracks = new ConcurrentDictionary<string, ProjectionTrack>();
 
         // Should do this as a linked list. Make EventPage have a next?
 
-        public Daemon(IDocumentStore store, IFetcher fetcher, IEnumerable<IProjection> projections)
+        public Daemon(IDocumentStore store, IFetcher fetcher, IActiveProjections projections)
         {
-            foreach (var projection in projections)
-            {
-                
-            }
+            _fetcher = fetcher;
         }
 
         public void Start()
         {
-            
+            //_fetcher.Start();
         }
 
         
 
-        public EventPage First { get; }
 
-        public EventPage Last { get; }
 
-        public int CachedEventCount
-        {
-            get { throw new NotImplementedException(); }
-        }
+
 
         public Task CachePage(EventPage page)
         {
