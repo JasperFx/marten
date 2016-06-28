@@ -62,33 +62,6 @@ namespace Marten.Testing.Events.Projections.Async
         }
 
         [Fact]
-        public async Task can_register_progress_initial()
-        {
-            using (var data = new StagedEventData(theOptions, new ConnectionSource(), new EventGraph(new StoreOptions()), new TestsSerializer()) )
-            {
-                await data.RegisterProgress(111).ConfigureAwait(false);
-
-                var lastEncountered = await data.LastEventProgression().ConfigureAwait(false);
-
-                lastEncountered.ShouldBe(111);
-            }
-        }
-
-        [Fact]
-        public async Task can_register_subsequent_progress()
-        {
-            using (var data = new StagedEventData(theOptions, new ConnectionSource(), new EventGraph(new StoreOptions()), new TestsSerializer()))
-            {
-                await data.RegisterProgress(111).ConfigureAwait(false);
-                await data.RegisterProgress(211).ConfigureAwait(false);
-
-                var lastEncountered = await data.LastEventProgression().ConfigureAwait(false);
-
-                lastEncountered.ShouldBe(211);
-            }
-        }
-
-        [Fact]
         public async Task smoke_test_able_to_fetch_a_page_of_events()
         {
             var list = new List<MembersJoined>();

@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Events.Projections.Async;
 using Marten.Linq.QueryHandlers;
 using Marten.Patching;
 using Marten.Services;
@@ -147,6 +148,13 @@ namespace Marten
         /// <param name="id"></param>
         /// <returns></returns>
         IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> where);
+
+        /// <summary>
+        /// Catch all mechanism to add additional database calls to the batched
+        /// updates in SaveChanges()/SaveChangesAsync()
+        /// </summary>
+        /// <param name="storageOperation"></param>
+        void QueueOperation(IStorageOperation storageOperation);
     }
 
     public interface ILoadByKeys<TDoc>

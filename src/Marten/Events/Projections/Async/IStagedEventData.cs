@@ -6,8 +6,6 @@ namespace Marten.Events.Projections.Async
     {
         Task<long> LastEventProgression();
 
-        Task RegisterProgress(long lastEncountered);
-
 
         Task<EventPage> FetchNextPage(long lastEncountered);
     }

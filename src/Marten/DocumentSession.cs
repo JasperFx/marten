@@ -228,6 +228,11 @@ namespace Marten
             return new PatchExpression<T>(fragment, _schema, _unitOfWork);
         }
 
+        public void QueueOperation(IStorageOperation storageOperation)
+        {
+            _unitOfWork.Add(storageOperation);
+        }
+
         private void applyProjections()
         {
             var projections = _schema.Events.As<IProjections>();

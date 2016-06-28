@@ -66,18 +66,6 @@ namespace Marten.Events.Projections.Async
             }
         }
 
-        public async Task RegisterProgress(long lastEncountered)
-        {
-            var cmd = _conn.CreateCommand()
-                .CallsSproc(_sproc)
-                .With("name", _options.Name, NpgsqlDbType.Varchar)
-                .With("last_encountered", lastEncountered);
-
-
-            await cmd.ExecuteNonQueryAsync(Cancellation).ConfigureAwait(false);
-
-            LastEncountered = lastEncountered;
-        }
 
         public async Task<EventPage> FetchNextPage(long lastEncountered)
         {
