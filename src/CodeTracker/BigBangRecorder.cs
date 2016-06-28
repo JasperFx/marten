@@ -10,7 +10,7 @@ namespace CodeTracker
         {
             var directory = AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory();
 
-            var recorder = new GithubDataRecorder(new Credentials("YOURUSERNAME", "YOURPASSWORD"), directory);
+            var recorder = new GithubDataRecorder(new Credentials("jeremydmiller", "Jasper1974"), directory);
 
 
             //recorder.RecordProject("JasperFx", "alba").Wait();
@@ -19,8 +19,12 @@ namespace CodeTracker
             //recorder.RecordProject("DarthFubuMVC", "fubucore").Wait();
             //recorder.RecordProject("DarthFubuMVC", "bottles").Wait();
             //recorder.RecordProject("DarthFubuMVC", "fubuvalidation").Wait();
-            recorder.RecordProject("structuremap", "structuremap").Wait();
-            recorder.RecordProject("structuremap", "structuremap.dnx").Wait();
+            recorder.RecordProject("DarthFubuMVC", "fuburake").Wait();
+            recorder.RecordProject("DarthFubuMVC", "fubu").Wait();
+            recorder.RecordProject("DarthFubuMVC", "fubucsprojfile").Wait();
+            recorder.RecordProject("DarthFubuMVC", "fubumvc").Wait();
+            //recorder.RecordProject("structuremap", "structuremap").Wait();
+            //recorder.RecordProject("structuremap", "structuremap.dnx").Wait();
         }
     }
 }

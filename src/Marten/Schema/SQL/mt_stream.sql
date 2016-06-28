@@ -1,4 +1,6 @@
-﻿DROP TABLE IF EXISTS {databaseSchema}.mt_streams CASCADE;
+﻿
+
+DROP TABLE IF EXISTS {databaseSchema}.mt_streams CASCADE;
 CREATE TABLE {databaseSchema}.mt_streams (
 	id					uuid CONSTRAINT pk_mt_streams PRIMARY KEY,
 	type				varchar(100) NULL,
@@ -66,7 +68,6 @@ BEGIN
 	end loop;
 
 	update {databaseSchema}.mt_streams set version = event_version, timestamp = now() where id = stream;
-
 
 	return return_value;
 END
