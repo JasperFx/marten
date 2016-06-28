@@ -101,6 +101,9 @@ namespace Marten.Testing.Acceptance
             // Toggle whether or not the index is a UNIQUE
             // index
             x.IsUnique = true;
+
+            // Partial index by supplying a condition
+            x.Where = "(data ->> 'Number')::int > 10";
         });
     });
             // ENDSAMPLE
