@@ -8,24 +8,26 @@ namespace Marten.Events.Projections.Async
 {
     public class Daemon : IEventPageWorker, IDisposable
     {
-        private readonly Accumulator _accumulator = new Accumulator();
+        private readonly DaemonOptions _options;
         private readonly IFetcher _fetcher;
         private readonly IActiveProjections _projections;
-        private ActionBlock<IDaemonUpdate> _updateBlock;
 
 
-        public Daemon(IFetcher fetcher, IActiveProjections projections)
+        public Daemon(DaemonOptions options, IFetcher fetcher, IActiveProjections projections)
         {
+            _options = options;
             _fetcher = fetcher;
             _projections = projections;
         }
 
         public void Start()
         {
-            _updateBlock = new ActionBlock<IDaemonUpdate>(msg => msg.Invoke(this));
-            _projections.StartTracks(_updateBlock);
+            UpdateBlock = new ActionBlock<IDaemonUpdate>(msg => msg.Invoke(this));
+            _projections.StartTracks(UpdateBlock);
             _fetcher.Start(this, true);
         }
+
+        public ActionBlock<IDaemonUpdate> UpdateBlock { get; private set; }
 
         public async Task Stop()
         {
@@ -34,13 +36,14 @@ namespace Marten.Events.Projections.Async
             await _projections.StopAll().ConfigureAwait(false);
         }
 
+        public Accumulator Accumulator { get; } = new Accumulator();
 
         public async Task CachePage(EventPage page)
         {
-            _accumulator.Store(page);
+            Accumulator.Store(page);
 
             // TODO -- make the threshold be configurable
-            if (_accumulator.CachedEventCount > 10000)
+            if (Accumulator.CachedEventCount > _options.MaximumStagedEventCount)
             {
                 await _fetcher.Pause().ConfigureAwait(false);
             }
@@ -64,7 +67,7 @@ namespace Marten.Events.Projections.Async
 
         void IEventPageWorker.QueuePage(EventPage page)
         {
-            _updateBlock.Post(new CachePageUpdate(page));
+            UpdateBlock.Post(new CachePageUpdate(page));
         }
 
         void IEventPageWorker.Finished(long lastEncountered)
@@ -75,7 +78,7 @@ namespace Marten.Events.Projections.Async
 
         public void Dispose()
         {
-            _updateBlock.Complete();
+            UpdateBlock.Complete();
             _projections.Dispose();
         }
 

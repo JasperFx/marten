@@ -13,7 +13,7 @@ namespace Marten.Testing.Events.Projections.Async
 {
     public class StagedEventDataTests : IntegratedFixture
     {
-        private readonly StagedEventOptions theOptions = new StagedEventOptions {Name = "something", EventTypeNames = new [] {"members_joined"}};
+        private readonly DaemonOptions theOptions = new DaemonOptions {Name = "something", EventTypeNames = new [] {"members_joined"}};
 
         public StagedEventDataTests()
         {

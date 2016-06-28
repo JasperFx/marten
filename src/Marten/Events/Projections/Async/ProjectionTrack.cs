@@ -9,6 +9,7 @@ namespace Marten.Events.Projections.Async
 {
     // Some tracks will be passive, others actively fetching until they're done
 
+    // Tested through integration tests
     public class ProjectionTrack : IProjectionTrack
     {
         private readonly CancellationTokenSource _cancellation;

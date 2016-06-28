@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
-using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
@@ -16,16 +14,15 @@ namespace Marten.Events.Projections.Async
     {
         private readonly NpgsqlConnection _conn;
         private readonly EventGraph _events;
-        private readonly StagedEventOptions _options;
+        private readonly NulloIdentityMap _map;
         private readonly EventSelector _selector;
 
         public readonly CancellationToken Cancellation = new CancellationToken();
-        private readonly NulloIdentityMap _map;
 
-        public StagedEventData(StagedEventOptions options, IConnectionFactory factory, EventGraph events,
+        public StagedEventData(DaemonOptions options, IConnectionFactory factory, EventGraph events,
             ISerializer serializer)
         {
-            _options = options;
+            Options = options;
             _events = events;
             _conn = factory.Create();
 
@@ -35,7 +32,7 @@ namespace Marten.Events.Projections.Async
             _map = new NulloIdentityMap(serializer);
         }
 
-        public StagedEventOptions Options => _options;
+        public DaemonOptions Options { get; }
 
 
         public string[] EventTypeNames { get; set; } = new string[0];
@@ -50,20 +47,20 @@ namespace Marten.Events.Projections.Async
         }
 
 
-
         public async Task<EventPage> FetchNextPage(long lastEncountered)
         {
-            var lastPossible = lastEncountered + _options.PageSize;
-            var sql = $@"
+            var lastPossible = lastEncountered + Options.PageSize;
+            var sql =
+                $@"
 select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
-{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) order by seq_id;       
+{_selector
+                    .ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) order by seq_id;       
 ";
 
             var cmd = _conn.CreateCommand(sql)
                 .With("last", lastEncountered)
                 .With("limit", lastPossible)
-                .With("types", _options.EventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
-
+                .With("types", Options.EventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
 
 
             long furthestExtant;
@@ -83,14 +80,13 @@ select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
             }
 
 
-            var streams = events.GroupBy(x => x.StreamId).Select(group =>
-            {
-                return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
-            }).ToArray();
+            var streams =
+                events.GroupBy(x => x.StreamId)
+                    .Select(
+                        group => { return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false); })
+                    .ToArray();
 
             return new EventPage(lastEncountered, furthestExtant, streams) {Count = events.Count};
         }
-
-
     }
 }

@@ -19,7 +19,7 @@ namespace Marten.Events.Projections.Async
         private readonly TaskCompletionSource<long> _completion = new TaskCompletionSource<long>();
         private long _lastEncountered;
 
-        public CompleteRebuild(StagedEventOptions options, IDocumentStore store, IProjection projection)
+        public CompleteRebuild(DaemonOptions options, IDocumentStore store, IProjection projection)
         {
             _store = store;
             _projection = projection;
