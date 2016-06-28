@@ -18,8 +18,6 @@ namespace Marten.Events.Projections.Async
 
         public async Task ExecutePage(EventPage page, CancellationToken cancellation)
         {
-            // TODO -- track the From and To, make sure we don't have any gaps. From would need to be equal to Last
-
             await _projection.ApplyAsync(_session, page.Streams, cancellation).ConfigureAwait(false);
 
             _session.QueueOperation(new EventProgressWrite(_events, _projection.Produces.FullName, page.To));

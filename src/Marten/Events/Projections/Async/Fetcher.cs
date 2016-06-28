@@ -10,7 +10,15 @@ namespace Marten.Events.Projections.Async
         void Receive(EventPage page);
     }
 
-    public class Fetcher : IDisposable
+    public interface IFetcher
+    {
+        void Start();
+        Task Pause();
+        Task Stop();
+        FetcherState State { get; }
+    }
+
+    public class Fetcher : IDisposable, IFetcher
     {
         private readonly IStagedEventData _eventData;
         private readonly IEventPageWorker _worker;
@@ -19,6 +27,7 @@ namespace Marten.Events.Projections.Async
         private Task _fetchingTask;
         private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
         private long _lastEncountered = 0;
+        private Task _reset;
 
         public Fetcher(IStagedEventData eventData, IEventPageWorker worker)
         {
@@ -38,7 +47,19 @@ namespace Marten.Events.Projections.Async
                     while (!_cancellation.IsCancellationRequested && _state == FetcherState.Active)
                     {
                         var page = await _eventData.FetchNextPage(_lastEncountered).ConfigureAwait(false);
-                        _worker.Receive(page);
+
+                        if (page.Count == 0)
+                        {
+                            // TODO -- make the cooldown time be configurable
+                            _reset = Task.Delay(1.Seconds(), _cancellation.Token).ContinueWith(t => Start());
+                            _state = FetcherState.Waiting;
+                        }
+                        else
+                        {
+                            _worker.Receive(page);
+                        }
+
+                        
                     }
                 }, _cancellation.Token);
             });
