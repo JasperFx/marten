@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using CodeTracker;
 using Marten.Events;
 using Marten.Events.Projections.Async;
 using NSubstitute;
@@ -77,6 +78,47 @@ namespace Marten.Testing.Events.Projections.Async
             theProjections.Received().StopAll();
         }
 
+    }
+
+    public class when_storing_progress : DaemonContext
+    {
+        [Fact]
+        public async Task store_progress_removes_obsolete_page()
+        {
+            var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
+            var thePage2 = new EventPage(101, 200, new EventStream[0]) { Count = 100 };
+            await theDaemon.CachePage(thePage).ConfigureAwait(false);
+            await theDaemon.CachePage(thePage2).ConfigureAwait(false);
+
+            projection1.LastEncountered.Returns(100);
+            projection2.LastEncountered.Returns(100);
+            projection3.LastEncountered.Returns(100);
+            projection4.LastEncountered.Returns(100);
+            projection5.LastEncountered.Returns(100);
+
+            await theDaemon.StoreProgress(typeof(ActiveProject), thePage).ConfigureAwait(false);
+
+            theDaemon.Accumulator.AllPages().Single()
+                .ShouldBe(thePage2);
+        }
+
+        public async Task should_restart_the_fetcher_if_it_was_paused_and_below_the_threshold()
+        {
+            theFetcher.State.Returns(FetcherState.Paused);
+
+            var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
+            await theDaemon.CachePage(thePage).ConfigureAwait(false);
+
+            projection1.LastEncountered.Returns(100);
+            projection2.LastEncountered.Returns(100);
+            projection3.LastEncountered.Returns(100);
+            projection4.LastEncountered.Returns(100);
+            projection5.LastEncountered.Returns(100);
+
+            await theDaemon.StoreProgress(typeof(ActiveProject), thePage).ConfigureAwait(false);
+
+            theFetcher.Received().Start(theDaemon, true);
+        }
     }
 
 

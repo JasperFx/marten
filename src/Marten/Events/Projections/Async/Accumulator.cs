@@ -41,7 +41,7 @@ namespace Marten.Events.Projections.Async
 
         public void Prune(long eventFloor)
         {
-            while (First.To <= eventFloor)
+            while (First != null && First.To <= eventFloor)
             {
                 First = First.Next;
             }
