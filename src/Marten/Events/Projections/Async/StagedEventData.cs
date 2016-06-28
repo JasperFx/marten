@@ -18,7 +18,6 @@ namespace Marten.Events.Projections.Async
         private readonly EventGraph _events;
         private readonly StagedEventOptions _options;
         private readonly EventSelector _selector;
-        private readonly FunctionName _sproc;
 
         public readonly CancellationToken Cancellation = new CancellationToken();
         private readonly NulloIdentityMap _map;
@@ -34,8 +33,6 @@ namespace Marten.Events.Projections.Async
 
             _selector = new EventSelector(events, serializer);
             _map = new NulloIdentityMap(serializer);
-
-            _sproc = new FunctionName(events.DatabaseSchemaName, "mt_mark_event_progression");
         }
 
         public StagedEventOptions Options => _options;
@@ -75,7 +72,7 @@ select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
 {_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) order by seq_id;       
 ";
 
-            var cmd = _conn.CreateCommand().Sql(sql)
+            var cmd = _conn.CreateCommand(sql)
                 .With("last", lastEncountered)
                 .With("limit", lastPossible)
                 .With("types", _options.EventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
@@ -102,7 +99,7 @@ select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
                 return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
             }).ToArray();
 
-            return new EventPage(lastEncountered, furthestExtant, streams);
+            return new EventPage(lastEncountered, furthestExtant, streams) {Count = events.Count};
         }
 
 

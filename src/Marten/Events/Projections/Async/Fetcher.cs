@@ -1,0 +1,96 @@
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Baseline;
+
+namespace Marten.Events.Projections.Async
+{
+    public interface IEventPageWorker
+    {
+        void Receive(EventPage page);
+    }
+
+    public class Fetcher : IDisposable
+    {
+        private readonly IStagedEventData _eventData;
+        private readonly IEventPageWorker _worker;
+        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
+        private FetcherState _state;
+        private Task _fetchingTask;
+        private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
+        private long _lastEncountered = 0;
+
+        public Fetcher(IStagedEventData eventData, IEventPageWorker worker)
+        {
+            _eventData = eventData;
+            _worker = worker;
+            _state = FetcherState.Waiting;
+        }
+
+        public void Start()
+        {
+            _lock.Write(() =>
+            {
+                if (_state == FetcherState.Active) return;
+
+                _fetchingTask = Task.Factory.StartNew(async () =>
+                {
+                    while (!_cancellation.IsCancellationRequested && _state == FetcherState.Active)
+                    {
+                        var page = await _eventData.FetchNextPage(_lastEncountered).ConfigureAwait(false);
+                        _worker.Receive(page);
+                    }
+                }, _cancellation.Token);
+            });
+        }
+
+
+        public async Task Pause()
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                _state = FetcherState.Paused;
+
+                await _fetchingTask.ConfigureAwait(false);
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
+        public async Task Stop()
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                _state = FetcherState.Waiting;
+
+                await _fetchingTask.ConfigureAwait(false);
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
+        public FetcherState State
+        {
+            get { return _lock.Read(() => _state); }
+        }
+
+        public void Dispose()
+        {
+            _cancellation.Cancel();
+        }
+    }
+
+    public enum FetcherState
+    {
+        Active, 
+        Waiting,
+        Paused
+    }
+
+}
