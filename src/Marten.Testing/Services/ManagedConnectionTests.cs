@@ -409,7 +409,7 @@ namespace Marten.Testing.Services
             LastException = ex;
         }
 
-        public void RecordSavedChanges(IDocumentSession session)
+        public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
             throw new NotImplementedException();
         }

@@ -25,7 +25,7 @@ namespace Marten.Testing.Events
                 session.Events.StartStream<Quest>(id, started);
                 session.SaveChanges();
 
-                var events = listener.AfterCommitSession.LastCommit
+                var events = listener.LastCommit
                     .GetEvents()
                     .ToList();
 
@@ -42,7 +42,7 @@ namespace Marten.Testing.Events
 
                 session.SaveChanges();
 
-                var events = listener.AfterCommitSession.LastCommit
+                var events = listener.LastCommit
                     .GetEvents()
                     .ToList();
 
@@ -67,7 +67,7 @@ namespace Marten.Testing.Events
                 session.Events.StartStream<Quest>(id2, new QuestStarted { Id = id2 });
                 session.SaveChanges();
 
-                var events = listener.AfterCommitSession.LastCommit
+                var events = listener.LastCommit
                     .GetEvents()
                     .ToList();
 
@@ -91,7 +91,7 @@ namespace Marten.Testing.Events
 
                 session.SaveChanges();
 
-                var events = listener.AfterCommitSession.LastCommit
+                var events = listener.LastCommit
                     .GetEvents()
                     .ToList();
 

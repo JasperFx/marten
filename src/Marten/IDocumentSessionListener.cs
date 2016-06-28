@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Marten.Services;
 
 namespace Marten
 {
@@ -27,15 +28,17 @@ namespace Marten
         /// After an IDocumentSession is committed
         /// </summary>
         /// <param name="session"></param>
-        void AfterCommit(IDocumentSession session);
+        /// <param name="commit"></param>
+        void AfterCommit(IDocumentSession session, IChangeSet commit);
 
         /// <summary>
         /// After an IDocumentSession is committed
         /// </summary>
         /// <param name="session"></param>
+        /// <param name="commit"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task AfterCommitAsync(IDocumentSession session, CancellationToken token);
+        Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
 
 
         /// <summary>
@@ -64,12 +67,12 @@ namespace Marten
             return Task.CompletedTask;
         }
 
-        public virtual void AfterCommit(IDocumentSession session)
+        public virtual void AfterCommit(IDocumentSession session, IChangeSet commit)
         {
             // Nothing
         }
 
-        public virtual Task AfterCommitAsync(IDocumentSession session, CancellationToken token)
+        public virtual Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
         {
             // Nothing
             return Task.CompletedTask;

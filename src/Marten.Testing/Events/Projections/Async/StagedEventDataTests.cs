@@ -163,9 +163,12 @@ namespace Marten.Testing.Events.Projections.Async
         public async Task correctly_correlates_by_stream()
         {
             var streams = new List<EventStream>();
+            var logger = new RecordingLogger();
 
             using (var session = theStore.LightweightSession())
             {
+                session.Logger = logger;
+
                 for (int i = 0; i < 20; i++)
                 {
                     var joined = new MembersJoined
@@ -184,7 +187,7 @@ namespace Marten.Testing.Events.Projections.Async
 
                 await session.SaveChangesAsync().ConfigureAwait(false);
 
-                streams.AddRange(session.LastCommit.GetStreams());
+                streams.AddRange(logger.LastCommit.GetStreams());
             }
 
 

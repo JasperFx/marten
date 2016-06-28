@@ -40,7 +40,8 @@ namespace Marten
         /// through SaveChanges() or SaveChangesAsync()
         /// </summary>
         /// <param name="session"></param>
-        void RecordSavedChanges(IDocumentSession session);
+        /// <param name="commit"></param>
+        void RecordSavedChanges(IDocumentSession session, IChangeSet commit);
     }
     // ENDSAMPLE
 
@@ -66,7 +67,7 @@ namespace Marten
         {
         }
 
-        public void RecordSavedChanges(IDocumentSession session)
+        public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
         }
     }
@@ -98,9 +99,9 @@ namespace Marten
             Console.WriteLine(ex);
         }
 
-        public void RecordSavedChanges(IDocumentSession session)
+        public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
-            var lastCommit = session.LastCommit;
+            var lastCommit = commit;
             Console.WriteLine(
                 $"Persisted {lastCommit.Updated.Count()} updates, {lastCommit.Inserted.Count()} inserts, and {lastCommit.Deleted.Count()} deletions");
         }

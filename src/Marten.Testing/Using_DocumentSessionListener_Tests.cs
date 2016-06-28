@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -390,16 +391,20 @@ namespace Marten.Testing
             return Task.CompletedTask;
         }
 
-        public override Task AfterCommitAsync(IDocumentSession session, CancellationToken token)
+        public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
         {
+            LastCommit = commit;
             AfterCommitSession = session;
             return Task.CompletedTask;
         }
 
+        public IChangeSet LastCommit { get; set; }
+
         public IDocumentSession SaveChangesSession { get; set; }
 
-        public override void AfterCommit(IDocumentSession session)
+        public override void AfterCommit(IDocumentSession session, IChangeSet commit)
         {
+            LastCommit = commit;
             AfterCommitSession = session;
         }
 

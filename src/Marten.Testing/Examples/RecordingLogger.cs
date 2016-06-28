@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Marten.Services;
 using Npgsql;
 
 namespace Marten.Testing.Examples
@@ -18,7 +19,7 @@ namespace Marten.Testing.Examples
             Commands.Add(command);
         }
 
-        public void RecordSavedChanges(IDocumentSession session)
+        public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
             // do nothing
         }

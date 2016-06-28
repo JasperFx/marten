@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Baseline;
+using Marten.Services;
 
 namespace Marten.Testing.Examples
 
@@ -33,12 +34,12 @@ namespace Marten.Testing.Examples
                 .Each(s => Debug.WriteLine(s));
         }
 
-        public override void AfterCommit(IDocumentSession session)
+        public override void AfterCommit(IDocumentSession session, IChangeSet commit)
         {
             // See what was just persisted, and possibly carry out post
             // commit actions
 
-            var last = session.LastCommit;
+            var last = commit;
 
             last.Updated.Each(x => Debug.WriteLine($"{x} was updated"));
             last.Deleted.Each(x => Debug.WriteLine($"{x} was deleted"));

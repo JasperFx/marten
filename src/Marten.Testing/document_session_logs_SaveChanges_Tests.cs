@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Services;
 using Npgsql;
@@ -36,6 +37,8 @@ namespace Marten.Testing
 
     public class RecordingLogger : IMartenSessionLogger
     {
+        public readonly IList<IChangeSet> Commits = new List<IChangeSet>();
+
         public void LogSuccess(NpgsqlCommand command)
         {
             
@@ -45,10 +48,15 @@ namespace Marten.Testing
         {
         }
 
-        public void RecordSavedChanges(IDocumentSession session)
+        public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
             LastSession = session;
+            LastCommit = commit;
+
+            Commits.Add(commit);
         }
+
+        public IChangeSet LastCommit { get; set; }
 
         public IDocumentSession LastSession { get; set; }
     }

@@ -10,14 +10,12 @@ using Marten.Linq;
 using Marten.Patching;
 using Marten.Schema;
 using Marten.Services;
-using Marten.Services.Deletes;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
     public class DocumentSession : QuerySession, IDocumentSession
     {
-        private readonly IList<IChangeSet> _changes = new List<IChangeSet>();
         private readonly IManagedConnection _connection;
         private readonly StoreOptions _options;
         private readonly IDocumentSchema _schema;
@@ -163,14 +161,13 @@ namespace Marten
 
             var batch = new UpdateBatch(_options, _serializer, _connection, IdentityMap.Versions);
             var changes = _unitOfWork.ApplyChanges(batch);
-            _changes.Add(changes);
 
 
             _connection.Commit();
 
-            Logger.RecordSavedChanges(this);
+            Logger.RecordSavedChanges(this, changes);
 
-            _options.Listeners.Each(x => x.AfterCommit(this));
+            _options.Listeners.Each(x => x.AfterCommit(this, changes));
         }
 
         public async Task SaveChangesAsync(CancellationToken token)
@@ -185,20 +182,17 @@ namespace Marten
             var batch = new UpdateBatch(_options, _serializer, _connection, IdentityMap.Versions);
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
 
-            _changes.Add(changes);
 
             _connection.Commit();
 
-            Logger.RecordSavedChanges(this);
+            Logger.RecordSavedChanges(this, changes);
 
             foreach (var listener in _options.Listeners)
             {
-                await listener.AfterCommitAsync(this, token).ConfigureAwait(false);
+                await listener.AfterCommitAsync(this, changes, token).ConfigureAwait(false);
             }
         }
 
-        public IEnumerable<IChangeSet> Commits => _changes;
-        public IChangeSet LastCommit => _changes.LastOrDefault();
         public IPatchExpression<T> Patch<T>(int id)
         {
             return patchById<T>(id);
