@@ -106,12 +106,4 @@ namespace Marten.Events.Projections.Async
             _cancellation.Cancel();
         }
     }
-
-    public enum FetcherState
-    {
-        Active, 
-        Waiting,
-        Paused
-    }
-
 }

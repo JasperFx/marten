@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using CodeTracker;
+using Marten.Events;
 using Marten.Util;
 using Xunit.Abstractions;
 
@@ -12,10 +13,23 @@ namespace Marten.Testing.AsyncDaemon
 {
     public class TestHarness : IntegratedFixture
     {
+        public static bool HasBuiltExpectations = false;
 
-
-        public void generate_full_aggregates()
+        public static void RebuildExpectations()
         {
+            if (HasBuiltExpectations) return;
+
+            var store = TestingDocumentStore.For(_ =>
+            {
+                _.DatabaseSchemaName = "expected";
+                _.Events.DatabaseSchemaName = "expected";
+
+                _.Events.AggregateStreamsInlineWith<ActiveProject>();
+                _.Events.TransformEventsInlineWith(new CommitViewTransform());
+            });
+
+            store.Schema.EnsureStorageExists(typeof(EventStream));
+
             var folder = AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory()
                 .AppendPath("CodeTracker");
 
@@ -31,15 +45,20 @@ namespace Marten.Testing.AsyncDaemon
 
                 Debug.WriteLine($"Loaded {project.OrganizationName}{project.ProjectName} from JSON");
 
-                tasks.Add(project.PublishEvents(theStore, 0));
+                tasks.Add(project.PublishEvents(store, 0));
             }
 
             Task.WaitAll(tasks.ToArray());
 
-            // TODO -- download all the CommitView documents and persist
-            // TODO -- download all the ActiveProject documents and persist
-
+            HasBuiltExpectations = true;
         }
+
+        public static void CompareAll()
+        {
+            // check that there are the same number of commit views
+        }
+
+
 
     }
 }

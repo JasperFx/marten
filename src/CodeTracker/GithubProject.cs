@@ -124,7 +124,8 @@ namespace CodeTracker
                 Message = commit.Commit.Message,
                 Timestamp = commit.Commit.Author.Date,
                 Additions = stats.Additions,
-                Deletions = stats.Deletions
+                Deletions = stats.Deletions,
+                UserName = commit.Author?.Login
             };
 
             _events.Add(@event);

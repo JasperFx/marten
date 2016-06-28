@@ -1,8 +1,21 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marten.Events.Projections.Async
 {
+    // Some tracks will be passive, others actively fetching until they're done
+    public interface IProjectionTrack
+    {
+        long LastEncountered { get; }
+
+        Type ViewType { get; }
+
+        void QueuePage(EventPage page);
+
+        bool Processing { get; }
+    }
+
     public class ProjectionTrack
     {
         private readonly EventGraph _events;
@@ -23,6 +36,12 @@ namespace Marten.Events.Projections.Async
             _session.QueueOperation(new EventProgressWrite(_events, _projection.Produces.FullName, page.To));
 
             await _session.SaveChangesAsync(cancellation).ConfigureAwait(false);
+
+            LastEncountered = page.To;
         }
+
+        public long LastEncountered { get; set; }
+
+        public Type ViewType => _projection.Produces;
     }
 }

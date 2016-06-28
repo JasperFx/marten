@@ -64,11 +64,12 @@
     <Compile Include="Events\Projections\AggregationProjection.cs" />
     <Compile Include="Events\Projections\AggregationStep.cs" />
     <Compile Include="Events\Projections\Aggregator.cs" />
-    <Compile Include="Events\Projections\Async\Accumulator.cs" />
+    <Compile Include="Events\Projections\Async\Daemon.cs" />
     <Compile Include="Events\Projections\Async\CompleteRebuild.cs" />
     <Compile Include="Events\Projections\Async\EventPage.cs" />
     <Compile Include="Events\Projections\Async\EventProgressWrite.cs" />
     <Compile Include="Events\Projections\Async\Fetcher.cs" />
+    <Compile Include="Events\Projections\Async\FetcherState.cs" />
     <Compile Include="Events\Projections\Async\IStagedEventData.cs" />
     <Compile Include="Events\Projections\Async\ProjectionStatus.cs" />
     <Compile Include="Events\Projections\Async\ProjectionTrack.cs" />
