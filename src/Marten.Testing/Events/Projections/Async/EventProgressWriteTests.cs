@@ -17,7 +17,7 @@ namespace Marten.Testing.Events.Projections.Async
 
 
         [Fact]
-        public async Task can_register_progress_initial()
+        public void can_register_progress_initial()
         {
             using (var session = theStore.OpenSession())
             {
@@ -35,7 +35,7 @@ namespace Marten.Testing.Events.Projections.Async
         }
 
         [Fact]
-        public async Task can_register_subsequent_progress()
+        public void can_register_subsequent_progress()
         {
             using (var session = theStore.OpenSession())
             {

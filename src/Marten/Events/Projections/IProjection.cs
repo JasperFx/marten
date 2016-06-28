@@ -11,6 +11,6 @@ namespace Marten.Events.Projections
         Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token);
 
         Type[] Consumes { get; }
-        Type[] Produces { get; }
+        Type Produces { get; }
     }
 }

@@ -5,11 +5,13 @@ namespace Marten.Events.Projections.Async
 {
     public class ProjectionTrack
     {
+        private readonly EventGraph _events;
         private readonly IProjection _projection;
         private readonly IDocumentSession _session;
 
-        public ProjectionTrack(IProjection projection, IDocumentSession session)
+        public ProjectionTrack(EventGraph events, IProjection projection, IDocumentSession session)
         {
+            _events = events;
             _projection = projection;
             _session = session;
         }
@@ -20,7 +22,7 @@ namespace Marten.Events.Projections.Async
 
             await _projection.ApplyAsync(_session, page.Streams, cancellation).ConfigureAwait(false);
 
-            // TODO -- do something to mark the progress of the staged event options
+            _session.QueueOperation(new EventProgressWrite(_events, _projection.Produces.FullName, page.To));
 
             await _session.SaveChangesAsync(cancellation).ConfigureAwait(false);
         }

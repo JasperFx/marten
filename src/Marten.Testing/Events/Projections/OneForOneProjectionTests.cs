@@ -20,7 +20,7 @@ namespace Marten.Testing.Events.Projections
         public void produces_the_view()
         {
             new OneForOneProjection<Commit, CommitView>(new CommitViewTransform())
-                .Produces.Single()
+                .Produces
                 .ShouldBe(typeof(CommitView));
         }
     }

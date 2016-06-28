@@ -14,7 +14,7 @@ namespace Marten.Events.Projections
             _transform = transform;
 
             Consumes = new[] {typeof(TEvent)};
-            Produces = new[] {typeof(TView)};
+            Produces = typeof(TView);
         }
 
         public void Apply(IDocumentSession session, EventStream[] streams)
@@ -36,6 +36,6 @@ namespace Marten.Events.Projections
         }
 
         public Type[] Consumes { get; }
-        public Type[] Produces { get; }
+        public Type Produces { get; }
     }
 }

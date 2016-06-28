@@ -22,7 +22,7 @@ namespace Marten.Testing.Events.Projections
             var aggregator = new Aggregator<QuestParty>();
             var projection = new AggregationProjection<QuestParty>(null, aggregator);
 
-            projection.Produces.Single().ShouldBe(typeof(QuestParty));
+            projection.Produces.ShouldBe(typeof(QuestParty));
         }
     }
 }

@@ -47,7 +47,7 @@ namespace Marten.Events.Projections
         }
 
         public Type[] Consumes => _aggregator.EventTypes;
-        public Type[] Produces => new[] {typeof(T)};
+        public Type Produces => typeof(T);
 
 
         public EventStream[] MatchingStreams(EventStream[] streams)
