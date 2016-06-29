@@ -28,8 +28,7 @@ namespace Marten.Events.Projections.Async
 
             options.EventTypeNames = projection.Consumes.Select(x => events.EventMappingFor(x).Alias).ToArray();
 
-            var eventData = new StagedEventData(options, storeOptions.ConnectionFactory(), events, storeOptions.Serializer());
-            _fetcher = new Fetcher(eventData);
+            _fetcher = new Fetcher(options, storeOptions.ConnectionFactory(), events, storeOptions.Serializer());
 
             // TODO -- may want to be purging the identity map as you go
             _session = store.OpenSession();

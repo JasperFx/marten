@@ -90,7 +90,7 @@
     <Compile Include="Events\Projections\Async\AccumulatorTests.cs" />
     <Compile Include="Events\Projections\Async\DaemonTests.cs" />
     <Compile Include="Events\Projections\Async\EventProgressWriteTests.cs" />
-    <Compile Include="Events\Projections\Async\StagedEventDataTests.cs" />
+    <Compile Include="Events\Projections\Async\FetcherTests.cs" />
     <Compile Include="Events\Projections\inline_aggregation_by_stream_with_multiples.cs" />
     <Compile Include="Events\Projections\inline_transformation_of_events.cs" />
     <Compile Include="Events\Projections\MonsterSlayed.cs" />
