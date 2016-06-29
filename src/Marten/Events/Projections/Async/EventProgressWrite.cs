@@ -14,9 +14,9 @@ namespace Marten.Events.Projections.Async
         private NpgsqlParameter _numberArg;
         private readonly FunctionName _sproc;
 
-        public EventProgressWrite(EventGraph events, string key, long number)
+        public EventProgressWrite(DaemonOptions options, string key, long number)
         {
-            _sproc = new FunctionName(events.DatabaseSchemaName, "mt_mark_event_progression");
+            _sproc = new FunctionName(options.SchemaName, "mt_mark_event_progression");
             _key = key;
             _number = number;
         }

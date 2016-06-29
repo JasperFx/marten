@@ -5,6 +5,15 @@ namespace Marten.Events.Projections.Async
 {
     public class DaemonOptions
     {
+        private readonly EventGraph _events;
+
+        public DaemonOptions(EventGraph events)
+        {
+            _events = events;
+        }
+
+        public string SchemaName => _events.DatabaseSchemaName;
+
         public string Name { get; set; } = Guid.NewGuid().ToString();
         public int PageSize { get; set; } = 100;
         public string[] EventTypeNames { get; set; } = new string[0];

@@ -21,7 +21,8 @@ namespace Marten.Testing.Events.Projections.Async
         {
             using (var session = theStore.OpenSession())
             {
-                session.QueueOperation(new EventProgressWrite(theStore.Schema.Events.As<EventGraph>(), "summary", 111));
+                var events = theStore.Schema.Events.As<EventGraph>();
+                session.QueueOperation(new EventProgressWrite(new DaemonOptions(events), "summary", 111));
                 session.SaveChanges();
 
 
@@ -39,10 +40,13 @@ namespace Marten.Testing.Events.Projections.Async
         {
             using (var session = theStore.OpenSession())
             {
-                session.QueueOperation(new EventProgressWrite(theStore.Schema.Events.As<EventGraph>(), "summary", 111));
+                var events = theStore.Schema.Events.As<EventGraph>();
+                var options = new DaemonOptions(events);
+
+                session.QueueOperation(new EventProgressWrite(options, "summary", 111));
                 session.SaveChanges();
 
-                session.QueueOperation(new EventProgressWrite(theStore.Schema.Events.As<EventGraph>(), "summary", 222));
+                session.QueueOperation(new EventProgressWrite(options, "summary", 222));
                 session.SaveChanges();
 
                 var last =

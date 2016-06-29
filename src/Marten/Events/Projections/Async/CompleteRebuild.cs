@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +31,7 @@ namespace Marten.Events.Projections.Async
 
             // TODO -- may want to be purging the identity map as you go
             _session = store.OpenSession();
-            _track = new ProjectionTrack(events, projection, _session);
+            _track = new ProjectionTrack(options, projection, _session);
         }
 
         public async Task<long> PerformRebuild(CancellationToken token)

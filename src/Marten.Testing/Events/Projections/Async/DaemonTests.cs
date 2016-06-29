@@ -31,11 +31,7 @@ namespace Marten.Testing.Events.Projections.Async
             await theDaemon.CachePage(thePage).ConfigureAwait(false);
 
 
-            projection1.Received().QueuePage(thePage);
-            projection2.Received().QueuePage(thePage);
-            projection3.Received().QueuePage(thePage);
-            projection4.Received().QueuePage(thePage);
-            projection5.Received().QueuePage(thePage);
+            projection.Received().QueuePage(thePage);
         }
 
         [Fact]
@@ -69,11 +65,7 @@ namespace Marten.Testing.Events.Projections.Async
         {
             theFetcher.Stop().Returns(Task.CompletedTask);
 
-            projection1.Stop().Returns(Task.CompletedTask);
-            projection2.Stop().Returns(Task.CompletedTask);
-            projection3.Stop().Returns(Task.CompletedTask);
-            projection4.Stop().Returns(Task.CompletedTask);
-            projection5.Stop().Returns(Task.CompletedTask);
+            projection.Stop().Returns(Task.CompletedTask);
 
 
 
@@ -81,11 +73,7 @@ namespace Marten.Testing.Events.Projections.Async
 
             theFetcher.Received().Stop();
 
-            projection1.Received().Stop();
-            projection2.Received().Stop();
-            projection3.Received().Stop();
-            projection4.Received().Stop();
-            projection5.Received().Stop();
+            projection.Received().Stop();
         }
 
     }
@@ -100,11 +88,7 @@ namespace Marten.Testing.Events.Projections.Async
             await theDaemon.CachePage(thePage).ConfigureAwait(false);
             await theDaemon.CachePage(thePage2).ConfigureAwait(false);
 
-            projection1.LastEncountered.Returns(100);
-            projection2.LastEncountered.Returns(100);
-            projection3.LastEncountered.Returns(100);
-            projection4.LastEncountered.Returns(100);
-            projection5.LastEncountered.Returns(100);
+            projection.LastEncountered.Returns(100);
 
             await theDaemon.StoreProgress(typeof(ActiveProject), thePage).ConfigureAwait(false);
 
@@ -119,11 +103,7 @@ namespace Marten.Testing.Events.Projections.Async
             var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
             await theDaemon.CachePage(thePage).ConfigureAwait(false);
 
-            projection1.LastEncountered.Returns(100);
-            projection2.LastEncountered.Returns(100);
-            projection3.LastEncountered.Returns(100);
-            projection4.LastEncountered.Returns(100);
-            projection5.LastEncountered.Returns(100);
+            projection.LastEncountered.Returns(100);
 
             await theDaemon.StoreProgress(typeof(ActiveProject), thePage).ConfigureAwait(false);
 
@@ -142,11 +122,7 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public void should_start_the_projections_with_the_update_block()
         {
-            projection1.Received().Updater = theDaemon.UpdateBlock;
-            projection2.Received().Updater = theDaemon.UpdateBlock;
-            projection3.Received().Updater = theDaemon.UpdateBlock;
-            projection4.Received().Updater = theDaemon.UpdateBlock;
-            projection5.Received().Updater = theDaemon.UpdateBlock;
+            projection.Received().Updater = theDaemon.UpdateBlock;
 
         }
 
@@ -161,31 +137,15 @@ namespace Marten.Testing.Events.Projections.Async
     {
         protected readonly IFetcher theFetcher = Substitute.For<IFetcher>();
         protected Daemon theDaemon;
-        protected IProjectionTrack projection1;
-        protected IProjectionTrack projection2;
-        protected IProjectionTrack projection3;
-        protected IProjectionTrack projection4;
-        protected IProjectionTrack projection5;
-        protected DaemonOptions theOptions = new DaemonOptions();
+        protected IProjectionTrack projection;
+
+        protected DaemonOptions theOptions = new DaemonOptions(new EventGraph(new StoreOptions()));
 
         public DaemonContext()
         {
-            projection1 = Substitute.For<IProjectionTrack>();
-            projection2 = Substitute.For<IProjectionTrack>();
-            projection3 = Substitute.For<IProjectionTrack>();
-            projection4 = Substitute.For<IProjectionTrack>();
-            projection5 = Substitute.For<IProjectionTrack>();
+            projection = Substitute.For<IProjectionTrack>();
 
-            var projections = new IProjectionTrack[]
-            {
-                projection1,
-                projection2,
-                projection3,
-                projection4,
-                projection5
-            };
-
-            theDaemon = new Daemon(theOptions, theFetcher, projections);
+            theDaemon = new Daemon(theOptions, theFetcher, projection);
 
 
 

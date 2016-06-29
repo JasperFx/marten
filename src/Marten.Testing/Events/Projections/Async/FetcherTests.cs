@@ -12,7 +12,7 @@ namespace Marten.Testing.Events.Projections.Async
 {
     public class FetcherTests : IntegratedFixture
     {
-        private readonly DaemonOptions theOptions = new DaemonOptions {Name = "something", EventTypeNames = new [] {"members_joined"}};
+        private readonly DaemonOptions theOptions = new DaemonOptions(new EventGraph(new StoreOptions())) {Name = "something", EventTypeNames = new [] {"members_joined"}};
 
         public FetcherTests()
         {
