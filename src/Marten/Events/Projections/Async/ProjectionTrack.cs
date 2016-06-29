@@ -7,14 +7,7 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Marten.Events.Projections.Async
 {
-    public enum DaemonLifecycle
-    {
-        StopAtEndOfEventData,
-        Continuous
-    }
-
-
-    public class Daemon : IEventPageWorker, IDisposable
+    public class ProjectionTrack : IEventPageWorker, IDisposable
     {
         private readonly IFetcher _fetcher;
         private readonly IDocumentSession _session;
@@ -26,7 +19,7 @@ namespace Marten.Events.Projections.Async
         private readonly IList<EventWaiter> _waiters = new List<EventWaiter>();
         private readonly TaskCompletionSource<long> _rebuildCompletion = new TaskCompletionSource<long>();
 
-        public Daemon(DaemonOptions options, IFetcher fetcher, IDocumentSession session, IProjection projection)
+        public ProjectionTrack(DaemonOptions options, IFetcher fetcher, IDocumentSession session, IProjection projection)
         {
             _options = options;
             _fetcher = fetcher;

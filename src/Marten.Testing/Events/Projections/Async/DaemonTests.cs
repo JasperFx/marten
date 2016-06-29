@@ -12,16 +12,16 @@ using Xunit;
 namespace Marten.Testing.Events.Projections.Async
 {
 
-    public class when_caching_pages : DaemonContext
+    public class when_caching_pages : ProjectionTrackContext
     {
         [Fact]
         public async Task stores_the_first_page()
         {
             var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
 
-            await theDaemon.CachePage(thePage).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(thePage).ConfigureAwait(false);
 
-            theDaemon.Accumulator.AllPages().Single()
+            theProjectionTrack.Accumulator.AllPages().Single()
                 .ShouldBe(thePage);
         }
 
@@ -30,7 +30,7 @@ namespace Marten.Testing.Events.Projections.Async
         {
             var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
 
-            await theDaemon.CachePage(thePage).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(thePage).ConfigureAwait(false);
         }
 
         [Fact]
@@ -38,7 +38,7 @@ namespace Marten.Testing.Events.Projections.Async
         {
             var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
 
-            await theDaemon.CachePage(thePage).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(thePage).ConfigureAwait(false);
 
             await theFetcher.DidNotReceive().Pause().ConfigureAwait(false);
         }
@@ -47,9 +47,9 @@ namespace Marten.Testing.Events.Projections.Async
         public async Task pauses_the_fetcher_if_the_queue_number_is_greater_than_the_options_threshold()
         {
             // The default for MaximumStagedEventCount is 1000
-            await theDaemon.CachePage(new EventPage(0, 100, new EventStream[0]) {Count = 100}).ConfigureAwait(false);
-            await theDaemon.CachePage(new EventPage(101, 200, new EventStream[0]) {Count = 100}).ConfigureAwait(false);
-            await theDaemon.CachePage(new EventPage(201, 1100, new EventStream[0]) {Count = 1100 - 201}).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(new EventPage(0, 100, new EventStream[0]) {Count = 100}).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(new EventPage(101, 200, new EventStream[0]) {Count = 100}).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(new EventPage(201, 1100, new EventStream[0]) {Count = 1100 - 201}).ConfigureAwait(false);
 
             await theFetcher.Received().Pause().ConfigureAwait(false);
         }
@@ -57,14 +57,14 @@ namespace Marten.Testing.Events.Projections.Async
 
 
 
-    public class when_stopping_the_daemon : DaemonContext
+    public class when_stopping_a_projection_track : ProjectionTrackContext
     {
         [Fact]
         public async Task should_stop_the_fetcher_and_projections()
         {
             theFetcher.Stop().Returns(Task.CompletedTask);
 
-            await theDaemon.Stop().ConfigureAwait(false);
+            await theProjectionTrack.Stop().ConfigureAwait(false);
 
             theFetcher.Received().Stop();
 
@@ -72,20 +72,20 @@ namespace Marten.Testing.Events.Projections.Async
 
     }
 
-    public class when_storing_progress : DaemonContext
+    public class when_storing_progress : ProjectionTrackContext
     {
         [Fact]
         public async Task store_progress_removes_obsolete_page()
         {
             var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
             var thePage2 = new EventPage(101, 200, new EventStream[0]) { Count = 100 };
-            await theDaemon.CachePage(thePage).ConfigureAwait(false);
-            await theDaemon.CachePage(thePage2).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(thePage).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(thePage2).ConfigureAwait(false);
 
 
-            await theDaemon.StoreProgress(typeof(ActiveProject), thePage).ConfigureAwait(false);
+            await theProjectionTrack.StoreProgress(typeof(ActiveProject), thePage).ConfigureAwait(false);
 
-            theDaemon.Accumulator.AllPages().Single()
+            theProjectionTrack.Accumulator.AllPages().Single()
                 .ShouldBe(thePage2);
         }
 
@@ -95,44 +95,44 @@ namespace Marten.Testing.Events.Projections.Async
             theFetcher.State.Returns(FetcherState.Paused);
 
             var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
-            await theDaemon.CachePage(thePage).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(thePage).ConfigureAwait(false);
 
 
-            await theDaemon.StoreProgress(typeof(ActiveProject), thePage).ConfigureAwait(false);
+            await theProjectionTrack.StoreProgress(typeof(ActiveProject), thePage).ConfigureAwait(false);
 
-            theFetcher.Received().Start(theDaemon, theOptions.Lifecycle);
+            theFetcher.Received().Start(theProjectionTrack, theOptions.Lifecycle);
         }
     }
 
 
-    public class when_starting_the_daemon : DaemonContext
+    public class when_starting_a_projection_track : ProjectionTrackContext
     {
-        public when_starting_the_daemon()
+        public when_starting_a_projection_track()
         {
-            theDaemon.Start();
+            theProjectionTrack.Start();
         }
 
 
         [Fact]
         public void should_start_the_fetcher_with_auto_restart()
         {
-            theFetcher.Received().Start(theDaemon, theOptions.Lifecycle);
+            theFetcher.Received().Start(theProjectionTrack, theOptions.Lifecycle);
         }
     }
 
-    public abstract class DaemonContext
+    public abstract class ProjectionTrackContext
     {
         protected readonly IFetcher theFetcher = Substitute.For<IFetcher>();
-        protected Daemon theDaemon;
+        protected ProjectionTrack theProjectionTrack;
         protected IProjection projection;
 
         protected DaemonOptions theOptions = new DaemonOptions(new EventGraph(new StoreOptions()));
 
-        public DaemonContext()
+        public ProjectionTrackContext()
         {
             projection = Substitute.For<IProjection>();
 
-            theDaemon = new Daemon(theOptions, theFetcher, Substitute.For<IDocumentSession>(), projection);
+            theProjectionTrack = new ProjectionTrack(theOptions, theFetcher, Substitute.For<IDocumentSession>(), projection);
 
 
 

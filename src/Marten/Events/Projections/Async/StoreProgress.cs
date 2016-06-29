@@ -14,9 +14,9 @@ namespace Marten.Events.Projections.Async
             _page = page;
         }
 
-        public Task Invoke(Daemon daemon)
+        public Task Invoke(ProjectionTrack projectionTrack)
         {
-            return daemon.StoreProgress(_viewType, _page);
+            return projectionTrack.StoreProgress(_viewType, _page);
         }
     }
 }

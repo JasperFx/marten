@@ -11,9 +11,9 @@ namespace Marten.Events.Projections.Async
             _page = page;
         }
 
-        public Task Invoke(Daemon daemon)
+        public Task Invoke(ProjectionTrack projectionTrack)
         {
-            return daemon.CachePage(_page);
+            return projectionTrack.CachePage(_page);
         }
     }
 }

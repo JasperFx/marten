@@ -13,7 +13,7 @@ namespace Marten.Events.Projections.Async
         private readonly IDocumentStore _store;
         private readonly IProjection _projection;
         private readonly Fetcher _fetcher;
-        private readonly Daemon _daemon;
+        private readonly ProjectionTrack _projectionTrack;
 
         public CompleteRebuild(DaemonOptions options, IDocumentStore store, IProjection projection)
         {
@@ -26,7 +26,7 @@ namespace Marten.Events.Projections.Async
 
             _fetcher = new Fetcher(options, storeOptions.ConnectionFactory(), events, storeOptions.Serializer());
 
-            _daemon = new Daemon(options, _fetcher, store.OpenSession(), projection);
+            _projectionTrack = new ProjectionTrack(options, _fetcher, store.OpenSession(), projection);
 
         }
 
@@ -36,7 +36,7 @@ namespace Marten.Events.Projections.Async
 
             await clearExistingState(token).ConfigureAwait(false);
 
-            return await _daemon.RunUntilEndOfEvents().ConfigureAwait(false);
+            return await _projectionTrack.RunUntilEndOfEvents().ConfigureAwait(false);
 
         }
 
@@ -62,7 +62,7 @@ namespace Marten.Events.Projections.Async
         public void Dispose()
         {
             _fetcher.Dispose();
-            _daemon.Dispose();
+            _projectionTrack.Dispose();
         }
 
 

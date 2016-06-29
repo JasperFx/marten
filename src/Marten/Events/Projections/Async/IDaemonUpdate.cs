@@ -4,6 +4,6 @@ namespace Marten.Events.Projections.Async
 {
     public interface IDaemonUpdate
     {
-        Task Invoke(Daemon daemon);
+        Task Invoke(ProjectionTrack projectionTrack);
     }
 }
