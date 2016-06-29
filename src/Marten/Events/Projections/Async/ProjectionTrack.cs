@@ -1,32 +1,20 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Baseline;
 
 namespace Marten.Events.Projections.Async
 {
     // Some tracks will be passive, others actively fetching until they're done
-    public interface IProjectionTrack : IDisposable
-    {
-        long LastEncountered { get; }
-
-        Type ViewType { get; }
-
-        void QueuePage(EventPage page);
-
-        int QueuedPageCount { get; }
-    }
 
     public class ProjectionTrack : IProjectionTrack
     {
+        private readonly CancellationTokenSource _cancellation;
         private readonly EventGraph _events;
         private readonly IProjection _projection;
         private readonly IDocumentSession _session;
-        private readonly CancellationTokenSource _cancellation;
         private readonly ActionBlock<EventPage> _track;
 
         private readonly IList<EventWaiter> _waiters = new List<EventWaiter>();
@@ -43,6 +31,23 @@ namespace Marten.Events.Projections.Async
             _track = new ActionBlock<EventPage>(page => ExecutePage(page, _cancellation.Token));
         }
 
+        public long LastEncountered { get; set; }
+
+        public Type ViewType => _projection.Produces;
+
+        public void QueuePage(EventPage page)
+        {
+            _track.Post(page);
+        }
+
+        public int QueuedPageCount => _track.InputCount;
+
+        public void Dispose()
+        {
+            _waiters.Clear();
+            _track.Complete();
+        }
+
         public async Task ExecutePage(EventPage page, CancellationToken cancellation)
         {
             await _projection.ApplyAsync(_session, page.Streams, cancellation).ConfigureAwait(false);
@@ -56,8 +61,6 @@ namespace Marten.Events.Projections.Async
             LastEncountered = page.To;
 
             evaluateWaiters();
-
-
         }
 
         private void evaluateWaiters()
@@ -70,17 +73,6 @@ namespace Marten.Events.Projections.Async
             }
         }
 
-        public long LastEncountered { get; set; }
-
-        public Type ViewType => _projection.Produces;
-
-        public void QueuePage(EventPage page)
-        {
-            _track.Post(page);
-        }
-
-        public int QueuedPageCount => _track.InputCount;
-
         public Task<long> WaitUntilEventIsProcessed(long sequence)
         {
             if (LastEncountered >= sequence) return Task.FromResult(sequence);
@@ -89,23 +81,6 @@ namespace Marten.Events.Projections.Async
             _waiters.Add(waiter);
 
             return waiter.Completion.Task;
-        }
-
-        internal class EventWaiter
-        {
-            public readonly TaskCompletionSource<long> Completion = new TaskCompletionSource<long>();
-            public long Sequence { get; set; }
-
-            public EventWaiter(long sequence)
-            {
-                Sequence = sequence;
-            }
-        }
-
-        public void Dispose()
-        {
-            _waiters.Clear();
-            _track.Complete();
         }
     }
 }

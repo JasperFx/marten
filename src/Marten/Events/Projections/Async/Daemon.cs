@@ -1,29 +1,20 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
+using Baseline;
 
 namespace Marten.Events.Projections.Async
 {
-    public interface IActiveProjections
-    {
-        IProjectionTrack[] CoordinatedTracks { get; }
-
-        IProjectionTrack[] AllTracks { get; }
-
-        IProjectionTrack[] SelfGoverningTracks { get; set; }
-        IProjectionTrack TrackFor(string viewType);
-    }
-
-
-    // Will have a stream that feeds into Daemon
-    public class Daemon
+    public class Daemon : IEventPageWorker, IDisposable
     {
         private readonly Accumulator _accumulator = new Accumulator();
         private readonly IFetcher _fetcher;
         private readonly IActiveProjections _projections;
+        private ActionBlock<IDaemonUpdate> _updateBlock;
 
-        // Should do this as a linked list. Make EventPage have a next?
 
-        public Daemon(IDocumentStore store, IFetcher fetcher, IActiveProjections projections)
+        public Daemon(IFetcher fetcher, IActiveProjections projections)
         {
             _fetcher = fetcher;
             _projections = projections;
@@ -31,7 +22,16 @@ namespace Marten.Events.Projections.Async
 
         public void Start()
         {
-            //_fetcher.Start();
+            _updateBlock = new ActionBlock<IDaemonUpdate>(msg => msg.Invoke(this));
+            _projections.StartTracks(_updateBlock);
+            _fetcher.Start(this, true);
+        }
+
+        public async Task Stop()
+        {
+            await _fetcher.Stop().ConfigureAwait(false);
+
+            await _projections.StopAll().ConfigureAwait(false);
         }
 
 
@@ -42,20 +42,15 @@ namespace Marten.Events.Projections.Async
             // TODO -- make the threshold be configurable
             if (_accumulator.CachedEventCount > 10000)
             {
-                var stop = _fetcher.Stop();
+                await _fetcher.Pause().ConfigureAwait(false);
             }
 
-            // TODO:
-            /*
-             * * store the page
-             * * if this makes you go over the threshold for maximum items, latch the fetcher
-             * * if it's the next page for any projection, send it on
-             * 
-             */
-            throw new NotImplementedException();
+            _projections.CoordinatedTracks
+                .Where(x => x.LastEncountered <= page.From)
+                .Each(x => x.QueuePage(page));
         }
 
-        public Task StoreProgress(string viewType, EventPage page)
+        public Task StoreProgress(Type viewType, EventPage page)
         {
             // TODO -- Need to update projection status
             // * Trim off anything that's obsolete
@@ -65,6 +60,38 @@ namespace Marten.Events.Projections.Async
             //   to the next projection
 
             throw new NotImplementedException();
+        }
+
+        void IEventPageWorker.QueuePage(EventPage page)
+        {
+            _updateBlock.Post(new CachePageUpdate(page));
+        }
+
+        void IEventPageWorker.Finished(long lastEncountered)
+        {
+            // TODO -- do something here!
+            throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+            _updateBlock.Complete();
+            _projections.Dispose();
+        }
+
+        public async Task<long> WaitUntilEventIsProcessed(long sequence)
+        {
+            long farthest = 0;
+            foreach (var track in _projections.AllTracks)
+            {
+                var last = await track.WaitUntilEventIsProcessed(sequence).ConfigureAwait(false);
+                if (farthest == 0 || last < farthest)
+                {
+                    farthest = last;
+                }
+            }
+
+            return farthest;
         }
     }
 }
