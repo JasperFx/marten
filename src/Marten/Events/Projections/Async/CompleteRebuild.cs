@@ -8,15 +8,12 @@ using Marten.Util;
 namespace Marten.Events.Projections.Async
 {
 
-    public class CompleteRebuild : IDisposable, IEventPageWorker
+    public class CompleteRebuild : IDisposable
     {
         private readonly IDocumentStore _store;
         private readonly IProjection _projection;
         private readonly Fetcher _fetcher;
-        private readonly IDocumentSession _session;
-        private readonly ProjectionTrack _track;
-        private readonly TaskCompletionSource<long> _completion = new TaskCompletionSource<long>();
-        private long _lastEncountered;
+        private readonly Daemon _daemon;
 
         public CompleteRebuild(DaemonOptions options, IDocumentStore store, IProjection projection)
         {
@@ -29,9 +26,8 @@ namespace Marten.Events.Projections.Async
 
             _fetcher = new Fetcher(options, storeOptions.ConnectionFactory(), events, storeOptions.Serializer());
 
-            // TODO -- may want to be purging the identity map as you go
-            _session = store.OpenSession();
-            _track = new ProjectionTrack(options, projection, _session);
+            _daemon = new Daemon(options, _fetcher, store.OpenSession(), projection);
+
         }
 
         public async Task<long> PerformRebuild(CancellationToken token)
@@ -40,9 +36,8 @@ namespace Marten.Events.Projections.Async
 
             await clearExistingState(token).ConfigureAwait(false);
 
-            _fetcher.Start(this, false);
+            return await _daemon.RunUntilEndOfEvents().ConfigureAwait(false);
 
-            return await _completion.Task;
         }
 
         private async Task clearExistingState(CancellationToken token)
@@ -67,27 +62,10 @@ namespace Marten.Events.Projections.Async
         public void Dispose()
         {
             _fetcher.Dispose();
-            _track.Dispose();
-            _session.Dispose();
+            _daemon.Dispose();
         }
 
-        void IEventPageWorker.QueuePage(EventPage page)
-        {
-            Console.WriteLine("Got " + page);
 
-            if (page.Count != 0)
-            {
-                _lastEncountered = page.To;
-                _track.QueuePage(page);
-            }
-        }
 
-        public void Finished(long lastEncountered)
-        {
-            _track.WaitUntilEventIsProcessed(_lastEncountered).ContinueWith(t =>
-            {
-                _completion.SetResult(lastEncountered);
-            });
-        }
     }
 }

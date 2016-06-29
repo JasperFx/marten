@@ -44,7 +44,7 @@ namespace Marten.Events.Projections.Async
 
         public string[] EventTypeNames { get; set; } = new string[0];
 
-        public void Start(IEventPageWorker worker, bool waitForMoreOnEmpty)
+        public void Start(IEventPageWorker worker, DaemonLifecycle lifecycle)
         {
             _lock.Write(() =>
             {
@@ -60,13 +60,13 @@ namespace Marten.Events.Projections.Async
 
                         if (page.Count == 0)
                         {
-                            if (waitForMoreOnEmpty)
+                            if (lifecycle == DaemonLifecycle.Continuous)
                             {
                                 _state = FetcherState.Waiting;
                                 
                                 // TODO -- make the cooldown time be configurable
                                 await Task.Delay(1.Seconds(), Cancellation.Token).ConfigureAwait(false);
-                                Start(worker, waitForMoreOnEmpty);
+                                Start(worker, lifecycle);
                             }
                             else
                             {
@@ -107,6 +107,8 @@ namespace Marten.Events.Projections.Async
             try
             {
                 _state = FetcherState.Waiting;
+
+                Cancellation.Cancel();
 
                 await _fetchingTask.ConfigureAwait(false);
             }

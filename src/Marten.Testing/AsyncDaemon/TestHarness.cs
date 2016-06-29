@@ -123,6 +123,8 @@ namespace Marten.Testing.AsyncDaemon
             build.Dispose();
 
             CompareActiveProjects(theStore);
+
+            build.Dispose();
         }
 
     }

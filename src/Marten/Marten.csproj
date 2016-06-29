@@ -76,9 +76,7 @@
     <Compile Include="Events\Projections\Async\IDaemonUpdate.cs" />
     <Compile Include="Events\Projections\Async\IEventPageWorker.cs" />
     <Compile Include="Events\Projections\Async\IFetcher.cs" />
-    <Compile Include="Events\Projections\Async\IProjectionTrack.cs" />
     <Compile Include="Events\Projections\Async\ProjectionStatus.cs" />
-    <Compile Include="Events\Projections\Async\ProjectionTrack.cs" />
     <Compile Include="Events\Projections\Async\DaemonOptions.cs" />
     <Compile Include="Events\Projections\Async\StoreProgress.cs" />
     <Compile Include="Events\Projections\IAggregation.cs" />

@@ -14,6 +14,8 @@ namespace Marten.Events.Projections.Async
 
         public string SchemaName => _events.DatabaseSchemaName;
 
+        public DaemonLifecycle Lifecycle { get; set; } = DaemonLifecycle.Continuous;
+
         public string Name { get; set; } = Guid.NewGuid().ToString();
         public int PageSize { get; set; } = 100;
         public string[] EventTypeNames { get; set; } = new string[0];

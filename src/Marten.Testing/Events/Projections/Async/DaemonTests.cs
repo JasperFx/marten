@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using CodeTracker;
 using Marten.Events;
+using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using NSubstitute;
 using Shouldly;
@@ -29,9 +31,6 @@ namespace Marten.Testing.Events.Projections.Async
             var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
 
             await theDaemon.CachePage(thePage).ConfigureAwait(false);
-
-
-            projection.Received().QueuePage(thePage);
         }
 
         [Fact]
@@ -65,15 +64,10 @@ namespace Marten.Testing.Events.Projections.Async
         {
             theFetcher.Stop().Returns(Task.CompletedTask);
 
-            projection.Stop().Returns(Task.CompletedTask);
-
-
-
             await theDaemon.Stop().ConfigureAwait(false);
 
             theFetcher.Received().Stop();
 
-            projection.Received().Stop();
         }
 
     }
@@ -88,7 +82,6 @@ namespace Marten.Testing.Events.Projections.Async
             await theDaemon.CachePage(thePage).ConfigureAwait(false);
             await theDaemon.CachePage(thePage2).ConfigureAwait(false);
 
-            projection.LastEncountered.Returns(100);
 
             await theDaemon.StoreProgress(typeof(ActiveProject), thePage).ConfigureAwait(false);
 
@@ -96,6 +89,7 @@ namespace Marten.Testing.Events.Projections.Async
                 .ShouldBe(thePage2);
         }
 
+        [Fact]
         public async Task should_restart_the_fetcher_if_it_was_paused_and_below_the_threshold()
         {
             theFetcher.State.Returns(FetcherState.Paused);
@@ -103,11 +97,10 @@ namespace Marten.Testing.Events.Projections.Async
             var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
             await theDaemon.CachePage(thePage).ConfigureAwait(false);
 
-            projection.LastEncountered.Returns(100);
 
             await theDaemon.StoreProgress(typeof(ActiveProject), thePage).ConfigureAwait(false);
 
-            theFetcher.Received().Start(theDaemon, true);
+            theFetcher.Received().Start(theDaemon, theOptions.Lifecycle);
         }
     }
 
@@ -119,17 +112,11 @@ namespace Marten.Testing.Events.Projections.Async
             theDaemon.Start();
         }
 
-        [Fact]
-        public void should_start_the_projections_with_the_update_block()
-        {
-            projection.Received().Updater = theDaemon.UpdateBlock;
-
-        }
 
         [Fact]
         public void should_start_the_fetcher_with_auto_restart()
         {
-            theFetcher.Received().Start(theDaemon, true);
+            theFetcher.Received().Start(theDaemon, theOptions.Lifecycle);
         }
     }
 
@@ -137,15 +124,15 @@ namespace Marten.Testing.Events.Projections.Async
     {
         protected readonly IFetcher theFetcher = Substitute.For<IFetcher>();
         protected Daemon theDaemon;
-        protected IProjectionTrack projection;
+        protected IProjection projection;
 
         protected DaemonOptions theOptions = new DaemonOptions(new EventGraph(new StoreOptions()));
 
         public DaemonContext()
         {
-            projection = Substitute.For<IProjectionTrack>();
+            projection = Substitute.For<IProjection>();
 
-            theDaemon = new Daemon(theOptions, theFetcher, projection);
+            theDaemon = new Daemon(theOptions, theFetcher, Substitute.For<IDocumentSession>(), projection);
 
 
 
