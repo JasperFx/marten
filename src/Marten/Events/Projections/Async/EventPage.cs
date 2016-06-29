@@ -14,5 +14,10 @@
             To = to;
             Streams = streams;
         }
+
+        public override string ToString()
+        {
+            return $"Event Page From: {From}, To: {To}, Count: {Count}";
+        }
     }
 }

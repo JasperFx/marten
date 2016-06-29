@@ -1,4 +1,4 @@
-﻿AjaxMin
+AjaxMin
 Cassette
 Cassette.Nancy
 elmah
@@ -14,3 +14,4 @@ Newtonsoft.Json
 NLog
 Npgsql
 PagedList
+System.Threading.Tasks.Dataflow

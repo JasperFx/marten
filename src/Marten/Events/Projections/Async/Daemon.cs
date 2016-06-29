@@ -1,33 +1,32 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Marten.Events.Projections.Async
 {
     public interface IActiveProjections
     {
-        IProjectionTrack TrackFor(string viewType);
-
         IProjectionTrack[] CoordinatedTracks { get; }
 
         IProjectionTrack[] AllTracks { get; }
 
         IProjectionTrack[] SelfGoverningTracks { get; set; }
+        IProjectionTrack TrackFor(string viewType);
     }
 
 
     // Will have a stream that feeds into Daemon
     public class Daemon
     {
+        private readonly Accumulator _accumulator = new Accumulator();
         private readonly IFetcher _fetcher;
-        private readonly IDictionary<string, ProjectionTrack> _tracks = new ConcurrentDictionary<string, ProjectionTrack>();
+        private readonly IActiveProjections _projections;
 
         // Should do this as a linked list. Make EventPage have a next?
 
         public Daemon(IDocumentStore store, IFetcher fetcher, IActiveProjections projections)
         {
             _fetcher = fetcher;
+            _projections = projections;
         }
 
         public void Start()
@@ -35,14 +34,17 @@ namespace Marten.Events.Projections.Async
             //_fetcher.Start();
         }
 
-        
 
-
-
-
-
-        public Task CachePage(EventPage page)
+        public async Task CachePage(EventPage page)
         {
+            _accumulator.Store(page);
+
+            // TODO -- make the threshold be configurable
+            if (_accumulator.CachedEventCount > 10000)
+            {
+                var stop = _fetcher.Stop();
+            }
+
             // TODO:
             /*
              * * store the page

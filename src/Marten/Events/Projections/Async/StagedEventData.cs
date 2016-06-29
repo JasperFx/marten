@@ -12,7 +12,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events.Projections.Async
 {
-    public class StagedEventData : IStagedEventData, IDisposable
+    public class StagedEventData : IStagedEventData
     {
         private readonly NpgsqlConnection _conn;
         private readonly EventGraph _events;
@@ -49,19 +49,6 @@ namespace Marten.Events.Projections.Async
             _conn.Dispose();
         }
 
-        public async Task<long> LastEventProgression()
-        {
-            var sql = $"select last_seq_id from {_events.DatabaseSchemaName}.mt_event_progression where name = :name";
-            var cmd = _conn.CreateCommand().Sql(sql).With("name", _options.Name);
-            using (var reader = await cmd.ExecuteReaderAsync(Cancellation).ConfigureAwait(false))
-            {
-                var hasAny = await reader.ReadAsync(Cancellation).ConfigureAwait(false);
-
-                if (!hasAny) return 0;
-
-                return await reader.GetFieldValueAsync<long>(0, Cancellation).ConfigureAwait(false);
-            }
-        }
 
 
         public async Task<EventPage> FetchNextPage(long lastEncountered)
@@ -86,7 +73,9 @@ select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
             {
                 await reader.ReadAsync(Cancellation).ConfigureAwait(false);
 
-                furthestExtant = await reader.GetFieldValueAsync<long>(0, Cancellation).ConfigureAwait(false);
+                furthestExtant = await reader.IsDBNullAsync(0, Cancellation).ConfigureAwait(false)
+                    ? 0
+                    : await reader.GetFieldValueAsync<long>(0, Cancellation).ConfigureAwait(false);
 
                 await reader.NextResultAsync(Cancellation).ConfigureAwait(false);
 

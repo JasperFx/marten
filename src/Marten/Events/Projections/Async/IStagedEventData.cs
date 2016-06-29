@@ -1,12 +1,10 @@
+using System;
 using System.Threading.Tasks;
 
 namespace Marten.Events.Projections.Async
 {
-    public interface IStagedEventData
+    public interface IStagedEventData: IDisposable
     {
-        Task<long> LastEventProgression();
-
-
         Task<EventPage> FetchNextPage(long lastEncountered);
     }
 }

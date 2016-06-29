@@ -10,3 +10,4 @@ HtmlTags
 Baseline
 xunit
 NSubstitute
+System.Threading.Tasks.Dataflow

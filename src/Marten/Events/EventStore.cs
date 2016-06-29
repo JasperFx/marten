@@ -36,7 +36,7 @@ namespace Marten.Events
 
         public void Append(Guid stream, params object[] events)
         {
-
+            _schema.EnsureStorageExists(typeof(EventStream));
 
             if (_unitOfWork.HasStream(stream))
             {
@@ -52,6 +52,8 @@ namespace Marten.Events
 
         public Guid StartStream<T>(Guid id, params object[] events) where T : class, new()
         {
+            _schema.EnsureStorageExists(typeof(EventStream));
+
             var stream = new EventStream(id, events.Select(EventStream.ToEvent).ToArray(), true)
             {
                 AggregateType = typeof (T)

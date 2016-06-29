@@ -7,12 +7,13 @@ namespace Marten.Events.Projections.Async
 {
     public interface IEventPageWorker
     {
-        void Receive(EventPage page);
+        void QueuePage(EventPage page);
+        void Finished(long lastEncountered);
     }
 
     public interface IFetcher
     {
-        void Start(IEventPageWorker worker);
+        void Start(IEventPageWorker worker, bool waitForMoreOnEmpty);
         Task Pause();
         Task Stop();
         FetcherState State { get; }
@@ -26,7 +27,6 @@ namespace Marten.Events.Projections.Async
         private Task _fetchingTask;
         private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
         private long _lastEncountered = 0;
-        private Task _reset;
 
         public Fetcher(IStagedEventData eventData)
         {
@@ -34,11 +34,13 @@ namespace Marten.Events.Projections.Async
             _state = FetcherState.Waiting;
         }
 
-        public void Start(IEventPageWorker worker)
+        public void Start(IEventPageWorker worker, bool waitForMoreOnEmpty)
         {
             _lock.Write(() =>
             {
                 if (_state == FetcherState.Active) return;
+
+                _state = FetcherState.Active;
 
                 _fetchingTask = Task.Factory.StartNew(async () =>
                 {
@@ -48,16 +50,26 @@ namespace Marten.Events.Projections.Async
 
                         if (page.Count == 0)
                         {
-                            // TODO -- make the cooldown time be configurable
-                            _reset = Task.Delay(1.Seconds(), _cancellation.Token).ContinueWith(t => Start(worker));
-                            _state = FetcherState.Waiting;
+                            if (waitForMoreOnEmpty)
+                            {
+                                _state = FetcherState.Waiting;
+                                
+                                // TODO -- make the cooldown time be configurable
+                                await Task.Delay(1.Seconds(), _cancellation.Token).ConfigureAwait(false);
+                                Start(worker, waitForMoreOnEmpty);
+                            }
+                            else
+                            {
+                                _state = FetcherState.Paused;
+                                worker.Finished(_lastEncountered);
+                                break;
+                            }
                         }
                         else
                         {
-                            worker.Receive(page);
+                            _lastEncountered = page.To;
+                            worker.QueuePage(page);
                         }
-
-                        
                     }
                 }, _cancellation.Token);
             });
@@ -102,6 +114,7 @@ namespace Marten.Events.Projections.Async
         public void Dispose()
         {
             _cancellation.Cancel();
+            _eventData.Dispose();
         }
     }
 }

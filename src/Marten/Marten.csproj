@@ -370,6 +370,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Schema\SQL\mt_immutable_timestamp.sql" />
   </ItemGroup>
+
   <ItemGroup>
     <None Include="Marten.project.json" />
   </ItemGroup>
