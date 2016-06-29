@@ -22,14 +22,12 @@
   "dependencies": {
     "Newtonsoft.Json": "9.0.1",
     "Remotion.Linq": "2.1.1",
-    "Baseline": {
-      "version": "1.0.0-alpha-32"
-    }
+    "Npgsql": "3.1.4",
+    "Baseline": "1.0.0-alpha-32"
   },
   "frameworks": {
     "netstandard1.3": {
       "dependencies": {
-        "Npgsql": "3.1.4",
         "System.Linq.Queryable": "4.0.1",
         "System.ObjectModel": "4.0.12",
         "System.Reflection": "4.1.0"

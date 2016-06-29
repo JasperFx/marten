@@ -24,13 +24,13 @@
           "lib/net45/Newtonsoft.Json.dll": {}
         }
       },
-      "Npgsql/3.1.4": {
+      "Npgsql/3.1.5": {
         "type": "package",
         "compile": {
-          "lib/net451/Npgsql.dll": {}
+          "lib/net451/npgsql.dll": {}
         },
         "runtime": {
-          "lib/net451/Npgsql.dll": {}
+          "lib/net451/npgsql.dll": {}
         }
       },
       "Remotion.Linq/2.1.1": {
@@ -208,13 +208,13 @@
           "lib/net45/Newtonsoft.Json.dll": {}
         }
       },
-      "Npgsql/3.1.4": {
+      "Npgsql/3.1.5": {
         "type": "package",
         "compile": {
-          "lib/net451/Npgsql.dll": {}
+          "lib/net451/npgsql.dll": {}
         },
         "runtime": {
-          "lib/net451/Npgsql.dll": {}
+          "lib/net451/npgsql.dll": {}
         }
       },
       "Remotion.Linq/2.1.1": {
@@ -407,19 +407,19 @@
         "tools/install.ps1"
       ]
     },
-    "Npgsql/3.1.4": {
-      "sha512": "jkWNvmrk27FJ5ETXDDT1RzbE/SFUNkunIophGRoEmN7/WMpt55YaEpAZlFVSy5wPqb+JgiCgGyFIhXMA4s0zWw==",
+    "Npgsql/3.1.5": {
+      "sha512": "goxdRti9awLXumRiZh7Z2Lu6DQ0v6tEz+aPNfp2OjuxKCGIZYr/KmJ/Q9X+wRyGkzi0nzAacWZC5YAd5xSW6PA==",
       "type": "package",
-      "path": "Npgsql/3.1.4",
+      "path": "Npgsql/3.1.5",
       "files": [
-        "Npgsql.3.1.4.nupkg.sha512",
+        "Npgsql.3.1.5.nupkg.sha512",
         "Npgsql.nuspec",
-        "lib/net45/Npgsql.dll",
-        "lib/net45/Npgsql.xml",
-        "lib/net451/Npgsql.dll",
-        "lib/net451/Npgsql.xml",
-        "lib/netstandard1.3/Npgsql.dll",
-        "lib/netstandard1.3/Npgsql.xml"
+        "lib/net45/npgsql.dll",
+        "lib/net45/npgsql.xml",
+        "lib/net451/npgsql.dll",
+        "lib/net451/npgsql.xml",
+        "lib/netstandard1.3/npgsql.dll",
+        "lib/netstandard1.3/npgsql.xml"
       ]
     },
     "Remotion.Linq/2.1.1": {
@@ -1227,7 +1227,7 @@
     "": [
       "Baseline >= 1.0.0-alpha-32",
       "Newtonsoft.Json >= 9.0.1",
-      "Npgsql >= 3.1.4",
+      "Npgsql >= 3.1.5",
       "Remotion.Linq >= 2.1.1"
     ],
     ".NETFramework,Version=v4.6": []

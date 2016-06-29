@@ -5029,10 +5029,10 @@
     "": [
       "Baseline >= 1.0.0-alpha-32",
       "Newtonsoft.Json >= 9.0.1",
+      "Npgsql >= 3.1.4",
       "Remotion.Linq >= 2.1.1"
     ],
     ".NETStandard,Version=v1.3": [
-      "Npgsql >= 3.1.4",
       "System.Linq.Queryable >= 4.0.1",
       "System.ObjectModel >= 4.0.12",
       "System.Reflection >= 4.1.0"
