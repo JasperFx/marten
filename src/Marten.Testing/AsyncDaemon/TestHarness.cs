@@ -124,5 +124,6 @@ namespace Marten.Testing.AsyncDaemon
 
             CompareActiveProjects(theStore);
         }
+
     }
 }

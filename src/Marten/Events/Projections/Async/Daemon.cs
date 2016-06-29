@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -10,20 +11,21 @@ namespace Marten.Events.Projections.Async
     {
         private readonly DaemonOptions _options;
         private readonly IFetcher _fetcher;
-        private readonly IActiveProjections _projections;
+        private readonly IList<IProjectionTrack> _projections = new List<IProjectionTrack>();
+        private bool _isDisposed;
 
 
-        public Daemon(DaemonOptions options, IFetcher fetcher, IActiveProjections projections)
+        public Daemon(DaemonOptions options, IFetcher fetcher, IEnumerable<IProjectionTrack> projections)
         {
             _options = options;
             _fetcher = fetcher;
-            _projections = projections;
+            _projections.AddRange(projections);
         }
 
         public void Start()
         {
             UpdateBlock = new ActionBlock<IDaemonUpdate>(msg => msg.Invoke(this));
-            _projections.StartTracks(UpdateBlock);
+            _projections.Each(x => x.Updater = UpdateBlock);
             _fetcher.Start(this, true);
         }
 
@@ -33,7 +35,11 @@ namespace Marten.Events.Projections.Async
         {
             await _fetcher.Stop().ConfigureAwait(false);
 
-            await _projections.StopAll().ConfigureAwait(false);
+            foreach (var track in _projections)
+            {
+                await track.Stop().ConfigureAwait(false);
+            }
+
         }
 
         public Accumulator Accumulator { get; } = new Accumulator();
@@ -47,14 +53,15 @@ namespace Marten.Events.Projections.Async
                 await _fetcher.Pause().ConfigureAwait(false);
             }
 
-            _projections.CoordinatedTracks
-                .Where(x => x.LastEncountered <= page.From)
-                .Each(x => x.QueuePage(page));
+            foreach (var track in _projections)
+            {
+                track.QueuePage(page);
+            }
         }
 
         public Task StoreProgress(Type viewType, EventPage page)
         {
-            var minimum = _projections.CoordinatedTracks.Min(x => x.LastEncountered);
+            var minimum = _projections.Min(x => x.LastEncountered);
 
             Accumulator.Prune(minimum);
 
@@ -74,20 +81,28 @@ namespace Marten.Events.Projections.Async
 
         void IEventPageWorker.Finished(long lastEncountered)
         {
-            // TODO -- do something here!
-            throw new NotImplementedException();
+            Dispose();
+
+
+            
         }
 
         public void Dispose()
         {
+            if (_isDisposed) return;
+
+            _isDisposed = true;
             UpdateBlock.Complete();
-            _projections.Dispose();
+            foreach (var track in _projections)
+            {
+                track.Dispose();
+            }
         }
 
         public async Task<long> WaitUntilEventIsProcessed(long sequence)
         {
             long farthest = 0;
-            foreach (var track in _projections.AllTracks)
+            foreach (var track in _projections)
             {
                 var last = await track.WaitUntilEventIsProcessed(sequence).ConfigureAwait(false);
                 if (farthest == 0 || last < farthest)

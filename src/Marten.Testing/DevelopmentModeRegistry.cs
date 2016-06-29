@@ -1,5 +1,4 @@
 using System;
-using Marten.Events;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;

@@ -12,8 +12,6 @@ namespace Marten.Testing.Events.Projections.Async
 
     public class when_caching_pages : DaemonContext
     {
-
-
         [Fact]
         public async Task stores_the_first_page()
         {
@@ -70,12 +68,24 @@ namespace Marten.Testing.Events.Projections.Async
         public async Task should_stop_the_fetcher_and_projections()
         {
             theFetcher.Stop().Returns(Task.CompletedTask);
-            theProjections.StopAll().Returns(Task.CompletedTask);
+
+            projection1.Stop().Returns(Task.CompletedTask);
+            projection2.Stop().Returns(Task.CompletedTask);
+            projection3.Stop().Returns(Task.CompletedTask);
+            projection4.Stop().Returns(Task.CompletedTask);
+            projection5.Stop().Returns(Task.CompletedTask);
+
+
 
             await theDaemon.Stop().ConfigureAwait(false);
 
             theFetcher.Received().Stop();
-            theProjections.Received().StopAll();
+
+            projection1.Received().Stop();
+            projection2.Received().Stop();
+            projection3.Received().Stop();
+            projection4.Received().Stop();
+            projection5.Received().Stop();
         }
 
     }
@@ -132,7 +142,12 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public void should_start_the_projections_with_the_update_block()
         {
-            theProjections.Received().StartTracks(theDaemon.UpdateBlock);
+            projection1.Received().Updater = theDaemon.UpdateBlock;
+            projection2.Received().Updater = theDaemon.UpdateBlock;
+            projection3.Received().Updater = theDaemon.UpdateBlock;
+            projection4.Received().Updater = theDaemon.UpdateBlock;
+            projection5.Received().Updater = theDaemon.UpdateBlock;
+
         }
 
         [Fact]
@@ -145,7 +160,6 @@ namespace Marten.Testing.Events.Projections.Async
     public abstract class DaemonContext
     {
         protected readonly IFetcher theFetcher = Substitute.For<IFetcher>();
-        protected readonly IActiveProjections theProjections = Substitute.For<IActiveProjections>();
         protected Daemon theDaemon;
         protected IProjectionTrack projection1;
         protected IProjectionTrack projection2;
@@ -156,16 +170,25 @@ namespace Marten.Testing.Events.Projections.Async
 
         public DaemonContext()
         {
-            theDaemon = new Daemon(theOptions, theFetcher, theProjections);
-
             projection1 = Substitute.For<IProjectionTrack>();
             projection2 = Substitute.For<IProjectionTrack>();
             projection3 = Substitute.For<IProjectionTrack>();
             projection4 = Substitute.For<IProjectionTrack>();
             projection5 = Substitute.For<IProjectionTrack>();
 
-            var projectionTracks = new []{projection1, projection2, projection3, projection4, projection5};
-            theProjections.CoordinatedTracks.Returns(projectionTracks);
+            var projections = new IProjectionTrack[]
+            {
+                projection1,
+                projection2,
+                projection3,
+                projection4,
+                projection5
+            };
+
+            theDaemon = new Daemon(theOptions, theFetcher, projections);
+
+
+
         }
 
 

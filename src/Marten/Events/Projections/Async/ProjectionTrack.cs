@@ -7,8 +7,6 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Marten.Events.Projections.Async
 {
-    // Some tracks will be passive, others actively fetching until they're done
-
     // Tested through integration tests
     public class ProjectionTrack : IProjectionTrack
     {
@@ -42,6 +40,7 @@ namespace Marten.Events.Projections.Async
         }
 
         public int QueuedPageCount => _track.InputCount;
+        public ITargetBlock<IDaemonUpdate> Updater { get; set; }
 
         public void Dispose()
         {
@@ -62,6 +61,8 @@ namespace Marten.Events.Projections.Async
             LastEncountered = page.To;
 
             evaluateWaiters();
+
+            Updater?.Post(new StoreProgress(ViewType, page));
         }
 
         private void evaluateWaiters()
@@ -82,6 +83,11 @@ namespace Marten.Events.Projections.Async
             _waiters.Add(waiter);
 
             return waiter.Completion.Task;
+        }
+
+        public Task Stop()
+        {
+            throw new NotImplementedException();
         }
     }
 }
