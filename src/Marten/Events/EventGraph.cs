@@ -25,7 +25,13 @@ namespace Marten.Events
         public EventGraph(StoreOptions options)
         {
             Options = options;
-            _events.OnMissing = eventType => typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
+            _events.OnMissing = eventType =>
+            {
+                var mapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
+                Options.AddMapping(mapping);
+
+                return mapping;
+            };
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 

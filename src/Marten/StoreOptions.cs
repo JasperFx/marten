@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using Baseline;
 using Marten.Events;
 using Marten.Linq.Parsing;
@@ -29,6 +30,10 @@ namespace Marten
 
         private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
             new ConcurrentDictionary<Type, DocumentMapping>();
+
+        private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
+            new ConcurrentDictionary<Type, IDocumentMapping>();
+
 
         /// <summary>
         ///     Add, remove, or reorder global session listeners
@@ -234,6 +239,22 @@ namespace Marten
         /// Optional. If set, adds the specified user as the owner of database tables created by Marten
         /// </summary>
         public string OwnerName { get; set; }
+
+        internal IDocumentMapping FindMapping(Type documentType)
+        {
+            return _mappings.GetOrAdd(documentType, type =>
+            {
+                var subclass =  AllDocumentMappings.SelectMany(x => x.SubClasses)
+                        .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping;
+
+                return subclass ?? MappingFor(documentType);
+            });
+        }
+
+        internal void AddMapping(IDocumentMapping mapping)
+        {
+            _mappings[mapping.DocumentType] = mapping;
+        }
     }
 
     public class LinqCustomizations

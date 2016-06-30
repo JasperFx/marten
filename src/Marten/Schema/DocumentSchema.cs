@@ -25,8 +25,6 @@ namespace Marten.Schema
         private readonly IConnectionFactory _factory;
         private readonly IMartenLogger _logger;
 
-        private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
-            new ConcurrentDictionary<Type, IDocumentMapping>();
 
 
         private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new ConcurrentDictionary<Type, object>();
@@ -44,8 +42,6 @@ namespace Marten.Schema
             _logger = logger;
 
             StoreOptions = options;
-
-            options.AllDocumentMappings.Each(x => _mappings[x.DocumentType] = x);
 
             _sequences = new Lazy<SequenceFactory>(() =>
             {
@@ -130,7 +126,7 @@ namespace Marten.Schema
         }
 
         public IDbObjects DbObjects { get; }
-        public IEnumerable<IDocumentMapping> AllMappings => _mappings.Values;
+        public IEnumerable<IDocumentMapping> AllMappings => StoreOptions.AllDocumentMappings;
 
         public IBulkLoader<T> BulkLoaderFor<T>()
         {
@@ -168,14 +164,7 @@ namespace Marten.Schema
 
         public IDocumentMapping MappingFor(Type documentType)
         {
-            return _mappings.GetOrAdd(documentType, type =>
-            {
-                return
-                    StoreOptions.Events.AllEvents().FirstOrDefault(x => x.DocumentType == type)
-                    ?? StoreOptions.AllDocumentMappings.SelectMany(x => x.SubClasses)
-                        .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping
-                    ?? StoreOptions.MappingFor(type);
-            });
+            return StoreOptions.FindMapping(documentType);
         }
 
         public void EnsureStorageExists(Type documentType)
