@@ -188,6 +188,15 @@ namespace Marten.Schema
             // TODO -- HACK! Do something later that's more systematic
             if (documentType == typeof(StreamState)) return;
 
+            if (documentType == typeof(EventStream))
+            {
+                var patch = new SchemaPatch(this);
+                Events.As<EventGraph>().SchemaObjects
+                    .GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
+
+                return;
+            }
+
             buildSchemaObjectsIfNecessary(MappingFor(documentType));
         }
 

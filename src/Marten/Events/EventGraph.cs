@@ -2,19 +2,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Baseline;
-using Baseline.Reflection;
 using Marten.Events.Projections;
-using Marten.Linq;
 using Marten.Schema;
-using Marten.Schema.Identity;
 
 namespace Marten.Events
 {
-    // TODO -- try to eliminate the IDocumentMapping implementation here
-    // just making things ugly. If you could inject the IDatabaseSchemaObjects directly....
-    public class EventGraph : IDocumentMapping, IEventStoreConfiguration, IProjections
+    public class EventGraph : IEventStoreConfiguration, IProjections
     {
         private readonly ConcurrentDictionary<string, IAggregator> _aggregateByName =
             new ConcurrentDictionary<string, IAggregator>();
@@ -40,44 +34,13 @@ namespace Marten.Events
 
         internal StoreOptions Options { get; }
 
-
-        public Type DocumentType { get; } = typeof(EventStream);
-
+        // TODO -- make this internal
         public TableName Table => new TableName(DatabaseSchemaName, "mt_streams");
 
-        public IDocumentStorage BuildStorage(IDocumentSchema schema)
-        {
-            throw new NotSupportedException();
-        }
-
+        // TODO -- make this internal
         public IDocumentSchemaObjects SchemaObjects { get; }
 
-        public void DeleteAllDocuments(IConnectionFactory factory)
-        {
-            throw new NotSupportedException();
-        }
-
-        public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
-        {
-            var idMember = ReflectionHelper.GetProperty<EventStream>(x => x.Id);
-            var idType = typeof(Guid);
-
-            var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
-
-            return
-                (IdAssignment<T>) Activator.CreateInstance(assignerType, idMember, new CombGuidIdGeneration(), schema);
-        }
-
-        public IQueryableDocument ToQueryableDocument()
-        {
-            throw new NotSupportedException();
-        }
-
-        public IDocumentUpsert BuildUpsert(IDocumentSchema schema)
-        {
-            return new EventStreamAppender(this);
-        }
-
+        public bool JavascriptProjectionsEnabled { get; set; }
 
         public EventMapping EventMappingFor(Type eventType)
         {
@@ -126,13 +89,13 @@ namespace Marten.Events
 
         public void AggregateFor<T>(IAggregator<T> aggregator) where T : class, new()
         {
-            _aggregates.AddOrUpdate(typeof (T), aggregator, (type, previous) => aggregator);
+            _aggregates.AddOrUpdate(typeof(T), aggregator, (type, previous) => aggregator);
         }
 
         public IAggregator<T> AggregateFor<T>() where T : class, new()
         {
             return _aggregates
-                .GetOrAdd(typeof (T), type => new Aggregator<T>())
+                .GetOrAdd(typeof(T), type => new Aggregator<T>())
                 .As<IAggregator<T>>();
         }
 
@@ -166,26 +129,8 @@ namespace Marten.Events
             Inlines.Add(projection);
         }
 
-        public bool JavascriptProjectionsEnabled { get; set; }
-
 
         public IList<IProjection> Inlines { get; } = new List<IProjection>();
-
-
-        public IField FieldFor(IEnumerable<MemberInfo> members)
-        {
-            throw new NotSupportedException();
-        }
-
-        public IWhereFragment FilterDocuments(IWhereFragment query)
-        {
-            throw new NotSupportedException();
-        }
-
-        public IWhereFragment DefaultWhereFragment()
-        {
-            throw new NotSupportedException();
-        }
 
         public string AggregateAliasFor(Type aggregateType)
         {
