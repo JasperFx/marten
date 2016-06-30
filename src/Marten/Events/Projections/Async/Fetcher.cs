@@ -57,6 +57,8 @@ namespace Marten.Events.Projections.Async
 
                 _state = FetcherState.Active;
 
+                
+
                 _fetchingTask = Task.Factory.StartNew(async () =>
                 {
                     while (!Cancellation.IsCancellationRequested && _state == FetcherState.Active)
@@ -108,6 +110,11 @@ namespace Marten.Events.Projections.Async
 
         public async Task Stop()
         {
+            if (_state != FetcherState.Active)
+            {
+                return;
+            }
+
             _lock.EnterWriteLock();
             try
             {

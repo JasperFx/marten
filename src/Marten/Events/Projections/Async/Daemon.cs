@@ -39,15 +39,46 @@ namespace Marten.Events.Projections.Async
 
         public Task Stop<T>()
         {
-            throw new NotImplementedException();
+            var all = _tracks.Values.Select(x => x.Stop());
+            return Task.WhenAll(all);
         }
 
         public Task Stop(Type viewType)
         {
-            throw new NotImplementedException();
+            if (!_tracks.ContainsKey(viewType))
+            {
+                return Task.CompletedTask;
+            }
+
+            return _tracks[viewType].Stop();
         }
 
-        public void Start<T>()
+        public void Start<T>(DaemonLifecycle lifecycle)
+        {
+            Start(typeof(T), lifecycle);
+        }
+
+        public void Start(Type viewType, DaemonLifecycle lifecycle)
+        {
+            if (!_tracks.ContainsKey(viewType))
+            {
+                throw new ArgumentOutOfRangeException(nameof(viewType));
+            }
+
+            _tracks[viewType].Start(lifecycle);
+        }
+
+        public void Dispose()
+        {
+            foreach (var track in _tracks.Values)
+            {
+                track.Dispose();
+            }
+
+            _tracks.Clear();
+        }
+
+        public void StartAll()
         {
             using (var conn = _store.Advanced.OpenConnection())
             {
@@ -79,52 +110,36 @@ namespace Marten.Events.Projections.Async
             }
         }
 
-        public void Start(Type viewType)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Dispose()
+        public async Task WaitUntilEventIsProcessed(long sequence, CancellationToken token = new CancellationToken())
         {
             foreach (var track in _tracks.Values)
             {
-                track.Dispose();
+                await track.WaitUntilEventIsProcessed(sequence).ConfigureAwait(false);
             }
-
-            _tracks.Clear();
         }
 
-        public Task RebuildProjection<T>(CancellationToken token)
+        public async Task WaitForNonStaleResults(CancellationToken token = new CancellationToken())
         {
-            throw new NotImplementedException();
+            var last = await currentEventNumber(token).ConfigureAwait(false);
+
+            await WaitUntilEventIsProcessed(last, token).ConfigureAwait(false);
         }
 
-        public void StartAll()
+        public Task WaitForNonStaleResultsOf<T>(CancellationToken token = new CancellationToken())
         {
-            foreach (var track in _tracks.Values)
+            return WaitForNonStaleResultsOf(typeof(T), token);
+        }
+
+        public async Task WaitForNonStaleResultsOf(Type viewType, CancellationToken token)
+        {
+            if (!_tracks.ContainsKey(viewType))
             {
-                track.Start(DaemonLifecycle.Continuous);
+                throw new ArgumentOutOfRangeException(nameof(viewType));
             }
-        }
 
-        public Task<long> WaitUntilEventIsProcessed(long sequence)
-        {
-            throw new NotImplementedException();
-        }
+            var current = await currentEventNumber(token).ConfigureAwait(false);
 
-        public Task WaitForNonStaleResults()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task WaitForNonStaleResultsOf<T>()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task WaitForNonStaleResultsOf(Type viewType)
-        {
-            throw new NotImplementedException();
+            await _tracks[viewType].WaitUntilEventIsProcessed(current).ConfigureAwait(false);
         }
 
         public IEnumerable<IProjectionTrack> AllActivity => _tracks.Values;
@@ -139,9 +154,43 @@ namespace Marten.Events.Projections.Async
             return _tracks.ContainsKey(viewType) ? _tracks[viewType] : null;
         }
 
-        public Task RebuildAll()
+        public Task RebuildAll(CancellationToken token = new CancellationToken())
         {
-            throw new NotImplementedException();
+            var all = _tracks.Values.Select(x => x.Rebuild(token));
+
+            return Task.WhenAll(all);
+        }
+
+        public Task Rebuild<T>(CancellationToken token = new CancellationToken())
+        {
+            return Rebuild(typeof(T), token);
+        }
+
+        public Task Rebuild(Type viewType, CancellationToken token = new CancellationToken())
+        {
+            if (!_tracks.ContainsKey(viewType))
+            {
+                throw new ArgumentOutOfRangeException(nameof(viewType));
+            }
+
+            return _tracks[viewType].Rebuild(token);
+        }
+
+        private async Task<long> currentEventNumber(CancellationToken token)
+        {
+            var sql = $"select max(seq_id) from {_store.Schema.Events.Table}";
+            using (var conn = _store.Advanced.OpenConnection())
+            {
+                return await conn.ExecuteAsync(async (cmd, tkn) =>
+                {
+                    cmd.Sql(sql);
+                    using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
+                    {
+                        var any = await reader.ReadAsync(tkn).ConfigureAwait(false);
+                        return any ? await reader.GetFieldValueAsync<long>(0, tkn).ConfigureAwait(false) : 0;
+                    }
+                }, token);
+            }
         }
     }
 }

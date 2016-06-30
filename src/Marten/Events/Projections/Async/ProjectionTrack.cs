@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Marten.Util;
 
 namespace Marten.Events.Projections.Async
 {
@@ -18,12 +19,14 @@ namespace Marten.Events.Projections.Async
         private readonly IList<EventWaiter> _waiters = new List<EventWaiter>();
         private readonly TaskCompletionSource<long> _rebuildCompletion = new TaskCompletionSource<long>();
         private readonly EventGraph _events;
+        private readonly IDocumentStore _store;
 
         public ProjectionTrack(IFetcher fetcher, IDocumentStore store, IProjection projection)
         {
             _fetcher = fetcher;
             _session = store.OpenSession();
             _projection = projection;
+            _store = store;
 
             _events = store.Schema.Events;
 
@@ -98,6 +101,8 @@ namespace Marten.Events.Projections.Async
 
         public void Start(DaemonLifecycle lifecycle)
         {
+            _store.Schema.EnsureStorageExists(_projection.Produces);
+
             Lifecycle = lifecycle;
             _fetcher.Start(this, lifecycle);
         }
@@ -145,10 +150,43 @@ namespace Marten.Events.Projections.Async
             return waiter.Completion.Task;
         }
 
-        public Task<long> RunUntilEndOfEvents()
+        public Task<long> RunUntilEndOfEvents(CancellationToken token = new CancellationToken())
         {
+            _store.Schema.EnsureStorageExists(_projection.Produces);
+
+            // TODO -- make the CancellationToken go into fetcher
             _fetcher.Start(this, DaemonLifecycle.StopAtEndOfEventData);
             return _rebuildCompletion.Task;
+        }
+
+        public async Task Rebuild(CancellationToken token = new CancellationToken())
+        {
+            _store.Schema.EnsureStorageExists(_projection.Produces);
+
+            await _fetcher.Stop().ConfigureAwait(false);
+
+            await clearExistingState(token).ConfigureAwait(false);
+
+            await RunUntilEndOfEvents(token).ConfigureAwait(false);
+        }
+
+        private async Task clearExistingState(CancellationToken token)
+        {
+            var tableName = _store.Schema.MappingFor(_projection.Produces).Table;
+            var sql = $"delete from {_store.Schema.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
+
+            using (var conn = _store.Advanced.OpenConnection())
+            {
+                await conn.ExecuteAsync(async (cmd, tkn) =>
+                {
+                    await cmd.Sql(sql)
+                        .With("name", _projection.Produces.FullName)
+                        .ExecuteNonQueryAsync(tkn)
+                        .ConfigureAwait(false);
+                }, token).ConfigureAwait(false);
+            }
+
+            Console.WriteLine("Cleared the Existing Projection State for " + _projection.Produces.FullName);
         }
     }
 }

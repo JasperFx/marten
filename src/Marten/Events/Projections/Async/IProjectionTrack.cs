@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marten.Events.Projections.Async
@@ -10,6 +11,7 @@ namespace Marten.Events.Projections.Async
         void Start(DaemonLifecycle lifecycle);
         Task Stop();
         Task<long> WaitUntilEventIsProcessed(long sequence);
-        Task<long> RunUntilEndOfEvents();
+        Task<long> RunUntilEndOfEvents(CancellationToken token = new CancellationToken());
+        Task Rebuild(CancellationToken token = new CancellationToken());
     }
 }

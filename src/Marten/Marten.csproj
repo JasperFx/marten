@@ -70,7 +70,6 @@
     <Compile Include="Events\Projections\Async\IDaemon.cs" />
     <Compile Include="Events\Projections\Async\IProjectionTrack.cs" />
     <Compile Include="Events\Projections\Async\ProjectionTrack.cs" />
-    <Compile Include="Events\Projections\Async\CompleteRebuild.cs" />
     <Compile Include="Events\Projections\Async\EventPage.cs" />
     <Compile Include="Events\Projections\Async\EventProgressWrite.cs" />
     <Compile Include="Events\Projections\Async\EventWaiter.cs" />

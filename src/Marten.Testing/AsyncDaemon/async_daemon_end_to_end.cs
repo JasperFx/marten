@@ -20,20 +20,20 @@ namespace Marten.Testing.AsyncDaemon
         [Fact]
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch()
         {
+            StoreOptions(_ =>
+            {
+                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
+            });
+
             _fixture.PublishAllProjectEvents(theStore);
 
-            var projection = new AggregationProjection<ActiveProject>(new AggregateFinder<ActiveProject>(), new Aggregator<ActiveProject>());
-            var build = new CompleteRebuild(theStore, projection);
 
-            var last = await build.PerformRebuild(new CancellationToken()).ConfigureAwait(false);
-
-            Console.WriteLine(last);
-
-            build.Dispose();
+            using (var daemon = theStore.BuildProjectionDaemon())
+            {
+                await daemon.Rebuild<ActiveProject>().ConfigureAwait(false);
+            }
 
             _fixture.CompareActiveProjects(theStore);
-
-            build.Dispose();
         }
     }
 }

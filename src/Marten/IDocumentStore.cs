@@ -81,6 +81,6 @@ namespace Marten
 
 
 
-        IDaemon BuildProjectionDaemon(Type[] viewTypes);
+        IDaemon BuildProjectionDaemon(Type[] viewTypes = null);
     }
 }
