@@ -56,7 +56,7 @@ AND    n.nspname = '{1}';";
 
         public void DeleteDocumentsExcept(params Type[] documentTypes)
         {
-            _schema.AllDocumentMaps().Where(x => !documentTypes.Contains(x.DocumentType)).Each(x =>
+            _schema.AllMappings.Where(x => !documentTypes.Contains(x.DocumentType)).Each(x =>
             {
                 x.DeleteAllDocuments(_factory);
             });

@@ -89,7 +89,7 @@ namespace Marten.Schema
 
         public IEnumerable<ISchemaObjects> AllSchemaObjects()
         {
-            var mappings = AllDocumentMaps().TopologicalSort(m =>
+            var mappings = AllMappings.TopologicalSort(m =>
             {
                 var documentMapping = m as DocumentMapping;
                 if (documentMapping == null)
@@ -212,7 +212,7 @@ namespace Marten.Schema
         public string[] AllSchemaNames()
         {
             var schemas =
-                AllDocumentMaps().OfType<DocumentMapping>().Select(x => x.DatabaseSchemaName).Distinct().ToList();
+                AllMappings.OfType<DocumentMapping>().Select(x => x.DatabaseSchemaName).Distinct().ToList();
 
             schemas.Fill(StoreOptions.DatabaseSchemaName);
             schemas.Fill(StoreOptions.Events.DatabaseSchemaName);
@@ -323,11 +323,6 @@ namespace Marten.Schema
             return writer.ToString();
         }
 
-
-        public IEnumerable<IDocumentMapping> AllDocumentMaps()
-        {
-            return StoreOptions.AllDocumentMappings;
-        }
 
         public IResolver<T> ResolverFor<T>()
         {

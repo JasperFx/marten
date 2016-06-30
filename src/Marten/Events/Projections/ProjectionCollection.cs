@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using Marten.Schema;
 
 namespace Marten.Events.Projections
 {
@@ -26,8 +25,6 @@ namespace Marten.Events.Projections
 
         public AggregationProjection<T> AggregateStreamsWith<T>() where T : class, new()
         {
-            _options.MappingFor(typeof(T));
-
             var aggregator = new Aggregator<T>();
             var finder = new AggregateFinder<T>();
             var projection = new AggregationProjection<T>(finder, aggregator);

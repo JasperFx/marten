@@ -78,7 +78,6 @@ namespace Marten.Schema
         string ToDDL();
 
 
-        IEnumerable<IDocumentMapping> AllDocumentMaps();
         string[] AllSchemaNames();
 
         IResolver<T> ResolverFor<T>();
