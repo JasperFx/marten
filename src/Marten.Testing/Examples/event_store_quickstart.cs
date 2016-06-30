@@ -16,7 +16,7 @@ namespace Marten.Testing.Examples
 var store = DocumentStore.For(_ =>
 {
     _.Connection(ConnectionSource.ConnectionString);
-    _.Events.AggregateStreamsInlineWith<QuestParty>();
+    _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
 });
 
 var questId = Guid.NewGuid();

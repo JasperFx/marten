@@ -8,7 +8,7 @@ using Marten.Schema;
 
 namespace Marten.Events
 {
-    public class EventGraph : IProjections
+    public class EventGraph
     {
         private readonly ConcurrentDictionary<string, IAggregator> _aggregateByName =
             new ConcurrentDictionary<string, IAggregator>();
@@ -30,6 +30,9 @@ namespace Marten.Events
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 
             SchemaObjects = new EventStoreDatabaseObjects(this);
+
+            InlineProjections = new ProjectionCollection(options);
+            AsyncProjections = new ProjectionCollection(options);
         }
 
         internal StoreOptions Options { get; }
@@ -103,30 +106,8 @@ namespace Marten.Events
                     name => { return AllAggregates().FirstOrDefault(x => x.Alias == name); }).AggregateType;
         }
 
-        public IAggregator<T> AggregateStreamsInlineWith<T>() where T : class, new()
-        {
-            var aggregator = AggregateFor<T>();
-            var finder = new AggregateFinder<T>();
-            var projection = new AggregationProjection<T>(finder, aggregator);
-
-            Inlines.Add(projection);
-
-            return aggregator;
-        }
-
-        public void TransformEventsInlineWith<TEvent, TView>(ITransform<TEvent, TView> transform)
-        {
-            var projection = new OneForOneProjection<TEvent, TView>(transform);
-            Inlines.Add(projection);
-        }
-
-        public void InlineTransformation(IProjection projection)
-        {
-            Inlines.Add(projection);
-        }
-
-
-        public IList<IProjection> Inlines { get; } = new List<IProjection>();
+        public ProjectionCollection InlineProjections { get; }
+        public ProjectionCollection AsyncProjections { get; }
 
         public string AggregateAliasFor(Type aggregateType)
         {

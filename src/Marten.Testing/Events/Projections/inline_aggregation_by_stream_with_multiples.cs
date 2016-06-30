@@ -32,15 +32,15 @@ namespace Marten.Testing.Events.Projections
 
                 // This is all you need to create the QuestParty projected
                 // view
-                _.Events.AggregateStreamsInlineWith<QuestParty>();
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
             });
             // ENDSAMPLE
 
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.AggregateStreamsInlineWith<QuestParty>();
-                _.Events.AggregateStreamsInlineWith<QuestMonsters>();
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.InlineProjections.AggregateStreamsWith<QuestMonsters>();
             });
 
             var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
@@ -58,8 +58,9 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.AggregateStreamsInlineWith<QuestParty>();
-                _.Events.AggregateStreamsInlineWith<QuestMonsters>();
+
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.InlineProjections.AggregateStreamsWith<QuestMonsters>();
             });
 
             var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);

@@ -42,8 +42,8 @@ namespace Marten.Testing.AsyncDaemon
             _.DatabaseSchemaName = "expected";
             _.Events.DatabaseSchemaName = "expected";
 
-            _.Events.AggregateStreamsInlineWith<ActiveProject>();
-            _.Events.TransformEventsInlineWith(new CommitViewTransform());
+            _.Events.InlineProjections.AggregateStreamsWith<ActiveProject>();
+            _.Events.InlineProjections.TransformEvents(new CommitViewTransform());
         });
 
 

@@ -25,7 +25,8 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.TransformEventsInlineWith(new MonsterDefeatedTransform());
+
+                _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());
             });
 
             var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
@@ -49,7 +50,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineTransformation(new OneForOneProjection<MonsterSlayed, MonsterDefeated>(new MonsterDefeatedTransform()));
+                _.Events.InlineProjections.Add(new OneForOneProjection<MonsterSlayed, MonsterDefeated>(new MonsterDefeatedTransform()));
             });
 
             var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
@@ -76,7 +77,7 @@ namespace Marten.Testing.Events.Projections
             {
                 _.Connection(ConnectionSource.ConnectionString);
 
-                _.Events.TransformEventsInlineWith(new MonsterDefeatedTransform());
+                _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());
             });
             // ENDSAMPLE
 
@@ -87,7 +88,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.TransformEventsInlineWith(new MonsterDefeatedTransform());
+                _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());
             });
 
             var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);

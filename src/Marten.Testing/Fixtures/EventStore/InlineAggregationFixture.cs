@@ -25,7 +25,7 @@ namespace Marten.Testing.Fixtures.EventStore
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.AggregateStreamsInlineWith<QuestParty>();
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
             });
 
             Context.State.Store(_store);

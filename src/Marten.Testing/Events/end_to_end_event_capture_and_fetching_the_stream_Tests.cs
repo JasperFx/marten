@@ -428,7 +428,7 @@ namespace Marten.Testing.Events
 
                 _.Connection(ConnectionSource.ConnectionString);
 
-                _.Events.AggregateStreamsInlineWith<QuestParty>();
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
 
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));

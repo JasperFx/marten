@@ -6,12 +6,12 @@ namespace Marten.Events.Projections
 {
     public class ProjectionCollection : IEnumerable<IProjection>
     {
-        private readonly IDocumentSchema _schema;
+        private readonly StoreOptions _options;
         private readonly IList<IProjection> _projections = new List<IProjection>();
 
-        public ProjectionCollection(IDocumentSchema schema)
+        public ProjectionCollection(StoreOptions options)
         {
-            _schema = schema;
+            _options = options;
         }
 
         public IEnumerator<IProjection> GetEnumerator()
@@ -26,7 +26,7 @@ namespace Marten.Events.Projections
 
         public AggregationProjection<T> AggregateStreamsWith<T>() where T : class, new()
         {
-            _schema.MappingFor(typeof(T));
+            _options.MappingFor(typeof(T));
 
             var aggregator = new Aggregator<T>();
             var finder = new AggregateFinder<T>();
@@ -47,7 +47,7 @@ namespace Marten.Events.Projections
 
         public void Add(IProjection projection)
         {
-            _schema.MappingFor(projection.Produces);
+            _options.MappingFor(projection.Produces);
             _projections.Add(projection);
         }
     }
