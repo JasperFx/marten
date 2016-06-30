@@ -24,6 +24,7 @@
         "NETStandard.Library": "1.6.0",
         "NSubstitute": "2.0.0-alpha003",
         "System.Diagnostics.TraceSource": "4.0.0",
+        "Microsoft.Extensions.PlatformAbstractions": "1.0.0",
         "Microsoft.NETCore.App": {
           "type": "platform",
           "version": "1.0.0"

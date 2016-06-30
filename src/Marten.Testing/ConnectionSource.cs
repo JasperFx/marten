@@ -13,16 +13,21 @@ namespace Marten.Testing
 
         static ConnectionSource()
         {
-            var path = Directory.GetCurrentDirectory().AppendPath("connection.txt");
+            string path = null;
+#if NET46
+            path = AppDomain.CurrentDomain.BaseDirectory.AppendPath("connection.txt");
             if (!File.Exists(path))
             {
                 path =
-                    Directory.GetCurrentDirectory().ParentDirectory()
+                    AppDomain.CurrentDomain.BaseDirectory.ParentDirectory()
                         .ParentDirectory()
                         .AppendPath("connection.txt");
             }
 
-
+#else
+            var ps = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default;
+            path = ps.Application.ApplicationBasePath.AppendPath("connection.txt");
+#endif
             ConnectionString = new FileSystem().ReadStringFromFile(path);
         }
 
