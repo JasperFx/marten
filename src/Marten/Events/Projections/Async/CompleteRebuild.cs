@@ -20,7 +20,7 @@ namespace Marten.Events.Projections.Async
             _store = store;
             _projection = projection;
             var storeOptions = store.Advanced.Options;
-            var events = store.Schema.Events.As<EventGraph>();
+            var events = store.Schema.Events;
 
             options.EventTypeNames = projection.Consumes.Select(x => events.EventMappingFor(x).Alias).ToArray();
 

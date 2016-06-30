@@ -95,7 +95,7 @@ namespace Marten
         /// <summary>
         ///     Configuration of event streams and projections
         /// </summary>
-        public IEventStoreConfiguration Events { get; }
+        public EventGraph Events { get; }
 
         /// <summary>
         ///     Extension point to add custom Linq query parsers

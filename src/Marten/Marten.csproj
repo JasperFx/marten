@@ -59,7 +59,6 @@
     <Compile Include="Events\EventStoreDatabaseObjects.cs" />
     <Compile Include="Events\EventStream.cs" />
     <Compile Include="Events\EventStreamVersioningCallback.cs" />
-    <Compile Include="Events\IEventStoreConfiguration.cs" />
     <Compile Include="Events\IProjections.cs" />
     <Compile Include="Events\Projections\AggregationProjection.cs" />
     <Compile Include="Events\Projections\AggregationStep.cs" />

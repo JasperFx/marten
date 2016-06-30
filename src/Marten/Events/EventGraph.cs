@@ -8,7 +8,7 @@ using Marten.Schema;
 
 namespace Marten.Events
 {
-    public class EventGraph : IEventStoreConfiguration, IProjections
+    public class EventGraph : IProjections
     {
         private readonly ConcurrentDictionary<string, IAggregator> _aggregateByName =
             new ConcurrentDictionary<string, IAggregator>();

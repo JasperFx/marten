@@ -284,7 +284,7 @@ namespace Marten.Services.BatchQuerying
 
         public Task<T> AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new()
         {
-            var inner = new EventQueryHandler(new EventSelector(_schema.Events.As<EventGraph>(), _serializer), streamId, version, timestamp);
+            var inner = new EventQueryHandler(new EventSelector(_schema.Events, _serializer), streamId, version, timestamp);
             var aggregator = _schema.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner);
 
@@ -294,19 +294,19 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IEvent> Load(Guid id)
         {
-            var handler = new SingleEventQueryHandler(id, _schema.Events.As<EventGraph>(), _serializer);
+            var handler = new SingleEventQueryHandler(id, _schema.Events, _serializer);
             return AddItem(handler);
         }
 
         public Task<StreamState> FetchStreamState(Guid streamId)
         {
-            var handler = new StreamStateHandler(_schema.Events.As<EventGraph>(), streamId);
+            var handler = new StreamStateHandler(_schema.Events, streamId);
             return AddItem(handler);
         }
 
         public Task<IList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
         {
-            var selector = new EventSelector(_schema.Events.As<EventGraph>(), _serializer);
+            var selector = new EventSelector(_schema.Events, _serializer);
             var handler = new EventQueryHandler(selector, streamId, version, timestamp);
 
             return AddItem(handler);

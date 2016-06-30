@@ -48,7 +48,7 @@ namespace Marten.Schema
         /// <summary>
         /// The event store configuration
         /// </summary>
-        IEventStoreConfiguration Events { get; }
+        EventGraph Events { get; }
 
         /// <summary>
         /// Access to Linq parsing for adhoc querying techniques

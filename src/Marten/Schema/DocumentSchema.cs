@@ -125,7 +125,7 @@ namespace Marten.Schema
 
             if (Events.IsActive)
             {
-                yield return Events.As<EventGraph>().SchemaObjects;
+                yield return Events.SchemaObjects;
             }
         }
 
@@ -170,11 +170,6 @@ namespace Marten.Schema
         {
             return _mappings.GetOrAdd(documentType, type =>
             {
-                if (type == typeof(EventStream))
-                {
-                    return StoreOptions.Events.As<IDocumentMapping>();
-                }
-
                 return
                     StoreOptions.Events.AllEvents().FirstOrDefault(x => x.DocumentType == type)
                     ?? StoreOptions.AllDocumentMappings.SelectMany(x => x.SubClasses)
@@ -191,7 +186,7 @@ namespace Marten.Schema
             if (documentType == typeof(EventStream))
             {
                 var patch = new SchemaPatch(this);
-                Events.As<EventGraph>().SchemaObjects
+                Events.SchemaObjects
                     .GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
 
                 return;
@@ -222,7 +217,7 @@ namespace Marten.Schema
             });
         }
 
-        public IEventStoreConfiguration Events => StoreOptions.Events;
+        public EventGraph Events => StoreOptions.Events;
 
 
         public string[] AllSchemaNames()

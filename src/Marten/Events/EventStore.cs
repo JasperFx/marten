@@ -30,7 +30,7 @@ namespace Marten.Events
             _connection = connection;
             _unitOfWork = unitOfWork;
 
-            _selector = new EventSelector(_schema.Events.As<EventGraph>(), serializer);
+            _selector = new EventSelector(_schema.Events, serializer);
 
         }
 
@@ -153,25 +153,25 @@ namespace Marten.Events
 
         public IEvent Load(Guid id)
         {
-            var handler = new SingleEventQueryHandler(id, _schema.Events.As<EventGraph>(), _serializer);
+            var handler = new SingleEventQueryHandler(id, _schema.Events, _serializer);
             return _connection.Fetch(handler, new NulloIdentityMap(_serializer));
         }
 
         public Task<IEvent> LoadAsync(Guid id, CancellationToken token = default(CancellationToken))
         {
-            var handler = new SingleEventQueryHandler(id, _schema.Events.As<EventGraph>(), _serializer);
+            var handler = new SingleEventQueryHandler(id, _schema.Events, _serializer);
             return _connection.FetchAsync(handler, new NulloIdentityMap(_serializer), token);
         }
 
         public StreamState FetchStreamState(Guid streamId)
         {
-            var handler = new StreamStateHandler(_schema.Events.As<EventGraph>(), streamId);
+            var handler = new StreamStateHandler(_schema.Events, streamId);
             return _connection.Fetch(handler, null);
         }
 
         public Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = new CancellationToken())
         {
-            var handler = new StreamStateHandler(_schema.Events.As<EventGraph>(), streamId);
+            var handler = new StreamStateHandler(_schema.Events, streamId);
             return _connection.FetchAsync(handler, null, token);
         }
     }
