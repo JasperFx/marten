@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Projections.Async;
 
 namespace Marten.Events.Projections
 {
@@ -12,5 +13,7 @@ namespace Marten.Events.Projections
 
         Type[] Consumes { get; }
         Type Produces { get; }
+
+        AsyncOptions AsyncOptions { get; }
     }
 }

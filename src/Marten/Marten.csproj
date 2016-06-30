@@ -63,6 +63,7 @@
     <Compile Include="Events\Projections\AggregationStep.cs" />
     <Compile Include="Events\Projections\Aggregator.cs" />
     <Compile Include="Events\Projections\Async\Accumulator.cs" />
+    <Compile Include="Events\Projections\Async\AsyncOptions.cs" />
     <Compile Include="Events\Projections\Async\CachePageUpdate.cs" />
     <Compile Include="Events\Projections\Async\DaemonLifecycle.cs" />
     <Compile Include="Events\Projections\Async\ProjectionTrack.cs" />
@@ -76,7 +77,6 @@
     <Compile Include="Events\Projections\Async\IEventPageWorker.cs" />
     <Compile Include="Events\Projections\Async\IFetcher.cs" />
     <Compile Include="Events\Projections\Async\ProjectionStatus.cs" />
-    <Compile Include="Events\Projections\Async\DaemonOptions.cs" />
     <Compile Include="Events\Projections\Async\StoreProgress.cs" />
     <Compile Include="Events\Projections\IAggregation.cs" />
     <Compile Include="Events\Projections\IAggregationFinder.cs" />

@@ -15,18 +15,13 @@ namespace Marten.Events.Projections.Async
         private readonly Fetcher _fetcher;
         private readonly ProjectionTrack _projectionTrack;
 
-        public CompleteRebuild(DaemonOptions options, IDocumentStore store, IProjection projection)
+        public CompleteRebuild(IDocumentStore store, IProjection projection)
         {
             _store = store;
             _projection = projection;
-            var storeOptions = store.Advanced.Options;
-            var events = store.Schema.Events;
+            _fetcher = new Fetcher(store, _projection.AsyncOptions, _projection.Consumes);
 
-            options.EventTypeNames = projection.Consumes.Select(x => events.EventMappingFor(x).Alias).ToArray();
-
-            _fetcher = new Fetcher(options, storeOptions.ConnectionFactory(), events, storeOptions.Serializer());
-
-            _projectionTrack = new ProjectionTrack(options, _fetcher, store.OpenSession(), projection);
+            _projectionTrack = new ProjectionTrack(_fetcher, store, projection);
 
         }
 

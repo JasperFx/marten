@@ -14,33 +14,33 @@ namespace Marten.Events.Projections.Async
 {
     public class Fetcher : IDisposable, IFetcher
     {
+        private readonly AsyncOptions _options;
         private readonly NpgsqlConnection _conn;
-        private readonly EventGraph _events;
         private readonly NulloIdentityMap _map;
         private readonly EventSelector _selector;
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private FetcherState _state;
         private Task _fetchingTask;
         private long _lastEncountered = 0;
+        private string[] _eventTypeNames;
 
-        public Fetcher(DaemonOptions options, IConnectionFactory factory, EventGraph events,
-            ISerializer serializer)
+        public Fetcher(IDocumentStore store, AsyncOptions options, IEnumerable<Type> eventTypes)
         {
+            _options = options;
             _state = FetcherState.Waiting;
 
-            Options = options;
-            _events = events;
-            _conn = factory.Create();
+            _conn = store.Schema.StoreOptions.ConnectionFactory().Create();
 
             _conn.Open();
 
-            _selector = new EventSelector(events, serializer);
-            _map = new NulloIdentityMap(serializer);
+            _selector = new EventSelector(store.Schema.Events, store.Advanced.Serializer);
+            _map = new NulloIdentityMap(store.Advanced.Serializer);
+
+            _eventTypeNames = eventTypes.Select(x => store.Schema.Events.EventMappingFor(x).Alias).ToArray();
         }
 
         public CancellationTokenSource Cancellation { get; } = new CancellationTokenSource();
 
-        public DaemonOptions Options { get; }
 
         public string[] EventTypeNames { get; set; } = new string[0];
 
@@ -132,7 +132,7 @@ namespace Marten.Events.Projections.Async
 
         public async Task<EventPage> FetchNextPage(long lastEncountered)
         {
-            var lastPossible = lastEncountered + Options.PageSize;
+            var lastPossible = lastEncountered + _options.PageSize;
             var sql =
                 $@"
 select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
@@ -143,7 +143,7 @@ select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
             var cmd = _conn.CreateCommand(sql)
                 .With("last", lastEncountered)
                 .With("limit", lastPossible)
-                .With("types", Options.EventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
+                .With("types", _eventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
 
 
             long furthestExtant;

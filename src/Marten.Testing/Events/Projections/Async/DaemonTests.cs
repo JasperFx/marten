@@ -100,7 +100,7 @@ namespace Marten.Testing.Events.Projections.Async
 
             await theProjectionTrack.StoreProgress(typeof(ActiveProject), thePage).ConfigureAwait(false);
 
-            theFetcher.Received().Start(theProjectionTrack, theOptions.Lifecycle);
+            theFetcher.Received().Start(theProjectionTrack, theProjectionTrack.Lifecycle);
         }
     }
 
@@ -109,14 +109,14 @@ namespace Marten.Testing.Events.Projections.Async
     {
         public when_starting_a_projection_track()
         {
-            theProjectionTrack.Start();
+            theProjectionTrack.Start(DaemonLifecycle.Continuous);
         }
 
 
         [Fact]
         public void should_start_the_fetcher_with_auto_restart()
         {
-            theFetcher.Received().Start(theProjectionTrack, theOptions.Lifecycle);
+            theFetcher.Received().Start(theProjectionTrack, DaemonLifecycle.Continuous);
         }
     }
 
@@ -126,13 +126,13 @@ namespace Marten.Testing.Events.Projections.Async
         protected ProjectionTrack theProjectionTrack;
         protected IProjection projection;
 
-        protected DaemonOptions theOptions = new DaemonOptions(new EventGraph(new StoreOptions()));
-
         public ProjectionTrackContext()
         {
             projection = Substitute.For<IProjection>();
 
-            theProjectionTrack = new ProjectionTrack(theOptions, theFetcher, Substitute.For<IDocumentSession>(), projection);
+            projection.AsyncOptions.Returns(new AsyncOptions());
+
+            theProjectionTrack = new ProjectionTrack(theFetcher, Substitute.For<IDocumentStore>(), projection);
 
 
 

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events.Projections.Async;
 
 namespace Marten.Events.Projections
 {
@@ -54,5 +55,7 @@ namespace Marten.Events.Projections
         {
             return streams.Where(_aggregator.AppliesTo).ToArray();
         }
+
+        public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
     }
 }

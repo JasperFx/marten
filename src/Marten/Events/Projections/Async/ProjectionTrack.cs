@@ -12,19 +12,20 @@ namespace Marten.Events.Projections.Async
         private readonly IFetcher _fetcher;
         private readonly IDocumentSession _session;
         private readonly IProjection _projection;
-        private readonly DaemonOptions _options;
         private bool _isDisposed;
         private readonly ActionBlock<EventPage> _executionTrack;
         private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
         private readonly IList<EventWaiter> _waiters = new List<EventWaiter>();
         private readonly TaskCompletionSource<long> _rebuildCompletion = new TaskCompletionSource<long>();
+        private readonly EventGraph _events;
 
-        public ProjectionTrack(DaemonOptions options, IFetcher fetcher, IDocumentSession session, IProjection projection)
+        public ProjectionTrack(IFetcher fetcher, IDocumentStore store, IProjection projection)
         {
-            _options = options;
             _fetcher = fetcher;
-            _session = session;
+            _session = store.OpenSession();
             _projection = projection;
+
+            _events = store.Schema.Events;
 
             _executionTrack = new ActionBlock<EventPage>(page => ExecutePage(page, _cancellation.Token));
 
@@ -52,7 +53,7 @@ namespace Marten.Events.Projections.Async
         {
             await _projection.ApplyAsync(_session, page.Streams, cancellation).ConfigureAwait(false);
 
-            _session.QueueOperation(new EventProgressWrite(_options, _projection.Produces.FullName, page.To));
+            _session.QueueOperation(new EventProgressWrite(_events, _projection.Produces.FullName, page.To));
 
             await _session.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -91,9 +92,10 @@ namespace Marten.Events.Projections.Async
             Dispose();
         }
 
-        public void Start()
+        public void Start(DaemonLifecycle lifecycle)
         {
-            _fetcher.Start(this, _options.Lifecycle);
+            Lifecycle = lifecycle;
+            _fetcher.Start(this, lifecycle);
         }
 
         public async Task Stop()
@@ -106,7 +108,7 @@ namespace Marten.Events.Projections.Async
         {
             Accumulator.Store(page);
 
-            if (Accumulator.CachedEventCount > _options.MaximumStagedEventCount)
+            if (Accumulator.CachedEventCount > _projection.AsyncOptions.MaximumStagedEventCount)
             {
                 await _fetcher.Pause().ConfigureAwait(false);
             }
@@ -118,14 +120,16 @@ namespace Marten.Events.Projections.Async
         {
             Accumulator.Prune(page.To);
 
-            if (Accumulator.CachedEventCount <= _options.MaximumStagedEventCount &&
+            if (Accumulator.CachedEventCount <= _projection.AsyncOptions.MaximumStagedEventCount &&
                 _fetcher.State == FetcherState.Paused)
             {
-                _fetcher.Start(this, _options.Lifecycle);
+                _fetcher.Start(this, Lifecycle);
             }
 
             return Task.CompletedTask;
         }
+
+        public DaemonLifecycle Lifecycle { get; private set; } = DaemonLifecycle.Continuous;
 
         public Task<long> WaitUntilEventIsProcessed(long sequence)
         {

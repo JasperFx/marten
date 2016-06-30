@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Events;
 using Marten.Events.Projections.Async;
 using Shouldly;
@@ -12,7 +11,6 @@ namespace Marten.Testing.Events.Projections.Async
 {
     public class FetcherTests : IntegratedFixture
     {
-        private readonly DaemonOptions theOptions = new DaemonOptions(new EventGraph(new StoreOptions())) {Name = "something", EventTypeNames = new [] {"members_joined"}};
 
         public FetcherTests()
         {
@@ -76,12 +74,13 @@ namespace Marten.Testing.Events.Projections.Async
                 await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            using (var data = new Fetcher(theOptions, new ConnectionSource(), theStore.Schema.Events, new JilSerializer()))
+            var options = new AsyncOptions();
+            using (var data = new Fetcher(theStore, options, new Type[] {typeof(MembersJoined)}))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
                 page.From.ShouldBe(0);
-                page.To.ShouldBe(data.Options.PageSize);
+                page.To.ShouldBe(options.PageSize);
 
                 page.Streams.SelectMany(x => x.Events).Count().ShouldBe(100);
             }
@@ -111,14 +110,7 @@ namespace Marten.Testing.Events.Projections.Async
                 await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            var events = theStore.Schema.Events;
-            theOptions.EventTypeNames = new[]
-            {
-                events.EventMappingFor<MembersDeparted>().EventTypeName,
-                events.EventMappingFor<ArrivedAtLocation>().EventTypeName
-            };
-
-            using (var data = new Fetcher(theOptions, new ConnectionSource(), events, new JilSerializer()))
+            using (var data = new Fetcher(theStore, new AsyncOptions(), new Type[] {typeof(MembersDeparted), typeof(ArrivedAtLocation)}))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -162,17 +154,12 @@ namespace Marten.Testing.Events.Projections.Async
                 streams.AddRange(logger.LastCommit.GetStreams());
             }
 
-
-
-            var events = theStore.Schema.Events;
-            theOptions.EventTypeNames = new[]
+            var types = new Type[]
             {
-                events.EventMappingFor<MembersJoined>().EventTypeName,
-                events.EventMappingFor<MembersDeparted>().EventTypeName,
-                events.EventMappingFor<ArrivedAtLocation>().EventTypeName
+                typeof(MembersJoined), typeof(MembersDeparted), typeof(ArrivedAtLocation)
             };
 
-            using (var data = new Fetcher(theOptions, new ConnectionSource(), events, new JilSerializer()))
+            using (var data = new Fetcher(theStore, new AsyncOptions(), types))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -204,7 +191,9 @@ namespace Marten.Testing.Events.Projections.Async
                 await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            using (var data = new Fetcher(theOptions, new ConnectionSource(), theStore.Schema.Events, new JilSerializer()))
+            var types = new Type[] {typeof(MembersJoined)};
+
+            using (var data = new Fetcher(theStore, new AsyncOptions(), types))
             {
                 var events1 = (await data.FetchNextPage(0).ConfigureAwait(false)).Streams.SelectMany(x => x.Events).ToArray();
                 var events2 = (await data.FetchNextPage(100).ConfigureAwait(false)).Streams.SelectMany(x => x.Events).ToArray();

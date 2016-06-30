@@ -114,7 +114,7 @@ namespace Marten.Testing.AsyncDaemon
             PublishAllProjectEvents(theStore);
 
             var projection = new AggregationProjection<ActiveProject>(new AggregateFinder<ActiveProject>(), new Aggregator<ActiveProject>());
-            var build = new CompleteRebuild(new DaemonOptions(theStore.Schema.Events), theStore, projection);
+            var build = new CompleteRebuild(theStore, projection);
 
             var last = await build.PerformRebuild(new CancellationToken()).ConfigureAwait(false);
 
