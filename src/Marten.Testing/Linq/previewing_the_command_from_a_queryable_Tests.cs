@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using Marten.Linq;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 

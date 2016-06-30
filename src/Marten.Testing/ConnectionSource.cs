@@ -13,11 +13,11 @@ namespace Marten.Testing
 
         static ConnectionSource()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory.AppendPath("connection.txt");
+            var path = Directory.GetCurrentDirectory().AppendPath("connection.txt");
             if (!File.Exists(path))
             {
                 path =
-                    AppDomain.CurrentDomain.BaseDirectory.ParentDirectory()
+                    Directory.GetCurrentDirectory().ParentDirectory()
                         .ParentDirectory()
                         .AppendPath("connection.txt");
             }

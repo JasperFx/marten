@@ -1,7 +1,6 @@
 using System.Data.Common;
 using Marten.Linq;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using NSubstitute;
 using Xunit;
 

@@ -77,7 +77,7 @@ namespace Marten.Testing.Examples
                 _.Connection("some connection string");
 
                 // Override the JSON Serialization
-                _.Serializer<JilSerializer>();
+                _.Serializer<TestsSerializer>();
             });
             // ENDSAMPLE
         }

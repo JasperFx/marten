@@ -5,7 +5,6 @@ using System.Reflection;
 using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Testing.Documents;
-using Marten.Testing.Fixtures;
 using Marten.Util;
 using Shouldly;
 using Xunit;

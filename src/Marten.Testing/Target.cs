@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Baseline;
 
-namespace Marten.Testing.Fixtures
+namespace Marten.Testing
 {
     public enum Colors
     {

@@ -2,7 +2,6 @@
 using Shouldly;
 using Xunit;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 
 namespace Marten.Testing.Bugs
 {

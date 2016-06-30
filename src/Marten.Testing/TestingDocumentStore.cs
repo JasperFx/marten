@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Testing.Documents;
-using Marten.Testing.Fixtures;
 
 namespace Marten.Testing
 {
@@ -54,7 +53,7 @@ namespace Marten.Testing
         {
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
-            options.Serializer<JilSerializer>();
+            options.Serializer<TestsSerializer>();
 
 
             configure(options);

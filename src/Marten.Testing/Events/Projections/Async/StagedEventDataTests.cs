@@ -27,7 +27,7 @@ namespace Marten.Testing.Events.Projections.Async
         {
             var factory = new ConnectionSource();
 
-            using (var data = new StagedEventData(theOptions, factory, new EventGraph(new StoreOptions()), new JilSerializer()))
+            using (var data = new StagedEventData(theOptions, factory, new EventGraph(new StoreOptions()), new TestsSerializer()))
             {
                 var lastEncountered = await data.LastEventProgression().ConfigureAwait(false);
 
@@ -52,7 +52,7 @@ namespace Marten.Testing.Events.Projections.Async
                 }
             }
 
-            using (var data = new StagedEventData(theOptions, factory, new EventGraph(new StoreOptions()), new JilSerializer()) )
+            using (var data = new StagedEventData(theOptions, factory, new EventGraph(new StoreOptions()), new TestsSerializer()) )
             {
                 var lastEncountered = await data.LastEventProgression().ConfigureAwait(false);
 
@@ -64,7 +64,7 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public async Task can_register_progress_initial()
         {
-            using (var data = new StagedEventData(theOptions, new ConnectionSource(), new EventGraph(new StoreOptions()), new JilSerializer()) )
+            using (var data = new StagedEventData(theOptions, new ConnectionSource(), new EventGraph(new StoreOptions()), new TestsSerializer()) )
             {
                 await data.RegisterProgress(111).ConfigureAwait(false);
 
@@ -77,7 +77,7 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public async Task can_register_subsequent_progress()
         {
-            using (var data = new StagedEventData(theOptions, new ConnectionSource(), new EventGraph(new StoreOptions()), new JilSerializer()))
+            using (var data = new StagedEventData(theOptions, new ConnectionSource(), new EventGraph(new StoreOptions()), new TestsSerializer()))
             {
                 await data.RegisterProgress(111).ConfigureAwait(false);
                 await data.RegisterProgress(211).ConfigureAwait(false);
@@ -104,7 +104,7 @@ namespace Marten.Testing.Events.Projections.Async
                 await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            using (var data = new StagedEventData(theOptions, new ConnectionSource(), theStore.Schema.Events.As<EventGraph>(), new JilSerializer()))
+            using (var data = new StagedEventData(theOptions, new ConnectionSource(), theStore.Schema.Events.As<EventGraph>(), new TestsSerializer()))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -146,7 +146,7 @@ namespace Marten.Testing.Events.Projections.Async
                 events.EventMappingFor<ArrivedAtLocation>().EventTypeName
             };
 
-            using (var data = new StagedEventData(theOptions, new ConnectionSource(), events, new JilSerializer()))
+            using (var data = new StagedEventData(theOptions, new ConnectionSource(), events, new TestsSerializer()))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -197,7 +197,7 @@ namespace Marten.Testing.Events.Projections.Async
                 events.EventMappingFor<ArrivedAtLocation>().EventTypeName
             };
 
-            using (var data = new StagedEventData(theOptions, new ConnectionSource(), events, new JilSerializer()))
+            using (var data = new StagedEventData(theOptions, new ConnectionSource(), events, new TestsSerializer()))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -229,7 +229,7 @@ namespace Marten.Testing.Events.Projections.Async
                 await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            using (var data = new StagedEventData(theOptions, new ConnectionSource(), theStore.Schema.Events.As<EventGraph>(), new JilSerializer()))
+            using (var data = new StagedEventData(theOptions, new ConnectionSource(), theStore.Schema.Events.As<EventGraph>(), new TestsSerializer()))
             {
                 var events1 = (await data.FetchNextPage(0).ConfigureAwait(false)).Streams.SelectMany(x => x.Events).ToArray();
                 var events2 = (await data.FetchNextPage(100).ConfigureAwait(false)).Streams.SelectMany(x => x.Events).ToArray();

@@ -28,14 +28,8 @@
   "frameworks": {
     "netstandard1.3": {
       "dependencies": {
-        "System.Linq.Queryable": "4.0.1",
-        "System.ObjectModel": "4.0.12",
-        "System.Reflection": "4.1.0"
-      },
-      "imports": [
-        "dnxcore50",
-        "portable-net45+win8"
-      ]
+        "NETStandard.Library": "1.6.0"
+      }
     }
   }
 }

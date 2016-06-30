@@ -5,20 +5,35 @@
     "dotnet-test-xunit": "2.2.0-preview2-build1029",
     "Marten": { "target": "project" },
     "Marten.Testing.OtherAssembly": { "target": "project" },
-    "HtmlTags": "3.0.0.186",
     "Shouldly": "2.8.0",
-    "Octokit": "0.20.0",
-    "Jil": "2.14.3",
-    "Storyteller": "3.0.0.329-rc",
-    "NSubstitute": "1.10.0",
     "structuremap": "4.2.0.402",
     "System.Data.Common": "4.1.0",
     "System.Reflection.TypeExtensions": "4.1.0"
   },
   "buildOptions": {
-    "copyToOutput": ["**/*.js", "connection.txt"]
-  }, 
+    "copyToOutput": [ "**/*.js", "connection.txt" ]
+  },
   "frameworks": {
+    "netcoreapp1.0": {
+      "buildOptions": {
+        "compile": {
+          "exclude": [ "**/Fixtures/**/*.cs", "**/Github/**/*.cs", "**/Acceptance/**/*.cs", "StorytellerHarness.cs" ]
+        }
+      },
+      "dependencies": {
+        "NETStandard.Library": "1.6.0",
+        "NSubstitute": "2.0.0-alpha003",
+        "System.Diagnostics.TraceSource": "4.0.0",
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        }
+      },
+      "imports": [
+        "dnxcore50",
+        "portable-net45+win8"
+      ]
+    },
     "net46": {
       "frameworkAssemblies": {
         "System.Web": "",
@@ -26,6 +41,11 @@
         "System.Data": ""
       },
       "dependencies": {
+        "Octokit": "0.20.0",
+        "NSubstitute": "1.10.0",
+        "HtmlTags": "3.0.0.186",
+        "Jil": "2.14.3",
+        "Storyteller": "3.0.0.329-rc",
         "Microsoft.NETCore.Platforms": "1.0.1"
       }
     }

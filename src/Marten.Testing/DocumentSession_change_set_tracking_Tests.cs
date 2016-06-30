@@ -2,7 +2,6 @@
 using System.Linq;
 using Marten.Services;
 using Marten.Services.Deletes;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 

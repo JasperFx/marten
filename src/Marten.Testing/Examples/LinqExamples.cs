@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Marten.Util;
 
@@ -67,8 +66,8 @@ namespace Marten.Testing.Examples
         // SAMPLE: searching_within_case_insensitive_string_fields
         public void case_insensitive_string_fields(IDocumentSession session)
         {
-            session.Query<Target>().Where(x => x.String.StartsWith("A",true,CultureInfo.InvariantCulture));
-            session.Query<Target>().Where(x => x.String.EndsWith("SuFfiX", true, CultureInfo.InvariantCulture));
+            session.Query<Target>().Where(x => x.String.StartsWith("A", StringComparison.OrdinalIgnoreCase));
+            session.Query<Target>().Where(x => x.String.EndsWith("SuFfiX", StringComparison.OrdinalIgnoreCase));
 
             // using Marten.Util
             session.Query<Target>().Where(x => x.String.Contains("soMeThiNg", StringComparison.OrdinalIgnoreCase));

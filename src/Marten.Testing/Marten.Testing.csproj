@@ -93,7 +93,6 @@
     <Compile Include="Events\fetching_stream_state.cs" />
     <Compile Include="Examples\ForeignKeyExamples.cs" />
     <Compile Include="Fixtures\EventStore\InlineAggregationFixture.cs" />
-    <Compile Include="Fixtures\Target.cs" />
     <Compile Include="Generation\creating_diffs_when_system_columns_are_missing.cs" />
     <Compile Include="IntDoc.cs" />
     <Compile Include="IntegratedFixture.cs" />
@@ -198,6 +197,7 @@
     <Compile Include="Linq\query_with_nullable_types_Tests.cs" />
     <Compile Include="Patching\can_build_the_patching_function.cs" />
     <Compile Include="Patching\PatchExpressionTests.cs" />
+    <Compile Include="PlayingTests.cs" />
     <Compile Include="Schema\BulkLoaderConstructionTests.cs" />
     <Compile Include="Schema\configuring_mapping_deletion_style.cs" />
     <Compile Include="Schema\creating_a_full_patch.cs" />
@@ -281,6 +281,7 @@
     <Compile Include="store_and_bulk_insert_by_mixed_bag_of_document_types_Tests.cs" />
     <Compile Include="StorytellerHarness.cs" />
     <Compile Include="StringDoc.cs" />
+    <Compile Include="Target.cs" />
     <Compile Include="TestingDocumentStore.cs" />
     <Compile Include="TrackingSession\document_session_load_already_loaded_document_Tests.cs" />
     <Compile Include="TrackingSession\document_session_load_not_found_then_stored_Tests.cs" />

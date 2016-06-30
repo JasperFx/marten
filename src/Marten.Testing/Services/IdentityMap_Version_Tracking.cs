@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 

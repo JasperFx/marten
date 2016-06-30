@@ -4,17 +4,19 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Baseline;
-using HtmlTags;
-using Jil;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using StructureMap;
+#if NET46
+using HtmlTags;
+using Jil;
+#endif
 
 namespace Marten.Testing
 {
-    // SAMPLE: JilSerializer
+#if NET46
+    // SAMPLE: TestsSerializer
     public class JilSerializer : ISerializer
     {
         private readonly Options _options 
@@ -48,6 +50,18 @@ namespace Marten.Testing
         public EnumStorage EnumStorage => EnumStorage.AsString;
     }
     // ENDSAMPLE
+#endif
+
+    public class TestsSerializer
+#if NET46
+        : JilSerializer
+#else
+        : JsonNetSerializer
+#endif
+    {
+        
+    }
+
 
     public static class JilSamples
     {
@@ -58,8 +72,8 @@ var store = DocumentStore.For(_ =>
 {
     _.Connection("the connection string");
 
-    // Replace the ISerializer w/ the JilSerializer
-    _.Serializer<JilSerializer>();
+    // Replace the ISerializer w/ the TestsSerializer
+    _.Serializer<TestsSerializer>();
 });
             // ENDSAMPLE
         }
@@ -182,16 +196,16 @@ var store = DocumentStore.For(_ =>
             time_query<JsonNetSerializer, DateIsSearchable>(data);
             time_query<JsonNetSerializer, ContainmentOperator>(data);
 
-            time_query<JilSerializer, JsonLocatorOnly>(data);
-            time_query<JilSerializer, JsonBToRecord>(data);
-            time_query<JilSerializer, DateIsSearchable>(data);
+            time_query<TestsSerializer, JsonLocatorOnly>(data);
+            time_query<TestsSerializer, JsonBToRecord>(data);
+            time_query<TestsSerializer, DateIsSearchable>(data);
             
-            time_query<JilSerializer, ContainmentOperator>(data);
+            time_query<TestsSerializer, ContainmentOperator>(data);
         }
 
 
 
-
+#if NET46
 
         private void measure_and_report()
         {
@@ -204,7 +218,7 @@ var store = DocumentStore.For(_ =>
             document.Add("h1").Text("Marten Where Timings");
 
             document.Add(reportForSerializer(typeof (JsonNetSerializer)));
-            document.Add(reportForSerializer(typeof (JilSerializer)));
+            document.Add(reportForSerializer(typeof (TestsSerializer)));
 
             document.OpenInBrowser();
         }
@@ -280,6 +294,7 @@ var store = DocumentStore.For(_ =>
             return div;
         }
 
+#endif
 
 public class DateIsSearchable : MartenRegistry
 {
@@ -334,7 +349,7 @@ public class ContainmentOperator : MartenRegistry
 
         public void generate_data()
         {
-            //theContainer.Inject<ISerializer>(new JilSerializer());
+            //theContainer.Inject<ISerializer>(new TestsSerializer());
 
             theContainer.GetInstance<DocumentCleaner>().CompletelyRemove(typeof (Target));
 

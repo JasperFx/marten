@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Baseline;
-using HtmlTags;
 using Marten.Schema;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using StructureMap;
 using StructureMap.Util;
 using Xunit;
 
 namespace Marten.Testing
 {
+#if NET46
+using HtmlTags;
     public class insert_timing
     {
         private string key<TSerializer, TRegistry, TStrategy>()
@@ -83,17 +83,17 @@ throw new NotImplementedException("No longer have an Alter() mechanism to add th
             create_timing<JsonNetSerializer, WithGin, BatchUpdates>(data);
             create_timing<JsonNetSerializer, WithGin, MultipleCommands>(data);
 
-            create_timing<JilSerializer, NoIndexes, BulkInserts>(data);
-            create_timing<JilSerializer, NoIndexes, BatchUpdates>(data);
-            create_timing<JilSerializer, NoIndexes, MultipleCommands>(data);
+            create_timing<TestsSerializer, NoIndexes, BulkInserts>(data);
+            create_timing<TestsSerializer, NoIndexes, BatchUpdates>(data);
+            create_timing<TestsSerializer, NoIndexes, MultipleCommands>(data);
 
-            create_timing<JilSerializer, IndexedDuplicatedField, BulkInserts>(data);
-            create_timing<JilSerializer, IndexedDuplicatedField, BatchUpdates>(data);
-            create_timing<JilSerializer, IndexedDuplicatedField, MultipleCommands>(data);
+            create_timing<TestsSerializer, IndexedDuplicatedField, BulkInserts>(data);
+            create_timing<TestsSerializer, IndexedDuplicatedField, BatchUpdates>(data);
+            create_timing<TestsSerializer, IndexedDuplicatedField, MultipleCommands>(data);
 
-            create_timing<JilSerializer, WithGin, BulkInserts>(data);
-            create_timing<JilSerializer, WithGin, BatchUpdates>(data);
-            create_timing<JilSerializer, WithGin, MultipleCommands>(data);
+            create_timing<TestsSerializer, WithGin, BulkInserts>(data);
+            create_timing<TestsSerializer, WithGin, BatchUpdates>(data);
+            create_timing<TestsSerializer, WithGin, MultipleCommands>(data);
             
 
             var document = new HtmlDocument();
@@ -102,7 +102,7 @@ throw new NotImplementedException("No longer have an Alter() mechanism to add th
             document.Add("h2").Text("Newtonsoft.Json");
             document.Add(tableForSerializer<JsonNetSerializer>());
             document.Add("h2").Text("Jil");
-            document.Add(tableForSerializer<JilSerializer>());
+            document.Add(tableForSerializer<TestsSerializer>());
 
             document.OpenInBrowser();
         }
@@ -226,4 +226,5 @@ throw new NotImplementedException("No longer have an Alter() mechanism to add th
             });
         }
     }
+#endif
 }

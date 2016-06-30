@@ -9,7 +9,6 @@ using Marten.Linq;
 using Marten.Services;
 using Marten.Services.Includes;
 using Marten.Util;
-using Octokit;
 using Shouldly;
 using Xunit;
 using Issue = Marten.Testing.Documents.Issue;

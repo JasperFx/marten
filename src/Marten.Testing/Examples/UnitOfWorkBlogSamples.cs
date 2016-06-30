@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Web.Configuration;
 using Baseline;
 using Shouldly;
 using Xunit;
@@ -46,7 +45,7 @@ using (var session = theStore.OpenSession())
     // I'm just writing out the Sql executed here
     var sql = logger.Commands.Single().CommandText;
     new FileSystem()
-        .WriteStringToFile("unitofwork.sql", sql);
+        .WriteStringToFile(@"bin\unitofwork.sql", sql);
 
 }
         }

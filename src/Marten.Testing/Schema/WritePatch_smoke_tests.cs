@@ -3,7 +3,6 @@ using Baseline;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
-using Marten.Testing.Fixtures;
 using Xunit;
 
 namespace Marten.Testing.Schema
@@ -55,16 +54,16 @@ namespace Marten.Testing.Schema
             });
 
             var fileSystem = new FileSystem();
-            fileSystem.DeleteDirectory("patches");
-            fileSystem.CreateDirectory("patches");
+            fileSystem.DeleteDirectory(@"bin\patches");
+            fileSystem.CreateDirectory(@"bin\patches");
 
             // SAMPLE: write-patch
-            // Write the patch SQL file to the "patches" directory
-            theStore.Schema.WritePatch("patches".AppendPath("1.initial.sql"));
+            // Write the patch SQL file to the @"bin\patches" directory
+            theStore.Schema.WritePatch(@"bin\patches".AppendPath("1.initial.sql"));
             // ENDSAMPLE
 
-            fileSystem.FileExists("patches".AppendPath("1.initial.sql"));
-            fileSystem.FileExists("patches".AppendPath("1.initial.drop.sql"));
+            fileSystem.FileExists(@"bin\patches".AppendPath("1.initial.sql"));
+            fileSystem.FileExists(@"bin\patches".AppendPath("1.initial.drop.sql"));
         }
 
         [Fact]

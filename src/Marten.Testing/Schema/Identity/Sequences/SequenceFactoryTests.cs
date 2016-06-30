@@ -1,7 +1,6 @@
 ﻿using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 

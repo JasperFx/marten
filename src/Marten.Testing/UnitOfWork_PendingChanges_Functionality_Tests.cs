@@ -3,7 +3,6 @@ using System.Linq;
 using Baseline;
 using Marten.Services.Deletes;
 using Marten.Testing.Documents;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 

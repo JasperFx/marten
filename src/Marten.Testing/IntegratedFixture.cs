@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
+using System.Reflection;
 using System.Threading;
-using HtmlTags.Reflection;
 using Xunit;
 
 namespace Marten.Testing
@@ -15,11 +15,16 @@ namespace Marten.Testing
         {
             _store = new Lazy<IDocumentStore>(TestingDocumentStore.Basic);
 
-            GetType().ForAttribute<CollectionAttribute>(att => UseDefaultSchema());
+            if (GetType().GetTypeInfo().GetCustomAttribute<CollectionAttribute>(true) != null)
+            {
+                UseDefaultSchema();
+            }
 
+#if NET46
             _originalCulture = Thread.CurrentThread.CurrentCulture;
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
+#endif
         }
 
         protected string toJson<T>(T doc)
@@ -45,8 +50,10 @@ namespace Marten.Testing
             {
                 _store.Value.Dispose();
             }
+#if NET46
             Thread.CurrentThread.CurrentCulture = _originalCulture;
             Thread.CurrentThread.CurrentUICulture = _originalCulture;
+#endif
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 

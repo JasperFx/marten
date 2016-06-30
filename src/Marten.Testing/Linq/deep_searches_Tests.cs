@@ -2,7 +2,6 @@
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using Xunit;
 
 namespace Marten.Testing.Linq

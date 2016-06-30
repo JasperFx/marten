@@ -5,7 +5,6 @@ using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Deletes;
-using Marten.Testing.Fixtures;
 using Marten.Util;
 using NpgsqlTypes;
 using Shouldly;
@@ -72,7 +71,7 @@ namespace Marten.Testing.Util
 
             var upsert = theMapping.UpsertFunction;
 
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             batch.Sproc(upsert).Param("docId", target1.Id).JsonBody("doc", serializer.ToJson(target1)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
             batch.Sproc(upsert).Param("docId", target2.Id).JsonBody("doc", serializer.ToJson(target2)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);

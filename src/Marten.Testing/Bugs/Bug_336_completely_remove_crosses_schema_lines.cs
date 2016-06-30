@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using Marten.Testing.Documents;
-using Marten.Testing.Fixtures;
 using Xunit;
 
 namespace Marten.Testing.Bugs

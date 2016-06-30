@@ -3,7 +3,6 @@ using System.Reflection;
 using Baseline.Reflection;
 using Marten.Schema;
 using Marten.Testing.Documents;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 

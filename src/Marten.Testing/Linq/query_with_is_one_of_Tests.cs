@@ -2,7 +2,6 @@
 using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 

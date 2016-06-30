@@ -8,7 +8,6 @@ using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Linq.Parsing;
 using Marten.Schema;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using StructureMap;
 using Xunit;

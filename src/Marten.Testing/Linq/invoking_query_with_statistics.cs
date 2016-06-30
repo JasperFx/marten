@@ -5,7 +5,6 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using Marten.Util;
 using Shouldly;
 using Xunit;

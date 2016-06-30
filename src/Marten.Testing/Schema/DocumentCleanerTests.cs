@@ -6,7 +6,6 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 using Issue = Marten.Testing.Documents.Issue;

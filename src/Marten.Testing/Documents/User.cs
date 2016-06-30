@@ -1,6 +1,5 @@
 ﻿using System;
 using Baseline;
-using Marten.Testing.Fixtures;
 
 namespace Marten.Testing.Documents
 {

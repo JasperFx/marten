@@ -183,7 +183,7 @@ namespace Marten.Testing.Transforms
             using (var store = TestingDocumentStore.Basic())
             {
                 var user = new User {FirstName = "Jeremy", LastName = "Miller"};
-                var json = new JilSerializer().ToCleanJson(user);
+                var json = new TestsSerializer().ToCleanJson(user);
 
                 var func = TransformFunction.ForFile(new StoreOptions(), "get_fullname.js");
 

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
-using Marten.Testing.Fixtures;
 using Marten.Testing.Linq;
 using Shouldly;
 using Xunit;

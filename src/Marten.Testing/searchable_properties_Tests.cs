@@ -1,6 +1,5 @@
 ﻿using Marten.Schema;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using System.Linq;
 using Xunit;
 

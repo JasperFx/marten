@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using Marten.Util;
 using Xunit;
 

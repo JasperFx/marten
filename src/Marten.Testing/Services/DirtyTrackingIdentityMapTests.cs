@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 
@@ -16,7 +15,7 @@ namespace Marten.Testing.Services
         {
             var target = Target.Random();
 
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
@@ -48,7 +47,7 @@ namespace Marten.Testing.Services
         {
             var target = Target.Random();
 
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
@@ -72,7 +71,7 @@ namespace Marten.Testing.Services
         {
             var target = Target.Random();
 
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
@@ -94,7 +93,7 @@ namespace Marten.Testing.Services
         {
             var target = Target.Random();
 
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
@@ -121,7 +120,7 @@ namespace Marten.Testing.Services
             var c = Target.Random();
             var d = Target.Random();
 
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
@@ -145,7 +144,7 @@ namespace Marten.Testing.Services
             var c = Target.Random();
             var d = Target.Random();
 
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
@@ -174,7 +173,7 @@ namespace Marten.Testing.Services
             var c = Target.Random();
             var d = Target.Random();
 
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
@@ -204,7 +203,7 @@ namespace Marten.Testing.Services
             var target2 = Target.Random();
             target2.Id = target.Id;
 
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
@@ -223,7 +222,7 @@ namespace Marten.Testing.Services
         public void store()
         {
             var target = Target.Random();
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
@@ -236,7 +235,7 @@ namespace Marten.Testing.Services
         [Fact]
         public void get_with_miss_in_database()
         {
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
             map.Get<Target>(Guid.NewGuid(), () => null).ShouldBeNull();
@@ -246,7 +245,7 @@ namespace Marten.Testing.Services
         public void has_positive()
         {
             var target = Target.Random();
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
@@ -259,7 +258,7 @@ namespace Marten.Testing.Services
         [Fact]
         public void has_negative()
         {
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
             map.Has<Target>(Guid.NewGuid()).ShouldBeFalse();
@@ -269,7 +268,7 @@ namespace Marten.Testing.Services
         public void retrieve()
         {
             var target = Target.Random();
-            var serializer = new JilSerializer();
+            var serializer = new TestsSerializer();
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 

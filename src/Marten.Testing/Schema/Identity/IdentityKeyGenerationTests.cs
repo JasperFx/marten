@@ -1,6 +1,5 @@
 ﻿using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
-using Marten.Testing.Fixtures;
 using NSubstitute;
 using Shouldly;
 using Xunit;

@@ -1,5 +1,4 @@
-﻿using Octokit;
-using StructureMap;
+﻿using StructureMap;
 using User = Marten.Testing.Documents.User;
 
 namespace Marten.Testing.Examples

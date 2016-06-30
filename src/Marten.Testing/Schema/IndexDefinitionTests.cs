@@ -1,5 +1,4 @@
 ﻿using Marten.Schema;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 

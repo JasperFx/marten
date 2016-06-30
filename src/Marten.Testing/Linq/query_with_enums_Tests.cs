@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using Xunit;
 
 namespace Marten.Testing.Linq
@@ -10,7 +9,7 @@ namespace Marten.Testing.Linq
         [Fact]
         public void use_enum_values_with_jil_that_are_not_duplicated()
         {
-            StoreOptions(_ => _.Serializer<JilSerializer>());
+            StoreOptions(_ => _.Serializer<TestsSerializer>());
 
             theSession.Store(new Target{Color = Colors.Blue, Number = 1});
             theSession.Store(new Target{Color = Colors.Red, Number = 2});
@@ -73,7 +72,7 @@ namespace Marten.Testing.Linq
         {
             StoreOptions(_ =>
             {
-                _.Serializer<JilSerializer>();
+                _.Serializer<TestsSerializer>();
                 _.Schema.For<Target>().Duplicate(x => x.Color);
             });
 
@@ -124,7 +123,7 @@ namespace Marten.Testing.Linq
         {
             StoreOptions(_ =>
             {
-                _.Serializer<JilSerializer>();
+                _.Serializer<TestsSerializer>();
                 _.Schema.For<Target>().Duplicate(x => x.Color);
             });
 
