@@ -34,13 +34,9 @@ namespace Marten.Events
 
         internal StoreOptions Options { get; }
 
-        // TODO -- make this internal
-        public TableName Table => new TableName(DatabaseSchemaName, "mt_streams");
+        internal TableName Table => new TableName(DatabaseSchemaName, "mt_streams");
 
-        // TODO -- make this internal
-        public IDocumentSchemaObjects SchemaObjects { get; }
-
-        public bool JavascriptProjectionsEnabled { get; set; }
+        internal IDocumentSchemaObjects SchemaObjects { get; }
 
         public EventMapping EventMappingFor(Type eventType)
         {
