@@ -65,7 +65,10 @@
     <Compile Include="Events\Projections\Async\Accumulator.cs" />
     <Compile Include="Events\Projections\Async\AsyncOptions.cs" />
     <Compile Include="Events\Projections\Async\CachePageUpdate.cs" />
+    <Compile Include="Events\Projections\Async\Daemon.cs" />
     <Compile Include="Events\Projections\Async\DaemonLifecycle.cs" />
+    <Compile Include="Events\Projections\Async\IDaemon.cs" />
+    <Compile Include="Events\Projections\Async\IProjectionTrack.cs" />
     <Compile Include="Events\Projections\Async\ProjectionTrack.cs" />
     <Compile Include="Events\Projections\Async\CompleteRebuild.cs" />
     <Compile Include="Events\Projections\Async\EventPage.cs" />

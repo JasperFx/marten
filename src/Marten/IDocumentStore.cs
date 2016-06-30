@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using Marten.Events.Projections.Async;
 using Marten.Schema;
 using Marten.Transforms;
 
@@ -77,5 +78,9 @@ namespace Marten
         /// Use Javascript transformations to alter existing documents
         /// </summary>
         IDocumentTransforms Transform { get; }
+
+
+
+        IDaemon BuildProjectionDaemon(Type[] viewTypes);
     }
 }

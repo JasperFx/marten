@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Marten.Events.Projections
 {
@@ -46,6 +48,11 @@ namespace Marten.Events.Projections
         {
             _options.MappingFor(projection.Produces);
             _projections.Add(projection);
+        }
+
+        public IProjection ForView(Type viewType)
+        {
+            return _projections.FirstOrDefault(x => x.Produces == viewType);
         }
     }
 }

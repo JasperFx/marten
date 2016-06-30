@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Baseline;
+using Marten.Events.Projections.Async;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
@@ -310,5 +311,11 @@ namespace Marten
         }
 
         public IDocumentTransforms Transform { get; }
+        public IDaemon BuildProjectionDaemon(Type[] viewTypes = null)
+        {
+            // TODO -- let's think a little more about this one. Maybe have an option where you can pass in "none"
+            // make sure you *could* get an async daemon for an inline projection
+            return new Daemon(this, viewTypes ?? Schema.Events.AsyncProjections.Select(x => x.Produces).ToArray());
+        }
     }
 }

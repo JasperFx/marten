@@ -119,6 +119,7 @@ namespace Marten.Events
 
         public ProjectionCollection InlineProjections { get; }
         public ProjectionCollection AsyncProjections { get; }
+        internal TableName ProgressionTable => new TableName(DatabaseSchemaName, "mt_event_progression");
 
         public string AggregateAliasFor(Type aggregateType)
         {

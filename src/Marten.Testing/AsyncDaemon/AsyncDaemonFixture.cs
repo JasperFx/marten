@@ -1,22 +1,27 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using CodeTracker;
-using Marten.Events;
-using Marten.Events.Projections;
-using Marten.Events.Projections.Async;
-using Xunit;
 
 namespace Marten.Testing.AsyncDaemon
 {
-    public class TestHarness : IntegratedFixture
+    public class AsyncDaemonFixture : IDisposable
     {
-        static TestHarness()
+        private readonly IDocumentStore _store;
+
+        public AsyncDaemonFixture()
         {
+            _store = TestingDocumentStore.For(_ =>
+            {
+                _.DatabaseSchemaName = "expected";
+                _.Events.DatabaseSchemaName = "expected";
+
+                _.Events.InlineProjections.AggregateStreamsWith<ActiveProject>();
+                _.Events.InlineProjections.TransformEvents(new CommitViewTransform());
+            });
+
             var folder = AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory()
                 .AppendPath("CodeTracker");
 
@@ -31,23 +36,12 @@ namespace Marten.Testing.AsyncDaemon
                 Console.WriteLine($"Loaded {project.OrganizationName}{project.ProjectName} from JSON");
             }
 
-            PublishAllProjectEvents(ExpectedStore);
+            PublishAllProjectEvents(_store);
         }
 
-        public static Dictionary<Guid, GithubProject> AllProjects { get; }
+        public Dictionary<Guid, GithubProject> AllProjects { get; }
 
-
-        public static IDocumentStore ExpectedStore = TestingDocumentStore.For(_ =>
-        {
-            _.DatabaseSchemaName = "expected";
-            _.Events.DatabaseSchemaName = "expected";
-
-            _.Events.InlineProjections.AggregateStreamsWith<ActiveProject>();
-            _.Events.InlineProjections.TransformEvents(new CommitViewTransform());
-        });
-
-
-        public static void PublishAllProjectEvents(IDocumentStore store)
+        public void PublishAllProjectEvents(IDocumentStore store)
         {
             var tasks = AllProjects.Values.Select(project => project.PublishEvents(store, 0)).ToArray();
 
@@ -67,9 +61,9 @@ namespace Marten.Testing.AsyncDaemon
             return dict;
         }
 
-        public static void CompareActiveProjects(IDocumentStore store)
+        public void CompareActiveProjects(IDocumentStore store)
         {
-            var expected = fetchProjects(ExpectedStore);
+            var expected = fetchProjects(_store);
             var actual = fetchProjects(store);
 
             var list = new List<string>();
@@ -106,26 +100,9 @@ namespace Marten.Testing.AsyncDaemon
 
         }
 
- 
-
-
-        public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch()
+        public void Dispose()
         {
-            PublishAllProjectEvents(theStore);
-
-            var projection = new AggregationProjection<ActiveProject>(new AggregateFinder<ActiveProject>(), new Aggregator<ActiveProject>());
-            var build = new CompleteRebuild(theStore, projection);
-
-            var last = await build.PerformRebuild(new CancellationToken()).ConfigureAwait(false);
-
-            Console.WriteLine(last);
-
-            build.Dispose();
-
-            CompareActiveProjects(theStore);
-
-            build.Dispose();
+            _store.Dispose();
         }
-
     }
 }

@@ -22,7 +22,7 @@ namespace Marten.Events.Projections.Async
         private FetcherState _state;
         private Task _fetchingTask;
         private long _lastEncountered = 0;
-        private string[] _eventTypeNames;
+        private readonly string[] _eventTypeNames;
 
         public Fetcher(IDocumentStore store, AsyncOptions options, IEnumerable<Type> eventTypes)
         {
@@ -37,6 +37,11 @@ namespace Marten.Events.Projections.Async
             _map = new NulloIdentityMap(store.Advanced.Serializer);
 
             _eventTypeNames = eventTypes.Select(x => store.Schema.Events.EventMappingFor(x).Alias).ToArray();
+        }
+
+        public Fetcher(IDocumentStore store, IProjection projection) : this(store, projection.AsyncOptions, projection.Consumes)
+        {
+            
         }
 
         public CancellationTokenSource Cancellation { get; } = new CancellationTokenSource();

@@ -53,7 +53,8 @@
     <Compile Include="Acceptance\select_with_transformation.cs" />
     <Compile Include="Acceptance\soft_deletes.cs" />
     <Compile Include="Acceptance\using_natural_identity_keys.cs" />
-    <Compile Include="AsyncDaemon\TestHarness.cs" />
+    <Compile Include="AsyncDaemon\AsyncDaemonFixture.cs" />
+    <Compile Include="AsyncDaemon\async_daemon_end_to_end.cs" />
     <Compile Include="auto_assign_missing_guid_ids_Tests.cs" />
     <Compile Include="Bugs\ability_to_persist_generic_types.cs" />
     <Compile Include="Bugs\ability_to_persist_nested_types_Tests.cs" />

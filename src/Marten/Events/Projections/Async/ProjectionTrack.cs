@@ -7,7 +7,7 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Marten.Events.Projections.Async
 {
-    public class ProjectionTrack : IEventPageWorker, IDisposable
+    public class ProjectionTrack : IEventPageWorker, IProjectionTrack
     {
         private readonly IFetcher _fetcher;
         private readonly IDocumentSession _session;
@@ -30,7 +30,11 @@ namespace Marten.Events.Projections.Async
             _executionTrack = new ActionBlock<EventPage>(page => ExecutePage(page, _cancellation.Token));
 
             UpdateBlock = new ActionBlock<IDaemonUpdate>(msg => msg.Invoke(this));
+
+            ViewType = _projection.Produces;
         }
+
+        public Type ViewType { get; }
 
         public ActionBlock<IDaemonUpdate> UpdateBlock { get; private set; }
 
