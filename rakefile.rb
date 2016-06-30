@@ -158,7 +158,7 @@ def storyteller_path()
   global_cache = `./nuget.exe locals global-packages -list`
   global_cache = global_cache.split(': ').last.strip
   project_file = load_project_file("src/Marten.Testing/project.json")
-  storyteller_version = project_file["dependencies"]["Storyteller"]
+  storyteller_version = project_file["frameworks"]["net46"]["dependencies"]["Storyteller"]
   "#{global_cache}Storyteller/#{storyteller_version}/tools/st.exe"
 end
 
