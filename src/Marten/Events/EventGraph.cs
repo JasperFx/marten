@@ -133,6 +133,12 @@ namespace Marten.Events
             return AsyncProjections.ForView(viewType) ?? InlineProjections.ForView(viewType);
         }
 
+        public EventProjection<TView> Project<TView>()
+        {
+            var projection = new EventProjection<TView>();
+            InlineProjections.Add(projection);
+            return projection;
+        }
         /// <summary>
         /// Set default strategy to lookup IAggregator when no explicit IAggregator registration exists. 
         /// </summary>
