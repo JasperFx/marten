@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Projections.Async;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -75,7 +76,7 @@ namespace Marten.Testing.Events.Projections.Async
             }
 
             var options = new AsyncOptions();
-            using (var data = new Fetcher(theStore, options, new Type[] {typeof(MembersJoined)}))
+            using (var data = new Fetcher(theStore, options, Substitute.For<IDaemonLogger>(), new Type[] {typeof(MembersJoined)}))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -110,7 +111,7 @@ namespace Marten.Testing.Events.Projections.Async
                 await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            using (var data = new Fetcher(theStore, new AsyncOptions(), new Type[] {typeof(MembersDeparted), typeof(ArrivedAtLocation)}))
+            using (var data = new Fetcher(theStore, new AsyncOptions(), Substitute.For<IDaemonLogger>(), new Type[] {typeof(MembersDeparted), typeof(ArrivedAtLocation)}))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -159,7 +160,7 @@ namespace Marten.Testing.Events.Projections.Async
                 typeof(MembersJoined), typeof(MembersDeparted), typeof(ArrivedAtLocation)
             };
 
-            using (var data = new Fetcher(theStore, new AsyncOptions(), types))
+            using (var data = new Fetcher(theStore, new AsyncOptions(), Substitute.For<IDaemonLogger>(), types))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -193,7 +194,7 @@ namespace Marten.Testing.Events.Projections.Async
 
             var types = new Type[] {typeof(MembersJoined)};
 
-            using (var data = new Fetcher(theStore, new AsyncOptions(), types))
+            using (var data = new Fetcher(theStore, new AsyncOptions(), Substitute.For<IDaemonLogger>(), types))
             {
                 var events1 = (await data.FetchNextPage(0).ConfigureAwait(false)).Streams.SelectMany(x => x.Events).ToArray();
                 var events2 = (await data.FetchNextPage(100).ConfigureAwait(false)).Streams.SelectMany(x => x.Events).ToArray();

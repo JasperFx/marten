@@ -41,6 +41,17 @@ namespace Marten.Testing.AsyncDaemon
 
         public Dictionary<Guid, GithubProject> AllProjects { get; }
 
+        public async  Task PublishAllProjectEventsAsync(IDocumentStore store)
+        {
+            foreach (var track in AllProjects.Values)
+            {
+                await track.PublishEvents(store, 0).ConfigureAwait(false);
+            }
+
+            //var tasks = AllProjects.Values.Select(project => project.PublishEvents(store, 0)).ToArray();
+            //return Task.WhenAll(tasks);
+        }
+
         public void PublishAllProjectEvents(IDocumentStore store)
         {
             var tasks = AllProjects.Values.Select(project => project.PublishEvents(store, 0)).ToArray();

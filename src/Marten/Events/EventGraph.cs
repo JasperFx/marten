@@ -43,7 +43,7 @@ namespace Marten.Events
 
         internal StoreOptions Options { get; }
 
-        internal TableName Table => new TableName(DatabaseSchemaName, "mt_streams");
+        internal TableName Table => new TableName(DatabaseSchemaName, "mt_events");
 
         internal IDocumentSchemaObjects SchemaObjects { get; }
 

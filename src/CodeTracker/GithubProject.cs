@@ -133,8 +133,10 @@ namespace CodeTracker
 
         public async Task PublishEvents(IDocumentStore store, int pause)
         {
-            var events = Events.OrderBy(x => x.Timestamp).ToArray();
-
+            var events = Events.OrderBy(x => x.Timestamp).ToList();
+            var started = events.OfType<ProjectStarted>().Single();
+            events.Remove(started);
+            events.Insert(0, started);
 
             var index = 0;
             var page = events.Skip(index).Take(10).ToArray();

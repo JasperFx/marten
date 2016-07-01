@@ -65,10 +65,14 @@
     <Compile Include="Events\Projections\Async\Accumulator.cs" />
     <Compile Include="Events\Projections\Async\AsyncOptions.cs" />
     <Compile Include="Events\Projections\Async\CachePageUpdate.cs" />
+    <Compile Include="Events\Projections\Async\ConsoleDaemonLogger.cs" />
     <Compile Include="Events\Projections\Async\Daemon.cs" />
     <Compile Include="Events\Projections\Async\DaemonLifecycle.cs" />
+    <Compile Include="Events\Projections\Async\DebugDaemonLogger.cs" />
     <Compile Include="Events\Projections\Async\IDaemon.cs" />
+    <Compile Include="Events\Projections\Async\IDaemonLogger.cs" />
     <Compile Include="Events\Projections\Async\IProjectionTrack.cs" />
+    <Compile Include="Events\Projections\Async\NulloDaemonLogger.cs" />
     <Compile Include="Events\Projections\Async\ProjectionTrack.cs" />
     <Compile Include="Events\Projections\Async\EventPage.cs" />
     <Compile Include="Events\Projections\Async\EventProgressWrite.cs" />
@@ -76,10 +80,10 @@
     <Compile Include="Events\Projections\Async\Fetcher.cs" />
     <Compile Include="Events\Projections\Async\FetcherState.cs" />
     <Compile Include="Events\Projections\Async\IDaemonUpdate.cs" />
-    <Compile Include="Events\Projections\Async\IEventPageWorker.cs" />
     <Compile Include="Events\Projections\Async\IFetcher.cs" />
     <Compile Include="Events\Projections\Async\ProjectionStatus.cs" />
     <Compile Include="Events\Projections\Async\StoreProgress.cs" />
+    <Compile Include="Events\Projections\Async\TracingLogger.cs" />
     <Compile Include="Events\Projections\IAggregation.cs" />
     <Compile Include="Events\Projections\IAggregationFinder.cs" />
     <Compile Include="Events\Projections\IAggregator.cs" />

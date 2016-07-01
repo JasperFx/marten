@@ -4,44 +4,56 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Baseline;
 using Marten.Util;
 
 namespace Marten.Events.Projections.Async
 {
-    public class ProjectionTrack : IEventPageWorker, IProjectionTrack
+    public class ProjectionTrack : IProjectionTrack
     {
-        private readonly IFetcher _fetcher;
-        private readonly IDocumentSession _session;
-        private readonly IProjection _projection;
-        private bool _isDisposed;
-        private readonly ActionBlock<EventPage> _executionTrack;
         private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
-        private readonly IList<EventWaiter> _waiters = new List<EventWaiter>();
-        private readonly TaskCompletionSource<long> _rebuildCompletion = new TaskCompletionSource<long>();
         private readonly EventGraph _events;
+        private readonly ActionBlock<EventPage> _executionTrack;
+        private readonly IFetcher _fetcher;
+        private readonly IDaemonLogger _logger;
+        private readonly IProjection _projection;
+        private readonly TaskCompletionSource<long> _rebuildCompletion = new TaskCompletionSource<long>();
         private readonly IDocumentStore _store;
+        private readonly IList<EventWaiter> _waiters = new List<EventWaiter>();
+        private bool _isDisposed;
+        private bool _atEndOfEventLog;
 
-        public ProjectionTrack(IFetcher fetcher, IDocumentStore store, IProjection projection)
+        public ProjectionTrack(IFetcher fetcher, IDocumentStore store, IProjection projection, IDaemonLogger logger)
         {
             _fetcher = fetcher;
-            _session = store.OpenSession();
             _projection = projection;
+            _logger = logger;
             _store = store;
 
             _events = store.Schema.Events;
 
-            _executionTrack = new ActionBlock<EventPage>(page => ExecutePage(page, _cancellation.Token));
+            _executionTrack = new ActionBlock<EventPage>(page => ExecutePage(page, _cancellation.Token), new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = 1,
+                EnsureOrdered = true
+            });
 
-            UpdateBlock = new ActionBlock<IDaemonUpdate>(msg => msg.Invoke(this));
+            UpdateBlock = new ActionBlock<IDaemonUpdate>(msg => msg.Invoke(this), new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = 1,
+                EnsureOrdered = true
+            });
 
             ViewType = _projection.Produces;
         }
 
-        public Type ViewType { get; }
-
-        public ActionBlock<IDaemonUpdate> UpdateBlock { get; private set; }
+        public ActionBlock<IDaemonUpdate> UpdateBlock { get; }
 
         public Accumulator Accumulator { get; } = new Accumulator();
+
+        public DaemonLifecycle Lifecycle { get; private set; } = DaemonLifecycle.Continuous;
+
+        public Type ViewType { get; }
 
         public long LastEncountered { get; set; }
 
@@ -56,51 +68,35 @@ namespace Marten.Events.Projections.Async
             _executionTrack.Complete();
         }
 
-        public async Task ExecutePage(EventPage page, CancellationToken cancellation)
-        {
-            await _projection.ApplyAsync(_session, page.Streams, cancellation).ConfigureAwait(false);
-
-            _session.QueueOperation(new EventProgressWrite(_events, _projection.Produces.FullName, page.To));
-
-            await _session.SaveChangesAsync(cancellation).ConfigureAwait(false);
-
-            Console.WriteLine($"Processed {page} for view {_projection.Produces.FullName}");
-
-            LastEncountered = page.To;
-
-            evaluateWaiters();
-
-            UpdateBlock?.Post(new StoreProgress(_projection.Produces, page));
-        }
-
-        private void evaluateWaiters()
-        {
-            var expiredWaiters = _waiters.Where(x => x.Sequence <= LastEncountered).ToArray();
-            foreach (var waiter in expiredWaiters)
-            {
-                waiter.Completion.SetResult(LastEncountered);
-                _waiters.Remove(waiter);
-            }
-        }
-
-        void IEventPageWorker.QueuePage(EventPage page)
+        public void QueuePage(EventPage page)
         {
             UpdateBlock.Post(new CachePageUpdate(page));
         }
 
-        void IEventPageWorker.Finished(long lastEncountered)
+        public void Finished(long lastEncountered)
         {
-            WaitUntilEventIsProcessed(lastEncountered).ContinueWith(t =>
-            {
-                _fetcher.Stop();
-;                _rebuildCompletion.SetResult(lastEncountered);
-            });
+            _logger.FetchingFinished(this, lastEncountered);
+            _atEndOfEventLog = true;
 
-            Dispose();
+            if (_executionTrack.InputCount == 0)
+            {
+                _rebuildCompletion.SetResult(lastEncountered);
+            }
+            else
+            {
+                WaitUntilEventIsProcessed(lastEncountered).ContinueWith(t =>
+                {
+                    _rebuildCompletion.SetResult(t.Result);
+                });
+            }
+
+
         }
 
         public void Start(DaemonLifecycle lifecycle)
         {
+            _logger.StartingProjection(this, lifecycle);
+
             _store.Schema.EnsureStorageExists(_projection.Produces);
 
             Lifecycle = lifecycle;
@@ -109,36 +105,12 @@ namespace Marten.Events.Projections.Async
 
         public async Task Stop()
         {
+            _logger.Stopping(this);
             await _fetcher.Stop().ConfigureAwait(false);
+            _logger.Stopped(this);
 
+            _rebuildCompletion.TrySetResult(LastEncountered);
         }
-
-        public async Task CachePage(EventPage page)
-        {
-            Accumulator.Store(page);
-
-            if (Accumulator.CachedEventCount > _projection.AsyncOptions.MaximumStagedEventCount)
-            {
-                await _fetcher.Pause().ConfigureAwait(false);
-            }
-
-            _executionTrack.Post(page);
-        }
-
-        public Task StoreProgress(Type viewType, EventPage page)
-        {
-            Accumulator.Prune(page.To);
-
-            if (Accumulator.CachedEventCount <= _projection.AsyncOptions.MaximumStagedEventCount &&
-                _fetcher.State == FetcherState.Paused)
-            {
-                _fetcher.Start(this, Lifecycle);
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public DaemonLifecycle Lifecycle { get; private set; } = DaemonLifecycle.Continuous;
 
         public Task<long> WaitUntilEventIsProcessed(long sequence)
         {
@@ -156,11 +128,14 @@ namespace Marten.Events.Projections.Async
 
             // TODO -- make the CancellationToken go into fetcher
             _fetcher.Start(this, DaemonLifecycle.StopAtEndOfEventData);
+
             return _rebuildCompletion.Task;
         }
 
         public async Task Rebuild(CancellationToken token = new CancellationToken())
         {
+            Lifecycle = DaemonLifecycle.StopAtEndOfEventData;
+
             _store.Schema.EnsureStorageExists(_projection.Produces);
 
             await _fetcher.Stop().ConfigureAwait(false);
@@ -170,10 +145,93 @@ namespace Marten.Events.Projections.Async
             await RunUntilEndOfEvents(token).ConfigureAwait(false);
         }
 
+        public async Task ExecutePage(EventPage page, CancellationToken cancellation)
+        {
+            // Duplicated, ignore. Shouldn't happen, but Fetcher is screwed up, so...
+            if (page.To <= LastEncountered) return;
+
+            _logger.ExecutingPage(page, this);
+
+            Console.WriteLine("Handling events " + page.Streams.SelectMany(x => x.Events).OrderBy(x => x.Sequence).Select(x => x.Sequence.ToString()).Join(", "));
+
+            using (var session = _store.OpenSession())
+            {
+                await _projection.ApplyAsync(session, page.Streams, cancellation).ConfigureAwait(false);
+
+                session.QueueOperation(new EventProgressWrite(_events, _projection.Produces.FullName, page.To));
+
+                await session.SaveChangesAsync(cancellation).ConfigureAwait(false);
+
+                _logger.PageExecuted(page, this);
+
+                LastEncountered = page.To;
+
+                evaluateWaiters();
+
+                UpdateBlock?.Post(new StoreProgress(_projection.Produces, page));
+            }
+        }
+
+        private void evaluateWaiters()
+        {
+            var expiredWaiters = _waiters.Where(x => x.Sequence <= LastEncountered).ToArray();
+            foreach (var waiter in expiredWaiters)
+            {
+                waiter.Completion.SetResult(LastEncountered);
+                _waiters.Remove(waiter);
+            }
+        }
+
+        public async Task CachePage(EventPage page)
+        {
+            Accumulator.Store(page);
+
+            
+            if (Accumulator.CachedEventCount > _projection.AsyncOptions.MaximumStagedEventCount)
+            {
+                _logger.ProjectionBackedUp(this, Accumulator.CachedEventCount, page);
+                await _fetcher.Pause().ConfigureAwait(false);
+            }
+            
+
+            _executionTrack.Post(page);
+        }
+
+        private bool shouldRestartFetcher()
+        {
+            if (_fetcher.State == FetcherState.Active) return false;
+
+            if (Lifecycle == DaemonLifecycle.StopAtEndOfEventData && _atEndOfEventLog) return false;
+
+            if (Accumulator.CachedEventCount <= _projection.AsyncOptions.MaximumStagedEventCount &&
+                _fetcher.State == FetcherState.Paused)
+            {
+                return true;
+            }
+
+            return false;
+
+        }
+
+        public Task StoreProgress(Type viewType, EventPage page)
+        {
+            Accumulator.Prune(page.To);
+
+            if (shouldRestartFetcher())
+            {
+                _fetcher.Start(this, Lifecycle);
+            }
+
+            return Task.CompletedTask;
+        }
+
         private async Task clearExistingState(CancellationToken token)
         {
+            _logger.ClearingExistingState(this);
+
             var tableName = _store.Schema.MappingFor(_projection.Produces).Table;
-            var sql = $"delete from {_store.Schema.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
+            var sql =
+                $"delete from {_store.Schema.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
 
             using (var conn = _store.Advanced.OpenConnection())
             {
@@ -186,7 +244,8 @@ namespace Marten.Events.Projections.Async
                 }, token).ConfigureAwait(false);
             }
 
-            Console.WriteLine("Cleared the Existing Projection State for " + _projection.Produces.FullName);
+            LastEncountered = 0;
         }
     }
+
 }

@@ -7,31 +7,28 @@ using Baseline;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Events.Projections.Async
 {
     public class Fetcher : IDisposable, IFetcher
     {
-        private readonly AsyncOptions _options;
-        private readonly NpgsqlConnection _conn;
-        private readonly NulloIdentityMap _map;
-        private readonly EventSelector _selector;
-        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
-        private FetcherState _state;
-        private Task _fetchingTask;
-        private long _lastEncountered = 0;
+        private readonly IConnectionFactory _connectionFactory;
         private readonly string[] _eventTypeNames;
+        private readonly IDaemonLogger _logger;
+        private readonly NulloIdentityMap _map;
+        private readonly AsyncOptions _options;
+        private readonly EventSelector _selector;
+        private Task _fetchingTask;
+        private long _lastEncountered;
 
-        public Fetcher(IDocumentStore store, AsyncOptions options, IEnumerable<Type> eventTypes)
+        public Fetcher(IDocumentStore store, AsyncOptions options, IDaemonLogger logger, IEnumerable<Type> eventTypes)
         {
             _options = options;
-            _state = FetcherState.Waiting;
+            _logger = logger;
+            State = FetcherState.Waiting;
 
-            _conn = store.Schema.StoreOptions.ConnectionFactory().Create();
-
-            _conn.Open();
+            _connectionFactory = store.Advanced.Options.ConnectionFactory();
 
             _selector = new EventSelector(store.Schema.Events, store.Advanced.Serializer);
             _map = new NulloIdentityMap(store.Advanced.Serializer);
@@ -39,9 +36,9 @@ namespace Marten.Events.Projections.Async
             _eventTypeNames = eventTypes.Select(x => store.Schema.Events.EventMappingFor(x).Alias).ToArray();
         }
 
-        public Fetcher(IDocumentStore store, IProjection projection) : this(store, projection.AsyncOptions, projection.Consumes)
+        public Fetcher(IDocumentStore store, IProjection projection, IDaemonLogger logger)
+            : this(store, projection.AsyncOptions, logger, projection.Consumes)
         {
-            
         }
 
         public CancellationTokenSource Cancellation { get; } = new CancellationTokenSource();
@@ -49,140 +46,158 @@ namespace Marten.Events.Projections.Async
 
         public string[] EventTypeNames { get; set; } = new string[0];
 
-        public void Start(IEventPageWorker worker, DaemonLifecycle lifecycle)
+        public void Dispose()
         {
-            _lock.Write(() =>
+            Cancellation.Cancel();
+        }
+
+        public void Start(IProjectionTrack track, DaemonLifecycle lifecycle)
+        {
+            if (_fetchingTask != null && !_fetchingTask.IsCompleted)
             {
-                if (_state == FetcherState.Active) return;
+                throw new InvalidOperationException("The Fetcher is already started!");
+            }
 
-                _state = FetcherState.Active;
+            if (State == FetcherState.Active) return;
 
-                
+            State = FetcherState.Active;
 
-                _fetchingTask = Task.Factory.StartNew(async () =>
+            if (track.LastEncountered > _lastEncountered)
+            {
+                _lastEncountered = track.LastEncountered;
+            }
+
+            _logger.FetchStarted(track);
+
+            _fetchingTask =
+                Task.Factory.StartNew(async () =>
                 {
-                    while (!Cancellation.IsCancellationRequested && _state == FetcherState.Active)
+                    await fetchEvents(track, lifecycle).ConfigureAwait(false);
+                },
+                    Cancellation.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                    .ContinueWith(t =>
                     {
-                        var page = await FetchNextPage(_lastEncountered).ConfigureAwait(false);
-
-                        if (page.Count == 0)
-                        {
-                            if (lifecycle == DaemonLifecycle.Continuous)
-                            {
-                                _state = FetcherState.Waiting;
-                                
-                                // TODO -- make the cooldown time be configurable
-                                await Task.Delay(1.Seconds(), Cancellation.Token).ConfigureAwait(false);
-                                Start(worker, lifecycle);
-                            }
-                            else
-                            {
-                                _state = FetcherState.Paused;
-                                worker.Finished(_lastEncountered);
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            _lastEncountered = page.To;
-                            worker.QueuePage(page);
-                        }
-                    }
-                }, Cancellation.Token);
-            });
+                        _logger.FetchingStopped(track);
+                    });
         }
 
 
         public async Task Pause()
         {
-            _lock.EnterWriteLock();
-            try
-            {
-                _state = FetcherState.Paused;
+            State = FetcherState.Paused;
 
-                await _fetchingTask.ConfigureAwait(false);
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
-            }
+            await _fetchingTask.ConfigureAwait(false);
         }
 
         public async Task Stop()
         {
-            if (_state != FetcherState.Active)
+            if (State != FetcherState.Active)
             {
                 return;
             }
 
-            _lock.EnterWriteLock();
-            try
-            {
-                _state = FetcherState.Waiting;
+            State = FetcherState.Waiting;
 
-                Cancellation.Cancel();
-
-                await _fetchingTask.ConfigureAwait(false);
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
-            }
-        }
-
-        public FetcherState State
-        {
-            get { return _lock.Read(() => _state); }
-        }
-
-        public void Dispose()
-        {
             Cancellation.Cancel();
-            _conn.Close();
-            _conn.Dispose();
+
+            await _fetchingTask.ConfigureAwait(false);
         }
+
+        public FetcherState State { get; private set; }
 
         public async Task<EventPage> FetchNextPage(long lastEncountered)
         {
-            var lastPossible = lastEncountered + _options.PageSize;
-            var sql =
-                $@"
+            using (var conn = _connectionFactory.Create())
+            {
+                await conn.OpenAsync().ConfigureAwait(false);
+
+                var lastPossible = lastEncountered + _options.PageSize;
+                var sql =
+                    $@"
 select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
-{_selector
-                    .ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) order by seq_id;       
+{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) order by seq_id;       
 ";
 
-            var cmd = _conn.CreateCommand(sql)
-                .With("last", lastEncountered)
-                .With("limit", lastPossible)
-                .With("types", _eventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
+                var cmd = conn.CreateCommand(sql)
+                    .With("last", lastEncountered)
+                    .With("limit", lastPossible)
+                    .With("types", _eventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
 
 
-            long furthestExtant;
-            IList<IEvent> events = null;
+                long furthestExtant;
+                IList<IEvent> events = null;
 
-            var token = Cancellation.Token;
-            using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
-            {
-                await reader.ReadAsync(token).ConfigureAwait(false);
+                var token = Cancellation.Token;
+                using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+                {
+                    await reader.ReadAsync(token).ConfigureAwait(false);
 
-                furthestExtant = await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
-                    ? 0
-                    : await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+                    furthestExtant = await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
+                        ? 0
+                        : await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
 
-                await reader.NextResultAsync(token).ConfigureAwait(false);
+                    await reader.NextResultAsync(token).ConfigureAwait(false);
 
-                events = await _selector.ReadAsync(reader, _map, token).ConfigureAwait(false);
+                    events = await _selector.ReadAsync(reader, _map, token).ConfigureAwait(false);
+
+                    reader.Close();
+                }
+
+                conn.Close();
+
+                var streams =
+                    events.GroupBy(x => x.StreamId)
+                        .Select(
+                            group =>
+                            {
+                                return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
+                            })
+                        .ToArray();
+
+                return new EventPage(lastEncountered, furthestExtant, streams) {Count = events.Count};
             }
+        }
 
+        private async Task fetchEvents(IProjectionTrack track, DaemonLifecycle lifecycle)
+        {
+            while (!Cancellation.IsCancellationRequested && State == FetcherState.Active)
+            {
+                var page = await FetchNextPage(_lastEncountered).ConfigureAwait(false);
 
-            var streams =
-                events.GroupBy(x => x.StreamId)
-                    .Select(
-                        group => { return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false); })
-                    .ToArray();
+                _logger.PageFetched(track, page);
 
-            return new EventPage(lastEncountered, furthestExtant, streams) { Count = events.Count };
+                if (page.Count == 0)
+                {
+                    if (lifecycle == DaemonLifecycle.Continuous)
+                    {
+                        State = FetcherState.Waiting;
+
+                        _logger.PausingFetching(track, _lastEncountered);
+
+                        // TODO -- make the cooldown time be configurable
+#pragma warning disable 4014
+                        Task.Delay(1.Seconds(), Cancellation.Token).ContinueWith(t =>
+#pragma warning restore 4014
+                        {
+                            Start(track, lifecycle);
+                        });
+                    }
+                    else
+                    {
+                        State = FetcherState.Paused;
+
+                        _logger.FetchingIsAtEndOfEvents(track);
+                        track.Finished(_lastEncountered);
+
+                        break;
+                    }
+                }
+                else
+                {
+                    _lastEncountered = page.To;
+                    track.QueuePage(page);
+                }
+            }
         }
     }
 }

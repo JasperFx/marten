@@ -42,6 +42,8 @@ namespace CodeTracker
         {
             ProjectName = started.Name;
             OrganizationName = started.Organization;
+
+            Console.WriteLine("Handled ProjectStarted, now " + this);
         }
 
         public void Apply(IssueCreated created)

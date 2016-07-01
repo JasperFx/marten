@@ -10,11 +10,13 @@ namespace Marten.Events.Projections.Async
     public class Daemon : IDaemon
     {
         private readonly IDocumentStore _store;
+        private readonly IDaemonLogger _logger;
         private readonly IDictionary<Type, IProjectionTrack> _tracks = new Dictionary<Type, IProjectionTrack>();
 
-        public Daemon(IDocumentStore store, Type[] viewTypes)
+        public Daemon(IDocumentStore store, IDaemonLogger logger, Type[] viewTypes)
         {
             _store = store;
+            _logger = logger;
             foreach (var viewType in viewTypes)
             {
                 var projection = store.Schema.Events.AsyncProjections.ForView(viewType);
@@ -22,8 +24,8 @@ namespace Marten.Events.Projections.Async
                     throw new ArgumentOutOfRangeException(nameof(viewType),
                         $"No projection is configured for view type {viewType.FullName}");
 
-                var fetcher = new Fetcher(store, projection);
-                var track = new ProjectionTrack(fetcher, store, projection);
+                var fetcher = new Fetcher(store, projection, logger);
+                var track = new ProjectionTrack(fetcher, store, projection, logger);
 
                 _tracks.Add(viewType, track);
             }
@@ -31,16 +33,18 @@ namespace Marten.Events.Projections.Async
 
         public async Task StopAll()
         {
+            _logger.BeginStopAll();
             foreach (var track in _tracks.Values)
             {
                 await track.Stop().ConfigureAwait(false);
             }
+
+            _logger.AllStopped();
         }
 
         public Task Stop<T>()
         {
-            var all = _tracks.Values.Select(x => x.Stop());
-            return Task.WhenAll(all);
+            return Stop(typeof(T));
         }
 
         public Task Stop(Type viewType)
@@ -80,6 +84,27 @@ namespace Marten.Events.Projections.Async
 
         public void StartAll()
         {
+            _logger.BeginStartAll(_tracks.Values);
+
+            foreach (var track in _tracks.Values)
+            {
+                _store.Schema.EnsureStorageExists(track.ViewType);
+            }
+
+            _store.Schema.EnsureStorageExists(typeof(EventStream));
+
+            findCurrentEventLogPositions();
+
+            foreach (var track in _tracks.Values)
+            {
+                track.Start(DaemonLifecycle.Continuous);
+            }
+
+            _logger.FinishedStartingAll();
+        }
+
+        private void findCurrentEventLogPositions()
+        {
             using (var conn = _store.Advanced.OpenConnection())
             {
                 conn.Execute(cmd =>
@@ -106,16 +131,14 @@ namespace Marten.Events.Projections.Async
 
             foreach (var track in _tracks.Values)
             {
-                track.Start(DaemonLifecycle.Continuous);
+                _logger.DeterminedStartingPosition(track);
             }
         }
 
-        public async Task WaitUntilEventIsProcessed(long sequence, CancellationToken token = new CancellationToken())
+        public Task WaitUntilEventIsProcessed(long sequence, CancellationToken token = new CancellationToken())
         {
-            foreach (var track in _tracks.Values)
-            {
-                await track.WaitUntilEventIsProcessed(sequence).ConfigureAwait(false);
-            }
+            var tasks = _tracks.Values.Select(x => x.WaitUntilEventIsProcessed(sequence));
+            return Task.WhenAll(tasks);
         }
 
         public async Task WaitForNonStaleResults(CancellationToken token = new CancellationToken())
@@ -156,9 +179,13 @@ namespace Marten.Events.Projections.Async
 
         public Task RebuildAll(CancellationToken token = new CancellationToken())
         {
+            _logger.BeginRebuildAll(_tracks.Values);
             var all = _tracks.Values.Select(x => x.Rebuild(token));
 
-            return Task.WhenAll(all);
+            return Task.WhenAll(all).ContinueWith(t =>
+            {
+                _logger.FinishRebuildAll(t.Status, t.Exception);
+            }, token);
         }
 
         public Task Rebuild<T>(CancellationToken token = new CancellationToken())
