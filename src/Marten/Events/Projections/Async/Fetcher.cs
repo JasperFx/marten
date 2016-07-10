@@ -145,14 +145,7 @@ select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
 
                 conn.Close();
 
-                var streams =
-                    events.GroupBy(x => x.StreamId)
-                        .Select(
-                            group =>
-                            {
-                                return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
-                            })
-                        .ToArray();
+                var streams = EventPage.ToStreams(events);
 
                 return new EventPage(lastEncountered, furthestExtant, streams) {Count = events.Count};
             }

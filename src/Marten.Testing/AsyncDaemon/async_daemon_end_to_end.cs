@@ -34,8 +34,7 @@ namespace Marten.Testing.AsyncDaemon
             {
                 daemon.StartAll();
 
-                _fixture.PublishAllProjectEvents(theStore);
-                //await _fixture.PublishAllProjectEventsAsync(theStore);
+                await _fixture.PublishAllProjectEventsAsync(theStore);
 
                 // Runs all projections until there are no more events coming in
                 await daemon.WaitForNonStaleResults().ConfigureAwait(false);
