@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Marten.Events.Projections.Async
@@ -14,6 +15,16 @@ namespace Marten.Events.Projections.Async
                                 return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
                             })
                         .ToArray();
+        }
+
+        public static bool IsCompletelySequential(IList<long> sequences)
+        {
+            for (int i = 0; i < sequences.Count - 1; i++)
+            {
+                if (sequences[i + 1] - sequences[i] != 1) return false;
+            }
+
+            return true;
         }
 
         public long From { get; set; }
