@@ -4,6 +4,14 @@ using System.Linq;
 
 namespace Marten.Events.Projections.Async
 {
+    public enum EventPageType
+    {
+        Empty,
+        Sequential,
+        NonSequential,
+        Matching
+    }
+
     public class EventPage
     {
         public static EventStream[] ToStreams(IEnumerable<IEvent> events)
@@ -33,6 +41,8 @@ namespace Marten.Events.Projections.Async
         public int Count { get; set; }
         public EventPage Next { get; set; }
 
+        public IList<long> Sequences { get; set; }
+
         public EventPage(long from, long to, IList<IEvent> events)
         {
             From = @from;
@@ -40,9 +50,34 @@ namespace Marten.Events.Projections.Async
             Streams = ToStreams(events);
         }
 
+        public EventPage(long lastEncountered, IList<long> sequences, IList<IEvent> events)
+        {
+            Sequences = sequences;
+            From = lastEncountered;
+            To = Sequences.LastOrDefault();
+            Streams = ToStreams(events);
+        }
+
+        public bool IsSequential()
+        {
+            if (!Sequences.Any()) return false;
+
+            var startsAfterFrom = Sequences[0] - From == 1;
+            return startsAfterFrom && IsCompletelySequential(Sequences) ;
+        }
+
+        public bool CanContinueProcessing(IList<long> previous)
+        {
+            if (IsSequential()) return true;
+
+            return (Sequences ?? new List<long>()).SequenceEqual(previous);
+        }
+
         public override string ToString()
         {
             return $"Event Page From: {From}, To: {To}, Count: {Count}";
         }
+
+ 
     }
 }

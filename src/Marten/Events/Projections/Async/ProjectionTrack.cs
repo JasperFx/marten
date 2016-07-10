@@ -152,8 +152,6 @@ namespace Marten.Events.Projections.Async
 
             _logger.ExecutingPage(page, this);
 
-            Console.WriteLine("Handling events " + page.Streams.SelectMany(x => x.Events).OrderBy(x => x.Sequence).Select(x => x.Sequence.ToString()).Join(", "));
-
             using (var session = _store.OpenSession())
             {
                 await _projection.ApplyAsync(session, page.Streams, cancellation).ConfigureAwait(false);

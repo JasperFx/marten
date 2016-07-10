@@ -45,7 +45,7 @@ namespace Marten.Testing.AsyncDaemon
         {
             foreach (var track in AllProjects.Values)
             {
-                await track.PublishEvents(store, 0).ConfigureAwait(false);
+                await track.PublishEvents(store, 50).ConfigureAwait(false);
             }
 
             //var tasks = AllProjects.Values.Select(project => project.PublishEvents(store, 0)).ToArray();

@@ -110,50 +110,81 @@ namespace Marten.Events.Projections.Async
         {
             using (var conn = _connectionFactory.Create())
             {
-                await conn.OpenAsync().ConfigureAwait(false);
+                try
+                {
+                    await conn.OpenAsync().ConfigureAwait(false);
 
-                var lastPossible = lastEncountered + _options.PageSize;
-                var sql =
-                    $@"
-select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
+                    var lastPossible = lastEncountered + _options.PageSize;
+                    var sql =
+                        $@"
+select seq_id from mt_events where seq_id > :last and seq_id <= :limit order by seq_id;
 {_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) order by seq_id;       
 ";
 
-                var cmd = conn.CreateCommand(sql)
-                    .With("last", lastEncountered)
-                    .With("limit", lastPossible)
-                    .With("types", _eventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
+                    var cmd = conn.CreateCommand(sql)
+                        .With("last", lastEncountered)
+                        .With("limit", lastPossible)
+                        .With("types", _eventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
 
-                var page = await buildEventPage(lastEncountered, cmd).ConfigureAwait(false);
+                    var page = await buildEventPage(lastEncountered, cmd).ConfigureAwait(false);
 
-                conn.Close();
+                    if (page.Count == 0 || page.IsSequential())
+                    {
+                        return page;
+                    }
 
-                return page;
+                    var starting = page;
+
+                    await Task.Delay(250).ConfigureAwait(false);
+                    page = await buildEventPage(lastEncountered, cmd).ConfigureAwait(false);
+                    while (!page.CanContinueProcessing(starting.Sequences))
+                    {
+                        starting = page;
+                        page = await buildEventPage(lastEncountered, cmd).ConfigureAwait(false);
+                    }
+
+                    return page;
+                }
+                finally
+                {
+                    conn.Close();
+                }
+
+                
+
+                
             }
         }
 
         private async Task<EventPage> buildEventPage(long lastEncountered, NpgsqlCommand cmd)
         {
-            long furthestExtant;
             IList<IEvent> events = null;
+            IList<long> sequences = new List<long>();
 
             var token = Cancellation.Token;
             using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
             {
-                await reader.ReadAsync(token).ConfigureAwait(false);
+                while (await reader.ReadAsync(token).ConfigureAwait(false))
+                {
+                    var seq = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+                    sequences.Add(seq);
+                }
 
-                furthestExtant = await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
-                    ? 0
-                    : await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+                if (sequences.Any())
+                {
+                    await reader.NextResultAsync(token).ConfigureAwait(false);
 
-                await reader.NextResultAsync(token).ConfigureAwait(false);
-
-                events = await _selector.ReadAsync(reader, _map, token).ConfigureAwait(false);
+                    events = await _selector.ReadAsync(reader, _map, token).ConfigureAwait(false);
+                }
+                else
+                {
+                    events = new List<IEvent>();
+                }
 
                 reader.Close();
             }
 
-            return new EventPage(lastEncountered, furthestExtant, events) {Count = events.Count};
+            return new EventPage(lastEncountered, sequences, events) {Count = events.Count};
         }
 
 
