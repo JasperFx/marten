@@ -20,7 +20,7 @@ namespace Marten.Testing.Events.Projections.Async
 
         private EventPage toPage(long from, long to, int eventCount)
         {
-            return new EventPage(from, to, new EventStream[0]) {Count = eventCount};
+            return new EventPage(from, to, new IEvent[0]) {Count = eventCount};
         }
 
         [Fact]

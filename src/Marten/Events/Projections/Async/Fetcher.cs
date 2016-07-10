@@ -7,6 +7,7 @@ using Baseline;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Util;
+using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Events.Projections.Async
@@ -123,33 +124,38 @@ select max(seq_id) from mt_events where seq_id > :last and seq_id <= :limit;
                     .With("limit", lastPossible)
                     .With("types", _eventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
 
-
-                long furthestExtant;
-                IList<IEvent> events = null;
-
-                var token = Cancellation.Token;
-                using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
-                {
-                    await reader.ReadAsync(token).ConfigureAwait(false);
-
-                    furthestExtant = await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
-                        ? 0
-                        : await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
-
-                    await reader.NextResultAsync(token).ConfigureAwait(false);
-
-                    events = await _selector.ReadAsync(reader, _map, token).ConfigureAwait(false);
-
-                    reader.Close();
-                }
+                var page = await buildEventPage(lastEncountered, cmd).ConfigureAwait(false);
 
                 conn.Close();
 
-                var streams = EventPage.ToStreams(events);
-
-                return new EventPage(lastEncountered, furthestExtant, streams) {Count = events.Count};
+                return page;
             }
         }
+
+        private async Task<EventPage> buildEventPage(long lastEncountered, NpgsqlCommand cmd)
+        {
+            long furthestExtant;
+            IList<IEvent> events = null;
+
+            var token = Cancellation.Token;
+            using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+            {
+                await reader.ReadAsync(token).ConfigureAwait(false);
+
+                furthestExtant = await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
+                    ? 0
+                    : await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+
+                await reader.NextResultAsync(token).ConfigureAwait(false);
+
+                events = await _selector.ReadAsync(reader, _map, token).ConfigureAwait(false);
+
+                reader.Close();
+            }
+
+            return new EventPage(lastEncountered, furthestExtant, events) {Count = events.Count};
+        }
+
 
         private async Task fetchEvents(IProjectionTrack track, DaemonLifecycle lifecycle)
         {

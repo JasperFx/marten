@@ -17,7 +17,7 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public async Task stores_the_first_page()
         {
-            var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
+            var thePage = new EventPage(0, 100, new IEvent[0]) { Count = 100 };
 
             await theProjectionTrack.CachePage(thePage).ConfigureAwait(false);
 
@@ -28,7 +28,7 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public async Task should_queue_the_page_on_each_projection_on_the_first_one()
         {
-            var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
+            var thePage = new EventPage(0, 100, new IEvent[0]) { Count = 100 };
 
             await theProjectionTrack.CachePage(thePage).ConfigureAwait(false);
         }
@@ -36,7 +36,7 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public async Task should_not_pause_the_fetcher_if_under_the_threshold()
         {
-            var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
+            var thePage = new EventPage(0, 100, new IEvent[0]) { Count = 100 };
 
             await theProjectionTrack.CachePage(thePage).ConfigureAwait(false);
 
@@ -47,9 +47,9 @@ namespace Marten.Testing.Events.Projections.Async
         public async Task pauses_the_fetcher_if_the_queue_number_is_greater_than_the_options_threshold()
         {
             // The default for MaximumStagedEventCount is 1000
-            await theProjectionTrack.CachePage(new EventPage(0, 100, new EventStream[0]) {Count = 100}).ConfigureAwait(false);
-            await theProjectionTrack.CachePage(new EventPage(101, 200, new EventStream[0]) {Count = 100}).ConfigureAwait(false);
-            await theProjectionTrack.CachePage(new EventPage(201, 1100, new EventStream[0]) {Count = 1100 - 201}).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(new EventPage(0, 100, new IEvent[0]) {Count = 100}).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(new EventPage(101, 200, new IEvent[0]) {Count = 100}).ConfigureAwait(false);
+            await theProjectionTrack.CachePage(new EventPage(201, 1100, new IEvent[0]) {Count = 1100 - 201}).ConfigureAwait(false);
 
             await theFetcher.Received().Pause().ConfigureAwait(false);
         }
@@ -77,8 +77,8 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public async Task store_progress_removes_obsolete_page()
         {
-            var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
-            var thePage2 = new EventPage(101, 200, new EventStream[0]) { Count = 100 };
+            var thePage = new EventPage(0, 100, new IEvent[0]) { Count = 100 };
+            var thePage2 = new EventPage(101, 200, new IEvent[0]) { Count = 100 };
             await theProjectionTrack.CachePage(thePage).ConfigureAwait(false);
             await theProjectionTrack.CachePage(thePage2).ConfigureAwait(false);
 
@@ -94,7 +94,7 @@ namespace Marten.Testing.Events.Projections.Async
         {
             theFetcher.State.Returns(FetcherState.Paused);
 
-            var thePage = new EventPage(0, 100, new EventStream[0]) { Count = 100 };
+            var thePage = new EventPage(0, 100, new IEvent[0]) { Count = 100 };
             await theProjectionTrack.CachePage(thePage).ConfigureAwait(false);
 
 

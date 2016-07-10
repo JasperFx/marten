@@ -33,11 +33,11 @@ namespace Marten.Events.Projections.Async
         public int Count { get; set; }
         public EventPage Next { get; set; }
 
-        public EventPage(long from, long to, EventStream[] streams)
+        public EventPage(long from, long to, IList<IEvent> events)
         {
             From = @from;
             To = to;
-            Streams = streams;
+            Streams = ToStreams(events);
         }
 
         public override string ToString()
