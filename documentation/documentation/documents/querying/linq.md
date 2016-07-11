@@ -27,14 +27,19 @@ Right now, Marten supports both _and_ and _or_ queries with Linq:
 
 ## Searching within Child Collections
 
-As of v0.7, Marten supports simple `Any()` queries within child collections, but only for checking
-equality of members of the child collection elements (this feature uses the [Postgresql JSONB containment operator](http://www.postgresql.org/docs/9.5/static/datatype-json.html) to compose the underlying SQL).
+As of v0.7, Marten supports simple `Any()` queries within child collections, **but only for checking
+equality** of members of the child collection elements (this feature uses the [Postgresql JSONB containment operator](http://www.postgresql.org/docs/9.5/static/datatype-json.html) to compose the underlying SQL).
 
 Marten will also allow you to use the `Contains` method to search within arrays or lists of simple elements like strings.
 
 The following code sample demonstrates the supported Linq patterns for collection searching:
 
 <[sample:searching_within_child_collections]>
+
+You can search on equality of multiple fields or properties within the child collection
+using the `&&` operator:
+
+<[sample:any-query-through-child-collection-with-and]>
 
 ## Searching for NULL Values
 
@@ -124,19 +129,6 @@ Marten also allows you to query over IEnumerables using the Any method for equal
 Linq queries against boolean properties can use shorthand mechanisms in `Where()` clauses like so:
 
 <[sample:boolean_queries]>
-
-
-## Querying within Child Collections
-
-As of Marten v0.6, you can use rudimentary `Any()` searches on child collections, **but Marten can only
-query for equality of fields or properties within the Any() subquery.**
-
-<[sample:any-query-through-child-collections]>
-
-You can search on equality of multiple fields or properties within the child collection
-using the `&&` operator:
-
-<[sample:any-query-through-child-collection-with-and]>
 
 ## IsOneOf
 
