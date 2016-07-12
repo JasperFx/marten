@@ -34,11 +34,6 @@ namespace Marten.Events.Projections.Async
         {
         }
 
-        public void PageFetched(IProjectionTrack track, EventPage page)
-        {
-            
-        }
-
         public void PausingFetching(IProjectionTrack track, long lastEncountered)
         {
             
@@ -55,11 +50,6 @@ namespace Marten.Events.Projections.Async
         }
 
         public void FetchingStopped(IProjectionTrack track)
-        {
-            
-        }
-
-        public void ExecutingPage(EventPage page, IProjectionTrack track)
         {
             
         }

@@ -64,11 +64,6 @@ namespace Marten.Events.Projections.Async
             _writeline("Daemon stopped successfully");
         }
 
-        public void PageFetched(IProjectionTrack track, EventPage page)
-        {
-            //_writeline($"{page} fetched for {track.ViewType.FullName}");
-        }
-
         public void PausingFetching(IProjectionTrack track, long lastEncountered)
         {
             _writeline($"Pausing fetching for {track.ViewType.FullName}, last encountered {lastEncountered}");
@@ -87,11 +82,6 @@ namespace Marten.Events.Projections.Async
         public void FetchingStopped(IProjectionTrack track)
         {
             _writeline($"Stopped event fetching for {track.ViewType.FullName}");
-        }
-
-        public void ExecutingPage(EventPage page, IProjectionTrack track)
-        {
-            //_writeline($"Executing {page} for projection {track.ViewType.FullName}");
         }
 
         public void PageExecuted(EventPage page, IProjectionTrack track)

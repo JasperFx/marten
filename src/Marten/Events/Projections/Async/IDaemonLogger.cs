@@ -13,12 +13,10 @@ namespace Marten.Events.Projections.Async
         void FinishRebuildAll(TaskStatus status, AggregateException exception);
         void BeginStopAll();
         void AllStopped();
-        void PageFetched(IProjectionTrack track, EventPage page);
         void PausingFetching(IProjectionTrack track, long lastEncountered);
         void FetchStarted(IProjectionTrack track);
         void FetchingIsAtEndOfEvents(IProjectionTrack track);
         void FetchingStopped(IProjectionTrack track);
-        void ExecutingPage(EventPage page, IProjectionTrack track);
         void PageExecuted(EventPage page, IProjectionTrack track);
         void FetchingFinished(IProjectionTrack track, long lastEncountered);
         void StartingProjection(IProjectionTrack track, DaemonLifecycle lifecycle);

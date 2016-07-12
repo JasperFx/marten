@@ -150,8 +150,6 @@ namespace Marten.Events.Projections.Async
             // Duplicated, ignore. Shouldn't happen, but Fetcher is screwed up, so...
             if (page.To <= LastEncountered) return;
 
-            _logger.ExecutingPage(page, this);
-
             using (var session = _store.OpenSession())
             {
                 await _projection.ApplyAsync(session, page.Streams, cancellation).ConfigureAwait(false);

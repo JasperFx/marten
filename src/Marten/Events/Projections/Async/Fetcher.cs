@@ -197,8 +197,6 @@ select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(t
             {
                 var page = await FetchNextPage(_lastEncountered).ConfigureAwait(false);
 
-                _logger.PageFetched(track, page);
-
                 if (page.Count == 0)
                 {
                     if (lifecycle == DaemonLifecycle.Continuous)
