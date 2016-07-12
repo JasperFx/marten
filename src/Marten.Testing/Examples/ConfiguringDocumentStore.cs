@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Documents;
+using Newtonsoft.Json;
 
 namespace Marten.Testing.Examples
 {
@@ -79,6 +81,33 @@ namespace Marten.Testing.Examples
                 // Override the JSON Serialization
                 _.Serializer<TestsSerializer>();
             });
+            // ENDSAMPLE
+        }
+
+        public void customize_json_net_serialization()
+        {
+            // SAMPLE: customize_json_net_serialization
+    var serializer = new Marten.Services.JsonNetSerializer();
+            
+    // To change the enum storage policy to store Enum's as strings:
+    serializer.EnumStorage = EnumStorage.AsString;
+
+    // All other customizations:
+    serializer.Customize(_ =>
+    {
+        // Code directly against a Newtonsoft.Json JsonSerializer
+        _.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
+        _.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
+    });
+
+    var store = DocumentStore.For(_ =>
+    {
+        _.Connection("some connection string");
+
+        // Replace the default JsonNetSerializer with the one we configured
+        // above
+        _.Serializer(serializer);
+    });
             // ENDSAMPLE
         }
 
