@@ -64,13 +64,19 @@ namespace Marten.Util
             return command;
         }
 
-        public static NpgsqlParameter AddParameter(this NpgsqlCommand command, object value)
+        public static NpgsqlParameter AddParameter(this NpgsqlCommand command, object value, NpgsqlDbType? dbType = null)
         {
             var name = "arg" + command.Parameters.Count;
 
             var parameter = command.CreateParameter();
             parameter.ParameterName = name;
             parameter.Value = value ?? DBNull.Value;
+
+            if (dbType.HasValue)
+            {
+                parameter.NpgsqlDbType = dbType.Value;
+            }
+
             command.Parameters.Add(parameter);
 
             return parameter;

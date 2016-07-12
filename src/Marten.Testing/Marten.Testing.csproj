@@ -74,6 +74,7 @@
     <Compile Include="Bugs\Bug_416_cannot_create_index_on_datetime_field.cs" />
     <Compile Include="Bugs\Bug_431_not_patching_with_the_doc_type_column.cs" />
     <Compile Include="Bugs\Bug_432_querying_with_UTC_times_with_offset.cs" />
+    <Compile Include="Bugs\Bug_449_IsOneOf_query_with_enum_types.cs" />
     <Compile Include="bulk_loader_overwrite_sql_tests.cs" />
     <Compile Include="Events\capturing_event_versions_on_existing_streams_after_append.cs" />
     <Compile Include="Events\EventStreamTester.cs" />
