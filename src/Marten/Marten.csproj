@@ -73,6 +73,7 @@
     <Compile Include="Events\Projections\Async\IDaemonLogger.cs" />
     <Compile Include="Events\Projections\Async\IProjectionTrack.cs" />
     <Compile Include="Events\Projections\Async\NulloDaemonLogger.cs" />
+    <Compile Include="Events\Projections\Async\ProjectionExtensions.cs" />
     <Compile Include="Events\Projections\Async\ProjectionTrack.cs" />
     <Compile Include="Events\Projections\Async\EventPage.cs" />
     <Compile Include="Events\Projections\Async\EventProgressWrite.cs" />
