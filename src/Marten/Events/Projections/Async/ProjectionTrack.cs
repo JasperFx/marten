@@ -201,7 +201,7 @@ namespace Marten.Events.Projections.Async
 
             if (Lifecycle == DaemonLifecycle.StopAtEndOfEventData && _atEndOfEventLog) return false;
 
-            if (Accumulator.CachedEventCount <= _projection.AsyncOptions.MaximumStagedEventCount &&
+            if (Accumulator.CachedEventCount <= _projection.AsyncOptions.CooldownStatedEventCount &&
                 _fetcher.State == FetcherState.Paused)
             {
                 return true;

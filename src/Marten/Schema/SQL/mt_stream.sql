@@ -5,7 +5,7 @@ CREATE TABLE {databaseSchema}.mt_streams (
 	id					uuid CONSTRAINT pk_mt_streams PRIMARY KEY,
 	type				varchar(100) NULL,
 	version				integer NOT NULL,
-	timestamp           timestamp without time zone default (now() at time zone 'utc') NOT NULL,
+	timestamp           timestamptz default (now() at time zone 'utc') NOT NULL,
 	snapshot			jsonb,
 	snapshot_version	integer	
 );

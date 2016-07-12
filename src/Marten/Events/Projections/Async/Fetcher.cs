@@ -18,13 +18,15 @@ namespace Marten.Events.Projections.Async
         private readonly string[] _eventTypeNames;
         private readonly IDaemonLogger _logger;
         private readonly NulloIdentityMap _map;
+        private readonly DaemonSettings _settings;
         private readonly AsyncOptions _options;
         private readonly EventSelector _selector;
         private Task _fetchingTask;
         private long _lastEncountered;
 
-        public Fetcher(IDocumentStore store, AsyncOptions options, IDaemonLogger logger, IEnumerable<Type> eventTypes)
+        public Fetcher(IDocumentStore store, DaemonSettings settings, AsyncOptions options, IDaemonLogger logger, IEnumerable<Type> eventTypes)
         {
+            _settings = settings;
             _options = options;
             _logger = logger;
             State = FetcherState.Waiting;
@@ -37,8 +39,8 @@ namespace Marten.Events.Projections.Async
             _eventTypeNames = eventTypes.Select(x => store.Schema.Events.EventMappingFor(x).Alias).ToArray();
         }
 
-        public Fetcher(IDocumentStore store, IProjection projection, IDaemonLogger logger)
-            : this(store, projection.AsyncOptions, logger, projection.Consumes)
+        public Fetcher(IDocumentStore store, DaemonSettings settings, IProjection projection, IDaemonLogger logger)
+            : this(store, settings, projection.AsyncOptions, logger, projection.Consumes)
         {
         }
 
@@ -117,13 +119,14 @@ namespace Marten.Events.Projections.Async
                     var lastPossible = lastEncountered + _options.PageSize;
                     var sql =
                         $@"
-select seq_id from mt_events where seq_id > :last and seq_id <= :limit order by seq_id;
-{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) order by seq_id;       
+select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(transaction_timestamp() at time zone 'utc', mt_events.timestamp) <= :buffer order by seq_id;
+{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) and age(transaction_timestamp() at time zone 'utc', mt_events.timestamp) <= :buffer order by seq_id;       
 ";
 
                     var cmd = conn.CreateCommand(sql)
                         .With("last", lastEncountered)
                         .With("limit", lastPossible)
+                        .With("buffer", _settings.LeadingEdgeBuffer)
                         .With("types", _eventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
 
                     var page = await buildEventPage(lastEncountered, cmd).ConfigureAwait(false);

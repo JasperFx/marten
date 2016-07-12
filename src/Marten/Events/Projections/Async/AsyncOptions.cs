@@ -4,5 +4,7 @@ namespace Marten.Events.Projections.Async
     {
         public int PageSize { get; set; } = 100;
         public int MaximumStagedEventCount { get; set; } = 1000;
+
+        public int CooldownStatedEventCount { get; set; } = 500;
     }
 }

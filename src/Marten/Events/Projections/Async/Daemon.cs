@@ -3,17 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Util;
 
 namespace Marten.Events.Projections.Async
 {
+    public class DaemonSettings
+    {
+        public TimeSpan LeadingEdgeBuffer { get; set; } = 1.Seconds();
+    }
+
     public class Daemon : IDaemon
     {
         private readonly IDocumentStore _store;
         private readonly IDaemonLogger _logger;
         private readonly IDictionary<Type, IProjectionTrack> _tracks = new Dictionary<Type, IProjectionTrack>();
 
-        public Daemon(IDocumentStore store, IDaemonLogger logger, Type[] viewTypes)
+        public Daemon(IDocumentStore store, DaemonSettings settings, IDaemonLogger logger, Type[] viewTypes)
         {
             _store = store;
             _logger = logger;
@@ -24,7 +30,7 @@ namespace Marten.Events.Projections.Async
                     throw new ArgumentOutOfRangeException(nameof(viewType),
                         $"No projection is configured for view type {viewType.FullName}");
 
-                var fetcher = new Fetcher(store, projection, logger);
+                var fetcher = new Fetcher(store, settings, projection, logger);
                 var track = new ProjectionTrack(fetcher, store, projection, logger);
 
                 _tracks.Add(viewType, track);

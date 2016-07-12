@@ -10,27 +10,27 @@ namespace Marten.Testing.AsyncDaemon
     public class async_daemon_end_to_end : IntegratedFixture, IClassFixture<AsyncDaemonFixture>
     {
         
-//        public async_daemon_end_to_end(AsyncDaemonFixture fixture, ITestOutputHelper output)
-//        {
-//            _fixture = fixture;
-//            _logger = new TracingLogger(output.WriteLine);
-//        }
-        
-        public async_daemon_end_to_end()
+        public async_daemon_end_to_end(AsyncDaemonFixture fixture, ITestOutputHelper output)
         {
-            _fixture = new AsyncDaemonFixture();
-            _logger = new ConsoleDaemonLogger();
+            _fixture = fixture;
+            _logger = new TracingLogger(output.WriteLine);
         }
+        
+//        public async_daemon_end_to_end()
+//        {
+//            _fixture = new AsyncDaemonFixture();
+//            _logger = new ConsoleDaemonLogger();
+//        }
 
         private readonly AsyncDaemonFixture _fixture;
         private readonly IDaemonLogger _logger;
 
-        //[Fact] // - NOT PASSING CONSISTENTLY. #sadtrombone
+        [Fact] 
         public async Task build_continuously_as_events_flow_in()
         {
             StoreOptions(_ => { _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>(); });
 
-            using (var daemon = theStore.BuildProjectionDaemon(logger:_logger))
+            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger))
             {
                 daemon.StartAll();
 
@@ -47,7 +47,7 @@ namespace Marten.Testing.AsyncDaemon
             _fixture.CompareActiveProjects(theStore);
         }
 
-        //[Fact]
+        [Fact]
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch()
         {
             StoreOptions(_ => { _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>(); });

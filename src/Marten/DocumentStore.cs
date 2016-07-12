@@ -311,11 +311,11 @@ namespace Marten
         }
 
         public IDocumentTransforms Transform { get; }
-        public IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null)
+        public IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null)
         {
             // TODO -- let's think a little more about this one. Maybe have an option where you can pass in "none"
             // make sure you *could* get an async daemon for an inline projection
-            return new Daemon(this, logger ?? new NulloDaemonLogger(), viewTypes ?? Schema.Events.AsyncProjections.Select(x => x.Produces).ToArray());
+            return new Daemon(this, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), viewTypes ?? Schema.Events.AsyncProjections.Select(x => x.Produces).ToArray());
         }
     }
 }
