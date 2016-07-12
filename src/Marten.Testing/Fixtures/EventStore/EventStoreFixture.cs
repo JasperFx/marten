@@ -190,7 +190,6 @@ namespace Marten.Testing.Fixtures.EventStore
 
             using (var session = _store.LightweightSession())
             {
-                // TODO -- eliminate the aggregate type here
                 return session.Events.FetchStream(_lastStream, version).Select(x => x.Data.ToString()).ToArray();
             }
         }

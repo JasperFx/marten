@@ -3,16 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Util;
 
 namespace Marten.Events.Projections.Async
 {
-    public class DaemonSettings
-    {
-        public TimeSpan LeadingEdgeBuffer { get; set; } = 1.Seconds();
-    }
-
     public class Daemon : IDaemon
     {
         private readonly IDocumentStore _store;

@@ -7,7 +7,6 @@ namespace Marten.Events.Projections
     {
         T Find(EventStream stream, IDocumentSession session);
 
-        // TODO -- make this use the batch query later
         Task<T> FindAsync(EventStream stream, IDocumentSession session, CancellationToken token);
     }
 }

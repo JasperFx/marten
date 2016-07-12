@@ -205,13 +205,12 @@ select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(t
 
                         _logger.PausingFetching(track, _lastEncountered);
 
-                        // TODO -- make the cooldown time be configurable
-#pragma warning disable 4014
-                        Task.Delay(1.Seconds(), Cancellation.Token).ContinueWith(t =>
-#pragma warning restore 4014
+                        #pragma warning disable 4014
+                        Task.Delay(_settings.FetchingCooldown, Cancellation.Token).ContinueWith(t =>
                         {
                             Start(track, lifecycle);
                         });
+                        #pragma warning restore 4014
                     }
                     else
                     {

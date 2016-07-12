@@ -68,6 +68,7 @@
     <Compile Include="Events\Projections\Async\ConsoleDaemonLogger.cs" />
     <Compile Include="Events\Projections\Async\Daemon.cs" />
     <Compile Include="Events\Projections\Async\DaemonLifecycle.cs" />
+    <Compile Include="Events\Projections\Async\DaemonSettings.cs" />
     <Compile Include="Events\Projections\Async\DebugDaemonLogger.cs" />
     <Compile Include="Events\Projections\Async\IDaemon.cs" />
     <Compile Include="Events\Projections\Async\IDaemonLogger.cs" />

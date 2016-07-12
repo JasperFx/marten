@@ -24,19 +24,13 @@ namespace Marten.Events
         private readonly EventGraph _parent;
         protected readonly DocumentMapping _inner;
 
-        // TODO -- this logic is duplicated. Centralize in an ext method
-        public static string ToEventTypeName(Type eventType)
-        {
-            return eventType.Name.ToTableAlias();
-        }
-
         protected EventMapping(EventGraph parent, Type eventType)
         {
             _options = parent.Options;
             _parent = parent;
             DocumentType = eventType;
 
-            EventTypeName = Alias = ToEventTypeName(DocumentType);
+            EventTypeName = Alias = DocumentType.Name.ToTableAlias();
             IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
 
             _inner = new DocumentMapping(eventType, parent.Options);
@@ -215,7 +209,6 @@ namespace Marten.Events
             return new FetchResult<T>(doc, json, null);
         }
 
-        // TODO -- lots of this is duplicated from Resolver<T>
         public async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
         {
             var found = await reader.ReadAsync(token).ConfigureAwait(false);
