@@ -105,21 +105,6 @@ namespace Marten.Testing.Events.Projections.Async
     }
 
 
-    public class when_starting_a_projection_track : ProjectionTrackContext
-    {
-        public when_starting_a_projection_track()
-        {
-            theProjectionTrack.Start(DaemonLifecycle.Continuous);
-        }
-
-
-        [Fact]
-        public void should_start_the_fetcher_with_auto_restart()
-        {
-            theFetcher.Received().Start(theProjectionTrack, DaemonLifecycle.Continuous);
-        }
-    }
-
     public abstract class ProjectionTrackContext
     {
         protected readonly IFetcher theFetcher = Substitute.For<IFetcher>();

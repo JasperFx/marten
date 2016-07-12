@@ -61,6 +61,8 @@ namespace Marten.Events.Projections.Async
         {
             if (_isDisposed) return;
 
+            _cancellation.Cancel();
+
             _isDisposed = true;
             UpdateBlock.Complete();
 
@@ -100,7 +102,7 @@ namespace Marten.Events.Projections.Async
             _store.Schema.EnsureStorageExists(_projection.Produces);
 
             Lifecycle = lifecycle;
-            _fetcher.Start(this, lifecycle);
+            _fetcher.Start(this, lifecycle, _cancellation.Token);
         }
 
         public async Task Stop()
@@ -122,12 +124,11 @@ namespace Marten.Events.Projections.Async
             return waiter.Completion.Task;
         }
 
-        public Task<long> RunUntilEndOfEvents(CancellationToken token = new CancellationToken())
+        public Task<long> RunUntilEndOfEvents(CancellationToken token = default(CancellationToken))
         {
             _store.Schema.EnsureStorageExists(_projection.Produces);
 
-            // TODO -- make the CancellationToken go into fetcher
-            _fetcher.Start(this, DaemonLifecycle.StopAtEndOfEventData);
+            _fetcher.Start(this, DaemonLifecycle.StopAtEndOfEventData, token);
 
             return _rebuildCompletion.Task;
         }

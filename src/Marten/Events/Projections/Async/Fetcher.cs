@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Util;
@@ -23,6 +22,7 @@ namespace Marten.Events.Projections.Async
         private readonly EventSelector _selector;
         private Task _fetchingTask;
         private long _lastEncountered;
+        private CancellationToken _token = default(CancellationToken);
 
         public Fetcher(IDocumentStore store, DaemonSettings settings, AsyncOptions options, IDaemonLogger logger, IEnumerable<Type> eventTypes)
         {
@@ -44,17 +44,13 @@ namespace Marten.Events.Projections.Async
         {
         }
 
-        public CancellationTokenSource Cancellation { get; } = new CancellationTokenSource();
-
-
         public string[] EventTypeNames { get; set; } = new string[0];
 
         public void Dispose()
         {
-            Cancellation.Cancel();
         }
 
-        public void Start(IProjectionTrack track, DaemonLifecycle lifecycle)
+        public void Start(IProjectionTrack track, DaemonLifecycle lifecycle, CancellationToken token = default(CancellationToken))
         {
             if (_fetchingTask != null && !_fetchingTask.IsCompleted)
             {
@@ -62,6 +58,8 @@ namespace Marten.Events.Projections.Async
             }
 
             if (State == FetcherState.Active) return;
+
+            _token = token;
 
             State = FetcherState.Active;
 
@@ -77,11 +75,11 @@ namespace Marten.Events.Projections.Async
                 {
                     await fetchEvents(track, lifecycle).ConfigureAwait(false);
                 },
-                    Cancellation.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                    token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                     .ContinueWith(t =>
                     {
                         _logger.FetchingStopped(track);
-                    });
+                    }, token);
         }
 
 
@@ -100,8 +98,6 @@ namespace Marten.Events.Projections.Async
             }
 
             State = FetcherState.Waiting;
-
-            Cancellation.Cancel();
 
             await _fetchingTask.ConfigureAwait(false);
         }
@@ -164,20 +160,19 @@ select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(t
             IList<IEvent> events = null;
             IList<long> sequences = new List<long>();
 
-            var token = Cancellation.Token;
-            using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+            using (var reader = await cmd.ExecuteReaderAsync(_token).ConfigureAwait(false))
             {
-                while (await reader.ReadAsync(token).ConfigureAwait(false))
+                while (await reader.ReadAsync(_token).ConfigureAwait(false))
                 {
-                    var seq = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+                    var seq = await reader.GetFieldValueAsync<long>(0, _token).ConfigureAwait(false);
                     sequences.Add(seq);
                 }
 
                 if (sequences.Any())
                 {
-                    await reader.NextResultAsync(token).ConfigureAwait(false);
+                    await reader.NextResultAsync(_token).ConfigureAwait(false);
 
-                    events = await _selector.ReadAsync(reader, _map, token).ConfigureAwait(false);
+                    events = await _selector.ReadAsync(reader, _map, _token).ConfigureAwait(false);
                 }
                 else
                 {
@@ -193,7 +188,7 @@ select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(t
 
         private async Task fetchEvents(IProjectionTrack track, DaemonLifecycle lifecycle)
         {
-            while (!Cancellation.IsCancellationRequested && State == FetcherState.Active)
+            while (!_token.IsCancellationRequested && State == FetcherState.Active)
             {
                 var page = await FetchNextPage(_lastEncountered).ConfigureAwait(false);
 
@@ -206,10 +201,10 @@ select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(t
                         _logger.PausingFetching(track, _lastEncountered);
 
                         #pragma warning disable 4014
-                        Task.Delay(_settings.FetchingCooldown, Cancellation.Token).ContinueWith(t =>
+                        Task.Delay(_settings.FetchingCooldown, _token).ContinueWith(t =>
                         {
-                            Start(track, lifecycle);
-                        });
+                            Start(track, lifecycle, _token);
+                        }, _token);
                         #pragma warning restore 4014
                     }
                     else
