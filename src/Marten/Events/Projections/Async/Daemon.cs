@@ -19,21 +19,20 @@ namespace Marten.Events.Projections.Async
         private readonly IDaemonLogger _logger;
         private readonly IDictionary<Type, IProjectionTrack> _tracks = new Dictionary<Type, IProjectionTrack>();
 
-        public Daemon(IDocumentStore store, DaemonSettings settings, IDaemonLogger logger, Type[] viewTypes)
+        public Daemon(IDocumentStore store, DaemonSettings settings, IDaemonLogger logger, IEnumerable<IProjection> projections)
         {
             _store = store;
             _logger = logger;
-            foreach (var viewType in viewTypes)
+            foreach (var projection in projections)
             {
-                var projection = store.Schema.Events.AsyncProjections.ForView(viewType);
                 if (projection == null)
-                    throw new ArgumentOutOfRangeException(nameof(viewType),
-                        $"No projection is configured for view type {viewType.FullName}");
+                    throw new ArgumentOutOfRangeException(nameof(projection),
+                        $"No projection is configured for view type {projection.Produces.FullName}");
 
                 var fetcher = new Fetcher(store, settings, projection, logger);
                 var track = new ProjectionTrack(fetcher, store, projection, logger);
 
-                _tracks.Add(viewType, track);
+                _tracks.Add(projection.Produces, track);
             }
         }
 

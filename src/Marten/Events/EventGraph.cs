@@ -126,5 +126,10 @@ namespace Marten.Events
             return _aggregates
                 .GetOrAdd(aggregateType, type => typeof(Aggregator<>).CloseAndBuildAs<IAggregator>(aggregateType)).Alias;
         }
+
+        public IProjection ProjectionFor(Type viewType)
+        {
+            return AsyncProjections.ForView(viewType) ?? InlineProjections.ForView(viewType);
+        }
     }
 }
