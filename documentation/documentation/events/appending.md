@@ -3,9 +3,7 @@
 
 Marten's event sourcing support "appends" event data documents to a single table `mt_events.` Events must be captured against a stream id, with a second table called `mt_streams` that Marten uses to
 keep metadata describing the state of an individual stream. Appending events to either a new or existing stream is done within the same Marten transaction as any other document updates or deletions. See 
-<[linkto:documents/basics/persisting]> for more information on Marten transactions.
-
-TODO(link to the new topic about Unit of Work and Transactions when it's available)
+<[linkto:documentation/documents/basics/persisting]> for more information on Marten transactions.
 
 ## Event Types
 
@@ -28,7 +26,7 @@ aggregating events via snapshot caching using the aggregate type.
 
 ## Starting a new Stream
 
-As of Marten v0.9, you need to start a new event stream against some kind of .Net type that theoretically marks the type of stream your capturing. 
+As of Marten v0.9, you can **optionally** start a new event stream against some kind of .Net type that theoretically marks the type of stream your capturing. 
 Marten does not yet use this type as anything more than metadata, but our thought is that some projections would key off this information and that in a 
 future version use that aggregate type to perform versioned snapshots of the entire stream. We may also make the aggregate type optional so that
 you could just supply either a string to mark the "stream type" or work without a stream type.

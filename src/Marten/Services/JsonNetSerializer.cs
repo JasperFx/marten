@@ -63,6 +63,7 @@ namespace Marten.Services
         public string ToCleanJson(object document)
         {
             var writer = new StringWriter();
+
             _clean.Serialize(writer, document);
 
             return writer.ToString();

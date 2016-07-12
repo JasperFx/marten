@@ -111,6 +111,20 @@ namespace Marten.Testing.Examples
             // ENDSAMPLE
         }
 
+        public void setting_event_schema()
+        {
+            // SAMPLE: setting_event_schema
+    var store = DocumentStore.For(_ =>
+    {
+        _.Connection("some connection string");
+
+        // Places all the Event Store schema objects
+        // into the "events" schema
+        _.Events.DatabaseSchemaName = "events";
+    });
+            // ENDSAMPLE
+        }
+
         
     }
 }

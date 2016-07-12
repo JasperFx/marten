@@ -1,3 +1,4 @@
+schema
 appending
 streams
 projections

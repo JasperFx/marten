@@ -21,6 +21,7 @@ namespace Marten.Events
         void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new();
     }
+    // ENDSAMPLE
 
     public class Event<T> : IEvent
     {
@@ -29,14 +30,39 @@ namespace Marten.Events
             Data = data;
         }
 
+        // SAMPLE: event_metadata
+        /// <summary>
+        /// A reference to the stream that contains
+        /// this event
+        /// </summary>
         public Guid StreamId { get; set; }
 
+        /// <summary>
+        /// An alternative Guid identifier to identify
+        /// events across databases
+        /// </summary>
         public Guid Id { get; set; }
+
+        /// <summary>
+        /// An event's version position within its event stream
+        /// </summary>
         public int Version { get; set; }
+
+        /// <summary>
+        /// A global sequential number identifying the Event
+        /// </summary>
         public long Sequence { get; set; }
+
+        /// <summary>
+        /// The actual event data
+        /// </summary>
         public T Data { get; set; }
+        // ENDSAMPLE
+
 
         object IEvent.Data => Data;
+
+
 
         public virtual void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new()
