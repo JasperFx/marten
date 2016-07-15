@@ -54,6 +54,7 @@
     <Compile Include="Events\Event.cs" />
     <Compile Include="Events\EventQueryHandler.cs" />
     <Compile Include="Events\EventSelector.cs" />
+    <Compile Include="Events\EventsQueryHandler.cs" />
     <Compile Include="Events\EventStore.cs" />
     <Compile Include="Events\EventStoreDatabaseObjects.cs" />
     <Compile Include="Events\EventStream.cs" />
