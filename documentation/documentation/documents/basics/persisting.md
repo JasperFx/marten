@@ -7,6 +7,7 @@ At this point, the `IDocumentSession` is the sole [unit of work](http://martinfo
    what documents have changed
 1. The "dirty checking" session tries to determine which documents loaded from that `IDocumentSession` has any changes when `IDocumentSession.SaveChanges()` is called
 
+<div class="alert alert-info">When using a `Guid`/`CombGuid`, `Int`, or `Long` identifier, Marten will ensure the identity is set immediately after calling `IDocumentSession.Store` on the entity.</div>
 
 ## Storing Multiple Documents
 
