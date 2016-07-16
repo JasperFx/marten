@@ -88,6 +88,17 @@ namespace Marten.Patching
             apply();
         }
 
+        public void Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, 
+            RemoveAction action = RemoveAction.RemoveFirst)
+        {
+            Patch.Add("type", "remove");
+            Patch.Add("value", element);
+            Patch.Add("path", toPath(expression));
+            Patch.Add("action", (int) action);
+
+            apply();
+        }
+
         public void Rename(string oldName, Expression<Func<T, object>> expression)
         {
             Patch.Add("type", "rename");

@@ -251,5 +251,27 @@ namespace Marten.Testing.Patching
             expression.Patch["to"].ShouldBe("Double");
             expression.Patch["path"].ShouldBe("Inner.Inner.Old");
         }
+
+        [Fact]
+        public void remove_first()
+        {
+            expression.Remove(x => x.NumberArray, 5);
+
+            expression.Patch["type"].ShouldBe("remove");
+            expression.Patch["value"].ShouldBe(5);
+            expression.Patch["path"].ShouldBe("NumberArray");
+            expression.Patch["action"].ShouldBe((int)RemoveAction.RemoveFirst);
+        }
+
+        [Fact]
+        public void remove_all()
+        {
+            expression.Remove(x => x.NumberArray, 5, RemoveAction.RemoveAll);
+
+            expression.Patch["type"].ShouldBe("remove");
+            expression.Patch["value"].ShouldBe(5);
+            expression.Patch["path"].ShouldBe("NumberArray");
+            expression.Patch["action"].ShouldBe((int) RemoveAction.RemoveAll);
+        }
     }
 }

@@ -64,6 +64,15 @@ namespace Marten.Patching
         /// <param name="index"></param>
         void Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int index = 0);
 
+	    /// <summary>
+	    /// Remove element from a child collection on the persisted document
+	    /// </summary>
+	    /// <typeparam name="TElement"></typeparam>
+	    /// <param name="expression"></param>
+	    /// <param name="element"></param>
+	    /// <param name="action"></param>
+	    void Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, RemoveAction action = RemoveAction.RemoveFirst);
+
         /// <summary>
         /// Rename a property or field in the persisted JSON document
         /// </summary>

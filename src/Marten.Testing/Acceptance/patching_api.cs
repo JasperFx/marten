@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using Marten.Patching;
 using Marten.Services;
 using Marten.Testing.Fixtures;
 using Shouldly;
@@ -332,5 +334,89 @@ namespace Marten.Testing.Acceptance
     }
         // ENDSAMPLE
 
+        // SAMPLE: remove_primitive_element
+    [Fact]
+    public void remove_primitive_element()
+    {
+        var target = Target.Random();
+        var initialCount = target.NumberArray.Length;
+
+        var random = new Random();
+        var child = target.NumberArray[random.Next(0, initialCount)];
+
+        theSession.Store(target);
+        theSession.SaveChanges();
+
+        theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child);
+        theSession.SaveChanges();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = query.Load<Target>(target.Id);
+            target2.NumberArray.Length.ShouldBe(initialCount - 1);
+
+            target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.Except(new[] {child}));
+        }
+    }
+        // ENDSAMPLE
+
+        // SAMPLE: remove_repeated_primitive_element
+    [Fact]
+    public void remove_repeated_primitive_elements()
+    {
+        var target = Target.Random();
+        var initialCount = target.NumberArray.Length;
+
+        var random = new Random();
+        var child = target.NumberArray[random.Next(0, initialCount)];
+        var occurances = target.NumberArray.Count(e => e == child);
+        if (occurances < 2)
+        {
+            target.NumberArray = target.NumberArray.Concat(new[] {child}).ToArray();
+            ++occurances;
+            ++initialCount;
+        }
+
+        theSession.Store(target);
+        theSession.SaveChanges();
+
+        theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child, RemoveAction.RemoveAll);
+        theSession.SaveChanges();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = query.Load<Target>(target.Id);
+            target2.NumberArray.Length.ShouldBe(initialCount - occurances);
+
+            target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.Except(new[] {child}));
+        }
+    }
+        // ENDSAMPLE
+
+        // SAMPLE: remove_complex_element
+        [Fact]
+    public void remove_complex_element()
+    {
+        var target = Target.Random(true);
+        var initialCount = target.Children.Length;
+
+        var random = new Random();
+        var child = target.Children[random.Next(0, initialCount)];
+
+        theSession.Store(target);
+        theSession.SaveChanges();
+
+        theSession.Patch<Target>(target.Id).Remove(x => x.Children, child);
+        theSession.SaveChanges();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = query.Load<Target>(target.Id);
+            target2.Children.Length.ShouldBe(initialCount - 1);
+
+            target2.Children.ShouldNotContain(t => t.Id == child.Id);
+        }
+    }
+        // ENDSAMPLE
     }
 }
