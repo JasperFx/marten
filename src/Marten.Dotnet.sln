@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Marten", "Marten\Marten.xproj", "{FCCA5D3A-B632-4D81-B839-F6344FDD01F1}"
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Marten.Testing", "Marten.Testing\Marten.Testing.xproj", "{D5E592AD-5368-4E97-A3AC-6729FA43CB51}"
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Marten.Testing.OtherAssembly", "Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.xproj", "{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "CodeTracker", "CodeTracker\CodeTracker.xproj", "{191C8E59-6E68-4B82-BD8B-ED4A28237AFF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}.Release|Any CPU.Build.0 = Release|Any CPU
+		{191C8E59-6E68-4B82-BD8B-ED4A28237AFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{191C8E59-6E68-4B82-BD8B-ED4A28237AFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{191C8E59-6E68-4B82-BD8B-ED4A28237AFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{191C8E59-6E68-4B82-BD8B-ED4A28237AFF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

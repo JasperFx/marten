@@ -184,6 +184,15 @@
         "runtime": {
           "lib/net45/_._": {}
         }
+      },
+      "System.Threading.Tasks.Dataflow/4.6.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard1.1/System.Threading.Tasks.Dataflow.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard1.1/System.Threading.Tasks.Dataflow.dll": {}
+        }
       }
     },
     ".NETFramework,Version=v4.6/win": {
@@ -367,6 +376,15 @@
         },
         "runtime": {
           "lib/net45/_._": {}
+        }
+      },
+      "System.Threading.Tasks.Dataflow/4.6.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard1.1/System.Threading.Tasks.Dataflow.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard1.1/System.Threading.Tasks.Dataflow.dll": {}
         }
       }
     }
@@ -1221,6 +1239,21 @@
         "ref/xamarinwatchos10/_._",
         "runtimes/aot/lib/netcore50/System.Threading.dll"
       ]
+    },
+    "System.Threading.Tasks.Dataflow/4.6.0": {
+      "sha512": "Sa0UslA7lATwIDNjDUVhqHt3luIUw8Qch6iAApqVdaGavNfbwTZAUaMo5iY9IYT7JacrMqn+1YMX+pT2yfrsYw==",
+      "type": "package",
+      "path": "System.Threading.Tasks.Dataflow/4.6.0",
+      "files": [
+        "System.Threading.Tasks.Dataflow.4.6.0.nupkg.sha512",
+        "System.Threading.Tasks.Dataflow.nuspec",
+        "ThirdPartyNotices.txt",
+        "dotnet_library_license.txt",
+        "lib/netstandard1.0/System.Threading.Tasks.Dataflow.XML",
+        "lib/netstandard1.0/System.Threading.Tasks.Dataflow.dll",
+        "lib/netstandard1.1/System.Threading.Tasks.Dataflow.XML",
+        "lib/netstandard1.1/System.Threading.Tasks.Dataflow.dll"
+      ]
     }
   },
   "projectFileDependencyGroups": {
@@ -1228,7 +1261,8 @@
       "Baseline >= 1.0.0",
       "Newtonsoft.Json >= 9.0.1",
       "Npgsql >= 3.1.5",
-      "Remotion.Linq >= 2.1.1"
+      "Remotion.Linq >= 2.1.1",
+      "System.Threading.Tasks.Dataflow >= 4.6.0"
     ],
     ".NETFramework,Version=v4.6": []
   },

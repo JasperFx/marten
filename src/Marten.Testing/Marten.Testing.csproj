@@ -330,7 +330,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CodeTracker\CodeTracker.csproj">
-      <Project>{453068e2-5579-4450-b4e4-dfe129970b0f}</Project>
+      <Project>{cb3da9e1-a40d-40db-a88f-87dc4f22377f}</Project>
       <Name>CodeTracker</Name>
     </ProjectReference>
     <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj">

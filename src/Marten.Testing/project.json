@@ -5,6 +5,7 @@
     "dotnet-test-xunit": "2.2.0-preview2-build1029",
     "Marten": { "target": "project" },
     "Marten.Testing.OtherAssembly": { "target": "project" },
+    "CodeTracker": { "target": "project" },
     "Shouldly": "2.8.0",
     "structuremap": "4.2.0.402",
     "System.Data.Common": "4.1.0",

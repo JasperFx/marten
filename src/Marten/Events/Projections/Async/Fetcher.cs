@@ -178,8 +178,6 @@ select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(t
                 {
                     events = new List<IEvent>();
                 }
-
-                reader.Close();
             }
 
             return new EventPage(lastEncountered, sequences, events) {Count = events.Count};

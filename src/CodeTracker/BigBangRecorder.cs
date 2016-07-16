@@ -1,11 +1,13 @@
 using System;
 using Baseline;
-using Octokit;
+using Marten.Testing.AsyncDaemon;
+//using Octokit;
 
 namespace CodeTracker
 {
     public static class BigBangRecorder
     {
+        /*
         public static void TryIt()
         {
             var directory = AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory();
@@ -26,5 +28,6 @@ namespace CodeTracker
             recorder.RecordProject("structuremap", "structuremap").Wait();
             recorder.RecordProject("structuremap", "structuremap.dnx").Wait();
         }
+        */
     }
 }

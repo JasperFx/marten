@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten;
 using Newtonsoft.Json;
-using Octokit;
+//using Octokit;
 using FileMode = System.IO.FileMode;
 
 namespace CodeTracker
@@ -66,6 +66,7 @@ namespace CodeTracker
             }
         }
 
+        /*
         public void RecordIssue(Issue issue)
         {
             _events.Add(new IssueCreated
@@ -97,6 +98,7 @@ namespace CodeTracker
                 }
             }
         }
+        */
 
         public void SaveTo(string directory)
         {
@@ -116,6 +118,7 @@ namespace CodeTracker
             }
         }
 
+        /*
         public void RecordCommit(GitHubCommit commit, GitHubCommitStats stats)
         {
             var @event = new Commit
@@ -130,6 +133,7 @@ namespace CodeTracker
 
             _events.Add(@event);
         }
+        */
 
         public async Task PublishEvents(IDocumentStore store, int pause)
         {

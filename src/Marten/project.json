@@ -24,6 +24,7 @@
     "Remotion.Linq": "2.1.1",
     "Npgsql": "3.1.4",
     "Baseline": "1.0.0"
+	"System.Threading.Tasks.Dataflow": "4.6"
   },
   "frameworks": {
     "netstandard1.3": {

@@ -21,45 +21,6 @@ namespace Marten.Testing.Events.Projections.Async
         }
 
         [Fact]
-        public async Task can_get_last_event_progression_on_initial_check()
-        {
-            var factory = new ConnectionSource();
-
-            using (var data = new StagedEventData(theOptions, factory, new EventGraph(new StoreOptions()), new TestsSerializer()))
-            {
-                var lastEncountered = await data.LastEventProgression().ConfigureAwait(false);
-
-                lastEncountered.ShouldBe(0);
-            }
-        }
-
-        [Fact]
-        public async Task can_get_last_event_progression_from_existing_data()
-        {
-            var factory = new ConnectionSource();
-
-            using (var conn = factory.Create())
-            {
-                conn.Open();
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.Sql("insert into mt_event_progression (name, last_seq_id) values ('something', 121)");
-
-                    await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
-
-                }
-            }
-
-            using (var data = new StagedEventData(theOptions, factory, new EventGraph(new StoreOptions()), new TestsSerializer()) )
-            {
-                var lastEncountered = await data.LastEventProgression().ConfigureAwait(false);
-
-                lastEncountered.ShouldBe(121);
-            }
-
-        }
-
-        [Fact]
         public async Task smoke_test_able_to_fetch_a_page_of_events()
         {
             var list = new List<MembersJoined>();

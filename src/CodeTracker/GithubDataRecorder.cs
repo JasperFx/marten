@@ -1,9 +1,11 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Octokit;
+using CodeTracker;
+//using Octokit;
 
-namespace CodeTracker
+namespace Marten.Testing.AsyncDaemon
 {
+    /*
     public class GithubDataRecorder
     {
         private readonly GitHubClient _client;
@@ -50,4 +52,5 @@ namespace CodeTracker
 
 
     }
+    */
 }

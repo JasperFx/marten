@@ -2888,6 +2888,22 @@
           "lib/netstandard1.1/xunit.runner.utility.dotnet.dll": {}
         }
       },
+      "CodeTracker/1.0.0-alpha": {
+        "type": "project",
+        "framework": ".NETStandard,Version=v1.3",
+        "dependencies": {
+          "Baseline": "1.0.0-alpha-32",
+          "Marten": "1.0.0-alpha",
+          "NETStandard.Library": "1.6.0",
+          "Newtonsoft.Json": "9.0.1"
+        },
+        "compile": {
+          "netstandard1.3/CodeTracker.dll": {}
+        },
+        "runtime": {
+          "netstandard1.3/CodeTracker.dll": {}
+        }
+      },
       "Marten/1.0.0-alpha": {
         "type": "project",
         "framework": ".NETStandard,Version=v1.3",
@@ -2896,7 +2912,8 @@
           "NETStandard.Library": "1.6.0",
           "Newtonsoft.Json": "9.0.1",
           "Npgsql": "3.1.4",
-          "Remotion.Linq": "2.1.1"
+          "Remotion.Linq": "2.1.1",
+          "System.Threading.Tasks.Dataflow": "4.6.0"
         },
         "compile": {
           "netstandard1.3/Marten.dll": {}
@@ -3939,6 +3956,15 @@
           "lib/net45/_._": {}
         }
       },
+      "System.Threading.Tasks.Dataflow/4.6.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard1.1/System.Threading.Tasks.Dataflow.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard1.1/System.Threading.Tasks.Dataflow.dll": {}
+        }
+      },
       "System.Threading.Timer/4.0.1": {
         "type": "package",
         "compile": {
@@ -4052,6 +4078,27 @@
           "lib/net45/xunit.runner.utility.desktop.dll": {}
         }
       },
+      "CodeTracker/1.0.0-alpha": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.6",
+        "dependencies": {
+          "Baseline": "1.0.0-alpha-32",
+          "Marten": "1.0.0-alpha",
+          "NETStandard.Library": "1.6.0",
+          "Newtonsoft.Json": "9.0.1"
+        },
+        "frameworkAssemblies": [
+          "System.Data",
+          "System.Linq.Expressions",
+          "System.Web"
+        ],
+        "compile": {
+          "net46/CodeTracker.dll": {}
+        },
+        "runtime": {
+          "net46/CodeTracker.dll": {}
+        }
+      },
       "Marten/1.0.0-alpha": {
         "type": "project",
         "framework": ".NETStandard,Version=v1.3",
@@ -4060,7 +4107,8 @@
           "NETStandard.Library": "1.6.0",
           "Newtonsoft.Json": "9.0.1",
           "Npgsql": "3.1.4",
-          "Remotion.Linq": "2.1.1"
+          "Remotion.Linq": "2.1.1",
+          "System.Threading.Tasks.Dataflow": "4.6.0"
         },
         "compile": {
           "netstandard1.3/Marten.dll": {}
@@ -9668,6 +9716,11 @@
         "xunit.runner.utility.nuspec"
       ]
     },
+    "CodeTracker/1.0.0-alpha": {
+      "type": "project",
+      "path": "../CodeTracker/project.json",
+      "msbuildProject": "../CodeTracker/CodeTracker.xproj"
+    },
     "Marten/1.0.0-alpha": {
       "type": "project",
       "path": "../Marten/project.json",
@@ -9681,6 +9734,7 @@
   },
   "projectFileDependencyGroups": {
     "": [
+      "CodeTracker",
       "Marten",
       "Marten.Testing.OtherAssembly",
       "Shouldly >= 2.8.0",

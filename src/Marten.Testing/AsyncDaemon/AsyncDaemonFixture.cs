@@ -22,7 +22,7 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.InlineProjections.TransformEvents(new CommitViewTransform());
             });
 
-            var folder = AppDomain.CurrentDomain.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory()
+            var folder = ".".ToFullPath().ParentDirectory().ParentDirectory().ParentDirectory()
                 .AppendPath("CodeTracker");
 
             var files = new FileSystem().FindFiles(folder, FileSet.Shallow("*.json"));
