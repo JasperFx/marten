@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Services;
 using Shouldly;
 using Xunit;
@@ -66,6 +69,57 @@ namespace Marten.Testing.Events
 
             theSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
                 .Single().Id.ShouldBe(departed2.Id);
+        }
+
+        [Fact]
+        public void can_fetch_all_events()
+        {
+            theSession.Events.StartStream<Quest>(joined1, departed1);
+            theSession.Events.StartStream<Quest>(joined2, departed2);
+
+            theSession.SaveChanges();
+
+            var results = theSession.Events.FetchAll();
+
+            results.Count.ShouldBe(4);
+        }
+
+        [Fact]
+        public void can_fetch_all_events_after_now()
+        {
+            var now = DateTime.UtcNow;
+
+            theSession.Events.StartStream<Quest>(joined1, departed1);
+            theSession.Events.StartStream<Quest>(joined2, departed2);
+
+            theSession.SaveChanges();
+
+            var past = now.AddSeconds(-1);
+
+            var results = theSession.Events.FetchAll(after: past);
+
+            results.Count.ShouldBe(4);
+        }
+
+        [Fact]
+        public void can_fetch_all_events_before_now()
+        {
+            theSession.Events.StartStream<Quest>(joined1, departed1);
+            theSession.Events.StartStream<Quest>(joined2, departed2);
+
+            theSession.SaveChanges();
+
+            var now = DateTime.UtcNow;        
+            var results = theSession.Events.FetchAll(before: now);
+
+            results.Count.ShouldBe(0);
+        }
+
+        [Fact]
+        public void can_fetch_all_events_utc_only()
+        {
+            Should.Throw<Exception>(() => theSession.Events.FetchAll(before: DateTime.Now));
+            Should.Throw<Exception>(() => theSession.Events.FetchAll(after: DateTime.Now));
         }
     }
 }
