@@ -1,4 +1,4 @@
-﻿using Octokit;
+﻿//using Octokit;
 
 namespace Marten.Testing.Github
 {
@@ -8,6 +8,7 @@ namespace Marten.Testing.Github
         {
         }
 
+        /*
         public GhUser(Author account)
         {
             AvatarUrl = account.AvatarUrl;
@@ -17,6 +18,7 @@ namespace Marten.Testing.Github
             Type = account.Type;
             Url = account.Url;
         }
+        */
 
         public string Type { get; set; }
 

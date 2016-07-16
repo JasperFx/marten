@@ -3,7 +3,6 @@
     "xunit": "2.2.0-beta2-build3300",
     "HtmlTags": "3.0.0.186",
     "Shouldly": "2.8.0",
-    "Octokit": "0.20.0",
     "Jil": "2.14.3",
     "Storyteller": "3.0.0.329-rc",
     "NSubstitute": "1.10.0",

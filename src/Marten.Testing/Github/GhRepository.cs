@@ -1,4 +1,4 @@
-using Octokit;
+//using Octokit;
 
 namespace Marten.Testing.Github
 {
@@ -8,6 +8,7 @@ namespace Marten.Testing.Github
         {
         }
 
+        /*
         public GhRepository(Octokit.Repository repository)
         {
             Url = repository.Url;
@@ -23,6 +24,7 @@ namespace Marten.Testing.Github
             ForksCount = repository.ForksCount;
             StargazersCount = repository.StargazersCount;
         }
+        */
 
         public string Language { get; set; }
 

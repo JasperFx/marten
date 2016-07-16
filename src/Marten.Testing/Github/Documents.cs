@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using Octokit;
+//using Octokit;
 
 namespace Marten.Testing.Github
 {
@@ -9,7 +9,7 @@ namespace Marten.Testing.Github
         public GhCommit()
         {
         }
-
+        /*
         public GhCommit(GitHubCommit commit)
         {
             Message = commit.Commit.Message;
@@ -20,6 +20,7 @@ namespace Marten.Testing.Github
             Deletions = commit.Stats.Deletions;
             Total = commit.Stats.Total;
         }
+        */
 
         public int Total { get; set; }
 

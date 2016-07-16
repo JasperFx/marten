@@ -1,10 +1,11 @@
 ﻿using System;
 using Baseline;
 using Marten.Services;
-using Octokit;
+//using Octokit;
 
 namespace Marten.Testing.Github
 {
+    /*
     public class GitHubExporter
     {
         private readonly string _exportPath;
@@ -33,4 +34,5 @@ namespace Marten.Testing.Github
 
         }
     }
+    */
 }

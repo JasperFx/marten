@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Octokit;
+//using Octokit;
 
 namespace Marten.Testing.Github
 {
@@ -13,7 +13,7 @@ namespace Marten.Testing.Github
     }
 
 
-
+    /*
 
     public static class GithubClientExtensions
     {
@@ -48,4 +48,5 @@ namespace Marten.Testing.Github
             return history;
         }
     }
+    */
 }
