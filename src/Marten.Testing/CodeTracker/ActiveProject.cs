@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 
-namespace CodeTracker
+namespace Marten.Testing.CodeTracker
 {
     public class ActiveProject
     {

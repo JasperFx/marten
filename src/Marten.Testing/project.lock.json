@@ -2888,22 +2888,6 @@
           "lib/netstandard1.1/xunit.runner.utility.dotnet.dll": {}
         }
       },
-      "CodeTracker/1.0.0-alpha": {
-        "type": "project",
-        "framework": ".NETStandard,Version=v1.3",
-        "dependencies": {
-          "Baseline": "1.0.0-alpha-32",
-          "Marten": "1.0.0-alpha",
-          "NETStandard.Library": "1.6.0",
-          "Newtonsoft.Json": "9.0.1"
-        },
-        "compile": {
-          "netstandard1.3/CodeTracker.dll": {}
-        },
-        "runtime": {
-          "netstandard1.3/CodeTracker.dll": {}
-        }
-      },
       "Marten/1.0.0-alpha": {
         "type": "project",
         "framework": ".NETStandard,Version=v1.3",
@@ -3292,19 +3276,6 @@
         },
         "runtime": {
           "lib/net45/NuGet.Versioning.dll": {}
-        }
-      },
-      "Octokit/0.20.0": {
-        "type": "package",
-        "frameworkAssemblies": [
-          "System",
-          "System.Net.Http"
-        ],
-        "compile": {
-          "lib/net45/Octokit.dll": {}
-        },
-        "runtime": {
-          "lib/net45/Octokit.dll": {}
         }
       },
       "Remotion.Linq/2.1.1": {
@@ -4078,27 +4049,6 @@
           "lib/net45/xunit.runner.utility.desktop.dll": {}
         }
       },
-      "CodeTracker/1.0.0-alpha": {
-        "type": "project",
-        "framework": ".NETFramework,Version=v4.6",
-        "dependencies": {
-          "Baseline": "1.0.0-alpha-32",
-          "Marten": "1.0.0-alpha",
-          "NETStandard.Library": "1.6.0",
-          "Newtonsoft.Json": "9.0.1"
-        },
-        "frameworkAssemblies": [
-          "System.Data",
-          "System.Linq.Expressions",
-          "System.Web"
-        ],
-        "compile": {
-          "net46/CodeTracker.dll": {}
-        },
-        "runtime": {
-          "net46/CodeTracker.dll": {}
-        }
-      },
       "Marten/1.0.0-alpha": {
         "type": "project",
         "framework": ".NETStandard,Version=v1.3",
@@ -4815,37 +4765,6 @@
         "lib/net45/NuGet.Versioning.xml",
         "lib/netstandard1.0/NuGet.Versioning.dll",
         "lib/netstandard1.0/NuGet.Versioning.xml"
-      ]
-    },
-    "Octokit/0.20.0": {
-      "sha512": "9h9B5/u8a93L148B2CwHmrBzHVJfg9ZloRIsMrZHELGJ6YaQvy9g+QBIVVkP3mnTurk6Pnak63IPMBHYkjsZGQ==",
-      "type": "package",
-      "path": "Octokit/0.20.0",
-      "files": [
-        "LICENSE.txt",
-        "Octokit.0.20.0.nupkg.sha512",
-        "Octokit.nuspec",
-        "README.md",
-        "ReleaseNotes.md",
-        "lib/net45/Octokit.XML",
-        "lib/net45/Octokit.dll",
-        "lib/net45/Octokit.pdb",
-        "lib/netcore451/Octokit.XML",
-        "lib/netcore451/Octokit.dll",
-        "lib/netcore451/Octokit.pdb",
-        "lib/portable-net45+wp80+win+wpa81/Octokit.XML",
-        "lib/portable-net45+wp80+win+wpa81/Octokit.dll",
-        "lib/portable-net45+wp80+win+wpa81/Octokit.pdb",
-        "linqpad-samples/1-introducing-octokit.linq",
-        "linqpad-samples/10-search-issues.linq",
-        "linqpad-samples/2-releases.linq",
-        "linqpad-samples/3-browse-repositories.linq",
-        "linqpad-samples/4-observable-browse-repositories.linq",
-        "linqpad-samples/5-interact-with-git-database.linq",
-        "linqpad-samples/6-create-repository.linq",
-        "linqpad-samples/7-search-for-repos.linq",
-        "linqpad-samples/8-gists.linq",
-        "linqpad-samples/9-issues.linq"
       ]
     },
     "Remotion.Linq/2.1.1": {
@@ -9716,11 +9635,6 @@
         "xunit.runner.utility.nuspec"
       ]
     },
-    "CodeTracker/1.0.0-alpha": {
-      "type": "project",
-      "path": "../CodeTracker/project.json",
-      "msbuildProject": "../CodeTracker/CodeTracker.xproj"
-    },
     "Marten/1.0.0-alpha": {
       "type": "project",
       "path": "../Marten/project.json",
@@ -9734,7 +9648,6 @@
   },
   "projectFileDependencyGroups": {
     "": [
-      "CodeTracker",
       "Marten",
       "Marten.Testing.OtherAssembly",
       "Shouldly >= 2.8.0",
@@ -9756,7 +9669,6 @@
       "Jil >= 2.14.3",
       "Microsoft.NETCore.Platforms >= 1.0.1",
       "NSubstitute >= 1.10.0",
-      "Octokit >= 0.20.0",
       "Storyteller >= 3.0.0.329-rc",
       "System.Data",
       "System.Linq.Expressions",

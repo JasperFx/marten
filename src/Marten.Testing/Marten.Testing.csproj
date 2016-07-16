@@ -79,6 +79,14 @@
     <Compile Include="Bugs\Bug_443_erroneously_creating_the_event_tables_when_unnecessary.cs" />
     <Compile Include="Bugs\Bug_449_IsOneOf_query_with_enum_types.cs" />
     <Compile Include="bulk_loader_overwrite_sql_tests.cs" />
+    <Compile Include="CodeTracker\ActiveProject.cs" />
+    <Compile Include="CodeTracker\BigBangRecorder.cs" />
+    <Compile Include="CodeTracker\CommitView.cs" />
+    <Compile Include="CodeTracker\Events.cs" />
+    <Compile Include="CodeTracker\GithubDataRecorder.cs" />
+    <Compile Include="CodeTracker\GithubProject.cs" />
+    <Compile Include="CodeTracker\IssueState.cs" />
+    <Compile Include="CodeTracker\UserAction.cs" />
     <Compile Include="Events\aggregates_should_be_registered_as_document_mappings_automatically.cs" />
     <Compile Include="Events\capturing_event_versions_on_existing_streams_after_append.cs" />
     <Compile Include="Events\EventStreamTester.cs" />
@@ -329,10 +337,6 @@
     <Compile Include="Util\update_batch_Tests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CodeTracker\CodeTracker.csproj">
-      <Project>{cb3da9e1-a40d-40db-a88f-87dc4f22377f}</Project>
-      <Name>CodeTracker</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj">
       <Project>{ee53c3d3-65ae-42ef-92f4-116e8d6889dd}</Project>
       <Name>Marten.Testing.OtherAssembly</Name>
@@ -351,6 +355,8 @@
   </Target>
   -->
   <ItemGroup>
+    <Content Include="CodeTracker\CodeTracker.csproj" />
+    <Content Include="CodeTracker\CodeTracker.csproj.user" />
     <Content Include="connection.txt" />
     <Content Include="Events\fake_aggregate.js" />
     <Content Include="Events\location.js" />
@@ -366,6 +372,23 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="CodeTracker\alba.json" />
+    <None Include="CodeTracker\baseline.json" />
+    <None Include="CodeTracker\bottles.json" />
+    <None Include="CodeTracker\CodeTracker.project.json" />
+    <None Include="CodeTracker\CodeTracker.project.lock.json" />
+    <None Include="CodeTracker\CodeTracker.xproj" />
+    <None Include="CodeTracker\fubu.json" />
+    <None Include="CodeTracker\fubucore.json" />
+    <None Include="CodeTracker\fubucsprojfile.json" />
+    <None Include="CodeTracker\fubumvc.json" />
+    <None Include="CodeTracker\fuburake.json" />
+    <None Include="CodeTracker\fubuvalidation.json" />
+    <None Include="CodeTracker\marten.json" />
+    <None Include="CodeTracker\project.json" />
+    <None Include="CodeTracker\project.lock.json" />
+    <None Include="CodeTracker\structuremap.dnx.json" />
+    <None Include="CodeTracker\structuremap.json" />
     <None Include="Marten.Testing.project.json" />
   </ItemGroup>
 </Project>

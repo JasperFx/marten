@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using CodeTracker;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
+using Marten.Testing.CodeTracker;
 using NSubstitute;
 using Shouldly;
 using Xunit;

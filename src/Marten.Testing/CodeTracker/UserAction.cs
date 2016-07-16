@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CodeTracker
+namespace Marten.Testing.CodeTracker
 {
     public class UserAction
     {

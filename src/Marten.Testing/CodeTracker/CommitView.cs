@@ -3,7 +3,7 @@ using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Schema;
 
-namespace CodeTracker
+namespace Marten.Testing.CodeTracker
 {
     public class CommitView
     {

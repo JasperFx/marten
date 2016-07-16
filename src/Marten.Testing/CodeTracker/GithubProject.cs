@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten;
 using Newtonsoft.Json;
 //using Octokit;
 using FileMode = System.IO.FileMode;
 
-namespace CodeTracker
+namespace Marten.Testing.CodeTracker
 {
     public class GithubProject
     {

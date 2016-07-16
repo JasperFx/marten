@@ -1,7 +1,6 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using CodeTracker;
+﻿using System.Threading.Tasks;
 using Marten.Events.Projections.Async;
+using Marten.Testing.CodeTracker;
 using Xunit;
 using Xunit.Abstractions;
 

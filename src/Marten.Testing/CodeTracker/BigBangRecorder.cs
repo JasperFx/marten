@@ -1,9 +1,6 @@
-using System;
-using Baseline;
-using Marten.Testing.AsyncDaemon;
 //using Octokit;
 
-namespace CodeTracker
+namespace Marten.Testing.CodeTracker
 {
     public static class BigBangRecorder
     {

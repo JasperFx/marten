@@ -3,10 +3,49 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
-using CodeTracker;
+using Marten.Testing.CodeTracker;
 
 namespace Marten.Testing.AsyncDaemon
 {
+    public class renamestuff
+    {
+        public void RenameClasses()
+        {
+            var folder = ".".ToFullPath().ParentDirectory().ParentDirectory()
+                .AppendPath("CodeTracker");
+
+            var fileSystem = new FileSystem();
+            var files = fileSystem.FindFiles(folder, FileSet.Shallow("*.json"));
+
+            
+
+            foreach (var file in files)
+            {
+                var json = fileSystem.ReadStringFromFile(file);
+
+                json = replace(json, "GithubProject");
+                json = replace(json, "Timestamped[]");
+                json = replace(json, "ProjectStarted");
+                json = replace(json, "IssueCreated");
+                json = replace(json, "IssueClosed");
+                json = replace(json, "IssueReopened");
+                json = replace(json, "Commit");
+
+
+                fileSystem.WriteStringToFile(file, json);
+            }
+
+        }
+
+        public string replace(string json, string className)
+        {
+            var pattern = $"CodeTracker.{className}, CodeTracker";
+            var replacement = $"Marten.Testing.CodeTracker.{className}, Marten.Testing";
+
+            return json.Replace(pattern, replacement);
+        }
+    }
+
     public class AsyncDaemonFixture : IDisposable
     {
         private readonly IDocumentStore _store;
@@ -22,7 +61,7 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.InlineProjections.TransformEvents(new CommitViewTransform());
             });
 
-            var folder = ".".ToFullPath().ParentDirectory().ParentDirectory().ParentDirectory()
+            var folder = ".".ToFullPath().ParentDirectory().ParentDirectory()
                 .AppendPath("CodeTracker");
 
             var files = new FileSystem().FindFiles(folder, FileSet.Shallow("*.json"));
@@ -38,6 +77,8 @@ namespace Marten.Testing.AsyncDaemon
 
             PublishAllProjectEvents(_store);
         }
+
+
 
         public Dictionary<Guid, GithubProject> AllProjects { get; }
 
