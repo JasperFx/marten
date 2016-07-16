@@ -43,6 +43,7 @@ namespace Marten.Testing.Github
         {
         }
 
+        /*
         public Comment(CommitComment comment)
         {
             Id = comment.Id;
@@ -50,6 +51,7 @@ namespace Marten.Testing.Github
             Body = comment.Body;
             User = comment.User.Id;
         }
+        */
 
         public int User { get; set; }
 
@@ -66,6 +68,7 @@ namespace Marten.Testing.Github
         {
         }
 
+        /*
         public CommitFile(GitHubCommitFile file)
         {
             Filename = file.Filename;
@@ -79,6 +82,7 @@ namespace Marten.Testing.Github
             Sha = file.Sha;
             PreviousFileName = file.PreviousFileName;
         }
+        */
 
         public string PreviousFileName { get; set; }
 

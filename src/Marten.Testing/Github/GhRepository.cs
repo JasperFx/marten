@@ -40,7 +40,8 @@ namespace Marten.Testing.Github
 
         public string Name { get; set; }
 
-        public User Owner { get; set; }
+
+        //public User Owner { get; set; }
 
         public int Id { get; set; }
 
