@@ -52,6 +52,25 @@ namespace Marten.Events
         Task<IList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken));
 
         /// <summary>
+        /// Synchronously fetches all of the events
+        /// </summary>
+        /// <param name="before">If set, queries for events captured on or before this timestamp</param>
+        /// <param name="after">If set, queries for events captured on or after this timestamp</param>
+        /// <param name="version">If set, queries for events up to and including this version</param>
+        /// <returns></returns>
+        IList<IEvent> FetchAll(DateTime? before = null, DateTime? after = null, int version = 0);
+
+        /// <summary>
+        /// Asynchronously fetches all of the events for the named stream
+        /// </summary>
+        /// <param name="before">If set, queries for events captured on or before this timestamp</param>
+        /// <param name="after">If set, queries for events captured on or after this timestamp</param>
+        /// <param name="version">If set, queries for events up to and including this version</param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<IList<IEvent>> FetchAllAsync(DateTime? before = null, DateTime? after = null, int version = 0, CancellationToken token = default(CancellationToken));
+
+        /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
         /// </summary>
         /// <typeparam name="T"></typeparam>
