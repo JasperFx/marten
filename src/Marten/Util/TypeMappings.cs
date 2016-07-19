@@ -20,7 +20,8 @@ namespace Marten.Util
             {typeof (decimal), "decimal"},
             {typeof(float), "decimal" },
             {typeof(DateTime), "timestamp without time zone" },
-            {typeof (DateTimeOffset), "timestamp with time zone"}
+            {typeof (DateTimeOffset), "timestamp with time zone"},
+            {typeof (IDictionary<,>), "jsonb" },
         };
 
         private static readonly MethodInfo _getNgpsqlDbTypeMethod;
@@ -104,6 +105,9 @@ namespace Marten.Util
             {
                 return GetPgType(memberType.GetInnerTypeFromNullable());
             }
+
+            if (memberType.IsGenericType) return PgTypes[memberType.GetGenericTypeDefinition()];
+
 
             return PgTypes[memberType];
         }

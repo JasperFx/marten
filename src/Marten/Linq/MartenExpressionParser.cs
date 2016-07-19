@@ -69,7 +69,10 @@ namespace Marten.Linq
 
             // soft deletes
             new MaybeDeletedParser(),
-            new IsDeletedParser()
+            new IsDeletedParser(),
+
+            // dictionaries
+            new DictionaryExpressions()
         };
 
 

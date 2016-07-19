@@ -1,4 +1,5 @@
 ﻿using Marten.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -13,8 +14,8 @@ namespace Marten.Testing.Linq
             var query = theSession.Query<Target>().Where(t => t.StringDict.ContainsKey("foo"));
             var command = query.ToCommand(Marten.Linq.FetchType.FetchMany);
             var dictParam = command.Parameters[0];
-            dictParam.DbType.ShouldBeTheSameAs(System.Data.DbType.Object);
-            dictParam.Value.ShouldBeTheSameAs(new Dictionary<string, string> { { "foo", null } });
+            (dictParam.DbType == System.Data.DbType.String).ShouldBeTrue();
+            (dictParam.Value.ToString() == "foo").ShouldBeTrue();
         }
 
         [Fact]
@@ -23,8 +24,8 @@ namespace Marten.Testing.Linq
             var query = theSession.Query<Target>().Where(t => t.StringDict.Contains(new KeyValuePair<string, string>("foo", "bar")));
             var command = query.ToCommand(Marten.Linq.FetchType.FetchMany);
             var dictParam = command.Parameters[0];
-            dictParam.DbType.ShouldBeTheSameAs(System.Data.DbType.Object);
-            dictParam.Value.ShouldBeTheSameAs(new Dictionary<string, string> { { "foo", "bar" } });
+            (dictParam.DbType == System.Data.DbType.String).ShouldBeTrue();
+            (dictParam.Value.ToString() == "{\"foo\":\"bar\"}").ShouldBeTrue();
         }
 
         [Fact]
@@ -33,8 +34,8 @@ namespace Marten.Testing.Linq
             var query = theSession.Query<Target>().Where(t => ((IEnumerable<KeyValuePair<string,string>>) t.StringDict).Contains(new KeyValuePair<string, string>("foo", "bar")));
             var command = query.ToCommand(Marten.Linq.FetchType.FetchMany);
             var dictParam = command.Parameters[0];
-            dictParam.DbType.ShouldBeTheSameAs(System.Data.DbType.Object);
-            dictParam.Value.ShouldBeTheSameAs(new Dictionary<string, string> { { "foo", "bar" } });
+            (dictParam.DbType == System.Data.DbType.String).ShouldBeTrue();
+            (dictParam.Value.ToString() == "{\"foo\":\"bar\"}").ShouldBeTrue();
         }
     }
 }

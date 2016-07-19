@@ -91,6 +91,7 @@ namespace Marten.Testing
         public Target()
         {
             Id = Guid.NewGuid();
+            StringDict = new Dictionary<string, string>();
         }
 
         public Guid Id { get; set; }
@@ -125,6 +126,9 @@ namespace Marten.Testing
         public int? NullableNumber { get; set; }
         public DateTime? NullableDateTime { get; set; }
         public bool? NullableBoolean { get; set; }
+
+        public IDictionary<string,string> StringDict { get; set; }
+
     }
 
     public class Address
