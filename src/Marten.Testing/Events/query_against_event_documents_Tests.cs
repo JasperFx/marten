@@ -109,7 +109,7 @@ namespace Marten.Testing.Events
 
             theSession.SaveChanges();
 
-            var now = DateTime.UtcNow;        
+            var now = DateTime.UtcNow;
             var results = theSession.Events.FetchAll(before: now);
 
             results.Count.ShouldBe(0);
@@ -118,8 +118,13 @@ namespace Marten.Testing.Events
         [Fact]
         public void can_fetch_all_events_utc_only()
         {
-            Should.Throw<Exception>(() => theSession.Events.FetchAll(before: DateTime.Now));
-            Should.Throw<Exception>(() => theSession.Events.FetchAll(after: DateTime.Now));
+            Should
+                .Throw<ArgumentOutOfRangeException>(() => theSession.Events.FetchAll(before: DateTime.Now))
+                .ParamName.ShouldBe("before");
+
+            Should
+                .Throw<ArgumentOutOfRangeException>(() => theSession.Events.FetchAll(after: DateTime.Now))
+                .ParamName.ShouldBe("after");
         }
     }
 }
