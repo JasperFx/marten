@@ -21,7 +21,7 @@ namespace Marten.Events
 
             if (after != null && after.Value.Kind != DateTimeKind.Utc)
             {
-                throw new ArgumentOutOfRangeException(nameof(before), "This method only accepts UTC dates");
+                throw new ArgumentOutOfRangeException(nameof(after), "This method only accepts UTC dates");
             }
 
             _before = before;
