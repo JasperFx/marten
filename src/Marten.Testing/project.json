@@ -11,7 +11,10 @@
     "System.Reflection.TypeExtensions": "4.1.0"
   },
   "buildOptions": {
-    "copyToOutput": [ "**/*.js", "connection.txt" ]
+    "copyToOutput": {
+      "include": [ "**.js", "connection.txt" ],
+      "exclude": "bin"
+    } 
   },
   "frameworks": {
     "netcoreapp1.0": {
