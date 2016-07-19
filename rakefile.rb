@@ -111,7 +111,7 @@ end
 desc "Run the storyteller specifications"
 task :storyteller => [:compile] do
   storyteller_cmd = storyteller_path()
-  sh "#{storyteller_cmd} run src/Marten.Testing --results-path artifacts/stresults.htm --build #{COMPILE_TARGET}"
+  sh "#{storyteller_cmd} run src/Marten.Testing --results-path artifacts/stresults.htm --build #{COMPILE_TARGET}/net46/win7-x64"
 end
 
 desc "Run the storyteller specifications"
