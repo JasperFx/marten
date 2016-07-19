@@ -61,7 +61,7 @@ task :version do
   puts 'Writing version to project.json'
   nuget_version = "#{BUILD_VERSION}-#{build_revision}"
   project_file = load_project_file('src/Marten/project.json')
-  File.open('src/Marten/project.json', "r+") do |file|
+  File.open('src/Marten/project.json', "w+") do |file|
     project_file["version"] = nuget_version
     file.write(JSON.pretty_generate project_file)
   end
@@ -83,9 +83,6 @@ end
 desc 'Compile the code'
 task :compile => [:clean, 'nuget:restore'] do
   msbuild = '"C:\Program Files (x86)\MSBuild\14.0\Bin\msbuild.exe"'
-
-  #Eventually this part won't be required, but ensures things compile for both old and new
-  sh "#{msbuild} src/Marten.sln   /property:Configuration=#{COMPILE_TARGET} /v:m /t:rebuild /nr:False /maxcpucount:2"
 
   #sh "ILMerge.exe /out:src/Marten/bin/#{COMPILE_TARGET}/Marten.dll /lib:src/Marten/bin/#{COMPILE_TARGET} /target:library /targetplatform:v4 /internalize /ndebug src/Marten/bin/#{COMPILE_TARGET}/Marten.dll src/Marten/bin/#{COMPILE_TARGET}/Newtonsoft.Json.dll src/Marten/bin/#{COMPILE_TARGET}/Baseline.dll  src/Marten/bin/#{COMPILE_TARGET}/Remotion.Linq.dll"
 
@@ -138,7 +135,6 @@ namespace :nuget do
   desc 'Restores nuget packages with paket'
   task :restore => [:bootstrap] do
     sh 'dotnet restore'
-    sh './nuget.exe restore ./src/Marten.sln'
     #sh '.paket/paket.exe restore'
   end
 
