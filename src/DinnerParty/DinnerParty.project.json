@@ -7,6 +7,7 @@
     "Cassette": "2.4.2",
     "Cassette.Nancy": "2.2.1",
     "elmah": "1.2.2",
+    "Marten": "0.9.12.563",
     "Nancy": "1.4.3",
     "Nancy.Authentication.Forms": "1.4.1",
     "Nancy.Viewengines.Razor": "1.4.3",
@@ -14,7 +15,8 @@
     "Nancy.RouteHelpers": "1.0.6",
     "Nancy.Hosting.Aspnet": "1.4.1",
     "NLog": "4.3.4",
-    "PagedList": "1.17.0"
+    "PagedList": "1.17.0",
+    "System.Data.Common": "4.1.0" 
   },
   "frameworks": {
     "net46": { }

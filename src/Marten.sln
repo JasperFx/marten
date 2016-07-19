@@ -3,15 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten", "Marten\Marten.csproj", "{3D44A648-636E-4D4E-B943-361D103F1FA2}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Marten", "Marten\Marten.xproj", "{FCCA5D3A-B632-4D81-B839-F6344FDD01F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.Testing", "Marten.Testing\Marten.Testing.csproj", "{6CB31CF9-9556-4E1D-8196-025156A783CD}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Marten.Testing", "Marten.Testing\Marten.Testing.xproj", "{D5E592AD-5368-4E97-A3AC-6729FA43CB51}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.Testing.OtherAssembly", "Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj", "{EE53C3D3-65AE-42EF-92F4-116E8D6889DD}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{2A45ADBF-F6B1-4287-8AF5-190561E47085}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DinnerParty", "DinnerParty\DinnerParty.csproj", "{6B6F66F9-4867-4887-A796-44029F9E3709}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Marten.Testing.OtherAssembly", "Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.xproj", "{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,27 +15,20 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3D44A648-636E-4D4E-B943-361D103F1FA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3D44A648-636E-4D4E-B943-361D103F1FA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3D44A648-636E-4D4E-B943-361D103F1FA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3D44A648-636E-4D4E-B943-361D103F1FA2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6CB31CF9-9556-4E1D-8196-025156A783CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6CB31CF9-9556-4E1D-8196-025156A783CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6CB31CF9-9556-4E1D-8196-025156A783CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6CB31CF9-9556-4E1D-8196-025156A783CD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EE53C3D3-65AE-42EF-92F4-116E8D6889DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EE53C3D3-65AE-42EF-92F4-116E8D6889DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EE53C3D3-65AE-42EF-92F4-116E8D6889DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EE53C3D3-65AE-42EF-92F4-116E8D6889DD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6B6F66F9-4867-4887-A796-44029F9E3709}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6B6F66F9-4867-4887-A796-44029F9E3709}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6B6F66F9-4867-4887-A796-44029F9E3709}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6B6F66F9-4867-4887-A796-44029F9E3709}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCCA5D3A-B632-4D81-B839-F6344FDD01F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCCA5D3A-B632-4D81-B839-F6344FDD01F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCCA5D3A-B632-4D81-B839-F6344FDD01F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCCA5D3A-B632-4D81-B839-F6344FDD01F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5E592AD-5368-4E97-A3AC-6729FA43CB51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5E592AD-5368-4E97-A3AC-6729FA43CB51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5E592AD-5368-4E97-A3AC-6729FA43CB51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5E592AD-5368-4E97-A3AC-6729FA43CB51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{6B6F66F9-4867-4887-A796-44029F9E3709} = {2A45ADBF-F6B1-4287-8AF5-190561E47085}
 	EndGlobalSection
 EndGlobal
