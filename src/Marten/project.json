@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-alpha-51046",
+  "version": "1.0.0-alpha-*",
   "description": "Postgresql as a Document Db and Event Store for .Net Development",
   "authors": [
     "Jeremy D. Miller",
@@ -31,7 +31,7 @@
     "Remotion.Linq": "2.1.1",
     "Npgsql": "3.1.6",
     "Baseline": "1.1.0",
-    "System.Threading.Tasks.Dataflow": "4.6"
+    "System.Threading.Tasks.Dataflow": "4.6.0"
   },
   "frameworks": {
     "netstandard1.3": {
