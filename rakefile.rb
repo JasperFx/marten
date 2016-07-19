@@ -86,7 +86,7 @@ task :compile => [:clean, 'nuget:restore'] do
 
   #sh "ILMerge.exe /out:src/Marten/bin/#{COMPILE_TARGET}/Marten.dll /lib:src/Marten/bin/#{COMPILE_TARGET} /target:library /targetplatform:v4 /internalize /ndebug src/Marten/bin/#{COMPILE_TARGET}/Marten.dll src/Marten/bin/#{COMPILE_TARGET}/Newtonsoft.Json.dll src/Marten/bin/#{COMPILE_TARGET}/Baseline.dll  src/Marten/bin/#{COMPILE_TARGET}/Remotion.Linq.dll"
 
-  sh 'dotnet build ./src/Marten.Testing/'
+  sh "dotnet build ./src/Marten.Testing/ --configuration #{COMPILE_TARGET}"
 end
 
 desc 'Run the unit tests'
