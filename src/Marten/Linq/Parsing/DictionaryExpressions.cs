@@ -8,14 +8,24 @@ namespace Marten.Linq.Parsing
 {
     public class DictionaryExpressions : IMethodCallParser
     {
-        static readonly MethodInfo ICollectionKVPStringStringContains = typeof(ICollection<KeyValuePair<string, string>>).GetMethod("Contains");
-        static readonly MethodInfo IDictionaryStringStringContainsKey = typeof(IDictionary<string, string>).GetMethod("ContainsKey");
+        static bool IsCollectionContainsWithStringKey(MethodInfo m) => 
+                m.Name == "Contains" 
+            && m.DeclaringType.IsConstructedGenericType 
+            && m.DeclaringType.GetGenericTypeDefinition() == typeof(ICollection<>)
+            && m.DeclaringType.GenericTypeArguments[0].IsConstructedGenericType
+            && m.DeclaringType.GenericTypeArguments[0].GetGenericTypeDefinition() == typeof(KeyValuePair<,>)
+            && m.DeclaringType.GenericTypeArguments[0].GenericTypeArguments[0] == typeof(string);
+
+        static bool IsDictionaryContainsKey(MethodInfo m) =>
+               m.Name == "ContainsKey"
+            && m.DeclaringType.IsConstructedGenericType
+            && m.DeclaringType.GetGenericTypeDefinition() == typeof(IDictionary<,>)
+            && m.DeclaringType.GenericTypeArguments[0] == typeof(string);
 
         public bool Matches(MethodCallExpression expression)
         {
-            return
-                expression.Method == ICollectionKVPStringStringContains
-                || expression.Method == IDictionaryStringStringContainsKey;
+            return IsCollectionContainsWithStringKey(expression.Method)
+                || IsDictionaryContainsKey(expression.Method);
         }
 
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
@@ -25,11 +35,11 @@ namespace Marten.Linq.Parsing
             var members = finder.Members;
             var fieldlocator = mapping.FieldFor(members).SqlLocator;
 
-            if (expression.Method == ICollectionKVPStringStringContains)
+            if (IsCollectionContainsWithStringKey(expression.Method))
             {
                 return QueryFromICollectionContains(expression, fieldlocator, serializer);
             }
-            else if (expression.Method == IDictionaryStringStringContainsKey)
+            else if (IsDictionaryContainsKey(expression.Method))
             {
                 return QueryFromDictionaryContainsKey(expression, fieldlocator);
             }
@@ -46,9 +56,15 @@ namespace Marten.Linq.Parsing
         static IWhereFragment QueryFromICollectionContains(MethodCallExpression expression, string fieldPath, ISerializer serializer)
         {
             var constant = expression.Arguments[0] as ConstantExpression;
-            var kvp = (KeyValuePair<string, string>)constant.Value;
-            var dict = serializer.ToJson(new Dictionary<string, string> { { kvp.Key, kvp.Value } });
-            return new CustomizableWhereFragment($"{fieldPath} @> ?", "?", Tuple.Create<object, NpgsqlTypes.NpgsqlDbType?>(dict, NpgsqlTypes.NpgsqlDbType.Jsonb));
+            var kvp = constant.Value; // is kvp<string, unknown>
+            var kvpType = kvp.GetType();
+            var key = kvpType.GetProperty("Key").GetValue(kvp);
+            var value = kvpType.GetProperty("Value").GetValue(kvp);
+            var dictType = typeof(Dictionary<,>).MakeGenericType(kvpType.GenericTypeArguments[0], kvpType.GenericTypeArguments[1]);
+            var dict = dictType.GetConstructors()[0].Invoke(null);
+            dictType.GetMethod("Add").Invoke(dict, new[] { key, value });
+            var json = serializer.ToJson(dict);
+            return new CustomizableWhereFragment($"{fieldPath} @> ?", "?", Tuple.Create<object, NpgsqlTypes.NpgsqlDbType?>(json, NpgsqlTypes.NpgsqlDbType.Jsonb));
         }
     }
 }
