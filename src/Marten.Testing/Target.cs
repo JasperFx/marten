@@ -83,6 +83,8 @@ namespace Marten.Testing
                 {
                     target.Children[i] = Random();
                 }
+
+                target.StringDict = Enumerable.Range(0, _random.Next(1, 10)).ToDictionary(i => $"key{i}", i => $"value{i}");
             }
 
             return target;

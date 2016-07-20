@@ -36,7 +36,7 @@ namespace Marten.Testing.Linq
 }}, 
 ""UserName"": ""{UserName}"", 
 ""Birthdate"": ""{Birthdate.ToString("s")}""
-}}".Replace("\r\n", "");
+}}".Replace("\r\n", "").Replace("\n", "");
         }
     }
 

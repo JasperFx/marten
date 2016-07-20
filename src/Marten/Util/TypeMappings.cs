@@ -106,8 +106,7 @@ namespace Marten.Util
                 return GetPgType(memberType.GetInnerTypeFromNullable());
             }
 
-            if (memberType.IsGenericType) return PgTypes[memberType.GetGenericTypeDefinition()];
-
+            if (memberType.IsConstructedGenericType) return PgTypes[memberType.GetGenericTypeDefinition()];
 
             return PgTypes[memberType];
         }

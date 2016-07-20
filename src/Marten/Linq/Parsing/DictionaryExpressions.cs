@@ -3,7 +3,6 @@ using System.Linq.Expressions;
 using Marten.Schema;
 using System.Reflection;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Marten.Linq.Parsing
 {
@@ -11,13 +10,12 @@ namespace Marten.Linq.Parsing
     {
         static readonly MethodInfo ICollectionKVPStringStringContains = typeof(ICollection<KeyValuePair<string, string>>).GetMethod("Contains");
         static readonly MethodInfo IDictionaryStringStringContainsKey = typeof(IDictionary<string, string>).GetMethod("ContainsKey");
-        static readonly MethodInfo IEnumerableKVPStringStringContains = typeof(IEnumerable<KeyValuePair<string, string>>).GetMethod("Contains");
+
         public bool Matches(MethodCallExpression expression)
         {
-            return 
-                expression.Method == ICollectionKVPStringStringContains 
-                || expression.Method == IDictionaryStringStringContainsKey 
-                || expression.Method == IEnumerableKVPStringStringContains;
+            return
+                expression.Method == ICollectionKVPStringStringContains
+                || expression.Method == IDictionaryStringStringContainsKey;
         }
 
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
@@ -35,22 +33,14 @@ namespace Marten.Linq.Parsing
             {
                 return QueryFromDictionaryContainsKey(expression, fieldlocator);
             }
-            else if (expression.Method == IEnumerableKVPStringStringContains)
-            {
-                return QueryFromIEnumerableContains(expression, fieldlocator, serializer);
-            }
             else throw new NotImplementedException("Could not understand the format of the dictionary access");
-        }
-
-        static IWhereFragment QueryFromIEnumerableContains(MethodCallExpression expression, string fieldlocator, ISerializer serializer)
-        {
-            throw new NotImplementedException();
         }
 
         static IWhereFragment QueryFromDictionaryContainsKey(MethodCallExpression expression, string fieldLocator)
         {
             var key = (string)expression.Arguments[0].Value();
-            return new WhereFragment($"{fieldLocator} ? ?", key);
+            // have to use different token here because we actually want the `?` character as the operator!
+            return new CustomizableWhereFragment($"{fieldLocator} ? @1", "@1", Tuple.Create<object, NpgsqlTypes.NpgsqlDbType?>(key, NpgsqlTypes.NpgsqlDbType.Text)); 
         }
 
         static IWhereFragment QueryFromICollectionContains(MethodCallExpression expression, string fieldPath, ISerializer serializer)
@@ -58,7 +48,7 @@ namespace Marten.Linq.Parsing
             var constant = expression.Arguments[0] as ConstantExpression;
             var kvp = (KeyValuePair<string, string>)constant.Value;
             var dict = serializer.ToJson(new Dictionary<string, string> { { kvp.Key, kvp.Value } });
-            return new WhereFragment($"{fieldPath} @> ?", dict);
+            return new CustomizableWhereFragment($"{fieldPath} @> ?", "?", Tuple.Create<object, NpgsqlTypes.NpgsqlDbType?>(dict, NpgsqlTypes.NpgsqlDbType.Jsonb));
         }
     }
 }
