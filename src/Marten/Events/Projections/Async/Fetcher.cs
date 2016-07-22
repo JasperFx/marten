@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Projections.Async.ErrorHandling;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Util;
@@ -16,6 +17,7 @@ namespace Marten.Events.Projections.Async
         private readonly IConnectionFactory _connectionFactory;
         private readonly string[] _eventTypeNames;
         private readonly IDaemonLogger _logger;
+        private readonly IDaemonErrorHandler _errorHandler;
         private readonly NulloIdentityMap _map;
         private readonly DaemonSettings _settings;
         private readonly AsyncOptions _options;
@@ -23,12 +25,14 @@ namespace Marten.Events.Projections.Async
         private Task _fetchingTask;
         private long _lastEncountered;
         private CancellationToken _token = default(CancellationToken);
+        private IProjectionTrack _track;
 
-        public Fetcher(IDocumentStore store, DaemonSettings settings, AsyncOptions options, IDaemonLogger logger, IEnumerable<Type> eventTypes)
+        public Fetcher(IDocumentStore store, DaemonSettings settings, AsyncOptions options, IDaemonLogger logger, IDaemonErrorHandler errorHandler, IEnumerable<Type> eventTypes)
         {
             _settings = settings;
             _options = options;
             _logger = logger;
+            _errorHandler = errorHandler;
             State = FetcherState.Waiting;
 
             _connectionFactory = store.Advanced.Options.ConnectionFactory();
@@ -39,8 +43,8 @@ namespace Marten.Events.Projections.Async
             _eventTypeNames = eventTypes.Select(x => store.Schema.Events.EventMappingFor(x).Alias).ToArray();
         }
 
-        public Fetcher(IDocumentStore store, DaemonSettings settings, IProjection projection, IDaemonLogger logger)
-            : this(store, settings, projection.AsyncOptions, logger, projection.Consumes)
+        public Fetcher(IDocumentStore store, DaemonSettings settings, IProjection projection, IDaemonLogger logger, IDaemonErrorHandler errorHandler)
+            : this(store, settings, projection.AsyncOptions, logger, errorHandler, projection.Consumes)
         {
         }
 
@@ -52,6 +56,8 @@ namespace Marten.Events.Projections.Async
 
         public void Start(IProjectionTrack track, DaemonLifecycle lifecycle, CancellationToken token = default(CancellationToken))
         {
+            _track = track;
+
             if (_fetchingTask != null && !_fetchingTask.IsCompleted)
             {
                 throw new InvalidOperationException("The Fetcher is already started!");
@@ -106,6 +112,18 @@ namespace Marten.Events.Projections.Async
 
         public async Task<EventPage> FetchNextPage(long lastEncountered)
         {
+            EventPage page = null;
+
+            await _errorHandler.TryAction(async () =>
+            {
+                page = await fetchNextPage(lastEncountered).ConfigureAwait(false);
+            }, _track).ConfigureAwait(false);
+
+            return page;
+        }
+
+        private async Task<EventPage> fetchNextPage(long lastEncountered)
+        {
             using (var conn = _connectionFactory.Create())
             {
                 try
@@ -148,10 +166,6 @@ select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(t
                 {
                     conn.Close();
                 }
-
-                
-
-                
             }
         }
 

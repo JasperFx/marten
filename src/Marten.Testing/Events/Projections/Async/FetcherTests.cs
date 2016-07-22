@@ -43,7 +43,7 @@ namespace Marten.Testing.Events.Projections.Async
                 LeadingEdgeBuffer = 0.Seconds()
             };
 
-            using (var data = new Fetcher(theStore, settings, options, Substitute.For<IDaemonLogger>(), new Type[] {typeof(MembersJoined)}))
+            using (var data = new Fetcher(theStore, settings, options, Substitute.For<IDaemonLogger>(), new StubErrorHandler(), new Type[] {typeof(MembersJoined)}))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -83,7 +83,7 @@ namespace Marten.Testing.Events.Projections.Async
                 LeadingEdgeBuffer = 0.Seconds()
             };
 
-            using (var data = new Fetcher(theStore, settings, new AsyncOptions(), Substitute.For<IDaemonLogger>(), new Type[] {typeof(MembersDeparted), typeof(ArrivedAtLocation)}))
+            using (var data = new Fetcher(theStore, settings, new AsyncOptions(), Substitute.For<IDaemonLogger>(), new StubErrorHandler(), new Type[] {typeof(MembersDeparted), typeof(ArrivedAtLocation)}))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -136,7 +136,7 @@ namespace Marten.Testing.Events.Projections.Async
             {
                 LeadingEdgeBuffer = 0.Seconds()
             };
-            using (var data = new Fetcher(theStore, settings, new AsyncOptions(), Substitute.For<IDaemonLogger>(), types))
+            using (var data = new Fetcher(theStore, settings, new AsyncOptions(), Substitute.For<IDaemonLogger>(), new StubErrorHandler(), types))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -175,7 +175,7 @@ namespace Marten.Testing.Events.Projections.Async
                 LeadingEdgeBuffer = 0.Seconds()
             };
 
-            using (var data = new Fetcher(theStore, settings, new AsyncOptions(), Substitute.For<IDaemonLogger>(), types))
+            using (var data = new Fetcher(theStore, settings, new AsyncOptions(), Substitute.For<IDaemonLogger>(), new StubErrorHandler(), types))
             {
                 var events1 = (await data.FetchNextPage(0).ConfigureAwait(false)).Streams.SelectMany(x => x.Events).ToArray();
                 var events2 = (await data.FetchNextPage(100).ConfigureAwait(false)).Streams.SelectMany(x => x.Events).ToArray();

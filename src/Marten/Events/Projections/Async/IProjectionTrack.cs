@@ -1,10 +1,11 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Projections.Async.ErrorHandling;
 
 namespace Marten.Events.Projections.Async
 {
-    public interface IProjectionTrack : IDisposable
+    public interface IProjectionTrack : IDisposable, IMonitoredActivity
     {
         long LastEncountered { get; set; }
         Type ViewType { get; }

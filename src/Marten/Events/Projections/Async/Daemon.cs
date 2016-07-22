@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Projections.Async.ErrorHandling;
 using Marten.Util;
 
 namespace Marten.Events.Projections.Async
@@ -11,18 +12,22 @@ namespace Marten.Events.Projections.Async
     {
         private readonly IDocumentStore _store;
         private readonly IDictionary<Type, IProjectionTrack> _tracks = new Dictionary<Type, IProjectionTrack>();
+        private DaemonErrorHandler _errorHandler;
 
         public Daemon(IDocumentStore store, DaemonSettings settings, IDaemonLogger logger, IEnumerable<IProjection> projections)
         {
             _store = store;
             Logger = logger;
+
+            _errorHandler = new DaemonErrorHandler(this, logger, settings.ExceptionHandling);
+
             foreach (var projection in projections)
             {
                 if (projection == null)
                     throw new ArgumentOutOfRangeException(nameof(projection),
                         $"No projection is configured for view type {projection.Produces.FullName}");
 
-                var fetcher = new Fetcher(store, settings, projection, logger);
+                var fetcher = new Fetcher(store, settings, projection, logger, _errorHandler);
                 var track = new ProjectionTrack(fetcher, store, projection, logger);
 
                 _tracks.Add(projection.Produces, track);

@@ -114,6 +114,12 @@ namespace Marten.Events.Projections.Async
             _rebuildCompletion.TrySetResult(LastEncountered);
         }
 
+        public Task Start()
+        {
+            Start(Lifecycle);
+            return Task.CompletedTask;
+        }
+
         public Task<long> WaitUntilEventIsProcessed(long sequence)
         {
             if (LastEncountered >= sequence) return Task.FromResult(sequence);
@@ -128,7 +134,7 @@ namespace Marten.Events.Projections.Async
         {
             _store.Schema.EnsureStorageExists(_projection.Produces);
 
-            _fetcher.Start(this, DaemonLifecycle.StopAtEndOfEventData, token);
+            Start(DaemonLifecycle.StopAtEndOfEventData);
 
             return _rebuildCompletion.Task;
         }
