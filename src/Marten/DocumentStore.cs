@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using Marten.Linq;
@@ -314,6 +315,8 @@ namespace Marten
         public IDocumentTransforms Transform { get; }
         public IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null)
         {
+            Schema.EnsureStorageExists(typeof(EventStream));
+
             if (projections == null)
             {
                 projections = viewTypes?.Select(x => Schema.Events.ProjectionFor(x)).Where(x => x != null).ToArray() ?? Schema.Events.AsyncProjections.ToArray();

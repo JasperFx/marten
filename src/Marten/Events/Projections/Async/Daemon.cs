@@ -213,7 +213,14 @@ namespace Marten.Events.Projections.Async
                     using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                     {
                         var any = await reader.ReadAsync(tkn).ConfigureAwait(false);
-                        return any ? await reader.GetFieldValueAsync<long>(0, tkn).ConfigureAwait(false) : 0;
+                        if (!any) return 0;
+
+                        if (await reader.IsDBNullAsync(0, tkn).ConfigureAwait(false))
+                        {
+                            return 0;
+                        }
+
+                        return await reader.GetFieldValueAsync<long>(0, tkn).ConfigureAwait(false);
                     }
                 }, token);
             }
