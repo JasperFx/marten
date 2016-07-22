@@ -34,5 +34,7 @@ namespace Marten.Events.Projections.Async
 
         Task Rebuild<T>(CancellationToken token = default(CancellationToken));
         Task Rebuild(Type viewType, CancellationToken token = default(CancellationToken));
+
+        IDaemonLogger Logger { get; }
     }
 }

@@ -10,13 +10,12 @@ namespace Marten.Events.Projections.Async
     public class Daemon : IDaemon
     {
         private readonly IDocumentStore _store;
-        private readonly IDaemonLogger _logger;
         private readonly IDictionary<Type, IProjectionTrack> _tracks = new Dictionary<Type, IProjectionTrack>();
 
         public Daemon(IDocumentStore store, DaemonSettings settings, IDaemonLogger logger, IEnumerable<IProjection> projections)
         {
             _store = store;
-            _logger = logger;
+            Logger = logger;
             foreach (var projection in projections)
             {
                 if (projection == null)
@@ -30,15 +29,17 @@ namespace Marten.Events.Projections.Async
             }
         }
 
+        public IDaemonLogger Logger { get; }
+
         public async Task StopAll()
         {
-            _logger.BeginStopAll();
+            Logger.BeginStopAll();
             foreach (var track in _tracks.Values)
             {
                 await track.Stop().ConfigureAwait(false);
             }
 
-            _logger.AllStopped();
+            Logger.AllStopped();
         }
 
         public Task Stop<T>()
@@ -83,7 +84,7 @@ namespace Marten.Events.Projections.Async
 
         public void StartAll()
         {
-            _logger.BeginStartAll(_tracks.Values);
+            Logger.BeginStartAll(_tracks.Values);
 
             foreach (var track in _tracks.Values)
             {
@@ -99,7 +100,7 @@ namespace Marten.Events.Projections.Async
                 track.Start(DaemonLifecycle.Continuous);
             }
 
-            _logger.FinishedStartingAll();
+            Logger.FinishedStartingAll();
         }
 
         private void findCurrentEventLogPositions()
@@ -130,7 +131,7 @@ namespace Marten.Events.Projections.Async
 
             foreach (var track in _tracks.Values)
             {
-                _logger.DeterminedStartingPosition(track);
+                Logger.DeterminedStartingPosition(track);
             }
         }
 
@@ -178,12 +179,12 @@ namespace Marten.Events.Projections.Async
 
         public Task RebuildAll(CancellationToken token = new CancellationToken())
         {
-            _logger.BeginRebuildAll(_tracks.Values);
+            Logger.BeginRebuildAll(_tracks.Values);
             var all = _tracks.Values.Select(x => x.Rebuild(token));
 
             return Task.WhenAll(all).ContinueWith(t =>
             {
-                _logger.FinishRebuildAll(t.Status, t.Exception);
+                Logger.FinishRebuildAll(t.Status, t.Exception);
             }, token);
         }
 

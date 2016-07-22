@@ -67,9 +67,19 @@
     <Compile Include="Events\Projections\Async\CachePageUpdate.cs" />
     <Compile Include="Events\Projections\Async\ConsoleDaemonLogger.cs" />
     <Compile Include="Events\Projections\Async\Daemon.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\DaemonErrorHandler.cs" />
     <Compile Include="Events\Projections\Async\DaemonLifecycle.cs" />
     <Compile Include="Events\Projections\Async\DaemonSettings.cs" />
     <Compile Include="Events\Projections\Async\DebugDaemonLogger.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\ExceptionAction.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\ExceptionHandler.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\ExceptionHandling.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\IExceptionAction.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\IMonitoredActivity.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\Pause.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\Retry.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\Stop.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\StopAll.cs" />
     <Compile Include="Events\Projections\Async\IDaemon.cs" />
     <Compile Include="Events\Projections\Async\IDaemonLogger.cs" />
     <Compile Include="Events\Projections\Async\IProjectionTrack.cs" />
@@ -381,7 +391,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Schema\SQL\mt_immutable_timestamp.sql" />
   </ItemGroup>
-
   <ItemGroup>
     <None Include="Marten.project.json" />
   </ItemGroup>

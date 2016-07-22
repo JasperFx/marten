@@ -1,5 +1,6 @@
 using System;
 using Baseline;
+using Marten.Events.Projections.Async.ErrorHandling;
 
 namespace Marten.Events.Projections.Async
 {
@@ -8,5 +9,7 @@ namespace Marten.Events.Projections.Async
         public TimeSpan LeadingEdgeBuffer { get; set; } = 1.Seconds();
 
         public TimeSpan FetchingCooldown { get; set; } = 1.Seconds();
+
+        public ExceptionHandling ExceptionHandling { get; } = new ExceptionHandling();
     }
 }
