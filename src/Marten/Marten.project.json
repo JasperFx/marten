@@ -3,7 +3,7 @@
     "Npgsql": "3.1.5",
     "Newtonsoft.Json": "9.0.1",
     "Remotion.Linq": "2.1.1",
-    "Baseline": "1.0.0-alpha-32"
+    "Baseline": "1.0.0"
   },
   "frameworks": {
     "net46": { }
