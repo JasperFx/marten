@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Baseline;
 
 namespace Marten.Testing
@@ -48,6 +49,8 @@ namespace Marten.Testing
             target.Float = float.Parse(_random.NextDouble().ToString());
 
             target.NumberArray = new[] { _random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) };
+
+            target.NumberArray = target.NumberArray.Distinct().ToArray();
 
             switch (_random.Next(0, 2))
             {
