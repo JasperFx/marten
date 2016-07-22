@@ -18,6 +18,8 @@ namespace Marten.Events.Projections.Async.ErrorHandling
         {
             if (attempts < Attempts)
             {
+                await Task.Delay(Cooldown).ConfigureAwait(false);
+
                 return ExceptionAction.Retry;
             }
 

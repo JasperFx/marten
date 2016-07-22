@@ -99,6 +99,8 @@
     <Compile Include="Events\Projections\AggregatorTests.cs" />
     <Compile Include="Events\Projections\Async\AccumulatorTests.cs" />
     <Compile Include="Events\Projections\Async\DaemonTests.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\FakeMonitoredActivity.cs" />
+    <Compile Include="Events\Projections\Async\ErrorHandling\RetryTests.cs" />
     <Compile Include="Events\Projections\Async\EventPageTests.cs" />
     <Compile Include="Events\Projections\Async\EventProgressWriteTests.cs" />
     <Compile Include="Events\Projections\Async\FetcherTests.cs" />
