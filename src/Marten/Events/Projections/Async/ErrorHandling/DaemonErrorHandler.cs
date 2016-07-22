@@ -3,7 +3,12 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.Projections.Async.ErrorHandling
 {
-    public class DaemonErrorHandler
+    public interface IDaemonErrorHandler
+    {
+        Task TryAction(Func<Task> action, IMonitoredActivity activity, int attempts = 0);
+    }
+
+    public class DaemonErrorHandler : IDaemonErrorHandler
     {
         private readonly IDaemon _daemon;
         private readonly IDaemonLogger _logger;

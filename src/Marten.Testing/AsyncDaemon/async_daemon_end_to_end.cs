@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq.Expressions;
+using System.Threading.Tasks;
+using Baseline;
 using Marten.Events.Projections.Async;
 using Marten.Testing.CodeTracker;
 using Xunit;
@@ -29,7 +31,10 @@ namespace Marten.Testing.AsyncDaemon
         {
             StoreOptions(_ => { _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>(); });
 
-            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger))
+            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
+            {
+                LeadingEdgeBuffer = 1.Seconds()
+            }))
             {
                 daemon.StartAll();
 
@@ -54,7 +59,10 @@ namespace Marten.Testing.AsyncDaemon
             _fixture.PublishAllProjectEvents(theStore);
 
 
-            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger))
+            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
+            {
+                LeadingEdgeBuffer = 0.Seconds()
+            }))
             {
                 await daemon.Rebuild<ActiveProject>().ConfigureAwait(false);
             }

@@ -110,13 +110,13 @@ namespace Marten.Events.Projections.Async
             {
                 try
                 {
-                    await conn.OpenAsync().ConfigureAwait(false);
+                    await conn.OpenAsync(_token).ConfigureAwait(false);
 
                     var lastPossible = lastEncountered + _options.PageSize;
                     var sql =
                         $@"
-select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(transaction_timestamp() at time zone 'utc', mt_events.timestamp) <= :buffer order by seq_id;
-{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) and age(transaction_timestamp() at time zone 'utc', mt_events.timestamp) <= :buffer order by seq_id;       
+select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(transaction_timestamp() at time zone 'utc', mt_events.timestamp) >= :buffer order by seq_id;
+{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) and age(transaction_timestamp() at time zone 'utc', mt_events.timestamp) >= :buffer order by seq_id;       
 ";
 
                     var cmd = conn.CreateCommand(sql)
@@ -134,7 +134,7 @@ select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(t
 
                     var starting = page;
 
-                    await Task.Delay(250).ConfigureAwait(false);
+                    await Task.Delay(250, _token).ConfigureAwait(false);
                     page = await buildEventPage(lastEncountered, cmd).ConfigureAwait(false);
                     while (!page.CanContinueProcessing(starting.Sequences))
                     {
