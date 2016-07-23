@@ -7,7 +7,7 @@ CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
 build_revision = tc_build_number || Time.new.strftime('5%H%M')
-build_number = "#{BUILD_VERSION}-#{build_revision}"
+build_number = "#1.0.0.#{build_revision}"
 BUILD_NUMBER = build_number
 
 task :ci => [:connection, :version, :default, 'nuget:pack']
@@ -59,9 +59,10 @@ task :version do
   end
 
   puts 'Writing version to project.json'
+  nuget_version = "#{BUILD_VERSION}-#{build_revision}"
   project_file = load_project_file('src/Marten/project.json')
   File.open('src/Marten/project.json', "r+") do |file|
-    project_file["version"] = options[:version]
+    project_file["version"] = nuget_version
     file.write(JSON.pretty_generate project_file)
   end
 end
