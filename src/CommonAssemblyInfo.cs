@@ -1,9 +1,9 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
-[assembly: AssemblyDescription("Postgresql as a Document Db and Event DocumentStore for .Net Development")]
+[assembly: AssemblyDescription("Postgresql as a Document Db and Event Store for .Net Development")]
 [assembly: AssemblyProduct("Marten")]
-[assembly: AssemblyCopyright("Copyright 2015 Jeremy D. Miller et al. All rights reserved.")]
-[assembly: AssemblyTrademark("bfb4ec22cfaaecd2ffd4c222f2df0aea19371f71")]
-[assembly: AssemblyVersion("0.5.0.50711")]
-[assembly: AssemblyFileVersion("0.5.0.50711")]
-[assembly: AssemblyInformationalVersion("0.5.0.50711")]
+[assembly: AssemblyCopyright("Copyright 2016 Jeremy D. Miller et al. All rights reserved.")]
+[assembly: AssemblyTrademark("ad28ea251414b415d8e8678750015f01dbaaff49")]
+[assembly: AssemblyVersion("1.0.0.51046")]
+[assembly: AssemblyFileVersion("1.0.0.51046")]
+[assembly: AssemblyInformationalVersion("1.0.0.51046")]

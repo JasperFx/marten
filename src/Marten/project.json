@@ -1,13 +1,20 @@
-﻿{
-  "version": "1.0.0-alpha-*",
+{
+  "version": "1.0.0-alpha-51046",
   "description": "Postgresql as a Document Db and Event Store for .Net Development",
-  "authors": [ "Jeremy D. Miller", "Tim Cools", "Jeff Doolittle" ],
+  "authors": [
+    "Jeremy D. Miller",
+    "Tim Cools",
+    "Jeff Doolittle"
+  ],
   "packOptions": {
     "projectUrl": "http://jasperfx.github.io/marten",
     "licenseUrl": "https://github.com/JasperFX/marten/blob/master/LICENSE.txt"
   },
   "buildOptions": {
-    "compile": [ "**/*.cs", "../CommonAssemblyInfo.cs" ],
+    "compile": [
+      "**/*.cs",
+      "../CommonAssemblyInfo.cs"
+    ],
     "embed": {
       "mappings": {
         "Marten.Schema.SchemaObjects.sql": "Schema/SchemaObjects.sql",
@@ -24,7 +31,7 @@
     "Remotion.Linq": "2.1.1",
     "Npgsql": "3.1.6",
     "Baseline": "1.1.0",
-	"System.Threading.Tasks.Dataflow": "4.6"
+    "System.Threading.Tasks.Dataflow": "4.6"
   },
   "frameworks": {
     "netstandard1.3": {

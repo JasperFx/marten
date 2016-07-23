@@ -2928,7 +2928,7 @@
           "lib/netstandard1.1/xunit.runner.utility.dotnet.dll": {}
         }
       },
-      "Marten/1.0.0-alpha": {
+      "Marten/1.0.0-alpha-51046": {
         "type": "project",
         "framework": ".NETStandard,Version=v1.3",
         "dependencies": {
@@ -4089,7 +4089,7 @@
           "lib/net45/xunit.runner.utility.desktop.dll": {}
         }
       },
-      "Marten/1.0.0-alpha": {
+      "Marten/1.0.0-alpha-51046": {
         "type": "project",
         "framework": ".NETStandard,Version=v1.3",
         "dependencies": {
@@ -9763,7 +9763,7 @@
         "xunit.runner.utility.nuspec"
       ]
     },
-    "Marten/1.0.0-alpha": {
+    "Marten/1.0.0-alpha-51046": {
       "type": "project",
       "path": "../Marten/project.json",
       "msbuildProject": "../Marten/Marten.xproj"
