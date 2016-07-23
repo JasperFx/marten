@@ -16,8 +16,8 @@ namespace Marten.Events
         private readonly ConcurrentDictionary<Type, IAggregator> _aggregates =
             new ConcurrentDictionary<Type, IAggregator>();
 
-        private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
-        private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
+        private readonly ConcurrentCache<string, EventMapping> _byEventName = new ConcurrentCache<string, EventMapping>();
+        private readonly ConcurrentCache<Type, EventMapping> _events = new ConcurrentCache<Type, EventMapping>();
 
 
         private string _databaseSchemaName;

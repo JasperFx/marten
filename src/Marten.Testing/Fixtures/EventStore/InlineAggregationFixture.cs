@@ -10,7 +10,7 @@ namespace Marten.Testing.Fixtures.EventStore
 {
     public class InlineAggregationFixture : Fixture
     {
-        private readonly Cache<string, Guid> _streams = new Cache<string, Guid>();
+        private readonly LightweightCache<string, Guid> _streams = new LightweightCache<string, Guid>();
         private IDocumentStore _store;
         private Guid _lastStream;
 

@@ -10,7 +10,6 @@ namespace Marten.Events.Projections.Async
         long LastEncountered { get; set; }
         Type ViewType { get; }
         void Start(DaemonLifecycle lifecycle);
-        Task Stop();
         Task<long> WaitUntilEventIsProcessed(long sequence);
         Task<long> RunUntilEndOfEvents(CancellationToken token = new CancellationToken());
         Task Rebuild(CancellationToken token = new CancellationToken());

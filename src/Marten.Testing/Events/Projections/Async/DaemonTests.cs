@@ -66,7 +66,7 @@ namespace Marten.Testing.Events.Projections.Async
 
             await theProjectionTrack.Stop().ConfigureAwait(false);
 
-            theFetcher.Received().Stop();
+            await theFetcher.Received().Stop();
 
         }
 

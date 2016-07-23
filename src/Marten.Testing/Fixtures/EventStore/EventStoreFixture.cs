@@ -15,7 +15,7 @@ namespace Marten.Testing.Fixtures.EventStore
 {
     public class EventStoreFixture : Fixture
     {
-        private readonly Cache<string, Guid> _streams = new Cache<string, Guid>();
+        private readonly LightweightCache<string, Guid> _streams = new LightweightCache<string, Guid>();
         private IContainer _container;
         private IDocumentStore _store;
         private Guid _lastStream;
