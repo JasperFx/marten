@@ -53,7 +53,7 @@ task :version do
     file.write "[assembly: AssemblyProduct(\"#{options[:product_name]}\")]\n"
     file.write "[assembly: AssemblyCopyright(\"#{options[:copyright]}\")]\n"
     file.write "[assembly: AssemblyTrademark(\"#{options[:trademark]}\")]\n"
-    file.write "[assembly: AssemblyVersion(\"#{options[:version]}\")]\n"
+    file.write "[assembly: AssemblyVersion(\"#{build_number}\")]\n"
     file.write "[assembly: AssemblyFileVersion(\"#{options[:file_version]}\")]\n"
     file.write "[assembly: AssemblyInformationalVersion(\"#{options[:informational_version]}\")]\n"
   end
