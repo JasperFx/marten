@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+        <meta charset="utf-8">
+        <meta name="generator" content="Bootply" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<title>Marten - Event Store Schema Objects</title>
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+        
+
+        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+
+        <!-- CSS code from Bootply.com editor -->
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    </head>
+    
+    <!-- HTML code from Bootply.com editor -->
+    
+    <body  >
+
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+        
+        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <a href="/marten" class="navbar-brand">Marten</a>
+		    </div>
+		    <nav class="collapse navbar-collapse" role="navigation">
+		      <ul class="nav navbar-nav pull-right">
+            <li>
+              <a href="/marten/getting_started">Getting Started</a>
+            </li>
+		        <li>
+		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+		        </li>
+		      	<li><a href="/marten/documentation/events" title="Marten as Event Store">Previous</a></li>
+		      	<li><a href="/marten/documentation/events/appending" title="Appending Events">Next</a></li>
+		      </ul>
+      <div class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input id="search" type="search" class="form-control" placeholder="Search">
+        </div>
+      </div>
+
+		    </nav>
+
+		  </div>
+		</nav>
+
+		  <div class="container">
+		  	<nav class="navbar-inverse">
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/events">Marten as Event Store</a></li><li class="active">Event Store Schema Objects</li></ol>
+		  	</nav>
+		  </div>
+
+		<!--main-->
+		<div class="container">
+			<div class="row">
+		      <!--left-->
+		      
+		      <div class="col-md-3" id="leftCol">
+		      	<h3>Marten 1.0-alpha</h3>
+		      	<br />
+
+				<ul class="nav nav-stacked affix" id="sidebar">
+
+		        </ul>
+
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/appending">Appending Events</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events">Marten as Event Store</a></p>
+
+		        </ul>
+		      </div><!--/left-->
+		      
+		      <!--right-->
+		      <div class="col-md-9">
+			      	<h1>Event Store Schema Objects <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/events/schema.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      
+			      	<hr />
+
+			      	<div id="main-pane">
+			      		<!--Title:Event Store Schema Objects-->
+<h2>Overriding the Schema</h2>
+<p>By default, the event store database objects are created in the default schema for the active <code>IDocumentStore</code>. If you wish,
+you can segregate the event store objects into a separate schema with this syntax:</p>
+<pre><code class="language-csharp">
+    var store = DocumentStore.For(_ =&gt;
+    {
+        _.Connection(&quot;some connection string&quot;);
+
+        // Places all the Event Store schema objects
+        // into the &quot;events&quot; schema
+        _.Events.DatabaseSchemaName = &quot;events&quot;;
+    });
+</code></pre>
+<h2>Database Tables</h2>
+<p>The events are stored in the <code>mt_events</code> table, with these columns:</p>
+<ul>
+<li><code>seq_id</code> - A sequential identifier that acts as the primary key</li>
+<li><code>id</code> - A Guid value uniquely identifying the event across databases</li>
+<li><code>stream_id</code> - A foreign key to the event stream that contains the event</li>
+<li><code>version</code> - A numerical version of the event's position within its event stream</li>
+<li><code>data</code> - The actual event data stored as JSONB</li>
+<li><code>type</code> - A string identifier for the event type taht's derived from the event type name. For example, events of type <code>IssueResolved</code> would be identified as &quot;issue_resolved.&quot; The <code>type</code>
+column exists so that Marten can be effectively used without the underlying JSON serializer having to embed type metadata.</li>
+<li><code>timestamp</code> - A database timestamp written by the database when events are committed.</li>
+</ul>
+<p>The &quot;Async Daemon&quot; projection support keys off of the sequential id, but we retained the Guid id field for backward compatibility
+and to retain a potential way to uniquely identify events across databases.</p>
+<p>In addition, there are a couple other metadata tables you'll see in your schema:</p>
+<ul>
+<li><code>mt_streams</code> - Metadata about each event stream</li>
+<li><code>mt_event_progression</code> - A durable record about the progress of each async projection through the event store</li>
+</ul>
+<p>And finally, a couple functions that Marten uses internally:</p>
+<ul>
+<li><code>mt_append_event</code> - Writes event data to the <code>mt_events</code> and <code>mt_streams</code> tables</li>
+<li><code>mt_mark_event_progression</code> - Updates the <code>mt_event_progression</code> table</li>
+</ul>
+<h2>Event Metadata in Code</h2>
+<p>Hopefully, it's relatively clear how the fields in <code>mt_events</code> maps to the <code>IEvent</code> interface in Marten:</p>
+<pre><code class="language-csharp">
+        /// &lt;summary&gt;
+        /// A reference to the stream that contains
+        /// this event
+        /// &lt;/summary&gt;
+        public Guid StreamId { get; set; }
+
+        /// &lt;summary&gt;
+        /// An alternative Guid identifier to identify
+        /// events across databases
+        /// &lt;/summary&gt;
+        public Guid Id { get; set; }
+
+        /// &lt;summary&gt;
+        /// An event&#39;s version position within its event stream
+        /// &lt;/summary&gt;
+        public int Version { get; set; }
+
+        /// &lt;summary&gt;
+        /// A global sequential number identifying the Event
+        /// &lt;/summary&gt;
+        public long Sequence { get; set; }
+
+        /// &lt;summary&gt;
+        /// The actual event data
+        /// &lt;/summary&gt;
+        public T Data { get; set; }
+</code></pre>
+<p>The full event data is available on <code>EventStream</code> and <code>IEvent</code> objects immediately after committing a transaction that involves
+event capture. See <a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a> for more information on capturing event data in the instrumentation
+hooks.</p>
+
+
+			      	</div>
+
+			      	<hr />
+
+			      	<nav>
+				        <span>
+				        	<strong>Previous: </strong><a href="/marten/documentation/events">Marten as Event Store</a>
+
+				        </span>
+				        <span class="pull-right">
+
+				        	<strong>Next: </strong><a href="/marten/documentation/events/appending">Appending Events</a>
+
+				        </span>
+			      	</nav>
+
+		      </div><!--/right-->
+		  	</div><!--/row-->
+		</div><!--/container-->
+
+
+    </body>
+
+
+    <foot>
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+    </foot>
+</html>
+

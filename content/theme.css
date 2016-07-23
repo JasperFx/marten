@@ -1,0 +1,45 @@
+h2{
+	margin-top: 50px;
+}
+
+div.alert{
+	font-size: 14px !important;
+}
+
+div.single-command-usage {
+    border-left: 5px solid #DDDDDD;
+    white-space: pre;
+    font-family: serif;
+    color: #777777;
+    margin-left: 10px;
+}
+
+.single-command-usage em {
+    color: navy;
+    font-style: italic;
+    padding-right: 3px;
+    margin-left: 10px;
+}
+
+section h4 span.section-header {
+    margin-right: 10px;
+
+}
+
+section h4 {
+    margin-bottom: 10px;
+    color: #CC3300;
+    font-weight: bold;
+}
+
+i.command-description {
+    font-weight: lighter;
+}
+
+.usages-table, .single-command-usage {
+    margin-top: 10px;
+}
+
+.command-section h4 {
+    margin-bottom: 10px;
+}
