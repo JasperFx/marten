@@ -2,12 +2,12 @@ require 'json'
 
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '0.9.12'
+BUILD_VERSION = '1.0.0-alpha';
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
 build_revision = tc_build_number || Time.new.strftime('5%H%M')
-build_number = "#{BUILD_VERSION}.#{build_revision}"
+build_number = "#{BUILD_VERSION}-#{build_revision}"
 BUILD_NUMBER = build_number
 
 task :ci => [:connection, :version, :default, 'nuget:pack']

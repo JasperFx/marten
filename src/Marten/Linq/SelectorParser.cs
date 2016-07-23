@@ -80,7 +80,7 @@ namespace Marten.Linq
             if (_target == null)
             {
                 _target = new TargetObject(expression.Type);
-                if (expression.Type.GetTypeInfo().HasAttribute<CompilerGeneratedAttribute>())
+                if (expression.Type.HasAttribute<CompilerGeneratedAttribute>())
                 {
                     // it's anonymous, and the rules are different
                     var parameters = expression.Constructor.GetParameters();

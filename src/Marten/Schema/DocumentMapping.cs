@@ -64,7 +64,7 @@ namespace Marten.Schema
 
         private void applyAnyMartenAttributes(Type documentType)
         {
-            documentType.GetTypeInfo().ForAttribute<MartenAttribute>(att => att.Modify(this));
+            documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
 
             documentType.GetProperties()
                 .Where(x => TypeMappings.HasTypeMapping(x.PropertyType))

@@ -3,7 +3,7 @@
   "version": 1,
   "targets": {
     ".NETFramework,Version=v4.6": {
-      "Baseline/1.0.0": {
+      "Baseline/1.1.0": {
         "frameworkAssemblies": [
           "System.Xml"
         ],
@@ -44,12 +44,12 @@
           "lib/net45/Newtonsoft.Json.dll": {}
         }
       },
-      "Npgsql/3.1.5": {
+      "Npgsql/3.1.6": {
         "compile": {
-          "lib/net451/npgsql.dll": {}
+          "lib/net451/Npgsql.dll": {}
         },
         "runtime": {
-          "lib/net451/npgsql.dll": {}
+          "lib/net451/Npgsql.dll": {}
         }
       },
       "NSubstitute/1.10.0": {
@@ -300,7 +300,7 @@
       }
     },
     ".NETFramework,Version=v4.6/win": {
-      "Baseline/1.0.0": {
+      "Baseline/1.1.0": {
         "frameworkAssemblies": [
           "System.Xml"
         ],
@@ -341,12 +341,12 @@
           "lib/net45/Newtonsoft.Json.dll": {}
         }
       },
-      "Npgsql/3.1.5": {
+      "Npgsql/3.1.6": {
         "compile": {
-          "lib/net451/npgsql.dll": {}
+          "lib/net451/Npgsql.dll": {}
         },
         "runtime": {
-          "lib/net451/npgsql.dll": {}
+          "lib/net451/Npgsql.dll": {}
         }
       },
       "NSubstitute/1.10.0": {
@@ -598,11 +598,11 @@
     }
   },
   "libraries": {
-    "Baseline/1.0.0": {
-      "sha512": "awu2TPV4idhXaMWxV9kgp2tAx7nZ3bSzZxI+8an2z+BLoKj0AOQnJxQoLf+eGwc38hPzqKem5AeEj6xt5hdP1A==",
+    "Baseline/1.1.0": {
+      "sha512": "3z8yzQdTid/MgnR6yMERAGzTD+j/C1DtsP7xgZ9htz+YghgH3m3YqRUw574aBuTflujDgGKEtihXc8YZhheeFQ==",
       "type": "package",
       "files": [
-        "Baseline.1.0.0.nupkg.sha512",
+        "Baseline.1.1.0.nupkg.sha512",
         "Baseline.nuspec",
         "lib/net451/Baseline.dll",
         "lib/netstandard1.3/Baseline.dll"
@@ -651,18 +651,18 @@
         "tools/install.ps1"
       ]
     },
-    "Npgsql/3.1.5": {
-      "sha512": "goxdRti9awLXumRiZh7Z2Lu6DQ0v6tEz+aPNfp2OjuxKCGIZYr/KmJ/Q9X+wRyGkzi0nzAacWZC5YAd5xSW6PA==",
+    "Npgsql/3.1.6": {
+      "sha512": "XXdvYqLrLaYweZ5fKsmRmz1nZWp791XWvIo2bPX8bMybGLHcVZ+votGiYj/54dd8DzxnBTp/7dTxmoxm5KQS9g==",
       "type": "package",
       "files": [
-        "Npgsql.3.1.5.nupkg.sha512",
+        "Npgsql.3.1.6.nupkg.sha512",
         "Npgsql.nuspec",
-        "lib/net45/npgsql.dll",
-        "lib/net45/npgsql.xml",
-        "lib/net451/npgsql.dll",
-        "lib/net451/npgsql.xml",
-        "lib/netstandard1.3/npgsql.dll",
-        "lib/netstandard1.3/npgsql.xml"
+        "lib/net45/Npgsql.dll",
+        "lib/net45/Npgsql.xml",
+        "lib/net451/Npgsql.dll",
+        "lib/net451/Npgsql.xml",
+        "lib/netstandard1.3/Npgsql.dll",
+        "lib/netstandard1.3/Npgsql.xml"
       ]
     },
     "NSubstitute/1.10.0": {
