@@ -12,7 +12,7 @@ namespace Marten.Events.Projections.Async
     {
         private readonly IDocumentStore _store;
         private readonly IDictionary<Type, IProjectionTrack> _tracks = new Dictionary<Type, IProjectionTrack>();
-        private DaemonErrorHandler _errorHandler;
+        private readonly DaemonErrorHandler _errorHandler;
 
         public Daemon(IDocumentStore store, DaemonSettings settings, IDaemonLogger logger, IEnumerable<IProjection> projections)
         {

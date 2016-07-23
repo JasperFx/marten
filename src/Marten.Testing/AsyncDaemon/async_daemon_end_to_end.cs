@@ -1,6 +1,10 @@
-﻿using System.Linq.Expressions;
+﻿using System;
+using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events;
+using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using Marten.Testing.CodeTracker;
 using Xunit;
@@ -68,6 +72,72 @@ namespace Marten.Testing.AsyncDaemon
             }
 
             _fixture.CompareActiveProjects(theStore);
+        }
+
+        [Fact]
+        public async Task run_with_error_handling()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
+                _.Events.AsyncProjections.Add(new OccasionalErroringProjection());
+            });
+
+            var settings = new DaemonSettings
+            {
+                LeadingEdgeBuffer = 0.Seconds()
+            };
+
+            settings.ExceptionHandling.OnException<DivideByZeroException>().Retry(3);
+
+
+            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: settings))
+            {
+                daemon.StartAll();
+
+                await _fixture.PublishAllProjectEventsAsync(theStore);
+                //_fixture.PublishAllProjectEvents(theStore);
+
+                // Runs all projections until there are no more events coming in
+                await daemon.WaitForNonStaleResults().ConfigureAwait(false);
+
+                await daemon.StopAll().ConfigureAwait(false);
+            }
+
+            _fixture.CompareActiveProjects(theStore);
+        }
+
+
+        public class OccasionalErroringProjection : IProjection
+        {
+            private readonly Random _random = new Random(5);
+            private bool _failed;
+
+            public Type[] Consumes { get; } = new Type[] {typeof(ProjectStarted), typeof(IssueCreated), typeof(IssueClosed), typeof(Commit)};
+            public Type Produces { get; } = typeof(FakeThing);
+            public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
+            public void Apply(IDocumentSession session, EventStream[] streams)
+            {
+                
+            }
+
+            public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+            {
+                if (!_failed && _random.Next(0, 10) == 9)
+                {
+                    _failed = true;
+                    throw new DivideByZeroException();
+                }
+
+                _failed = false;
+
+                return Task.CompletedTask;
+            }
+        }
+
+        public class FakeThing
+        {
+            public Guid Id;
         }
     }
 }
