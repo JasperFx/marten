@@ -38,7 +38,11 @@ namespace Marten.Events.Projections
 
         public async Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
         {
-            foreach (var stream in MatchingStreams(streams))
+            var matchingStreams = MatchingStreams(streams);
+
+            await _finder.FetchAllAggregates(session, matchingStreams, token).ConfigureAwait(false);
+
+            foreach (var stream in matchingStreams)
             {
                 var state = await _finder.FindAsync(stream, session, token).ConfigureAwait(false) ?? new T();
                 update(state, stream);

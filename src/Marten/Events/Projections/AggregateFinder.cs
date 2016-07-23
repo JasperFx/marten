@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
@@ -46,6 +47,11 @@ namespace Marten.Events.Projections
             _setId(returnValue, stream.Id);
 
             return returnValue;
+        }
+
+        public async Task FetchAllAggregates(IDocumentSession session, EventStream[] streams, CancellationToken token)
+        {
+            await session.LoadManyAsync<T>(token, streams.Select(x => x.Id).ToArray()).ConfigureAwait(false);
         }
     }
 }
