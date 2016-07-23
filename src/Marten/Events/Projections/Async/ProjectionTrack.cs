@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Baseline;
+using Marten.Events.Projections.Async.ErrorHandling;
 using Marten.Util;
 
 namespace Marten.Events.Projections.Async
@@ -16,6 +17,7 @@ namespace Marten.Events.Projections.Async
         private ActionBlock<EventPage> _executionTrack;
         private readonly IFetcher _fetcher;
         private readonly IDaemonLogger _logger;
+        private readonly IDaemonErrorHandler _errorHandler;
         private readonly IProjection _projection;
         private readonly TaskCompletionSource<long> _rebuildCompletion = new TaskCompletionSource<long>();
         private readonly IDocumentStore _store;
@@ -23,11 +25,12 @@ namespace Marten.Events.Projections.Async
         private bool _isDisposed;
         private bool _atEndOfEventLog;
 
-        public ProjectionTrack(IFetcher fetcher, IDocumentStore store, IProjection projection, IDaemonLogger logger)
+        public ProjectionTrack(IFetcher fetcher, IDocumentStore store, IProjection projection, IDaemonLogger logger, IDaemonErrorHandler errorHandler)
         {
             _fetcher = fetcher;
             _projection = projection;
             _logger = logger;
+            _errorHandler = errorHandler;
             _store = store;
 
             _events = store.Schema.Events;
@@ -76,8 +79,8 @@ namespace Marten.Events.Projections.Async
 
         private void stopConsumers()
         {
-            UpdateBlock.Complete();
-            _executionTrack.Complete();
+            UpdateBlock?.Complete();
+            _executionTrack?.Complete();
         }
 
         public void QueuePage(EventPage page)
@@ -162,8 +165,13 @@ namespace Marten.Events.Projections.Async
 
             await _fetcher.Stop().ConfigureAwait(false);
 
-            await clearExistingState(token).ConfigureAwait(false);
 
+            await _errorHandler.TryAction(async () =>
+            {
+                await clearExistingState(token).ConfigureAwait(false);
+            }, this).ConfigureAwait(false);
+
+            
             await RunUntilEndOfEvents(token).ConfigureAwait(false);
         }
 
@@ -172,6 +180,16 @@ namespace Marten.Events.Projections.Async
             // Duplicated, ignore. Shouldn't happen, but Fetcher is screwed up, so...
             if (page.To <= LastEncountered) return;
 
+            await _errorHandler.TryAction(async () =>
+            {
+                await executePage(page, cancellation).ConfigureAwait(false);
+            }, this).ConfigureAwait(false);
+
+
+        }
+
+        private async Task executePage(EventPage page, CancellationToken cancellation)
+        {
             using (var session = _store.OpenSession())
             {
                 await _projection.ApplyAsync(session, page.Streams, cancellation).ConfigureAwait(false);
@@ -210,9 +228,9 @@ namespace Marten.Events.Projections.Async
                 _logger.ProjectionBackedUp(this, Accumulator.CachedEventCount, page);
                 await _fetcher.Pause().ConfigureAwait(false);
             }
-            
 
-            _executionTrack.Post(page);
+
+            _executionTrack?.Post(page);
         }
 
         private bool shouldRestartFetcher()

@@ -28,7 +28,7 @@ namespace Marten.Events.Projections.Async
                         $"No projection is configured for view type {projection.Produces.FullName}");
 
                 var fetcher = new Fetcher(store, settings, projection, logger, _errorHandler);
-                var track = new ProjectionTrack(fetcher, store, projection, logger);
+                var track = new ProjectionTrack(fetcher, store, projection, logger, _errorHandler);
 
                 _tracks.Add(projection.Produces, track);
             }
