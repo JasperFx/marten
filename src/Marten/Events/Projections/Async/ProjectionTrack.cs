@@ -13,7 +13,7 @@ namespace Marten.Events.Projections.Async
     {
         private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
         private readonly EventGraph _events;
-        private readonly ActionBlock<EventPage> _executionTrack;
+        private ActionBlock<EventPage> _executionTrack;
         private readonly IFetcher _fetcher;
         private readonly IDaemonLogger _logger;
         private readonly IProjection _projection;
@@ -32,22 +32,26 @@ namespace Marten.Events.Projections.Async
 
             _events = store.Schema.Events;
 
-            _executionTrack = new ActionBlock<EventPage>(page => ExecutePage(page, _cancellation.Token), new ExecutionDataflowBlockOptions
-            {
-                MaxDegreeOfParallelism = 1,
-                EnsureOrdered = true
-            });
+            ViewType = _projection.Produces;
+        }
+
+        private void startConsumers()
+        {
+            _executionTrack = new ActionBlock<EventPage>(page => ExecutePage(page, _cancellation.Token),
+                new ExecutionDataflowBlockOptions
+                {
+                    MaxDegreeOfParallelism = 1,
+                    EnsureOrdered = true
+                });
 
             UpdateBlock = new ActionBlock<IDaemonUpdate>(msg => msg.Invoke(this), new ExecutionDataflowBlockOptions
             {
                 MaxDegreeOfParallelism = 1,
                 EnsureOrdered = true
             });
-
-            ViewType = _projection.Produces;
         }
 
-        public ActionBlock<IDaemonUpdate> UpdateBlock { get; }
+        public ActionBlock<IDaemonUpdate> UpdateBlock { get; private set; }
 
         public Accumulator Accumulator { get; } = new Accumulator();
 
@@ -64,9 +68,15 @@ namespace Marten.Events.Projections.Async
             _cancellation.Cancel();
 
             _isDisposed = true;
-            UpdateBlock.Complete();
+            stopConsumers();
 
             _waiters.Clear();
+            
+        }
+
+        private void stopConsumers()
+        {
+            UpdateBlock.Complete();
             _executionTrack.Complete();
         }
 
@@ -101,13 +111,18 @@ namespace Marten.Events.Projections.Async
 
             _store.Schema.EnsureStorageExists(_projection.Produces);
 
+            startConsumers();
+
             Lifecycle = lifecycle;
             _fetcher.Start(this, lifecycle, _cancellation.Token);
+
+
         }
 
         public async Task Stop()
         {
             _logger.Stopping(this);
+            stopConsumers();
             await _fetcher.Stop().ConfigureAwait(false);
             _logger.Stopped(this);
 
