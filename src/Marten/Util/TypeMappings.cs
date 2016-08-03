@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Baseline;
 using NpgsqlTypes;
 
@@ -57,13 +58,20 @@ namespace Marten.Util
             return type;
         }
 
+        public static string ReplaceMultiSpace(this string str, string newStr)
+        {
+            var regex = new Regex("\\s+");
+            return regex.Replace(str, newStr);
+        }
+
         public static string CanonicizeSql(this string sql)
         {
             var replaced = sql
                 .Trim()
                 .Replace('\n', ' ')
                 .Replace('\r', ' ')
-                .Replace("  ", " ")
+                .Replace('\t', ' ')
+                .ReplaceMultiSpace(" ")
                 .Replace("character varying", "varchar")
                 .Replace("Boolean", "boolean")
                 .Replace("numeric", "decimal").TrimEnd(';').TrimEnd();
