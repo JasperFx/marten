@@ -109,14 +109,20 @@ namespace Marten.Events
             return aggregate;
         }
 
-        public Task<T> AggregateStreamAsync<T>(Guid streamId, int version = 0, DateTime? timestamp = null,
+        public async Task<T> AggregateStreamAsync<T>(Guid streamId, int version = 0, DateTime? timestamp = null,
             CancellationToken token = new CancellationToken()) where T : class, new()
         {
             var inner = new EventQueryHandler(_selector, streamId, version, timestamp);
             var aggregator = _schema.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
 
-            return _connection.FetchAsync(handler, null, token);
+            var aggregate = await _connection.FetchAsync(handler, null, token).ConfigureAwait(false);
+
+            var assignment = _schema.IdAssignmentFor<T>();
+            assignment.Assign(aggregate, streamId);
+
+
+            return aggregate;
         }
 
 

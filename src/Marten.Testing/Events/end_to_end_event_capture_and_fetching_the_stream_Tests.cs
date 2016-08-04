@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Testing.Events.Projections;
 using Shouldly;
@@ -169,6 +170,32 @@ namespace Marten.Testing.Events
                 session.SaveChanges();
 
                 var party = session.Events.AggregateStream<QuestParty>(questId);
+                party.Id.ShouldBe(questId);
+            }
+        }
+
+        [Fact]
+        public async Task aggregate_stream_async_has_the_id()
+        {
+            var store = InitStore("event_store");
+            var questId = Guid.NewGuid();
+
+            using (var session = store.OpenSession())
+            {
+                var parties = await session.Query<QuestParty>().ToListAsync();
+                parties.Count.ShouldBeLessThanOrEqualTo(0);
+            }
+
+            //This SaveChanges will fail with missing method (ro collection configured?)
+            using (var session = store.OpenSession())
+            {
+                var started = new QuestStarted { Name = "Destroy the One Ring" };
+                var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
+
+                session.Events.StartStream<Quest>(questId, started, joined1);
+                await session.SaveChangesAsync();
+
+                var party = await session.Events.AggregateStreamAsync<QuestParty>(questId);
                 party.Id.ShouldBe(questId);
             }
         }
