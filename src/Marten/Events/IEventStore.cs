@@ -16,6 +16,15 @@ namespace Marten.Events
         void Append(Guid stream, params object[] events);
 
         /// <summary>
+        /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
+        /// matches supplied expected version or transaction is aborted.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="expectedVersion">Expected maximum event version after append</param>
+        /// <param name="events"></param>
+        void Append(Guid stream, int expectedVersion, params object[] events);
+
+        /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
         /// </summary>
         /// <typeparam name="TAggregate"></typeparam>
