@@ -236,6 +236,12 @@ namespace Marten
 
 
         /// <summary>
+        /// Allows you to modify how the DDL for document tables and upsert functions is
+        /// written
+        /// </summary>
+        public DdlRules DdlRules { get; } = new DdlRules();
+
+        /// <summary>
         /// Optional. If set, adds the specified user as the owner of database tables created by Marten
         /// </summary>
         public string OwnerName { get; set; }
@@ -263,5 +269,52 @@ namespace Marten
         ///     Add custom Linq expression parsers for your own methods
         /// </summary>
         public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
+    }
+
+    public enum CreationStyle
+    {
+        /// <summary>
+        /// Export DDL by first issuing a DROP statement for a table, then the CREATE statement. This is the default
+        /// </summary>
+        DropThenCreate,
+
+        /// <summary>
+        /// Export DDL for table creation by using a CREATE IF NOT EXISTS clause w/o a prior DROP statement
+        /// </summary>
+        CreateIfNotExists
+    }
+
+    public enum SecurityRights
+    {
+        /// <summary>
+        /// Upsert functions will execute with the rights of the current Postgresql user. This is the default
+        /// in both Marten and Postgresql.
+        /// </summary>
+        Invoker,
+
+        /// <summary>
+        /// Upsert functions will execute with the rights of the Postgresql user that created the schema
+        /// objects. 
+        /// </summary>
+        Definer
+    }
+
+    public class DdlRules
+    {
+        /// <summary>
+        /// Alters the syntax used to create tables in DDL
+        /// </summary>
+        public CreationStyle TableCreation { get; set; } = CreationStyle.DropThenCreate;
+
+        /// <summary>
+        /// Alters the user rights for the upsert functions in DDL
+        /// </summary>
+        public SecurityRights UpsertRights { get; set; } = SecurityRights.Invoker;
+
+
+        /// <summary>
+        /// Adds declarations to the DDL to give a specific DB role rights to read
+        /// </summary>
+        public IList<string> GrantToRules { get; } = new List<string>();
     }
 }

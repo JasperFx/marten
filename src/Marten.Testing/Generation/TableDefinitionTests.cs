@@ -92,5 +92,38 @@ namespace Marten.Testing.Generation
             table1.Equals(table2).ShouldBeTrue();
             table2.Equals(table1).ShouldBeTrue();
         }
+
+        [Fact]
+        public void write_ddl_in_default_drop_then_create_mode()
+        {
+            var users = DocumentMapping.For<User>();
+            var table = users.SchemaObjects.StorageTable();
+            var rules = new DdlRules
+            {
+                TableCreation = CreationStyle.DropThenCreate
+            };
+
+            var ddl = table.ToDDL(rules);
+
+            ddl.ShouldContain("DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
+            ddl.ShouldContain("CREATE TABLE public.mt_doc_user");
+
+        }
+
+        [Fact]
+        public void write_ddl_in_create_if_not_exists_mode()
+        {
+            var users = DocumentMapping.For<User>();
+            var table = users.SchemaObjects.StorageTable();
+            var rules = new DdlRules
+            {
+                TableCreation = CreationStyle.CreateIfNotExists
+            };
+
+            var ddl = table.ToDDL(rules);
+
+            ddl.ShouldNotContain("DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
+            ddl.ShouldContain("CREATE TABLE IF NOT EXISTS public.mt_doc_user");
+        }
     }
 }

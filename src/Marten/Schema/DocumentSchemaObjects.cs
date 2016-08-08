@@ -33,7 +33,7 @@ namespace Marten.Schema
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             var table = StorageTable();
-            table.Write(writer);
+            table.Write(schema.StoreOptions.DdlRules, writer);
             writer.WriteLine();
             writer.WriteLine();
 

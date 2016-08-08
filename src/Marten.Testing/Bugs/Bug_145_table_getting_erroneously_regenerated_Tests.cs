@@ -36,10 +36,10 @@ namespace Marten.Testing.Bugs
 
                 var writer = new StringWriter();
                 writer.WriteLine("Expected:");
-                configured.Write(writer);
+                configured.Write(theStore.Schema.StoreOptions.DdlRules, writer);
                 writer.WriteLine();
                 writer.WriteLine("But from the database, was:");
-                existing.Write(writer);
+                existing.Write(theStore.Schema.StoreOptions.DdlRules, writer);
 
                 throw new Exception(writer.ToString());
             }

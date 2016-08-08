@@ -16,7 +16,7 @@ namespace Marten.Testing.Generation
             table.RemoveColumn(DocumentMapping.VersionColumn);
 
             var writer = new StringWriter();
-            table.Write(writer);
+            table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
 
             using (var conn = theStore.Advanced.OpenConnection())
             {
@@ -41,7 +41,7 @@ namespace Marten.Testing.Generation
             table.RemoveColumn(DocumentMapping.DotNetTypeColumn);
 
             var writer = new StringWriter();
-            table.Write(writer);
+            table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
 
             using (var conn = theStore.Advanced.OpenConnection())
             {
@@ -66,7 +66,7 @@ namespace Marten.Testing.Generation
             table.RemoveColumn(DocumentMapping.LastModifiedColumn);
 
             var writer = new StringWriter();
-            table.Write(writer);
+            table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
 
             using (var conn = theStore.Advanced.OpenConnection())
             {

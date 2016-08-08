@@ -68,6 +68,15 @@ namespace Marten.Testing
             // ENDSAMPLE
         }
 
+        [Fact]
+        public void default_ddl_rules()
+        {
+            var options = new StoreOptions();
+
+            options.DdlRules.TableCreation.ShouldBe(CreationStyle.DropThenCreate);
+            options.DdlRules.UpsertRights.ShouldBe(SecurityRights.Invoker);
+        }
+
         public class FakeUserStorage : IDocumentStorage, IdAssignment<User>
         {
             public Type DocumentType { get; } = typeof (User);

@@ -48,10 +48,27 @@ namespace Marten.Generation
             PrimaryKey = primaryKey;
         }
 
-        public void Write(StringWriter writer)
+        public string ToDDL(DdlRules rules)
         {
-            writer.WriteLine("DROP TABLE IF EXISTS {0} CASCADE;", Table.QualifiedName);
-            writer.WriteLine("CREATE TABLE {0} (", Table.QualifiedName);
+            var writer = new StringWriter();
+
+            Write(rules, writer);
+
+            return writer.ToString();
+        }
+
+        public void Write(DdlRules rules, StringWriter writer)
+        {
+
+            if (rules.TableCreation == CreationStyle.DropThenCreate)
+            {
+                writer.WriteLine("DROP TABLE IF EXISTS {0} CASCADE;", Table.QualifiedName);
+                writer.WriteLine("CREATE TABLE {0} (", Table.QualifiedName);
+            }
+            else
+            {
+                writer.WriteLine("CREATE TABLE IF NOT EXISTS {0} (", Table.QualifiedName);
+            }
 
             var length = Columns.Select(x => x.Name.Length).Max() + 4;
 
