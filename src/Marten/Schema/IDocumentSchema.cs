@@ -151,5 +151,13 @@ namespace Marten.Schema
         void ApplyAllConfiguredChangesToDatabase();
 
         void EnsureFunctionExists(string functionName);
+
+
+        /// <summary>
+        /// Generate a DDL patch for one specific document type
+        /// </summary>
+        /// <param name="documentType"></param>
+        /// <returns></returns>
+        SchemaPatch ToPatch(Type documentType);
     }
 }

@@ -257,6 +257,15 @@ namespace Marten.Schema
 
             return patch;
         }
+
+        public SchemaPatch ToPatch(Type documentType)
+        {
+            var mapping = MappingFor(documentType);
+            var patch = new SchemaPatch();
+            mapping.SchemaObjects.WritePatch(this, patch);
+
+            return patch;
+        }
         
         public void AssertDatabaseMatchesConfiguration()
         {
@@ -304,6 +313,8 @@ namespace Marten.Schema
                 SchemaPatch.WriteTransactionalFile(file, writer.ToString());
             }
         }
+
+
 
 
         public string ToDDL()

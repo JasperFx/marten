@@ -67,6 +67,32 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void can_create_patch_for_a_single_document_type()
+        {
+            StoreOptions(_ =>
+            {
+                // This is enough to tell Marten that the User
+                // document is persisted and needs schema objects
+                _.Schema.For<User>();
+            });
+
+            var patch = theStore.Schema.ToPatch(typeof(User));
+
+            patch.UpdateDDL.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
+            patch.UpdateDDL.ShouldContain("CREATE TABLE public.mt_doc_user");
+            patch.RollbackDDL.ShouldContain("drop table if exists public.mt_doc_user cascade;");
+
+            patch.WriteUpdateFile("update_users.sql");
+
+            var text = new FileSystem().ReadStringFromFile("update_users.sql");
+
+            text.ShouldContain("DO LANGUAGE plpgsql $tran$");
+            text.ShouldContain("$tran$;");
+
+
+        }
+
+        [Fact]
         public void can_do_schema_validation_with_no_detected_changes()
         {
             theStore.Schema.EnsureStorageExists(typeof(User));
