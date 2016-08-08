@@ -82,9 +82,9 @@ namespace Marten.Testing.Schema
             patch.UpdateDDL.ShouldContain("CREATE TABLE public.mt_doc_user");
             patch.RollbackDDL.ShouldContain("drop table if exists public.mt_doc_user cascade;");
 
-            patch.WriteUpdateFile("update_users.sql");
+            patch.WriteUpdateFile("bin/update_users.sql");
 
-            var text = new FileSystem().ReadStringFromFile("update_users.sql");
+            var text = new FileSystem().ReadStringFromFile("bin/update_users.sql");
 
             text.ShouldContain("DO LANGUAGE plpgsql $tran$");
             text.ShouldContain("$tran$;");

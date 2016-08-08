@@ -126,4 +126,19 @@ namespace Marten.Testing.Generation
             ddl.ShouldContain("CREATE TABLE IF NOT EXISTS public.mt_doc_user");
         }
     }
+
+    public class using_custom_ddl_rules_smoke_tests : IntegratedFixture
+    {
+        [Fact]
+        public void can_use_CreateIfNotExists()
+        {
+            StoreOptions(_ =>
+            {
+                _.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
+            });
+
+            // Would blow up if it doesn't work;)
+            theStore.Schema.EnsureStorageExists(typeof(User));
+        }
+    }
 }
