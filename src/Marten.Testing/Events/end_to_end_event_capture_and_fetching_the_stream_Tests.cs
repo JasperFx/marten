@@ -416,6 +416,35 @@ namespace Marten.Testing.Events
 
         [Theory]
         [MemberData("SessionTypes")]
+        public void assert_on_max_event_id_on_event_stream_append(
+            DocumentTracking sessionType)
+        {
+            var store = InitStore("event_store");
+
+            var id = Guid.NewGuid();
+            var started = new QuestStarted();
+            
+            using (var session = store.OpenSession(sessionType))
+            {
+                // SAMPLE: append-events-assert-on-eventid
+                session.Events.StartStream<Quest>(id, started);
+                session.SaveChanges();
+
+                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+                // Events are appended into the stream only if the maximum event id for the stream
+                // would be 3 after the append operation.
+                session.Events.Append(id, 3, joined, departed);
+
+                session.SaveChanges();
+                // ENDSAMPLE
+            }
+        }
+
+
+        [Theory]
+        [MemberData("SessionTypes")]
         public void capture_immutable_events(DocumentTracking sessionType)
         {
             var store = InitStore();
