@@ -86,6 +86,11 @@ namespace Marten.Generation
             });
 
             writer.WriteLine(");");
+
+            rules.GrantToRoles.Each(role =>
+            {
+                writer.WriteLine($"GRANT SELECT ({Columns.Select(x => x.Name).Join(", ")}) ON TABLE {Table.QualifiedName} TO \"{role}\";");
+            });
         }
 
         public TableColumn Column(string name)

@@ -382,6 +382,28 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("jsonb NOT NULL");
         }
 
+
+        [Fact]
+        public void generate_simple_document_table_with_grants()
+        {
+            StoreOptions(_ =>
+            {
+                _.DdlRules.GrantToRoles.Add("foo");
+                _.DdlRules.GrantToRoles.Add("bar");
+            });
+
+            var mapping = DocumentMapping.For<MySpecialDocument>();
+            var builder = new StringWriter();
+
+            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldContain("GRANT SELECT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
+            sql.ShouldContain("GRANT SELECT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
+
+        }
+
         [Fact]
         public void generate_simple_document_table_on_other_schema()
         {

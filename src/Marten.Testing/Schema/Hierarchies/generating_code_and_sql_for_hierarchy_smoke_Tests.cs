@@ -29,6 +29,23 @@ namespace Marten.Testing.Schema.Hierarchies
         }
 
         [Fact]
+        public void can_generate_upsert_function_with_grants()
+        {
+            var writer = new StringWriter();
+
+            var rules = new DdlRules();
+            rules.GrantToRoles.Add("foo");
+            rules.GrantToRoles.Add("bar");
+
+            new UpsertFunction(theHierarchy).WriteFunctionSql(rules, writer);
+
+            var sql = writer.ToString();
+
+            sql.ShouldContain("GRANT EXECUTE ON public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) TO \"foo\";");
+            sql.ShouldContain("GRANT EXECUTE ON public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) TO \"bar\";");
+        }
+
+        [Fact]
         public void can_generate_upsert_function_with_security_definer()
         {
             var writer = new StringWriter();

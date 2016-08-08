@@ -77,6 +77,8 @@ namespace Marten.Schema
                 ? "SECURITY INVOKER"
                 : "SECURITY DEFINER";
 
+            
+
             writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {securityDeclaration} AS $function$
 DECLARE
@@ -92,6 +94,11 @@ END;
 $function$;
 ");
 
+
+            rules.GrantToRoles.Each(role =>
+            {
+                writer.WriteLine($"GRANT EXECUTE ON {_functionName.QualifiedName}({argList}) TO \"{role}\";");
+            });
 
         }
 

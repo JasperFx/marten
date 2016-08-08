@@ -315,6 +315,6 @@ namespace Marten
         /// <summary>
         /// Adds declarations to the DDL to give a specific DB role rights to read
         /// </summary>
-        public IList<string> GrantToRules { get; } = new List<string>();
+        public IList<string> GrantToRoles { get; } = new List<string>();
     }
 }
