@@ -1,3 +1,6 @@
+DO LANGUAGE plpgsql $tran$
+BEGIN
+
 
 CREATE OR REPLACE FUNCTION public.mt_transform_patch_doc(doc JSONB, patch JSONB) RETURNS JSONB AS $$
 
@@ -170,3 +173,7 @@ module.exports = function(doc, patch){
 
 $$ LANGUAGE plv8 IMMUTABLE STRICT;
 
+
+
+END;
+$tran$;

@@ -232,13 +232,11 @@ namespace Marten.Schema
         public void WritePatch(string filename)
         {
             var patch = ToPatch();
-            var fileSystem = new FileSystem();
 
-
-            fileSystem.WriteStringToFile(filename, patch.UpdateDDL);
+            patch.WriteUpdateFile(filename);
 
             var dropFile = SchemaPatch.ToDropFileName(filename);
-            fileSystem.WriteStringToFile(dropFile, patch.RollbackDDL);
+            patch.WriteRollbackFile(dropFile);
 
         }
 
@@ -295,7 +293,6 @@ namespace Marten.Schema
             var schemaObjects = AllSchemaObjects().ToArray();
             writeDatabaseSchemaGenerationScript(directory, system, schemaObjects);
 
-            var fileSystem = new FileSystem();
 
             foreach (var schemaObject in schemaObjects)
             {
@@ -303,7 +300,8 @@ namespace Marten.Schema
                 schemaObject.WriteSchemaObjects(this, writer);
 
                 var file = directory.AppendPath(schemaObject.Name + ".sql");
-                fileSystem.WriteStringToFile(file, writer.ToString());
+
+                SchemaPatch.WriteTransactionalFile(file, writer.ToString());
             }
         }
 
@@ -312,13 +310,18 @@ namespace Marten.Schema
         {
             var writer = new StringWriter();
 
-            var allSchemaNames = AllSchemaNames();
-            DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, writer);
-
-            foreach (var schemaObject in AllSchemaObjects())
+            SchemaPatch.WriteTransactionalScript(writer, w =>
             {
-                schemaObject.WriteSchemaObjects(this, writer);
-            }
+                var allSchemaNames = AllSchemaNames();
+                DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, w);
+
+                foreach (var schemaObject in AllSchemaObjects())
+                {
+                    schemaObject.WriteSchemaObjects(this, writer);
+                }
+            });
+
+
 
             return writer.ToString();
         }

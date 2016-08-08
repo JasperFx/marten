@@ -37,5 +37,43 @@ namespace Marten.Schema
 
         public string UpdateDDL => _up.Writer.ToString();
         public string RollbackDDL => _down.Writer.ToString();
+
+        public static void WriteTransactionalScript(TextWriter writer, Action<TextWriter> writeStep)
+        {
+            writer.WriteLine("DO LANGUAGE plpgsql $tran$");
+            writer.WriteLine("BEGIN");
+            writer.WriteLine("");
+
+            writeStep(writer);
+
+            writer.WriteLine("");
+            writer.WriteLine("END;");
+            writer.WriteLine("$tran$;");
+        }
+
+        public static void WriteTransactionalFile(string file, string sql)
+        {
+            using (var stream = new FileStream(file, FileMode.Create))
+            {
+                var writer = new StreamWriter(stream) {AutoFlush = true};
+
+                WriteTransactionalScript(writer, w => w.WriteLine(sql));
+
+                
+
+                stream.Flush(true);
+            }
+        }
+
+        public void WriteUpdateFile(string file)
+        {
+            WriteTransactionalFile(file, UpdateDDL);
+        }
+
+
+        public void WriteRollbackFile(string file)
+        {
+            WriteTransactionalFile(file, RollbackDDL);
+        }
     }
 }

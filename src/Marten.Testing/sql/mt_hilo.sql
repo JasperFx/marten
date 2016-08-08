@@ -1,3 +1,6 @@
+DO LANGUAGE plpgsql $tran$
+BEGIN
+
 DROP TABLE IF EXISTS public.mt_hilo CASCADE;
 CREATE TABLE public.mt_hilo (
 	entity_name			varchar CONSTRAINT pk_mt_hilo PRIMARY KEY,
@@ -24,3 +27,7 @@ $$ LANGUAGE plpgsql;
 
 
 
+
+
+END;
+$tran$;

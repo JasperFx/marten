@@ -56,14 +56,14 @@ $$;
             }
         }
 
-        public static void WriteSql(StoreOptions options, IEnumerable<string> schemaNames, StringWriter writer)
+        public static void WriteSql(StoreOptions options, IEnumerable<string> schemaNames, TextWriter writer)
         {
             writer.Write(BeginScript);
             schemaNames.Each(name => WriteSql(options, name, writer));
             writer.WriteLine(EndScript);
         }
 
-        private static void WriteSql(StoreOptions options, string databaseSchemaName, StringWriter writer)
+        private static void WriteSql(StoreOptions options, string databaseSchemaName, TextWriter writer)
         {
             writer.WriteLine($@"
     IF NOT EXISTS(
