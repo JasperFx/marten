@@ -33,7 +33,7 @@ namespace Marten.Testing.Schema
                 patch.ShouldNotContain("mt_doc_target");
 
                 patch.ShouldContain("DROP FUNCTION public.mt_upsert_issue(doc jsonb, docdotnettype character varying, docid uuid, docversion uuid) cascade;");
-                patch.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_issue(current_version uuid, doc JSONB, docDotNetType varchar, docId uuid, docVersion uuid) RETURNS UUID LANGUAGE plpgsql AS $function$");
+                patch.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_issue(current_version uuid, doc JSONB, docDotNetType varchar, docId uuid, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
                 patch.ShouldContain("-- SchemaDiff for Marten.Testing.Documents.User");
                 patch.ShouldContain("ALTER TABLE public.mt_doc_user ADD COLUMN user_name varchar;");
                 patch.ShouldContain("update public.mt_doc_user set user_name = data ->> 'UserName'");

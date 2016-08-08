@@ -38,7 +38,7 @@ namespace Marten.Schema
             writer.WriteLine();
 
             var function = new UpsertFunction(_mapping);
-            function.WriteFunctionSql(writer);
+            function.WriteFunctionSql(schema.StoreOptions.DdlRules, writer);
             
 
             _mapping.ForeignKeys.Each(x =>
@@ -66,7 +66,7 @@ namespace Marten.Schema
             {
                 writer.WriteLine($"ALTER TABLE {_mapping.Table} OWNER TO \"{ownerName}\";");
 
-                var functionBody = function.ToBody();
+                var functionBody = function.ToBody(schema.StoreOptions.DdlRules);
                 writer.WriteLine(functionBody.ToOwnershipCommand(ownerName));
             }
 
@@ -128,7 +128,7 @@ namespace Marten.Schema
         public SchemaDiff CreateSchemaDiff(IDocumentSchema schema)
         {
             var objects = schema.DbObjects.FindSchemaObjects(_mapping);
-            return new SchemaDiff(objects, _mapping);
+            return new SchemaDiff(objects, _mapping, schema.StoreOptions.DdlRules);
         }
 
         private void runDependentScripts(SchemaPatch runner)

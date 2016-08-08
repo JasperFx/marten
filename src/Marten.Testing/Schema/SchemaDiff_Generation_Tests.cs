@@ -82,6 +82,8 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
+            store1.Advanced.Clean.CompletelyRemoveAll();
+
             store1.Schema.EnsureStorageExists(typeof(User));
 
 

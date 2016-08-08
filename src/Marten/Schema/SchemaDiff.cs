@@ -11,7 +11,7 @@ namespace Marten.Schema
     {
         private readonly DocumentMapping _mapping;
 
-        public SchemaDiff(SchemaObjects existing, DocumentMapping mapping)
+        public SchemaDiff(SchemaObjects existing, DocumentMapping mapping, DdlRules rules)
         {
             if (existing.HasNone())
             {
@@ -51,7 +51,7 @@ namespace Marten.Schema
 
                 var expectedFunction = new UpsertFunction(mapping);
 
-                FunctionDiff = new FunctionDiff(expectedFunction.ToBody(), existing.Function);
+                FunctionDiff = new FunctionDiff(expectedFunction.ToBody(rules), existing.Function);
             }
 
             _mapping = mapping;
