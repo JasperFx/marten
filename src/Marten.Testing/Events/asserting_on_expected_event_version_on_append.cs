@@ -44,7 +44,7 @@ namespace Marten.Testing.Events
                 session.SaveChanges();
             }
 
-            Assert.Throws<PostgresException>(() => theSession.SaveChanges());
+            Assert.Throws<EventStreamUnexpectedMaxEventIdException>(() => theSession.SaveChanges());
 
             using (var session = theStore.OpenSession())
             {

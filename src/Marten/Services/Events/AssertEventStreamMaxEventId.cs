@@ -35,7 +35,7 @@ namespace Marten.Services.Events
   (SELECT max(events.version)
    FROM {tableName} AS events
    WHERE events.stream_id = '{stream}') <> {expectedVersion} THEN 
-RAISE EXCEPTION 'Unexpected MAX(id) for event stream'; END IF; END; $$;";
+RAISE EXCEPTION '{EventContracts.UnexpectedMaxEventIdForStream.Value}'; END IF; END; $$;";
         }
 
         public override string ToString()

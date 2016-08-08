@@ -3,6 +3,7 @@ using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Services.Events;
 using Npgsql;
 
 namespace Marten.Services
@@ -50,6 +51,11 @@ namespace Marten.Services
             {
                 action(cmd);
                 Logger.LogSuccess(cmd);
+            }
+            catch (NpgsqlException e) when (e.Message.IndexOf(EventContracts.UnexpectedMaxEventIdForStream, StringComparison.Ordinal) > -1)
+            {
+                Logger.LogFailure(cmd, e);
+                throw new EventStreamUnexpectedMaxEventIdException(e);
             }
             catch (Exception e)
             {
