@@ -8,6 +8,8 @@ using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Deletes;
+using Marten.Services.Events;
 
 namespace Marten.Events
 {
@@ -48,6 +50,12 @@ namespace Marten.Events
 
                 _unitOfWork.StoreStream(eventStream);
             }
+        }
+
+        public void Append(Guid stream, int expectedVersion, params object[] events)
+        {
+            Append(stream, events);
+            _unitOfWork.Add(new AssertEventStreamMaxEventId(stream, expectedVersion, _schema.Events.Table.QualifiedName));
         }
 
         public Guid StartStream<T>(Guid id, params object[] events) where T : class, new()

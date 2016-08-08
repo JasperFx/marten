@@ -49,3 +49,10 @@ If you have an existing stream, you can later append additional events with `IEv
 
 <[sample:append-events]>
 
+### Appending & Assertions ###
+
+`IEventStore.Append()` supports an overload taking in a parameter `int expectedVersion` that can be used to assert that events are inserted into the
+event stream if and only if the maximum event id for the stream matches the expected version after event insertions. Otherwise the transaction is aborted
+and a `EventStreamUnexpectedMaxEventIdException` exception is thrown.
+
+<[sample:append-events-assert-on-eventid]> 
