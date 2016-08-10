@@ -15,7 +15,6 @@ namespace Marten.Events.Projections.Async
     public class Fetcher : IDisposable, IFetcher
     {
         private readonly IConnectionFactory _connectionFactory;
-        private readonly string[] _eventTypeNames;
         private readonly IDaemonLogger _logger;
         private readonly IDaemonErrorHandler _errorHandler;
         private readonly NulloIdentityMap _map;
@@ -40,7 +39,7 @@ namespace Marten.Events.Projections.Async
             _selector = new EventSelector(store.Schema.Events, store.Advanced.Serializer);
             _map = new NulloIdentityMap(store.Advanced.Serializer);
 
-            _eventTypeNames = eventTypes.Select(x => store.Schema.Events.EventMappingFor(x).Alias).ToArray();
+            EventTypeNames = eventTypes.Select(x => store.Schema.Events.EventMappingFor(x).Alias).ToArray();
         }
 
         public Fetcher(IDocumentStore store, DaemonSettings settings, IProjection projection, IDaemonLogger logger, IDaemonErrorHandler errorHandler)
@@ -48,7 +47,7 @@ namespace Marten.Events.Projections.Async
         {
         }
 
-        public string[] EventTypeNames { get; set; } = new string[0];
+        public string[] EventTypeNames { get; }
 
         public void Dispose()
         {
@@ -77,35 +76,31 @@ namespace Marten.Events.Projections.Async
             _logger.FetchStarted(track);
 
             _fetchingTask =
-                Task.Factory.StartNew(async () =>
-                {
-                    await fetchEvents(track, lifecycle).ConfigureAwait(false);
-                },
-                    token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                Task.Run(() => fetchEvents(track, lifecycle), token)
                     .ContinueWith(t =>
                     {
                         _logger.FetchingStopped(track);
-                    }, token);
+                    }, token, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
 
 
-        public async Task Pause()
+        public Task Pause()
         {
             State = FetcherState.Paused;
 
-            await _fetchingTask.ConfigureAwait(false);
+            return _fetchingTask;
         }
 
-        public async Task Stop()
+        public Task Stop()
         {
             if (State != FetcherState.Active)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             State = FetcherState.Waiting;
 
-            await _fetchingTask.ConfigureAwait(false);
+            return _fetchingTask;
         }
 
         public FetcherState State { get; private set; }
@@ -134,14 +129,14 @@ namespace Marten.Events.Projections.Async
                     var sql =
                         $@"
 select seq_id from mt_events where seq_id > :last and seq_id <= :limit and age(transaction_timestamp() at time zone 'utc', mt_events.timestamp) >= :buffer order by seq_id;
-{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) and age(transaction_timestamp() at time zone 'utc', mt_events.timestamp) >= :buffer order by seq_id;       
+{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) and age(transaction_timestamp() at time zone 'utc', mt_events.timestamp) >= :buffer order by seq_id;
 ";
 
                     var cmd = conn.CreateCommand(sql)
                         .With("last", lastEncountered)
                         .With("limit", lastPossible)
                         .With("buffer", _settings.LeadingEdgeBuffer)
-                        .With("types", _eventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
+                        .With("types", EventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
 
                     var page = await buildEventPage(lastEncountered, cmd).ConfigureAwait(false);
 
