@@ -210,12 +210,11 @@ namespace Marten.Events.Projections.Async
 
         private async Task<long> currentEventNumber(CancellationToken token)
         {
-            var sql = $"select max(seq_id) from {_store.Schema.Events.Table}";
             using (var conn = _store.Advanced.OpenConnection())
             {
                 return await conn.ExecuteAsync(async (cmd, tkn) =>
                 {
-                    cmd.Sql(sql);
+                    cmd.Sql($"select max(seq_id) from {_store.Schema.Events.Table}");
                     using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                     {
                         var any = await reader.ReadAsync(tkn).ConfigureAwait(false);
