@@ -46,6 +46,12 @@ namespace Marten.Events.Projections
 
         public void Add(IProjection projection)
         {
+            if (projection == null) throw new ArgumentNullException(nameof(projection));
+            if (projection.Produces == null)
+            {
+                throw new InvalidOperationException("projection.Produces is null. Projection should defined the produced projection type.");
+            }
+
             _options.MappingFor(projection.Produces);
             _projections.Add(projection);
         }
