@@ -2,6 +2,7 @@ using System;
 using Marten.Linq.QueryHandlers;
 using Marten.Util;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace Marten.Events
 {
@@ -44,13 +45,13 @@ namespace Marten.Events
             
             if (_before.HasValue)
             {
-                var beforeParam = command.AddParameter(_before.Value);
+                var beforeParam = command.AddParameter(_before.Value, NpgsqlDbType.Timestamp);
                 sql += " and timestamp <= :" + beforeParam.ParameterName;
             }
 
             if (_after.HasValue)
             {
-                var afterParam = command.AddParameter(_after.Value);
+                var afterParam = command.AddParameter(_after.Value, NpgsqlDbType.Timestamp);
                 sql += " and timestamp >= :" + afterParam.ParameterName;
             }
 

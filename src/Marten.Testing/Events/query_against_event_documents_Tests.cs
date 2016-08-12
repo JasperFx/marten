@@ -112,7 +112,26 @@ namespace Marten.Testing.Events
             var now = DateTime.UtcNow;
             var results = theSession.Events.FetchAll(before: now);
 
-            results.Count.ShouldBe(0);
+            results.Count.ShouldBe(4);
+        }
+
+        [Fact]
+        public void can_fetch_all_events_between_two_timestamps()
+        {
+            theSession.Events.StartStream<Quest>(joined1);
+            theSession.SaveChanges();
+
+            var from = DateTime.UtcNow;
+            theSession.Events.StartStream<Quest>(departed1, joined2);
+            theSession.SaveChanges();
+
+            var to = DateTime.UtcNow;
+            theSession.Events.StartStream<Quest>(departed2);
+            theSession.SaveChanges();
+
+            var results = theSession.Events.FetchAll(after: from, before: to);
+
+            results.Count.ShouldBe(2);
         }
 
         [Fact]
