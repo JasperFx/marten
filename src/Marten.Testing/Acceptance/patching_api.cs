@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Marten.Patching;
 using Marten.Services;
-using Marten.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 
@@ -355,9 +355,10 @@ namespace Marten.Testing.Acceptance
             var target2 = query.Load<Target>(target.Id);
             target2.NumberArray.Length.ShouldBe(initialCount - 1);
 
-            target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.Except(new[] {child}));
+            target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.ExceptFirst(child));
         }
     }
+
         // ENDSAMPLE
 
         // SAMPLE: remove_repeated_primitive_element
@@ -394,7 +395,7 @@ namespace Marten.Testing.Acceptance
         // ENDSAMPLE
 
         // SAMPLE: remove_complex_element
-        [Fact]
+    [Fact]
     public void remove_complex_element()
     {
         var target = Target.Random(true);
@@ -418,5 +419,24 @@ namespace Marten.Testing.Acceptance
         }
     }
         // ENDSAMPLE
+    }
+
+    internal static class EnumerableExtensions
+    {
+        public static IEnumerable<T> ExceptFirst<T>(this IEnumerable<T> enumerable, T item)
+        {
+            var encountered = false;
+            var expected = new List<T>();
+            foreach (var val in enumerable)
+            {
+                if (!encountered && val.Equals(item))
+                {
+                    encountered = true;
+                    continue;
+                }
+                expected.Add(val);
+            }
+            return expected;
+        }
     }
 }
