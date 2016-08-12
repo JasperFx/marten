@@ -108,6 +108,92 @@ namespace Marten.Testing.AsyncDaemon
         }
 
 
+        [Fact]
+        public async Task build_continuously_as_events_flow_in_on_other_schema()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
+                _.Events.DatabaseSchemaName = "events";
+            });
+
+            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
+            {
+                LeadingEdgeBuffer = 1.Seconds()
+            }))
+            {
+                daemon.StartAll();
+
+                await _fixture.PublishAllProjectEventsAsync(theStore);
+                //_fixture.PublishAllProjectEvents(theStore);
+
+                // Runs all projections until there are no more events coming in
+                await daemon.WaitForNonStaleResults().ConfigureAwait(false);
+
+                await daemon.StopAll().ConfigureAwait(false);
+            }
+
+
+            _fixture.CompareActiveProjects(theStore);
+        }
+
+        [Fact]
+        public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_on_other_schema()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
+                _.Events.DatabaseSchemaName = "events";
+            });
+
+            _fixture.PublishAllProjectEvents(theStore);
+
+
+            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
+            {
+                LeadingEdgeBuffer = 0.Seconds()
+            }))
+            {
+                await daemon.Rebuild<ActiveProject>().ConfigureAwait(false);
+            }
+
+            _fixture.CompareActiveProjects(theStore);
+        }
+
+        [Fact]
+        public async Task run_with_error_handling_on_other_schema()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
+                _.Events.AsyncProjections.Add(new OccasionalErroringProjection());
+                _.Events.DatabaseSchemaName = "events";
+            });
+
+            var settings = new DaemonSettings
+            {
+                LeadingEdgeBuffer = 0.Seconds()
+            };
+
+            settings.ExceptionHandling.OnException<DivideByZeroException>().Retry(3);
+
+
+            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: settings))
+            {
+                daemon.StartAll();
+
+                await _fixture.PublishAllProjectEventsAsync(theStore);
+                //_fixture.PublishAllProjectEvents(theStore);
+
+                // Runs all projections until there are no more events coming in
+                await daemon.WaitForNonStaleResults().ConfigureAwait(false);
+
+                await daemon.StopAll().ConfigureAwait(false);
+            }
+
+            _fixture.CompareActiveProjects(theStore);
+        }
+
         public class OccasionalErroringProjection : IProjection
         {
             private readonly Random _random = new Random(5);
