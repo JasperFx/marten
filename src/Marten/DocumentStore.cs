@@ -259,6 +259,17 @@ namespace Marten
 
         public IDiagnostics Diagnostics { get; }
 
+        public IDocumentSession OpenSession(SessionOptions options)
+        {
+            var map = createMap(options.Tracking);
+            var session = new DocumentSession(this, _options, Schema, _serializer,
+                new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, options.IsolationLevel, options.Timeout), _parser, map);
+
+            session.Logger = _logger.StartSession(session);
+
+            return session;
+        }
+
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
@@ -297,6 +308,19 @@ namespace Marten
         public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             return OpenSession(DocumentTracking.None, isolationLevel);
+        }
+
+        public IQuerySession QuerySession(SessionOptions options)
+        {
+            var parser = new MartenQueryParser();
+
+            var session = new QuerySession(this, Schema, _serializer,
+                new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout), parser,
+                new NulloIdentityMap(_serializer));
+
+            session.Logger = _logger.StartSession(session);
+
+            return session;
         }
 
         public IQuerySession QuerySession()

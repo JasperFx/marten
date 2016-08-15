@@ -4,6 +4,7 @@ using System.Data;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Transforms;
 
 namespace Marten
@@ -43,6 +44,13 @@ namespace Marten
         /// <returns></returns>
         IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+        /// <summary>
+        ///     Open a new IDocumentSession with the supplied DocumentTracking.
+        ///     "IdentityOnly" is the default.
+        /// </summary>
+        /// <param name="options">Additional options for session</param>
+        /// <returns></returns>
+        IDocumentSession OpenSession(SessionOptions options);
 
         /// <summary>
         ///     Convenience method to create a new "lightweight" IDocumentSession with no IdentityMap
@@ -64,6 +72,14 @@ namespace Marten
         /// </summary>
         /// <returns></returns>
         IQuerySession QuerySession();
+
+        /// <summary>
+        ///     Opens a read-only IQuerySession to the current document store for efficient
+        ///     querying without any underlying object tracking.
+        /// </summary>
+        /// <param name="options">Additional options for session. DocumentTracking is not applicable for IQuerySession.</param>        
+        /// <returns></returns>
+        IQuerySession QuerySession(SessionOptions options);
 
         /// <summary>
         ///     Bulk insert a potentially mixed enumerable of document types
