@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Reflection;
 using Baseline.Reflection;
 using Marten.Schema;
@@ -13,6 +14,15 @@ namespace Marten.Testing.Schema
         public readonly JsonLocatorField theStringField = JsonLocatorField.For<User>(EnumStorage.AsInteger, x => x.FirstName);
         public readonly JsonLocatorField theNumberField = JsonLocatorField.For<User>(EnumStorage.AsInteger, x => x.Age);
         public readonly JsonLocatorField theEnumField = JsonLocatorField.For<Target>(EnumStorage.AsInteger, x => x.Color);
+
+
+        [Fact]
+        public void selection_locator_matches_sql_locator_for_non_dates()
+        {
+            theStringField.SqlLocator.ShouldBe(theStringField.SelectionLocator);
+            theNumberField.SqlLocator.ShouldBe(theNumberField.SelectionLocator);
+            theEnumField.SqlLocator.ShouldBe(theEnumField.SelectionLocator);
+        }
 
         [Fact]
         public void member_name_is_derived()
@@ -102,6 +112,34 @@ namespace Marten.Testing.Schema
             var deep = new JsonLocatorField(EnumStorage.AsInteger, new MemberInfo[] { inner, inner, stringProp });
 
             deep.SqlLocator.ShouldBe("d.data -> 'Inner' -> 'Inner' ->> 'String'");
+        }
+
+        public class DocWithDates
+        {
+            public Guid Id = Guid.NewGuid();
+
+            public DateTime DateTime { get; set; }
+            public DateTimeOffset DateTimeOffset { get; set; }
+
+            public DateTime? NullableDateTime { get; set; }
+            public DateTimeOffset? NullableDateTimeOffset { get; set; }
+        }
+
+        [Fact]
+        public void do_not_use_timestamp_functions_on_selection_locator_for_dates()
+        {
+            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, x => x.DateTime)
+                .SelectionLocator.ShouldBe("CAST(d.data ->> 'DateTime' as timestamp without time zone)");
+            
+            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, x => x.NullableDateTime)
+                .SelectionLocator.ShouldBe("CAST(d.data ->> 'NullableDateTime' as timestamp without time zone)");
+            
+            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, x => x.DateTimeOffset)
+                .SelectionLocator.ShouldBe("CAST(d.data ->> 'DateTimeOffset' as timestamp with time zone)");
+
+            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, x => x.NullableDateTimeOffset)
+                .SelectionLocator.ShouldBe("CAST(d.data ->> 'NullableDateTimeOffset' as timestamp with time zone)");
+                
         }
     }
 }

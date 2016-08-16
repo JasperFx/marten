@@ -18,6 +18,7 @@ namespace Marten.Schema
         public MemberInfo[] Members => new[] {_idMember};
         public string MemberName => _idMember.Name;
         public string SqlLocator { get; } = "d.id";
+        public string SelectionLocator { get; } = "d.id";
         public string ColumnName { get; } = "id";
         public void WritePatch(DocumentMapping mapping, SchemaPatch patch)
         {

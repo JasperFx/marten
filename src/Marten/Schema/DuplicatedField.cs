@@ -56,6 +56,8 @@ namespace Marten.Schema
         };
 
 
+        public string SelectionLocator => SqlLocator;
+
         public string ColumnName
         {
             get { return _columnName; }

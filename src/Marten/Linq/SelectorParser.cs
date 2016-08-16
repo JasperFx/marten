@@ -181,7 +181,9 @@ namespace Marten.Linq
 
         public string ToJsonBuildObjectPair(IQueryableDocument mapping)
         {
-            var locator = mapping.FieldFor(Field.Members).SqlLocator;
+            var locator = mapping.FieldFor(Field.Members).SelectionLocator;
+
+
             return $"'{Setter.Name}', {locator}";
         }
     }

@@ -12,6 +12,8 @@ namespace Marten.Schema
 
         string SqlLocator { get; }
 
+        string SelectionLocator { get; }
+
         string ColumnName { get; }
 
         void WritePatch(DocumentMapping mapping, SchemaPatch patch);

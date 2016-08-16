@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Baseline;
 using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Util;
@@ -32,10 +33,12 @@ namespace Marten.Schema
             else if (memberType == typeof(DateTime) || memberType == typeof(DateTime?))
             {
                 SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp(d.data ->> '{member.Name}')";
+                SelectionLocator = $"CAST(d.data ->> '{member.Name}' as {PgType})";
             }
             else if (memberType == typeof(DateTimeOffset) || memberType == typeof(DateTimeOffset?))
             {
                 SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp(d.data ->> '{member.Name}')";
+                SelectionLocator = $"CAST(d.data ->> '{member.Name}' as {PgType})";
             }
             else
             {
@@ -51,7 +54,10 @@ namespace Marten.Schema
                 };
             }
 
-
+            if (SelectionLocator.IsEmpty())
+            {
+                SelectionLocator = SqlLocator;
+            }
         }
 
         public JsonLocatorField(EnumStorage enumStyle, MemberInfo[] members) : base(members)
@@ -96,6 +102,7 @@ namespace Marten.Schema
         }
 
         public string SqlLocator { get; }
+        public string SelectionLocator { get; }
         public string ColumnName => String.Empty;
         public void WritePatch(DocumentMapping mapping, SchemaPatch patch)
         {
