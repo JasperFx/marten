@@ -7,23 +7,16 @@ namespace Marten.Services
         /// <summary>
         /// Default to DocumentTracking.IdentityOnly
         /// </summary>
-        public readonly DocumentTracking Tracking;
+        public DocumentTracking Tracking { get; set; } = DocumentTracking.IdentityOnly;
 
         /// <summary>
         /// Default to 30 seconds
         /// </summary>
-        public readonly int Timeout;
+        public int Timeout { get; set; } = 30;
 
         /// <summary>
         /// Default to IsolationLevel.ReadCommitted
         /// </summary>
-        public readonly IsolationLevel IsolationLevel;
-
-        public SessionOptions(DocumentTracking tracking = DocumentTracking.IdentityOnly, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int timeout = 30)
-        {
-            Tracking = tracking;
-            Timeout = timeout;
-            IsolationLevel = isolationLevel;
-        }
+        public IsolationLevel IsolationLevel { get; set; } = IsolationLevel.ReadCommitted;
     }
 }

@@ -13,18 +13,18 @@ namespace Marten.Testing
         {
             var container = Container.For<DevelopmentModeRegistry>();
             var store = container.GetInstance<IDocumentStore>();
-            
-            var options = new SessionOptions(timeout: 1);
+
+            var options = new SessionOptions() { Timeout = 1 };
 
             using (var session = store.OpenSession(options))
-            {                
+            {
                 var e = Assert.Throws<NpgsqlException>(() =>
                 {
                     session.Query<QuerySessionTests.FryGuy>("select pg_sleep(2)");
                 });
 
                 Assert.Contains("connected party did not properly respond after a period of time", e.InnerException.Message);
-            }            
+            }
         }
 
         [Fact]
@@ -43,7 +43,7 @@ namespace Marten.Testing
                 session.SaveChanges();
             }
 
-            var options = new SessionOptions(timeout: 15);
+            var options = new SessionOptions() { Timeout = 15 };
 
             using (var query = store.QuerySession(options).As<QuerySession>())
             {
