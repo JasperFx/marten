@@ -77,7 +77,5 @@ namespace Marten.Events.Projections.Async
         {
             return $"Event Page From: {From}, To: {To}, Count: {Count}";
         }
-
- 
     }
 }

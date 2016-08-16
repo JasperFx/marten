@@ -18,12 +18,12 @@ namespace Marten.Events
 
     internal class EventSelector : ISelector<IEvent>
     {
-        private readonly EventGraph _events;
+        public EventGraph Events { get; }
         private readonly ISerializer _serializer;
 
         internal EventSelector(EventGraph events, ISerializer serializer)
         {
-            _events = events;
+            Events = events;
             _serializer = serializer;
         }
 
@@ -35,7 +35,7 @@ namespace Marten.Events
             var dataJson = reader.GetString(3);
 
 
-            var mapping = _events.EventMappingFor(eventTypeName);
+            var mapping = Events.EventMappingFor(eventTypeName);
 
             if (mapping == null)
             {
@@ -63,7 +63,7 @@ namespace Marten.Events
             var version = await reader.GetFieldValueAsync<int>(2, token).ConfigureAwait(false);
             var dataJson = await reader.GetFieldValueAsync<string>(3, token).ConfigureAwait(false);
 
-            var mapping = _events.EventMappingFor(eventTypeName);
+            var mapping = Events.EventMappingFor(eventTypeName);
 
             if (mapping == null)
             {
@@ -91,7 +91,7 @@ namespace Marten.Events
 
         public string ToSelectClause(IQueryableDocument mapping)
         {
-            return $"select id, type, version, data, seq_id, stream_id from {_events.DatabaseSchemaName}.mt_events";
+            return $"select id, type, version, data, seq_id, stream_id from {Events.DatabaseSchemaName}.mt_events";
         }
     }
 }
