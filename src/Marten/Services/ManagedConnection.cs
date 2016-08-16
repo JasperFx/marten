@@ -198,7 +198,7 @@ namespace Marten.Services
         {
             if (_connection.IsValueCreated)
             {
-                _connection.Value.SafeDispose();
+                _connection.Value.Dispose();
             }
         }
     }

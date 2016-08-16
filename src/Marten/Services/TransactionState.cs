@@ -27,6 +27,7 @@ namespace Marten.Services
             {
                 Transaction = Connection.BeginTransaction(_isolationLevel);
             }
+
             if (_mode == CommandRunnerMode.ReadOnly)
             {
                 using (var cmd = new NpgsqlCommand("SET TRANSACTION READ ONLY;"))
@@ -62,8 +63,12 @@ namespace Marten.Services
 
         public void Dispose()
         {
-            Transaction?.SafeDispose();
-            Connection.SafeDispose();
+            Transaction?.Dispose();
+
+
+            Connection.Close();
+
+            Connection.Dispose();
         }
 
         public NpgsqlCommand CreateCommand()
