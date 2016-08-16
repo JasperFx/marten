@@ -1,0 +1,54 @@
+﻿using Baseline;
+using Marten.Services;
+using Npgsql;
+using StructureMap;
+using Xunit;
+
+namespace Marten.Testing
+{
+    public class SessionOptionsTests
+    {
+        [Fact]
+        public void can_choke_on_custom_timeout()
+        {
+            var container = Container.For<DevelopmentModeRegistry>();
+            var store = container.GetInstance<IDocumentStore>();
+
+            var options = new SessionOptions() { Timeout = 1 };
+
+            using (var session = store.OpenSession(options))
+            {
+                var e = Assert.Throws<NpgsqlException>(() =>
+                {
+                    session.Query<QuerySessionTests.FryGuy>("select pg_sleep(2)");
+                });
+
+                Assert.Contains("connected party did not properly respond after a period of time", e.InnerException.Message);
+            }
+        }
+
+        [Fact]
+        public void can_define_custom_timeout()
+        {
+            var container = Container.For<DevelopmentModeRegistry>();
+            var store = container.GetInstance<IDocumentStore>();
+
+            var guy1 = new QuerySessionTests.FryGuy();
+            var guy2 = new QuerySessionTests.FryGuy();
+            var guy3 = new QuerySessionTests.FryGuy();
+
+            using (var session = store.OpenSession())
+            {
+                session.Store(guy1, guy2, guy3);
+                session.SaveChanges();
+            }
+
+            var options = new SessionOptions() { Timeout = 15 };
+
+            using (var query = store.QuerySession(options).As<QuerySession>())
+            {
+                query.LoadDocument<QuerySessionTests.FryGuy>(guy2.id).ShouldNotBeNull();
+            }
+        }
+    }
+}

@@ -9,11 +9,13 @@ namespace Marten.Services
     {
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;
+        private readonly int _commandTimeout;
 
-        public TransactionState(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel)
+        public TransactionState(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout)
         {
             _mode = mode;
             _isolationLevel = isolationLevel;
+            this._commandTimeout = commandTimeout;
             Connection = factory.Create();
             Connection.Open();
             BeginTransaction();
@@ -39,6 +41,7 @@ namespace Marten.Services
         {
             cmd.Connection = Connection;
             cmd.Transaction = Transaction;
+            cmd.CommandTimeout = _commandTimeout;
         }
 
         public NpgsqlTransaction Transaction { get; private set; }
