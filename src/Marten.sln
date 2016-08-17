@@ -9,6 +9,8 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Marten.Testing", "Marten.Te
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Marten.Testing.OtherAssembly", "Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.xproj", "{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}"
 EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Marten.CLI", "Marten.CLI\Marten.CLI.xproj", "{798F7CD9-3528-4655-9D37-6A646D749B76}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B88916DD-8CAF-42F8-BB40-7CE6C4E49491}.Release|Any CPU.Build.0 = Release|Any CPU
+		{798F7CD9-3528-4655-9D37-6A646D749B76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{798F7CD9-3528-4655-9D37-6A646D749B76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{798F7CD9-3528-4655-9D37-6A646D749B76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{798F7CD9-3528-4655-9D37-6A646D749B76}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
