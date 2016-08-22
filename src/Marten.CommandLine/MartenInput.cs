@@ -19,6 +19,7 @@ namespace Marten.CommandLine
         {
             if (ConnFlag.IsNotEmpty())
             {
+                WriteLine($"Connecting to '{ConnFlag}'");
                 Options.Connection(ConnFlag);
             }
 

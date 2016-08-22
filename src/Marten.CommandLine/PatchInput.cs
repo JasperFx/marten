@@ -9,5 +9,9 @@ namespace Marten.CommandLine
 
         [Description("Opt into also writing out any missing schema creation scripts")]
         public bool SchemaFlag { get; set; }
+
+
+        [Description("Override the location of the drop file")]
+        public string DropFlag { get; set; }
     }
 }

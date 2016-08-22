@@ -33,9 +33,9 @@ namespace Marten.CommandLine
                 patch.WriteUpdateFile(input.FileName);
 
 
-                var dropFile = SchemaPatch.ToDropFileName(input.FileName);
+                var dropFile = input.DropFlag ?? SchemaPatch.ToDropFileName(input.FileName);
 
-                input.WriteLine(ConsoleColor.Green, "Wrote the drop file to " + input.FileName);
+                input.WriteLine(ConsoleColor.Green, "Wrote the drop file to " + dropFile);
                 patch.WriteRollbackFile(dropFile);
 
                 return true;
