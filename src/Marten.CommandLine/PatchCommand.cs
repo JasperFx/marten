@@ -1,0 +1,48 @@
+﻿using System;
+using Marten.Schema;
+using Oakton;
+
+namespace Marten.CommandLine
+{
+    [Description(
+         "Evaluates the current configuration against the database and writes a patch and drop file if there are any differences"
+     )]
+    public class PatchCommand : MartenCommand<PatchInput>
+    {
+        public PatchCommand()
+        {
+            Usage("Write the patch and matching drop file").Arguments(x => x.FileName);
+        }
+
+        protected override bool execute(IDocumentStore store, PatchInput input)
+        {
+            try
+            {
+                store.Schema.AssertDatabaseMatchesConfiguration();
+
+
+                input.WriteLine(ConsoleColor.Green, "No differences were detected between the Marten configuration and the database");
+
+                return true;
+            }
+            catch (SchemaValidationException)
+            {
+                var patch = store.Schema.ToPatch(input.SchemaFlag);
+
+                input.WriteLine(ConsoleColor.Green, "Wrote a patch file to " + input.FileName);
+                patch.WriteUpdateFile(input.FileName);
+
+
+                var dropFile = SchemaPatch.ToDropFileName(input.FileName);
+
+                input.WriteLine(ConsoleColor.Green, "Wrote the drop file to " + input.FileName);
+                patch.WriteRollbackFile(dropFile);
+
+                return true;
+            }
+
+
+
+        }
+    }
+}

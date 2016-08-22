@@ -128,7 +128,8 @@ namespace Marten.Schema
         /// rollback file as well.
         /// </summary>
         /// <param name="filename"></param>
-        void WritePatch(string filename);
+        /// <param name="withSchemas"></param>
+        void WritePatch(string filename, bool withSchemas = true);
 
         /// <summary>
         /// Tries to write a "patch" SQL text to upgrade the database

@@ -229,9 +229,9 @@ namespace Marten.Schema
             new FileSystem().WriteStringToFile(filename, sql);
         }
 
-        public void WritePatch(string filename)
+        public void WritePatch(string filename, bool withSchemas = true)
         {
-            var patch = ToPatch();
+            var patch = ToPatch(withSchemas);
 
             patch.WriteUpdateFile(filename);
 
