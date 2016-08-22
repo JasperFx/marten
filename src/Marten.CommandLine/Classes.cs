@@ -1,4 +1,5 @@
-﻿using Baseline;
+﻿using System;
+using Baseline;
 using Oakton;
 
 namespace Marten.CommandLine
@@ -17,8 +18,9 @@ namespace Marten.CommandLine
             Usage("Write the patch and matching drop file").Arguments(x => x.FileName);
         }
 
-        protected override void execute(IDocumentStore store, PatchInput input)
+        protected override bool execute(IDocumentStore store, PatchInput input)
         {
+            throw new NotImplementedException();
             var patch = store.Schema.ToPatch(false);
 
             if (patch.UpdateDDL.IsNotEmpty())

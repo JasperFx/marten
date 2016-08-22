@@ -13,7 +13,7 @@ namespace Marten.CommandLine
                 .Arguments(x => x.FileName);
         }
 
-        protected override void execute(IDocumentStore store, DumpInput input)
+        protected override bool execute(IDocumentStore store, DumpInput input)
         {
             if (input.ByTypeFlag)
             {
@@ -37,6 +37,8 @@ namespace Marten.CommandLine
 
                 store.Schema.WriteDDL(input.FileName);
             }
+
+            return true;
         }
 
     }

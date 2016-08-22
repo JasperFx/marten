@@ -10,10 +10,8 @@ namespace Marten.CommandLine
             {
                 using (var store = input.CreateStore())
                 {
-                    execute(store, input);
+                    return execute(store, input);
                 }
-
-                return true;
             }
             finally
             {
@@ -21,6 +19,6 @@ namespace Marten.CommandLine
             }
         }
 
-        protected abstract void execute(IDocumentStore store, T input);
+        protected abstract bool execute(IDocumentStore store, T input);
     }
 }
