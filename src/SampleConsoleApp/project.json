@@ -1,0 +1,28 @@
+﻿{
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "emitEntryPoint": true
+  },
+
+  "dependencies": {
+    "Marten.CommandLine": { "target": "project" },
+    "Marten.Testing": {"target": "project" }
+  },
+
+  "frameworks": {
+    "net46": {},
+    "netcoreapp1.0": {
+      "dependencies": {
+        "NETStandard.Library": "1.6.0"
+
+      },
+      "imports": "dnxcore50"
+    }
+  },
+  "runtimes": {
+    "win7-x64": {},
+    "win7-x86": {},
+    "osx.10.10-x64": {},
+    "osx.10.11-x64": {}
+  }
+}

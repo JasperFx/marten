@@ -1,0 +1,35 @@
+﻿{
+  "version": "1.0.0-alpha-*",
+  "description": "Command line tooling for managing Marten development",
+  "authors": [
+    "Jeremy D. Miller",
+    "Tim Cools",
+    "Jeff Doolittle"
+  ],
+  "packOptions": {
+    "projectUrl": "http://jasperfx.github.io/marten",
+    "licenseUrl": "https://github.com/JasperFX/marten/blob/master/LICENSE.txt"
+  },
+  "buildOptions": {
+    "compile": [
+      "**/*.cs",
+      "../CommonAssemblyInfo.cs"
+    ]
+  },
+
+  "dependencies": {
+    "Oakton": "1.1.0",
+    "Marten": {"target": "project" }  
+  },
+
+
+  "frameworks": {
+    "netstandard1.3": {
+      "dependencies": { "NETStandard.Library": "1.6.0" }
+    },
+    "net46": {
+
+    }  
+
+  }
+}

@@ -3,6 +3,7 @@
   "description": "Postgresql as a Document Db and Event Store for .Net Development",
   "authors": [
     "Jeremy D. Miller",
+
     "Tim Cools",
     "Jeff Doolittle"
   ],
