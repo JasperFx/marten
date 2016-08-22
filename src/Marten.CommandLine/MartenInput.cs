@@ -43,6 +43,8 @@ namespace Marten.CommandLine
         {
             if (LogFlag.IsEmpty()) return;
 
+            
+
             using (var stream = new FileStream(LogFlag, FileMode.Create))
             {
                 var writer = new StreamWriter(stream);
@@ -50,6 +52,8 @@ namespace Marten.CommandLine
 
                 writer.Flush();
             }
+
+            ConsoleWriter.Write(ConsoleColor.Green, "Wrote a log file to " + LogFlag);
         }
     }
 }
