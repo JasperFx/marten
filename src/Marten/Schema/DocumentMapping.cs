@@ -18,7 +18,7 @@ namespace Marten.Schema
     public enum Deletions
     {
         CanDelete,
-        NoDeletes
+        CannotDelete
     }
 
     public class DocumentMapping : IDocumentMapping, IQueryableDocument

@@ -241,7 +241,7 @@ namespace Marten.Testing.Schema
             mapping.SchemaObjects.As<DocumentSchemaObjects>().StorageTable()
                 .Deletions.ShouldBe(mapping.Deletions);
 
-            mapping.Deletions = Deletions.NoDeletes;
+            mapping.Deletions = Deletions.CannotDelete;
 
             mapping.SchemaObjects.As<DocumentSchemaObjects>().StorageTable()
                 .Deletions.ShouldBe(mapping.Deletions);
@@ -461,7 +461,7 @@ namespace Marten.Testing.Schema
             });
 
             var mapping = DocumentMapping.For<MySpecialDocument>();
-            mapping.Deletions = Deletions.NoDeletes;
+            mapping.Deletions = Deletions.CannotDelete;
 
             var builder = new StringWriter();
 
