@@ -101,7 +101,7 @@ namespace Marten.Schema
             var json = reader.GetString(startingIndex);
             var id = reader[startingIndex + 1];
 
-            var version = reader.GetFieldValue<Guid>(2);
+            var version = reader.GetFieldValue<Guid>(startingIndex + 2);
 
             return map.Get<T>(id, json, version);
         }
@@ -115,7 +115,7 @@ namespace Marten.Schema
 
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
-            var version = await reader.GetFieldValueAsync<Guid>(2, token).ConfigureAwait(false);
+            var version = await reader.GetFieldValueAsync<Guid>(startingIndex + 2, token).ConfigureAwait(false);
 
             return map.Get<T>(id, json, version);
         }
