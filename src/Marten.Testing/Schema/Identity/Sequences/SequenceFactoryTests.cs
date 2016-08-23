@@ -41,7 +41,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
         {
             var patch = theStore.Schema.ToPatch();
 
-            ShouldBeStringTestExtensions.ShouldContain(patch.RollbackDDL, "drop table if exists public.mt_hilo cascade;");
+            patch.RollbackDDL.ShouldContain("drop table if exists public.mt_hilo cascade;");
         }
 
         [Fact]
@@ -50,7 +50,32 @@ namespace Marten.Testing.Schema.Identity.Sequences
             StoreOptions(_ => _.DatabaseSchemaName = "other");
             var patch = theStore.Schema.ToPatch();
 
-            ShouldBeStringTestExtensions.ShouldContain(patch.RollbackDDL, "drop table if exists other.mt_hilo cascade;");
+            patch.RollbackDDL.ShouldContain("drop table if exists other.mt_hilo cascade;");
+        }
+
+        [Fact]
+        public void grant_generation()
+        {
+            StoreOptions(_ =>
+            {
+                _.DdlRules.Grants.Add("foo");
+                _.DdlRules.Grants.Add("bar");
+
+                _.DatabaseSchemaName = "other";
+            });
+
+            var patch = theStore.Schema.ToPatch();
+
+            patch.UpdateDDL.ShouldContain("GRANT SELECT ON TABLE other.mt_hilo TO \"foo\";");
+            patch.UpdateDDL.ShouldContain("GRANT UPDATE ON TABLE other.mt_hilo TO \"foo\";");
+            patch.UpdateDDL.ShouldContain("GRANT INSERT ON TABLE other.mt_hilo TO \"foo\";");
+            patch.UpdateDDL.ShouldContain("GRANT EXECUTE ON other.mt_get_next_hi(varchar) TO \"foo\";");
+
+
+            patch.UpdateDDL.ShouldContain("GRANT SELECT ON TABLE other.mt_hilo TO \"bar\";");
+            patch.UpdateDDL.ShouldContain("GRANT UPDATE ON TABLE other.mt_hilo TO \"bar\";");
+            patch.UpdateDDL.ShouldContain("GRANT INSERT ON TABLE other.mt_hilo TO \"bar\";");
+            patch.UpdateDDL.ShouldContain("GRANT EXECUTE ON other.mt_get_next_hi(varchar) TO \"bar\";");
         }
     }
 

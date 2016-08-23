@@ -86,6 +86,20 @@ namespace Marten.Schema.Identity.Sequences
                 patch.Rollbacks.Drop(this, Table);
 
                 writeOwnership(schema, patch);
+
+                writeGrants(schema, patch);
+            }
+        }
+
+        private void writeGrants(IDocumentSchema schema, SchemaPatch patch)
+        {
+            foreach (var role in schema.StoreOptions.DdlRules.Grants)
+            {
+                patch.Updates.Apply(this, $"GRANT SELECT ON TABLE {Table.QualifiedName} TO \"{role}\";");
+                patch.Updates.Apply(this, $"GRANT UPDATE ON TABLE {Table.QualifiedName} TO \"{role}\";");
+                patch.Updates.Apply(this, $"GRANT INSERT ON TABLE {Table.QualifiedName} TO \"{role}\";");
+
+                patch.Updates.Apply(this, $"GRANT EXECUTE ON {schema.StoreOptions.DatabaseSchemaName}.mt_get_next_hi(varchar) TO \"{role}\";");
             }
         }
 
