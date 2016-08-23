@@ -35,6 +35,7 @@ namespace Marten.Schema
                 });
 
                 writeOwnership(options, patch);
+
             }
             else if (HasChanged)
             {
