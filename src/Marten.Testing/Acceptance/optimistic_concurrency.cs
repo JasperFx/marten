@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Testing;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -521,6 +522,12 @@ namespace Marten.Testing.Acceptance
 
 
         }
+
+
+
+
+
+
     }
 
     [UseOptimisticConcurrency]
@@ -537,4 +544,7 @@ namespace Marten.Testing.Acceptance
         public string Name { get; set; } = "Starbucks";
     }
     // ENDSAMPLE
+
+
+
 }

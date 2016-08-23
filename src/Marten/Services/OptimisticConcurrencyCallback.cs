@@ -11,9 +11,9 @@ namespace Marten.Services
         private readonly object _id;
         private readonly VersionTracker _versions;
         private readonly Guid _newVersion;
-        private readonly Guid _oldVersion;
+        private readonly Guid? _oldVersion;
 
-        public OptimisticConcurrencyCallback(object id, VersionTracker versions, Guid newVersion, Guid oldVersion)
+        public OptimisticConcurrencyCallback(object id, VersionTracker versions, Guid newVersion, Guid? oldVersion)
         {
             _id = id;
             _versions = versions;

@@ -184,7 +184,6 @@ namespace Marten.Schema
 
         public void RegisterUpdate(UpdateBatch batch, object entity)
         {
-
             var json = batch.Serializer.ToJson(entity);
             RegisterUpdate(batch, entity, json);
         }
@@ -195,9 +194,9 @@ namespace Marten.Schema
             var currentVersion = batch.Versions.Version<T>(Identity(entity));
 
             ICallback callback = null;
-            if (_mapping.UseOptimisticConcurrency && currentVersion.HasValue)
+            if (_mapping.UseOptimisticConcurrency)
             {
-                callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions, newVersion, currentVersion.Value);
+                callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions, newVersion, currentVersion);
             }
 
 

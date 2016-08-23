@@ -70,7 +70,7 @@ namespace Marten.Schema
 
             if (Arguments.Any(x => x is CurrentVersionArgument))
             {
-                updates += $" where {_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version or current_version is null";
+                updates += $" where {_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version";
             }
 
             var securityDeclaration = rules.UpsertRights == SecurityRights.Invoker
