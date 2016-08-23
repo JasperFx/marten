@@ -90,6 +90,8 @@ namespace Marten.Generation
             rules.GrantToRoles.Each(role =>
             {
                 writer.WriteLine($"GRANT SELECT ({Columns.Select(x => x.Name).Join(", ")}) ON TABLE {Table.QualifiedName} TO \"{role}\";");
+                writer.WriteLine($"GRANT UPDATE ({Columns.Select(x => x.Name).Join(", ")}) ON TABLE {Table.QualifiedName} TO \"{role}\";");
+                writer.WriteLine($"GRANT INSERT ({Columns.Select(x => x.Name).Join(", ")}) ON TABLE {Table.QualifiedName} TO \"{role}\";");
             });
         }
 

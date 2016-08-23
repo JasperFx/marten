@@ -402,6 +402,12 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("GRANT SELECT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
             sql.ShouldContain("GRANT SELECT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
 
+            sql.ShouldContain("GRANT UPDATE (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
+            sql.ShouldContain("GRANT UPDATE (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
+
+            sql.ShouldContain("GRANT INSERT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
+            sql.ShouldContain("GRANT INSERT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
+
         }
 
         [Fact]
