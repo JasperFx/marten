@@ -235,6 +235,19 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void brings_over_deletion_style_to_table_definition()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.SchemaObjects.As<DocumentSchemaObjects>().StorageTable()
+                .Deletions.ShouldBe(mapping.Deletions);
+
+            mapping.Deletions = Deletions.NoDeletes;
+
+            mapping.SchemaObjects.As<DocumentSchemaObjects>().StorageTable()
+                .Deletions.ShouldBe(mapping.Deletions);
+        }
+
+        [Fact]
         public void to_table_columns_with_subclasses()
         {
             var mapping = DocumentMapping.For<Squad>();
@@ -382,14 +395,20 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("jsonb NOT NULL");
         }
 
+        [Fact]
+        public void can_delete_by_default()
+        {
+            DocumentMapping.For<User>().Deletions.ShouldBe(Deletions.CanDelete);
+        }
+
 
         [Fact]
         public void generate_simple_document_table_with_grants()
         {
             StoreOptions(_ =>
             {
-                _.DdlRules.GrantToRoles.Add("foo");
-                _.DdlRules.GrantToRoles.Add("bar");
+                _.DdlRules.Grants.Add("foo");
+                _.DdlRules.Grants.Add("bar");
             });
 
             var mapping = DocumentMapping.For<MySpecialDocument>();
@@ -408,6 +427,50 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("GRANT INSERT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
             sql.ShouldContain("GRANT INSERT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
 
+        }
+
+        [Fact]
+        public void generate_grants_for_deletions_if_allowed()
+        {
+            StoreOptions(_ =>
+            {
+                _.DdlRules.Grants.Add("foo");
+                _.DdlRules.Grants.Add("bar");
+            });
+
+            var mapping = DocumentMapping.For<MySpecialDocument>();
+            mapping.Deletions = Deletions.CanDelete;
+
+            var builder = new StringWriter();
+
+            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldContain("GRANT DELETE ON public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
+            sql.ShouldContain("GRANT DELETE ON public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
+        }
+
+        [Fact]
+        public void do_not_generate_grants_for_deletions_if_not_allowed()
+        {
+            StoreOptions(_ =>
+            {
+                _.DdlRules.Grants.Add("foo");
+                _.DdlRules.Grants.Add("bar");
+            });
+
+            var mapping = DocumentMapping.For<MySpecialDocument>();
+            mapping.Deletions = Deletions.NoDeletes;
+
+            var builder = new StringWriter();
+
+            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
+
+            var sql = builder.ToString();
+
+            sql.ShouldNotContain("GRANT DELETE ON public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
+            sql.ShouldNotContain("GRANT DELETE ON public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
         }
 
         [Fact]

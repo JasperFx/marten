@@ -11,11 +11,16 @@ using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services.Includes;
 using Marten.Util;
-using Npgsql;
 using Remotion.Linq;
 
 namespace Marten.Schema
 {
+    public enum Deletions
+    {
+        CanDelete,
+        NoDeletes
+    }
+
     public class DocumentMapping : IDocumentMapping, IQueryableDocument
     {
         public const string BaseAlias = "BASE";
@@ -61,6 +66,8 @@ namespace Marten.Schema
 
             applyAnyMartenAttributes(documentType);
         }
+
+        public Deletions Deletions { get; set; } = Deletions.CanDelete;
 
         private void applyAnyMartenAttributes(Type documentType)
         {

@@ -34,8 +34,8 @@ namespace Marten.Testing.Schema.Hierarchies
             var writer = new StringWriter();
 
             var rules = new DdlRules();
-            rules.GrantToRoles.Add("foo");
-            rules.GrantToRoles.Add("bar");
+            rules.Grants.Add("foo");
+            rules.Grants.Add("bar");
 
             new UpsertFunction(theHierarchy).WriteFunctionSql(rules, writer);
 

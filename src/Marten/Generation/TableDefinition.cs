@@ -26,6 +26,8 @@ namespace Marten.Generation
             }
         }
 
+        public Deletions Deletions { get; set; }
+
         public TableDefinition(TableName table, TableColumn primaryKey)
         {
             if (table == null) throw new ArgumentNullException(nameof(table));
@@ -87,11 +89,16 @@ namespace Marten.Generation
 
             writer.WriteLine(");");
 
-            rules.GrantToRoles.Each(role =>
+            rules.Grants.Each(role =>
             {
                 writer.WriteLine($"GRANT SELECT ({Columns.Select(x => x.Name).Join(", ")}) ON TABLE {Table.QualifiedName} TO \"{role}\";");
                 writer.WriteLine($"GRANT UPDATE ({Columns.Select(x => x.Name).Join(", ")}) ON TABLE {Table.QualifiedName} TO \"{role}\";");
                 writer.WriteLine($"GRANT INSERT ({Columns.Select(x => x.Name).Join(", ")}) ON TABLE {Table.QualifiedName} TO \"{role}\";");
+
+                if (Deletions == Deletions.CanDelete)
+                {
+                    writer.WriteLine($"GRANT DELETE ON {Table.QualifiedName} TO \"{role}\";");
+                }
             });
         }
 

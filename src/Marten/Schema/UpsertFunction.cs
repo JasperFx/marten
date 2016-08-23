@@ -95,7 +95,7 @@ $function$;
 ");
 
 
-            rules.GrantToRoles.Each(role =>
+            rules.Grants.Each(role =>
             {
                 writer.WriteLine($"GRANT EXECUTE ON {_functionName.QualifiedName}({argList}) TO \"{role}\";");
             });
