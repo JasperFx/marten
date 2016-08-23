@@ -19,12 +19,13 @@ namespace Marten.Events
         private readonly ConcurrentCache<string, EventMapping> _byEventName = new ConcurrentCache<string, EventMapping>();
         private readonly ConcurrentCache<Type, EventMapping> _events = new ConcurrentCache<Type, EventMapping>();
 
-
+        private IAggregatorLookup _aggregatorLookup;
         private string _databaseSchemaName;
 
         public EventGraph(StoreOptions options)
         {
             Options = options;
+            _aggregatorLookup = new AggregatorLookup();
             _events.OnMissing = eventType =>
             {
                 var mapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
@@ -38,7 +39,7 @@ namespace Marten.Events
             SchemaObjects = new EventStoreDatabaseObjects(this);
 
             InlineProjections = new ProjectionCollection(options);
-            AsyncProjections = new ProjectionCollection(options);
+            AsyncProjections = new ProjectionCollection(options);            
         }
 
         internal StoreOptions Options { get; }
@@ -104,7 +105,7 @@ namespace Marten.Events
                 .GetOrAdd(typeof(T), type =>
                 {
                     Options.MappingFor(typeof(T));
-                    return new Aggregator<T>();
+                    return _aggregatorLookup.Lookup<T>();
                 })
                 .As<IAggregator<T>>();
         }
@@ -124,12 +125,21 @@ namespace Marten.Events
         public string AggregateAliasFor(Type aggregateType)
         {
             return _aggregates
-                .GetOrAdd(aggregateType, type => typeof(Aggregator<>).CloseAndBuildAs<IAggregator>(aggregateType)).Alias;
+                .GetOrAdd(aggregateType, type => _aggregatorLookup.Lookup(type)).Alias;
         }
 
         public IProjection ProjectionFor(Type viewType)
         {
             return AsyncProjections.ForView(viewType) ?? InlineProjections.ForView(viewType);
+        }
+
+        /// <summary>
+        /// Set default strategy to lookup IAggregator when no explicit IAggregator registration exists. 
+        /// </summary>
+        /// <remarks>Unless called, <see cref="AggregatorLookup"/> is used</remarks>
+        public void UseAggregatorLookup(IAggregatorLookup aggregatorLookup)
+        {
+            _aggregatorLookup = aggregatorLookup;
         }
     }
 }
