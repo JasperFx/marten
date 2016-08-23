@@ -49,22 +49,32 @@ namespace Marten.Schema
         public string UpdateDDL => _up.Writer.ToString();
         public string RollbackDDL => _down.Writer.ToString();
 
-        public static void WriteTransactionalScript(TextWriter writer, Action<TextWriter> writeStep)
+        public void WriteTransactionalScript(TextWriter writer, Action<TextWriter> writeStep)
         {
             writer.WriteLine("DO LANGUAGE plpgsql $tran$");
             writer.WriteLine("BEGIN");
             writer.WriteLine("");
 
-
+            if (Rules.Role.IsNotEmpty())
+            {
+                writer.WriteLine($"SET ROLE {Rules.Role};");
+                writer.WriteLine("");
+            }
 
             writeStep(writer);
+
+            if (Rules.Role.IsNotEmpty())
+            {
+                writer.WriteLine($"RESET ROLE;");
+                writer.WriteLine("");
+            }
 
             writer.WriteLine("");
             writer.WriteLine("END;");
             writer.WriteLine("$tran$;");
         }
 
-        public static void WriteTransactionalFile(string file, string sql)
+        public void WriteTransactionalFile(string file, string sql)
         {
             using (var stream = new FileStream(file, FileMode.Create))
             {

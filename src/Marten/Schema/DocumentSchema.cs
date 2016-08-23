@@ -310,7 +310,7 @@ namespace Marten.Schema
 
                 var file = directory.AppendPath(schemaObject.Name + ".sql");
 
-                SchemaPatch.WriteTransactionalFile(file, writer.ToString());
+                new SchemaPatch(new DdlRules()).WriteTransactionalFile(file, writer.ToString());
             }
         }
 
@@ -321,7 +321,7 @@ namespace Marten.Schema
         {
             var writer = new StringWriter();
 
-            SchemaPatch.WriteTransactionalScript(writer, w =>
+            new SchemaPatch(new DdlRules()).WriteTransactionalScript(writer, w =>
             {
                 var allSchemaNames = AllSchemaNames();
                 DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, w);
