@@ -47,7 +47,7 @@ namespace Marten.Schema
             {
                 var sequences = new SequenceFactory(this, _factory, options, _logger);
                 
-                var patch = new SchemaPatch();
+                var patch = new SchemaPatch(StoreOptions.DdlRules);
 
                 sequences.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
 
@@ -242,7 +242,7 @@ namespace Marten.Schema
 
         public SchemaPatch ToPatch(bool withSchemas = true)
         {
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(StoreOptions.DdlRules);
 
             if (withSchemas)
             {
@@ -261,7 +261,7 @@ namespace Marten.Schema
         public SchemaPatch ToPatch(Type documentType)
         {
             var mapping = MappingFor(documentType);
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(StoreOptions.DdlRules);
             mapping.SchemaObjects.WritePatch(this, patch);
 
             return patch;
@@ -360,7 +360,7 @@ namespace Marten.Schema
             {
                 var transform = StoreOptions.Transforms.For(key);
 
-                var patch = new SchemaPatch();
+                var patch = new SchemaPatch(StoreOptions.DdlRules);
 
                 transform.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
 

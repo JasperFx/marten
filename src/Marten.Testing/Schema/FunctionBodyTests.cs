@@ -45,7 +45,7 @@ $BODY$
             var func = new FunctionBody(new FunctionName("public", "mt_upsert_target"), new string[0], theFunctionBody);
 
 
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(new DdlRules());
 
             var options = new StoreOptions {OwnerName = null};
 
@@ -64,7 +64,7 @@ $BODY$
             var func = new FunctionBody(new FunctionName("public", "mt_upsert_target"), new string[0], theFunctionBody);
 
 
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(new DdlRules());
 
             var options = new StoreOptions { OwnerName = "bill" };
 

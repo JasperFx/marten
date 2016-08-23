@@ -72,7 +72,7 @@ namespace Marten.Testing.Schema
 
                 var function = new SystemFunction(theStore.Advanced.Options, "mt_immutable_timestamp");
 
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(new DdlRules());
 
             function.WritePatch(theStore.Schema, patch);
 

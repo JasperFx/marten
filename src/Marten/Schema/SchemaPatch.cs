@@ -6,6 +6,8 @@ namespace Marten.Schema
 {
     public class SchemaPatch
     {
+        public DdlRules Rules { get; set; }
+
         public static string ToDropFileName(string updateFile)
         {
             var containingFolder = updateFile.ParentDirectory();
@@ -21,11 +23,20 @@ namespace Marten.Schema
         private readonly DDLRecorder _down = new DDLRecorder();
         private readonly IDDLRunner _liveRunner;
 
-        public SchemaPatch()
+
+
+
+        public SchemaPatch(DdlRules rules)
         {
+            Rules = rules;
         }
 
-        public SchemaPatch(IDDLRunner liveRunner)
+        public SchemaPatch(DocumentSchema schema) : this(schema.StoreOptions.DdlRules, schema)
+        {
+            
+        }
+
+        public SchemaPatch(DdlRules rules, IDDLRunner liveRunner) : this(rules)
         {
             _liveRunner = liveRunner;
         }
@@ -43,6 +54,8 @@ namespace Marten.Schema
             writer.WriteLine("DO LANGUAGE plpgsql $tran$");
             writer.WriteLine("BEGIN");
             writer.WriteLine("");
+
+
 
             writeStep(writer);
 

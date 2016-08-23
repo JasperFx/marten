@@ -39,7 +39,7 @@ namespace Marten.Testing.Transforms
         [Fact]
         public void patch_if_it_does_not_exist()
         {
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(new DdlRules());
 
             theStore.Advanced.Options.Transforms.For("get_fullname")
                 .WritePatch(theStore.Schema, patch);
@@ -52,7 +52,7 @@ namespace Marten.Testing.Transforms
         {
             var transform = theStore.Schema.TransformFor("get_fullname");
 
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(new DdlRules());
 
             theStore.Advanced.Options.Transforms.For("get_fullname")
                 .WritePatch(theStore.Schema, patch);

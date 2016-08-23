@@ -76,7 +76,7 @@ namespace Marten.Testing.Transforms
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
 
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(new DdlRules());
             func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, patch);
 
             var generated = func.GenerateFunction();
@@ -96,7 +96,7 @@ namespace Marten.Testing.Transforms
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(new DdlRules());
 
 
             func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOnly, schema, patch);
@@ -118,7 +118,7 @@ namespace Marten.Testing.Transforms
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(new DdlRules());
 
 
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
@@ -140,7 +140,7 @@ namespace Marten.Testing.Transforms
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(new DdlRules());
 
 
             func.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOrUpdate, schema, patch);
@@ -167,7 +167,7 @@ namespace Marten.Testing.Transforms
 
             dbobjects.DefinitionForFunction(func.Function).Returns(body);
 
-            var patch = new SchemaPatch();
+            var patch = new SchemaPatch(new DdlRules());
 
             func.GenerateSchemaObjectsIfNecessary(AutoCreate.All, schema, patch);
 
