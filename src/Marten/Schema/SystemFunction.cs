@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Baseline;
 using Marten.Services;
 using Marten.Util;
 
@@ -7,13 +8,15 @@ namespace Marten.Schema
 {
     public class SystemFunction : ISchemaObjects
     {
+        private readonly string _args;
         private readonly FunctionName _function;
         private readonly string _dropSql;
 
-        public SystemFunction(StoreOptions options, string functionName)
+        public SystemFunction(StoreOptions options, string functionName, string args)
         {
+            _args = args;
             _function = new FunctionName(options.DatabaseSchemaName, functionName);
-            _dropSql = $"drop function if exists {options.DatabaseSchemaName}.mt_immutable_timestamp cascade";
+            _dropSql = $"drop function if exists {options.DatabaseSchemaName}.{functionName}({args}) cascade";
 
             Name = functionName;
         }
@@ -56,6 +59,12 @@ namespace Marten.Schema
 
             writer.WriteLine(body);
             writer.WriteLine("");
+
+            schema.StoreOptions.DdlRules.Grants.Each(role =>
+            {
+                writer.WriteLine($"GRANT EXECUTE ON {_function.QualifiedName}({_args}) TO \"{role}\";");
+            });
+
             writer.WriteLine("");
         }
 

@@ -63,12 +63,12 @@ namespace Marten.Schema
             DbObjects = new DbObjects(_factory, this);
 
 
-            addSystemFunction(options, "mt_immutable_timestamp");
+            addSystemFunction(options, "mt_immutable_timestamp", "text");
         }
 
-        private void addSystemFunction(StoreOptions options, string functionName)
+        private void addSystemFunction(StoreOptions options, string functionName, string args)
         {
-            _systemFunctions.Add(functionName, new SystemFunction(options, functionName));
+            _systemFunctions.Add(functionName, new SystemFunction(options, functionName, args));
         }
 
 

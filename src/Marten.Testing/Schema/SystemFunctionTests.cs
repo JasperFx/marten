@@ -50,13 +50,37 @@ namespace Marten.Testing.Schema
                     cmd => cmd.Sql("drop function if exists other.mt_immutable_timestamp(text)").ExecuteNonQuery());
             }
 
-            var function = new SystemFunction(theStore.Advanced.Options, "mt_immutable_timestamp");
+            var function = new SystemFunction(theStore.Advanced.Options, "mt_immutable_timestamp", "text");
 
             var writer = new StringWriter();
 
             function.WriteSchemaObjects(theStore.Schema, writer);
 
             writer.ToString().ShouldContain("CREATE OR REPLACE FUNCTION other.mt_immutable_timestamp(value text)");
+        }
+
+        [Fact]
+        public void can_write_schema_objects_with_grants()
+        {
+            StoreOptions(_ =>
+            {
+                _.DatabaseSchemaName = "other";
+                _.DdlRules.Grants.Add("foo");
+            });
+
+            using (var conn = theStore.Advanced.OpenConnection())
+            {
+                conn.Execute(
+                    cmd => cmd.Sql("drop function if exists other.mt_immutable_timestamp(text)").ExecuteNonQuery());
+            }
+
+            var function = new SystemFunction(theStore.Advanced.Options, "mt_immutable_timestamp", "text");
+
+            var writer = new StringWriter();
+
+            function.WriteSchemaObjects(theStore.Schema, writer);
+
+            writer.ToString().ShouldContain("GRANT EXECUTE ON other.mt_immutable_timestamp(text) TO \"foo\";");
         }
 
         [Fact]
@@ -70,7 +94,7 @@ namespace Marten.Testing.Schema
                     cmd => cmd.Sql("drop function if exists other.mt_immutable_timestamp(text)").ExecuteNonQuery());
             }
 
-                var function = new SystemFunction(theStore.Advanced.Options, "mt_immutable_timestamp");
+                var function = new SystemFunction(theStore.Advanced.Options, "mt_immutable_timestamp", "text");
 
             var patch = new SchemaPatch(new DdlRules());
 
