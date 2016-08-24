@@ -21,7 +21,7 @@ CREATE TABLE {databaseSchema}.mt_events (
 	version		integer NOT NULL,
 	data		jsonb NOT NULL,
 	type 		varchar(100) NOT NULL,
-	timestamp	timestamp without time zone default (now() at time zone 'utc') NOT NULL,
+	timestamp	timestamp with time zone default (now()) NOT NULL,
 	CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version),
 	CONSTRAINT pk_mt_events_id_unique UNIQUE(id)
 );

@@ -134,7 +134,7 @@ namespace Marten.Schema
                 .As<IDocumentStorage>();
         }
 
-        public IDocumentSchemaObjects SchemaObjects => _schemaObjects;
+        public virtual IDocumentSchemaObjects SchemaObjects => _schemaObjects;
 
         public IList<string> DependentScripts => _schemaObjects.DependentScripts;
         public IList<Type> DependentTypes => _schemaObjects.DependentTypes;
@@ -181,7 +181,7 @@ namespace Marten.Schema
 
         public Type DocumentType { get; }
 
-        public TableName Table => new TableName(DatabaseSchemaName, $"{TablePrefix}{_alias}");
+        public virtual TableName Table => new TableName(DatabaseSchemaName, $"{TablePrefix}{_alias}");
 
         public MemberInfo IdMember { get; }
 
@@ -455,7 +455,7 @@ namespace Marten.Schema
             return duplicate;
         }
 
-        public DuplicatedField DuplicateField(MemberInfo[] members, string pgType = null)
+        public DuplicatedField DuplicateField(MemberInfo[] members, string pgType = null, string columnName = null)
         {
             var memberName = members.Select(x => x.Name).Join("");
 
@@ -463,6 +463,11 @@ namespace Marten.Schema
             if (pgType.IsNotEmpty())
             {
                 duplicatedField.PgType = pgType;
+            }
+
+            if (columnName.IsNotEmpty())
+            {
+                duplicatedField.ColumnName = columnName;
             }
 
             _fields[memberName] = duplicatedField;

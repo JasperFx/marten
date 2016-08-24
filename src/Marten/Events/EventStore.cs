@@ -90,18 +90,6 @@ namespace Marten.Events
             return _connection.FetchAsync(handler, null, token);
         }
 
-        public IList<IEvent> FetchAll(DateTime? before = null, DateTime? after = null, int version = 0)
-        {
-            var handler = new EventsQueryHandler(_selector, before, after, version);
-            return _connection.Fetch(handler, null);
-        }
-
-        public Task<IList<IEvent>> FetchAllAsync(DateTime? before = null, DateTime? after = null, int version = 0, CancellationToken token = default(CancellationToken))
-        {
-            var handler = new EventsQueryHandler(_selector, before, after, version);
-            return _connection.FetchAsync(handler, null, token);
-        }
-
         public T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new()
         {
             var inner = new EventQueryHandler(_selector, streamId, version, timestamp);
@@ -148,6 +136,11 @@ namespace Marten.Events
             
 
             return _session.Query<T>();
+        }
+
+        public IMartenQueryable<IEvent> QueryAllRawEvents()
+        {
+            return _session.Query<IEvent>();
         }
 
         public Event<T> Load<T>(Guid id) where T : class

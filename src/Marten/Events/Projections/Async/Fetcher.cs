@@ -130,7 +130,7 @@ namespace Marten.Events.Projections.Async
                         $@"
 select seq_id from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :last and seq_id <= :limit and age(transaction_timestamp() at time zone 'utc', {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer order by seq_id;
 {_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) and age(transaction_timestamp() at time zone 'utc', {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer order by seq_id;
-";
+".Replace(" as d", "");
 
                     var cmd = conn.CreateCommand(sql)
                         .With("last", lastEncountered)

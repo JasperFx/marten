@@ -21,7 +21,7 @@ namespace Marten.Events
         /// <summary>
         /// The UTC time that this event was originally captured
         /// </summary>
-        DateTime Timestamp { get; set; }
+        DateTimeOffset Timestamp { get; set; }
 
         void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new();
@@ -66,7 +66,7 @@ namespace Marten.Events
         /// <summary>
         /// The UTC time that this event was originally captured
         /// </summary>
-        public DateTime Timestamp { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
         // ENDSAMPLE
 
 

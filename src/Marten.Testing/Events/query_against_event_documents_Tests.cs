@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Services;
+using Marten.Util;
 using Shouldly;
 using Xunit;
 
@@ -79,7 +80,7 @@ namespace Marten.Testing.Events
 
             theSession.SaveChanges();
 
-            var results = theSession.Events.FetchAll();
+            var results = theSession.Events.QueryAllRawEvents().ToList();
 
             results.Count.ShouldBe(4);
         }
@@ -87,7 +88,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void can_fetch_all_events_after_now()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTimeOffset.UtcNow;
 
             theSession.Events.StartStream<Quest>(joined1, departed1);
             theSession.Events.StartStream<Quest>(joined2, departed2);
@@ -96,7 +97,8 @@ namespace Marten.Testing.Events
 
             var past = now.AddSeconds(-1);
 
-            var results = theSession.Events.FetchAll(after: past);
+            var results = theSession.Events.QueryAllRawEvents().Where(x => x.Timestamp > past).ToList();
+                
 
             results.Count.ShouldBe(4);
         }
@@ -109,24 +111,60 @@ namespace Marten.Testing.Events
 
             theSession.SaveChanges();
 
-            var now = DateTime.UtcNow;
-            var results = theSession.Events.FetchAll(before: now);
+            
+
+            var dbNow = (DateTime)theSession.Connection.CreateCommand().Sql("select now();").ExecuteScalar();
+            var now = new DateTimeOffset(dbNow).AddSeconds(5);
+           
+
+            var all = theSession.Events.QueryAllRawEvents().ToList();
+
+            var results = theSession.Events.QueryAllRawEvents()
+                .Where(x => x.Timestamp < now).ToList();
 
             results.Count.ShouldBe(4);
         }
 
 
+        [Fact]
+        public void can_fetch_events_by_sequence()
+        {
+            theSession.Events.StartStream<Quest>(joined1, departed1);
+            theSession.Events.StartStream<Quest>(joined2, departed2);
+
+            theSession.SaveChanges();
+
+            theSession.Events.QueryAllRawEvents()
+                .Count(x => x.Sequence <= 2).ShouldBe(2);
+        }
 
         [Fact]
-        public void can_fetch_all_events_utc_only()
+        public void can_fetch_by_version()
         {
-            Should
-                .Throw<ArgumentOutOfRangeException>(() => theSession.Events.FetchAll(before: DateTime.Now))
-                .ParamName.ShouldBe("before");
+            theSession.Events.StartStream<Quest>(joined1, departed1);
+            theSession.Events.StartStream<Quest>(joined2, departed2);
 
-            Should
-                .Throw<ArgumentOutOfRangeException>(() => theSession.Events.FetchAll(after: DateTime.Now))
-                .ParamName.ShouldBe("after");
+            theSession.SaveChanges();
+
+            theSession.Events.QueryAllRawEvents()
+                .Count(x => x.Version == 1).ShouldBe(2);
         }
+
+        [Fact]
+        public void can_search_by_stream()
+        {
+            var stream1 = theSession.Events.StartStream<Quest>(joined1, departed1);
+            var stream2 = theSession.Events.StartStream<Quest>(joined2, departed2);
+
+            theSession.SaveChanges();
+
+            theSession.Events.QueryAllRawEvents()
+                .Count(x => x.StreamId == stream1).ShouldBe(2);
+        }
+
+        /*
+         * MORE!!!
+         * Async everything
+         */
     }
 }

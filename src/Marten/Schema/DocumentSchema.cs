@@ -64,6 +64,8 @@ namespace Marten.Schema
 
 
             addSystemFunction(options, "mt_immutable_timestamp", "text");
+
+            _eventQuery = new Lazy<EventQueryMapping>(() => new EventQueryMapping(StoreOptions));
         }
 
         private void addSystemFunction(StoreOptions options, string functionName, string args)
@@ -162,8 +164,15 @@ namespace Marten.Schema
 
         public StoreOptions StoreOptions { get; }
 
+        private readonly Lazy<EventQueryMapping> _eventQuery;
+
         public IDocumentMapping MappingFor(Type documentType)
         {
+            if (documentType == typeof(IEvent))
+            {
+                return _eventQuery.Value;
+            }
+
             return StoreOptions.FindMapping(documentType);
         }
 

@@ -68,7 +68,6 @@ namespace Marten.Schema
             }
         }
 
-        // TODO -- think this one might have to change w/ FK's
         public void WritePatch(DocumentMapping mapping, SchemaPatch patch)
         {
             patch.Updates.Apply(mapping, $"ALTER TABLE {mapping.Table.QualifiedName} ADD COLUMN {ColumnName} {PgType};");
@@ -92,7 +91,7 @@ namespace Marten.Schema
         }
 
 
-        public string SqlLocator { get; private set; }
+        public string SqlLocator { get; set; }
 
         public static DuplicatedField For<T>(EnumStorage enumStorage, Expression<Func<T, object>> expression)
         {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Transforms;
 using Remotion.Linq;
@@ -105,6 +106,12 @@ namespace Marten.Linq
                 if (typeof (T) == typeof (string))
                 {
                     return (ISelector<T>) new JsonSelector();
+                }
+
+                // I'm so ashamed of this hack, but "simplest thing that works"
+                if (typeof(T) == typeof(IEvent))
+                {
+                    return mapping.As<EventQueryMapping>().Selector.As<ISelector<T>>();
                 }
 
                 var resolver = schema.ResolverFor<T>();
