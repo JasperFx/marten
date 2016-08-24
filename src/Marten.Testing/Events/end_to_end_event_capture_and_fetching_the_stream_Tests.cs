@@ -41,6 +41,37 @@ namespace Marten.Testing.Events
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
+
+                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTime)));
+            }
+        }
+
+        [Theory]
+        [MemberData("SessionTypes")]
+        public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_async(DocumentTracking sessionType)
+        {
+            var store = InitStore();
+
+
+            using (var session = store.OpenSession(sessionType))
+            {
+                // SAMPLE: start-stream-with-aggregate-type
+                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+                var id = session.Events.StartStream<Quest>(joined, departed);
+                await session.SaveChangesAsync();
+                // ENDSAMPLE
+
+                var streamEvents = await session.Events.FetchStreamAsync(id);
+
+                streamEvents.Count().ShouldBe(2);
+                streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt(0).Version.ShouldBe(1);
+                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt(1).Version.ShouldBe(2);
+
+                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTime)));
             }
         }
 

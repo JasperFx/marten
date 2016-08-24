@@ -18,6 +18,11 @@ namespace Marten.Events
 
         Guid StreamId { get; set; }
 
+        /// <summary>
+        /// The UTC time that this event was originally captured
+        /// </summary>
+        DateTime Timestamp { get; set; }
+
         void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new();
     }
@@ -57,6 +62,11 @@ namespace Marten.Events
         /// The actual event data
         /// </summary>
         public T Data { get; set; }
+
+        /// <summary>
+        /// The UTC time that this event was originally captured
+        /// </summary>
+        public DateTime Timestamp { get; set; }
         // ENDSAMPLE
 
 
