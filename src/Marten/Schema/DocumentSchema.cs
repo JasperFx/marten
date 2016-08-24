@@ -479,7 +479,7 @@ namespace Marten.Schema
 
         private void assertNoDuplicateDocumentAliases()
         {
-            var duplicates = StoreOptions.AllDocumentMappings.GroupBy(x => x.Alias).Where(x => x.Count() > 1).ToArray();
+            var duplicates = StoreOptions.AllDocumentMappings.Where(x => !x.StructuralTyped).GroupBy(x => x.Alias).Where(x => x.Count() > 1).ToArray();
             if (duplicates.Any())
             {
                 var message = duplicates.Select(group =>

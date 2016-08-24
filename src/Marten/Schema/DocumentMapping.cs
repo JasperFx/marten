@@ -194,6 +194,7 @@ namespace Marten.Schema
 
         public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;
         public DeleteStyle DeleteStyle { get; set; } = DeleteStyle.Remove;
+        public bool StructuralTyped { get; set; }
 
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
