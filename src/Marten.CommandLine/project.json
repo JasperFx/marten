@@ -16,20 +16,17 @@
       "../CommonAssemblyInfo.cs"
     ]
   },
-
   "dependencies": {
     "Oakton": "1.1.0",
-    "Marten": {"target": "project" }  
+    "Marten": "1.0.0-alpha"
   },
-
-
   "frameworks": {
     "netstandard1.3": {
-      "dependencies": { "NETStandard.Library": "1.6.0" }
+      "dependencies": {
+        "NETStandard.Library": "1.6.0"
+      }
     },
     "net46": {
-
-    }  
-
+    }
   }
 }
