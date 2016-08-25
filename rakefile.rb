@@ -134,7 +134,7 @@ namespace :nuget do
 
   desc 'Restores nuget packages with paket'
   task :restore => [:bootstrap] do
-    sh 'dotnet restore --disable-parallel'
+    sh 'dotnet restore'
     #sh '.paket/paket.exe restore'
   end
 
