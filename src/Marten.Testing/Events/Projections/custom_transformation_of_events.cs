@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class custom_transformation_of_events : DocumentSessionFixture<IdentityMap>
+    public class project_events_from_multiple_streams_into_view : DocumentSessionFixture<IdentityMap>
     {
         static readonly Guid streamId = Guid.NewGuid();
 
@@ -73,12 +73,12 @@ namespace Marten.Testing.Events.Projections
         }
 
         [Fact]
-        public void persist_new_document()
+        public void persist_new_view()
         {
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.Add(new PersistDocumentProjection());
+                _.Events.InlineProjections.Add(new PersistViewProjection());
             });
 
             theSession.Events.StartStream<QuestParty>(streamId, started, joined);
@@ -96,12 +96,12 @@ namespace Marten.Testing.Events.Projections
         }
 
         [Fact]
-        public async void persist_new_document_async()
+        public async void persist_new_view_async()
         {
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.Add(new PersistDocumentProjection());
+                _.Events.InlineProjections.Add(new PersistViewProjection());
             });
 
             theSession.Events.StartStream<QuestParty>(streamId, started, joined);
@@ -125,9 +125,9 @@ namespace Marten.Testing.Events.Projections
         public List<object> Events { get; } = new List<object>();
     }
 
-    public class PersistDocumentProjection : ViewProjection<PersistedView>
+    public class PersistViewProjection : ViewProjection<PersistedView>
     {
-        public PersistDocumentProjection()
+        public PersistViewProjection()
         {
             ProjectEvent<QuestStarted>(Persist);
             ProjectEvent<MembersJoined>(e => e.QuestId, Persist);

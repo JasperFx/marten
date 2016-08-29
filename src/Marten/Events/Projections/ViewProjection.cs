@@ -35,16 +35,16 @@ namespace Marten.Events.Projections
 
             Event<TEvent>((session, id, @event) =>
             {
-                var experience = GetView(session, id);
+                var view = GetView(session, id);
 
-                handler(experience, @event);
+                handler(view, @event);
             });
 
             EventAsync<TEvent>(async (session, id, @event) =>
             {
-                var experience = await GetViewAsync(session, id);
+                var view = await GetViewAsync(session, id);
 
-                handler(experience, @event);
+                handler(view, @event);
             });
 
             return this;
@@ -59,18 +59,18 @@ namespace Marten.Events.Projections
             {
                 var eventId = viewIdSelector(@event);
 
-                var experience = GetView(session, eventId);
+                var view = GetView(session, eventId);
 
-                handler(experience, @event);
+                handler(view, @event);
             });
 
             EventAsync<TEvent>(async (session, streamId, @event) =>
             {
                 var eventId = viewIdSelector(@event);
 
-                var experience = await GetViewAsync(session, eventId);
+                var view = await GetViewAsync(session, eventId);
 
-                handler(experience, @event);
+                handler(view, @event);
             });
 
             return this;
