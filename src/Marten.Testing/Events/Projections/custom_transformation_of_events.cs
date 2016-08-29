@@ -32,7 +32,13 @@ namespace Marten.Testing.Events.Projections
                     .ProjectEvent<MonsterSlayed>(e => e.QuestId, (view, @event) => events.Add(@event));
             });
 
-            theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
+            theSession.Events.StartStream<QuestParty>(streamId, started, joined);
+            theSession.SaveChanges();
+
+            theSession.Events.StartStream<Monster>(slayed1, slayed2);
+            theSession.SaveChanges();
+
+            theSession.Events.Append(streamId, joined2);
             theSession.SaveChanges();
 
             events.Count.ShouldBe(5);
@@ -53,7 +59,13 @@ namespace Marten.Testing.Events.Projections
                     .ProjectEvent<MonsterSlayed>(e => e.QuestId, (view, @event) => { events.Add(@event); });
             });
 
-            theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
+            theSession.Events.StartStream<QuestParty>(streamId, started, joined);
+            await theSession.SaveChangesAsync();
+
+            theSession.Events.StartStream<Monster>(slayed1, slayed2);
+            await theSession.SaveChangesAsync();
+
+            theSession.Events.Append(streamId, joined2);
             await theSession.SaveChangesAsync();
 
             events.Count.ShouldBe(5);
@@ -69,7 +81,13 @@ namespace Marten.Testing.Events.Projections
                 _.Events.InlineProjections.Add(new PersistDocumentProjection());
             });
 
-            theSession.Events.StartStream<QuestParty>(streamId, started, joined, slayed1, slayed2, joined2);
+            theSession.Events.StartStream<QuestParty>(streamId, started, joined);
+            theSession.SaveChanges();
+
+            theSession.Events.StartStream<Monster>(slayed1, slayed2);
+            theSession.SaveChanges();
+
+            theSession.Events.Append(streamId, joined2);
             theSession.SaveChanges();
 
             var document = theSession.Load<PersistedView>(streamId);
@@ -86,7 +104,13 @@ namespace Marten.Testing.Events.Projections
                 _.Events.InlineProjections.Add(new PersistDocumentProjection());
             });
 
-            theSession.Events.StartStream<QuestParty>(streamId, started, joined, slayed1, slayed2, joined2);
+            theSession.Events.StartStream<QuestParty>(streamId, started, joined);
+            await theSession.SaveChangesAsync();
+
+            theSession.Events.StartStream<Monster>(slayed1, slayed2);
+            await theSession.SaveChangesAsync();
+
+            theSession.Events.Append(streamId, joined2);
             await theSession.SaveChangesAsync();
 
             var document = theSession.Load<PersistedView>(streamId);
