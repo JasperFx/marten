@@ -25,6 +25,7 @@ namespace Marten.Testing.Events
 
     public class MembersJoined
     {
+
         public MembersJoined()
         {
         }
@@ -35,6 +36,8 @@ namespace Marten.Testing.Events
             Location = location;
             Members = members;
         }
+
+        public Guid QuestId { get; set; }
 
         public int Day { get; set; }
 
