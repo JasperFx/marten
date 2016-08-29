@@ -25,7 +25,7 @@ namespace Marten.Events.Projections
         private readonly IDictionary<Type, Action<IDocumentSession, StreamEvent>> _handlers = new ConcurrentDictionary<Type, Action<IDocumentSession, StreamEvent>>();
         private readonly IDictionary<Type, Func<IDocumentSession, StreamEvent, Task>> _asyncHandlers = new ConcurrentDictionary<Type, Func<IDocumentSession, StreamEvent, Task>>();
 
-        public Type[] Consumes => _handlers.Keys.Union(_asyncHandlers.Keys).ToArray();
+        public Type[] Consumes => GetUniqueEventTypes();
         public Type Produces => typeof(TView);
         public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
 
@@ -146,6 +146,14 @@ namespace Marten.Events.Projections
         private static IEnumerable<StreamEvent> GetEvents(EventStream[] streams)
         {
             return streams.SelectMany(stream => stream.Events.Select(@event => new StreamEvent(stream, @event)));
+        }
+
+        private Type[] GetUniqueEventTypes()
+        {
+            return _handlers.Keys
+                .Union(_asyncHandlers.Keys)
+                .Distinct()
+                .ToArray();
         }
     }
 }
