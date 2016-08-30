@@ -71,6 +71,12 @@ namespace Marten.Transforms
 
                 writer.WriteLine(expected.ToOwnershipCommand(schema.StoreOptions.OwnerName));
             }
+
+            var args = allArgs().Select(x => "jsonb").Join(", ");
+            schema.StoreOptions.DdlRules.Grants.Each(role =>
+            {
+                writer.WriteLine($"GRANT EXECUTE ON FUNCTION {Function.QualifiedName}({args}) TO \"{role}\";");
+            });
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)
@@ -97,7 +103,7 @@ namespace Marten.Transforms
 
                 schema.StoreOptions.DdlRules.Grants.Each(role =>
                 {
-                    patch.Updates.Apply(this, $"GRANT EXECUTE ON {Function.QualifiedName}({signature}) TO \"{role}\"");
+                    patch.Updates.Apply(this, $"GRANT EXECUTE ON FUNCTION {Function.QualifiedName}({signature}) TO \"{role}\"");
                 });
             }
         }

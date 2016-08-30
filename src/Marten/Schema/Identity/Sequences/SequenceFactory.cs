@@ -53,7 +53,10 @@ namespace Marten.Schema.Identity.Sequences
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
+            var patch = new SchemaPatch(schema.StoreOptions.DdlRules, writer);
+
             var sqlScript = SchemaBuilder.GetSqlScript(Table.Schema, "mt_hilo");
+
             writer.WriteLine(sqlScript);
             writer.WriteLine("");
             writer.WriteLine("");
@@ -63,6 +66,9 @@ namespace Marten.Schema.Identity.Sequences
                 writer.WriteLine($"ALTER TABLE {schema.StoreOptions.DatabaseSchemaName}.mt_hilo OWNER TO \"{schema.StoreOptions.OwnerName}\";");
                 writer.WriteLine($"ALTER FUNCTION {schema.StoreOptions.DatabaseSchemaName}.mt_get_next_hi(varchar) OWNER TO \"{schema.StoreOptions.OwnerName}\";");
             }
+
+            writeOwnership(schema, patch);
+            writeGrants(schema, patch);
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)
@@ -99,7 +105,7 @@ namespace Marten.Schema.Identity.Sequences
                 patch.Updates.Apply(this, $"GRANT UPDATE ON TABLE {Table.QualifiedName} TO \"{role}\";");
                 patch.Updates.Apply(this, $"GRANT INSERT ON TABLE {Table.QualifiedName} TO \"{role}\";");
 
-                patch.Updates.Apply(this, $"GRANT EXECUTE ON {schema.StoreOptions.DatabaseSchemaName}.mt_get_next_hi(varchar) TO \"{role}\";");
+                patch.Updates.Apply(this, $"GRANT EXECUTE ON FUNCTION {schema.StoreOptions.DatabaseSchemaName}.mt_get_next_hi(varchar) TO \"{role}\";");
             }
         }
 

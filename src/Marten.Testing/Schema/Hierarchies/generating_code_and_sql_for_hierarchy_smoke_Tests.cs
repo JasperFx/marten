@@ -41,8 +41,8 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("GRANT EXECUTE ON public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) TO \"foo\";");
-            sql.ShouldContain("GRANT EXECUTE ON public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) TO \"bar\";");
+            sql.ShouldContain("GRANT EXECUTE ON FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) TO \"foo\";");
+            sql.ShouldContain("GRANT EXECUTE ON FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) TO \"bar\";");
         }
 
         [Fact]

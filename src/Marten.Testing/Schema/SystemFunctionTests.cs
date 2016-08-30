@@ -80,7 +80,7 @@ namespace Marten.Testing.Schema
 
             function.WriteSchemaObjects(theStore.Schema, writer);
 
-            writer.ToString().ShouldContain("GRANT EXECUTE ON other.mt_immutable_timestamp(text) TO \"foo\";");
+            writer.ToString().ShouldContain("GRANT EXECUTE ON FUNCTION other.mt_immutable_timestamp(text) TO \"foo\";");
         }
 
         [Fact]

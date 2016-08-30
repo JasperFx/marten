@@ -31,6 +31,11 @@ namespace Marten.Schema
             Rules = rules;
         }
 
+        public SchemaPatch(DdlRules rules, StringWriter upWriter) : this(rules, new DDLRecorder(upWriter))
+        {
+            
+        }
+
         public SchemaPatch(DocumentSchema schema) : this(schema.StoreOptions.DdlRules, schema)
         {
             

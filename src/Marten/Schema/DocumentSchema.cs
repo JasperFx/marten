@@ -319,7 +319,7 @@ namespace Marten.Schema
 
                 var file = directory.AppendPath(schemaObject.Name + ".sql");
 
-                new SchemaPatch(new DdlRules()).WriteTransactionalFile(file, writer.ToString());
+                new SchemaPatch(StoreOptions.DdlRules).WriteTransactionalFile(file, writer.ToString());
             }
         }
 
@@ -330,7 +330,7 @@ namespace Marten.Schema
         {
             var writer = new StringWriter();
 
-            new SchemaPatch(new DdlRules()).WriteTransactionalScript(writer, w =>
+            new SchemaPatch(StoreOptions.DdlRules).WriteTransactionalScript(writer, w =>
             {
                 var allSchemaNames = AllSchemaNames();
                 DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, w);
@@ -426,6 +426,8 @@ namespace Marten.Schema
 
         void IDDLRunner.Apply(object subject, string ddl)
         {
+            if (ddl.Trim().IsEmpty()) return;
+
             try
             {
                 _factory.RunSql(ddl);

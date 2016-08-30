@@ -169,6 +169,8 @@ namespace Marten.Schema
             if (diff.CanPatch())
             {
                 diff.CreatePatch(schema.StoreOptions, runner);
+
+
                 
             }
             else if (autoCreateSchemaObjectsMode == AutoCreate.All)

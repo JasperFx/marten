@@ -69,13 +69,38 @@ namespace Marten.Testing.Schema.Identity.Sequences
             patch.UpdateDDL.ShouldContain("GRANT SELECT ON TABLE other.mt_hilo TO \"foo\";");
             patch.UpdateDDL.ShouldContain("GRANT UPDATE ON TABLE other.mt_hilo TO \"foo\";");
             patch.UpdateDDL.ShouldContain("GRANT INSERT ON TABLE other.mt_hilo TO \"foo\";");
-            patch.UpdateDDL.ShouldContain("GRANT EXECUTE ON other.mt_get_next_hi(varchar) TO \"foo\";");
+            patch.UpdateDDL.ShouldContain("GRANT EXECUTE ON FUNCTION other.mt_get_next_hi(varchar) TO \"foo\";");
 
 
             patch.UpdateDDL.ShouldContain("GRANT SELECT ON TABLE other.mt_hilo TO \"bar\";");
             patch.UpdateDDL.ShouldContain("GRANT UPDATE ON TABLE other.mt_hilo TO \"bar\";");
             patch.UpdateDDL.ShouldContain("GRANT INSERT ON TABLE other.mt_hilo TO \"bar\";");
-            patch.UpdateDDL.ShouldContain("GRANT EXECUTE ON other.mt_get_next_hi(varchar) TO \"bar\";");
+            patch.UpdateDDL.ShouldContain("GRANT EXECUTE ON FUNCTION other.mt_get_next_hi(varchar) TO \"bar\";");
+        }
+
+        [Fact]
+        public void should_have_grants_with_the_sequence_factory_in_to_ddl()
+        {
+            StoreOptions(_ =>
+            {
+                _.DdlRules.Grants.Add("foo");
+                _.DdlRules.Grants.Add("bar");
+
+                _.DatabaseSchemaName = "other";
+            });
+
+            var sql = theStore.Schema.ToDDL();
+
+            sql.ShouldContain("GRANT SELECT ON TABLE other.mt_hilo TO \"foo\";");
+            sql.ShouldContain("GRANT UPDATE ON TABLE other.mt_hilo TO \"foo\";");
+            sql.ShouldContain("GRANT INSERT ON TABLE other.mt_hilo TO \"foo\";");
+            sql.ShouldContain("GRANT EXECUTE ON FUNCTION other.mt_get_next_hi(varchar) TO \"foo\";");
+
+
+            sql.ShouldContain("GRANT SELECT ON TABLE other.mt_hilo TO \"bar\";");
+            sql.ShouldContain("GRANT UPDATE ON TABLE other.mt_hilo TO \"bar\";");
+            sql.ShouldContain("GRANT INSERT ON TABLE other.mt_hilo TO \"bar\";");
+            sql.ShouldContain("GRANT EXECUTE ON FUNCTION other.mt_get_next_hi(varchar) TO \"bar\";");
         }
     }
 

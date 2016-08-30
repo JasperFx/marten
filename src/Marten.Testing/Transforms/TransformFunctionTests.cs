@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
@@ -60,6 +61,23 @@ namespace Marten.Testing.Transforms
             func.Body.ShouldContain("module.exports");
 
             func.Function.Name.ShouldBe("mt_transform_get_fullname");
+        }
+
+        [Fact]
+        public void write_schema_includes_grants()
+        {
+            var options = new StoreOptions();
+            options.DdlRules.Grants.Add("foo");
+
+            var writer = new StringWriter();
+            var schema = Substitute.For<IDocumentSchema>();
+            schema.StoreOptions.Returns(options);
+
+            var func = TransformFunction.ForFile(options, "get_fullname.js");
+
+            func.WriteSchemaObjects(schema, writer);
+
+            writer.ToString().ShouldContain("GRANT EXECUTE ON FUNCTION public.mt_transform_get_fullname(jsonb) TO \"foo\";");
         }
 
         [Fact]

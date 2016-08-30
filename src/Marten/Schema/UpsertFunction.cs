@@ -97,7 +97,7 @@ $function$;
 
             rules.Grants.Each(role =>
             {
-                writer.WriteLine($"GRANT EXECUTE ON {_functionName.QualifiedName}({argList}) TO \"{role}\";");
+                writer.WriteLine($"GRANT EXECUTE ON FUNCTION {_functionName.QualifiedName}({argList}) TO \"{role}\";");
             });
 
         }

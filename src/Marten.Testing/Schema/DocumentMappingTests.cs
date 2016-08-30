@@ -9,6 +9,7 @@ using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Testing.Documents;
 using Marten.Testing.Schema.Hierarchies;
+using Marten.Util;
 using Shouldly;
 using StructureMap;
 using Xunit;
@@ -405,11 +406,16 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_simple_document_table_with_grants()
         {
+
+
             StoreOptions(_ =>
             {
                 _.DdlRules.Grants.Add("foo");
                 _.DdlRules.Grants.Add("bar");
             });
+
+            createRoles();
+
 
             var mapping = DocumentMapping.For<MySpecialDocument>();
             var builder = new StringWriter();
@@ -427,6 +433,16 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("GRANT INSERT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
             sql.ShouldContain("GRANT INSERT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
 
+        }
+
+        private static void createRoles()
+        {
+            using (var conn = new ConnectionSource().Create())
+            {
+                conn.Open();
+                conn.CreateCommand("DROP ROLE IF EXISTS foo;create role foo;").ExecuteNonQuery();
+                conn.CreateCommand("DROP ROLE IF EXISTS bar;create role bar;").ExecuteNonQuery();
+            }
         }
 
         [Fact]

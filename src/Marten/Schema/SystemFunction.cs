@@ -39,6 +39,11 @@ namespace Marten.Schema
             }
 
             diff.WritePatch(schema.StoreOptions, patch);
+
+            schema.StoreOptions.DdlRules.Grants.Each(role =>
+            {
+                patch.Updates.Apply(this, $"GRANT EXECUTE ON FUNCTION {_function.QualifiedName}({_args}) TO \"{role}\";");
+            });
         }
 
         private FunctionDiff createFunctionDiff(IDocumentSchema schema)
@@ -62,7 +67,7 @@ namespace Marten.Schema
 
             schema.StoreOptions.DdlRules.Grants.Each(role =>
             {
-                writer.WriteLine($"GRANT EXECUTE ON {_function.QualifiedName}({_args}) TO \"{role}\";");
+                writer.WriteLine($"GRANT EXECUTE ON FUNCTION {_function.QualifiedName}({_args}) TO \"{role}\";");
             });
 
             writer.WriteLine("");
@@ -81,6 +86,11 @@ namespace Marten.Schema
         public void WritePatch(IDocumentSchema schema, SchemaPatch patch)
         {
             createFunctionDiff(schema).WritePatch(schema.StoreOptions, patch);
+
+            schema.StoreOptions.DdlRules.Grants.Each(role =>
+            {
+                patch.Updates.Apply(this, $"GRANT EXECUTE ON FUNCTION {_function.QualifiedName}({_args}) TO \"{role}\";");
+            });
         }
 
         public string Name { get; }
