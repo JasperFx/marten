@@ -302,6 +302,35 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void can_write_patch_by_type_smoke_test()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.RegisterDocumentType<User>();
+                _.RegisterDocumentType<Company>();
+                _.RegisterDocumentType<Issue>();
+
+                _.Connection(ConnectionSource.ConnectionString);
+            }))
+            {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
+
+                store.Schema.WritePatchByType(@"bin\allsql2");
+            }
+
+            var fileSystem = new FileSystem();
+            var files = fileSystem.FindFiles(@"bin\allsql2", FileSet.Shallow("*.sql")).ToArray();
+
+            files.ShouldNotContain("database_schemas.sql");
+
+            files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x)
+                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "patch_doc.sql", "user.sql");
+
+
+        }
+
+        [Fact]
         public void write_ddl_by_type_generates_the_all_sql_script()
         {
             using (var store = DocumentStore.For(_ =>

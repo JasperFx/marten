@@ -92,6 +92,8 @@ namespace Marten.Events
 
         public void WritePatch(IDocumentSchema schema, SchemaPatch patch)
         {
+            if (!_parent.IsActive) return;
+
             var tableExists = schema.DbObjects.TableExists(_parent.Table);
 
             if (tableExists) return;

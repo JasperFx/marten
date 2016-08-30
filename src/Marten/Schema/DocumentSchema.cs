@@ -324,7 +324,31 @@ namespace Marten.Schema
         }
 
 
+        public void WritePatchByType(string directory)
+        {
+            var system = new FileSystem();
 
+            system.DeleteDirectory(directory);
+            system.CreateDirectory(directory);
+
+            var schemaObjects = AllSchemaObjects().ToArray();
+            writeDatabaseSchemaGenerationScript(directory, system, schemaObjects);
+
+
+            foreach (var schemaObject in schemaObjects)
+            {
+                var patch = new SchemaPatch(StoreOptions.DdlRules);
+                schemaObject.WritePatch(this, patch);
+
+                if (patch.UpdateDDL.IsNotEmpty())
+                {
+                    var file = directory.AppendPath(schemaObject.Name + ".sql");
+                    patch.WriteUpdateFile(file);
+                }
+
+
+            }
+        }
 
         public string ToDDL()
         {

@@ -160,5 +160,7 @@ namespace Marten.Schema
         /// <param name="documentType"></param>
         /// <returns></returns>
         SchemaPatch ToPatch(Type documentType);
+
+        void WritePatchByType(string directory);
     }
 }
