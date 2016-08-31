@@ -200,6 +200,67 @@ namespace Marten.Testing.Services.Includes
         }
 
         [Fact]
+        public void include_to_list_using_inner_join()
+        {
+            var user1 = new User();
+            var user2 = new User();
+
+            var issue1 = new Issue { AssigneeId = user1.Id, Title = "Garage Door is busted" };
+            var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+            var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+            var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
+
+            theSession.Store(user1, user2);
+            theSession.Store(issue1, issue2, issue3, issue4);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var list = new List<User>();
+
+                var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list, JoinType.Inner).ToArray();
+
+                list.Count.ShouldBe(2);
+
+                list.Any(x => x.Id == user1.Id);
+                list.Any(x => x.Id == user2.Id);
+
+                issues.Length.ShouldBe(3);
+            }
+        }
+
+        [Fact]
+        public void include_to_list_using_outer_join()
+        {
+            var user1 = new User();
+            var user2 = new User();
+
+            var issue1 = new Issue { AssigneeId = user1.Id, Title = "Garage Door is busted" };
+            var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+            var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+            var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
+
+            theSession.Store(user1, user2);
+            theSession.Store(issue1, issue2, issue3, issue4);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var list = new List<User>();
+
+                var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list, JoinType.LeftOuter).ToArray();
+
+                list.Count.ShouldBe(3);
+
+                list.Any(x => x.Id == user1.Id);
+                list.Any(x => x.Id == user2.Id);
+                list.Any(x => x == null);
+
+                issues.Length.ShouldBe(4);
+            }
+        }
+
+        [Fact]
         public void include_is_running_through_identitymap()
         {
             var user1 = new User();
