@@ -90,7 +90,7 @@ namespace Marten.Linq
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list,
             JoinType joinType = JoinType.Inner) where TInclude : class
         {
-            return Include<TInclude>(idSource, list.Fill);
+            return Include<TInclude>(idSource, list.Fill, joinType);
         }
 
         public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
