@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Baseline;
 using Marten.Events.Projections.Async.ErrorHandling;
 using Marten.Util;
 
@@ -93,7 +92,7 @@ namespace Marten.Events.Projections.Async
             _logger.FetchingFinished(this, lastEncountered);
             _atEndOfEventLog = true;
 
-            if (_executionTrack.InputCount == 0)
+            if (_executionTrack.InputCount == 0 && LastEncountered >= lastEncountered)
             {
                 _rebuildCompletion.SetResult(lastEncountered);
             }

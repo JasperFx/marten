@@ -158,6 +158,9 @@ namespace Marten.Testing.AsyncDaemon
 
             _fixture.PublishAllProjectEvents(theStore);
 
+
+            
+
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
             {
                 LeadingEdgeBuffer = 0.Seconds()
@@ -167,6 +170,7 @@ namespace Marten.Testing.AsyncDaemon
             }
 
             _fixture.CompareActiveProjects(theStore);
+            
         }
 
         [Fact]
