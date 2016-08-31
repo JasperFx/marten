@@ -158,17 +158,15 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Creates a computed index on this data member within the JSON data storage
+            /// </summary>
+            /// <param name="expression"></param>
+            /// <param name="configure"></param>
+            /// <returns></returns>
             public DocumentMappingExpression<T> Index(Expression<Func<T, object>> expression, Action<ComputedIndex> configure = null)
             {
-                var visitor = new FindMembers();
-                visitor.Visit(expression);
-
-                alter = mapping =>
-                {
-                    var index = new ComputedIndex(mapping, visitor.Members.ToArray());
-                    configure?.Invoke(index);
-                    mapping.Indexes.Add(index);
-                };
+                alter = m => m.Index(expression, configure);
 
                 return this;
             }
@@ -178,17 +176,7 @@ namespace Marten
                 Action<ForeignKeyDefinition> foreignKeyConfiguration = null,
                 Action<IndexDefinition> indexConfiguration = null)
             {
-                var visitor = new FindMembers();
-                visitor.Visit(expression);
-
-                alter = mapping =>
-                {
-                    var foreignKeyDefinition = mapping.AddForeignKey(visitor.Members.ToArray(), typeof(TReference));
-                    foreignKeyConfiguration?.Invoke(foreignKeyDefinition);
-
-                    var indexDefinition = mapping.AddIndex(foreignKeyDefinition.ColumnName);
-                    indexConfiguration?.Invoke(indexDefinition);
-                };
+                alter = m => m.ForeignKey<TReference>(expression, foreignKeyConfiguration, indexConfiguration);
 
                 return this;
             }

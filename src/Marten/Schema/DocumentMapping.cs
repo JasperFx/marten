@@ -494,6 +494,9 @@ namespace Marten.Schema
     {
         public DocumentMapping(StoreOptions storeOptions) : base(typeof(T), storeOptions)
         {
+            var configure = typeof(T).GetMethod("ConfigureMarten", BindingFlags.Static | BindingFlags.Public);
+            configure?.Invoke(null, new object[] {this});
+
         }
 
         /// <summary>
@@ -550,6 +553,36 @@ namespace Marten.Schema
                     null
                 )
             );
+        }
+
+        /// <summary>
+        /// Adds a computed index 
+        /// </summary>
+        /// <param name="expression"></param>
+        /// <param name="configure"></param>
+        public void Index(Expression<Func<T, object>> expression, Action<ComputedIndex> configure = null)
+        {
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            var index = new ComputedIndex(this, visitor.Members.ToArray());
+            configure?.Invoke(index);
+            Indexes.Add(index);
+        }
+
+        public void ForeignKey<TReference>(
+            Expression<Func<T, object>> expression,
+            Action<ForeignKeyDefinition> foreignKeyConfiguration = null,
+            Action<IndexDefinition> indexConfiguration = null)
+        {
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            var foreignKeyDefinition = AddForeignKey(visitor.Members.ToArray(), typeof(TReference));
+            foreignKeyConfiguration?.Invoke(foreignKeyDefinition);
+
+            var indexDefinition = AddIndex(foreignKeyDefinition.ColumnName);
+            indexConfiguration?.Invoke(indexDefinition);
         }
     }
 }

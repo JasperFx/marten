@@ -891,5 +891,41 @@ namespace Marten.Testing.Schema
                 throw new NotImplementedException();
             }
         }
+
+
+        public class ConfiguresItself
+        {
+            public static void ConfigureMarten(DocumentMapping mapping)
+            {
+                mapping.Alias = "different";
+            }
+
+            public Guid Id;
+        }
+
+        [Fact]
+        public void uses_ConfigureMarten_method_to_alter_mapping_upon_construction()
+        {
+            var mapping = DocumentMapping.For<ConfiguresItself>();
+            mapping.Alias.ShouldBe("different");
+        }
+
+        public class ConfiguresItselfSpecifically
+        {
+            public static void ConfigureMarten(DocumentMapping<ConfiguresItselfSpecifically> mapping)
+            {
+                mapping.Duplicate(x => x.Name);
+            }
+
+            public Guid Id;
+            public string Name;
+        }
+
+        [Fact]
+        public void uses_ConfigureMarten_method_to_alter_mapping_upon_construction_with_the_generic_signature()
+        {
+            var mapping = DocumentMapping.For<ConfiguresItselfSpecifically>();
+            mapping.DuplicatedFields.Single().MemberName.ShouldBe(nameof(ConfiguresItselfSpecifically.Name));
+        }
     }
 }
