@@ -60,7 +60,10 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.InlineProjections.AggregateStreamsWith<ActiveProject>();
                 _.Events.InlineProjections.TransformEvents(new CommitViewTransform());
             });
+        }
 
+        public void LoadAllProjects()
+        {
             var folder = ".".ToFullPath().ParentDirectory().ParentDirectory()
                 .AppendPath("CodeTracker");
 
@@ -78,9 +81,15 @@ namespace Marten.Testing.AsyncDaemon
             PublishAllProjectEvents(_store);
         }
 
+        public void LoadSingleProjects()
+        {
+            AllProjects = new Dictionary<Guid, GithubProject>();
+            AllProjects.Add(Guid.NewGuid(), new GithubProject("org", "name", DateTimeOffset.UtcNow));
 
+            PublishAllProjectEvents(_store);
+        }
 
-        public Dictionary<Guid, GithubProject> AllProjects { get; }
+        public Dictionary<Guid, GithubProject> AllProjects { get; private set; }
 
         public Task PublishAllProjectEventsAsync(IDocumentStore store)
         {
@@ -99,7 +108,6 @@ namespace Marten.Testing.AsyncDaemon
 
             Task.WaitAll(tasks.ToArray());
         }
-
 
         private static IDictionary<string, ActiveProject> fetchProjects(IDocumentStore store)
         {
