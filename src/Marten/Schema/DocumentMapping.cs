@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Baseline;
@@ -21,12 +22,7 @@ namespace Marten.Schema
         CannotDelete
     }
 
-    public class DocumentMapping<T> : DocumentMapping
-    {
-        public DocumentMapping(StoreOptions storeOptions) : base(typeof(T), storeOptions)
-        {
-        }
-    }
+
 
     public class DocumentMapping : IDocumentMapping, IQueryableDocument
     {
@@ -233,7 +229,7 @@ namespace Marten.Schema
                 DefaultIdStrategy = idGeneration
             };
 
-            return new DocumentMapping(typeof(T), storeOptions);
+            return new DocumentMapping<T>(storeOptions);
         }
 
         public static MemberInfo FindIdMember(Type documentType)
@@ -491,6 +487,69 @@ namespace Marten.Schema
         public override string ToString()
         {
             return $"Storage for {DocumentType}, Table: {Table}";
+        }
+    }
+
+    public class DocumentMapping<T> : DocumentMapping
+    {
+        public DocumentMapping(StoreOptions storeOptions) : base(typeof(T), storeOptions)
+        {
+        }
+
+        /// <summary>
+        /// Marks a property or field on this document type as a searchable field that is also duplicated in the 
+        /// database document table
+        /// </summary>
+        /// <param name="expression"></param>
+        /// <param name="pgType">Optional, overrides the Postgresql column type for the duplicated field</param>
+        /// <param name="configure">Optional, allows you to customize the Postgresql database index configured for the duplicated field</param>
+        /// <returns></returns>
+        public void Duplicate(Expression<Func<T, object>> expression, string pgType = null, Action<IndexDefinition> configure = null)
+        {
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType);
+            var indexDefinition = AddIndex(duplicateField.ColumnName);
+            configure?.Invoke(indexDefinition);
+        }
+
+        /// <summary>
+        /// Programmatically directs Marten to map all the subclasses of <cref name="T"/> to a hierarchy of types
+        /// </summary>
+        /// <param name="allSubclassTypes">All the subclass types of <cref name="T"/> that you wish to map. 
+        /// You can use either params of <see cref="Type"/> or <see cref="MappedType"/> or a mix, since Type can implicitly convert to MappedType (without an alias)</param>
+        /// <returns></returns>
+        public void AddSubClassHierarchy(params MappedType[] allSubclassTypes)
+        {
+            allSubclassTypes.Each(subclassType =>
+                AddSubClass(
+                    subclassType.Type,
+                    allSubclassTypes.Except(new[] { subclassType }),
+                    subclassType.Alias
+                )
+            );
+        }
+
+        /// <summary>
+        /// Programmatically directs Marten to map all the subclasses of <cref name="T"/> to a hierarchy of types. <c>Unadvised in projects with many types.</c>
+        /// </summary>
+        /// <returns></returns>
+        public void AddSubClassHierarchy()
+        {
+            var baseType = typeof(T);
+            var allSubclassTypes = baseType.GetTypeInfo().Assembly.GetTypes()
+                .Where(t => t.GetTypeInfo().IsSubclassOf(baseType) || baseType.GetTypeInfo().IsInterface && t.GetInterfaces().Contains(baseType))
+                .Select(t => (MappedType)t).ToList();
+
+
+            allSubclassTypes.Each<MappedType>(subclassType =>
+                AddSubClass(
+                    subclassType.Type,
+                    allSubclassTypes.Except<MappedType>(new[] { subclassType }),
+                    null
+                )
+            );
         }
     }
 }

@@ -141,16 +141,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string pgType = null, Action<IndexDefinition> configure = null)
             {
-                var visitor = new FindMembers();
-                visitor.Visit(expression);
-
-                alter = mapping =>
-                {
-                    var duplicateField = mapping.DuplicateField(visitor.Members.ToArray(), pgType);
-                    var indexDefinition = mapping.AddIndex(duplicateField.ColumnName);
-                    configure?.Invoke(indexDefinition);
-                };
-
+                alter = mapping => mapping.Duplicate(expression, pgType, configure);
                 return this;
             }
 
@@ -232,13 +223,13 @@ namespace Marten
                 return this;
             }
 
-            private Action<DocumentMapping> alter
+            private Action<DocumentMapping<T>> alter
             {
                 set
                 {
                     Action<StoreOptions> alteration = o =>
                     {
-                        value(o.MappingFor(typeof (T)));
+                        value((DocumentMapping<T>) o.MappingFor(typeof (T)));
                     };
 
 
@@ -285,13 +276,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> AddSubClassHierarchy(params MappedType[] allSubclassTypes)
             {
-                alter = mapping => allSubclassTypes.Each(subclassType => 
-                    mapping.AddSubClass(
-                        subclassType.Type, 
-                        allSubclassTypes.Except(new [] {subclassType}), 
-                        subclassType.Alias
-                    )
-                );
+                alter = m => m.AddSubClassHierarchy(allSubclassTypes);
                 return this;
             }
 
@@ -301,17 +286,8 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> AddSubClassHierarchy()
             {
-                var baseType = typeof (T);
-                var allSubclassTypes = baseType.GetTypeInfo().Assembly.GetTypes()
-                    .Where(t => t.GetTypeInfo().IsSubclassOf(baseType) || baseType.GetTypeInfo().IsInterface && t.GetInterfaces().Contains(baseType))
-                    .Select(t=>(MappedType)t).ToList();
-                alter = mapping => allSubclassTypes.Each<MappedType>(subclassType => 
-                    mapping.AddSubClass(
-                        subclassType.Type, 
-                        allSubclassTypes.Except<MappedType>(new [] {subclassType}),
-                        null
-                    )
-                );
+                alter = m => m.AddSubClassHierarchy();
+
                 return this;
             }
 

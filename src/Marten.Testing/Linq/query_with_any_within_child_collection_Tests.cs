@@ -38,10 +38,12 @@ namespace Marten.Testing.Linq
         [Fact]
         public void can_query_with_containment_operator()
         {
+            var expected = new Guid[] {targets[5].Id, targets[9].Id, targets[12].Id}.OrderBy(x => x);
+
             theSession.Query<Target>("where data @> '{\"Children\": [{\"Number\": 6}]}'")
                 .ToArray()
-                .Select(x => x.Id)
-                .ShouldHaveTheSameElementsAs(targets[5].Id, targets[9].Id, targets[12].Id);
+                .Select(x => x.Id).OrderBy(x => x)
+                .ShouldHaveTheSameElementsAs(expected);
         }
 
         [Fact]
