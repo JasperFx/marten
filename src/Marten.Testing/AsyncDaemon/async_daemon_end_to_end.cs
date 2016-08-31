@@ -33,6 +33,8 @@ namespace Marten.Testing.AsyncDaemon
         [Fact] 
         public async Task build_continuously_as_events_flow_in()
         {
+            _fixture.LoadAllProjects();
+
             StoreOptions(_ => { _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>(); });
 
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
@@ -58,6 +60,8 @@ namespace Marten.Testing.AsyncDaemon
         [Fact]
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch()
         {
+            _fixture.LoadAllProjects();
+
             StoreOptions(_ => { _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>(); });
 
             _fixture.PublishAllProjectEvents(theStore);
@@ -77,6 +81,8 @@ namespace Marten.Testing.AsyncDaemon
         [Fact]
         public async Task run_with_error_handling()
         {
+            _fixture.LoadAllProjects();
+
             StoreOptions(_ =>
             {
                 _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
@@ -111,6 +117,8 @@ namespace Marten.Testing.AsyncDaemon
         [Fact]
         public async Task build_continuously_as_events_flow_in_on_other_schema()
         {
+            _fixture.LoadAllProjects();
+
             StoreOptions(_ =>
             {
                 _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
@@ -138,8 +146,38 @@ namespace Marten.Testing.AsyncDaemon
         }
 
         [Fact]
+        public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_on_other_schema_single_event()
+        {
+            _fixture.LoadSingleProjects();
+
+            StoreOptions(_ =>
+            {
+                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
+                _.Events.DatabaseSchemaName = "events";
+            });
+
+            _fixture.PublishAllProjectEvents(theStore);
+
+
+            
+
+            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
+            {
+                LeadingEdgeBuffer = 0.Seconds()
+            }))
+            {
+                await daemon.Rebuild<ActiveProject>().ConfigureAwait(false);
+            }
+
+            _fixture.CompareActiveProjects(theStore);
+            
+        }
+
+        [Fact]
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_on_other_schema()
         {
+            _fixture.LoadAllProjects();
+
             StoreOptions(_ =>
             {
                 _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
@@ -163,6 +201,8 @@ namespace Marten.Testing.AsyncDaemon
         [Fact]
         public async Task run_with_error_handling_on_other_schema()
         {
+            _fixture.LoadAllProjects();
+
             StoreOptions(_ =>
             {
                 _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
