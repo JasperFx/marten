@@ -110,7 +110,7 @@ namespace Marten
         {
             return _documentMappings.GetOrAdd(documentType, type =>
             {
-                var mapping = new DocumentMapping(type, this);
+                var mapping = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(this, documentType);
 
                 if (mapping.IdMember == null)
                 {

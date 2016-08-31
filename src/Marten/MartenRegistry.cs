@@ -8,7 +8,6 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
-using Marten.Util;
 
 namespace Marten
 {

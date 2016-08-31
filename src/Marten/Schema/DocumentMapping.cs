@@ -21,6 +21,13 @@ namespace Marten.Schema
         CannotDelete
     }
 
+    public class DocumentMapping<T> : DocumentMapping
+    {
+        public DocumentMapping(StoreOptions storeOptions) : base(typeof(T), storeOptions)
+        {
+        }
+    }
+
     public class DocumentMapping : IDocumentMapping, IQueryableDocument
     {
         public const string BaseAlias = "BASE";

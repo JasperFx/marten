@@ -46,7 +46,6 @@
     "net46": {
       "frameworkAssemblies": {
         "System.Web": "",
-        "System.Linq.Expressions": "",
         "System.Data": "",
         "System.Threading.Tasks":  "" 
       }
