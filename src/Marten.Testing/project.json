@@ -7,9 +7,7 @@
     "Marten.Testing.OtherAssembly": { "target": "project" },
     "NSubstitute": "2.0.0-rc",
     "Shouldly": "2.8.0",
-    "structuremap": "4.2.0.402",
-    "System.Data.Common": "4.1.0",
-    "System.Reflection.TypeExtensions": "4.1.0"
+    "structuremap": "4.2.0.402"
   },
   "buildOptions": {
     "copyToOutput": {
@@ -25,9 +23,10 @@
         }
       },
       "dependencies": {
-        "NETStandard.Library": "1.6.0",
         "System.Diagnostics.TraceSource": "4.0.0",
+        "System.Reflection.TypeExtensions": "4.1.0",
         "Microsoft.Extensions.PlatformAbstractions": "1.0.0",
+        "System.Data.Common": "4.1.0",
         "Microsoft.NETCore.App": {
           "type": "platform",
           "version": "1.0.0"
@@ -40,9 +39,7 @@
     },
     "net46": {
       "frameworkAssemblies": {
-        "System.Web": "",
-        "System.Linq.Expressions": "",
-        "System.Data": ""
+        "System.Web": ""
       },
       "dependencies": {
         "HtmlTags": "3.0.0.186",

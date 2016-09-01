@@ -32,22 +32,21 @@
     "Remotion.Linq": "2.1.1",
     "Npgsql": "3.1.6",
     "Baseline": "1.1.0",
-    "System.Threading.Tasks.Dataflow": "4.6.0",
-    "System.Reflection.TypeExtensions": "4.1.0",
-    "System.Data.Common": "4.1.0",
-    "System.Linq.Expressions": "4.1.0"
+    "System.Threading.Tasks.Dataflow": "4.6.0"
   },
   "frameworks": {
     "netstandard1.3": {
       "dependencies": {
-        "NETStandard.Library": "1.6.0"
+        "NETStandard.Library": "1.6.0",
+        "System.Reflection.TypeExtensions": "4.1.0",
+        "System.Linq.Expressions": "4.1.0",
+        "System.Data.Common": "4.1.0"
       }
     },
     "net46": {
       "frameworkAssemblies": {
-        "System.Web": "",
-        "System.Data": "",
-        "System.Threading.Tasks":  "" 
+        "System.Threading.Tasks":  "",
+        "System.Data": ""
       }
     } 
   }
