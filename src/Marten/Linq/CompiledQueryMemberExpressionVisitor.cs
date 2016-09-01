@@ -28,7 +28,10 @@ namespace Marten.Linq
 
         protected override Expression VisitMember(MemberExpression node)
         {
-            _lastMember = _mapping.FieldFor(new MemberInfo[] {node.Member});
+            _lastMember = _mapping.FieldFor(new MemberInfo[] { node.Member });
+            
+
+            
 
             if (node.NodeType == ExpressionType.MemberAccess && node.Member.DeclaringType == _queryType)
             {

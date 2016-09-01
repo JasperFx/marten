@@ -117,7 +117,15 @@ namespace Marten.Util
                 return GetPgType(memberType.GetInnerTypeFromNullable());
             }
 
-            if (memberType.IsConstructedGenericType) return PgTypes[memberType.GetGenericTypeDefinition()];
+            if (memberType.IsConstructedGenericType)
+            {
+                var templateType = memberType.GetGenericTypeDefinition();
+
+                if (PgTypes.ContainsKey(templateType)) return PgTypes[templateType];
+
+                return "jsonb";
+            }
+            ;
 
             return PgTypes[memberType];
         }

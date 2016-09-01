@@ -30,6 +30,8 @@ namespace Marten.Linq.QueryHandlers
             for (var i = 0; i < _template.Parameters.Count; i++)
             {
                 var param = _setters[i].AddParameter(_model, command);
+                param.NpgsqlDbType = _template.Parameters[i].NpgsqlDbType;
+
                 sql = sql.Replace(":" + _template.Parameters[i].ParameterName, ":" + param.ParameterName);
             }
 
