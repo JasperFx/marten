@@ -26,6 +26,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.ProjectView<PersistedView>()
                     .ProjectEvent<QuestStarted>((view, @event) => events.Add(@event))
                     .ProjectEvent<MembersJoined>(e => e.QuestId, (view, @event) => events.Add(@event))
@@ -53,6 +54,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.ProjectView<PersistedView>()
                     .ProjectEvent<QuestStarted>((view, @event) => { events.Add(@event);})
                     .ProjectEvent<MembersJoined>(e => e.QuestId, (view, @event) => { events.Add(@event); })
@@ -73,11 +75,12 @@ namespace Marten.Testing.Events.Projections
         }
 
         [Fact]
-        public void persist_new_view()
+        public void from_projection()
         {
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.InlineProjections.Add(new PersistViewProjection());
             });
 
@@ -96,11 +99,12 @@ namespace Marten.Testing.Events.Projections
         }
 
         [Fact]
-        public async void persist_new_view_async()
+        public async void from_projection_async()
         {
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.InlineProjections.Add(new PersistViewProjection());
             });
 
@@ -131,7 +135,7 @@ namespace Marten.Testing.Events.Projections
         {
             ProjectEvent<QuestStarted>(Persist);
             ProjectEvent<MembersJoined>(e => e.QuestId, Persist);
-            ProjectEvent<MonsterSlayed>(e => e.QuestId, Persist);
+            ProjectEvent<MonsterSlayed>((session, e) => session.Load<QuestParty>(e.QuestId).Id, Persist);
         }
 
         private void Persist<T>(PersistedView view, T @event)

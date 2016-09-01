@@ -5,153 +5,151 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async;
+using Marten.Schema.Identity;
 
 namespace Marten.Events.Projections
 {
     public class ViewProjection<TView> : IProjection where TView : class, new()
     {
-        private class StreamEvent
+        private class EventHandler
         {
-            public EventStream Stream { get; }
-            public IEvent Event { get; }
+            public Func<IDocumentSession, object, Guid, Guid> IdSelector { get; }
+            public Action<TView, object> Handler { get; }
 
-            public StreamEvent(EventStream stream, IEvent @event)
+            public EventHandler(Func<IDocumentSession, object, Guid, Guid> idSelector, Action<TView, object> handler)
             {
-                Stream = stream;
-                Event = @event;
+                IdSelector = idSelector;
+                Handler = handler;
             }
         }
 
-        private readonly IDictionary<Type, Action<IDocumentSession, StreamEvent>> _handlers = new ConcurrentDictionary<Type, Action<IDocumentSession, StreamEvent>>();
-        private readonly IDictionary<Type, Func<IDocumentSession, StreamEvent, Task>> _asyncHandlers = new ConcurrentDictionary<Type, Func<IDocumentSession, StreamEvent, Task>>();
+        private class EventProjection
+        {
+            public Guid ViewId { get; }
+            public Action<TView> ProjectTo { get; }
 
-        public Type[] Consumes => GetUniqueEventTypes();
+            public EventProjection(EventHandler eventHandler, Guid viewId, IEvent @event)
+            {
+                ViewId = viewId;
+                ProjectTo = view => eventHandler.Handler(view, @event.Data);
+            }
+        }
+
+        private readonly IDictionary<Type, EventHandler> _handlers = new ConcurrentDictionary<Type, EventHandler>();
+
+        public Type[] Consumes => getUniqueEventTypes();
         public Type Produces => typeof(TView);
         public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
 
-        public ViewProjection<TView> ProjectEvent<TEvent>(Action<TView, TEvent> handler) where TEvent : class 
+        public ViewProjection<TView> ProjectEvent<TEvent>(Action<TView, TEvent> handler) where TEvent : class
+            => projectEvent((session, @event, streamId) => streamId, handler);
+
+        public ViewProjection<TView> ProjectEvent<TEvent>(Func<IDocumentSession, TEvent, Guid> viewIdSelector, Action<TView, TEvent> handler) where TEvent : class
         {
-            if (handler == null) throw new ArgumentNullException(nameof(handler));
-
-            Event<TEvent>((session, id, @event) =>
-            {
-                var view = GetView(session, id);
-
-                handler(view, @event);
-            });
-
-            EventAsync<TEvent>(async (session, id, @event) =>
-            {
-                var view = await GetViewAsync(session, id);
-
-                handler(view, @event);
-            });
-
-            return this;
+            if (viewIdSelector == null) throw new ArgumentNullException(nameof(viewIdSelector));
+            return projectEvent((session, @event, streamId) => viewIdSelector(session, @event as TEvent), handler);
         }
 
         public ViewProjection<TView> ProjectEvent<TEvent>(Func<TEvent, Guid> viewIdSelector, Action<TView, TEvent> handler) where TEvent : class
         {
             if (viewIdSelector == null) throw new ArgumentNullException(nameof(viewIdSelector));
+            return projectEvent((session, @event, streamId) => viewIdSelector(@event as TEvent), handler);
+        }
+
+        private ViewProjection<TView> projectEvent<TEvent>(Func<IDocumentSession, object, Guid, Guid> viewIdSelector, Action<TView, TEvent> handler) where TEvent : class
+        {
+            if (viewIdSelector == null) throw new ArgumentNullException(nameof(viewIdSelector));
             if (handler == null) throw new ArgumentNullException(nameof(handler));
 
-            Event<TEvent>((session, streamId, @event) =>
-            {
-                var eventId = viewIdSelector(@event);
+            var eventHandler = new EventHandler(viewIdSelector, (view, @event) => handler(view, @event as TEvent));
 
-                var view = GetView(session, eventId);
-
-                handler(view, @event);
-            });
-
-            EventAsync<TEvent>(async (session, streamId, @event) =>
-            {
-                var eventId = viewIdSelector(@event);
-
-                var view = await GetViewAsync(session, eventId);
-
-                handler(view, @event);
-            });
+            _handlers.Add(typeof(TEvent), eventHandler);
 
             return this;
         }
 
-        private void Event<TEvent>(Action<IDocumentSession, Guid, TEvent> handler) where TEvent : class
+        void IProjection.Apply(IDocumentSession session, EventStream[] streams)
         {
-            if (handler == null) throw new ArgumentNullException(nameof(handler));
+            var projections = getEventProjections(session, streams);
 
-            _handlers.Add(typeof(TEvent), (session, streamEvent) => handler(session, streamEvent.Stream.Id, streamEvent.Event.Data as TEvent));
+            var viewIds = projections.Select(projection => projection.ViewId).Distinct().ToArray();
+            var views = session.LoadMany<TView>(viewIds);
+
+            applyProjections(session, projections, views);
         }
 
-        private void EventAsync<TEvent>(Func<IDocumentSession, Guid, TEvent, Task> handler) where TEvent : class
+        async Task IProjection.ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
         {
-            if (handler == null) throw new ArgumentNullException(nameof(handler));
+            var projections = getEventProjections(session, streams);
 
-            _asyncHandlers.Add(typeof(TEvent), (session, streamEvent) => handler(session, streamEvent.Stream.Id, streamEvent.Event.Data as TEvent));
+            var viewIds = projections.Select(projection => projection.ViewId).Distinct().ToArray();
+            var views = await session.LoadManyAsync<TView>(token, viewIds);
+
+            applyProjections(session, projections, views);
         }
 
-        public void Apply(IDocumentSession session, EventStream[] streams)
+        private void applyProjections(IDocumentSession session, IList<EventProjection> projections, IList<TView> views)
         {
-            if (session == null) throw new ArgumentNullException(nameof(session));
+            var viewMap = createViewMap(session, projections, views);
 
-            var events = GetEvents(streams);
-
-            foreach (var @event in events)
+            foreach (var eventProjection in projections)
             {
-                Action<IDocumentSession, StreamEvent> handler;
-                if (_handlers.TryGetValue(@event.Event.Data.GetType(), out handler))
+                var view = viewMap[eventProjection.ViewId];
+
+                eventProjection.ProjectTo(view);
+            }
+        }
+
+        private IDictionary<Guid, TView> createViewMap(IDocumentSession session, IList<EventProjection> projections, IList<TView> views)
+        {
+            var idAssigner = session.DocumentStore.Schema.IdAssignmentFor<TView>();
+            var resolver = session.DocumentStore.Schema.ResolverFor<TView>();
+
+            var viewMap =  views.ToDictionary(view => (Guid) resolver.Identity(view), view => view);
+
+            foreach (var projection in projections)
+            {
+                var viewId = projection.ViewId;
+                TView view;
+                if (!viewMap.TryGetValue(viewId, out view))
                 {
-                    handler(session, @event);
+                    view = newView(idAssigner, viewId);
+                    viewMap.Add(viewId, view);
                 }
+                session.Store(view);
             }
+
+            return viewMap;
         }
 
-        public async Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+        private static TView newView(IdAssignment<TView> idAssigner, Guid id)
         {
-            var events = GetEvents(streams);
-
-            foreach (var @event in events)
-            {
-                Func<IDocumentSession, StreamEvent, Task> handler;
-                if (_asyncHandlers.TryGetValue(@event.Event.Data.GetType(), out handler))
-                {
-                    await handler(session, @event);
-                }
-            }
-        }
-
-        private static TView GetView(IDocumentSession session, Guid id)
-        {
-            var view = session.Load<TView>(id);
-            return EnsureView(session, id, view);
-        }
-
-        private static async Task<TView> GetViewAsync(IDocumentSession session, Guid id)
-        {
-            var view = await session.LoadAsync<TView>(id);
-            return EnsureView(session, id, view);
-        }
-
-        private static TView EnsureView(IDocumentSession session, Guid id, TView view)
-        {
-            if (view == null)
-            {
-                view = new TView();
-                session.DocumentStore.Schema.IdAssignmentFor<TView>().Assign(view, id);
-            }
-            session.Store(view);
+            var view = new TView();
+            idAssigner.Assign(view, id);
             return view;
         }
 
-        private static IEnumerable<StreamEvent> GetEvents(EventStream[] streams)
+        private IList<EventProjection> getEventProjections(IDocumentSession session, EventStream[] streams)
         {
-            return streams.SelectMany(stream => stream.Events.Select(@event => new StreamEvent(stream, @event)));
+            var streamEvents = streams.SelectMany(stream => stream.Events.Select(@event => new { StreamId = stream.Id, Event = @event } ));
+
+            var projections = new List<EventProjection>();
+            foreach (var streamEvent in streamEvents)
+            {
+                EventHandler handler;
+                if (_handlers.TryGetValue(streamEvent.Event.Data.GetType(), out handler))
+                {
+                    var viewId = handler.IdSelector(session, streamEvent.Event.Data, streamEvent.StreamId);
+                    projections.Add(new EventProjection(handler, viewId, streamEvent.Event));
+                }
+            }
+            return projections;
         }
 
-        private Type[] GetUniqueEventTypes()
+        private Type[] getUniqueEventTypes()
         {
             return _handlers.Keys
-                .Union(_asyncHandlers.Keys)
+                .Union(_handlers.Keys)
                 .Distinct()
                 .ToArray();
         }
