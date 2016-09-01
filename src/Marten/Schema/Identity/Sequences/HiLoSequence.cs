@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Threading;
 using Marten.Util;
 using NpgsqlTypes;
 
@@ -43,7 +44,16 @@ namespace Marten.Schema.Identity.Sequences
             {
                 if (ShouldAdvanceHi())
                 {
-                    AdvanceToNextHi();
+                    try
+                    {
+                        AdvanceToNextHi();
+                    }
+                    catch (Exception)
+                    {
+                        // Retry once.
+                        Thread.Sleep(50);
+                        AdvanceToNextHi();
+                    }
                 }
 
                 return AdvanceValue();
