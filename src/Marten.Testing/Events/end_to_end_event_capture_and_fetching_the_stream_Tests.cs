@@ -42,7 +42,7 @@ namespace Marten.Testing.Events
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
 
-                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTime)));
+                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
             }
         }
 
@@ -71,7 +71,7 @@ namespace Marten.Testing.Events
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
 
-                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTime)));
+                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
             }
         }
 
@@ -102,7 +102,7 @@ namespace Marten.Testing.Events
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
 
-                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTime)));
+                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
             }
         }
 
@@ -133,7 +133,7 @@ namespace Marten.Testing.Events
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
 
-                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTime)));
+                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
             }
         }
 
