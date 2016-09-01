@@ -35,6 +35,22 @@ namespace Marten.Linq
             }
         }
 
+        public static IEnumerable<IBodyClause> AllBodyClauses(this QueryModel query)
+        {
+            foreach (var clause in query.BodyClauses)
+            {
+                yield return clause;
+            }
+
+            if (query.MainFromClause.FromExpression is SubQueryExpression)
+            {
+                foreach (var clause in query.MainFromClause.FromExpression.As<SubQueryExpression>().QueryModel.BodyClauses)
+                {
+                    yield return clause;
+                }
+            }
+        }
+
         public static IEnumerable<T> FindOperators<T>(this QueryModel query) where T : ResultOperatorBase
         {
             return query.AllResultOperators().OfType<T>();
@@ -47,7 +63,7 @@ namespace Marten.Linq
 
         public static string ToOrderClause(this QueryModel query, IQueryableDocument mapping)
         {
-            var orders = query.BodyClauses.OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
+            var orders = query.AllBodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
             if (!orders.Any()) return string.Empty;
 
             return " order by " + orders.Select(c => ToOrderClause(c, mapping)).Join(", ");
@@ -63,7 +79,7 @@ namespace Marten.Linq
 
         public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, IQueryableDocument mapping, QueryModel query)
         {
-            var wheres = query.BodyClauses.OfType<WhereClause>().ToArray();
+            var wheres = query.AllBodyClauses().OfType<WhereClause>().ToArray();
             if (wheres.Length == 0) return mapping.DefaultWhereFragment();
 
             var where = wheres.Length == 1
