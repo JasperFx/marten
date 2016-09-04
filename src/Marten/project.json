@@ -31,7 +31,8 @@
     "Newtonsoft.Json": "9.0.1",
     "Remotion.Linq": "2.1.1",
     "Npgsql": "3.1.6",
-    "Baseline": "1.1.0"
+    "Baseline": "1.1.0",
+    "System.Threading.Tasks.Dataflow": "4.6.0"
   },
   "frameworks": {
     "netstandard1.3": {
@@ -39,16 +40,15 @@
         "NETStandard.Library": "1.6.0",
         "System.Reflection.TypeExtensions": "4.1.0",
         "System.Linq.Expressions": "4.1.0",
-        "System.Data.Common": "4.1.0",
-        "System.Threading.Tasks.Dataflow": "4.6.0"
+        "System.Data.Common": "4.1.0"
       }
     },
     "net46": {
       "dependencies": {
-        "Microsoft.Tpl.Dataflow": "4.5.24"
       },
       "frameworkAssemblies": {
-        "System.Data": ""
+        "System.Data": "",
+        "System.Threading.Tasks": {"type": "build" } 
       }
     } 
   }
