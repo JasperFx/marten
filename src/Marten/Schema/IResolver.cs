@@ -13,6 +13,7 @@ namespace Marten.Schema
         T Resolve(IIdentityMap map, ILoader loader, object id);
         Task<T> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id);
 
+        object Identity(object document);
 
         FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer);
 

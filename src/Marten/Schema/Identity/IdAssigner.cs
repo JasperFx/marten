@@ -21,7 +21,7 @@ namespace Marten.Schema.Identity
 
         public object Assign(TDoc document, out bool assigned)
         {
-            var original = _getter(document);
+            var original = _getter != null ? _getter(document) : default(TId);
 
             var id = _generator.Assign(original, out assigned);
 
