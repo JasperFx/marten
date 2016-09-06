@@ -10,9 +10,10 @@ namespace Marten.Events
         private readonly EventSelector _selector;
         private readonly Guid _streamId;
         private readonly DateTime? _timestamp;
+        private readonly int? _limit;
         private readonly int _version;
 
-        public EventQueryHandler(EventSelector selector, Guid streamId, int version = 0, DateTime? timestamp = null)
+        public EventQueryHandler(EventSelector selector, Guid streamId, int version = 0, DateTime? timestamp = null, int? limit = null)
             : base(selector)
         {
             if (timestamp != null && timestamp.Value.Kind != DateTimeKind.Utc)
@@ -24,6 +25,7 @@ namespace Marten.Events
             _streamId = streamId;
             _version = version;
             _timestamp = timestamp;
+            _limit = limit;
         }
 
         public override Type SourceType => typeof(IEvent);
@@ -48,6 +50,12 @@ namespace Marten.Events
             }
 
             sql += " order by version";
+
+            if (_limit.HasValue)
+            {
+                var limitParam = command.AddParameter(_limit.Value);
+                sql += " limit :" + limitParam.ParameterName;
+            }
 
             command.AppendQuery(sql);
         }
