@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
-using Marten.Util;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Linq
+namespace Marten.Testing.Linq.Compiled
 {
     public class compiled_query_Tests : DocumentSessionFixture<NulloIdentityMap>
     {

@@ -2,7 +2,7 @@
 using Marten.Util;
 using Npgsql;
 
-namespace Marten.Linq
+namespace Marten.Linq.Compiled
 {
     internal class DbParameterSetter<TObject, TProperty> : IDbParameterSetter
     {

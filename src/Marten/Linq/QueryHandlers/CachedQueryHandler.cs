@@ -2,6 +2,7 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Linq.Compiled;
 using Marten.Services;
 using Marten.Util;
 using Npgsql;

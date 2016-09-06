@@ -1,7 +1,7 @@
 using Marten.Util;
 using Npgsql;
 
-namespace Marten.Linq
+namespace Marten.Linq.Compiled
 {
     internal class ConstantDbParameterSetter : IDbParameterSetter
     {
