@@ -27,15 +27,15 @@ namespace Marten.Linq.Compiled
         private readonly IList<IDbParameterSetter> _parameterSetters = new List<IDbParameterSetter>();
         private readonly IQueryableDocument _mapping;
         private readonly Type _queryType;
-        private readonly EnumStorage _enumStorage;
+        private readonly ISerializer _serializer;
         private IField _lastMember;
         private static readonly string[] _skippedMethods = new[] {nameof(CompiledQueryExtensions.Include),nameof(CompiledQueryExtensions.Stats)};
 
-        public CompiledQueryMemberExpressionVisitor(IQueryableDocument mapping, Type queryType, EnumStorage enumStorage)
+        public CompiledQueryMemberExpressionVisitor(IQueryableDocument mapping, Type queryType, ISerializer serializer)
         {
             _mapping = mapping;
             _queryType = queryType;
-            _enumStorage = enumStorage;
+            _serializer = serializer;
         }
 
         public IList<IDbParameterSetter> ParameterSetters => _parameterSetters;
@@ -43,9 +43,6 @@ namespace Marten.Linq.Compiled
         protected override Expression VisitMember(MemberExpression node)
         {
             _lastMember = _mapping.FieldFor(new MemberInfo[] { node.Member });
-            
-
-            
 
             if (node.NodeType == ExpressionType.MemberAccess && node.Member.DeclaringType == _queryType)
             {
@@ -54,6 +51,7 @@ namespace Marten.Linq.Compiled
                 var result = (IDbParameterSetter)method.Invoke(this, new []{property});
                 _parameterSetters.Add(result);              
             }
+
             return base.VisitMember(node);
         }
 
@@ -75,7 +73,11 @@ namespace Marten.Linq.Compiled
             // skip Visiting Include or Stats method members
             if (_skippedMethods.Contains(node.Method.Name)) return node;
 
-
+            if (IsContainmentMethod(node.Method))
+            {
+                var visitor = new ContainmentParameterVisitor(_serializer, _queryType, _parameterSetters);
+                return visitor.Visit(node);
+            }
 
             return base.VisitMethodCall(node);
         }
@@ -83,7 +85,7 @@ namespace Marten.Linq.Compiled
         private IDbParameterSetter CreateParameterSetter<TObject, TProperty>(PropertyInfo property)
         {
             var getter = LambdaBuilder.GetProperty<TObject, object>(property);
-            if (property.PropertyType.GetTypeInfo().IsEnum && _enumStorage == EnumStorage.AsString)
+            if (property.PropertyType.GetTypeInfo().IsEnum && _serializer.EnumStorage == EnumStorage.AsString)
             {
                 getter = o =>
                 {

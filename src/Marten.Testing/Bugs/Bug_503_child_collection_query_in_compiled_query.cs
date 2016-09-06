@@ -11,7 +11,7 @@ namespace Marten.Testing.Bugs
     public class Bug_503_child_collection_query_in_compiled_query : IntegratedFixture
     {
 
-        //[Fact] 
+        [Fact] 
         public void try_to_query()
         {
             using (var session = theStore.OpenSession())
@@ -31,7 +31,7 @@ namespace Marten.Testing.Bugs
                 var o1 = session2.Query<Outer>().FirstOrDefault(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12"));
                 o1.ShouldNotBeNull();
 
-                var o2 = session2.Query(new FindOuterByInner("T1", "V2"));
+                var o2 = session2.Query(new FindOuterByInner("T1", "V12"));
 
                 o2.ShouldNotBeNull();
 

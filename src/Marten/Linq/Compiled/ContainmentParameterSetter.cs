@@ -1,19 +1,29 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using Baseline;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Linq.Compiled
 {
-    public class ContainmentParameterSetter<TQuery> : IDbParameterSetter
+    public interface IContainmentParameterSetter : IDbParameterSetter
+    {
+        void AddElement(string[] keys, MemberInfo member);
+        void Constant(string[] keys, object value);
+    }
+
+    public class ContainmentParameterSetter<TQuery> : IContainmentParameterSetter
     {
         private readonly ISerializer _serializer;
+        private readonly MemberInfo[] _pathToCollection;
 
-        public ContainmentParameterSetter(ISerializer serializer)
+        public ContainmentParameterSetter(ISerializer serializer, MemberInfo[] pathToCollection)
         {
             _serializer = serializer;
+            _pathToCollection = pathToCollection;
         }
 
         public void AddElement(string[] keys, MemberInfo member)
@@ -51,6 +61,16 @@ namespace Marten.Linq.Compiled
         public NpgsqlParameter AddParameter(object query, NpgsqlCommand command)
         {
             var dict = BuildDictionary((TQuery) query);
+
+            var array = new IDictionary<string, object>[] {dict};
+            dict = new Dictionary<string, object> { {_pathToCollection.Last().Name, array} };
+
+            _pathToCollection.Reverse().Skip(1).Each(member =>
+            {
+                dict = new Dictionary<string, object> {{member.Name, dict}};
+            });
+
+
             var json = _serializer.ToCleanJson(dict);
 
             var param = command.AddParameter(json);

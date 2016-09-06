@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Reflection;
 using Marten.Linq;
 using Marten.Linq.Compiled;
 using Marten.Services;
@@ -17,7 +18,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var field = FindMembers.Member<Target>(x => x.StringField);
 
-            var setter = new ContainmentParameterSetter<Target>(new JsonNetSerializer());
+            var setter = new ContainmentParameterSetter<Target>(new JsonNetSerializer(), new MemberInfo[0]);
 
             setter.AddElement(new [] {"position"}, field);
 
@@ -29,7 +30,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var property = FindMembers.Member<Target>(x => x.String);
 
-            var setter = new ContainmentParameterSetter<Target>(new JsonNetSerializer());
+            var setter = new ContainmentParameterSetter<Target>(new JsonNetSerializer(), new MemberInfo[0]);
 
             setter.AddElement(new[] { "position" }, property);
 
@@ -39,7 +40,7 @@ namespace Marten.Testing.Linq.Compiled
         [Fact]
         public void can_build_out_dictionary_with_a_constant()
         {
-            var setter = new ContainmentParameterSetter<Target>(new JsonNetSerializer());
+            var setter = new ContainmentParameterSetter<Target>(new JsonNetSerializer(), new MemberInfo[0]);
             setter.Constant(new string[] {"foo", "bar"}, "baz");
 
             var target = new Target
@@ -61,7 +62,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var serializer = new JsonNetSerializer {EnumStorage = EnumStorage.AsString};
 
-            var setter = new ContainmentParameterSetter<Target>(serializer);
+            var setter = new ContainmentParameterSetter<Target>(serializer, new MemberInfo[0]);
 
             setter.AddElement(new [] {"color"}, FindMembers.Member<Target>(x => x.Color));
             setter.AddElement(new [] {"name"}, FindMembers.Member<Target>(x => x.String));
@@ -87,7 +88,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var serializer = new JsonNetSerializer { EnumStorage = EnumStorage.AsString };
 
-            var setter = new ContainmentParameterSetter<Target>(serializer);
+            var setter = new ContainmentParameterSetter<Target>(serializer, new MemberInfo[] {FindMembers.Member<Target>(x => x.Children)});
 
             setter.AddElement(new[] { "color" }, FindMembers.Member<Target>(x => x.Color));
             setter.AddElement(new[] { "name" }, FindMembers.Member<Target>(x => x.String));
@@ -105,7 +106,7 @@ namespace Marten.Testing.Linq.Compiled
             var parameter = setter.AddParameter(target, command);
 
             parameter.NpgsqlDbType.ShouldBe(NpgsqlDbType.Jsonb);
-            parameter.Value.ShouldBe("{\"color\":\"Blue\",\"name\":\"Ronald McDonald\",\"rank\":5}");
+            parameter.Value.ShouldBe("{\"Children\":[{\"color\":\"Blue\",\"name\":\"Ronald McDonald\",\"rank\":5}]}");
         }
 
 

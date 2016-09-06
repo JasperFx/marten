@@ -25,5 +25,13 @@ namespace Marten.Linq
 
             return base.VisitMember(node);
         }
+
+        public static MemberInfo[] Determine(Expression expression)
+        {
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            return visitor.Members.ToArray();
+        }
     }
 }

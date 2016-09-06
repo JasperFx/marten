@@ -168,7 +168,7 @@ namespace Marten.Linq.QueryHandlers
             Expression expression = query.QueryIs();
             var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
 
-            var setters = findSetters(_schema.MappingFor(typeof(TDoc)).ToQueryableDocument(), queryType, expression, _serializer.EnumStorage);
+            var setters = findSetters(_schema.MappingFor(typeof(TDoc)).ToQueryableDocument(), queryType, expression, _serializer);
 
             var model = MartenQueryParser.TransformQueryFlyweight.GetParsedQuery(invocation);
             _schema.EnsureStorageExists(typeof(TDoc));
@@ -207,9 +207,9 @@ namespace Marten.Linq.QueryHandlers
             prop.Invoke(query, new[] {Stats});
         }
 
-        private static IList<IDbParameterSetter> findSetters(IQueryableDocument mapping, Type queryType, Expression expression, EnumStorage enumStorage)
+        private static IList<IDbParameterSetter> findSetters(IQueryableDocument mapping, Type queryType, Expression expression, ISerializer serializer)
         {
-            var visitor = new CompiledQueryMemberExpressionVisitor(mapping, queryType, enumStorage);
+            var visitor = new CompiledQueryMemberExpressionVisitor(mapping, queryType, serializer);
             visitor.Visit(expression);
             var parameterSetters = visitor.ParameterSetters;
             return parameterSetters;
