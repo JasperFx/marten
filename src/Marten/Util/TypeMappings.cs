@@ -125,9 +125,9 @@ namespace Marten.Util
 
                 return "jsonb";
             }
-            ;
+            
 
-            return PgTypes[memberType];
+            return PgTypes.ContainsKey(memberType) ? PgTypes[memberType] : "jsonb";
         }
 
         public static bool HasTypeMapping(Type memberType)
