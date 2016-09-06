@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using Baseline;
-using Marten.Services;
 using Marten.Util;
 using Npgsql;
 

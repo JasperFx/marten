@@ -4,10 +4,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Schema;
-using Marten.Transforms;
 using Marten.Util;
 
-namespace Marten.Linq
+namespace Marten.Linq.Compiled
 {
     internal class CompiledQueryMemberExpressionVisitor : ExpressionVisitor
     {
