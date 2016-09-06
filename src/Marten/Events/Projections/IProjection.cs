@@ -14,7 +14,4 @@ namespace Marten.Events.Projections
         void Apply(IDocumentSession session, EventStream[] streams);
         Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token);
     }
-
-
-
 }
