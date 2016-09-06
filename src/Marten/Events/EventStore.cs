@@ -77,16 +77,16 @@ namespace Marten.Events
             return StartStream<TAggregate>(Guid.NewGuid(), events);
         }
 
-        public IList<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
+        public IList<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null, int? limit = null)
         {
-            var handler = new EventQueryHandler(_selector, streamId, version, timestamp);
+            var handler = new EventQueryHandler(_selector, streamId, version, timestamp, limit);
             return _connection.Fetch(handler, null);
         }
 
-        public Task<IList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null,
+        public Task<IList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null, int? limit = null,
             CancellationToken token = new CancellationToken())
         {
-            var handler = new EventQueryHandler(_selector, streamId, version, timestamp);
+            var handler = new EventQueryHandler(_selector, streamId, version, timestamp, limit);
             return _connection.FetchAsync(handler, null, token);
         }
 
