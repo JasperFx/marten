@@ -25,6 +25,15 @@ namespace Marten.Linq.Compiled
             Elements.Add((IDictionaryElement<TQuery>) setter);
         }
 
+        public void Constant(string[] keys, object value)
+        {
+            var memberType = value.GetType();
+            var setterType = typeof(DictionaryElement<,>).MakeGenericType(typeof(TQuery), memberType);
+
+            var setter = Activator.CreateInstance(setterType, keys, value);
+            Elements.Add((IDictionaryElement<TQuery>)setter);
+        }
+
         public IList<IDictionaryElement<TQuery>> Elements { get; } = new List<IDictionaryElement<TQuery>>();
 
         public IDictionary<string, object> BuildDictionary(TQuery query)
@@ -49,5 +58,7 @@ namespace Marten.Linq.Compiled
 
             return param;
         }
+
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using Marten.Linq;
+﻿using System.Collections.Generic;
+using Marten.Linq;
 using Marten.Linq.Compiled;
 using Marten.Services;
 using Npgsql;
@@ -33,6 +34,26 @@ namespace Marten.Testing.Linq.Compiled
             setter.AddElement(new[] { "position" }, property);
 
             setter.Elements[0].Member.Name.ShouldBe(nameof(Target.String));
+        }
+
+        [Fact]
+        public void can_build_out_dictionary_with_a_constant()
+        {
+            var setter = new ContainmentParameterSetter<Target>(new JsonNetSerializer());
+            setter.Constant(new string[] {"foo", "bar"}, "baz");
+
+            var target = new Target
+            {
+                Color = Colors.Blue,
+                String = "Ronald McDonald",
+                Number = 5
+            };
+
+            var dict = setter.BuildDictionary(target);
+
+            dict["foo"].ShouldBeOfType<Dictionary<string, object>>()
+                ["bar"].ShouldBe("baz");
+           
         }
 
         [Fact]

@@ -13,7 +13,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var field = FindMembers.Member<DictTarget>(x => x.Field);
 
-            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsInteger, new []{ "foo" }, field);
+            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsString, new []{ "foo" }, field);
 
             var target = new DictTarget
             {
@@ -32,7 +32,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var prop = FindMembers.Member<DictTarget>(x => x.Property);
 
-            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsInteger, new[] { "foo" }, prop);
+            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsString, new[] { "foo" }, prop);
 
             var target = new DictTarget
             {
@@ -52,7 +52,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var prop = FindMembers.Member<DictTarget>(x => x.Property);
 
-            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsInteger, new[] { "one", "two" }, prop);
+            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsString, new[] { "one", "two" }, prop);
 
             var target = new DictTarget
             {
@@ -73,7 +73,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var prop = FindMembers.Member<DictTarget>(x => x.Property);
 
-            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsInteger, new[] { "one", "two", "three" }, prop);
+            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsString, new[] { "one", "two", "three" }, prop);
 
             var target = new DictTarget
             {
@@ -95,7 +95,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var prop = FindMembers.Member<DictTarget>(x => x.Property);
 
-            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsInteger, new[] { "one", "two", "three" }, prop);
+            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsString, new[] { "one", "two", "three" }, prop);
 
             var target = new DictTarget
             {

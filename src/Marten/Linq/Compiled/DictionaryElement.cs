@@ -20,6 +20,12 @@ namespace Marten.Linq.Compiled
             Member = member;
         }
 
+        public DictionaryElement(string[] keys, TElement value)
+        {
+            Keys = keys;
+            _getter = query => value;
+        }
+
         public MemberInfo Member { get; }
 
         public void Write(TQuery target, IDictionary<string, object> dictionary)
