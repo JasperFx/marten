@@ -91,7 +91,7 @@ namespace Marten.Schema
 
         public IEnumerable<ISchemaObjects> AllSchemaObjects()
         {
-            var mappings = AllMappings.TopologicalSort(m =>
+            var mappings = AllMappings.OrderBy(x => x.DocumentType.Name).TopologicalSort(m =>
             {
                 var documentMapping = m as DocumentMapping;
                 if (documentMapping == null)
@@ -104,7 +104,7 @@ namespace Marten.Schema
                     .Select(MappingFor);
             });
 
-            foreach (var function in _systemFunctions.Values)
+            foreach (var function in _systemFunctions.Values.OrderBy(x => x.Name))
             {
                 yield return function;
             }
@@ -116,7 +116,7 @@ namespace Marten.Schema
 
             yield return new SequenceFactory(this, _factory, StoreOptions, _logger);
 
-            foreach (var transform in StoreOptions.Transforms.AllFunctions())
+            foreach (var transform in StoreOptions.Transforms.AllFunctions().OrderBy(x => x.Name))
             {
                 yield return transform;
             }
