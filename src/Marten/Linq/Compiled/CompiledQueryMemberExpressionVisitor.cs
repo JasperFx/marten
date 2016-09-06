@@ -8,13 +8,28 @@ using Marten.Util;
 
 namespace Marten.Linq.Compiled
 {
-    internal class CompiledQueryMemberExpressionVisitor : ExpressionVisitor
+    public class CompiledQueryMemberExpressionVisitor : ExpressionVisitor
     {
+        public static bool IsContainmentMethod(MethodInfo method)
+        {
+            if (method.Name == nameof(Enumerable.Any)) return true;
+
+            if (method.Name == nameof(Enumerable.Contains))
+            {
+                if (method.DeclaringType == typeof(string)) return false;
+
+                return true;
+            }
+
+            return false;
+        }
+
         private readonly IList<IDbParameterSetter> _parameterSetters = new List<IDbParameterSetter>();
         private readonly IQueryableDocument _mapping;
         private readonly Type _queryType;
         private readonly EnumStorage _enumStorage;
         private IField _lastMember;
+        private static readonly string[] _skippedMethods = new[] {nameof(CompiledQueryExtensions.Include),nameof(CompiledQueryExtensions.Stats)};
 
         public CompiledQueryMemberExpressionVisitor(IQueryableDocument mapping, Type queryType, EnumStorage enumStorage)
         {
@@ -58,8 +73,11 @@ namespace Marten.Linq.Compiled
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
             // skip Visiting Include or Stats method members
-            var skippedMethods = new[] {nameof(CompiledQueryExtensions.Include),nameof(CompiledQueryExtensions.Stats)};
-            return skippedMethods.Contains(node.Method.Name) ? node : base.VisitMethodCall(node);
+            if (_skippedMethods.Contains(node.Method.Name)) return node;
+
+
+
+            return base.VisitMethodCall(node);
         }
 
         private IDbParameterSetter CreateParameterSetter<TObject, TProperty>(PropertyInfo property)
