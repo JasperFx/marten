@@ -411,6 +411,29 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void can_write_ddl_by_type_with_no_database_connection()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.RegisterDocumentType<User>();
+                _.RegisterDocumentType<Company>();
+                _.RegisterDocumentType<Issue>();
+
+                _.AutoCreateSchemaObjects = AutoCreate.None;
+
+                _.Connection("");
+            }))
+            {
+                store.Schema.Events.IsActive.ShouldBeFalse();
+                store.Schema.WriteDDLByType(@"bin\allsql");
+            }
+
+            var fileSystem = new FileSystem();
+            fileSystem.FindFiles(@"bin\allsql", FileSet.Shallow("*mt_streams.sql"))
+                .Any().ShouldBeFalse();
+        }
+
+        [Fact]
         public void write_ddl_by_type_with_events()
         {
             using (var store = DocumentStore.For(_ =>
