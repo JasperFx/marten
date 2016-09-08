@@ -5,11 +5,6 @@ namespace Marten.Testing
 {
     public class DdlRulesTester
     {
-        [Fact]
-        public void default_grant_roles_is_empty()
-        {
-            new DdlRules().Grants.ShouldBeEmpty();
-        }
 
 
         [Fact]

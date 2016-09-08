@@ -60,30 +60,6 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
-        public void can_write_schema_objects_with_grants()
-        {
-            StoreOptions(_ =>
-            {
-                _.DatabaseSchemaName = "other";
-                _.DdlRules.Grants.Add("foo");
-            });
-
-            using (var conn = theStore.Advanced.OpenConnection())
-            {
-                conn.Execute(
-                    cmd => cmd.Sql("drop function if exists other.mt_immutable_timestamp(text)").ExecuteNonQuery());
-            }
-
-            var function = new SystemFunction(theStore.Advanced.Options, "mt_immutable_timestamp", "text");
-
-            var writer = new StringWriter();
-
-            function.WriteSchemaObjects(theStore.Schema, writer);
-
-            writer.ToString().ShouldContain("GRANT EXECUTE ON FUNCTION other.mt_immutable_timestamp(text) TO \"foo\";");
-        }
-
-        [Fact]
         public void can_patch_if_missing()
         {
             StoreOptions(_ => _.DatabaseSchemaName = "other");

@@ -403,38 +403,6 @@ namespace Marten.Testing.Schema
         }
 
 
-        [Fact]
-        public void generate_simple_document_table_with_grants()
-        {
-
-
-            StoreOptions(_ =>
-            {
-                _.DdlRules.Grants.Add("foo");
-                _.DdlRules.Grants.Add("bar");
-            });
-
-            createRoles();
-
-
-            var mapping = DocumentMapping.For<MySpecialDocument>();
-            var builder = new StringWriter();
-
-            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
-
-            var sql = builder.ToString();
-
-            sql.ShouldContain("GRANT SELECT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
-            sql.ShouldContain("GRANT SELECT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
-
-            sql.ShouldContain("GRANT UPDATE (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
-            sql.ShouldContain("GRANT UPDATE (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
-
-            sql.ShouldContain("GRANT INSERT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
-            sql.ShouldContain("GRANT INSERT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
-
-        }
-
         private static void createRoles()
         {
             using (var conn = new ConnectionSource().Create())
@@ -443,50 +411,6 @@ namespace Marten.Testing.Schema
                 conn.CreateCommand("DROP ROLE IF EXISTS foo;create role foo;").ExecuteNonQuery();
                 conn.CreateCommand("DROP ROLE IF EXISTS bar;create role bar;").ExecuteNonQuery();
             }
-        }
-
-        [Fact]
-        public void generate_grants_for_deletions_if_allowed()
-        {
-            StoreOptions(_ =>
-            {
-                _.DdlRules.Grants.Add("foo");
-                _.DdlRules.Grants.Add("bar");
-            });
-
-            var mapping = DocumentMapping.For<MySpecialDocument>();
-            mapping.Deletions = Deletions.CanDelete;
-
-            var builder = new StringWriter();
-
-            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
-
-            var sql = builder.ToString();
-
-            sql.ShouldContain("GRANT DELETE ON public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
-            sql.ShouldContain("GRANT DELETE ON public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
-        }
-
-        //[Fact] -- screws up CI
-        public void do_not_generate_grants_for_deletions_if_not_allowed()
-        {
-            StoreOptions(_ =>
-            {
-                _.DdlRules.Grants.Add("foo");
-                _.DdlRules.Grants.Add("bar");
-            });
-
-            var mapping = DocumentMapping.For<MySpecialDocument>();
-            mapping.Deletions = Deletions.CannotDelete;
-
-            var builder = new StringWriter();
-
-            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
-
-            var sql = builder.ToString();
-
-            sql.ShouldNotContain("GRANT DELETE ON public.mt_doc_documentmappingtests_myspecialdocument TO \"foo\";");
-            sql.ShouldNotContain("GRANT DELETE ON public.mt_doc_documentmappingtests_myspecialdocument TO \"bar\";");
         }
 
         [Fact]

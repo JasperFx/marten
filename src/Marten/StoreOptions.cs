@@ -240,11 +240,6 @@ namespace Marten
         /// </summary>
         public DdlRules DdlRules { get; } = new DdlRules();
 
-        /// <summary>
-        /// Optional. If set, adds the specified user as the owner of database tables created by Marten
-        /// </summary>
-        public string OwnerName { get; set; }
-
         internal IDocumentMapping FindMapping(Type documentType)
         {
             return _mappings.GetOrAdd(documentType, type =>

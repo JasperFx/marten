@@ -95,11 +95,6 @@ $function$;
 ");
 
 
-            rules.Grants.Each(role =>
-            {
-                writer.WriteLine($"GRANT EXECUTE ON FUNCTION {_functionName.QualifiedName}({argList}) TO \"{role}\";");
-            });
-
         }
 
         public UpsertArgument[] OrderedArguments()

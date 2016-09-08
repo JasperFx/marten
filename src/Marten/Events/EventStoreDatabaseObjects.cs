@@ -64,13 +64,6 @@ namespace Marten.Events
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             writeBasicTables(schema, writer);
-
-            if (schema.StoreOptions.OwnerName.IsNotEmpty())
-            {
-                var ddl = createOwnershipDDL(schema.StoreOptions);
-                writer.WriteLine();
-                writer.WriteLine(ddl);
-            }
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)
@@ -101,31 +94,8 @@ namespace Marten.Events
             patch.Updates.Apply(this, SchemaBuilder.GetSqlScript(_parent.DatabaseSchemaName, "mt_stream"));
 
             patch.Rollbacks.Drop(this, new TableName(schema.Events.DatabaseSchemaName, "mt_streams"));
-
-            writeOwnership(schema.StoreOptions, patch);
         }
 
-        private void writeOwnership(StoreOptions options, SchemaPatch patch)
-        {
-            if (options.OwnerName.IsEmpty()) return;
-
-            var toOwnershipDdl = createOwnershipDDL(options);
-            patch.Updates.Apply(this, toOwnershipDdl);
-        }
-
-        private static string createOwnershipDDL(StoreOptions options)
-        {
-            var toOwnershipDdl =
-                $@"
-ALTER TABLE {options.Events.DatabaseSchemaName}.mt_streams OWNER TO ""{options.OwnerName}"";
-ALTER TABLE {options.Events.DatabaseSchemaName}.mt_events OWNER TO ""{options.OwnerName}"";
-ALTER TABLE {options.Events.DatabaseSchemaName}.mt_event_progression OWNER TO ""{options.OwnerName}"";
-ALTER SEQUENCE {options.Events.DatabaseSchemaName}.mt_events_sequence OWNER TO ""{options.OwnerName}"";
-ALTER FUNCTION {options.Events.DatabaseSchemaName}.mt_append_event(uuid, varchar, uuid[], varchar[], jsonb[]) OWNER TO ""{options.OwnerName}"";
-ALTER FUNCTION {options.Events.DatabaseSchemaName}.mt_mark_event_progression(varchar, bigint) OWNER TO ""{options.OwnerName}"";
-            ".Trim();
-            return toOwnershipDdl;
-        }
 
         public string Name { get; } = "eventstore";
     }

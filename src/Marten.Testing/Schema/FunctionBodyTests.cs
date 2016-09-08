@@ -39,41 +39,5 @@ $BODY$
         }
 
 
-        [Fact]
-        public void write_patch_without_designated_owner()
-        {
-            var func = new FunctionBody(new FunctionName("public", "mt_upsert_target"), new string[0], theFunctionBody);
-
-
-            var patch = new SchemaPatch(new DdlRules());
-
-            var options = new StoreOptions {OwnerName = null};
-
-            var diff = new FunctionDiff(func, null);
-
-            diff.WritePatch(options, patch);
-
-            patch.UpdateDDL.ShouldNotContain("OWNER TO");
-
-
-        }
-
-        [Fact]
-        public void write_patch_with_designated_owner()
-        {
-            var func = new FunctionBody(new FunctionName("public", "mt_upsert_target"), new string[0], theFunctionBody);
-
-
-            var patch = new SchemaPatch(new DdlRules());
-
-            var options = new StoreOptions { OwnerName = "bill" };
-
-            var diff = new FunctionDiff(func, null);
-
-            diff.WritePatch(options, patch);
-
-            patch.UpdateDDL.ShouldContain("ALTER FUNCTION public.mt_upsert_target(jsonb, character varying, uuid, uuid) OWNER TO \"bill\";");
-
-        }
     }
 }

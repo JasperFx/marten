@@ -88,18 +88,6 @@ namespace Marten.Generation
             });
 
             writer.WriteLine(");");
-
-            rules.Grants.Each(role =>
-            {
-                writer.WriteLine($"GRANT SELECT ({Columns.Select(x => x.Name).Join(", ")}) ON TABLE {Table.QualifiedName} TO \"{role}\";");
-                writer.WriteLine($"GRANT UPDATE ({Columns.Select(x => x.Name).Join(", ")}) ON TABLE {Table.QualifiedName} TO \"{role}\";");
-                writer.WriteLine($"GRANT INSERT ({Columns.Select(x => x.Name).Join(", ")}) ON TABLE {Table.QualifiedName} TO \"{role}\";");
-
-                if (Deletions == Deletions.CanDelete)
-                {
-                    writer.WriteLine($"GRANT DELETE ON {Table.QualifiedName} TO \"{role}\";");
-                }
-            });
         }
 
         public TableColumn Column(string name)

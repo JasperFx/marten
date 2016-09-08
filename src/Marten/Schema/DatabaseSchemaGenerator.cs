@@ -76,10 +76,6 @@ $$;
     END IF;
 ");
 
-            if (options.OwnerName.IsNotEmpty())
-            {
-                writer.WriteLine($"ALTER SCHEMA {databaseSchemaName} OWNER TO \"{options.OwnerName}\";");
-            }
         }
     }
 }

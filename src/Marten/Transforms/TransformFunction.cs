@@ -63,20 +63,6 @@ namespace Marten.Transforms
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             writer.WriteLine(GenerateFunction());
-
-            if (schema.StoreOptions.OwnerName.IsNotEmpty())
-            {
-                writer.WriteLine();
-                var expected = new FunctionBody(Function, new string[] { ToDropSignature() }, GenerateFunction());
-
-                writer.WriteLine(expected.ToOwnershipCommand(schema.StoreOptions.OwnerName));
-            }
-
-            var args = allArgs().Select(x => "jsonb").Join(", ");
-            schema.StoreOptions.DdlRules.Grants.Each(role =>
-            {
-                writer.WriteLine($"GRANT EXECUTE ON FUNCTION {Function.QualifiedName}({args}) TO \"{role}\";");
-            });
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)
@@ -98,13 +84,6 @@ namespace Marten.Transforms
             if (diff.AllNew || !diff.Actual.Body.Contains(Body))
             {
                 diff.WritePatch(schema.StoreOptions, patch);
-
-                var signature = allArgs().Select(x => "JSONB").Join(", ");
-
-                schema.StoreOptions.DdlRules.Grants.Each(role =>
-                {
-                    patch.Updates.Apply(this, $"GRANT EXECUTE ON FUNCTION {Function.QualifiedName}({signature}) TO \"{role}\"");
-                });
             }
         }
 

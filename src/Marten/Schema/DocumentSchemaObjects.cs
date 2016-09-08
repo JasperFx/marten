@@ -61,15 +61,6 @@ namespace Marten.Schema
                 writer.WriteSql(_mapping.DatabaseSchemaName, script);
             });
 
-            var ownerName = schema.StoreOptions.OwnerName;
-            if (ownerName.IsNotEmpty())
-            {
-                writer.WriteLine($"ALTER TABLE {_mapping.Table} OWNER TO \"{ownerName}\";");
-
-                var functionBody = function.ToBody(schema.StoreOptions.DdlRules);
-                writer.WriteLine(functionBody.ToOwnershipCommand(ownerName));
-            }
-
             writer.WriteLine();
             writer.WriteLine();
         }
@@ -269,11 +260,6 @@ namespace Marten.Schema
                 diff.CreatePatch(schema.StoreOptions, patch);
             }
 
-            if (schema.StoreOptions.OwnerName.IsNotEmpty())
-            {
-                var ownership = $"ALTER TABLE {_mapping.Table} OWNER TO \"{schema.StoreOptions.OwnerName}\";";
-                patch.Updates.Apply(this, ownership);
-            }
         }
 
         public string Name => _mapping.Alias.ToLowerInvariant();

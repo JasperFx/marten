@@ -34,8 +34,6 @@ namespace Marten.Schema
                     patch.Rollbacks.Apply(this, drop);
                 });
 
-                writeOwnership(options, patch);
-
             }
             else if (HasChanged)
             {
@@ -56,18 +54,9 @@ namespace Marten.Schema
                     patch.Rollbacks.Apply(this, drop);
                 });
 
-                writeOwnership(options, patch);
             }
         }
 
-        private void writeOwnership(StoreOptions options, SchemaPatch patch)
-        {
-            if (options.OwnerName.IsEmpty()) return;
-
-            var ownership = Expected.ToOwnershipCommand(options.OwnerName);
-
-            patch.Updates.Apply(this, ownership);
-        }
 
         public override string ToString()
         {

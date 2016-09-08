@@ -18,13 +18,6 @@ namespace Marten.Schema
             runner.Apply(subject, sql);
         }
 
-        public static void OwnershipToTable(this IDDLRunner runner, StoreOptions options, TableName table)
-        {
-            if (options.OwnerName.IsNotEmpty())
-            {
-                runner.Apply(table, $"ALTER TABLE {table.QualifiedName} OWNER TO {options.OwnerName};");
-            }
-        }
 
     }
 }

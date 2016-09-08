@@ -151,28 +151,6 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("CREATE TABLE public.mt_doc_company");
         }
 
-        //[Fact] -- nasty on CI because of the damn roles
-        public void to_ddl_includes_the_grants_and_roles()
-        {
-            StoreOptions(_ =>
-            {
-                _.Schema.For<User>();
-
-                _.DdlRules.Grants.Add("foo");
-                _.DdlRules.Grants.Add("bar");
-                _.DdlRules.Role = "SystemRunner";
-                _.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
-            });
-
-            var sql = theSchema.ToDDL();
-            sql.ShouldContain("SET ROLE SystemRunner;");
-            sql.ShouldContain("RESET ROLE;");
-
-            sql.ShouldContain("GRANT SELECT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_user TO \"foo\";");
-            sql.ShouldContain("GRANT SELECT (id, data, mt_last_modified, mt_version, mt_dotnet_type) ON TABLE public.mt_doc_user TO \"bar\";");
-
-        }
-
         [Fact]
         public void generate_the_ddl_with_the_event_store()
         {

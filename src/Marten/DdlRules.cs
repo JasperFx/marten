@@ -14,13 +14,6 @@ namespace Marten
         /// </summary>
         public SecurityRights UpsertRights { get; set; } = SecurityRights.Invoker;
 
-
-        /// <summary>
-        /// Adds declarations to the DDL to give a specific DB role rights to read, update,
-        /// and insert rows into document tables
-        /// </summary>
-        public IList<string> Grants { get; } = new List<string>();
-
         /// <summary>
         /// Option to use this database role during DDL scripts
         /// </summary>

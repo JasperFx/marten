@@ -60,15 +60,6 @@ namespace Marten.Schema.Identity.Sequences
             writer.WriteLine(sqlScript);
             writer.WriteLine("");
             writer.WriteLine("");
-
-            if (schema.StoreOptions.OwnerName.IsNotEmpty())
-            {
-                writer.WriteLine($"ALTER TABLE {schema.StoreOptions.DatabaseSchemaName}.mt_hilo OWNER TO \"{schema.StoreOptions.OwnerName}\";");
-                writer.WriteLine($"ALTER FUNCTION {schema.StoreOptions.DatabaseSchemaName}.mt_get_next_hi(varchar) OWNER TO \"{schema.StoreOptions.OwnerName}\";");
-            }
-
-            writeOwnership(schema, patch);
-            writeGrants(schema, patch);
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)
@@ -90,35 +81,9 @@ namespace Marten.Schema.Identity.Sequences
                 patch.Updates.Apply(this, sqlScript);
 
                 patch.Rollbacks.Drop(this, Table);
-
-                writeOwnership(schema, patch);
-
-                writeGrants(schema, patch);
             }
         }
 
-        private void writeGrants(IDocumentSchema schema, SchemaPatch patch)
-        {
-            foreach (var role in schema.StoreOptions.DdlRules.Grants)
-            {
-                patch.Updates.Apply(this, $"GRANT SELECT ON TABLE {Table.QualifiedName} TO \"{role}\";");
-                patch.Updates.Apply(this, $"GRANT UPDATE ON TABLE {Table.QualifiedName} TO \"{role}\";");
-                patch.Updates.Apply(this, $"GRANT INSERT ON TABLE {Table.QualifiedName} TO \"{role}\";");
-
-                patch.Updates.Apply(this, $"GRANT EXECUTE ON FUNCTION {schema.StoreOptions.DatabaseSchemaName}.mt_get_next_hi(varchar) TO \"{role}\";");
-            }
-        }
-
-        private void writeOwnership(IDocumentSchema schema, SchemaPatch patch)
-        {
-            if (schema.StoreOptions.OwnerName.IsNotEmpty())
-            {
-                patch.Updates.Apply(this,
-                    $"ALTER TABLE {schema.StoreOptions.DatabaseSchemaName}.mt_hilo OWNER TO \"{schema.StoreOptions.OwnerName}\";");
-                patch.Updates.Apply(this,
-                    $"ALTER FUNCTION {schema.StoreOptions.DatabaseSchemaName}.mt_get_next_hi(varchar) OWNER TO \"{schema.StoreOptions.OwnerName}\";");
-            }
-        }
 
         public string Name { get; } = "mt_hilo";
     }

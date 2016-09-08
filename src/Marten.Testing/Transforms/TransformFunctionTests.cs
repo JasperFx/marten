@@ -64,23 +64,6 @@ namespace Marten.Testing.Transforms
         }
 
         [Fact]
-        public void write_schema_includes_grants()
-        {
-            var options = new StoreOptions();
-            options.DdlRules.Grants.Add("foo");
-
-            var writer = new StringWriter();
-            var schema = Substitute.For<IDocumentSchema>();
-            schema.StoreOptions.Returns(options);
-
-            var func = TransformFunction.ForFile(options, "get_fullname.js");
-
-            func.WriteSchemaObjects(schema, writer);
-
-            writer.ToString().ShouldContain("GRANT EXECUTE ON FUNCTION public.mt_transform_get_fullname(jsonb) TO \"foo\";");
-        }
-
-        [Fact]
         public void rebuilds_if_it_does_not_exist_in_the_schema_if_auto_create_is_all()
         {
             var schema = Substitute.For<IDocumentSchema>();
