@@ -33,12 +33,13 @@ namespace Marten.Schema
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
             var table = StorageTable();
-            table.Write(schema.StoreOptions.DdlRules, writer);
+            var rules = schema.StoreOptions.DdlRules;
+            table.Write(rules, writer);
             writer.WriteLine();
             writer.WriteLine();
 
             var function = new UpsertFunction(_mapping);
-            function.WriteFunctionSql(schema.StoreOptions.DdlRules, writer);
+            function.WriteFunctionSql(rules, writer);
             
 
             _mapping.ForeignKeys.Each(x =>
@@ -60,6 +61,18 @@ namespace Marten.Schema
 
                 writer.WriteSql(_mapping.DatabaseSchemaName, script);
             });
+
+            writer.WriteLine();
+            writer.WriteLine();
+
+            var template = _mapping.DdlTemplate.IsNotEmpty()
+                ? rules.Templates[_mapping.DdlTemplate.ToLower()]
+                : rules.Templates["default"];
+
+            table.WriteTemplate(template, writer);
+            var body = function.ToBody(rules);
+
+            body.WriteTemplate(template, writer);
 
             writer.WriteLine();
             writer.WriteLine();

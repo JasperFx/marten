@@ -199,6 +199,8 @@ namespace Marten.Schema
         public DeleteStyle DeleteStyle { get; set; } = DeleteStyle.Remove;
         public bool StructuralTyped { get; set; }
 
+        public string DdlTemplate { get; set; }
+
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             if (members.Count() == 1)

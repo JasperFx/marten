@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using Baseline;
 
@@ -49,6 +50,15 @@ namespace Marten.Schema
                 .Replace(DdlRules.FUNCTION, Function.Name)
                 .Replace(DdlRules.SIGNATURE, Signature())
                 ;
+        }
+
+        public void WriteTemplate(DdlTemplate template, StringWriter writer)
+        {
+            var text = template?.FunctionCreation;
+            if (text.IsNotEmpty())
+            {
+                writer.WriteLine(BuildTemplate(text));
+            }
         }
     }
 }

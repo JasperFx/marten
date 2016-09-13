@@ -88,6 +88,8 @@ namespace Marten.Generation
             });
 
             writer.WriteLine(");");
+
+
         }
 
         public TableColumn Column(string name)
@@ -148,6 +150,16 @@ namespace Marten.Generation
                 .Replace(DdlRules.COLUMNS, Columns.Select(x => x.Name).Join(", "))
                 .Replace(DdlRules.NON_ID_COLUMNS, Columns.Where(x => !x.Name.EqualsIgnoreCase("id")).Select(x => x.Name).Join(", "))
                 .Replace(DdlRules.METADATA_COLUMNS, "mt_last_modified, mt_version, mt_dotnet_type");
+        }
+
+        public void WriteTemplate(DdlTemplate template, StringWriter writer)
+        {
+            var text = template?.TableCreation;
+            if (text.IsNotEmpty())
+            {
+                writer.WriteLine();
+                writer.WriteLine(BuildTemplate(text));
+            }
         }
     }
 }
