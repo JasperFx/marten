@@ -38,6 +38,14 @@ $BODY$
             func.Signature().ShouldBe("public.mt_upsert_target(jsonb, character varying, uuid, uuid)");
         }
 
+        [Fact]
+        public void do_substitutions()
+        {
+            var func = new FunctionBody(new FunctionName("public", "mt_upsert_target"), new string[0], theFunctionBody);
 
+            func.BuildTemplate($"*{DdlRules.SCHEMA}*").ShouldBe("*public*");
+            func.BuildTemplate($"*{DdlRules.FUNCTION}*").ShouldBe("*mt_upsert_target*");
+            func.BuildTemplate($"*{DdlRules.SIGNATURE}*").ShouldBe($"*{func.Signature()}*");
+        }
     }
 }

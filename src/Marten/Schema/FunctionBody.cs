@@ -41,5 +41,14 @@ namespace Marten.Schema
             DropStatements = dropStatements;
             Body = body;
         }
+
+        public string BuildTemplate(string template)
+        {
+            return template
+                .Replace(DdlRules.SCHEMA, Function.Schema)
+                .Replace(DdlRules.FUNCTION, Function.Name)
+                .Replace(DdlRules.SIGNATURE, Signature())
+                ;
+        }
     }
 }
