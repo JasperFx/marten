@@ -220,7 +220,7 @@ namespace Marten.Schema
             return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
         }
 
-        public static DocumentMapping For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName,
+        public static DocumentMapping<T> For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName,
             Func<IDocumentMapping, StoreOptions, IIdGeneration> idGeneration = null)
         {
             var storeOptions = new StoreOptions

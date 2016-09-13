@@ -139,5 +139,15 @@ namespace Marten.Generation
         {
             Columns.RemoveAll(col => col.Name.EqualsIgnoreCase(columnName));
         }
+
+        public string BuildTemplate(string template)
+        {
+            return template
+                .Replace(DdlRules.SCHEMA, Table.Schema)
+                .Replace(DdlRules.TABLENAME, Table.Name)
+                .Replace(DdlRules.COLUMNS, Columns.Select(x => x.Name).Join(", "))
+                .Replace(DdlRules.NON_ID_COLUMNS, Columns.Where(x => !x.Name.EqualsIgnoreCase("id")).Select(x => x.Name).Join(", "))
+                .Replace(DdlRules.METADATA_COLUMNS, "mt_last_modified, mt_version, mt_dotnet_type");
+        }
     }
 }

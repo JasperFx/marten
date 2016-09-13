@@ -10,6 +10,7 @@ namespace Marten
         public static readonly string SIGNATURE = "%SIGNATURE%";
         public static readonly string COLUMNS = "%COLUMNS%";
         public static readonly string NON_ID_COLUMNS = "%NON_ID_COLUMNS%";
+        public static readonly string METADATA_COLUMNS = "%METADATA_COLUMNS%";
 
 
         /// <summary>

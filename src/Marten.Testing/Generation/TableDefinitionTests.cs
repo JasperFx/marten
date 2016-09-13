@@ -125,6 +125,25 @@ namespace Marten.Testing.Generation
             ddl.ShouldNotContain("DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
             ddl.ShouldContain("CREATE TABLE IF NOT EXISTS public.mt_doc_user");
         }
+
+        [Fact]
+        public void can_do_substitutions()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.Duplicate(x => x.FirstName);
+
+
+            var users = new DocumentSchemaObjects(mapping);
+            
+            var table = users.StorageTable();
+
+            table.BuildTemplate($"*{DdlRules.SCHEMA}*").ShouldBe($"*{table.Table.Schema}*");
+            table.BuildTemplate($"*{DdlRules.TABLENAME}*").ShouldBe($"*{table.Table.Name}*");
+            table.BuildTemplate($"*{DdlRules.COLUMNS}*").ShouldBe($"*id, data, mt_last_modified, mt_version, mt_dotnet_type, first_name*");
+            table.BuildTemplate($"*{DdlRules.NON_ID_COLUMNS}*").ShouldBe($"*data, mt_last_modified, mt_version, mt_dotnet_type, first_name*");
+
+            table.BuildTemplate($"*{DdlRules.METADATA_COLUMNS}*").ShouldBe("*mt_last_modified, mt_version, mt_dotnet_type*");
+        }
     }
 
     public class using_custom_ddl_rules_smoke_tests : IntegratedFixture
