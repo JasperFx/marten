@@ -2,6 +2,7 @@
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Util;
 using Shouldly;
 using Xunit;
 
@@ -16,6 +17,24 @@ namespace Marten.Testing.Schema
             var duplicate = mapping.DuplicatedFields.Single(x => x.MemberName == "Time2");
 
             duplicate.PgType.ShouldBe("timestamp with time zone");
+        }
+
+        [Fact]
+        public void creates_btree_index_for_the_member()
+        {
+            var mapping = DocumentMapping.For<Organization>();
+            var indexDefinition = mapping.Indexes.Cast<IndexDefinition>().Single(x => x.Columns.First() == "Name".ToTableAlias());
+
+            indexDefinition.Method.ShouldBe(IndexMethod.btree);
+        }
+
+        [Fact]
+        public void can_override_index_type_and_name_on_the_attribute()
+        {
+            var mapping = DocumentMapping.For<Organization>();
+            var indexDefinition = (IndexDefinition)mapping.Indexes.Single(x => x.IndexName == "idx_foo");
+
+            indexDefinition.Method.ShouldBe(IndexMethod.hash);
         }
 
         [Fact]
@@ -47,7 +66,7 @@ namespace Marten.Testing.Schema
             [DuplicateField]
             public string Name { get; set; }
 
-            [DuplicateField]
+            [DuplicateField(IndexMethod = IndexMethod.hash, IndexName = "idx_foo")]
             public string OtherName;
 
             [DuplicateField(PgType = "timestamp")]
