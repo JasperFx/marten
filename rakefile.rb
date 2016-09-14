@@ -2,7 +2,7 @@ require 'json'
 
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '1.0.0-alpha';
+BUILD_VERSION = '1.0.0';
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
@@ -147,6 +147,7 @@ namespace :nuget do
   desc 'Build the Nupkg file'
   task :pack => [:compile] do
     sh "dotnet pack ./src/Marten -o artifacts"
+    sh "dotnet pack ./src/Marten.CommandLine -o artifacts"
     #sh ".paket/paket.exe pack output artifacts version #{BUILD_NUMBER}"
   end
 end
