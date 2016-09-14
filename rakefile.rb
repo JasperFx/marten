@@ -134,7 +134,10 @@ namespace :nuget do
 
   desc 'Restores nuget packages with paket'
   task :restore => [:bootstrap] do
-    sh 'dotnet restore'
+    sh 'dotnet restore src/Marten'
+    sh 'dotnet restore src/Marten.CommandLine'
+    sh 'dotnet restore src/Marten.Testing.OtherAssembly'
+    sh 'dotnet restore src/Marten.Testing'
     #sh '.paket/paket.exe restore'
   end
 
