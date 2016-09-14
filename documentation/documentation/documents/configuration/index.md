@@ -8,13 +8,28 @@ which all come at the cost of slower inserts because it's an imperfect world. Ma
 * Indexes on the JSONB data field itself
 * Duplicate properties into separate database fields with a matching index for optimized querying
 * Choose how Postgresql will search within JSONB documents
+* DDL generation rules
+* How documents will be deleted
+
+My own personal bias is to avoid adding persistence concerns directly to the document types, but other developers
+will prefer to use either attributes or the new embedded configuration option with the thinking that it's
+better to keep the persistence configuration on the document type itself for easier traceability. Either way,
+Marten has you covered with the various configuration options shown here.
 
 The configuration options you'll most likely use are:
 
 <[TableOfContents]>
 
 
-TODO(talk about writing a custom StoreOptions class to make it easier to reuse configuration)
+## Custom StoreOptions
+
+It's perfectly valid to create your own subclass of `StoreOptions` that configures itself, as shown below. 
+
+<[sample:custom-store-options]>
+
+This strategy might be beneficial if you need to share Marten configuration across different applications
+or testing harnesses or custom migration tooling.
+
 
 ## MartenRegistry
 
@@ -48,3 +63,21 @@ As an example, an attribute to add a gin index to the JSONB storage for more eff
 would look like this:
 
 <[sample:GinIndexedAttribute]>
+
+
+## Embedding Configuration in Document Types
+
+Lastly, Marten can examine the document types themselves for a `public static ConfigureMarten()` method
+and invoke that to let the document type make its own customizations for its storage. Here's an example from
+the unit tests:
+
+<[sample:ConfigureMarten-generic]>
+
+The `DocumentMapping` type is the core configuration class representing how a document type is persisted or
+queried from within a Marten application. All the other configuration options end up writing to a
+`DocumentMapping` object.
+
+You can optionally take in the more specific `DocumentMapping<T>` for your document type to get at 
+some convenience methods for indexing or duplicating fields that depend on .Net Expression's:
+
+<[sample:ConfigureMarten-specifically]>

@@ -125,6 +125,26 @@ namespace Marten.Testing.Examples
             // ENDSAMPLE
         }
 
-        
+
+        // SAMPLE: custom-store-options
+public class MyStoreOptions : StoreOptions
+{
+    public static IDocumentStore ToStore()
+    {
+        return new DocumentStore(new MyStoreOptions());
+    }
+
+    public MyStoreOptions()
+    {
+        Connection(ConnectionSource.ConnectionString);
+
+        Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsString});
+
+        Schema.For<User>().Index(x => x.UserName);
+    }
+}
+        // ENDSAMPLE
+
+
     }
 }

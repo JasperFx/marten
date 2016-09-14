@@ -797,16 +797,17 @@ namespace Marten.Testing.Schema
             }
         }
 
+        // SAMPLE: ConfigureMarten-generic
+public class ConfiguresItself
+{
+    public static void ConfigureMarten(DocumentMapping mapping)
+    {
+        mapping.Alias = "different";
+    }
 
-        public class ConfiguresItself
-        {
-            public static void ConfigureMarten(DocumentMapping mapping)
-            {
-                mapping.Alias = "different";
-            }
-
-            public Guid Id;
-        }
+    public Guid Id;
+}
+        // ENDSAMPLE
 
         [Fact]
         public void uses_ConfigureMarten_method_to_alter_mapping_upon_construction()
@@ -815,16 +816,18 @@ namespace Marten.Testing.Schema
             mapping.Alias.ShouldBe("different");
         }
 
-        public class ConfiguresItselfSpecifically
-        {
-            public static void ConfigureMarten(DocumentMapping<ConfiguresItselfSpecifically> mapping)
-            {
-                mapping.Duplicate(x => x.Name);
-            }
+        // SAMPLE: ConfigureMarten-specifically
+public class ConfiguresItselfSpecifically
+{
+    public static void ConfigureMarten(DocumentMapping<ConfiguresItselfSpecifically> mapping)
+    {
+        mapping.Duplicate(x => x.Name);
+    }
 
-            public Guid Id;
-            public string Name;
-        }
+    public Guid Id;
+    public string Name;
+}
+        // ENDSAMPLE
 
         [Fact]
         public void uses_ConfigureMarten_method_to_alter_mapping_upon_construction_with_the_generic_signature()
