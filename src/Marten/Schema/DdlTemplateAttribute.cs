@@ -2,6 +2,9 @@ using System;
 
 namespace Marten.Schema
 {
+    /// <summary>
+    /// Override the DDL template for a single document type
+    /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
     public class DdlTemplateAttribute : MartenAttribute
     {

@@ -30,10 +30,15 @@ You can fetch the information for a single event by id, including its version nu
 ## Querying Directly Against Event Data
 
 We have to urge some caution about this functionality because it requires a search against the entire `mt_events` table. To issue Linq queries against
-any specific event type, use the `IEventStore.Query<T>()` method shown below:
+any specific event type, use the method shown below:
 
 <[sample:query-against-event-data]>
 
 You can use any Linq operator that Marten supports to query against event data. We think that this functionality is probably more useful for diagnostics or troubleshooting
 rather than something you would routinely use to support your application. We recommend that you favor event projection views over querying within the raw event table.
 
+Just in time for Marten 1.0, you can issue queries with Marten's full Linq support against the raw event data with this method:
+
+<[sample:example_of_querying_for_event_data]>
+
+This mechanism will allow you to query by any property of the `IEvent` interface shown above.

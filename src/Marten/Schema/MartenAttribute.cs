@@ -24,7 +24,4 @@ namespace Marten.Schema
         public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }
     }
     // ENDSAMPLE
-
-
-    
 }

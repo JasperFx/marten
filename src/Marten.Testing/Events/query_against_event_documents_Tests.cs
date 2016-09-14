@@ -85,6 +85,16 @@ namespace Marten.Testing.Events
             results.Count.ShouldBe(4);
         }
 
+        // SAMPLE: example_of_querying_for_event_data
+public void example_of_querying_for_event_data(IDocumentSession session, Guid stream)
+{
+    var events = session.Events.QueryAllRawEvents()
+        .Where(x => x.StreamId == stream)
+        .OrderBy(x => x.Sequence)
+        .ToList();
+}
+        // ENDSAMPLE
+
         [Fact]
         public void can_fetch_all_events_after_now()
         {
