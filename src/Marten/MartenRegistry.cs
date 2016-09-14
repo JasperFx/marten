@@ -305,6 +305,17 @@ namespace Marten
                 alter = m => m.DeleteStyle = DeleteStyle.SoftDelete;
                 return this;
             }
+
+            /// <summary>
+            /// Direct this document type's DDL to be created with the named template
+            /// </summary>
+            /// <param name="templateName"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> DdlTemplate(string templateName)
+            {
+                alter = m => m.DdlTemplate = templateName;
+                return this;
+            }
         }
     }
 

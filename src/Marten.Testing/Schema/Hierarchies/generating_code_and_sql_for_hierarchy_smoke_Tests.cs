@@ -27,7 +27,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
         }
-
+        
 
         [Fact]
         public void can_generate_upsert_function_with_security_definer()

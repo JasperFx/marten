@@ -3,6 +3,7 @@ using System.IO;
 using Baseline;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema
@@ -52,16 +53,37 @@ namespace Marten.Testing.Schema
             ddl.ShouldContain("Blue for public.mt_upsert_bluedoc");
         }
 
-
-    }
-
-    public class BlueDoc
-    {
-        public static void ConfigureMarten(DocumentMapping mapping)
+        [Fact]
+        public void use_an_overridden_template_if_it_exists_via_fluent_interface()
         {
-            mapping.DdlTemplate = "blue";
-        }
+            StoreOptions(_ =>
+            {
+                _.Schema.For<User>();
+                _.Schema.For<BlueDoc>().DdlTemplate("blue");
+            });
 
-        public Guid id;
+            theStore.Schema.MappingFor(typeof(BlueDoc))
+                .As<DocumentMapping>().DdlTemplate.ShouldBe("blue");
+        }
     }
+
+    // SAMPLE: configure_template_with_configure_marten
+public class BlueDoc
+{
+    public static void ConfigureMarten(DocumentMapping mapping)
+    {
+        mapping.DdlTemplate = "blue";
+    }
+
+    public Guid id;
+}
+    // ENDSAMPLE
+
+    // SAMPLE: configure_template_with_attribute
+[DdlTemplate("ReadOnly")]
+public class ReadOnlyDoc
+{
+    public Guid id;
+}
+    // ENDSAMPLE
 }
