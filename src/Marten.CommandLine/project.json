@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "Oakton": "1.1.0",
-    "Marten": "1.0.0-alpha"
+    "Marten": "1.0.0"
   },
   "frameworks": {
     "netstandard1.3": {
