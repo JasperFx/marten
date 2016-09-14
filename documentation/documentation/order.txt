@@ -1,4 +1,5 @@
 schema
+cli
 documents
 events
 precompiling
