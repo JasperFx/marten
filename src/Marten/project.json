@@ -9,7 +9,8 @@
   ],
   "packOptions": {
     "projectUrl": "http://jasperfx.github.io/marten",
-    "licenseUrl": "https://github.com/JasperFX/marten/blob/master/LICENSE.txt"
+    "licenseUrl": "https://github.com/JasperFX/marten/blob/master/LICENSE.txt",
+	"iconUrl": "http://jasperfx.github.io/marten/content/images/emblem.png"
   },
   "buildOptions": {
     "compile": [
