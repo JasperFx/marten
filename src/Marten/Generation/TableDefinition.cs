@@ -26,7 +26,6 @@ namespace Marten.Generation
             }
         }
 
-        public Deletions Deletions { get; set; }
 
         public TableDefinition(TableName table, TableColumn primaryKey)
         {

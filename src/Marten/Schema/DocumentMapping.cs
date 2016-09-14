@@ -16,13 +16,6 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public enum Deletions
-    {
-        CanDelete,
-        CannotDelete
-    }
-
-
 
     public class DocumentMapping : IDocumentMapping, IQueryableDocument
     {
@@ -69,8 +62,6 @@ namespace Marten.Schema
 
             applyAnyMartenAttributes(documentType);
         }
-
-        public Deletions Deletions { get; set; } = Deletions.CanDelete;
 
         private void applyAnyMartenAttributes(Type documentType)
         {

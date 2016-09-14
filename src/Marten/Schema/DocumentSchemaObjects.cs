@@ -211,10 +211,7 @@ namespace Marten.Schema
         public TableDefinition StorageTable() 
         {
             var pgIdType = TypeMappings.GetPgType(_mapping.IdMember.GetMemberType());
-            var table = new TableDefinition(_mapping.Table, new TableColumn("id", pgIdType))
-            {
-                Deletions = _mapping.Deletions
-            };
+            var table = new TableDefinition(_mapping.Table, new TableColumn("id", pgIdType));
 
 
             table.Columns.Add(new TableColumn("data", "jsonb") { Directive = "NOT NULL" });

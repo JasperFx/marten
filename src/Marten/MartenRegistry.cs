@@ -146,19 +146,6 @@ namespace Marten
             }
 
             /// <summary>
-            /// Use to override whether or not a document is allowed to be deleted by
-            /// Marten. Only impacts the creation of database GRANT's in DDL generation
-            /// </summary>
-            /// <param name="deletions"></param>
-            /// <returns></returns>
-            public DocumentMappingExpression<T> Deletions(Deletions deletions)
-            {
-                alter = m => m.Deletions = deletions;
-
-                return this;
-            }
-
-            /// <summary>
             /// Creates a computed index on this data member within the JSON data storage
             /// </summary>
             /// <param name="expression"></param>

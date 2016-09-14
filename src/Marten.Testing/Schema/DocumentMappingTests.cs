@@ -235,18 +235,6 @@ namespace Marten.Testing.Schema
                     DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, "first_name");
         }
 
-        [Fact]
-        public void brings_over_deletion_style_to_table_definition()
-        {
-            var mapping = DocumentMapping.For<User>();
-            mapping.SchemaObjects.As<DocumentSchemaObjects>().StorageTable()
-                .Deletions.ShouldBe(mapping.Deletions);
-
-            mapping.Deletions = Deletions.CannotDelete;
-
-            mapping.SchemaObjects.As<DocumentSchemaObjects>().StorageTable()
-                .Deletions.ShouldBe(mapping.Deletions);
-        }
 
         [Fact]
         public void to_table_columns_with_subclasses()
@@ -395,13 +383,6 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("CREATE TABLE public.mt_doc_documentmappingtests_myspecialdocument");
             sql.ShouldContain("jsonb NOT NULL");
         }
-
-        [Fact]
-        public void can_delete_by_default()
-        {
-            DocumentMapping.For<User>().Deletions.ShouldBe(Deletions.CanDelete);
-        }
-
 
         private static void createRoles()
         {

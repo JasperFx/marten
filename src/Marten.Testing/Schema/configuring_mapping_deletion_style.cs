@@ -10,18 +10,6 @@ namespace Marten.Testing.Schema
     public class configuring_mapping_deletion_style
     {
 
-        [CannotDelete]
-        public class NotDeletedDoc
-        {
-            public Guid Id;
-        }
-
-        [Fact]
-        public void cannot_delete()
-        {
-            DocumentMapping.For<NotDeletedDoc>()
-                .Deletions.ShouldBe(Deletions.CannotDelete);
-        }
 
         [Fact]
         public void default_delete_style_is_remove()
