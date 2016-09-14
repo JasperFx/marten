@@ -1,25 +1,19 @@
 <!--Title:Projections-->
 <!--Url:projections-->
 
-Projections are very new in Marten, but we plan on much more support and new use cases in the near future.
+<div class="alert alert-info">
+The Marten community is working to create more samples of event store projections. Check this page again soon. In the meantime,
+don't forget to just look through the code and our unit tests.
+</div>
 
-## The Vision
+First, some terminology that we're going to use throughout this section:
 
-A couple years ago, I got to do what turned into a proof of concept project for building out an event store on top of Postgresql’s JSON support. My thought for Marten’s projection support is 
-largely taken from [this blog post I wrote on the earlier attempt at writing an event store on Postgresql](https://jeremydmiller.com/2014/10/22/building-an-eventstore-with-user-defined-projections-on-top-of-postgresql-and-node-js/).
-
-Today the projection ability is very limited. So far you can use the live or “inline” aggregation of a single stream shown above or a simple pattern that allows you to create a single readside document for a given event type.
-
-The end state we envision is to be able to allow users to:
-
-* Express projections in either .Net code or by using Javascript functions running inside of Postgresql itself
-* To execute the projection building either “inline” with event capture for pure ACID, asynchronously for complicated aggregations or better performance (and there comes eventual consistency back into our lives), or do aggregations “live” on demand. We think that this break down of projection     timings will give users the ability to handle systems with many writes, but few reads with on demand projections, or to handle systems with few writes, but many reads with inline projections.
-* To provide and out of the box “async daemon” that you would host as a stateful process within your applications to continuously calculate projections in the background. We want to at least experiment with using Postgresql’s NOTIFY/LISTEN functionality to avoid making this a purely polling process.
-* Support hooks to perform your own form of event stream processing using the existing IDocumentSessionListener mechanism and maybe some way to plug more processors into the queue reading in the async daemon described above
-* Add some “snapshotting” functionality that allows you to perform aggregated views on top of occasional snapshots every X times an event is captured on an aggregate
-* Aggregate data across streams
-* Support arbitrary categorization of events across streams
-
+* _Projection_ - any strategy for generating "read side" views from the raw event streams
+* _Transformation_ - a type of projection that generates or updates a single read side view for a single event
+* _Aggregate_ - a type of projection that "aggregates" data from multiple events to create a single readside view document
+* _Inline Projections_ - projection's that are executed as part of any event capture transaction
+* _Async Projections_ - projection's that run in some kind of background process using an [eventual consistency](https://en.wikipedia.org/wiki/Eventual_consistency) strategy
+* _Live Projections_ - evaluating a projected view from the raw event data on demand within Marten
 
 
 ## Projecting from One Event to One Document    
@@ -41,11 +35,20 @@ Now, we can plug our new transform type above as a projection when we configure 
 
 ## Aggregated Views Across a Single Stream
 
-As of now (v0.9), Marten is only supporting aggregation via .Net classes. The out of the box convention is to expose `Apply([Event Type])` methods
+As of now (v1.0), Marten is only supporting aggregation via .Net classes. The out of the box convention is to expose `Apply([Event Type])` methods
 on your aggregate class to do all incremental updates to an aggregate object. Sticking with the fantasy theme, the `QuestParty` class shown below
 could be used to aggregate streams of quest data:
 
 <[sample:QuestParty]>
+
+## Aggregated Views Across Multiple Streams
+
+Example coming soon, and check [Jeremy's blog](http://jeremydmiller.com) for a sample soon.
+
+It's possible today by using either a custom `IProjection` or using the existing aggregation capabilities with a
+custom `IAggregateFinder<T>`, where "T" is the projected view document type.
+
+
 
 
 ## Live Aggregation via .Net
@@ -68,3 +71,5 @@ the aggregation type in the `StoreOptions` upfront when you build up your docume
 <[sample:registering-quest-party]>
 
 At this point, you would be able to query against `QuestParty` as just another document type.
+
+

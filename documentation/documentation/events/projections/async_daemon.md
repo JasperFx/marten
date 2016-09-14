@@ -1,4 +1,3 @@
 <!--Title: Async Projections Daemon-->
 
-
-**Forthcoming soon! We're partially waiting on Rx.Net to get an official CoreCLR release, but we expect that soon**
+For the moment, see Jeremy's blog post on [Offline Event Processing in Marten with the new “Async Daemon”](https://jeremydmiller.com/2016/08/04/offline-event-processing-in-marten-with-the-new-async-daemon/).
