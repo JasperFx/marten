@@ -59,7 +59,7 @@ task :version do
   end
 
   puts 'Writing version to project.json'
-  nuget_version = "#{BUILD_VERSION}-#{build_revision}"
+  nuget_version = "#{BUILD_VERSION}"
   project_file = load_project_file('src/Marten/project.json')
   File.open('src/Marten/project.json', "w+") do |file|
     project_file["version"] = nuget_version
