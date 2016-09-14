@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.0-alpha</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -69,7 +69,8 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 1.0-alpha</h3>
+			  
+				<img src="/content/images/emblem.png" width="80%" align="middle"/>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -149,6 +150,23 @@ id for the stream:</p>
 
                 session.SaveChanges();
 </code></pre>
+<h3>Appending &amp; Assertions</h3>
+<p><code>IEventStore.Append()</code> supports an overload taking in a parameter <code>int expectedVersion</code> that can be used to assert that events are inserted into the
+event stream if and only if the maximum event id for the stream matches the expected version after event insertions. Otherwise the transaction is aborted
+and a <code>EventStreamUnexpectedMaxEventIdException</code> exception is thrown.</p>
+<pre><code class="language-csharp">
+                session.Events.StartStream&lt;Quest&gt;(id, started);
+                session.SaveChanges();
+
+                var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };
+                var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };
+
+                // Events are appended into the stream only if the maximum event id for the stream
+                // would be 3 after the append operation.
+                session.Events.Append(id, 3, joined, departed);
+
+                session.SaveChanges();
+</code></pre> 
 
 
 			      	</div>

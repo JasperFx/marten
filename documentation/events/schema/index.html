@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.0-alpha</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -69,7 +69,8 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 1.0-alpha</h3>
+			  
+				<img src="/content/images/emblem.png" width="80%" align="middle"/>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -156,6 +157,11 @@ and to retain a potential way to uniquely identify events across databases.</p>
         /// The actual event data
         /// &lt;/summary&gt;
         public T Data { get; set; }
+
+        /// &lt;summary&gt;
+        /// The UTC time that this event was originally captured
+        /// &lt;/summary&gt;
+        public DateTimeOffset Timestamp { get; set; }
 </code></pre>
 <p>The full event data is available on <code>EventStream</code> and <code>IEvent</code> objects immediately after committing a transaction that involves
 event capture. See <a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a> for more information on capturing event data in the instrumentation

@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.0-alpha</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -69,7 +69,8 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 1.0-alpha</h3>
+			  
+				<img src="/content/images/emblem.png" width="80%" align="middle"/>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -135,6 +136,11 @@
         object Data { get; }
 
         Guid StreamId { get; set; }
+
+        /// &lt;summary&gt;
+        /// The UTC time that this event was originally captured
+        /// &lt;/summary&gt;
+        DateTimeOffset Timestamp { get; set; }
 
         void Apply&lt;TAggregate&gt;(TAggregate state, IAggregator&lt;TAggregate&gt; aggregator)
             where TAggregate : class, new();
@@ -238,7 +244,7 @@ public async Task load_a_single_event_asynchronously(IDocumentSession session, G
 </code></pre>
 <h2>Querying Directly Against Event Data</h2>
 <p>We have to urge some caution about this functionality because it requires a search against the entire <code>mt_events</code> table. To issue Linq queries against
-any specific event type, use the <code>IEventStore.Query&lt;T&gt;()</code> method shown below:</p>
+any specific event type, use the method shown below:</p>
 <pre><code class="language-csharp">
         [Fact]
         public void can_query_against_event_type()
@@ -259,6 +265,17 @@ any specific event type, use the <code>IEventStore.Query&lt;T&gt;()</code> metho
 </code></pre>
 <p>You can use any Linq operator that Marten supports to query against event data. We think that this functionality is probably more useful for diagnostics or troubleshooting
 rather than something you would routinely use to support your application. We recommend that you favor event projection views over querying within the raw event table.</p>
+<p>Just in time for Marten 1.0, you can issue queries with Marten's full Linq support against the raw event data with this method:</p>
+<pre><code class="language-csharp">
+public void example_of_querying_for_event_data(IDocumentSession session, Guid stream)
+{
+    var events = session.Events.QueryAllRawEvents()
+        .Where(x =&gt; x.StreamId == stream)
+        .OrderBy(x =&gt; x.Sequence)
+        .ToList();
+}
+</code></pre>
+<p>This mechanism will allow you to query by any property of the <code>IEvent</code> interface shown above.</p>
 
 
 			      	</div>

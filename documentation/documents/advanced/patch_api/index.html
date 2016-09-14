@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.0-alpha</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -69,7 +69,8 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 1.0-alpha</h3>
+			  
+				<img src="/content/images/emblem.png" width="80%" align="middle"/>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -256,13 +257,14 @@ being 0 so that a new item would be inserted at the beginning of the child colle
             var target2 = query.Load&lt;Target&gt;(target.Id);
             target2.NumberArray.Length.ShouldBe(initialCount - 1);
 
-            target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.Except(new[] {child}));
+            target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.ExceptFirst(child));
         }
     }
+
 </code></pre>
 <p>Removing complex items can also be accomplished, matching is performed on all fields:</p>
 <pre><code class="language-csharp">
-        [Fact]
+    [Fact]
     public void remove_complex_element()
     {
         var target = Target.Random(true);

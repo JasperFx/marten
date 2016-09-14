@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.0-alpha</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -69,7 +69,8 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 1.0-alpha</h3>
+			  
+				<img src="/content/images/emblem.png" width="80%" align="middle"/>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -98,10 +99,37 @@ which all come at the cost of slower inserts because it's an imperfect world. Ma
 <li>Indexes on the JSONB data field itself</li>
 <li>Duplicate properties into separate database fields with a matching index for optimized querying</li>
 <li>Choose how Postgresql will search within JSONB documents</li>
+<li>DDL generation rules</li>
+<li>How documents will be deleted</li>
 </ul>
+<p>My own personal bias is to avoid adding persistence concerns directly to the document types, but other developers
+will prefer to use either attributes or the new embedded configuration option with the thinking that it's
+better to keep the persistence configuration on the document type itself for easier traceability. Either way,
+Marten has you covered with the various configuration options shown here.</p>
 <p>The configuration options you'll most likely use are:</p>
 <ul class="table-of-contents"><li><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></li><li><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></li><li><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a></li><li><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></li></ul>
-<p>TODO(talk about writing a custom StoreOptions class to make it easier to reuse configuration)</p>
+<h2>Custom StoreOptions</h2>
+<p>It's perfectly valid to create your own subclass of <code>StoreOptions</code> that configures itself, as shown below.</p>
+<pre><code class="language-csharp">
+public class MyStoreOptions : StoreOptions
+{
+    public static IDocumentStore ToStore()
+    {
+        return new DocumentStore(new MyStoreOptions());
+    }
+
+    public MyStoreOptions()
+    {
+        Connection(ConnectionSource.ConnectionString);
+
+        Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsString});
+
+        Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);
+    }
+}
+</code></pre>
+<p>This strategy might be beneficial if you need to share Marten configuration across different applications
+or testing harnesses or custom migration tooling.</p>
 <h2>MartenRegistry</h2>
 <p>While there are some limited abilities to configure storage with attributes, the most complete option right now
 is a fluent interface implemented by the <code>MartenRegistry</code>. To configure a Marten document store, first write
@@ -165,6 +193,38 @@ would look like this:</p>
             mapping.AddGinIndexToData();
         }
     }
+</code></pre>
+<h2>Embedding Configuration in Document Types</h2>
+<p>Lastly, Marten can examine the document types themselves for a <code>public static ConfigureMarten()</code> method
+and invoke that to let the document type make its own customizations for its storage. Here's an example from
+the unit tests:</p>
+<pre><code class="language-csharp">
+public class ConfiguresItself
+{
+    public static void ConfigureMarten(DocumentMapping mapping)
+    {
+        mapping.Alias = &quot;different&quot;;
+    }
+
+    public Guid Id;
+}
+</code></pre>
+<p>The <code>DocumentMapping</code> type is the core configuration class representing how a document type is persisted or
+queried from within a Marten application. All the other configuration options end up writing to a
+<code>DocumentMapping</code> object.</p>
+<p>You can optionally take in the more specific <code>DocumentMapping&lt;T&gt;</code> for your document type to get at
+some convenience methods for indexing or duplicating fields that depend on .Net Expression's:</p>
+<pre><code class="language-csharp">
+public class ConfiguresItselfSpecifically
+{
+    public static void ConfigureMarten(DocumentMapping&lt;ConfiguresItselfSpecifically&gt; mapping)
+    {
+        mapping.Duplicate(x =&gt; x.Name);
+    }
+
+    public Guid Id;
+    public string Name;
+}
 </code></pre>
 
 

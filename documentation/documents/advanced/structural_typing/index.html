@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Calculated Index</title>
+		<title>Marten - Structural Typing</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/customizing" title="Customizing Document Storage">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/customizing/duplicated_fields" title="Duplicated Fields for Faster Querying">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/advanced/soft_deletes" title="Soft Deletes">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/advanced/cleaning" title="Tearing Down Document Storage">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Calculated Index</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/advanced">Advanced Topics</a></li><li class="active">Structural Typing</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,102 +77,71 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/advanced/cleaning">Tearing Down Document Storage</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced/soft_deletes">Soft Deletes</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Calculated Index <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/configuration/computed_index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Structural Typing <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/advanced/structural_typing.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title: Calculated Index-->
-<div class="alert alert-info">
-Calculated indexes are a great way to optimize the querying of a document type without incurring
-potentially expensive schema changes and extra runtime insert costs.
-</div>
-<div class="alert alert-warning">
-At this time, calculated indexes do not work against <code>DateTime</code> or <code>DateTimeOffset</code> fields. You will have
-to resort to a duplicated field for these types.
-</div>
-<p>If you want to optimize a document type for searches on a certain field within the JSON body without
-incurring the potential cost of the duplicated field, you can take advantage of Postgresql's
-<a href="https://www.postgresql.org/docs/9.5/static/indexes-expressional.html">computed index feature</a> within Marten with this syntax:</p>
+			      		<!--title: Structural Typing-->
+<p>Let's say that you have some kind of complicated document type that represents the single source of truth for that
+information within your system, but you frequently need to fetch only a subset of that document. In that
+particular case you can opt into Marten's (limited) support for &quot;<a href="https://en.wikipedia.org/wiki/Structural_type_system">structural typing</a>.&quot;</p>
+<p>See these two document types:</p>
 <pre><code class="language-csharp">
-    var store = DocumentStore.For(_ =&gt;
+    namespace Area1
     {
-        _.Connection(ConnectionSource.ConnectionString);
+        public class Product
+        {
+            public int Id { get; set; }
 
-        // This creates 
-        _.Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);
-    });
+            public string Name { get; set; }
 
-            
+            public decimal Price { get; set; }
+        }
+    }
 
-    using (var session = store.QuerySession())
+    namespace Area2
     {
-        // Postgresql will be able to use the computed
-        // index generated from above
-        var somebody = session.Query&lt;User&gt;()
-            .Where(x =&gt; x.UserName == &quot;somebody&quot;)
-            .FirstOrDefault();
+        [StructuralTyped]
+        public class Product
+        {
+            public int Id { get; set; }
+
+            public string Name { get; set; }
+        }
     }
 </code></pre>
-<p>In the configuration shown above, Marten generates a database index in Postgresql:</p>
-<pre>
-CREATE INDEX mt_doc_user_idx_user_name ON public.mt_doc_user ((data ->> 'UserName'));
-</pre>
-<p>You can also create calculated indexes for deep or nested properties like this:</p>
+<p>The <code>Area2.Product</code> has a subset of the properties that <code>Area1.Product</code> has. By marking <code>Area2.Product</code>
+with the <code>[StructuralTyped]</code> attribute, we are directing Marten to pull <code>Area2.Product</code> data
+from the underlying storage of the bigger <code>Area1.Product</code> document.</p>
+<p>You can see this in action inside of a unit test from Marten:</p>
 <pre><code class="language-csharp">
-    var store = DocumentStore.For(_ =&gt;
+[Fact]
+public void can_select_from_the_same_table()
+{
+    using (var session = theStore.OpenSession())
     {
-        _.Connection(ConnectionSource.ConnectionString);
+        var product1 = new Area1.Product {Name = &quot;Paper&quot;, Price = 10};
+        session.Store(product1);
+        session.SaveChanges();
 
-        _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Inner.Color);
-    });
+        var product2 = session.Load&lt;Area2.Product&gt;(product1.Id);
+
+        product2.Name.ShouldBe(product1.Name);
+    }
+}
 </code></pre>
-<p>The configuration above creates an index like this:</p>
-<pre>
-CREATE INDEX mt_doc_target_idx_inner_color ON public.mt_doc_target (((data -> 'Inner' ->> 'Color')::int));
-</pre>
-<h2>Customizing a Calculated Index</h2>
-<p>You have some ability to customize the calculated index by passing a second Lambda <code>Action</code> into
-the <code>Index()</code> method as shown below:</p>
-<pre><code class="language-csharp">
-    var store = DocumentStore.For(_ =&gt;
-    {
-        _.Connection(ConnectionSource.ConnectionString);
-
-        // The second, optional argument to Index()
-        // allows you to customize the calculated index
-        _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Number, x =&gt;
-        {
-            // Change the index method to &quot;brin&quot;
-            x.Method = IndexMethod.brin;
-
-            // Force the index to be generated with casing rules
-            x.Casing = ComputedIndex.Casings.Lower;
-
-            // Override the index name if you want
-            x.IndexName = &quot;mt_my_name&quot;;
-
-            // Toggle whether or not the index is concurrent
-            // Default is false
-            x.IsConcurrent = true;
-
-            // Toggle whether or not the index is a UNIQUE
-            // index
-            x.IsUnique = true;
-
-            // Partial index by supplying a condition
-            x.Where = &quot;(data -&gt;&gt; &#39;Number&#39;)::int &gt; 10&quot;;
-        });
-    });
-</code></pre>
+<p>The caveats here are that the document types must have the same name, cannot be inner classes, must be in
+separate namespaces, and the underlying JSON serializer must be able to resolve the structural typed
+subset documents from the raw JSON of the master document.</p>
 
 
 			      	</div>
@@ -181,12 +150,12 @@ the <code>Index()</code> method as shown below:</p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/advanced/soft_deletes">Soft Deletes</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/advanced/cleaning">Tearing Down Document Storage</a>
 
 				        </span>
 			      	</nav>

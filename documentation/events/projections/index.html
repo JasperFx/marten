@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.0-alpha</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -69,7 +69,8 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 1.0-alpha</h3>
+			  
+				<img src="/content/images/emblem.png" width="80%" align="middle"/>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -91,20 +92,18 @@
 			      	<div id="main-pane">
 			      		<!--Title:Projections-->
 <!--Url:projections-->
-<p>Projections are very new in Marten, but we plan on much more support and new use cases in the near future.</p>
-<h2>The Vision</h2>
-<p>A couple years ago, I got to do what turned into a proof of concept project for building out an event store on top of Postgresql’s JSON support. My thought for Marten’s projection support is
-largely taken from <a href="https://jeremydmiller.com/2014/10/22/building-an-eventstore-with-user-defined-projections-on-top-of-postgresql-and-node-js/">this blog post I wrote on the earlier attempt at writing an event store on Postgresql</a>.</p>
-<p>Today the projection ability is very limited. So far you can use the live or “inline” aggregation of a single stream shown above or a simple pattern that allows you to create a single readside document for a given event type.</p>
-<p>The end state we envision is to be able to allow users to:</p>
+<div class="alert alert-info">
+The Marten community is working to create more samples of event store projections. Check this page again soon. In the meantime,
+don't forget to just look through the code and our unit tests.
+</div>
+<p>First, some terminology that we're going to use throughout this section:</p>
 <ul>
-<li>Express projections in either .Net code or by using Javascript functions running inside of Postgresql itself</li>
-<li>To execute the projection building either “inline” with event capture for pure ACID, asynchronously for complicated aggregations or better performance (and there comes eventual consistency back into our lives), or do aggregations “live” on demand. We think that this break down of projection     timings will give users the ability to handle systems with many writes, but few reads with on demand projections, or to handle systems with few writes, but many reads with inline projections.</li>
-<li>To provide and out of the box “async daemon” that you would host as a stateful process within your applications to continuously calculate projections in the background. We want to at least experiment with using Postgresql’s NOTIFY/LISTEN functionality to avoid making this a purely polling process.</li>
-<li>Support hooks to perform your own form of event stream processing using the existing IDocumentSessionListener mechanism and maybe some way to plug more processors into the queue reading in the async daemon described above</li>
-<li>Add some “snapshotting” functionality that allows you to perform aggregated views on top of occasional snapshots every X times an event is captured on an aggregate</li>
-<li>Aggregate data across streams</li>
-<li>Support arbitrary categorization of events across streams</li>
+<li><em>Projection</em> - any strategy for generating &quot;read side&quot; views from the raw event streams</li>
+<li><em>Transformation</em> - a type of projection that generates or updates a single read side view for a single event</li>
+<li><em>Aggregate</em> - a type of projection that &quot;aggregates&quot; data from multiple events to create a single readside view document</li>
+<li><em>Inline Projections</em> - projection's that are executed as part of any event capture transaction</li>
+<li><em>Async Projections</em> - projection's that run in some kind of background process using an <a href="https://en.wikipedia.org/wiki/Eventual_consistency">eventual consistency</a> strategy</li>
+<li><em>Live Projections</em> - evaluating a projected view from the raw event data on demand within Marten</li>
 </ul>
 <h2>Projecting from One Event to One Document</h2>
 <p>If you want to have certain events projected to a readside document and the relationship is one to one, Marten supports this pattern today with the .Net <code>ITransform</code> interface:</p>
@@ -166,7 +165,7 @@ largely taken from <a href="https://jeremydmiller.com/2014/10/22/building-an-eve
         }
 </code></pre>
 <h2>Aggregated Views Across a Single Stream</h2>
-<p>As of now (v0.9), Marten is only supporting aggregation via .Net classes. The out of the box convention is to expose <code>Apply([Event Type])</code> methods
+<p>As of now (v1.0), Marten is only supporting aggregation via .Net classes. The out of the box convention is to expose <code>Apply([Event Type])</code> methods
 on your aggregate class to do all incremental updates to an aggregate object. Sticking with the fantasy theme, the <code>QuestParty</code> class shown below
 could be used to aggregate streams of quest data:</p>
 <pre><code class="language-csharp">
@@ -214,6 +213,10 @@ public class QuestParty
     }
 }
 </code></pre>
+<h2>Aggregated Views Across Multiple Streams</h2>
+<p>Example coming soon, and check <a href="http://jeremydmiller.com">Jeremy's blog</a> for a sample soon.</p>
+<p>It's possible today by using either a custom <code>IProjection</code> or using the existing aggregation capabilities with a
+custom <code>IAggregateFinder&lt;T&gt;</code>, where &quot;T&quot; is the projected view document type.</p>
 <h2>Live Aggregation via .Net</h2>
 <p>You can always fetch a stream of events and build an aggregate completely live from the current event data by using this syntax:</p>
 <pre><code class="language-csharp">

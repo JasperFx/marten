@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+        <meta charset="utf-8">
+        <meta name="generator" content="Bootply" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<title>Marten - Command Line Tooling for Marten Management</title>
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+        
+
+        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+
+        <!-- CSS code from Bootply.com editor -->
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    </head>
+    
+    <!-- HTML code from Bootply.com editor -->
+    
+    <body  >
+
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+        
+        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <a href="/marten" class="navbar-brand">Marten 1.0-alpha</a>
+		    </div>
+		    <nav class="collapse navbar-collapse" role="navigation">
+		      <ul class="nav navbar-nav pull-right">
+            <li>
+              <a href="/marten/getting_started">Getting Started</a>
+            </li>
+		        <li>
+		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+		        </li>
+		      	<li><a href="/marten/documentation/schema" title="Marten and the Postgresql Schema">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents" title="Marten as Document Db">Next</a></li>
+		      </ul>
+      <div class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input id="search" type="search" class="form-control" placeholder="Search">
+        </div>
+      </div>
+
+		    </nav>
+
+		  </div>
+		</nav>
+
+		  <div class="container">
+		  	<nav class="navbar-inverse">
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li class="active">Command Line Tooling for Marten Management</li></ol>
+		  	</nav>
+		  </div>
+
+		<!--main-->
+		<div class="container">
+			<div class="row">
+		      <!--left-->
+		      
+		      <div class="col-md-3" id="leftCol">
+			  
+				<img src="/content/images/emblem.png" width="80%" align="middle"/>
+		      	<br />
+
+				<ul class="nav nav-stacked affix" id="sidebar">
+
+		        </ul>
+
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents">Marten as Document Db</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/schema">Marten and the Postgresql Schema</a></p>
+
+		        </ul>
+		      </div><!--/left-->
+		      
+		      <!--right-->
+		      <div class="col-md-9">
+			      	<h1>Command Line Tooling for Marten Management <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/cli.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      
+			      	<hr />
+
+			      	<div id="main-pane">
+			      		<!--title:Command Line Tooling for Marten Management-->
+<p>There is a separate Nuget package called <em>Marten.CommandLine</em> that can be used to quickly generate your own command line tooling to
+use for managing Marten schemas at development time. In usage, you would create a new .Net console application in your system's
+solution that would reference the <em>Marten.CommandLine</em> nuget and all of the relevant libraries from your own system.</p>
+<p>Once you have the project and dependencies set up, setting up your command line tool is just this:</p>
+<pre><code class="language-csharp">
+    public class Program
+    {
+        public static int Main(string[] args)
+        {
+            var options = configureStoreOptions();
+
+            // MartenCommands is from the Marten.CommandLine nuget
+            return MartenCommands.Execute(options, args);
+        }
+
+        // build out the StoreOptions that you need for your application
+        private static StoreOptions configureStoreOptions()
+        {
+            var options = new StoreOptions();
+
+            options.Schema.For&lt;User&gt;();
+            options.Schema.For&lt;Issue&gt;();
+            options.Schema.For&lt;Target&gt;();
+
+            options.Connection(ConnectionSource.ConnectionString);
+
+            return options;
+        }
+    }
+</code></pre>
+<p>Replace the method <code>configureStoreOptions()</code> with whatever your application does to bootstrap and configure Marten. Doing this exposes
+commands to write or apply schema patches and verify an existing schema against the application configuration. If you named your
+application &quot;marten.exe&quot;, the commands supported in 1.0 are these:</p>
+<pre>
+------------------------------------------------------------------------------------------------------------------------------------
+<h2>Available commands:</h2>
+<p>apply -&gt; Applies all outstanding changes to the database based on the current configuration
+assert -&gt; Assert that the existing database matches the current Marten configuration
+dump -&gt; Dumps the entire DDL for the configured Marten database
+patch -&gt; Evaluates the current configuration against the database and writes a patch and drop file if there are any differences</p>
+<hr />
+</pre>
+<p>If you're not using the dotnet CLI yet, you'd just need to compile your new console application like you've always done and call the exe directly. If you're familiar with the *nix style of command line interfaces ala Git, you should feel right at home with the command line usage in Marten.</p>
+<p>For the sake of usability, let's say that you stick a file named &quot;marten.cmd&quot; (or the *nix shell file equivalent) at the root of your codebase like so:</p>
+<pre>
+dotnet run --project src/MyConsoleApp %*
+</pre>
+<p>All the example above does is delegate any arguments to your console application. Once you have that file, some sample usages are shown below:</p>
+<p>Assert that the database matches the current database. This
+command will fail if there are differences</p>
+<pre>
+marten assert --log log.txt
+</pre>
+<p>This command tries to update the database to reflect the application configuration</p>
+<pre>
+marten apply --log log.txt
+</pre>
+<p>This dumps a single file named &quot;database.sql&quot; with
+all the DDL necessary to build the database to
+match the application configuration</p>
+<pre>
+marten dump database.sql
+</pre>
+<p>This dumps the DDL to separate files per document
+type to a folder named &quot;scripts&quot;</p>
+<pre>
+marten dump scripts --by-type
+</pre>
+<p>Create a patch file called &quot;patch1.sql&quot; and
+the corresponding rollback file &quot;patch.drop.sql&quot; if any
+differences are found between the application configuration
+and the database</p>
+<pre>
+marten patch patch1.sql --drop patch1.drop.sql
+</pre>
+<p>In all cases, the commands expose usage help through &quot;marten help [command].&quot; Each of the commands also exposes a &quot;--conn&quot; (or &quot;-c&quot; if you prefer) flag to override the database connection string and a &quot;--log&quot; flag to record all the command output to a file.</p>
+<p> </p>
+<h3>Current Thinking about Marten + Sqitch</h3>
+Our team doing the RavenDb to Marten transition work has turned us on to using <a href="http://sqitch.org/">Sqitch</a> for database migrations. From my point of view, I like this choice because Sqitch just uses script files in whatever the underlying database's SQL dialect is. That means that Marten can use our <a href="http://jasperfx.github.io/marten/documentation/schema/migrations/">existing "WritePatch()" schema management</a> to tie into Sqitch's migration scheme.
+<p>The way that I think this could work for us is first to have a Sqitch project established in our codebase with its folders for updates, rollbacks, and verify's. In our build script that runs in our master continuous integration (CI) build, we would:</p>
+<ol>
+    <li>Call sqitch to update the CI database (or whatever database we declare to be the source of truth) with the latest known migrations</li>
+    <li>Call the "marten assert" command shown above to detect if there are outstanding differences between the application configuration and the database by examining the exit code from that command</li>
+    <li>If there are any differences detected, figure out what the next migration name would be based on our naming convention and use sqitch to start a new migration with that name</li>
+    <li>Run the "marten patch" command to write the update and rollback scripts to the file locations previously determined in steps 2 &amp; 3</li>
+    <li>Commit the new migration file back to the underlying git repository</li>
+</ol>
+I'm insisting on doing this on our CI server instead of making developers do it locally because I think it'll lead to less duplicated work and fewer problems from these migrations being created against work in progress feature branches.
+<p>For production (and staging/QA) deployments, we'd just use sqitch out of the box to bring the databases up to date.</p>
+<p>I like this approach because it keeps the monotony of repetitive database change tracking out of our developer's hair, while also allowing them to integrate database changes from outside of Marten objects into the database versioning.</p>
+
+
+			      	</div>
+
+			      	<hr />
+
+			      	<nav>
+				        <span>
+				        	<strong>Previous: </strong><a href="/marten/documentation/schema">Marten and the Postgresql Schema</a>
+
+				        </span>
+				        <span class="pull-right">
+
+				        	<strong>Next: </strong><a href="/marten/documentation/documents">Marten as Document Db</a>
+
+				        </span>
+			      	</nav>
+
+		      </div><!--/right-->
+		  	</div><!--/row-->
+		</div><!--/container-->
+
+
+    </body>
+
+
+    <foot>
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+    </foot>
+</html>
+

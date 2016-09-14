@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.0-alpha</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -69,7 +69,8 @@
 		      <!--left-->
 		      
 		      <div class="col-md-3" id="leftCol">
-		      	<h3>Marten 1.0-alpha</h3>
+			  
+				<img src="/content/images/emblem.png" width="80%" align="middle"/>
 		      	<br />
 
 				<ul class="nav nav-stacked affix" id="sidebar">
@@ -115,6 +116,7 @@ and there's nothing to install other than the Marten nuget.</p>
 
     public class MembersJoined
     {
+
         public MembersJoined()
         {
         }
@@ -125,6 +127,8 @@ and there's nothing to install other than the Marten nuget.</p>
             Location = location;
             Members = members;
         }
+
+        public Guid QuestId { get; set; }
 
         public int Day { get; set; }
 

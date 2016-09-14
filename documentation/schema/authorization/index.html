@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+        <meta charset="utf-8">
+        <meta name="generator" content="Bootply" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<title>Marten - Customizing Schema Generation</title>
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+        
+
+        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+
+        <!-- CSS code from Bootply.com editor -->
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    </head>
+    
+    <!-- HTML code from Bootply.com editor -->
+    
+    <body  >
+
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+        
+        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <a href="/marten" class="navbar-brand">Marten 1.0-alpha</a>
+		    </div>
+		    <nav class="collapse navbar-collapse" role="navigation">
+		      <ul class="nav navbar-nav pull-right">
+            <li>
+              <a href="/marten/getting_started">Getting Started</a>
+            </li>
+		        <li>
+		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+		        </li>
+		      	<li><a href="/marten/documentation/schema/exporting" title="Exporting the Schema Definition">Previous</a></li>
+		      	<li><a href="/marten/documentation/cli" title="Command Line Tooling for Marten Management">Next</a></li>
+		      </ul>
+      <div class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input id="search" type="search" class="form-control" placeholder="Search">
+        </div>
+      </div>
+
+		    </nav>
+
+		  </div>
+		</nav>
+
+		  <div class="container">
+		  	<nav class="navbar-inverse">
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/schema">Marten and the Postgresql Schema</a></li><li class="active">Customizing Schema Generation</li></ol>
+		  	</nav>
+		  </div>
+
+		<!--main-->
+		<div class="container">
+			<div class="row">
+		      <!--left-->
+		      
+		      <div class="col-md-3" id="leftCol">
+			  
+				<img src="/content/images/emblem.png" width="80%" align="middle"/>
+		      	<br />
+
+				<ul class="nav nav-stacked affix" id="sidebar">
+
+		        </ul>
+
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/cli">Command Line Tooling for Marten Management</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/schema/exporting">Exporting the Schema Definition</a></p>
+
+		        </ul>
+		      </div><!--/left-->
+		      
+		      <!--right-->
+		      <div class="col-md-9">
+			      	<h1>Customizing Schema Generation <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/schema/authorization.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      
+			      	<hr />
+
+			      	<div id="main-pane">
+			      		<!--title:Customizing Schema Generation-->
+<div class="alert alert-info">
+The Marten team's advice is to keep your Postgresql security usage very simple to reduce friction, but if you can't
+follow that advice, Marten has <i>some</i> facility to customize the generated DDL for database security rights.
+</div>
+<h2>Table Creation Style</h2>
+<p>By default, Marten generates the raw schema export from <code>IDocumentSchema.ToDDL()</code> by
+writing first a <code>DROP TABLE</code> statement, then a <code>CREATE TABLE</code> statement. If desired, you can direct Marten
+to do this generation by doing a single <code>CREATE TABLE IF NOT EXISTS</code> statement. That usage is shown below:</p>
+<pre><code class="language-csharp">
+var store = DocumentStore.For(_ =&gt;
+{
+    _.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
+
+    // or the default
+
+    _.DdlRules.TableCreation = CreationStyle.DropThenCreate;
+});
+</code></pre> 
+<h2>Invoker vs Definer Permissions</h2>
+<p>Marten does all of its document updating and inserting through the generated &quot;<a href="https://wiki.postgresql.org/wiki/UPSERT">upsert</a>&quot;
+functions. Most of the time you would probably just let these functions execute under the privileges of whatever
+schema user is currently running. If necessary, you can opt into Postgresql's ability to say that a function
+should run under the privileges of whatever Postgresql user account created the function.</p>
+<p>That is shown below:</p>
+<pre><code class="language-csharp">
+var store = DocumentStore.For(_ =&gt;
+{
+    // Opt into SECURITY DEFINER permissions
+    _.DdlRules.UpsertRights = SecurityRights.Definer;
+
+    // The default SECURITY INVOKER permissions
+    _.DdlRules.UpsertRights = SecurityRights.Invoker;
+});
+</code></pre>
+<p>See the <a href="https://www.postgresql.org/docs/9.5/static/sql-createfunction.html">Postgresql documentation on creating functions</a> for more information.</p>
+<h2>Database Role</h2>
+<p>If you want the DDL scripts generated by Marten to run under a specific Postgresql ROLE, you can configure that like so:</p>
+<pre><code class="language-csharp">
+var store = DocumentStore.For(_ =&gt;
+{
+    _.DdlRules.Role = &quot;ROLE1&quot;;
+});
+
+</code></pre>
+<p>Doing so will wrap any DDL scripts generated or exported by Marten with this pattern:</p>
+<pre>
+SET ROLE [ROLE_NAME];
+<p>-- the body of the DDL</p>
+<p>RESET ROLE;</p>
+</pre>
+<h2>Template Files for GRANT's</h2>
+<p>One of the primary goals of Marten has been to drastically reduce the mechanical work necessary to apply
+database schema changes as your system evolved. To that end, we've strived to make the DDL generation
+and patch generation be as complete as possible. However, if your database administrators require any kind
+of customized security on the document storage tables and upsert functions, you can optionally use the
+&quot;template file&quot; feature shown in this section to add GRANT's or other permissions to the database objects
+generated by Marten.</p>
+<p>To create a DDL template for the document storage tables, name your file with the pattern [template name].table that would look like the following:</p>
+<pre>
+ALTER TABLE %SCHEMA%.%TABLENAME% OWNER TO "SchemaOwners";
+GRANT SELECT (%COLUMNS%) ON TABLE %SCHEMA%.%TABLENAME% TO "ServiceAccountRole", "SchemaOwners"; 
+GRANT INSERT (%COLUMNS%) ON TABLE %SCHEMA%.%TABLENAME% TO "SchemaOwners";  
+GRANT UPDATE (%NON_ID_COLUMNS%) ON TABLE %SCHEMA%.%TABLENAME% TO "SchemaOwners";
+GRANT DELETE ON %SCHEMA%.%TABLENAME% TO "ServiceAccountRole"; 
+</pre>
+<p>For the Postgresql functions generated by Marten, you would name your file with the pattern [template name].function and it would look something like this:</p>
+<pre>
+ALTER FUNCTION %SCHEMA%.%FUNCTIONNAME%(%SIGNATURE%) OWNER TO "SchemaOwners";
+GRANT EXECUTE ON FUNCTION  %SCHEMA%.%FUNCTIONNAME%(%SIGNATURE%) TO "ServiceAccountRole"; 
+</pre>
+<p>As you probably surmised, the &quot;%SOMETHING%&quot; strings are the inputs coming from Marten itself (it's just a crude string replacement behind the scenes).
+The available substitutions for tables are:</p>
+<ul>
+<li>%SCHEMA% - the database schema holding the table</li>
+<li>%TABLENAME% - the name of the table</li>
+<li>%COLUMNS% - comma delimited list of all the columns in the table</li>
+<li>%NON_ID_COLUMNS% - comma delimited list of all the columns except for &quot;id&quot; in the table</li>
+<li>%METADATA_COLUMNS% - comma delimited list of all the Marten metadata columns</li>
+</ul>
+<p>For functions, you have:</p>
+<ul>
+<li>%SCHEMA% - the database schema holding the function</li>
+<li>%FUNCTION% - the name of the function</li>
+<li>%SIGNATURE% - a comma delimited string of all the declared input types for the function. Since Postgresql supports function overloading, you will frequently need to use the function signature to uniquely identify a function.</li>
+</ul>
+<p>To apply the templating, first put all your *.table and *.function files in a single directory or the base directory of your application and use code
+like that shown below in your <code>IDocumentStore</code> initialization:</p>
+<pre><code class="language-csharp">
+var store = DocumentStore.For(_ =&gt;
+{
+    // let&#39;s say that you have template files in a 
+    // &quot;templates&quot; directory under the root of your
+    // application
+    _.DdlRules.ReadTemplates(&quot;templates&quot;);
+
+    // Or just sweep the base directory of your application
+    _.DdlRules.ReadTemplates();
+});
+</code></pre>
+<p>**Do note that the <code>ReadTemplates()</code> methods only do a shallow search through the given directory and do not consider child directories.</p>
+<p>To establish the default table and function DDL template, name your files &quot;default.table&quot; and &quot;default.function&quot;. If Marten finds these files,
+it will automatically apply that to all document types as the default.</p>
+<p>To overwrite the default template on a document by document type basis, you have a couple options. You can opt to use the fluent interface configuration:</p>
+<pre><code class="language-csharp">
+var store = DocumentStore.For(_ =&gt;
+{
+    _.Schema.For&lt;User&gt;().DdlTemplate(&quot;readonly&quot;);
+});
+</code></pre>
+<p>You can also decorate document types with the <code>[DdlTemplate(&quot;name&quot;)]</code> attribute shown below:</p>
+<pre><code class="language-csharp">
+[DdlTemplate(&quot;ReadOnly&quot;)]
+public class ReadOnlyDoc
+{
+    public Guid id;
+}
+</code></pre> 
+<p>And lastly, you can take advantage of the embedded configuration option to change the Ddl template against the underlying configuration model:</p>
+<pre><code class="language-csharp">
+public class BlueDoc
+{
+    public static void ConfigureMarten(DocumentMapping mapping)
+    {
+        mapping.DdlTemplate = &quot;blue&quot;;
+    }
+
+    public Guid id;
+}
+</code></pre>
+
+
+			      	</div>
+
+			      	<hr />
+
+			      	<nav>
+				        <span>
+				        	<strong>Previous: </strong><a href="/marten/documentation/schema/exporting">Exporting the Schema Definition</a>
+
+				        </span>
+				        <span class="pull-right">
+
+				        	<strong>Next: </strong><a href="/marten/documentation/cli">Command Line Tooling for Marten Management</a>
+
+				        </span>
+			      	</nav>
+
+		      </div><!--/right-->
+		  	</div><!--/row-->
+		</div><!--/container-->
+
+
+    </body>
+
+
+    <foot>
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+    </foot>
+</html>
+
