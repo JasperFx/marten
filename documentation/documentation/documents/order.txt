@@ -5,3 +5,4 @@ configuration
 json
 advanced
 diagnostics
+command-timeouts

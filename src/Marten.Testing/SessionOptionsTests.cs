@@ -8,6 +8,18 @@ namespace Marten.Testing
 {
     public class SessionOptionsTests
     {
+        // SAMPLE: ConfigureCommandTimeout
+public void ConfigureCommandTimeout(IDocumentStore store)
+{
+    // Sets the command timeout for this session to 60 seconds
+    // The default is 30
+    using (var session = store.OpenSession(new SessionOptions {Timeout = 60}))
+    {
+                
+    }
+}
+        // ENDSAMPLE
+
         [Fact]
         public void can_choke_on_custom_timeout()
         {
