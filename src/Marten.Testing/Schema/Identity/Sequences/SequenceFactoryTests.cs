@@ -77,4 +77,26 @@ namespace Marten.Testing.Schema.Identity.Sequences
             theStore.Schema.DbObjects.SchemaFunctionNames().ShouldContain("seq_other.mt_get_next_hi");
         }
     }
+
+    public class SequenceFactoryWorking_when_AutoCreate_is_none : IntegratedFixture
+    {
+        [Fact]
+        public void can_function_after_the_schema_is_in_place()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.None;
+                _.Schema.For<IntDoc>();
+            });
+
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            using (var session = theStore.OpenSession())
+            {
+                var doc = new IntDoc();
+                session.Store(doc);
+                session.SaveChanges();
+            }
+        }
+    }
 }

@@ -8,20 +8,16 @@ namespace Marten.Schema.Identity.Sequences
 {
     public class SequenceFactory : ISequences, ISchemaObjects
     {
-        private readonly IDocumentSchema _schema;
         private readonly IConnectionFactory _factory;
         private readonly StoreOptions _options;
-        private readonly IMartenLogger _logger;
         private bool _checked = false;
 
         private TableName Table => new TableName(_options.DatabaseSchemaName, "mt_hilo");
 
-        public SequenceFactory(IDocumentSchema schema, IConnectionFactory factory, StoreOptions options, IMartenLogger logger)
+        public SequenceFactory(IConnectionFactory factory, StoreOptions options)
         {
-            _schema = schema;
             _factory = factory;
             _options = options;
-            _logger = logger;
         }
 
         public ISequence Hilo(Type documentType, HiloSettings settings)
@@ -31,13 +27,13 @@ namespace Marten.Schema.Identity.Sequences
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
         {
-            if (_checked) return;
+            if (_checked || autoCreateSchemaObjectsMode == AutoCreate.None) return;
 
             _checked = true;
 
             if (!schema.DbObjects.TableExists(Table))
             {
-                if (_options.AutoCreateSchemaObjects == AutoCreate.None)
+                if (autoCreateSchemaObjectsMode == AutoCreate.None)
                 {
                     throw new InvalidOperationException($"Hilo table is missing, but {nameof(StoreOptions.AutoCreateSchemaObjects)} is {_options.AutoCreateSchemaObjects}");
                 }

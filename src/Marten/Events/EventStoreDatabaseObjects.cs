@@ -21,7 +21,7 @@ namespace Marten.Events
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
         {
-            if (_checkedSchema) return;
+            if (_checkedSchema || autoCreateSchemaObjectsMode == AutoCreate.None) return;
 
             _checkedSchema = true;
 

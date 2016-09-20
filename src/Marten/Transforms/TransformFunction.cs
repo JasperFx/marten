@@ -39,7 +39,7 @@ namespace Marten.Transforms
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
         {
-            if (_checked) return;
+            if (_checked || autoCreateSchemaObjectsMode == AutoCreate.None) return;
 
 
             var diff  = functionDiff(schema);

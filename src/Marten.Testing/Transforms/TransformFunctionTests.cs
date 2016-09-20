@@ -107,26 +107,6 @@ namespace Marten.Testing.Transforms
             patch.UpdateDDL.ShouldContain(generated);
         }
 
-        [Fact]
-        public void throws_exception_if_auto_create_is_none_and_the_function_does_not_exist()
-        {
-            var schema = Substitute.For<IDocumentSchema>();
-            schema.StoreOptions.Returns(new StoreOptions());
-            var dbobjects = Substitute.For<IDbObjects>();
-            schema.DbObjects.Returns(dbobjects);
-
-            var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.None }, "get_fullname.js");
-
-            dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
-
-            var patch = new SchemaPatch(new DdlRules());
-
-
-            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
-            {
-                func.GenerateSchemaObjectsIfNecessary(AutoCreate.None, schema, patch);
-            });
-        }
 
         [Fact]
         public void rebuilds_if_it_does_not_exist_in_the_schema_if_auto_create_is_create_or_update()

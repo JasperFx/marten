@@ -106,7 +106,7 @@ namespace Marten.Schema
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
         {
-            if (_hasCheckedSchema) return;
+            if (_hasCheckedSchema || autoCreateSchemaObjectsMode == AutoCreate.None) return;
 
             DependentTypes.Each(schema.EnsureStorageExists);
 

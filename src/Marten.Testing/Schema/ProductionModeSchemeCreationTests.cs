@@ -42,34 +42,5 @@ namespace Marten.Testing.Schema
             }
         }
 
-        [Fact]
-        public void throw_exception_when_table_does_not_exist()
-        {
-            using (var c1 = Container.For<DevelopmentModeRegistry>())
-            {
-                c1.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
-            }
-
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.Connection(ConnectionSource.ConnectionString);
-                _.AutoCreateSchemaObjects = AutoCreate.None;
-            }))
-            {
-                using (var session = store.OpenSession())
-                {
-                    Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
-                    {
-                        session.Store(new User());
-                        session.SaveChanges();
-                    });
-
-
-                }
-            }
-
-            
-        }
-
     }
 }

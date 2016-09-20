@@ -86,7 +86,10 @@ AND    n.nspname = '{1}';";
                 connection.Commit();
 
                 _schema.ResetSchemaExistenceChecks();
-                _schema.RebuildSystemFunctions();
+                if (_schema.StoreOptions.AutoCreateSchemaObjects != AutoCreate.None)
+                {
+                    _schema.RebuildSystemFunctions();
+                }
             }
         }
 

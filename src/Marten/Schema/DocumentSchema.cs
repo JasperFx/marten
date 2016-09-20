@@ -45,7 +45,7 @@ namespace Marten.Schema
 
             _sequences = new Lazy<SequenceFactory>(() =>
             {
-                var sequences = new SequenceFactory(this, _factory, options, _logger);
+                var sequences = new SequenceFactory(_factory, options);
                 
                 var patch = new SchemaPatch(StoreOptions.DdlRules);
 
@@ -114,7 +114,7 @@ namespace Marten.Schema
                 yield return mapping.SchemaObjects;
             }
 
-            yield return new SequenceFactory(this, _factory, StoreOptions, _logger);
+            yield return new SequenceFactory(_factory, StoreOptions);
 
             foreach (var transform in StoreOptions.Transforms.AllFunctions().OrderBy(x => x.Name))
             {
@@ -297,7 +297,8 @@ namespace Marten.Schema
 
             foreach (var schemaObject in AllSchemaObjects())
             {
-                schemaObject.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
+                // Need to override the AutoCreate value here so stuff can actually work
+                schemaObject.GenerateSchemaObjectsIfNecessary(AutoCreate.CreateOrUpdate, this, patch);
             }
         }
 
