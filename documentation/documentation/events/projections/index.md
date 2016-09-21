@@ -43,13 +43,16 @@ could be used to aggregate streams of quest data:
 
 ## Aggregated Views Across Multiple Streams
 
-Example coming soon, and check [Jeremy's blog](http://jeremydmiller.com) for a sample soon.
+The easiest way to aggregate a view across multiple streams is to derive a class from `ViewProjection<T>`. For example, let's say we had three main
+aggregates: `Quest`, `Person`, and `Weapon`. A `Person` can belong to a `Quest`, and a `Weapon` can belong to a `Person`. Now let's consider
+that the arms master for the realm needs a report of the names of weapons traveling with a given quest. This requires our view projection to react
+to events related to all three of these aggregates. You could model this scenario as below. The view `WeaponNamesByQuest` 
+and corresponding `ViewProjection<WeaponNamesByQuest>` are near the bottom of the sample.
 
-It's possible today by using either a custom `IProjection` or using the existing aggregation capabilities with a
-custom `IAggregateFinder<T>`, where "T" is the projected view document type.
+<[sample:WeaponNamesByQuest]>
 
-
-
+For more flexibility, you can use either a custom `IProjection` or use the existing aggregation capabilities with a
+custom `IAggregateFinder<T>`, where "T" is the projected view document type. More examples of this are coming soon.
 
 ## Live Aggregation via .Net
 
