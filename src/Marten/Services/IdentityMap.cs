@@ -23,9 +23,9 @@ namespace Marten.Services
         }
 
         protected abstract TCacheValue ToCache(object id, Type concreteType, object document, string json);
-        protected abstract T FromCache<T>(TCacheValue cacheValue) where T : class;
+        protected abstract T FromCache<T>(TCacheValue cacheValue);
 
-        private void storeFetched<T>(object id, FetchResult<T> fetched) where T : class
+        private void storeFetched<T>(object id, FetchResult<T> fetched)
         {
             if (fetched != null && fetched.Version.HasValue)
             {
@@ -33,7 +33,7 @@ namespace Marten.Services
             }
         }
 
-        public T Get<T>(object id, Func<FetchResult<T>> result) where T : class
+        public T Get<T>(object id, Func<FetchResult<T>> result)
         {
             var cacheValue = Cache[typeof(T)].GetOrAdd(id, _ =>
             {
@@ -41,7 +41,8 @@ namespace Marten.Services
 
                 storeFetched(id, fetchResult);
 
-                var document = fetchResult?.Document;
+                var document = fetchResult == null ? default(T) : fetchResult.Document;
+                
                 _listeners.Each(listener => listener.DocumentLoaded(id, document));
                 return ToCache(id, typeof(T), document, fetchResult?.Json);
             });
@@ -50,7 +51,7 @@ namespace Marten.Services
             return FromCache<T>(cacheValue);
         }
 
-        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class
+        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken))
         {
             var dictionary = Cache[typeof(T)];
 
@@ -60,7 +61,7 @@ namespace Marten.Services
             }
 
             var fetchResult = await result(token).ConfigureAwait(false);
-            if (fetchResult == null) return null;
+            if (fetchResult == null) return default(T);
 
             storeFetched(id, fetchResult);
 
@@ -73,12 +74,12 @@ namespace Marten.Services
             return document;
         }
 
-        public T Get<T>(object id, string json, Guid? version) where T : class
+        public T Get<T>(object id, string json, Guid? version)
         {
             return Get<T>(id, typeof(T), json, version);
         }
 
-        public T Get<T>(object id, Type concreteType, string json, Guid? version) where T : class
+        public T Get<T>(object id, Type concreteType, string json, Guid? version)
         {
             var cacheValue = Cache[typeof(T)].GetOrAdd(id, _ =>
             {
@@ -104,7 +105,7 @@ namespace Marten.Services
             Cache[typeof(T)].TryRemove(id, out value);
         }
 
-        public void Store<T>(object id, T entity, Guid? version = null) where T : class
+        public void Store<T>(object id, T entity, Guid? version = null)
         {
             if (version.HasValue)
             {
@@ -129,16 +130,16 @@ namespace Marten.Services
             dictionary.AddOrUpdate(id, cacheValue, (i, e) => cacheValue);
         }
 
-        public bool Has<T>(object id) where T : class
+        public bool Has<T>(object id) 
         {
             var dict = Cache[typeof(T)];
             return dict.ContainsKey(id) && FromCache<T>(dict[id]) != null;
         }
 
-        public T Retrieve<T>(object id) where T : class
+        public T Retrieve<T>(object id)
         {
             var dict = Cache[typeof(T)];
-            return dict.ContainsKey(id) ? FromCache<T>(dict[id]): null;
+            return dict.ContainsKey(id) ? FromCache<T>(dict[id]) : default(T);
         }
 
         public IIdentityMap ForQuery()

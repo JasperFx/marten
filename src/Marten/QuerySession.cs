@@ -103,32 +103,32 @@ namespace Marten
             }, token);
         }
 
-        public T Load<T>(string id) where T : class
+        public T Load<T>(string id)
         {
             return load<T>(id);
         }
 
-        public Task<T> LoadAsync<T>(string id, CancellationToken token) where T : class
+        public Task<T> LoadAsync<T>(string id, CancellationToken token)
         {
             return loadAsync<T>(id, token);
         }
 
-        public T Load<T>(ValueType id) where T : class
+        public T Load<T>(ValueType id)
         {
             return load<T>(id);
         }
 
-        private T load<T>(object id) where T : class
+        private T load<T>(object id)
         {
             return storage<T>().As<IResolver<T>>().Resolve(_identityMap, this, id);
         }
 
-        private Task<T> loadAsync<T>(object id, CancellationToken token) where T : class
+        private Task<T> loadAsync<T>(object id, CancellationToken token)
         {
             return storage<T>().As<IResolver<T>>().ResolveAsync(_identityMap, this, token, id);
         }
 
-        public ILoadByKeys<T> LoadMany<T>() where T : class
+        public ILoadByKeys<T> LoadMany<T>()
         {
             return new LoadByKeys<T>(this);
         }
@@ -136,68 +136,68 @@ namespace Marten
 
 
 
-        public IList<T> LoadMany<T>(params string[] ids) where T : class
+        public IList<T> LoadMany<T>(params string[] ids)
         {
             return LoadMany<T>().ById(ids);
         }
 
-        public IList<T> LoadMany<T>(params Guid[] ids) where T : class
+        public IList<T> LoadMany<T>(params Guid[] ids)
         {
             return LoadMany<T>().ById(ids);
         }
 
-        public IList<T> LoadMany<T>(params int[] ids) where T : class
+        public IList<T> LoadMany<T>(params int[] ids)
         {
             return LoadMany<T>().ById(ids);
         }
 
-        public IList<T> LoadMany<T>(params long[] ids) where T : class
+        public IList<T> LoadMany<T>(params long[] ids)
         {
             return LoadMany<T>().ById(ids);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(params string[] ids) where T : class
+        public Task<IList<T>> LoadManyAsync<T>(params string[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(params Guid[] ids) where T : class
+        public Task<IList<T>> LoadManyAsync<T>(params Guid[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(params int[] ids) where T : class
+        public Task<IList<T>> LoadManyAsync<T>(params int[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(params long[] ids) where T : class
+        public Task<IList<T>> LoadManyAsync<T>(params long[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids) where T : class
+        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids, token);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params Guid[] ids) where T : class
+        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params Guid[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids, token);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params int[] ids) where T : class
+        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params int[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids, token);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids) where T : class
+        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids, token);
         }
 
 
-        private class LoadByKeys<TDoc> : ILoadByKeys<TDoc> where TDoc : class
+        private class LoadByKeys<TDoc> : ILoadByKeys<TDoc>
         {
             private readonly QuerySession _parent;
 
@@ -327,32 +327,32 @@ namespace Marten
             _connection.Dispose();
         }
 
-        public T Load<T>(int id) where T : class
+        public T Load<T>(int id)
         {
             return load<T>(id);
         }
 
-        public T Load<T>(long id) where T : class
+        public T Load<T>(long id)
         {
             return load<T>(id);
         }
 
-        public T Load<T>(Guid id) where T : class
+        public T Load<T>(Guid id) 
         {
             return load<T>(id);
         }
 
-        public Task<T> LoadAsync<T>(int id, CancellationToken token = new CancellationToken()) where T : class
+        public Task<T> LoadAsync<T>(int id, CancellationToken token = new CancellationToken())
         {
             return loadAsync<T>(id, token);
         }
 
-        public Task<T> LoadAsync<T>(long id, CancellationToken token = new CancellationToken()) where T : class
+        public Task<T> LoadAsync<T>(long id, CancellationToken token = new CancellationToken())
         {
             return loadAsync<T>(id, token);
         }
 
-        public Task<T> LoadAsync<T>(Guid id, CancellationToken token = new CancellationToken()) where T : class
+        public Task<T> LoadAsync<T>(Guid id, CancellationToken token = new CancellationToken())
         {
             return loadAsync<T>(id, token);
         }

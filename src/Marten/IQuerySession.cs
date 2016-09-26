@@ -16,7 +16,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(string id) where T : class;
+        T Load<T>(string id);
 
         /// <summary>
         /// Asynchronously find or load a single document of type T by a string id
@@ -25,7 +25,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(string id, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<T> LoadAsync<T>(string id, CancellationToken token = default(CancellationToken));
 
         /// <summary>
         /// Load or find a single document of type T with either a numeric or Guid id
@@ -33,7 +33,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(int id) where T : class;
+        T Load<T>(int id);
 
         /// <summary>
         /// Load or find a single document of type T with either a numeric or Guid id
@@ -41,7 +41,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(long id) where T : class;
+        T Load<T>(long id);
 
         /// <summary>
         /// Load or find a single document of type T with either a numeric or Guid id
@@ -49,7 +49,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(Guid id) where T : class;
+        T Load<T>(Guid id);
 
         /// <summary>
         /// Asynchronously load or find a single document of type T with either a numeric or Guid id
@@ -58,7 +58,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(int id, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<T> LoadAsync<T>(int id, CancellationToken token = default(CancellationToken));
 
         /// <summary>
         /// Asynchronously load or find a single document of type T with either a numeric or Guid id
@@ -67,7 +67,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(long id, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<T> LoadAsync<T>(long id, CancellationToken token = default(CancellationToken));
 
         /// <summary>
         /// Asynchronously load or find a single document of type T with either a numeric or Guid id
@@ -76,7 +76,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<T> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken));
 
 
         // SAMPLE: querying_with_linq
@@ -163,84 +163,84 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IList<T> LoadMany<T>(params string[] ids) where T : class;
+        IList<T> LoadMany<T>(params string[] ids);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IList<T> LoadMany<T>(params Guid[] ids) where T : class;
+        IList<T> LoadMany<T>(params Guid[] ids);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IList<T> LoadMany<T>(params int[] ids) where T : class;
+        IList<T> LoadMany<T>(params int[] ids);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IList<T> LoadMany<T>(params long[] ids) where T : class;
+        IList<T> LoadMany<T>(params long[] ids);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IList<T>> LoadManyAsync<T>(params string[] ids) where T : class;
+        Task<IList<T>> LoadManyAsync<T>(params string[] ids);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IList<T>> LoadManyAsync<T>(params Guid[] ids) where T : class;
+        Task<IList<T>> LoadManyAsync<T>(params Guid[] ids);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IList<T>> LoadManyAsync<T>(params int[] ids) where T : class;
+        Task<IList<T>> LoadManyAsync<T>(params int[] ids);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IList<T>> LoadManyAsync<T>(params long[] ids) where T : class;
+        Task<IList<T>> LoadManyAsync<T>(params long[] ids);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids) where T : class;
+        Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params Guid[] ids) where T : class;
+        Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params Guid[] ids);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params int[] ids) where T : class;
+        Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params int[] ids);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids) where T : class;
+        Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids);
 
         /// <summary>
         /// Directly load the persisted JSON data for documents by Id

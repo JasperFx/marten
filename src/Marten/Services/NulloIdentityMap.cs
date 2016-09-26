@@ -17,16 +17,16 @@ namespace Marten.Services
 
         public ISerializer Serializer => _serializer;
 
-        public T Get<T>(object id, Func<FetchResult<T>> result) where T : class
+        public T Get<T>(object id, Func<FetchResult<T>> result)
         {
             var fetched = result();
 
             storeFetched(id, fetched);
 
-            return fetched?.Document;
+            return fetched == null ? default(T) : fetched.Document;
         }
 
-        private void storeFetched<T>(object id, FetchResult<T> fetched) where T : class
+        private void storeFetched<T>(object id, FetchResult<T> fetched)
         {
             if (fetched?.Version != null)
             {
@@ -34,19 +34,18 @@ namespace Marten.Services
             }
         }
 
-        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken)) where T : class
+        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken))
         {
             var fetchResult = await result(token).ConfigureAwait(false);
 
             storeFetched(id, fetchResult);
 
-
-            return fetchResult?.Document;
+            return fetchResult == null ? default(T) : fetchResult.Document;
         }
 
-        public T Get<T>(object id, string json, Guid? version) where T : class
+        public T Get<T>(object id, string json, Guid? version)
         {
-            if (json.IsEmpty()) return null;
+            if (json.IsEmpty()) return default(T);
 
             if (version.HasValue)
             {
@@ -56,9 +55,9 @@ namespace Marten.Services
             return _serializer.FromJson<T>(json);
         }
 
-        public T Get<T>(object id, Type concreteType, string json, Guid? version) where T : class
+        public T Get<T>(object id, Type concreteType, string json, Guid? version)
         {
-            if (json.IsEmpty()) return null;
+            if (json.IsEmpty()) return default(T);
 
             if (version.HasValue)
             {
@@ -73,7 +72,7 @@ namespace Marten.Services
             // nothing
         }
 
-        public void Store<T>(object id, T entity, Guid? version = null) where T : class
+        public void Store<T>(object id, T entity, Guid? version = null)
         {
             if (version.HasValue)
             {
@@ -81,14 +80,14 @@ namespace Marten.Services
             }
         }
 
-        public bool Has<T>(object id) where T : class
+        public bool Has<T>(object id)
         {
             return false;
         }
 
-        public T Retrieve<T>(object id) where T : class
+        public T Retrieve<T>(object id)
         {
-            return null;
+            return default(T);
         }
 
         public IIdentityMap ForQuery()

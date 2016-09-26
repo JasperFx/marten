@@ -17,7 +17,12 @@ namespace Marten.Services
 
         protected override T FromCache<T>(TrackedEntity cacheValue)
         {
-            return cacheValue?.Document as T;
+            if (cacheValue == null)
+            {
+                return default(T);
+            }
+
+            return (T) cacheValue.Document;
         }
 
         public IEnumerable<DocumentChange> DetectChanges()
