@@ -10,6 +10,7 @@ using Baseline.Reflection;
 using Marten.Schema;
 using Marten.Transforms;
 using Remotion.Linq;
+using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
@@ -32,6 +33,7 @@ namespace Marten.Linq
         private SelectionType _selectionType = SelectionType.WholeDoc;
         private TargetObject _target;
         private string _transformName;
+        private bool _distinct;
 
 
         public SelectorParser(QueryModel query)
@@ -48,6 +50,12 @@ namespace Marten.Linq
                 var method = query.SelectClause.Selector.As<MethodCallExpression>().Method;
                 _selectionType = DetermineSelectionType(method);
             }
+
+            if (query.HasOperator<DistinctResultOperator>())
+            {
+                _distinct = true;
+            }
+            
         }
 
         public SelectionType DetermineSelectionType(MethodInfo method)
@@ -134,10 +142,10 @@ namespace Marten.Linq
 
             if (_target == null || _target.Type != typeof(T))
             {
-                return new SingleFieldSelector<T>(mapping, _currentField.Members.Reverse().ToArray());
+                return new SingleFieldSelector<T>(mapping, _currentField.Members.Reverse().ToArray(), _distinct);
             }
 
-            return _target.ToSelector<T>(mapping);
+            return _target.ToSelector<T>(mapping, _distinct);
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)

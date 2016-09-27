@@ -25,15 +25,15 @@ namespace Marten.Linq
             return setter.Field;
         }
 
-        public ISelector<T> ToSelector<T>(IQueryableDocument mapping)
+        public ISelector<T> ToSelector<T>(IQueryableDocument mapping, bool distinct = false)
         {
-            return new SelectTransformer<T>(mapping, this);
+            return new SelectTransformer<T>(mapping, this, distinct);
         }
 
         public string ToSelectField(IQueryableDocument mapping)
         {
             var jsonBuildObjectArgs = Setters.Select(x => x.ToJsonBuildObjectPair(mapping)).Join(", ");
-            return  $"json_build_object({jsonBuildObjectArgs}) as json";
+            return  $"jsonb_build_object({jsonBuildObjectArgs}) as json";
         }
 
         public ISelector<T> ToJsonSelector<T>(IQueryableDocument mapping)

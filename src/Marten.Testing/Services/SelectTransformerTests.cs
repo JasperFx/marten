@@ -29,7 +29,7 @@ namespace Marten.Testing.Linq
         public void select_fields_by_json_pairs()
         {
             theSelector.SelectFields().Single()
-                .ShouldBe("json_build_object('FirstName', d.data ->> 'First', 'LastName', d.data ->> 'Last') as json");
+                .ShouldBe("jsonb_build_object('FirstName', d.data ->> 'First', 'LastName', d.data ->> 'Last') as json");
         }
 
         public class User2
