@@ -13,6 +13,10 @@ namespace Marten.Linq
         {
         }
 
+        public SelectTransformer(IQueryableDocument mapping, TargetObject target, bool distinct)
+            : base(distinct, target.ToSelectField(mapping)) {
+        }
+
         public T Resolve(DbDataReader reader, IIdentityMap map)
         {
             var json = reader.GetString(0);

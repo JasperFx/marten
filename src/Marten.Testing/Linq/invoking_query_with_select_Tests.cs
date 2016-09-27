@@ -96,7 +96,7 @@ namespace Marten.Testing.Linq
                 .Select(x => new UserName { Name = x.FirstName })
                 .AsJson()
                 .First()
-                .ShouldBe("{\"Name\" : \"Bill\"}");
+                .ShouldBe("{\"Name\": \"Bill\"}");
             // ENDSAMPLE
         }
 
@@ -141,7 +141,7 @@ namespace Marten.Testing.Linq
                 // Select only the raw JSON
                 .AsJson()
                 .FirstOrDefault()
-                .ShouldBe("{\"Name\" : \"Bill\"}");
+                .ShouldBe("{\"Name\": \"Bill\"}");
             // ENDSAMPLE
         }
 
@@ -157,7 +157,7 @@ namespace Marten.Testing.Linq
 
             theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
                 .ToJsonArray()
-                .ShouldBe("[{\"Name\" : \"Bill\"},{\"Name\" : \"Hank\"},{\"Name\" : \"Sam\"},{\"Name\" : \"Tom\"}]");
+                .ShouldBe("[{\"Name\": \"Bill\"},{\"Name\": \"Hank\"},{\"Name\": \"Sam\"},{\"Name\": \"Tom\"}]");
         }
 
 
@@ -198,7 +198,7 @@ namespace Marten.Testing.Linq
                 .Select(x => new UserName { Name = x.FirstName })
                 .ToJsonArray();
 
-            users.ShouldBe("[{\"Name\" : \"Bill\"},{\"Name\" : \"Hank\"},{\"Name\" : \"Sam\"},{\"Name\" : \"Tom\"}]");
+            users.ShouldBe("[{\"Name\": \"Bill\"},{\"Name\": \"Hank\"},{\"Name\": \"Sam\"},{\"Name\": \"Tom\"}]");
         }
         
         // SAMPLE: anonymous_type_projection

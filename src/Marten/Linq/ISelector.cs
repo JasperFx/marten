@@ -22,17 +22,24 @@ namespace Marten.Linq
     public abstract class BasicSelector
     {
         private readonly string[] _selectFields;
+        private readonly bool _distinct = false;
 
         protected BasicSelector(params string[] selectFields)
         {
             _selectFields = selectFields;
         }
 
+        protected BasicSelector(bool distinct, params string[] selectFields)
+        {
+            _selectFields = selectFields;
+            _distinct = distinct;
+        }
+
         public string[] SelectFields() => _selectFields;
 
         public string ToSelectClause(IQueryableDocument mapping)
         {
-            return $"select {SelectFields().Join(", ")} from {mapping.Table.QualifiedName} as d";
+            return $"select {(_distinct ? "distinct " : "")}{SelectFields().Join(", ")} from {mapping.Table.QualifiedName} as d";
         }
     }
 

@@ -15,6 +15,11 @@ namespace Marten.Linq
         {
         }
 
+        public SingleFieldSelector(IQueryableDocument mapping, MemberInfo[] members, bool distinct)
+            : base(distinct, mapping.FieldFor(members).SqlLocator)
+        {
+        }
+
         public T Resolve(DbDataReader reader, IIdentityMap map)
         {
             var raw = reader[0];
