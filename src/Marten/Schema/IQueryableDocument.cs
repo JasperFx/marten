@@ -13,7 +13,7 @@ namespace Marten.Schema
 
         IWhereFragment DefaultWhereFragment();
 
-        IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback) where TOther : class;
+        IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback);
 
         IField FieldFor(IEnumerable<MemberInfo> members);
 

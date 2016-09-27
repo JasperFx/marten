@@ -9,7 +9,7 @@ using Marten.Schema;
 
 namespace Marten.Services.Includes
 {
-    public class IncludeSelector<TSearched, TIncluded> : BasicSelector, ISelector<TSearched> where TIncluded : class
+    public class IncludeSelector<TSearched, TIncluded> : BasicSelector, ISelector<TSearched>
     {
         private readonly Action<TIncluded> _callback;
         private readonly ISelector<TSearched> _inner;

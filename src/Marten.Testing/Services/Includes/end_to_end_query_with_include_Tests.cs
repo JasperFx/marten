@@ -8,6 +8,7 @@ using Baseline;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Services.Includes;
+using Marten.Testing.Documents;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -145,6 +146,35 @@ namespace Marten.Testing.Services.Includes
 
                 included.ShouldNotBeNull();
                 included.Id.ShouldBe(user.Id);
+
+                issue2.ShouldNotBeNull();
+            }
+        }
+
+        [Fact]
+        public void include_with_generic_type()
+        {
+            var user = new UserWithInterface { Id = Guid.NewGuid(), UserName = "Jens" };
+            var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+
+            theSession.Store<object>(user, issue);
+            theSession.SaveChanges();
+
+            IncludeGeneric<UserWithInterface>(user);
+        }
+
+        private void IncludeGeneric<T>(UserWithInterface userToCompareAgainst) where T : IUserWithInterface
+        {
+            using (var query = theStore.QuerySession())
+            {
+                T included = default(T);
+                var issue2 = query.Query<Issue>()
+                    .Include<T>(x => x.AssigneeId, x => included = x)
+                    .Where(x => x.Tags.Any(t => t == "DIY"))
+                    .Single();
+
+                included.ShouldNotBeNull();
+                included.Id.ShouldBe(userToCompareAgainst.Id);
 
                 issue2.ShouldNotBeNull();
             }
