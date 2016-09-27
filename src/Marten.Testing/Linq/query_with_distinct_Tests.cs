@@ -42,5 +42,42 @@ namespace Marten.Testing.Linq
 
         }
 
+        [Fact]
+        public void get_distinct_number() {
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new Target { Number = 3 });
+            theSession.Store(new Target { Number = 3 });
+
+            theSession.SaveChanges();
+
+            var queryable = theSession.Query<Target>().Select(x => x.Number).Distinct();
+
+            queryable.ToList().Count.ShouldBe(3);
+
+        }
+
+        [Fact]
+        public void get_distinct_numbers() {
+            theSession.Store(new Target { Number = 1, Decimal = 1.0M});
+            theSession.Store(new Target { Number = 1, Decimal = 2.0M });
+            theSession.Store(new Target { Number = 1, Decimal = 2.0M });
+            theSession.Store(new Target { Number = 2, Decimal = 1.0M });
+            theSession.Store(new Target { Number = 2, Decimal = 2.0M });
+            theSession.Store(new Target { Number = 2, Decimal = 1.0M });
+
+            theSession.SaveChanges();
+
+            var queryable = theSession.Query<Target>().Select(x => new {
+                x.Number,
+                x.Decimal
+            }).Distinct();
+
+            queryable.ToList().Count.ShouldBe(4);
+
+        }
+
     }
 }
