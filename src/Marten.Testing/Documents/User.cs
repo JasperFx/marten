@@ -61,4 +61,15 @@ namespace Marten.Testing.Documents
 
         public string UserName { get; set; }
     }
+
+    public class UserWithInterface : User, IUserWithInterface
+    {
+        
+    }
+
+    public interface IUserWithInterface
+    {
+        Guid Id { get; set; }
+        string UserName { get; set; }
+    }
 }

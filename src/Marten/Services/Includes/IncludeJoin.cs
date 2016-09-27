@@ -4,7 +4,7 @@ using Marten.Schema;
 
 namespace Marten.Services.Includes
 {
-    public class IncludeJoin<T> : IIncludeJoin where T : class
+    public class IncludeJoin<T> : IIncludeJoin
     {
         public string JoinText { get; }
         private readonly IQueryableDocument _mapping;

@@ -143,7 +143,7 @@ namespace Marten.Schema
         }
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members,
-            Action<TOther> callback) where TOther : class
+            Action<TOther> callback)
         {
             return Parent.JoinToInclude(joinType, other, members, callback);
         }

@@ -65,7 +65,7 @@ namespace Marten.Linq
         }
 
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback,
-            JoinType joinType = JoinType.Inner) where TInclude : class
+            JoinType joinType = JoinType.Inner)
         {
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var schema = executor.Schema;
@@ -88,13 +88,13 @@ namespace Marten.Linq
 
 
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list,
-            JoinType joinType = JoinType.Inner) where TInclude : class
+            JoinType joinType = JoinType.Inner)
         {
             return Include<TInclude>(idSource, list.Fill, joinType);
         }
 
         public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
-            IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner) where TInclude : class
+            IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner)
         {
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             var schema = executor.Schema;
