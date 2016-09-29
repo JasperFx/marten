@@ -51,7 +51,7 @@ namespace Marten.Schema
             Func<DbDataReader, TableName> transform = r => new TableName(r.GetString(0), r.GetString(1));
 
             var sql =
-                "select table_schema, table_name from information_schema.tables where table_name like ? and table_schema = ANY(?);";
+                "SELECT schemaname, relname FROM pg_stat_user_tables WHERE relname LIKE ? AND schemaname = ANY(?);";
 
             var schemaNames = _schema.AllSchemaNames();
 
