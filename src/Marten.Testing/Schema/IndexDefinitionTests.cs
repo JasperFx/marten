@@ -60,6 +60,16 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void generate_ddl_for_custom_index_name()
+        {
+            var definition = new IndexDefinition(mapping, "foo");
+            definition.IndexName = "bar";
+
+            definition.ToDDL()
+                .ShouldBe("CREATE INDEX mt_bar ON public.mt_doc_target (\"foo\");");
+        }
+
+        [Fact]
         public void generate_ddl_for_single_column_unique()
         {
             var definition = new IndexDefinition(mapping, "foo");
