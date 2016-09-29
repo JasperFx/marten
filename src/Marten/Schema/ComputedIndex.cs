@@ -38,7 +38,7 @@ namespace Marten.Schema
             {
                 if (_indexName.IsNotEmpty())
                 {
-                    return "mt_" + _indexName;
+                    return DocumentMapping.MartenPrefix + _indexName;
                 }
 
                 return GenerateIndexName();

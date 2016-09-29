@@ -27,7 +27,13 @@ namespace Marten.Schema
         {
             get
             {
-                return _indexName ?? $"{_parent.Table.Name}_idx_{_columns.Join("_")}";
+                if (_indexName.IsNotEmpty())
+                {
+                    return _indexName.StartsWith(DocumentMapping.MartenPrefix)
+                        ? _indexName
+                        : DocumentMapping.MartenPrefix + _indexName;
+                }
+                return $"{_parent.Table.Name}_idx_{_columns.Join("_")}";
             }
             set { _indexName = value; }
         }

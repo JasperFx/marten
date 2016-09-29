@@ -32,7 +32,7 @@ namespace Marten.Testing.Schema
         public void can_override_index_type_and_name_on_the_attribute()
         {
             var mapping = DocumentMapping.For<Organization>();
-            var indexDefinition = (IndexDefinition)mapping.Indexes.Single(x => x.IndexName == "idx_foo");
+            var indexDefinition = (IndexDefinition)mapping.Indexes.Single(x => x.IndexName == "mt_idx_foo");
 
             indexDefinition.Method.ShouldBe(IndexMethod.hash);
         }

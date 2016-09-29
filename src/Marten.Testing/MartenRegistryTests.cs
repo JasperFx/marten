@@ -70,7 +70,7 @@ namespace Marten.Testing
 
             var index = mapping.IndexesFor("data").Single();
 
-            index.IndexName.ShouldBe("my_gin_index");
+            index.IndexName.ShouldBe("mt_my_gin_index");
             index.Method.ShouldBe(IndexMethod.gin);
             index.Expression.ShouldBe("? jsonb_path_ops");
         }
