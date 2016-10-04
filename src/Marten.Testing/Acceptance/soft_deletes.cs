@@ -3,11 +3,9 @@ using System.Linq;
 using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 using Marten.Testing.Documents;
-using Marten.Testing.Fixtures;
 using Marten.Util;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Acceptance
 {

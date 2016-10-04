@@ -1,11 +1,9 @@
 ﻿using System.Linq;
 using Marten.Schema;
 using Marten.Testing.Documents;
-using Marten.Testing.Fixtures;
 using Npgsql;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Acceptance
 {
