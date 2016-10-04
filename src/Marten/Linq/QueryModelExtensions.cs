@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using Baseline;
 using Marten.Events;
 using Marten.Schema;
@@ -134,7 +135,24 @@ namespace Marten.Linq
                 return new WholeDocumentSelector<T>(mapping, resolver);
             }
 
+            if (query.SelectClause.Selector is QuerySourceReferenceExpression &&
+                query.SelectClause.Selector.As<QuerySourceReferenceExpression>().ReferencedQuerySource is
+                    AdditionalFromClause)
+            {
+                return buildSelectorForSelectMany<T>(query.SelectClause.Selector);
+            }
 
+            return createSelectTransformSelector<T>(schema, mapping, query);
+        }
+
+        private static ISelector<T> buildSelectorForSelectMany<T>(Expression selectClauseSelector)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static ISelector<T> createSelectTransformSelector<T>(IDocumentSchema schema, IQueryableDocument mapping,
+            QueryModel query)
+        {
             var visitor = new SelectorParser(query);
             visitor.Visit(query.SelectClause.Selector);
 
