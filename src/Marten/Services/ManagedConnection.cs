@@ -2,7 +2,6 @@
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Services.Events;
 using Npgsql;
 
@@ -34,6 +33,16 @@ namespace Marten.Services
         public void Rollback()
         {
             _connection.Value.Rollback();
+        }
+
+        public void BeginTransaction()
+        {
+            _connection.Value.BeginTransaction();
+        }
+
+        public bool InTransaction()
+        {
+            return _connection.IsValueCreated && _connection.Value.Transaction != null;
         }
 
         public NpgsqlConnection Connection => _connection.Value.Connection;

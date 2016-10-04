@@ -157,6 +157,8 @@ namespace Marten
         {
             if (!_unitOfWork.HasAnyUpdates()) return;
 
+            _connection.BeginTransaction();
+
             applyProjections();
 
             _options.Listeners.Each(x => x.BeforeSaveChanges(this));
@@ -184,6 +186,8 @@ namespace Marten
         public async Task SaveChangesAsync(CancellationToken token)
         {
             if (!_unitOfWork.HasAnyUpdates()) return;
+
+            _connection.BeginTransaction();
 
             await applyProjectionsAsync(token).ConfigureAwait(false);
 

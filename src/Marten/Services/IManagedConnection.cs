@@ -26,5 +26,7 @@ namespace Marten.Services
         NpgsqlConnection Connection { get; }
 
         int RequestCount { get; }
+        void BeginTransaction();
+        bool InTransaction();
     }
 }

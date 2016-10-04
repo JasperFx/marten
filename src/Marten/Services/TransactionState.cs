@@ -52,29 +52,31 @@ namespace Marten.Services
         public void Commit()
         {
             Transaction?.Commit();
-            BeginTransaction();
+            Transaction?.Dispose();
+            Transaction = null;
         }
 
         public void Rollback()
         {
             Transaction?.Rollback();
-            BeginTransaction();
+            Transaction?.Dispose();
+            Transaction = null;
         }
 
         public void Dispose()
         {
             Transaction?.Dispose();
+            Transaction = null;
 
 
             Connection.Close();
-
             Connection.Dispose();
         }
 
         public NpgsqlCommand CreateCommand()
         {
             var cmd = Connection.CreateCommand();
-            cmd.Transaction = Transaction;
+            if (Transaction != null) cmd.Transaction = Transaction;
 
             return cmd;
         }

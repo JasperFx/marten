@@ -78,6 +78,7 @@ namespace Marten.Transforms
 
             using (var conn = _factory.Create())
             {
+                conn.Open();
                 var tx = conn.BeginTransaction(IsolationLevel.ReadCommitted);
                 var cmd = conn.CreateCommand();
                 cmd.Transaction = tx;
@@ -88,6 +89,7 @@ namespace Marten.Transforms
 
                 cmd.ExecuteNonQuery();
 
+                tx.Commit();
             }
         }
 
