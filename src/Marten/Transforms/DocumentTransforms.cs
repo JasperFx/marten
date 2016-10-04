@@ -1,11 +1,15 @@
 using System;
+using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
+using Marten.Services;
 using Marten.Util;
+using Remotion.Linq;
 using Remotion.Linq.Clauses;
 
 namespace Marten.Transforms
@@ -13,10 +17,12 @@ namespace Marten.Transforms
     public class DocumentTransforms : IDocumentTransforms
     {
         private readonly IDocumentStore _store;
+        private readonly IConnectionFactory _factory;
 
-        public DocumentTransforms(IDocumentStore store)
+        public DocumentTransforms(IDocumentStore store, IConnectionFactory factory)
         {
             _store = store;
+            _factory = factory;
         }
 
         public void All<T>(string transformName)
@@ -55,22 +61,26 @@ namespace Marten.Transforms
             var mapping = _store.Schema.MappingFor(typeof(T));
             var sql = toBasicSql(mapping, transform);
 
-            using (var session = _store.LightweightSession())
+            QueryModel queryModel;
+            using (var session = _store.QuerySession())
             {
-                var queryModel = session.Query<T>().Where(@where).As<MartenQueryable<T>>().ToQueryModel();
+                queryModel = session.Query<T>().Where(@where).As<MartenQueryable<T>>().ToQueryModel(); 
+            }
 
-                var wheres = queryModel.BodyClauses.OfType<WhereClause>().ToArray();
-                if (wheres.Length == 0)
-                {
-                    throw new InvalidOperationException();
-                }
+            var wheres = queryModel.BodyClauses.OfType<WhereClause>().ToArray();
+            if (wheres.Length == 0)
+            {
+                throw new InvalidOperationException();
+            }
 
+            var whereFragment = _store.Schema.Parser.ParseWhereFragment(mapping.ToQueryableDocument(), wheres.First().Predicate);
+            whereFragment = mapping.ToQueryableDocument().FilterDocuments(queryModel, whereFragment);
 
-
-                var whereFragment = _store.Schema.Parser.ParseWhereFragment(mapping.ToQueryableDocument(), wheres.First().Predicate);
-                whereFragment = mapping.ToQueryableDocument().FilterDocuments(queryModel, whereFragment);
-
-                var cmd = session.Connection.CreateCommand();
+            using (var conn = _factory.Create())
+            {
+                var tx = conn.BeginTransaction(IsolationLevel.ReadCommitted);
+                var cmd = conn.CreateCommand();
+                cmd.Transaction = tx;
 
                 sql = sql.AppendWhere(whereFragment, cmd);
 
@@ -78,9 +88,9 @@ namespace Marten.Transforms
 
                 cmd.ExecuteNonQuery();
 
-                session.SaveChanges();
             }
         }
+
 
         public void Document<T>(string transformName, string id)
         {

@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
-using Marten.Linq;
 using Marten.Patching;
 using Marten.Schema;
 using Marten.Util;
@@ -16,17 +15,73 @@ namespace Marten.Services
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly IDocumentSchema _schema;
-        private readonly ConcurrentDictionary<Type, IEnumerable> _updates = new ConcurrentDictionary<Type, IEnumerable>();
-        private readonly ConcurrentDictionary<Type, IEnumerable> _inserts = new ConcurrentDictionary<Type, IEnumerable>();
         private readonly ConcurrentDictionary<Guid, EventStream> _events = new ConcurrentDictionary<Guid, EventStream>();
-        private readonly IList<IStorageOperation> _operations = new List<IStorageOperation>();
 
-        private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>(); 
+        private readonly ConcurrentDictionary<Type, IEnumerable> _inserts =
+            new ConcurrentDictionary<Type, IEnumerable>();
+
+        private readonly IList<IStorageOperation> _operations = new List<IStorageOperation>();
+        private readonly IDocumentSchema _schema;
+
+        private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>();
+
+        private readonly ConcurrentDictionary<Type, IEnumerable> _updates =
+            new ConcurrentDictionary<Type, IEnumerable>();
 
         public UnitOfWork(IDocumentSchema schema)
         {
             _schema = schema;
+        }
+
+        public IEnumerable<IDeletion> Deletions()
+        {
+            return _operations.OfType<IDeletion>();
+        }
+
+        public IEnumerable<IDeletion> DeletionsFor<T>()
+        {
+            return _operations.OfType<IDeletion>().Where(x => x.DocumentType == typeof(T));
+        }
+
+        public IEnumerable<IDeletion> DeletionsFor(Type documentType)
+        {
+            return _operations.OfType<IDeletion>().Where(x => x.DocumentType == documentType);
+        }
+
+        public IEnumerable<object> Updates()
+        {
+            return _updates.Values.SelectMany(x => x.OfType<object>())
+                .Union(detectTrackerChanges().Select(x => x.Document));
+        }
+
+        public IEnumerable<T> UpdatesFor<T>()
+        {
+            return Updates().OfType<T>();
+        }
+
+        public IEnumerable<object> Inserts()
+        {
+            return _inserts.Values.SelectMany(x => x.OfType<object>());
+        }
+
+        public IEnumerable<T> InsertsFor<T>()
+        {
+            return Inserts().OfType<T>();
+        }
+
+        public IEnumerable<T> AllChangedFor<T>()
+        {
+            return InsertsFor<T>().Union(UpdatesFor<T>());
+        }
+
+        public IEnumerable<EventStream> Streams()
+        {
+            return _events.Values;
+        }
+
+        public IEnumerable<PatchOperation> Patches()
+        {
+            return _operations.OfType<PatchOperation>();
         }
 
         public void AddTracker(IDocumentTracker tracker)
@@ -62,7 +117,7 @@ namespace Marten.Services
 
         public void StoreUpdates<T>(params T[] documents)
         {
-            var list = _updates.GetOrAdd(typeof (T), type => new List<T>()).As<List<T>>();
+            var list = _updates.GetOrAdd(typeof(T), type => new List<T>()).As<List<T>>();
 
             list.AddRange(documents);
         }
@@ -74,36 +129,10 @@ namespace Marten.Services
             list.AddRange(documents);
         }
 
-        public IEnumerable<IDeletion> Deletions()
-        {
-            return _operations.OfType<IDeletion>();
-        }
-
-        public IEnumerable<IDeletion> DeletionsFor<T>()
-        {
-            return _operations.OfType<IDeletion>().Where(x => x.DocumentType == typeof(T));
-        }
-
-        public IEnumerable<IDeletion> DeletionsFor(Type documentType)
-        {
-            return _operations.OfType<IDeletion>().Where(x => x.DocumentType == documentType);
-        } 
-
-        public IEnumerable<object> Updates()
-        {
-            return _updates.Values.SelectMany(x => x.OfType<object>())
-                .Union(detectTrackerChanges().Select(x => x.Document));
-        }
-
-        public IEnumerable<T> UpdatesFor<T>()
-        {
-            return Updates().OfType<T>();
-        }
-
 
         public ChangeSet ApplyChanges(UpdateBatch batch)
         {
-            ChangeSet changes = buildChangeSet(batch);
+            var changes = buildChangeSet(batch);
 
             batch.Execute();
 
@@ -137,7 +166,7 @@ namespace Marten.Services
 
         private DocumentChange[] determineChanges(UpdateBatch batch)
         {
-            int index = 0;
+            var index = 0;
             var order = _inserts.Keys.Union(_updates.Keys)
                 .TopologicalSort(GetTypeDependencies)
                 .ToDictionary(x => x, x => index++);
@@ -166,10 +195,7 @@ namespace Marten.Services
             {
                 var upsert = _schema.UpsertFor(group.Key);
 
-                group.Each(c =>
-                {
-                    upsert.RegisterUpdate(batch, c.Document, c.Json);
-                });
+                group.Each(c => { upsert.RegisterUpdate(batch, c.Document, c.Json); });
             });
 
             return changes;
@@ -185,9 +211,7 @@ namespace Marten.Services
         {
             var documentMapping = _schema.MappingFor(type) as DocumentMapping;
             if (documentMapping == null)
-            {
                 return Enumerable.Empty<Type>();
-            }
 
             return documentMapping.ForeignKeys.Select(keyDefinition => keyDefinition.ReferenceDocumentType);
         }
@@ -211,30 +235,9 @@ namespace Marten.Services
             changes.Each(x => x.ChangeCommitted());
         }
 
-        public IEnumerable<object> Inserts()
+        public bool HasAnyUpdates()
         {
-            return _inserts.Values.SelectMany(x => x.OfType<object>());
+            return Updates().Any() || _inserts.Any() || _events.Any() || _operations.Any();
         }
-
-        public IEnumerable<T> InsertsFor<T>()
-        {
-            return Inserts().OfType<T>();
-        }
-
-        public IEnumerable<T> AllChangedFor<T>()
-        {
-            return InsertsFor<T>().Union(UpdatesFor<T>());
-        }
-
-        public IEnumerable<EventStream> Streams()
-        {
-            return _events.Values;
-        }
-
-        public IEnumerable<PatchOperation> Patches()
-        {
-            return _operations.OfType<PatchOperation>();
-        }
-
     }
 }

@@ -155,6 +155,8 @@ namespace Marten
 
         public void SaveChanges()
         {
+            if (!_unitOfWork.HasAnyUpdates()) return;
+
             applyProjections();
 
             _options.Listeners.Each(x => x.BeforeSaveChanges(this));
@@ -163,7 +165,16 @@ namespace Marten
             var changes = _unitOfWork.ApplyChanges(batch);
 
 
-            _connection.Commit();
+            try
+            {
+                _connection.Commit();
+            }
+            catch (Exception)
+            {
+                _connection.Rollback();
+                
+                throw;
+            }
 
             Logger.RecordSavedChanges(this, changes);
 
@@ -172,6 +183,8 @@ namespace Marten
 
         public async Task SaveChangesAsync(CancellationToken token)
         {
+            if (!_unitOfWork.HasAnyUpdates()) return;
+
             await applyProjectionsAsync(token).ConfigureAwait(false);
 
             foreach (var listener in _options.Listeners)

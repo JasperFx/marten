@@ -17,6 +17,8 @@ namespace Marten.Testing
 
             theSession.Logger = logger;
 
+            theSession.Store(Target.Random());
+
             theSession.SaveChanges();
 
             logger.LastSession.ShouldBe(theSession);
@@ -28,6 +30,8 @@ namespace Marten.Testing
             var logger = new RecordingLogger();
 
             theSession.Logger = logger;
+
+            theSession.Store(Target.Random());
 
             await theSession.SaveChangesAsync().ConfigureAwait(false);
 

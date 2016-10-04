@@ -87,7 +87,7 @@ namespace Marten
 
             CreateDatabaseObjects();
 
-            Transform = new DocumentTransforms(this);
+            Transform = new DocumentTransforms(this, _connectionFactory);
 
             options.InitialData.Each(x => x.Populate(this));
 
