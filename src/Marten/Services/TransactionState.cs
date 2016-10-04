@@ -1,6 +1,5 @@
 using System;
 using System.Data;
-using Baseline;
 using Npgsql;
 
 namespace Marten.Services
@@ -18,11 +17,12 @@ namespace Marten.Services
             this._commandTimeout = commandTimeout;
             Connection = factory.Create();
             Connection.Open();
-            BeginTransaction();
         }
 
-        private void BeginTransaction()
+        public void BeginTransaction()
         {
+            if (Transaction != null) return;
+
             if (_mode == CommandRunnerMode.Transactional || _mode == CommandRunnerMode.ReadOnly)
             {
                 Transaction = Connection.BeginTransaction(_isolationLevel);
@@ -41,23 +41,23 @@ namespace Marten.Services
         public void Apply(NpgsqlCommand cmd)
         {
             cmd.Connection = Connection;
-            cmd.Transaction = Transaction;
+            if (Transaction != null) cmd.Transaction = Transaction;
             cmd.CommandTimeout = _commandTimeout;
         }
 
         public NpgsqlTransaction Transaction { get; private set; }
 
         public NpgsqlConnection Connection { get; }
-
+        
         public void Commit()
         {
-            Transaction.Commit();
+            Transaction?.Commit();
             BeginTransaction();
         }
 
         public void Rollback()
         {
-            Transaction.Rollback();
+            Transaction?.Rollback();
             BeginTransaction();
         }
 
