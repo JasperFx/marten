@@ -81,7 +81,7 @@ namespace Marten.Transforms
         {
             var diff = functionDiff(schema);
 
-            if (diff.AllNew || !diff.Actual.Body.Contains(Body))
+            if (diff.AllNew || diff.HasChanged)
             {
                 diff.WritePatch(schema.StoreOptions, patch);
             }

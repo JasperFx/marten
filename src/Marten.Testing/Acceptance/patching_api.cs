@@ -10,6 +10,28 @@ namespace Marten.Testing.Acceptance
 {
     public class patching_api : DocumentSessionFixture<NulloIdentityMap>
     {
+        [Fact]
+        public void can_use_patch_api_when_autocreate_is_none()
+        {
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            var entity = Target.Random();
+            theSession.Store(entity);
+            theSession.SaveChanges();
+
+            var store = DocumentStore.For(o =>
+            {
+                o.Connection(ConnectionSource.ConnectionString);
+                o.Serializer<TestsSerializer>();
+                o.AutoCreateSchemaObjects = AutoCreate.None;
+            });
+            using (var session = store.LightweightSession())
+            {
+                session.Patch<Target>(entity.Id).Set(t => t.String, "foo");
+                session.SaveChanges();
+            }
+        }
+
         // SAMPLE: set_an_immediate_property_by_id
         [Fact]
         public void set_an_immediate_property_by_id()
