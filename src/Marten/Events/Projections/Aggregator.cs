@@ -22,7 +22,7 @@ namespace Marten.Events.Projections
                 {
                     object step = null;
                     var eventType = method.GetParameters().Single<ParameterInfo>().ParameterType;
-                    if (eventType.GetTypeInfo().IsGenericType && eventType.GetGenericTypeDefinition() == typeof(Event<>))
+                    if (eventType.Closes(typeof(Event<>)))
                     {
                         eventType = eventType.GetGenericArguments().Single();
                         step = typeof(EventAggregationStep<,>)
