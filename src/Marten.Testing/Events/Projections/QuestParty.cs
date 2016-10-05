@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 
 namespace Marten.Testing.Events.Projections
 {
@@ -30,9 +31,9 @@ public class QuestParty
         _members.Fill(joined.Members);
     }
 
-    public void Apply(MembersDeparted departed)
+    public void Apply(Event<MembersDeparted> departed)
     {
-        _members.RemoveAll(x => departed.Members.Contains(x));
+        _members.RemoveAll(x => departed.Data.Members.Contains(x));
     }
 
     public void Apply(QuestStarted started)
