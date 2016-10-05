@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using Baseline;
 using Marten.Services;
+using Marten.Util;
 using Shouldly;
 using Xunit;
 
@@ -57,7 +58,8 @@ namespace Marten.Testing.Linq
 
             results
                 .Select(x => x.Id)
-                .ShouldHaveTheSameElementsAs(targets[5].Id, targets[9].Id, targets[12].Id);
+                .OrderBy(x => x)
+                .ShouldHaveTheSameElementsAs(new[] {targets[5].Id, targets[9].Id, targets[12].Id}.OrderBy(x => x));
         }
 
         [Fact]
@@ -72,7 +74,8 @@ namespace Marten.Testing.Linq
 
             results
                 .Select(x => x.Id)
-                .ShouldHaveTheSameElementsAs(targets[5].Id, targets[9].Id);
+                .OrderBy(x => x)
+                .ShouldHaveTheSameElementsAs(new[] {targets[5].Id, targets[9].Id}.OrderBy(x => x));
         }
 
         [Fact]

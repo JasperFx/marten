@@ -84,18 +84,13 @@ namespace Marten.Util
                 replaced = replaced
                     .Replace("LANGUAGE plv8 IMMUTABLE STRICT AS $function$", "AS $$");
 
-             
-
-                var languagePlv8ImmutableStrict = "$$ LANGUAGE plv8 IMMUTABLE STRICT";
-                var functionMarker = "$function$";
+                const string languagePlv8ImmutableStrict = "$$ LANGUAGE plv8 IMMUTABLE STRICT";
+                const string functionMarker = "$function$";
                 if (replaced.EndsWith(functionMarker))
                 {
-                    replaced = replaced.Substring(0, replaced.LastIndexOf(functionMarker) - 1) + languagePlv8ImmutableStrict;
-                };
-
-                
+                    replaced = replaced.Substring(0, replaced.LastIndexOf(functionMarker)) + languagePlv8ImmutableStrict;
+                }
             }
-
 
             return replaced
                 .Replace("  ", " ").TrimEnd().TrimEnd(';');

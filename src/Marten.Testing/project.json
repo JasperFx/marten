@@ -19,7 +19,7 @@
     "netcoreapp1.0": {
       "buildOptions": {
         "compile": {
-          "exclude": [ "**/Fixtures/**/*.cs", "**/Github/**/*.cs", "**/Acceptance/**/*.cs", "StorytellerHarness.cs" ]
+          "exclude": [ "**/Fixtures/**/*.cs", "**/Github/**/*.cs", "StorytellerHarness.cs" ]
         }
       },
       "dependencies": {
