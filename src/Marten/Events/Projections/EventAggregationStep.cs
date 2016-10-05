@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Marten.Events.Projections
 {
-    public class EventAggregationStep<T, TEvent> : IAggregation<T, TEvent>
+    public class EventAggregationStep<T, TEvent> : IAggregation<T, Event<TEvent>>
     {
         private readonly Action<T, Event<TEvent>> _apply;
 

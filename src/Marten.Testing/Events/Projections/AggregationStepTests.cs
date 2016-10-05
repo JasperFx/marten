@@ -25,7 +25,7 @@ namespace Marten.Testing.Events.Projections
             var party = new QuestParty();
             var joinedEvent = new MembersJoined {Members = new []{"Wolverine", "Cyclops", "Nightcrawler"}};
 
-            joinedStep.Apply(party, new Event<MembersJoined>(joinedEvent));
+            joinedStep.Apply(party, joinedEvent);
 
             party.Members.ShouldHaveTheSameElementsAs(joinedEvent.Members);
         }
