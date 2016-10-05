@@ -33,21 +33,19 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void can_build_aggregation_step_for_an_event_apply_method()
         {
-            Expression<Action<QuestParty, MembersDeparted>> apply = (p, j) => p.Apply(new Event<MembersDeparted>(j));
+            Expression<Action<QuestPartyWithEvents, MembersJoined>> apply = (p, j) => p.Apply(new Event<MembersJoined>(j));
 
 
-            var departed = ReflectionHelper.GetMethod<QuestParty>(x => x.Apply(new Event<MembersDeparted>(new MembersDeparted())));
+            var joined = ReflectionHelper.GetMethod<QuestPartyWithEvents>(x => x.Apply(new Event<MembersJoined>(new MembersJoined())));
 
-            var departedStep = new EventAggregationStep<QuestParty, MembersDeparted>(departed);
+            var joinedStep = new EventAggregationStep<QuestPartyWithEvents, MembersJoined>(joined);
 
-            var party = new QuestParty();
+            var party = new QuestPartyWithEvents();
             var joinedEvent = new MembersJoined { Members = new[] { "Wolverine", "Cyclops", "Nightcrawler" } };
-            var departedEvent = new MembersDeparted { Members = new[] { "Nightcrawler" } };
 
-            party.Apply(joinedEvent);
-            departedStep.Apply(party, new Event<MembersDeparted>(departedEvent));
+            joinedStep.Apply(party, new Event<MembersJoined>(joinedEvent));
 
-            party.Members.ShouldHaveTheSameElementsAs(joinedEvent.Members.Take(2));
+            party.Members.ShouldHaveTheSameElementsAs(joinedEvent.Members);
         }
     }
 
