@@ -74,10 +74,10 @@ namespace Marten.Schema.BulkLoading
             var table = _mapping.SchemaObjects.StorageTable();
 
             var storageTable = table.Table.QualifiedName;
-            var columns = table.Columns.Select(x => $"\"{x.Name}\"").Join(", ");
-            var selectColumns = table.Columns.Select(x => $"{_tempTableName}.\"{x.Name}\"").Join(", ");
+            var columns = table.Columns.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"\"{x.Name}\"").Join(", ");
+            var selectColumns = table.Columns.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"{_tempTableName}.\"{x.Name}\"").Join(", ");
 
-            return $@"insert into {storageTable} ({columns}) (select {selectColumns} from {_tempTableName} 
+            return $@"insert into {storageTable} ({columns}, {DocumentMapping.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTableName} 
                          left join {storageTable} on {_tempTableName}.id = {storageTable}.id where {storageTable}.id is null)";
         }
 
@@ -86,10 +86,10 @@ namespace Marten.Schema.BulkLoading
             var table = _mapping.SchemaObjects.StorageTable();
             var storageTable = table.Table.QualifiedName;
 
-            var updates = table.Columns.Where(x => x.Name != "id")
+            var updates = table.Columns.Where(x => x.Name != "id" && x.Name != DocumentMapping.LastModifiedColumn)
                 .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
 
-            return $@"update {storageTable} target SET {updates} FROM {_tempTableName} source WHERE source.id = target.id";
+            return $@"update {storageTable} target SET {updates}, {DocumentMapping.LastModifiedColumn} = transaction_timestamp() FROM {_tempTableName} source WHERE source.id = target.id";
         }
 
         public string CreateTempTableForCopying()

@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Marten.Services;
+using Marten.Util;
 using Shouldly;
 using Xunit;
 
@@ -76,6 +77,12 @@ namespace Marten.Testing
                 {
                     session.Load<Target>(data1[i].Id).Number.ShouldBe(-1);
                 }
+
+                var count = session.Connection.CreateCommand()
+                    .Sql("select count(*) from mt_doc_target where mt_last_modified is null")
+                    .ExecuteScalar();
+
+                count.ShouldBe(0);
             }
         }
 
@@ -144,6 +151,12 @@ namespace Marten.Testing
 
 
             theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
+
+            var count = theSession.Connection.CreateCommand()
+                .Sql("select count(*) from mt_doc_target where mt_last_modified is null")
+                .ExecuteScalar();
+
+            count.ShouldBe(0);
         }
 
         [Fact]
