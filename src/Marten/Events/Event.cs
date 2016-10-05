@@ -77,7 +77,7 @@ namespace Marten.Events
         public virtual void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new()
         {
-            aggregator.AggregatorFor<T>()?.Apply(state, Data);
+            aggregator.AggregatorFor<T>()?.Apply(state, this);
         }
 
         protected bool Equals(Event<T> other)
