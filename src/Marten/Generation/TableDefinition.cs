@@ -88,7 +88,7 @@ namespace Marten.Generation
 
             writer.WriteLine(");");
 
-
+            writer.WriteLine(this.OriginStatement());
         }
 
         public TableColumn Column(string name)
