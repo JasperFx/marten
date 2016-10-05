@@ -84,7 +84,7 @@ namespace Marten.Testing.Events.Projections
 
         public class MonsterSlayer : IAggregation<QuestParty, MonsterSlayed>
         {
-            public void Apply(QuestParty aggregate, Event<MonsterSlayed> @event)
+            public void Apply(QuestParty aggregate, MonsterSlayed @event)
             {
                 throw new NotImplementedException();
             }
