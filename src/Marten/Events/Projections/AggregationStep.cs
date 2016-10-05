@@ -33,9 +33,9 @@ namespace Marten.Events.Projections
             _apply = apply;
         }
 
-        public void Apply(T aggregate, Event<TEvent> @event)
+        public void Apply(T aggregate, TEvent @event)
         {
-            _apply(aggregate, @event.Data);
+            _apply(aggregate, @event);
         }
     }
 }
