@@ -5,5 +5,6 @@
         int NextInt();
         long NextLong();
         int MaxLo { get; }
+        void SetFloor(long floor);
     }
 }

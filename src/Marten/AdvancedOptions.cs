@@ -96,6 +96,20 @@ namespace Marten
                 return connection.Fetch(handler, null);
             }
         }
+
+        /// <summary>
+        /// Set the minimum sequence number for a Hilo sequence for a specific document type
+        /// to the specified floor. Useful for migrating data between databases 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="floor"></param>
+        public void ResetHiloSequenceFloor<T>(long floor)
+        {
+            // Make sure that the sequence is built for this one
+            _schema.IdAssignmentFor<T>();
+            var sequence = _schema.Sequences.SequenceFor(typeof(T));
+            sequence.SetFloor(floor);
+        }
     }
 
     public class DocumentMetadata

@@ -32,6 +32,29 @@ namespace Marten.Schema.Identity.Sequences
         public int CurrentLo { get; private set; }
 
         public int MaxLo { get; }
+        public void SetFloor(long floor)
+        {
+            var numberOfPages = (long) Math.Ceiling((double)floor / MaxLo);
+            var updateSql =
+                $"update {_options.DatabaseSchemaName}.mt_hilo set hi_value = :floor where entity_name = :name";
+
+            // This guarantees that the hilo row exists
+            AdvanceToNextHi();
+
+            using (var conn = _factory.Create())
+            {
+                conn.Open();
+
+                conn.CreateCommand(updateSql)
+                    .With("floor", numberOfPages)
+                    .With("name", _entityName)
+                    .ExecuteNonQuery();
+            }
+
+            // And again to get it where we need it to be
+            AdvanceToNextHi();
+
+        }
 
         public int NextInt()
         {

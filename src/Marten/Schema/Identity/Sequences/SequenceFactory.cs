@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using Baseline;
 using Marten.Services;
@@ -13,6 +14,7 @@ namespace Marten.Schema.Identity.Sequences
         private readonly StoreOptions _options;
         private readonly IMartenLogger _logger;
         private bool _checked = false;
+        private readonly ConcurrentDictionary<Type, ISequence> _sequences = new ConcurrentDictionary<Type, ISequence>();
 
         private TableName Table => new TableName(_options.DatabaseSchemaName, "mt_hilo");
 
@@ -24,9 +26,15 @@ namespace Marten.Schema.Identity.Sequences
             _logger = logger;
         }
 
+        public ISequence SequenceFor(Type documentType)
+        {
+            // Okay to let it blow up if it doesn't exist here IMO
+            return _sequences[documentType];
+        }
+
         public ISequence Hilo(Type documentType, HiloSettings settings)
         {
-            return new HiloSequence(_factory, _options, documentType.Name, settings);
+            return _sequences.GetOrAdd(documentType, type => new HiloSequence(_factory, _options, documentType.Name, settings));
         }
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)

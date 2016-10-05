@@ -10,6 +10,28 @@ namespace Marten.Testing.Schema.Identity.Sequences
     public class hilo_configuration_overrides
     {
         [Fact]
+        public void can_establish_the_hilo_starting_point()
+        {
+            var store = DocumentStore.For(ConnectionSource.ConnectionString);
+
+            store.Advanced.ResetHiloSequenceFloor<IntDoc>(2500);
+
+            using (var session = store.OpenSession())
+            {
+                var doc1 = new IntDoc();
+                var doc2 = new IntDoc();
+                var doc3 = new IntDoc();
+
+                session.Store(doc1, doc2, doc3);
+                
+                doc1.Id.ShouldBeGreaterThanOrEqualTo(2500);
+                doc2.Id.ShouldBeGreaterThanOrEqualTo(2500);
+                doc3.Id.ShouldBeGreaterThanOrEqualTo(2500);
+            }
+        }
+
+
+        [Fact]
         public void default_everything()
         {
             var defaults = new HiloSettings();
