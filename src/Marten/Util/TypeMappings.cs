@@ -127,6 +127,11 @@ namespace Marten.Util
 
         public static bool HasTypeMapping(Type memberType)
         {
+            if (memberType.IsNullable())
+            {
+                return HasTypeMapping(memberType.GetInnerTypeFromNullable());
+            }
+
             // more complicated later
             return PgTypes.ContainsKey(memberType) || memberType.GetTypeInfo().IsEnum;
         }
