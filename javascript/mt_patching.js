@@ -38,7 +38,11 @@ function setValue(doc, patch, location){
     return doc;
 }
 
+function deleteValue(doc, patch, location){
+    delete location.element[location.prop];
 
+    return doc;
+}
 
 function incrementValue(doc, patch, location){
     var interval = 1;
@@ -141,6 +145,7 @@ function deepEquals(x, y) {
 
 var ops = {
     'set': setValue,
+    'delete': deleteValue,
     'increment': incrementValue,
     'increment_float': incrementFloat,
     'append': appendElement,
