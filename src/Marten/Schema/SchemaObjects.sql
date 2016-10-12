@@ -1,4 +1,4 @@
-﻿select column_name, data_type 
+﻿select column_name, data_type, character_maximum_length 
 from information_schema.columns where table_schema = :schema and table_name = :table_name 
 order by ordinal_position;
 

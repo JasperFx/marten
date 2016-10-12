@@ -14,13 +14,22 @@ namespace Marten.Generation
         }
 
         public string Name { get; }
-        public string Type { get; }
+
+        // Needs to be writeable here.
+        public string Type { get; set; }
+
+        public string RawType()
+        {
+            return Type.Split('(')[0].Trim();
+        }
+
+
         public string Directive { get; set; }
 
         protected bool Equals(TableColumn other)
         {
             return string.Equals(Name, other.Name) &&
-                   string.Equals(TypeMappings.ConvertSynonyms(Type), TypeMappings.ConvertSynonyms(other.Type));
+                   string.Equals(TypeMappings.ConvertSynonyms(RawType()), TypeMappings.ConvertSynonyms(other.RawType()));
         }
 
         public override bool Equals(object obj)
@@ -42,6 +51,11 @@ namespace Marten.Generation
         public string ToDeclaration(int length)
         {
             return $"{Name.PadRight(length)}{Type} {Directive}";
+        }
+
+        public override string ToString()
+        {
+            return $"{Name} {Type} {Directive}";
         }
     }
 }
