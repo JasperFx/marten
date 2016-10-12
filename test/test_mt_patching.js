@@ -235,4 +235,28 @@ describe('Patching API', function() {
 
     expect(Patch(doc, patch)).to.deep.equal({children: [{name: 'first'}, {name: 'third'}]});
   });
+
+  it('can delete prop shallow', function() {
+    var doc = {first: 'foo', second: 'bar', third: 'baz'};
+
+    var patch = {type: 'delete', path: 'second'};
+
+    expect(Patch(doc, patch)).to.deep.equal({first: 'foo', third: 'baz'});
+  });
+
+  it('can delete prop deep', function() {
+    var doc = {top: {middle: {bottom: {first: 'foo', second: 'bar'}}}};
+
+    var patch = {type: 'delete', path: 'top.middle.bottom.first'};
+
+    expect(Patch(doc, patch)).to.deep.equal({top: {middle: {bottom: {second: 'bar'}}}});
+  });
+
+  it('can delete missing prop', function() {
+    var doc = {first: 'foo', second: 'bar'};
+
+    var patch = {type: 'delete', path: 'third'};
+
+    expect(Patch(doc, patch)).to.deep.equal({first: 'foo', second: 'bar'});
+  });
 });
