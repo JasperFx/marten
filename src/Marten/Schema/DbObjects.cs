@@ -199,6 +199,13 @@ AND    n.nspname = :schema;
                     while (reader.Read())
                     {
                         var column = new TableColumn(reader.GetString(0), reader.GetString(1));
+
+                        if (!reader.IsDBNull(2))
+                        {
+                            var length = reader.GetInt32(2);
+                            column.Type = $"{column.Type}({length})";
+                        }
+
                         columns.Add(column);
                     }
 

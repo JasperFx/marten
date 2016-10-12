@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -17,8 +18,26 @@ namespace Marten.Schema.Arguments
             .GetMethod("Param", new[] {typeof(string), typeof(object), typeof(NpgsqlDbType)});
 
         private MemberInfo[] _members;
+        private string _postgresType;
         public string Arg { get; set; }
-        public string PostgresType { get; set; }
+
+        public string PostgresType
+        {
+            get { return _postgresType; }
+            set
+            {
+                if (value == null) throw new ArgumentNullException();
+
+                if (value.Contains("("))
+                {
+                    _postgresType = value.Split('(')[0].Trim();
+                }
+                else
+                {
+                    _postgresType = value;
+                }
+            }
+        }
 
         public string Column { get; set; }
 
