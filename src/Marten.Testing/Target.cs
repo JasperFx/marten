@@ -131,6 +131,7 @@ namespace Marten.Testing
 
         public IDictionary<string,string> StringDict { get; set; }
 
+        public List<Guid> GuidList { get; set; }
     }
 
     public class Address
