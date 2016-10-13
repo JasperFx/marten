@@ -90,7 +90,7 @@ namespace Marten
         // ENDSAMPLE
 
         /// <summary>
-        /// Queries the document storage table for the document type T by supplied SQL. See http://jasperfx.github.io/marten/documentation/documents/sql/ for more information on usage.
+        /// Queries the document storage table for the document type T by supplied SQL. See http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="sql"></param>
@@ -99,7 +99,7 @@ namespace Marten
         IList<T> Query<T>(string sql, params object[] parameters);
 
         /// <summary>
-        /// Asynchronously queries the document storage table for the document type T by supplied SQL. See http://jasperfx.github.io/marten/documentation/documents/sql/ for more information on usage.
+        /// Asynchronously queries the document storage table for the document type T by supplied SQL. See http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="sql"></param>

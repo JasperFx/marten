@@ -17,7 +17,6 @@ namespace Marten.Patching
         private readonly IDictionary<string, object> _patch;
         private readonly TransformFunction _transform;
         private string _sql;
-        public Guid Id = Guid.NewGuid();
 
         public PatchOperation(TransformFunction transform, IQueryableDocument document, IWhereFragment fragment,
             IDictionary<string, object> patch)
@@ -40,11 +39,13 @@ namespace Marten.Patching
             var versionParam = batch.AddParameter(CombGuidIdGeneration.NewGuid(), NpgsqlDbType.Uuid);
 
             var where = _fragment.ToSql(batch.Command);
+            if (!where.StartsWith("where "))
+                where = "where " + where;
 
             _sql = $@"
 update {_document.Table.QualifiedName} as d 
 set data = {_transform.Function.QualifiedName}(data, :{patchParam.ParameterName}), {DocumentMapping.LastModifiedColumn} = (now() at time zone 'utc'), {DocumentMapping.VersionColumn} = :{versionParam.ParameterName}
-where {where}";
+{where}";
 
         }
     }
