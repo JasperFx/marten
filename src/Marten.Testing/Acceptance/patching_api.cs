@@ -441,6 +441,66 @@ namespace Marten.Testing.Acceptance
         }
     }
         // ENDSAMPLE
+
+        [Fact]
+        public void delete_redundant_property()
+        {
+            var target = Target.Random();
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            // SAMPLE: delete_redundant_property
+    theSession.Patch<Target>(target.Id).Delete("String");
+            // ENDSAMPLE
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var result = query.Load<Target>(target.Id);
+
+                result.String.ShouldBeNull();
+            }
+        }
+
+        [Fact]
+        public void delete_redundant_nested_property()
+        {
+            var target = Target.Random(true);
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            // SAMPLE: delete_redundant_nested_property
+    theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
+            // ENDSAMPLE
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var result = query.Load<Target>(target.Id);
+
+                result.Inner.String.ShouldBeNull();
+            }
+        }
+
+        [Fact]
+        public void delete_existing_property()
+        {
+            var target = Target.Random(true);
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            // SAMPLE: delete_existing_property
+    theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
+            // ENDSAMPLE
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var result = query.Load<Target>(target.Id);
+
+                result.Inner.ShouldBeNull();
+            }
+        }
     }
 
     internal static class EnumerableExtensions

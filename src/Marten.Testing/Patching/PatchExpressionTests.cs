@@ -273,5 +273,32 @@ namespace Marten.Testing.Patching
             expression.Patch["path"].ShouldBe("NumberArray");
             expression.Patch["action"].ShouldBe((int) RemoveAction.RemoveAll);
         }
+
+        [Fact]
+        public void delete_name()
+        {
+            expression.Delete("Foo");
+
+            expression.Patch["type"].ShouldBe("delete");
+            expression.Patch["path"].ShouldBe("Foo");
+        }
+
+        [Fact]
+        public void delete_nested_name()
+        {
+            expression.Delete("Foo", x => x.Inner.Inner);
+
+            expression.Patch["type"].ShouldBe("delete");
+            expression.Patch["path"].ShouldBe("Inner.Inner.Foo");
+        }
+
+        [Fact]
+        public void delete_nested_property()
+        {
+            expression.Delete(x => x.NumberArray);
+
+            expression.Patch["type"].ShouldBe("delete");
+            expression.Patch["path"].ShouldBe("NumberArray");
+        }
     }
 }
