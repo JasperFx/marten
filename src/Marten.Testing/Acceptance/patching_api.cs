@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Marten.Linq;
 using Marten.Patching;
 using Marten.Services;
 using Shouldly;
@@ -500,6 +501,28 @@ namespace Marten.Testing.Acceptance
 
                 result.Inner.ShouldBeNull();
             }
+        }
+
+        [Fact]
+        public void delete_property_from_many_documents()
+        {
+            for (var i = 0; i < 15; i++)
+            {
+                theSession.Store(Target.Random());
+            }
+            theSession.SaveChanges();
+
+            // SAMPLE: delete_property_from_many_documents
+    const string where = "where (data ->> 'String') is not null";
+    theSession.Query<Target>(where).Count.ShouldBe(15);
+    theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
+    theSession.SaveChanges();
+
+    using (var query = theStore.QuerySession())
+    {
+        query.Query<Target>(where).Count(t => t.String != null).ShouldBe(0);
+    }
+            // ENDSAMPLE
         }
     }
 

@@ -245,7 +245,7 @@ namespace Marten
 
         private IPatchExpression<T> patchById<T>(object id)
         {
-            var @where = new WhereFragment("d.id = ?", id);
+            var @where = new WhereFragment("where d.id = ?", id);
             return new PatchExpression<T>(@where, _schema, _unitOfWork);
         }
 
@@ -255,6 +255,11 @@ namespace Marten
 
             var fragment = _schema.BuildWhereFragment(model);
 
+            return new PatchExpression<T>(fragment, _schema, _unitOfWork);
+        }
+
+        public IPatchExpression<T> Patch<T>(IWhereFragment fragment)
+        {
             return new PatchExpression<T>(fragment, _schema, _unitOfWork);
         }
 
