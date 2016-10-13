@@ -117,6 +117,29 @@ namespace Marten.Patching
             apply();
         }
 
+        public void Delete(string name)
+        {
+            delete(name);
+        }
+
+        public void Delete<TParent>(string name, Expression<Func<T, TParent>> expression)
+        {
+            delete(toPath(expression) + $".{name}");
+        }
+
+        public void Delete<TElement>(Expression<Func<T, TElement>> expression)
+        {
+            delete(toPath(expression));
+        }
+
+        private void delete(string path)
+        {
+            Patch.Add("type", "delete");
+            Patch.Add("path", path);
+
+            apply();
+        }
+
         private string toPath(Expression expression)
         {
             var visitor = new FindMembers();
