@@ -9,296 +9,316 @@ namespace Marten.Testing.Patching
 {
     public class PatchExpressionTests
     {
-        private PatchExpression<Target> expression;
-        private IDocumentSchema schema = Substitute.For<IDocumentSchema>();
+        private readonly PatchExpression<Target> _expression;
+        private readonly IDocumentSchema _schema = Substitute.For<IDocumentSchema>();
         
 
         public PatchExpressionTests()
         {
-            expression = new PatchExpression<Target>(null, schema, new UnitOfWork(schema));
+            _expression = new PatchExpression<Target>(null, _schema, new UnitOfWork(_schema));
+        }
+
+        [Fact]
+        public void builds_patch_for_set_name()
+        {
+            _expression.Set("Float", 7.7f);
+
+            _expression.Patch["path"].ShouldBe("Float");
+            _expression.Patch["type"].ShouldBe("set");
+            _expression.Patch["value"].ShouldBe(7.7f);
+        }
+
+        [Fact]
+        public void builds_patch_for_set_name_deep()
+        {
+            _expression.Set("Double", x => x.Inner, 99.9d);
+
+            _expression.Patch["path"].ShouldBe("Inner.Double");
+            _expression.Patch["type"].ShouldBe("set");
+            _expression.Patch["value"].ShouldBe(99.9d);
         }
 
         [Fact]
         public void builds_patch_for_set_shallow()
         {
-            expression.Set(x => x.Number, 5);
+            _expression.Set(x => x.Number, 5);
 
-            expression.Patch["path"].ShouldBe("Number");
-            expression.Patch["type"].ShouldBe("set");
-            expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["path"].ShouldBe("Number");
+            _expression.Patch["type"].ShouldBe("set");
+            _expression.Patch["value"].ShouldBe(5);
         }
 
         [Fact]
         public void builds_patch_for_set_2_deep()
         {
-            expression.Set(x => x.Inner.Number, 5);
+            _expression.Set(x => x.Inner.Number, 5);
 
-            expression.Patch["path"].ShouldBe("Inner.Number");
-            expression.Patch["type"].ShouldBe("set");
-            expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["path"].ShouldBe("Inner.Number");
+            _expression.Patch["type"].ShouldBe("set");
+            _expression.Patch["value"].ShouldBe(5);
         }
 
         [Fact]
         public void builds_patch_for_set_3_deep()
         {
-            expression.Set(x => x.Inner.Inner.Number, 5);
+            _expression.Set(x => x.Inner.Inner.Number, 5);
 
-            expression.Patch["path"].ShouldBe("Inner.Inner.Number");
-            expression.Patch["type"].ShouldBe("set");
-            expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["path"].ShouldBe("Inner.Inner.Number");
+            _expression.Patch["type"].ShouldBe("set");
+            _expression.Patch["value"].ShouldBe(5);
         }
 
         [Fact]
         public void increment_int_with_default()
         {
-            expression.Increment(x => x.Number);
+            _expression.Increment(x => x.Number);
 
-            expression.Patch["path"].ShouldBe("Number");
-            expression.Patch["type"].ShouldBe("increment");
-            expression.Patch["increment"].ShouldBe(1);
+            _expression.Patch["path"].ShouldBe("Number");
+            _expression.Patch["type"].ShouldBe("increment");
+            _expression.Patch["increment"].ShouldBe(1);
         }
 
         [Fact]
         public void increment_int_with_default_deep()
         {
-            expression.Increment(x => x.Inner.Inner.Number);
+            _expression.Increment(x => x.Inner.Inner.Number);
 
-            expression.Patch["path"].ShouldBe("Inner.Inner.Number");
-            expression.Patch["type"].ShouldBe("increment");
-            expression.Patch["increment"].ShouldBe(1);
+            _expression.Patch["path"].ShouldBe("Inner.Inner.Number");
+            _expression.Patch["type"].ShouldBe("increment");
+            _expression.Patch["increment"].ShouldBe(1);
         }
 
         [Fact]
         public void increment_int_with_explicit_interval()
         {
-            expression.Increment(x => x.Number, 5);
+            _expression.Increment(x => x.Number, 5);
 
-            expression.Patch["path"].ShouldBe("Number");
-            expression.Patch["type"].ShouldBe("increment");
-            expression.Patch["increment"].ShouldBe(5);
+            _expression.Patch["path"].ShouldBe("Number");
+            _expression.Patch["type"].ShouldBe("increment");
+            _expression.Patch["increment"].ShouldBe(5);
         }
 
         [Fact]
         public void increment_long_with_default()
         {
-            expression.Increment(x => x.Long);
+            _expression.Increment(x => x.Long);
 
-            expression.Patch["path"].ShouldBe("Long");
-            expression.Patch["type"].ShouldBe("increment");
-            expression.Patch["increment"].ShouldBe(1);
+            _expression.Patch["path"].ShouldBe("Long");
+            _expression.Patch["type"].ShouldBe("increment");
+            _expression.Patch["increment"].ShouldBe(1);
         }
 
         [Fact]
         public void increment_long_with_default_deep()
         {
-            expression.Increment(x => x.Inner.Inner.Long);
+            _expression.Increment(x => x.Inner.Inner.Long);
 
-            expression.Patch["path"].ShouldBe("Inner.Inner.Long");
-            expression.Patch["type"].ShouldBe("increment");
-            expression.Patch["increment"].ShouldBe(1);
+            _expression.Patch["path"].ShouldBe("Inner.Inner.Long");
+            _expression.Patch["type"].ShouldBe("increment");
+            _expression.Patch["increment"].ShouldBe(1);
         }
 
         [Fact]
         public void increment_long_with_explicit_interval()
         {
-            expression.Increment(x => x.Long, 5);
+            _expression.Increment(x => x.Long, 5);
 
-            expression.Patch["path"].ShouldBe("Long");
-            expression.Patch["type"].ShouldBe("increment");
-            expression.Patch["increment"].ShouldBe(5);
+            _expression.Patch["path"].ShouldBe("Long");
+            _expression.Patch["type"].ShouldBe("increment");
+            _expression.Patch["increment"].ShouldBe(5);
         }
 
         [Fact]
         public void increment_double_with_default()
         {
-            expression.Increment(x => x.Double);
+            _expression.Increment(x => x.Double);
 
-            expression.Patch["path"].ShouldBe("Double");
-            expression.Patch["type"].ShouldBe("increment_float");
-            expression.Patch["increment"].ShouldBe(1);
+            _expression.Patch["path"].ShouldBe("Double");
+            _expression.Patch["type"].ShouldBe("increment_float");
+            _expression.Patch["increment"].ShouldBe(1);
         }
 
         [Fact]
         public void increment_double_with_default_deep()
         {
-            expression.Increment(x => x.Inner.Inner.Double);
+            _expression.Increment(x => x.Inner.Inner.Double);
 
-            expression.Patch["path"].ShouldBe("Inner.Inner.Double");
-            expression.Patch["type"].ShouldBe("increment_float");
-            expression.Patch["increment"].ShouldBe(1);
+            _expression.Patch["path"].ShouldBe("Inner.Inner.Double");
+            _expression.Patch["type"].ShouldBe("increment_float");
+            _expression.Patch["increment"].ShouldBe(1);
         }
 
         [Fact]
         public void increment_double_with_explicit_interval()
         {
-            expression.Increment(x => x.Double, 5);
+            _expression.Increment(x => x.Double, 5);
 
-            expression.Patch["path"].ShouldBe("Double");
-            expression.Patch["type"].ShouldBe("increment_float");
-            expression.Patch["increment"].ShouldBe(5);
+            _expression.Patch["path"].ShouldBe("Double");
+            _expression.Patch["type"].ShouldBe("increment_float");
+            _expression.Patch["increment"].ShouldBe(5);
         }
 
         [Fact]
         public void increment_float_with_default()
         {
-            expression.Increment(x => x.Float);
+            _expression.Increment(x => x.Float);
 
-            expression.Patch["path"].ShouldBe("Float");
-            expression.Patch["type"].ShouldBe("increment_float");
-            expression.Patch["increment"].ShouldBe(1);
+            _expression.Patch["path"].ShouldBe("Float");
+            _expression.Patch["type"].ShouldBe("increment_float");
+            _expression.Patch["increment"].ShouldBe(1);
         }
 
         [Fact]
         public void increment_float_with_default_deep()
         {
-            expression.Increment(x => x.Inner.Inner.Float);
+            _expression.Increment(x => x.Inner.Inner.Float);
 
-            expression.Patch["path"].ShouldBe("Inner.Inner.Float");
-            expression.Patch["type"].ShouldBe("increment_float");
-            expression.Patch["increment"].ShouldBe(1);
+            _expression.Patch["path"].ShouldBe("Inner.Inner.Float");
+            _expression.Patch["type"].ShouldBe("increment_float");
+            _expression.Patch["increment"].ShouldBe(1);
         }
 
         [Fact]
         public void increment_float_with_explicit_interval()
         {
-            expression.Increment(x => x.Float, 5);
+            _expression.Increment(x => x.Float, 5);
 
-            expression.Patch["path"].ShouldBe("Float");
-            expression.Patch["type"].ShouldBe("increment_float");
-            expression.Patch["increment"].ShouldBe(5);
+            _expression.Patch["path"].ShouldBe("Float");
+            _expression.Patch["type"].ShouldBe("increment_float");
+            _expression.Patch["increment"].ShouldBe(5);
         }
 
         [Fact]
         public void append_shallow()
         {
-            expression.Append(x => x.NumberArray, 5);
+            _expression.Append(x => x.NumberArray, 5);
 
-            expression.Patch["path"].ShouldBe("NumberArray");
-            expression.Patch["type"].ShouldBe("append");
-            expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["path"].ShouldBe("NumberArray");
+            _expression.Patch["type"].ShouldBe("append");
+            _expression.Patch["value"].ShouldBe(5);
         }
 
         [Fact]
         public void append_deep()
         {
-            expression.Append(x => x.Inner.Inner.NumberArray, 5);
+            _expression.Append(x => x.Inner.Inner.NumberArray, 5);
 
-            expression.Patch["path"].ShouldBe("Inner.Inner.NumberArray");
-            expression.Patch["type"].ShouldBe("append");
-            expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["path"].ShouldBe("Inner.Inner.NumberArray");
+            _expression.Patch["type"].ShouldBe("append");
+            _expression.Patch["value"].ShouldBe(5);
         }
 
         [Fact]
         public void insert_shallow()
         {
-            expression.Insert(x => x.NumberArray, 5);
+            _expression.Insert(x => x.NumberArray, 5);
 
-            expression.Patch["path"].ShouldBe("NumberArray");
-            expression.Patch["type"].ShouldBe("insert");
-            expression.Patch["value"].ShouldBe(5);
-            expression.Patch["index"].ShouldBe(0);
+            _expression.Patch["path"].ShouldBe("NumberArray");
+            _expression.Patch["type"].ShouldBe("insert");
+            _expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["index"].ShouldBe(0);
         }
 
         [Fact]
         public void insert_deep()
         {
-            expression.Insert(x => x.Inner.Inner.NumberArray, 5);
+            _expression.Insert(x => x.Inner.Inner.NumberArray, 5);
 
-            expression.Patch["path"].ShouldBe("Inner.Inner.NumberArray");
-            expression.Patch["type"].ShouldBe("insert");
-            expression.Patch["value"].ShouldBe(5);
-            expression.Patch["index"].ShouldBe(0);
+            _expression.Patch["path"].ShouldBe("Inner.Inner.NumberArray");
+            _expression.Patch["type"].ShouldBe("insert");
+            _expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["index"].ShouldBe(0);
         }
 
 
         [Fact]
         public void insert_at_a_nonzero_index()
         {
-            expression.Insert(x => x.NumberArray, 5, 2);
+            _expression.Insert(x => x.NumberArray, 5, 2);
 
-            expression.Patch["path"].ShouldBe("NumberArray");
-            expression.Patch["type"].ShouldBe("insert");
-            expression.Patch["value"].ShouldBe(5);
-            expression.Patch["index"].ShouldBe(2);
+            _expression.Patch["path"].ShouldBe("NumberArray");
+            _expression.Patch["type"].ShouldBe("insert");
+            _expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["index"].ShouldBe(2);
         }
 
         [Fact]
         public void rename_shallow()
         {
-            expression.Rename("Old", x => x.Double);
+            _expression.Rename("Old", x => x.Double);
 
-            expression.Patch["type"].ShouldBe("rename");
-            expression.Patch["to"].ShouldBe("Double");
-            expression.Patch["path"].ShouldBe("Old");
+            _expression.Patch["type"].ShouldBe("rename");
+            _expression.Patch["to"].ShouldBe("Double");
+            _expression.Patch["path"].ShouldBe("Old");
         }
 
         [Fact]
         public void rename_2_deep()
         {
-            expression.Rename("Old", x => x.Inner.Double);
+            _expression.Rename("Old", x => x.Inner.Double);
 
-            expression.Patch["type"].ShouldBe("rename");
-            expression.Patch["to"].ShouldBe("Double");
-            expression.Patch["path"].ShouldBe("Inner.Old");
+            _expression.Patch["type"].ShouldBe("rename");
+            _expression.Patch["to"].ShouldBe("Double");
+            _expression.Patch["path"].ShouldBe("Inner.Old");
         }
 
         [Fact]
         public void rename_3_deep()
         {
-            expression.Rename("Old", x => x.Inner.Inner.Double);
+            _expression.Rename("Old", x => x.Inner.Inner.Double);
 
-            expression.Patch["type"].ShouldBe("rename");
-            expression.Patch["to"].ShouldBe("Double");
-            expression.Patch["path"].ShouldBe("Inner.Inner.Old");
+            _expression.Patch["type"].ShouldBe("rename");
+            _expression.Patch["to"].ShouldBe("Double");
+            _expression.Patch["path"].ShouldBe("Inner.Inner.Old");
         }
 
         [Fact]
         public void remove_first()
         {
-            expression.Remove(x => x.NumberArray, 5);
+            _expression.Remove(x => x.NumberArray, 5);
 
-            expression.Patch["type"].ShouldBe("remove");
-            expression.Patch["value"].ShouldBe(5);
-            expression.Patch["path"].ShouldBe("NumberArray");
-            expression.Patch["action"].ShouldBe((int)RemoveAction.RemoveFirst);
+            _expression.Patch["type"].ShouldBe("remove");
+            _expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["path"].ShouldBe("NumberArray");
+            _expression.Patch["action"].ShouldBe((int)RemoveAction.RemoveFirst);
         }
 
         [Fact]
         public void remove_all()
         {
-            expression.Remove(x => x.NumberArray, 5, RemoveAction.RemoveAll);
+            _expression.Remove(x => x.NumberArray, 5, RemoveAction.RemoveAll);
 
-            expression.Patch["type"].ShouldBe("remove");
-            expression.Patch["value"].ShouldBe(5);
-            expression.Patch["path"].ShouldBe("NumberArray");
-            expression.Patch["action"].ShouldBe((int) RemoveAction.RemoveAll);
+            _expression.Patch["type"].ShouldBe("remove");
+            _expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["path"].ShouldBe("NumberArray");
+            _expression.Patch["action"].ShouldBe((int) RemoveAction.RemoveAll);
         }
 
         [Fact]
         public void delete_name()
         {
-            expression.Delete("Foo");
+            _expression.Delete("Foo");
 
-            expression.Patch["type"].ShouldBe("delete");
-            expression.Patch["path"].ShouldBe("Foo");
+            _expression.Patch["type"].ShouldBe("delete");
+            _expression.Patch["path"].ShouldBe("Foo");
         }
 
         [Fact]
         public void delete_nested_name()
         {
-            expression.Delete("Foo", x => x.Inner.Inner);
+            _expression.Delete("Foo", x => x.Inner.Inner);
 
-            expression.Patch["type"].ShouldBe("delete");
-            expression.Patch["path"].ShouldBe("Inner.Inner.Foo");
+            _expression.Patch["type"].ShouldBe("delete");
+            _expression.Patch["path"].ShouldBe("Inner.Inner.Foo");
         }
 
         [Fact]
         public void delete_nested_property()
         {
-            expression.Delete(x => x.NumberArray);
+            _expression.Delete(x => x.NumberArray);
 
-            expression.Patch["type"].ShouldBe("delete");
-            expression.Patch["path"].ShouldBe("NumberArray");
+            _expression.Patch["type"].ShouldBe("delete");
+            _expression.Patch["path"].ShouldBe("NumberArray");
         }
     }
 }

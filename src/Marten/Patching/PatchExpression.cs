@@ -23,11 +23,26 @@ namespace Marten.Patching
             _unitOfWork = unitOfWork;
         }
 
+        public void Set<TValue>(string name, TValue value)
+        {
+            set(name, value);
+        }
+
+        public void Set<TParent, TValue>(string name, Expression<Func<T, TParent>> expression, TValue value)
+        {
+            set(toPath(expression) + $".{name}", value);
+        }
+
         public void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value)
+        {
+            set(toPath(expression), value);
+        }
+
+        private void set<TValue>(string path, TValue value)
         {
             Patch.Add("type", "set");
             Patch.Add("value", value);
-            Patch.Add("path", toPath(expression));
+            Patch.Add("path", path);
 
             apply();
         }
