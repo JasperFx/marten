@@ -34,26 +34,45 @@ namespace Marten.Testing.Acceptance
         }
 
         // SAMPLE: set_an_immediate_property_by_id
-        [Fact]
-        public void set_an_immediate_property_by_id()
+    [Fact]
+    public void set_an_immediate_property_by_id()
+    {
+        var target = Target.Random(true);
+        target.Number = 5;
+
+
+        theSession.Store(target);
+        theSession.SaveChanges();
+
+        theSession.Patch<Target>(target.Id).Set(x => x.Number, 10);
+        theSession.SaveChanges();
+
+
+        using (var query = theStore.QuerySession())
         {
-            var target = Target.Random(true);
-            target.Number = 5;
-
-
-            theSession.Store(target);
-            theSession.SaveChanges();
-
-            theSession.Patch<Target>(target.Id).Set(x => x.Number, 10);
-            theSession.SaveChanges();
-
-
-            using (var query = theStore.QuerySession())
-            {
-                query.Load<Target>(target.Id).Number.ShouldBe(10);
-            }
+            query.Load<Target>(target.Id).Number.ShouldBe(10);
         }
+    }
         // ENDSAMPLE
+
+        [Fact]
+        public void initialise_a_new_property_by_expression()
+        {
+            theSession.Store(Target.Random(), Target.Random(), Target.Random());
+            theSession.SaveChanges();
+
+            // SAMPLE: initialise_a_new_property_by_expression
+    const string where = "where (data ->> 'UpdatedAt') is null";
+    theSession.Query<Target>(where).Count.ShouldBe(3);
+    theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
+    theSession.SaveChanges();
+
+    using (var query = theStore.QuerySession())
+    {
+        query.Query<Target>(where).Count.ShouldBe(0);
+    }
+            // ENDSAMPLE
+        }
 
         [Fact]
         public void set_a_deep_property_by_id()
@@ -75,7 +94,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        
+
         [Fact]
         public void set_an_immediate_property_by_where_clause()
         {
@@ -90,7 +109,7 @@ namespace Marten.Testing.Acceptance
             theSession.SaveChanges();
 
             // SAMPLE: set_an_immediate_property_by_where_clause
-            // Change every Target document where the Color is Blue
+    // Change every Target document where the Color is Blue
     theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
             // ENDSAMPLE
 
