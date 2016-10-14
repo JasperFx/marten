@@ -10,7 +10,6 @@ using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
 using System.Reflection;
-using System.Collections;
 
 namespace Marten.Linq
 {
@@ -168,26 +167,18 @@ namespace Marten.Linq
             {
                 throwNotSupportedContains();
             }
-
-            return $"data->'{pathTo(member)}' ?| :{fromParam.ParameterName}";
+            var visitor = new FindMembers();
+            visitor.Visit(member);
+            var members = visitor.Members;
+            if (!members.Any())
+                throwNotSupportedContains();
+            var path = members.Select(m => m.Name).Join("'->'");
+            return $"data->'{path}' ?| :{fromParam.ParameterName}";
         }
 
         private void throwNotSupportedContains()
         {
             throw new NotSupportedException($"The Contains() operator on subqueries within Collection.Any() searches only supports constant array/lists of {string.Join(" or ", supportedTypes.Select(t => t.Name))} expressions");
-        }
-
-        private string pathTo(MemberExpression memberExpression)
-        {
-            var path = new List<string> { memberExpression.Member.Name };
-            while (memberExpression.Expression.NodeType == ExpressionType.MemberAccess)
-            {
-                var propInfo = memberExpression.Expression.GetType().GetProperty("Member");
-                var propValue = propInfo.GetValue(memberExpression.Expression, null) as PropertyInfo;
-                path.Add(propValue.Name);
-                memberExpression = memberExpression.Expression as MemberExpression;
-            }
-            return path.AsEnumerable().Reverse().Join("'->'");
         }
 
         private bool isListOrArrayOf(Type value, Type valid)
