@@ -104,19 +104,19 @@ namespace Marten.Patching
         /// <param name="name">Redundant property or field name</param>
         void Delete(string name);
 
-		/// <summary>
-		/// Delete a removed property or field in the persisted JSON data
-		/// </summary>
-		/// <typeparam name="TParent"></typeparam>
-		/// <param name="name">Redundant property or field name</param>
-		/// <param name="expression">Path to the parent location</param>
-		void Delete<TParent>(string name, Expression<Func<T, TParent>> expression);
+        /// <summary>
+        /// Delete a removed property or field in the persisted JSON data
+        /// </summary>
+        /// <typeparam name="TParent"></typeparam>
+        /// <param name="name">Redundant property or field name</param>
+        /// <param name="expression">Path to the parent location</param>
+        void Delete<TParent>(string name, Expression<Func<T, TParent>> expression);
 
-		/// <summary>
-		/// Delete an existing property or field in the persisted JSON data
-		/// </summary>
-		/// <typeparam name="TElement"></typeparam>
-		/// <param name="expression">Path to the property or field to delete</param>
-		void Delete<TElement>(Expression<Func<T, TElement>> expression);
+        /// <summary>
+        /// Delete an existing property or field in the persisted JSON data
+        /// </summary>
+        /// <typeparam name="TElement"></typeparam>
+        /// <param name="expression">Path to the property or field to delete</param>
+        void Delete<TElement>(Expression<Func<T, TElement>> expression);
     }
 }
