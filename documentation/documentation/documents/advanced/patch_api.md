@@ -12,6 +12,7 @@ As of 1.2, Marten supports mechanisms to:
 
 1. Set the value of a persisted field or property
 1. Add a field or property with value
+1. Duplicate a field or property to one or more destinations
 1. Increment a numeric value by some increment (1 by default)
 1. Append an element to a child array, list, or collection at the end
 1. Insert an element into a child array, list, or collection at a given position
@@ -40,6 +41,18 @@ shown below:
 To initialize a new property on existing documents:
 
 <[sample:initialise_a_new_property_by_expression]>
+
+## Duplicating an existing Property/Field
+
+To copy an existing value to a new location:
+
+<[sample:duplicate_to_new_field]>
+
+The same value can be copied to multiple new locations:
+
+<[sample:duplicate_to_multiple_new_fields]>
+
+The new locations need not exist in the persisted document, null or absent parents will be initialized
 
 ## Incrementing an Existing Value
 

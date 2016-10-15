@@ -179,7 +179,7 @@ namespace Marten.Testing.Acceptance
         }
 
         // SAMPLE: increment_for_int
-        [Fact]
+    [Fact]
     public void increment_for_int()
     {
         var target = Target.Random();
