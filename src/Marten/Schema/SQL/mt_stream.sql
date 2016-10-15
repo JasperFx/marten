@@ -5,7 +5,7 @@ CREATE TABLE {databaseSchema}.mt_streams (
 	id					uuid CONSTRAINT pk_mt_streams PRIMARY KEY,
 	type				varchar(100) NULL,
 	version				integer NOT NULL,
-	timestamp           timestamptz default (now() at time zone 'utc') NOT NULL,
+	timestamp			timestamptz default (now()) NOT NULL,
 	snapshot			jsonb,
 	snapshot_version	integer	
 );
@@ -15,13 +15,13 @@ CREATE SEQUENCE {databaseSchema}.mt_events_sequence;
 
 DROP TABLE IF EXISTS {databaseSchema}.mt_events;
 CREATE TABLE {databaseSchema}.mt_events (
-    seq_id		    bigint CONSTRAINT pk_mt_events PRIMARY KEY,
-	id 	uuid NOT NULL,
+	seq_id		bigint CONSTRAINT pk_mt_events PRIMARY KEY,
+	id		uuid NOT NULL,
 	stream_id	uuid REFERENCES {databaseSchema}.mt_streams ON DELETE CASCADE,
 	version		integer NOT NULL,
 	data		jsonb NOT NULL,
 	type 		varchar(100) NOT NULL,
-	timestamp	timestamp with time zone default (now()) NOT NULL,
+	timestamp	timestamptz default (now()) NOT NULL,
 	CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version),
 	CONSTRAINT pk_mt_events_id_unique UNIQUE(id)
 );
@@ -92,14 +92,3 @@ INSERT INTO {databaseSchema}.mt_event_progression (name, last_seq_id) VALUES (na
 
 END;
 $function$;
-
-
-
-
-
-
-
-
-
-
-
