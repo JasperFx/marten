@@ -5,7 +5,7 @@ function findDeep(doc, parts){
 
     for (var i = 0; i < parts.length; i++){
         var child = parts[i];
-        if (!element.hasOwnProperty(child)){
+        if (!element.hasOwnProperty(child) || !element[child]){
             element[child] = {};
         }
 
@@ -15,8 +15,8 @@ function findDeep(doc, parts){
     return element;
 }
 
-function locate(doc, patch){
-    var parts = patch.path.split('.');
+function locate(doc, path){
+    var parts = path.split('.');
 
     var element, prop;
 
@@ -25,7 +25,7 @@ function locate(doc, patch){
         element = findDeep(doc, parts);
     }
     else {
-        prop = patch.path;
+        prop = path;
         element = doc;
     }
 
@@ -40,6 +40,16 @@ function setValue(doc, patch, location){
 
 function deleteValue(doc, patch, location){
     delete location.element[location.prop];
+
+    return doc;
+}
+
+function duplicateValue(doc, patch, location){
+    var value = location.element[location.prop];
+    for (var i = 0; i < patch.targets.length; i++) {
+      var copyTo = locate(doc, patch.targets[i]);
+      copyTo.element[copyTo.prop] = value;
+    }
 
     return doc;
 }
@@ -146,6 +156,7 @@ function deepEquals(x, y) {
 var ops = {
     'set': setValue,
     'delete': deleteValue,
+    'duplicate': duplicateValue,
     'increment': incrementValue,
     'increment_float': incrementFloat,
     'append': appendElement,
@@ -158,7 +169,7 @@ module.exports = function(doc, patch){
     // TODO -- throw if not a handler
     var handler = ops[patch.type];
 
-    var location = locate(doc, patch);
+    var location = locate(doc, patch.path);
 
     return handler(doc, patch, location);
 }
