@@ -47,6 +47,18 @@ namespace Marten.Patching
             apply();
         }
 
+        public void Duplicate<TElement>(Expression<Func<T, TElement>> expression, params Expression<Func<T, TElement>>[] destinations)
+        {
+            if (destinations.Length == 0)
+                throw new ArgumentException("At least one destination must be given");
+
+            Patch.Add("type", "duplicate");
+            Patch.Add("path", toPath(expression));
+            Patch.Add("targets", destinations.Select(toPath).ToArray());
+
+            apply();
+        }
+
         public void Increment(Expression<Func<T, int>> expression, int increment = 1)
         {
             Patch.Add("type", "increment");

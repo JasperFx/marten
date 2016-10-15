@@ -33,6 +33,14 @@ namespace Marten.Patching
         void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value);
 
         /// <summary>
+        /// Copy a single field or property value within the persisted JSON data to one or more destinations
+        /// </summary>
+        /// <typeparam name="TElement"></typeparam>
+        /// <param name="expression"></param>
+        /// <param name="destinations"></param>
+        void Duplicate<TElement>(Expression<Func<T, TElement>> expression, params Expression<Func<T, TElement>>[] destinations);
+
+        /// <summary>
         /// Increment a single field or property by adding the increment value
         /// to the persisted value
         /// </summary>
