@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Testing.CodeTracker;
+using Shouldly;
 
 namespace Marten.Testing.AsyncDaemon
 {
@@ -64,10 +65,9 @@ namespace Marten.Testing.AsyncDaemon
 
         public void LoadAllProjects()
         {
-            var folder = ".".ToFullPath().ParentDirectory().ParentDirectory()
-                .AppendPath("CodeTracker");
-
-            var files = new FileSystem().FindFiles(folder, FileSet.Shallow("*.json"));
+            var fileSystem = new FileSystem();
+            var folder = fileSystem.SearchUpForDirectory("CodeTracker");
+            var files = fileSystem.FindFiles(folder, FileSet.Shallow("*.json"));
 
             AllProjects = new Dictionary<Guid, GithubProject>();
             foreach (var file in files)
@@ -78,14 +78,18 @@ namespace Marten.Testing.AsyncDaemon
                 Console.WriteLine($"Loaded {project.OrganizationName}{project.ProjectName} from JSON");
             }
 
+            _store.Advanced.Clean.DeleteAllDocuments();
             PublishAllProjectEvents(_store);
         }
 
         public void LoadSingleProjects()
         {
-            AllProjects = new Dictionary<Guid, GithubProject>();
-            AllProjects.Add(Guid.NewGuid(), new GithubProject("org", "name", DateTimeOffset.UtcNow));
+            AllProjects = new Dictionary<Guid, GithubProject>
+            {
+                {Guid.NewGuid(), new GithubProject("org", "name", DateTimeOffset.UtcNow)}
+            };
 
+            _store.Advanced.Clean.DeleteAllDocuments();
             PublishAllProjectEvents(_store);
         }
 
@@ -93,11 +97,6 @@ namespace Marten.Testing.AsyncDaemon
 
         public Task PublishAllProjectEventsAsync(IDocumentStore store)
         {
-//            foreach (var track in AllProjects.Values)
-//            {
-//                await track.PublishEvents(store, 50).ConfigureAwait(false);
-//            }
-
             var tasks = AllProjects.Values.Select(project => project.PublishEvents(store, 10)).ToArray();
             return Task.WhenAll(tasks);
         }
@@ -105,7 +104,6 @@ namespace Marten.Testing.AsyncDaemon
         public void PublishAllProjectEvents(IDocumentStore store)
         {
             var tasks = AllProjects.Values.Select(project => project.PublishEvents(store, 0)).ToArray();
-
             Task.WaitAll(tasks.ToArray());
         }
 
@@ -124,7 +122,9 @@ namespace Marten.Testing.AsyncDaemon
         public void CompareActiveProjects(IDocumentStore store)
         {
             var expected = fetchProjects(_store);
+            expected.ShouldNotBeEmpty("There were no expected Projects");
             var actual = fetchProjects(store);
+            actual.ShouldNotBeEmpty("There were no actual Projects");
 
             var list = new List<string>();
 
