@@ -130,8 +130,56 @@ namespace Marten.Testing.Acceptance
             }
         }
 
+        [Fact]
+        public void duplicate_to_new_field()
+        {
+            // SAMPLE: duplicate_to_new_field
+    var target = Target.Random();
+    target.AnotherString = null;
+    theSession.Store(target);
+    theSession.SaveChanges();
+
+    theSession.Patch<Target>(target.Id).Duplicate(t => t.String, t => t.AnotherString);
+    theSession.SaveChanges();
+
+    using (var query = theStore.QuerySession())
+    {
+        var result = query.Load<Target>(target.Id);
+        result.AnotherString.ShouldBe(target.String);
+    }
+            // ENDSAMPLE
+        }
+
+        [Fact]
+        public void duplicate_to_multiple_new_fields()
+        {
+            var target = Target.Random();
+            target.StringField = null;
+            target.Inner = null;
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            // SAMPLE: duplicate_to_multiple_new_fields
+    theSession.Patch<Target>(target.Id).Duplicate(t => t.String,
+        t => t.StringField,
+        t => t.Inner.String,
+        t => t.Inner.AnotherString);
+            // ENDSAMPLE
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var result = query.Load<Target>(target.Id);
+
+                result.StringField.ShouldBe(target.String);
+                result.Inner.ShouldNotBeNull();
+                result.Inner.String.ShouldBe(target.String);
+                result.Inner.AnotherString.ShouldBe(target.String);
+            }
+        }
+
         // SAMPLE: increment_for_int
-    [Fact]
+        [Fact]
     public void increment_for_int()
     {
         var target = Target.Random();

@@ -1,4 +1,5 @@
-﻿using Marten.Patching;
+﻿using System;
+using Marten.Patching;
 using Marten.Schema;
 using Marten.Services;
 using NSubstitute;
@@ -319,6 +320,33 @@ namespace Marten.Testing.Patching
 
             _expression.Patch["type"].ShouldBe("delete");
             _expression.Patch["path"].ShouldBe("NumberArray");
+        }
+
+        [Fact]
+        public void duplicate_property()
+        {
+            _expression.Duplicate(x => x.String, x => x.AnotherString);
+
+            _expression.Patch["type"].ShouldBe("duplicate");
+            _expression.Patch["path"].ShouldBe("String");
+            ((string[]) _expression.Patch["targets"]).ShouldHaveTheSameElementsAs("AnotherString");
+        }
+
+        [Fact]
+        public void duplicate_property_to_multiple_targets()
+        {
+            _expression.Duplicate(x => x.String, x => x.AnotherString, x => x.Inner.String, x => x.Inner.AnotherString);
+
+            _expression.Patch["type"].ShouldBe("duplicate");
+            _expression.Patch["path"].ShouldBe("String");
+            ((string[])_expression.Patch["targets"]).ShouldHaveTheSameElementsAs("AnotherString", "Inner.String", "Inner.AnotherString");
+        }
+
+        [Fact]
+        public void duplicate_property_no_target()
+        {
+            Assert.Throws<ArgumentException>(() => _expression.Duplicate(x => x.String))
+                .Message.ShouldContain("At least one destination must be given");
         }
     }
 }
