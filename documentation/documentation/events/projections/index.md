@@ -73,3 +73,10 @@ the aggregation type in the `StoreOptions` upfront when you build up your docume
 At this point, you would be able to query against `QuestParty` as just another document type.
 
 
+## Aggregator Lookup
+
+
+`EventGraph.UseAggregatorLookup(IAggregatorLookup aggregatorLookup)` can be used to register an `IAggregatorLookup` that is used to look up `IAggregator<T>` for aggregations. This allows e.g. for generic aggregation strategy to be used, rathen than registering aggregators 
+case-by-case through `EventGraphAddAggregator<T>(IAggregator<T> aggregator)`.   
+
+<[sample:register-custom-aggregator-lookup]>
