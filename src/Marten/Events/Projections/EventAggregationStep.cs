@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Marten.Events.Projections
 {
-    public class EventAggregationStep<T, TEvent> : IAggregation<T, Event<TEvent>>
+    public class EventAggregationStep<T, TEvent> : IAggregationWithMetadata<T, TEvent>
     {
         private readonly Action<T, Event<TEvent>> _apply;
 
@@ -31,6 +31,11 @@ namespace Marten.Events.Projections
         public EventAggregationStep(Action<T, Event<TEvent>> apply)
         {
             _apply = apply;
+        }
+
+        public void Apply(T aggregate, TEvent @event)
+        {
+            throw new NotSupportedException("Should never be called");
         }
 
         public void Apply(T aggregate, Event<TEvent> @event)

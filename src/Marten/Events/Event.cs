@@ -1,4 +1,5 @@
 ﻿using System;
+using Baseline;
 using Marten.Events.Projections;
 
 namespace Marten.Events
@@ -77,7 +78,18 @@ namespace Marten.Events
         public virtual void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new()
         {
-            aggregator.AggregatorFor<T>()?.Apply(state, Data);
+            var step = aggregator.AggregatorFor<T>();
+            if (step is IAggregationWithMetadata<TAggregate, T>)
+            {
+                step.As<IAggregationWithMetadata<TAggregate, T>>()
+                    .Apply(state, this);
+            }
+            else
+            {
+                step?.Apply(state, Data);
+            }
+
+            
         }
 
         protected bool Equals(Event<T> other)
