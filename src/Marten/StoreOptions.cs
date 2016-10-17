@@ -249,10 +249,12 @@ namespace Marten
 
         public void AssertValidIdentifier(string name)
         {
-            if (name.Length >= (NameDataLength - 1))
-            {
-                throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
-            }
+            if (string.IsNullOrWhiteSpace(name))
+                throw new PostgresqlIdentifierInvalidException(name);
+            if (name.IndexOf(' ') >= 0)
+                throw new PostgresqlIdentifierInvalidException(name);
+            if (name.Length < NameDataLength) return;
+            throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
         }
 
         internal IDocumentMapping FindMapping(Type documentType)
