@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Marten.Linq;
 using Marten.Patching;
 using Marten.Services;
 using Shouldly;
@@ -33,26 +34,45 @@ namespace Marten.Testing.Acceptance
         }
 
         // SAMPLE: set_an_immediate_property_by_id
-        [Fact]
-        public void set_an_immediate_property_by_id()
+    [Fact]
+    public void set_an_immediate_property_by_id()
+    {
+        var target = Target.Random(true);
+        target.Number = 5;
+
+
+        theSession.Store(target);
+        theSession.SaveChanges();
+
+        theSession.Patch<Target>(target.Id).Set(x => x.Number, 10);
+        theSession.SaveChanges();
+
+
+        using (var query = theStore.QuerySession())
         {
-            var target = Target.Random(true);
-            target.Number = 5;
-
-
-            theSession.Store(target);
-            theSession.SaveChanges();
-
-            theSession.Patch<Target>(target.Id).Set(x => x.Number, 10);
-            theSession.SaveChanges();
-
-
-            using (var query = theStore.QuerySession())
-            {
-                query.Load<Target>(target.Id).Number.ShouldBe(10);
-            }
+            query.Load<Target>(target.Id).Number.ShouldBe(10);
         }
+    }
         // ENDSAMPLE
+
+        [Fact]
+        public void initialise_a_new_property_by_expression()
+        {
+            theSession.Store(Target.Random(), Target.Random(), Target.Random());
+            theSession.SaveChanges();
+
+            // SAMPLE: initialise_a_new_property_by_expression
+    const string where = "where (data ->> 'UpdatedAt') is null";
+    theSession.Query<Target>(where).Count.ShouldBe(3);
+    theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
+    theSession.SaveChanges();
+
+    using (var query = theStore.QuerySession())
+    {
+        query.Query<Target>(where).Count.ShouldBe(0);
+    }
+            // ENDSAMPLE
+        }
 
         [Fact]
         public void set_a_deep_property_by_id()
@@ -74,7 +94,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        
+
         [Fact]
         public void set_an_immediate_property_by_where_clause()
         {
@@ -89,7 +109,7 @@ namespace Marten.Testing.Acceptance
             theSession.SaveChanges();
 
             // SAMPLE: set_an_immediate_property_by_where_clause
-            // Change every Target document where the Color is Blue
+    // Change every Target document where the Color is Blue
     theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
             // ENDSAMPLE
 
@@ -107,6 +127,54 @@ namespace Marten.Testing.Acceptance
                 query.Load<Target>(target4.Id).Number.ShouldBe(1);
                 query.Load<Target>(target5.Id).Number.ShouldBe(1);
                 query.Load<Target>(target6.Id).Number.ShouldBe(1);
+            }
+        }
+
+        [Fact]
+        public void duplicate_to_new_field()
+        {
+            // SAMPLE: duplicate_to_new_field
+    var target = Target.Random();
+    target.AnotherString = null;
+    theSession.Store(target);
+    theSession.SaveChanges();
+
+    theSession.Patch<Target>(target.Id).Duplicate(t => t.String, t => t.AnotherString);
+    theSession.SaveChanges();
+
+    using (var query = theStore.QuerySession())
+    {
+        var result = query.Load<Target>(target.Id);
+        result.AnotherString.ShouldBe(target.String);
+    }
+            // ENDSAMPLE
+        }
+
+        [Fact]
+        public void duplicate_to_multiple_new_fields()
+        {
+            var target = Target.Random();
+            target.StringField = null;
+            target.Inner = null;
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            // SAMPLE: duplicate_to_multiple_new_fields
+    theSession.Patch<Target>(target.Id).Duplicate(t => t.String,
+        t => t.StringField,
+        t => t.Inner.String,
+        t => t.Inner.AnotherString);
+            // ENDSAMPLE
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var result = query.Load<Target>(target.Id);
+
+                result.StringField.ShouldBe(target.String);
+                result.Inner.ShouldNotBeNull();
+                result.Inner.String.ShouldBe(target.String);
+                result.Inner.AnotherString.ShouldBe(target.String);
             }
         }
 
@@ -441,6 +509,88 @@ namespace Marten.Testing.Acceptance
         }
     }
         // ENDSAMPLE
+
+        [Fact]
+        public void delete_redundant_property()
+        {
+            var target = Target.Random();
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            // SAMPLE: delete_redundant_property
+    theSession.Patch<Target>(target.Id).Delete("String");
+            // ENDSAMPLE
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var result = query.Load<Target>(target.Id);
+
+                result.String.ShouldBeNull();
+            }
+        }
+
+        [Fact]
+        public void delete_redundant_nested_property()
+        {
+            var target = Target.Random(true);
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            // SAMPLE: delete_redundant_nested_property
+    theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
+            // ENDSAMPLE
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var result = query.Load<Target>(target.Id);
+
+                result.Inner.String.ShouldBeNull();
+            }
+        }
+
+        [Fact]
+        public void delete_existing_property()
+        {
+            var target = Target.Random(true);
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            // SAMPLE: delete_existing_property
+    theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
+            // ENDSAMPLE
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var result = query.Load<Target>(target.Id);
+
+                result.Inner.ShouldBeNull();
+            }
+        }
+
+        [Fact]
+        public void delete_property_from_many_documents()
+        {
+            for (var i = 0; i < 15; i++)
+            {
+                theSession.Store(Target.Random());
+            }
+            theSession.SaveChanges();
+
+            // SAMPLE: delete_property_from_many_documents
+    const string where = "where (data ->> 'String') is not null";
+    theSession.Query<Target>(where).Count.ShouldBe(15);
+    theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
+    theSession.SaveChanges();
+
+    using (var query = theStore.QuerySession())
+    {
+        query.Query<Target>(where).Count(t => t.String != null).ShouldBe(0);
+    }
+            // ENDSAMPLE
+        }
     }
 
     internal static class EnumerableExtensions

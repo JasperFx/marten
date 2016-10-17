@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
-using Marten.Events.Projections.Async;
-using Marten.Linq.QueryHandlers;
+using Marten.Linq;
 using Marten.Patching;
 using Marten.Services;
 
@@ -146,8 +144,17 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
+        /// <param name="where"></param>
         /// <returns></returns>
         IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> where);
+
+        /// <summary>
+        /// Patch multiple documents matching the supplied where fragment
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="fragment"></param>
+        /// <returns></returns>
+        IPatchExpression<T> Patch<T>(IWhereFragment fragment);
 
         /// <summary>
         /// Catch all mechanism to add additional database calls to the batched

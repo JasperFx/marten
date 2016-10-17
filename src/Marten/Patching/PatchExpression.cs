@@ -23,11 +23,38 @@ namespace Marten.Patching
             _unitOfWork = unitOfWork;
         }
 
+        public void Set<TValue>(string name, TValue value)
+        {
+            set(name, value);
+        }
+
+        public void Set<TParent, TValue>(string name, Expression<Func<T, TParent>> expression, TValue value)
+        {
+            set(toPath(expression) + $".{name}", value);
+        }
+
         public void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value)
+        {
+            set(toPath(expression), value);
+        }
+
+        private void set<TValue>(string path, TValue value)
         {
             Patch.Add("type", "set");
             Patch.Add("value", value);
+            Patch.Add("path", path);
+
+            apply();
+        }
+
+        public void Duplicate<TElement>(Expression<Func<T, TElement>> expression, params Expression<Func<T, TElement>>[] destinations)
+        {
+            if (destinations.Length == 0)
+                throw new ArgumentException("At least one destination must be given");
+
+            Patch.Add("type", "duplicate");
             Patch.Add("path", toPath(expression));
+            Patch.Add("targets", destinations.Select(toPath).ToArray());
 
             apply();
         }
@@ -112,6 +139,29 @@ namespace Marten.Patching
             var path = parts.Join(".");
 
             Patch.Add("to", to);
+            Patch.Add("path", path);
+
+            apply();
+        }
+
+        public void Delete(string name)
+        {
+            delete(name);
+        }
+
+        public void Delete<TParent>(string name, Expression<Func<T, TParent>> expression)
+        {
+            delete(toPath(expression) + $".{name}");
+        }
+
+        public void Delete<TElement>(Expression<Func<T, TElement>> expression)
+        {
+            delete(toPath(expression));
+        }
+
+        private void delete(string path)
+        {
+            Patch.Add("type", "delete");
             Patch.Add("path", path);
 
             apply();

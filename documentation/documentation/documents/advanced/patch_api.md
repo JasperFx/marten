@@ -8,14 +8,17 @@ Marten's Patching API is a mechanism to update persisted documents without havin
 "Patching" can be much more efficient at runtime in some scenarios because you avoid the "deserialize from JSON, edit, serialize
 back to JSON" workflow.
 
-As of 1.0, Marten supports mechanisms to:
+As of 1.2, Marten supports mechanisms to:
 
 1. Set the value of a persisted field or property
+1. Add a field or property with value
+1. Duplicate a field or property to one or more destinations
 1. Increment a numeric value by some increment (1 by default)
 1. Append an element to a child array, list, or collection at the end
 1. Insert an element into a child array, list, or collection at a given position
 1. Remove an element from a child array, list, or collection
 1. Rename a persisted field or property to a new name for structural document changes
+1. Delete a persisted field or property
 
 The patch operation can be configured to either execute against a single document by supplying its id, or with a _Where_ clause expression.
 In all cases, the property or field being updated can be a deep accessor like `Target.Inner.Color`.
@@ -33,6 +36,23 @@ shown below:
 
 <[sample:set_an_immediate_property_by_id]>
 
+## Initialize a new Property/Field
+
+To initialize a new property on existing documents:
+
+<[sample:initialise_a_new_property_by_expression]>
+
+## Duplicating an existing Property/Field
+
+To copy an existing value to a new location:
+
+<[sample:duplicate_to_new_field]>
+
+The same value can be copied to multiple new locations:
+
+<[sample:duplicate_to_multiple_new_fields]>
+
+The new locations need not exist in the persisted document, null or absent parents will be initialized
 
 ## Incrementing an Existing Value
 
@@ -83,3 +103,24 @@ old name to the new name.
 <[sample:rename_deep_prop]>
 
 Renaming can be used on nested values.
+
+## Delete a Property/Field
+
+The `Patch.Delete()` operation can be used to remove a persisted property or field without the need
+to load, deserialize, edit and save all affected documents
+
+To delete a redundant property no longer available on the class use the string overload:
+
+<[sample:delete_redundant_property]>
+
+To delete a redundant property nested on a child class specify a location lambda:
+
+<[sample:delete_redundant_nested_property]>
+
+A current property may be erased simply with a lambda:
+
+<[sample:delete_existing_property]>
+
+Many documents may be patched using a where expressions:
+
+<[sample:delete_property_from_many_documents]>

@@ -235,4 +235,52 @@ describe('Patching API', function() {
 
     expect(Patch(doc, patch)).to.deep.equal({children: [{name: 'first'}, {name: 'third'}]});
   });
+
+  it('can delete prop shallow', function() {
+    var doc = {first: 'foo', second: 'bar', third: 'baz'};
+
+    var patch = {type: 'delete', path: 'second'};
+
+    expect(Patch(doc, patch)).to.deep.equal({first: 'foo', third: 'baz'});
+  });
+
+  it('can delete prop deep', function() {
+    var doc = {top: {middle: {bottom: {first: 'foo', second: 'bar'}}}};
+
+    var patch = {type: 'delete', path: 'top.middle.bottom.first'};
+
+    expect(Patch(doc, patch)).to.deep.equal({top: {middle: {bottom: {second: 'bar'}}}});
+  });
+
+  it('can delete missing prop', function() {
+    var doc = {first: 'foo', second: 'bar'};
+
+    var patch = {type: 'delete', path: 'third'};
+
+    expect(Patch(doc, patch)).to.deep.equal({first: 'foo', second: 'bar'});
+  });
+
+  it('can duplicate prop', function() {
+    var doc = {first: 'foo', second: 'bar'};
+
+    var patch = {type: 'duplicate', path: 'first', targets: ['third']};
+
+    expect(Patch(doc, patch)).to.deep.equal({first: 'foo', second: 'bar', third: 'foo'});
+  });
+
+  it('can duplicate prop to multiple targets', function() {
+    var doc = {first: {items: ['foo', 'bar']}, second: {}, third: {}};
+
+    var patch = {type: 'duplicate', path: 'first.items', targets: ['second.parts','third.bits']};
+
+    expect(Patch(doc, patch)).to.deep.equal({first: {items: ['foo', 'bar']}, second: {parts: ['foo', 'bar']}, third: {bits: ['foo', 'bar']}});
+  });
+
+  it('can duplicate prop to missing and partial parents', function() {
+    var doc = {items: [3, 5, 8, 13], first: null, second: null};
+
+    var patch = {type: 'duplicate', path: 'items', targets: ['first.items','second.inner.items']};
+
+    expect(Patch(doc, patch)).to.deep.equal({items: [3, 5, 8, 13], first: {items: [3, 5, 8, 13]}, second: {inner: {items: [3, 5, 8, 13]}}});
+  });
 });
