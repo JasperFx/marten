@@ -17,7 +17,10 @@ namespace Marten.Testing.Events
 
         public CustomAggregatorLookupTests()
         {
+            // SAMPLE: register-custom-aggregator-lookup
+            // Registering an aggregator lookup that provides aggregator supporting private Apply([Event Type]) methods
             theGraph.UseAggregatorLookup(new AggregatorLookup(type => typeof(AggregatorUsePrivateApply<>).CloseAndBuildAs<IAggregator>(type)));
+            // ENDSAMPLE
         }
 
         [Fact]
