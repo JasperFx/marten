@@ -236,5 +236,49 @@ namespace Marten.Testing
                 document.Id = (Guid) id;
             }
         }
+
+        [Fact]
+        public void default_name_data_length_is_64()
+        {
+            new StoreOptions().NameDataLength.ShouldBe(64);
+        }
+
+        [Fact]
+        public void assert_identifier_length_happy_path()
+        {
+            var options = new StoreOptions();
+
+            options.AssertValidIdentifier("somenamethatisnottoolong");
+        }
+
+        [Fact]
+        public void assert_identifier_length_sad_path()
+        {
+            var options = new StoreOptions();
+
+            var text = "";
+            while (text.Length <= options.NameDataLength)
+            {
+                text += Guid.NewGuid().ToString();
+            }
+
+            Exception<PostgresqlIdentifierTooLongException>.ShouldBeThrownBy(() =>
+            {
+                options.AssertValidIdentifier(text);
+            });
+        }
+
+        [Fact]
+        public void assert_identifier_length_sad_path_2()
+        {
+            var options = new StoreOptions();
+
+            var text = "*".PadRight(options.NameDataLength - 1, 'a');
+
+            Exception<PostgresqlIdentifierTooLongException>.ShouldBeThrownBy(() =>
+            {
+                options.AssertValidIdentifier(text);
+            });
+        }
     }
 }
