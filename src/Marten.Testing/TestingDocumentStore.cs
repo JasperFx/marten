@@ -55,6 +55,7 @@ namespace Marten.Testing
             options.Connection(ConnectionSource.ConnectionString);
             options.Serializer<TestsSerializer>();
 
+            options.NameDataLength = 100;
 
             configure(options);
 
