@@ -6,8 +6,8 @@ using Marten.Events;
 
 namespace Marten.Testing.Events.Projections
 {
-    // SAMPLE: QuestParty
-public class QuestParty
+    // SAMPLE: QuestPartyWithEvents
+public class QuestPartyWithEvents
 {
     private readonly IList<string> _members = new List<string>();
 
@@ -26,19 +26,19 @@ public class QuestParty
 
     public IList<string> Slayed { get; } = new List<string>();
 
-    public void Apply(MembersJoined joined)
+    public void Apply(Event<MembersJoined> joined)
     {
-        _members.Fill(joined.Members);
+        _members.Fill(joined.Data.Members);
     }
 
-    public void Apply(MembersDeparted departed)
+    public void Apply(Event<MembersDeparted> departed)
     {
-        _members.RemoveAll(x => departed.Members.Contains(x));
+        _members.RemoveAll(x => departed.Data.Members.Contains(x));
     }
 
-    public void Apply(QuestStarted started)
+    public void Apply(Event<QuestStarted> started)
     {
-        Name = started.Name;
+        Name = started.Data.Name;
     }
 
     public string Name { get; set; }

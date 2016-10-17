@@ -20,9 +20,19 @@ namespace Marten.Events.Projections
                 .Where(x => x.Name == ApplyMethod && x.GetParameters().Length == 1)
                 .Each(method =>
                 {
+                    object step = null;
                     var eventType = method.GetParameters().Single<ParameterInfo>().ParameterType;
-                    var step = typeof (AggregationStep<,>)
-                        .CloseAndBuildAs<object>(method, typeof (T), eventType);
+                    if (eventType.Closes(typeof(Event<>)))
+                    {
+                        eventType = eventType.GetGenericArguments().Single();
+                        step = typeof(EventAggregationStep<,>)
+                            .CloseAndBuildAs<object>(method, typeof(T), eventType);
+                    }
+                    else
+                    {
+                        step = typeof(AggregationStep<,>)
+                            .CloseAndBuildAs<object>(method, typeof(T), eventType);
+                    }
 
                     _aggregations.Add(eventType, step);
                 });

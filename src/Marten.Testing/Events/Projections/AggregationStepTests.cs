@@ -6,6 +6,7 @@ using Baseline;
 using Baseline.Reflection;
 using Marten.Events.Projections;
 using Xunit;
+using Marten.Events;
 
 namespace Marten.Testing.Events.Projections
 {
@@ -25,6 +26,24 @@ namespace Marten.Testing.Events.Projections
             var joinedEvent = new MembersJoined {Members = new []{"Wolverine", "Cyclops", "Nightcrawler"}};
 
             joinedStep.Apply(party, joinedEvent);
+
+            party.Members.ShouldHaveTheSameElementsAs(joinedEvent.Members);
+        }
+
+        [Fact]
+        public void can_build_aggregation_step_for_an_event_apply_method()
+        {
+            Expression<Action<QuestPartyWithEvents, MembersJoined>> apply = (p, j) => p.Apply(new Event<MembersJoined>(j));
+
+
+            var joined = ReflectionHelper.GetMethod<QuestPartyWithEvents>(x => x.Apply(new Event<MembersJoined>(new MembersJoined())));
+
+            var joinedStep = new EventAggregationStep<QuestPartyWithEvents, MembersJoined>(joined);
+
+            var party = new QuestPartyWithEvents();
+            var joinedEvent = new MembersJoined { Members = new[] { "Wolverine", "Cyclops", "Nightcrawler" } };
+
+            joinedStep.Apply(party, new Event<MembersJoined>(joinedEvent));
 
             party.Members.ShouldHaveTheSameElementsAs(joinedEvent.Members);
         }
