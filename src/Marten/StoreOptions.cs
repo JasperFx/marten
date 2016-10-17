@@ -240,6 +240,21 @@ namespace Marten
         /// </summary>
         public DdlRules DdlRules { get; } = new DdlRules();
 
+        /// <summary>
+        /// Used to validate database object name lengths against Postgresql's NAMEDATALEN property to avoid
+        /// Marten getting confused when comparing database schemas against the configuration. See https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html
+        /// for more information. This does NOT adjust NAMEDATALEN for you.
+        /// </summary>
+        public int NameDataLength { get; set; } = 64;
+
+        public void AssertValidIdentifier(string name)
+        {
+            if (name.Length >= (NameDataLength - 1))
+            {
+                throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
+            }
+        }
+
         internal IDocumentMapping FindMapping(Type documentType)
         {
             return _mappings.GetOrAdd(documentType, type =>
