@@ -248,32 +248,59 @@ namespace Marten.Testing
         {
             var options = new StoreOptions();
 
-            options.AssertValidIdentifier("somenamethatisnottoolong");
-        }
-
-        [Fact]
-        public void assert_identifier_length_sad_path()
-        {
-            var options = new StoreOptions();
-
-            var text = "";
-            while (text.Length <= options.NameDataLength)
+            for (var i = 1; i < options.NameDataLength; i++)
             {
-                text += Guid.NewGuid().ToString();
-            }
+                var text = new string('a', i);
 
-            Exception<PostgresqlIdentifierTooLongException>.ShouldBeThrownBy(() =>
-            {
                 options.AssertValidIdentifier(text);
-            });
+            }
         }
 
         [Fact]
-        public void assert_identifier_length_sad_path_2()
+        public void assert_identifier_must_not_contain_space()
+        {
+            var random = new Random();
+            var options = new StoreOptions();
+
+            for (var i = 1; i < options.NameDataLength; i++)
+            {
+                var text = new string('a', i);
+                var position = random.Next(0, i);
+
+                Exception<PostgresqlIdentifierInvalidException>.ShouldBeThrownBy(() =>
+                {
+                    options.AssertValidIdentifier(text.Remove(position).Insert(position, " "));
+                });
+            }
+        }
+
+        [Fact]
+        public void assert_identifier_null_or_whitespace()
         {
             var options = new StoreOptions();
 
-            var text = "*".PadRight(options.NameDataLength - 1, 'a');
+            Exception<PostgresqlIdentifierInvalidException>.ShouldBeThrownBy(() =>
+            {
+                options.AssertValidIdentifier(null);
+            });
+
+            for (var i = 0; i < options.NameDataLength; i++)
+            {
+                var text = new string(' ', i);
+
+                Exception<PostgresqlIdentifierInvalidException>.ShouldBeThrownBy(() =>
+                {
+                    options.AssertValidIdentifier(text);
+                });
+            }
+        }
+
+        [Fact]
+        public void assert_identifier_length_exceeding_maximum()
+        {
+            var options = new StoreOptions();
+
+            var text = new string('a', options.NameDataLength);
 
             Exception<PostgresqlIdentifierTooLongException>.ShouldBeThrownBy(() =>
             {
