@@ -104,9 +104,22 @@ namespace Marten.Schema
             _hasCheckedSchema = false;
         }
 
+        private void assertIdentifierLengths(StoreOptions options)
+        {
+            foreach (var index in _mapping.Indexes)
+            {
+                options.AssertValidIdentifier(index.IndexName);
+            }
+
+            options.AssertValidIdentifier(_mapping.UpsertFunction.Name);
+            options.AssertValidIdentifier(_mapping.Table.Name);
+        }
+
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
         {
             if (_hasCheckedSchema) return;
+
+            assertIdentifierLengths(schema.StoreOptions);
 
             DependentTypes.Each(schema.EnsureStorageExists);
 
@@ -131,6 +144,8 @@ namespace Marten.Schema
 
         public SchemaDiff CreateSchemaDiff(IDocumentSchema schema)
         {
+            
+
             var objects = schema.DbObjects.FindSchemaObjects(_mapping);
             return new SchemaDiff(objects, _mapping, schema.StoreOptions.DdlRules);
         }
@@ -200,6 +215,8 @@ namespace Marten.Schema
 
         private void rebuildTableAndUpsertFunction(IDocumentSchema schema, SchemaPatch runner)
         {
+            assertIdentifierLengths(schema.StoreOptions);
+
             var writer = new StringWriter();
             WriteSchemaObjects(schema, writer);
 
@@ -257,6 +274,8 @@ namespace Marten.Schema
 
         public void WritePatch(IDocumentSchema schema, SchemaPatch patch)
         {
+            assertIdentifierLengths(schema.StoreOptions);
+
             var diff = CreateSchemaDiff(schema);
             if (!diff.HasDifferences()) return;
 
