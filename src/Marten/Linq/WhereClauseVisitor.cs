@@ -146,40 +146,10 @@ namespace Marten.Linq
 
             protected override Expression VisitSubQuery(SubQueryExpression expression)
             {
-                var queryType = expression.QueryModel.MainFromClause.ItemType;
-
-                // Simple types
-                if (TypeMappings.HasTypeMapping(queryType))
-                {
-                    var contains = expression.QueryModel.ResultOperators.OfType<ContainsResultOperator>().FirstOrDefault();
-                    if (contains != null)
-                    {
-                        var @where = ContainmentWhereFragment.SimpleArrayContains(_parent._serializer, expression.QueryModel.MainFromClause.FromExpression, contains.Item.Value());
-                        _register.Peek()(@where);
-
-                        return null;
-                    }
-                }
-
-                if (expression.QueryModel.ResultOperators.Any(x => x is AnyResultOperator))
-                {
-                    // Any() without predicate
-                    if (!expression.QueryModel.BodyClauses.Any())
-                    {
-                        var @where_any_nopredicate = new CollectionAnyNoPredicateWhereFragment(expression);
-
-                        _register.Peek()(@where_any_nopredicate);
-                        return null;
-                    }
-                    var @where = new CollectionAnyContainmentWhereFragment(_parent._serializer, expression);
-
-                    _register.Peek()(@where);
-
-                    return null;
-                }
+                ChildCollectionWhereVisitor.Parse(_parent._serializer, expression, _register.Peek());
 
 
-                return base.VisitSubQuery(expression);
+                return null;
             }
 
             protected override Expression VisitMember(MemberExpression expression)
