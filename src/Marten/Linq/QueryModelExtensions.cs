@@ -110,6 +110,14 @@ namespace Marten.Linq
             return take == null ? sql : sql + " LIMIT " + take.Count + " ";
         }
 
+        public static bool HasSelectMany(this QueryModel query)
+        {
+            return query.SelectClause.Selector is QuerySourceReferenceExpression
+                   &&
+                   query.SelectClause.Selector.As<QuerySourceReferenceExpression>().ReferencedQuerySource is
+                       AdditionalFromClause;
+        }
+
         public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, IQueryableDocument mapping, QueryModel query)
         {
             var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
@@ -135,9 +143,7 @@ namespace Marten.Linq
                 return new WholeDocumentSelector<T>(mapping, resolver);
             }
 
-            if (query.SelectClause.Selector is QuerySourceReferenceExpression &&
-                query.SelectClause.Selector.As<QuerySourceReferenceExpression>().ReferencedQuerySource is
-                    AdditionalFromClause)
+            if (query.HasSelectMany())
             {
                 return buildSelectorForSelectMany<T>(query.SelectClause.Selector);
             }
