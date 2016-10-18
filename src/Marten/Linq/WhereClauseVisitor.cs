@@ -163,6 +163,14 @@ namespace Marten.Linq
 
                 if (expression.QueryModel.ResultOperators.Any(x => x is AnyResultOperator))
                 {
+                    // Any() without predicate
+                    if (!expression.QueryModel.BodyClauses.Any())
+                    {
+                        var @where_any_nopredicate = new CollectionAnyNoPredicateWhereFragment(expression);
+
+                        _register.Peek()(@where_any_nopredicate);
+                        return null;
+                    }
                     var @where = new CollectionAnyContainmentWhereFragment(_parent._serializer, expression);
 
                     _register.Peek()(@where);
