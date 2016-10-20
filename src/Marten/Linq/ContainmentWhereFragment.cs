@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Baseline;
 using Marten.Util;
 using Npgsql;
@@ -78,21 +78,14 @@ namespace Marten.Linq
             }
         }
 
-        public static IWhereFragment SimpleArrayContains(ISerializer serializer, Expression from,
-            object value)
+        public static IWhereFragment SimpleArrayContains(MemberInfo[] members, ISerializer serializer, Expression @from, object value)
         {
-            var visitor = new FindMembers();
-            visitor.Visit(from);
-
-            var members = visitor.Members;
-
             if (value != null)
             {
                 var array = Array.CreateInstance(value.GetType(), 1);
                 array.SetValue(value, 0);
 
-                var dict = new Dictionary<string, object>();
-                dict.Add(members.Last().Name, array);
+                var dict = new Dictionary<string, object> {{members.Last().Name, array}};
 
                 members.Reverse().Skip(1).Each(m => { dict = new Dictionary<string, object> {{m.Name, dict}}; });
 

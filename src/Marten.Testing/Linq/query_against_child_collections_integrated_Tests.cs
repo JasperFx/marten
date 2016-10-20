@@ -344,6 +344,22 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
+        public void query_array_with_Intersect_should_blow_up()
+        {
+            buildAuthorData();
+
+            Exception<NotSupportedException>.ShouldBeThrownBy(() =>
+            {
+                var res = theSession.Query<Article>()
+                    .Where(x => x.AuthorArray.Any(s => favAuthors.Intersect(new Guid[] {Guid.NewGuid()}).Any()))
+                    .OrderBy(x => x.Long)
+                    .ToList();
+            });
+
+
+        }
+
+        [Fact]
         public void query_guid_list_intersects_array()
         {
             buildAuthorData();

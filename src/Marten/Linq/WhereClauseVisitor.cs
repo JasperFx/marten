@@ -146,8 +146,10 @@ namespace Marten.Linq
 
             protected override Expression VisitSubQuery(SubQueryExpression expression)
             {
-                ChildCollectionWhereVisitor.Parse(_parent._serializer, expression, _register.Peek());
+                Action<IWhereFragment> register = w => _register.Peek()(w);
 
+                var visitor = new ChildCollectionWhereVisitor(_parent._serializer, expression, register);
+                visitor.Parse();
 
                 return null;
             }
