@@ -5,13 +5,17 @@ using System.Reflection;
 using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Services;
+using Marten.Testing.Events.Projections;
 using Marten.Util;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class CustomAggregatorLookupTests
+    public class CustomAggregatorLookupTests : DocumentSessionFixture<NulloIdentityMap>
     {
         private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
 
@@ -21,6 +25,15 @@ namespace Marten.Testing.Events
             // Registering an aggregator lookup that provides aggregator supporting private Apply([Event Type]) methods
             theGraph.UseAggregatorLookup(new AggregatorLookup(type => typeof(AggregatorUsePrivateApply<>).CloseAndBuildAs<IAggregator>(type)));
             // ENDSAMPLE
+
+            StoreOptions(options =>
+            {
+                var serializer = new JsonNetSerializer();
+                serializer.Customize(c => c.ContractResolver = new ResolvePrivateSetters());
+                options.Serializer(serializer);
+                options.Events.UseAggregatorLookup(new AggregatorLookup(type => typeof(AggregatorUsePrivateApply<>).CloseAndBuildAs<IAggregator>(type)));
+                options.Events.InlineProjections.AggregateStreamsWith<AggregateWithPrivateEventApply>();
+            });
         }
 
         [Fact]
@@ -34,7 +47,20 @@ namespace Marten.Testing.Events
             var party = aggregator.Build(stream.Events, null);
 
             party.Name.ShouldBe("Destroy the Ring");
-        }      
+        }
+
+
+        [Fact]
+        public void can_use_custom_aggregator_with_inline_projection()
+        {            
+            var quest = new QuestStarted {Name = "Destroy the Ring"};
+            var questId = Guid.NewGuid();
+            theSession.Events.StartStream<QuestParty>(questId, quest);
+            theSession.SaveChanges();
+
+            var projection = theSession.Load<AggregateWithPrivateEventApply>(questId);
+            projection.Name.ShouldBe("Destroy the Ring");
+        }        
     }
 
     public class AggregatorUsePrivateApply<T> : IAggregator<T> where T : class, new()
@@ -118,5 +144,28 @@ namespace Marten.Testing.Events
         }
 
         public string Name { get; private set; }
+    }
+
+    internal class ResolvePrivateSetters : DefaultContractResolver
+    {
+        protected override JsonProperty CreateProperty(
+            MemberInfo member,
+            MemberSerialization memberSerialization)
+        {
+            //TODO: Maybe cache
+            var prop = base.CreateProperty(member, memberSerialization);
+
+            if (!prop.Writable)
+            {
+                var property = member as PropertyInfo;
+                if (property != null)
+                {
+                    var hasPrivateSetter = property.GetSetMethod(true) != null;
+                    prop.Writable = hasPrivateSetter;
+                }
+            }
+
+            return prop;
+        }
     }
 }
