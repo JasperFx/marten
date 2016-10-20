@@ -463,6 +463,43 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
+        public void query_against_string_array_with_Length()
+        {
+            var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
+            var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
+            var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f", "g" } };
+
+
+            theSession.Store(doc1);
+            theSession.Store(doc2);
+            theSession.Store(doc3);
+
+            theSession.SaveChanges();
+
+            theSession.Query<DocWithArrays>().Where(x => x.Strings.Length == 4).ToArray()
+                .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
+        }
+
+
+        [Fact]
+        public void query_against_string_array_with_Count_method()
+        {
+            var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
+            var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
+            var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f", "g" } };
+
+
+            theSession.Store(doc1);
+            theSession.Store(doc2);
+            theSession.Store(doc3);
+
+            theSession.SaveChanges();
+
+            theSession.Query<DocWithArrays>().Where(x => x.Strings.Count() == 4).ToArray()
+                .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
+        }
+
+        [Fact]
         public void query_against_date_array()
         {
             var doc1 = new DocWithArrays { Dates = new[] { DateTime.Today, DateTime.Today.AddDays(1), DateTime.Today.AddDays(2) } };
@@ -517,6 +554,62 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
         // ENDSAMPLE
+
+
+        [Fact]
+        public void query_against_number_list_with_count_method()
+        {
+            var doc1 = new DocWithLists { Numbers = new List<int> { 1, 2, 3 } };
+            var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
+            var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7, 8 } };
+
+
+            theSession.Store(doc1);
+            theSession.Store(doc2);
+            theSession.Store(doc3);
+
+            theSession.SaveChanges();
+
+            theSession.Query<DocWithLists>()
+                .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
+        }
+
+        [Fact]
+        public void query_against_number_list_with_count_property()
+        {
+            var doc1 = new DocWithLists { Numbers = new List<int> { 1, 2, 3 } };
+            var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
+            var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7, 8 } };
+
+
+            theSession.Store(doc1);
+            theSession.Store(doc2);
+            theSession.Store(doc3);
+
+            theSession.SaveChanges();
+
+            theSession.Query<DocWithLists>()
+                .Single(x => x.Numbers.Count == 4).Id.ShouldBe(doc3.Id);
+        }
+
+        [Fact]
+        public void query_against_number_list_with_count_property_and_other_operators()
+        {
+            var doc1 = new DocWithLists { Numbers = new List<int> { 1, 2, 3 } };
+            var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
+            var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7, 8 } };
+
+
+            theSession.Store(doc1);
+            theSession.Store(doc2);
+            theSession.Store(doc3);
+
+            theSession.SaveChanges();
+
+            theSession.Query<DocWithLists>()
+                .Single(x => x.Numbers.Count > 3).Id.ShouldBe(doc3.Id);
+        }
+
 
         [Fact]
         public void query_against_number_IList()

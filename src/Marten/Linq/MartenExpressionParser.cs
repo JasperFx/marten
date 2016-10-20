@@ -7,6 +7,9 @@ using Marten.Linq.Parsing;
 using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 using Marten.Util;
+using Remotion.Linq;
+using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
 {
@@ -75,7 +78,7 @@ namespace Marten.Linq
             new DictionaryExpressions()
         };
 
-
+        // TODO -- pull this out somewhere else
         private IWhereFragment buildSimpleWhereClause(IQueryableDocument mapping, BinaryExpression binary)
         {
             var isValueExpressionOnRight = binary.Right.IsValueExpression();
@@ -84,9 +87,16 @@ namespace Marten.Linq
 
             var op = _operators[binary.NodeType];
 
-            var visitor = new FindMembers();
-            visitor.Visit(jsonLocatorExpression);
-            var members = visitor.Members;
+            var isSubQuery = isValueExpressionOnRight
+                ? binary.Left is SubQueryExpression
+                : binary.Right is SubQueryExpression;
+
+            if (isSubQuery)
+            {
+                return buildChildCollectionQuery(mapping, jsonLocatorExpression.As<SubQueryExpression>().QueryModel, valueExpression, op);
+            }
+
+            var members = FindMembers.Determine(jsonLocatorExpression);
 
             var field = mapping.FieldFor(members);
 
@@ -122,6 +132,21 @@ namespace Marten.Linq
 
 
             return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
+        }
+
+        private IWhereFragment buildChildCollectionQuery(IQueryableDocument mapping, QueryModel query, Expression valueExpression, string op)
+        {
+            var members = FindMembers.Determine(query.MainFromClause.FromExpression);
+            var field = mapping.FieldFor(members);
+
+            if (query.HasOperator<CountResultOperator>())
+            {
+                var value = field.GetValue(valueExpression);
+
+                return new WhereFragment($"jsonb_array_length({field.SqlLocator}) {op} ?", value);
+            }
+
+            throw new NotSupportedException("Marten does not yet support this type of Linq query against child collections");
         }
 
         private static object moduloByValue(BinaryExpression binary)
