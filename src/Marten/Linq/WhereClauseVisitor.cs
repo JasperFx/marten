@@ -4,20 +4,17 @@ using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
 using Marten.Schema;
-using Marten.Util;
 using Remotion.Linq.Clauses.Expressions;
-using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
 {
     public partial class MartenExpressionParser
     {
-
         public class WhereClauseVisitor : RelinqExpressionVisitor
         {
-            private readonly MartenExpressionParser _parent;
             private readonly IQueryableDocument _mapping;
+            private readonly MartenExpressionParser _parent;
             private readonly Stack<Action<IWhereFragment>> _register = new Stack<Action<IWhereFragment>>();
             private IWhereFragment _top;
 
@@ -43,7 +40,7 @@ namespace Marten.Linq
                     return null;
                 }
 
-                if (binary.NodeType == ExpressionType.AndAlso || binary.NodeType == ExpressionType.OrElse)
+                if ((binary.NodeType == ExpressionType.AndAlso) || (binary.NodeType == ExpressionType.OrElse))
                 {
                     var separator = binary.NodeType == ExpressionType.AndAlso
                         ? "and"
@@ -67,28 +64,42 @@ namespace Marten.Linq
 
             protected override Expression VisitMethodCall(MethodCallExpression expression)
             {
-                var parser = _parent._options.Linq.MethodCallParsers.FirstOrDefault(x => x.Matches(expression)) 
-                    ?? _parsers.FirstOrDefault(x => x.Matches(expression));
+                var parser = _parent._options.Linq.MethodCallParsers.FirstOrDefault(x => x.Matches(expression))
+                             ?? _parsers.FirstOrDefault(x => x.Matches(expression));
 
                 if (parser != null)
                 {
-                    var @where = parser.Parse(_mapping, _parent._serializer, expression);
-                    _register.Peek()(@where);
+                    var where = parser.Parse(_mapping, _parent._serializer, expression);
+                    _register.Peek()(where);
 
                     return null;
                 }
 
 
-                throw new NotSupportedException($"Marten does not (yet) support Linq queries using the {expression.Method.DeclaringType.FullName}.{expression.Method.Name}() method");
+                throw new NotSupportedException(
+                    $"Marten does not (yet) support Linq queries using the {expression.Method.DeclaringType.FullName}.{expression.Method.Name}() method");
             }
 
             protected override Expression VisitUnary(UnaryExpression node)
             {
+
+
                 switch (node.NodeType)
                 {
                     case ExpressionType.Not:
-                        var visitor = new NotVisitor(this, _register.Peek());
-                        visitor.Visit(node);
+                        if (node.Operand is SubQueryExpression)
+                        {
+                            var nested = new WhereClauseVisitor(_parent, _mapping);
+                            nested.Visit(node.Operand);
+
+                            var @where = new NotWhereFragment(nested.ToWhereFragment());
+                            _register.Peek()(@where);
+                        }
+                        else
+                        {
+                            var visitor = new NotVisitor(this, _mapping, _register.Peek());
+                            visitor.Visit(node);
+                        }
 
                         return null;
                 }
@@ -99,49 +110,8 @@ namespace Marten.Linq
 
             protected override Expression VisitConstant(ConstantExpression node)
             {
-                if (node.Type == typeof(bool) && (bool)node.Value) _top = new WhereFragment("true");
+                if ((node.Type == typeof(bool)) && (bool) node.Value) _top = new WhereFragment("true");
                 return base.VisitConstant(node);
-            }
-
-            public class NotVisitor : RelinqExpressionVisitor
-            {
-                private readonly WhereClauseVisitor _parent;
-                private readonly Action<IWhereFragment> _callback;
-
-                public NotVisitor(WhereClauseVisitor parent, Action<IWhereFragment> callback)
-                {
-                    _parent = parent;
-                    _callback = callback;
-                }
-
-                protected override Expression VisitMember(MemberExpression expression)
-                {
-                    if (expression.Type == typeof (bool))
-                    {
-                        var locator = _parent._mapping.JsonLocator(expression);
-                        var @where = new WhereFragment($"{locator} = False");
-                        _callback(@where);
-                    }
-
-                    return base.VisitMember(expression);
-                }
-
-                protected override Expression VisitBinary(BinaryExpression expression)
-                {
-                    if (expression.Type == typeof (bool) && expression.NodeType == ExpressionType.NotEqual)
-                    {
-                        var binaryExpression = expression.As<BinaryExpression>();
-                        var locator = _parent._mapping.JsonLocator(binaryExpression.Left);
-                        if (binaryExpression.Right.NodeType == ExpressionType.Constant &&
-                            binaryExpression.Right.As<ConstantExpression>().Value == null)
-                        {
-                            var @where = new WhereFragment($"({locator}) IS NULL");
-                            _callback(@where);
-                        }
-                    }
-
-                    return base.VisitBinary(expression);
-                }
             }
 
             protected override Expression VisitSubQuery(SubQueryExpression expression)
@@ -156,18 +126,16 @@ namespace Marten.Linq
 
             protected override Expression VisitMember(MemberExpression expression)
             {
-                if (expression.Type == typeof (bool))
+                if (expression.Type == typeof(bool))
                 {
                     var locator = _mapping.JsonLocator(expression);
-                    var @where = new WhereFragment("{0} = True".ToFormat(locator), true);
-                    _register.Peek()(@where);
+                    var where = new WhereFragment("{0} = True".ToFormat(locator), true);
+                    _register.Peek()(where);
                     return null;
                 }
 
                 return base.VisitMember(expression);
             }
-
-
         }
     }
 }
