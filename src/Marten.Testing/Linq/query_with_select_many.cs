@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Marten.Util;
 using Shouldly;
 using Xunit;
 
@@ -20,11 +21,27 @@ namespace Marten.Testing.Linq
                 session.SaveChanges();
             }
 
+            using (var conn = theStore.Advanced.OpenConnection())
+            {
+                conn.Execute(c =>
+                {
+                    var sql = @"select distinct jsonb_array_elements(data -> 'Tags') as x
+from mt_doc_product
+order by x;";
+
+                    var reader = c.Sql(sql).ExecuteReader();
+                    while (reader.Read())
+                    {
+                        Console.WriteLine(reader.GetString(0));
+                    }
+                });
+            }
+
             using (var query = theStore.QuerySession())
             {
-                var names = query.Query<Product>().SelectMany(x => x.Tags).ToList();
+                var names = query.Query<Product>().SelectMany(x => x.Tags).Distinct().ToList();
 
-                names.Count.ShouldBe(6);
+                names.OrderBy(x => x).ShouldHaveTheSameElementsAs("a", "b", "c", "d", "e", "f");
             }
         }
     }
