@@ -39,9 +39,13 @@ order by x;";
 
             using (var query = theStore.QuerySession())
             {
-                var names = query.Query<Product>().SelectMany(x => x.Tags).Distinct().ToList();
+                var distinct = query.Query<Product>().SelectMany(x => x.Tags).Distinct().ToList();
 
-                names.OrderBy(x => x).ShouldHaveTheSameElementsAs("a", "b", "c", "d", "e", "f");
+                distinct.OrderBy(x => x).ShouldHaveTheSameElementsAs("a", "b", "c", "d", "e", "f");
+
+                var names = query.Query<Product>().SelectMany(x => x.Tags).ToList();
+                names
+                    .Count().ShouldBe(9);
             }
         }
     }
