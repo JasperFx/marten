@@ -26,7 +26,7 @@ namespace Marten.Linq.Parsing
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var value = expression.Arguments.Single().Value();
-            return ContainmentWhereFragment.SimpleArrayContains(serializer, expression.Object, value);
+            return ContainmentWhereFragment.SimpleArrayContains(FindMembers.Determine(expression.Object) ,serializer, expression.Object, value);
         }
     }
 }

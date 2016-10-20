@@ -17,12 +17,14 @@ namespace Marten.Linq
     public class CollectionAnyContainmentWhereFragment : IWhereFragment
     {
         private static readonly Type[] supportedTypes = new Type[] { typeof(string), typeof(Guid) };
+        private readonly MemberInfo[] _members;
         private readonly ISerializer _serializer;
         private readonly SubQueryExpression _expression;
 
 
-        public CollectionAnyContainmentWhereFragment(ISerializer serializer, SubQueryExpression expression)
+        public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression)
         {
+            _members = members;
             _serializer = serializer;
             _expression = expression;
         }
@@ -38,7 +40,7 @@ namespace Marten.Linq
 
             if (!wheres.All(x => x is BinaryExpression || x is SubQueryExpression))
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             var binaryExpressions = wheres.OfType<BinaryExpression>().ToArray();
@@ -57,10 +59,6 @@ namespace Marten.Linq
                 yield break;
             }
 
-            var visitor = new FindMembers();
-            visitor.Visit(_expression.QueryModel.MainFromClause.FromExpression);
-
-            var members = visitor.Members;
             var dictionary = new Dictionary<string, object>();
 
             // Are we querying directly againt the elements as you would for primitive types?
@@ -72,9 +70,9 @@ namespace Marten.Linq
                 }
 
                 var values = binaryExpressions.Select(x => x.Right.Value()).ToArray();
-                if (members.Count == 1)
+                if (_members.Length == 1)
                 {
-                    dictionary.Add(members.Single().Name, values);
+                    dictionary.Add(_members.Single().Name, values);
                 }
                 else
                 {
@@ -87,9 +85,9 @@ namespace Marten.Linq
                 binaryExpressions.Each(x => gatherSearch(x, search));
 
 
-                if (members.Count == 1)
+                if (_members.Length == 1)
                 {
-                    dictionary.Add(members.Single().Name, new[] { search });
+                    dictionary.Add(_members.Single().Name, new[] { search });
                 }
                 else
                 {
