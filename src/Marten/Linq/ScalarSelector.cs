@@ -2,7 +2,6 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Services;
 
 namespace Marten.Linq

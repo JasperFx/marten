@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Transforms;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -145,15 +149,25 @@ namespace Marten.Linq
 
             if (query.HasSelectMany())
             {
-                return buildSelectorForSelectMany<T>(query.SelectClause.Selector);
+                return buildSelectorForSelectMany<T>(mapping, query);
             }
 
             return createSelectTransformSelector<T>(schema, mapping, query);
         }
 
-        private static ISelector<T> buildSelectorForSelectMany<T>(Expression selectClauseSelector)
+        private static ISelector<T> buildSelectorForSelectMany<T>(IQueryableDocument mapping, QueryModel query)
         {
-            throw new NotImplementedException();
+            var expression = query.SelectClause.Selector.As<QuerySourceReferenceExpression>();
+            var from = expression.ReferencedQuerySource.As<AdditionalFromClause>().FromExpression;
+
+            var members = FindMembers.Determine(from);
+            var field = mapping.FieldFor(members);
+
+            // What if there's a select here? Worry about that later?
+
+            var isDistinct = query.HasOperator<DistinctResultOperator>();
+
+            return new SingleFieldSelector<T>(isDistinct, $"jsonb_array_elements_text({field.SqlLocator}) as x");
         }
 
         private static ISelector<T> createSelectTransformSelector<T>(IDocumentSchema schema, IQueryableDocument mapping,
@@ -178,4 +192,6 @@ namespace Marten.Linq
 
 
     }
+
+
 }
