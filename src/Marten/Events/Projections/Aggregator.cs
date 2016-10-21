@@ -14,10 +14,15 @@ namespace Marten.Events.Projections
         private readonly IDictionary<Type, object> _aggregations = new Dictionary<Type, object>();
 
 
-        public Aggregator() 
+        public Aggregator() : this(typeof(T).GetMethods()
+                .Where(x => x.Name == ApplyMethod && x.GetParameters().Length == 1))
+        {           
+            Alias = typeof(T).Name.ToTableAlias();
+        }
+
+        protected Aggregator(IEnumerable<MethodInfo> overrideMethodLookup)
         {
-            typeof (T).GetMethods()
-                .Where(x => x.Name == ApplyMethod && x.GetParameters().Length == 1)
+            overrideMethodLookup
                 .Each(method =>
                 {
                     object step = null;
@@ -36,11 +41,9 @@ namespace Marten.Events.Projections
 
                     _aggregations.Add(eventType, step);
                 });
-
-            Alias = typeof (T).Name.ToTableAlias();
         }
 
-        public Type AggregateType => typeof (T);
+        public Type AggregateType => typeof(T);
 
         public string Alias { get; }
 
@@ -57,9 +60,9 @@ namespace Marten.Events.Projections
 
         public Aggregator<T> Add<TEvent>(IAggregation<T, TEvent> aggregation)
         {
-            if (_aggregations.ContainsKey(typeof (TEvent)))
+            if (_aggregations.ContainsKey(typeof(TEvent)))
             {
-                _aggregations[typeof (TEvent)] = aggregation;
+                _aggregations[typeof(TEvent)] = aggregation;
             }
             else
             {
@@ -76,8 +79,8 @@ namespace Marten.Events.Projections
 
         public IAggregation<T, TEvent> AggregatorFor<TEvent>()
         {
-            return _aggregations.ContainsKey(typeof (TEvent))
-                ? _aggregations[typeof (TEvent)].As<IAggregation<T, TEvent>>()
+            return _aggregations.ContainsKey(typeof(TEvent))
+                ? _aggregations[typeof(TEvent)].As<IAggregation<T, TEvent>>()
                 : null;
         }
 

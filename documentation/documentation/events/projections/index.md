@@ -77,6 +77,11 @@ At this point, you would be able to query against `QuestParty` as just another d
 
 
 `EventGraph.UseAggregatorLookup(IAggregatorLookup aggregatorLookup)` can be used to register an `IAggregatorLookup` that is used to look up `IAggregator<T>` for aggregations. This allows e.g. for generic aggregation strategy to be used, rathen than registering aggregators 
-case-by-case through `EventGraphAddAggregator<T>(IAggregator<T> aggregator)`.   
+case-by-case through `EventGraphAddAggregator<T>(IAggregator<T> aggregator)`. 
+
+A shorthand extension method `EventGraph.UseAggregatorLookup(this EventGraph eventGraph, AggregationLookupStrategy strategy)` can be used to set default aggregation lookup, whereby 
+
+- `AggregationLookupStrategy.UsePublicApply` resolves aggregators that use public Apply
+- `AggregationLookupStrategy.UsePrivateApply` resolves aggregators that use private Apply  
 
 <[sample:register-custom-aggregator-lookup]>
