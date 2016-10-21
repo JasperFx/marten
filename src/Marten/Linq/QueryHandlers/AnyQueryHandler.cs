@@ -2,11 +2,15 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
+using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.QueryHandlers
 {
@@ -26,7 +30,24 @@ namespace Marten.Linq.QueryHandlers
         public void ConfigureCommand(NpgsqlCommand command)
         {
             var mapping = _schema.MappingFor(_query).ToQueryableDocument();
-            var sql = "select (count(*) > 0) as result from " + mapping.Table.QualifiedName + " as d";
+
+            var select = "select (count(*) > 0) as result";
+
+            // TODO -- a lot of this is getting duplicated. Gather up the SelectMany handling
+            // better
+            if (_query.HasSelectMany())
+            {
+                var expression = _query.SelectClause.Selector.As<QuerySourceReferenceExpression>();
+                var from = expression.ReferencedQuerySource.As<AdditionalFromClause>().FromExpression;
+
+                var members = FindMembers.Determine(from);
+                var field = mapping.FieldFor(members);
+
+                select = $"select (sum(jsonb_array_length({field.SqlLocator})) > 0) as result";
+            }
+
+
+            var sql = $"{select} from {mapping.Table.QualifiedName} as d";
 
             var where = _schema.BuildWhereFragment(mapping, _query);
             sql = sql.AppendWhere(@where, command);
@@ -36,16 +57,20 @@ namespace Marten.Linq.QueryHandlers
 
         public bool Handle(DbDataReader reader, IIdentityMap map)
         {
-            reader.Read();
+            if (!reader.Read())
+            {
+                return false;
+            }
 
-            return reader.GetBoolean(0);
+            return !reader.IsDBNull(0) && reader.GetBoolean(0);
         }
 
         public async Task<bool> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            await reader.ReadAsync(token).ConfigureAwait(false);
+            var hasRow = await reader.ReadAsync(token).ConfigureAwait(false);
 
-            return await reader.GetFieldValueAsync<bool>(0, token).ConfigureAwait(false);
+
+            return hasRow && !(await reader.IsDBNullAsync(0, token).ConfigureAwait(false)) && await reader.GetFieldValueAsync<bool>(0, token).ConfigureAwait(false);
         }
     }
 }
