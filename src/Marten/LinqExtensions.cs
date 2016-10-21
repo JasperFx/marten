@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Baseline;
 
 namespace Marten
 {
@@ -15,6 +16,25 @@ namespace Marten
         public static bool IsOneOf<T>(this T variable, params T[] matches)
         {
             return matches.Contains(variable);
+        }
+
+
+        /// <summary>
+        /// Used for Linq queries to match on empty child collections
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumerable"></param>
+        /// <returns></returns>
+        public static bool IsEmpty<T>(this IEnumerable<T> enumerable)
+        {
+            if (enumerable == null) return true;
+
+            if (enumerable is string)
+            {
+                return string.IsNullOrEmpty(enumerable.As<string>());
+            }
+
+            return !enumerable.Any();
         }
     }
 }
