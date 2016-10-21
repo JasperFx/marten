@@ -144,6 +144,7 @@ namespace Marten.Linq
             return createSelectTransformSelector<T>(schema, mapping, query);
         }
 
+        // TODO -- might be better to have this return an intermediate object
         private static ISelector<T> buildSelectorForSelectMany<T>(IQueryableDocument mapping, QueryModel query, ISerializer serializer)
         {
             var expression = query.SelectClause.Selector.As<QuerySourceReferenceExpression>();

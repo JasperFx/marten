@@ -1,12 +1,17 @@
 using System;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
+using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.QueryHandlers
 {
@@ -27,7 +32,24 @@ namespace Marten.Linq.QueryHandlers
         {
             var mapping = _schema.MappingFor(_query.SourceType()).ToQueryableDocument();
 
-            var sql = "select count(*) as number from " + mapping.Table.QualifiedName + " as d";
+            var select = "select count(*) as number";
+            if (_query.HasSelectMany())
+            {
+                if (_query.HasOperator<DistinctResultOperator>())
+                {
+                    throw new NotSupportedException("Marten does not yet support SelectMany() with both a Distinct() and Count() operator");
+                }
+
+                var expression = _query.SelectClause.Selector.As<QuerySourceReferenceExpression>();
+                var from = expression.ReferencedQuerySource.As<AdditionalFromClause>().FromExpression;
+
+                var members = FindMembers.Determine(from);
+                var field = mapping.FieldFor(members);
+
+                select = $"select sum(jsonb_array_length({field.SqlLocator})) as number";
+            }
+
+            var sql = $"{select} from {mapping.Table.QualifiedName} as d";
 
             var where = _schema.BuildWhereFragment(mapping, _query);
 
