@@ -22,11 +22,13 @@ namespace Marten.Testing.Events
         {            
             StoreOptions(options =>
             {
+                // SAMPLE: scenarios-immutableprojections-storesetup
                 var serializer = new JsonNetSerializer();
                 serializer.Customize(c => c.ContractResolver = new ResolvePrivateSetters());
                 options.Serializer(serializer);
-                options.Events.UseAggregatorLookup(new AggregatorLookup(type => typeof(AggregatorApplyPrivate<>).CloseAndBuildAs<IAggregator>(type)));
+                options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);
                 options.Events.InlineProjections.AggregateStreamsWith<AggregateWithPrivateEventApply>();
+                // ENDSAMPLE
             });
         }
 
@@ -84,7 +86,8 @@ namespace Marten.Testing.Events
 
         [Fact]
         public void can_use_custom_aggregator_with_inline_projection()
-        {            
+        {
+            // SAMPLE: scenarios-immutableprojections-projectstream
             var quest = new QuestStarted {Name = "Destroy the Ring"};
             var questId = Guid.NewGuid();
             theSession.Events.StartStream<QuestParty>(questId, quest);
@@ -92,13 +95,14 @@ namespace Marten.Testing.Events
 
             var projection = theSession.Load<AggregateWithPrivateEventApply>(questId);
             projection.Name.ShouldBe("Destroy the Ring");
-        }        
+            // ENDSAMPLE
+        }
     }
 
-    
+    // SAMPLE: scenarios-immutableprojections-projection
     public class AggregateWithPrivateEventApply
     {
-        public Guid Id { get; set; }
+        public Guid Id { get; private set; }
         
         private void Apply(QuestStarted started)
         {
@@ -107,14 +111,15 @@ namespace Marten.Testing.Events
 
         public string Name { get; private set; }
     }
+    // ENDSAMPLE
 
+    // SAMPLE: scenarios-immutableprojections-serializer
     internal class ResolvePrivateSetters : DefaultContractResolver
     {
         protected override JsonProperty CreateProperty(
             MemberInfo member,
             MemberSerialization memberSerialization)
-        {
-            //TODO: Maybe cache
+        {            
             var prop = base.CreateProperty(member, memberSerialization);
 
             if (!prop.Writable)
@@ -130,4 +135,5 @@ namespace Marten.Testing.Events
             return prop;
         }
     }
+    // ENDSAMPLE
 }
