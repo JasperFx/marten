@@ -71,6 +71,7 @@ namespace Marten.Linq
                 : locator + " desc";
         }
 
+        [Obsolete("Moving this functionality to LinqQuery")]
         public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, IQueryableDocument mapping,
             QueryModel query)
         {

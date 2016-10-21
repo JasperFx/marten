@@ -70,7 +70,10 @@ namespace Marten.Linq.Model
         public void ConfigureCommand(NpgsqlCommand command)
         {
             var sql = Selector.ToSelectClause(_mapping);
-            var @where = _schema.BuildWhereFragment(_mapping, _query);
+
+
+
+            var @where = buildWhereFragment();
 
 
 
@@ -83,6 +86,22 @@ namespace Marten.Linq.Model
             sql = _query.AppendOffset(sql);
 
             command.AppendQuery(sql);
+        }
+
+        private IWhereFragment buildWhereFragment()
+        {
+            var bodies = _subQuery == null 
+                ? _query.AllBodyClauses() 
+                : _query.BodyClauses.Take(_subQuery.Index);
+
+            var wheres = bodies.OfType<WhereClause>().ToArray();
+            if (wheres.Length == 0) return _mapping.DefaultWhereFragment();
+
+            var where = wheres.Length == 1
+                ? _schema.Parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
+                : new CompoundWhereFragment(_schema.Parser, _mapping, "and", wheres);
+
+            return _mapping.FilterDocuments(_query, where);
         }
     }
 }
