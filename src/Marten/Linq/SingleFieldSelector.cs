@@ -20,6 +20,10 @@ namespace Marten.Linq
         {
         }
 
+        public SingleFieldSelector(bool distinct, string field) : base(distinct, field)
+        {
+        }
+
         public T Resolve(DbDataReader reader, IIdentityMap map)
         {
             var raw = reader[0];

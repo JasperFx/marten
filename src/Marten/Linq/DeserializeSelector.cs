@@ -14,6 +14,11 @@ namespace Marten.Linq
             _serializer = serializer;
         }
 
+        public DeserializeSelector(ISerializer serializer, params string[] selectFields) : base(selectFields)
+        {
+            _serializer = serializer;
+        }
+
         public T Resolve(DbDataReader reader, IIdentityMap map)
         {
             return _serializer.FromJson<T>(reader.GetString(0));
