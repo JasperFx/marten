@@ -81,6 +81,27 @@ namespace Marten.Testing.Linq
                 list.Count.ShouldBe(expectedCount);
             }
         }
+
+        [Fact]
+        public void select_many_against_complex_type_with_count()
+        {
+            var product1 = new Product { Tags = new[] { "a", "b", "c" } };
+            var product2 = new Product { Tags = new[] { "b", "c", "d" } };
+            var product3 = new Product { Tags = new[] { "d", "e", "f" } };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(product1, product2, product3);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Query<Product>().SelectMany(x => x.Tags)
+                    .Count().ShouldBe(9);
+
+            }
+        }
     }
 
     public class Product
