@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -99,6 +100,85 @@ namespace Marten.Testing.Linq
             {
                 query.Query<Product>().SelectMany(x => x.Tags)
                     .Count().ShouldBe(9);
+
+            }
+        }
+
+        [Fact]
+        public async Task select_many_against_complex_type_with_count_async()
+        {
+            var product1 = new Product { Tags = new[] { "a", "b", "c" } };
+            var product2 = new Product { Tags = new[] { "b", "c", "d" } };
+            var product3 = new Product { Tags = new[] { "d", "e", "f" } };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(product1, product2, product3);
+                await session.SaveChangesAsync();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                (await query.Query<Product>().SelectMany(x => x.Tags)
+                    .CountAsync()).ShouldBe(9);
+
+            }
+        }
+
+        [Fact]
+        public void select_many_with_any()
+        {
+            var product1 = new Product { Tags = new[] { "a", "b", "c" } };
+            var product2 = new Product { Tags = new[] { "b", "c", "d" } };
+            var product3 = new Product { Tags = new[] { "d", "e", "f" } };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(product1, product2, product3);
+
+                // Some Target docs w/ no children
+                session.Store(Target.Random(), Target.Random(), Target.Random());
+
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Query<Product>().SelectMany(x => x.Tags)
+                    .Any().ShouldBeTrue();
+
+                query.Query<Target>().SelectMany(x => x.Children)
+                    .Any().ShouldBeFalse();
+
+
+            }
+        }
+
+        [Fact]
+        public async Task select_many_with_any_async()
+        {
+            var product1 = new Product { Tags = new[] { "a", "b", "c" } };
+            var product2 = new Product { Tags = new[] { "b", "c", "d" } };
+            var product3 = new Product { Tags = new[] { "d", "e", "f" } };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(product1, product2, product3);
+
+                // Some Target docs w/ no children
+                session.Store(Target.Random(), Target.Random(), Target.Random());
+
+                await session.SaveChangesAsync().ConfigureAwait(false);
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                (await query.Query<Product>().SelectMany(x => x.Tags)
+                    .AnyAsync()).ShouldBeTrue();
+
+                (await query.Query<Target>().SelectMany(x => x.Children)
+                    .AnyAsync()).ShouldBeFalse();
+
 
             }
         }

@@ -33,6 +33,9 @@ namespace Marten.Linq.QueryHandlers
             var mapping = _schema.MappingFor(_query.SourceType()).ToQueryableDocument();
 
             var select = "select count(*) as number";
+
+            // TODO -- a lot of this is getting duplicated. Gather up the SelectMany handling
+            // better
             if (_query.HasSelectMany())
             {
                 if (_query.HasOperator<DistinctResultOperator>())
