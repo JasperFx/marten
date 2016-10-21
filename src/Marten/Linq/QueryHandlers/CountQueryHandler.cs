@@ -34,8 +34,6 @@ namespace Marten.Linq.QueryHandlers
 
             var select = "select count(*) as number";
 
-            // TODO -- a lot of this is getting duplicated. Gather up the SelectMany handling
-            // better
             if (_query.HasSelectMany())
             {
                 if (_query.HasOperator<DistinctResultOperator>())
@@ -43,13 +41,9 @@ namespace Marten.Linq.QueryHandlers
                     throw new NotSupportedException("Marten does not yet support SelectMany() with both a Distinct() and Count() operator");
                 }
 
-                var expression = _query.SelectClause.Selector.As<QuerySourceReferenceExpression>();
-                var from = expression.ReferencedQuerySource.As<AdditionalFromClause>().FromExpression;
+                var selectMany = _query.ToSelectManyQuery(mapping);
 
-                var members = FindMembers.Determine(from);
-                var field = mapping.FieldFor(members);
-
-                select = $"select sum(jsonb_array_length({field.SqlLocator})) as number";
+                select = $"select sum(jsonb_array_length({selectMany.SqlLocator})) as number";
             }
 
             var sql = $"{select} from {mapping.Table.QualifiedName} as d";

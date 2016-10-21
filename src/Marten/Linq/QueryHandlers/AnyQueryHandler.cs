@@ -33,17 +33,11 @@ namespace Marten.Linq.QueryHandlers
 
             var select = "select (count(*) > 0) as result";
 
-            // TODO -- a lot of this is getting duplicated. Gather up the SelectMany handling
-            // better
             if (_query.HasSelectMany())
             {
-                var expression = _query.SelectClause.Selector.As<QuerySourceReferenceExpression>();
-                var from = expression.ReferencedQuerySource.As<AdditionalFromClause>().FromExpression;
+                var selectMany = _query.ToSelectManyQuery(mapping);
 
-                var members = FindMembers.Determine(from);
-                var field = mapping.FieldFor(members);
-
-                select = $"select (sum(jsonb_array_length({field.SqlLocator})) > 0) as result";
+                select = $"select (sum(jsonb_array_length({selectMany.SqlLocator})) > 0) as result";
             }
 
 
