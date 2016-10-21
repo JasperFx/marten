@@ -16,8 +16,6 @@ namespace Marten.Linq
 {
     public static class QueryModelExtensions
     {
-        private static readonly Conversions conversions = new Conversions();
-
         public static Type SourceType(this QueryModel query)
         {
             return query.MainFromClause.ItemType;
@@ -118,7 +116,9 @@ namespace Marten.Linq
         {
             var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
             if (selectable != null)
+            {
                 return selectable.BuildSelector<T>(schema, mapping);
+            }
 
 
             if (query.HasSelectMany())
@@ -144,30 +144,14 @@ namespace Marten.Linq
             return createSelectTransformSelector<T>(schema, mapping, query);
         }
 
-        // TODO -- might be better to have this return an intermediate object
+        public static SelectManyQuery ToSelectManyQuery(this QueryModel query, IQueryableDocument mapping)
+        {
+            return new SelectManyQuery(mapping, query);
+        }
+
         private static ISelector<T> buildSelectorForSelectMany<T>(IQueryableDocument mapping, QueryModel query, ISerializer serializer)
         {
-            var expression = query.SelectClause.Selector.As<QuerySourceReferenceExpression>();
-            var from = expression.ReferencedQuerySource.As<AdditionalFromClause>().FromExpression;
-
-            var members = FindMembers.Determine(from);
-            var field = mapping.FieldFor(members);
-
-            // What if there's a select here? Worry about that later?
-
-            var isDistinct = query.HasOperator<DistinctResultOperator>();
-
-            if (typeof(T) == typeof(string))
-            {
-                return new SingleFieldSelector<T>(isDistinct, $"jsonb_array_elements_text({field.SqlLocator})");
-            }
-            else if (TypeMappings.HasTypeMapping(typeof(T)))
-            {
-                return new ArrayElementFieldSelector<T>(isDistinct, field, conversions);
-            }
-
-            return new DeserializeSelector<T>(serializer, $"jsonb_array_elements_text({field.SqlLocator})");
-            
+            return query.ToSelectManyQuery(mapping).ToSelector<T>(serializer);
         }
 
         private static ISelector<T> createSelectTransformSelector<T>(IDocumentSchema schema, IQueryableDocument mapping,
