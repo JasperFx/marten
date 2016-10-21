@@ -41,7 +41,11 @@ namespace Marten.Linq.Model
 
             SourceType = _query.SourceType();
             Selector = BuildSelector(schema, query, joins, stats);
+
+            Where = buildWhereFragment();
         }
+
+        public IWhereFragment Where { get; set; }
 
         public Type SourceType { get; }
 
@@ -71,13 +75,16 @@ namespace Marten.Linq.Model
         {
             var sql = Selector.ToSelectClause(_mapping);
 
+            string filter = null;
+            if (Where != null)
+            {
+                filter = Where.ToSql(command);
+            }
 
-
-            var @where = buildWhereFragment();
-
-
-
-            sql = sql.AppendWhere(@where, command);
+            if (filter.IsNotEmpty())
+            {
+                sql += " where " + filter;
+            }
 
             var orderBy = _query.ToOrderClause(_mapping);
             if (orderBy.IsNotEmpty()) sql += orderBy;
