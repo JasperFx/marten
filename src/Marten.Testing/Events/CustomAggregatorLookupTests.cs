@@ -6,6 +6,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Services;
+using Marten.Services.Events;
 using Marten.Testing.Events.Projections;
 using Marten.Util;
 using Newtonsoft.Json;
@@ -16,22 +17,15 @@ using Xunit;
 namespace Marten.Testing.Events
 {
     public class CustomAggregatorLookupTests : DocumentSessionFixture<NulloIdentityMap>
-    {
-        private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
-
+    {        
         public CustomAggregatorLookupTests()
-        {
-            // SAMPLE: register-custom-aggregator-lookup
-            // Registering an aggregator lookup that provides aggregator supporting private Apply([Event Type]) methods
-            theGraph.UseAggregatorLookup(new AggregatorLookup(type => typeof(AggregatorUsePrivateApply<>).CloseAndBuildAs<IAggregator>(type)));
-            // ENDSAMPLE
-
+        {            
             StoreOptions(options =>
             {
                 var serializer = new JsonNetSerializer();
                 serializer.Customize(c => c.ContractResolver = new ResolvePrivateSetters());
                 options.Serializer(serializer);
-                options.Events.UseAggregatorLookup(new AggregatorLookup(type => typeof(AggregatorUsePrivateApply<>).CloseAndBuildAs<IAggregator>(type)));
+                options.Events.UseAggregatorLookup(new AggregatorLookup(type => typeof(AggregatorApplyPrivate<>).CloseAndBuildAs<IAggregator>(type)));
                 options.Events.InlineProjections.AggregateStreamsWith<AggregateWithPrivateEventApply>();
             });
         }
@@ -39,6 +33,9 @@ namespace Marten.Testing.Events
         [Fact]
         public void can_lookup_private_apply_methods()
         {
+            var theGraph = new EventGraph(new StoreOptions());
+            theGraph.UseAggregatorLookup(new AggregatorLookup(type => typeof(AggregatorApplyPrivate<>).CloseAndBuildAs<IAggregator>(type)));            
+
             var aggregator = theGraph.AggregateFor<AggregateWithPrivateEventApply>();
 
             var stream = new EventStream(Guid.NewGuid(), false)
@@ -49,6 +46,41 @@ namespace Marten.Testing.Events
             party.Name.ShouldBe("Destroy the Ring");
         }
 
+
+        [Fact]
+        public void can_set_private_apply_aggregator_through_extension_methods_and_strategy()
+        {
+            var theGraph = new EventGraph(new StoreOptions());
+            // SAMPLE: register-custom-aggregator-lookup
+            // Registering an aggregator lookup that provides aggregator supporting private Apply([Event Type]) methods
+            theGraph.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);
+            // ENDSAMPLE
+
+            var aggregator = theGraph.AggregateFor<AggregateWithPrivateEventApply>();
+
+            var stream = new EventStream(Guid.NewGuid(), false)
+                .Add(new QuestStarted { Name = "Destroy the Ring" });
+
+            var party = aggregator.Build(stream.Events, null);
+
+            party.Name.ShouldBe("Destroy the Ring");
+        }
+
+        [Fact]
+        public void can_set_aggregator_through_extension_methods_and_strategy()
+        {
+            var theGraph = new EventGraph(new StoreOptions());
+            theGraph.UseAggregatorLookup(AggregationLookupStrategy.UsePublicApply);            
+
+            var aggregator = theGraph.AggregateFor<QuestParty>();
+
+            var stream = new EventStream(Guid.NewGuid(), false)
+                .Add(new QuestStarted { Name = "Destroy the Ring" });
+
+            var party = aggregator.Build(stream.Events, null);
+
+            party.Name.ShouldBe("Destroy the Ring");
+        }
 
         [Fact]
         public void can_use_custom_aggregator_with_inline_projection()
@@ -63,77 +95,7 @@ namespace Marten.Testing.Events
         }        
     }
 
-    public class AggregatorUsePrivateApply<T> : IAggregator<T> where T : class, new()
-    {
-        public static readonly string ApplyMethod = "Apply";
-
-        private readonly IDictionary<Type, object> _aggregations = new Dictionary<Type, object>();
-
-
-        public AggregatorUsePrivateApply()
-        {
-            typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
-                .Where(x => x.Name == ApplyMethod && x.GetParameters().Length == 1)
-                .Each(method =>
-                {
-                    var eventType = method.GetParameters().Single<ParameterInfo>().ParameterType;
-                    var step = typeof(AggregationStep<,>)
-                        .CloseAndBuildAs<object>(method, typeof(T), eventType);
-
-                    _aggregations.Add(eventType, step);
-                });
-
-            Alias = typeof(T).Name.ToTableAlias();
-        }
-
-        public Type AggregateType => typeof(T);
-
-        public string Alias { get; }
-
-        public T Build(IEnumerable<IEvent> events, IDocumentSession session)
-        {
-            var state = new T();
-
-            events.Each(x => x.Apply(state, this));
-
-            return state;
-        }
-
-        public Type[] EventTypes => _aggregations.Keys.ToArray();
-
-        public AggregatorUsePrivateApply<T> Add<TEvent>(IAggregation<T, TEvent> aggregation)
-        {
-            if (_aggregations.ContainsKey(typeof(TEvent)))
-            {
-                _aggregations[typeof(TEvent)] = aggregation;
-            }
-            else
-            {
-                _aggregations.Add(typeof(TEvent), aggregation);
-            }
-
-            return this;
-        }
-
-        public AggregatorUsePrivateApply<T> Add<TEvent>(Action<T, TEvent> application)
-        {
-            return Add(new AggregationStep<T, TEvent>(application));
-        }
-
-        public IAggregation<T, TEvent> AggregatorFor<TEvent>()
-        {
-            return _aggregations.ContainsKey(typeof(TEvent))
-                ? _aggregations[typeof(TEvent)].As<IAggregation<T, TEvent>>()
-                : null;
-        }
-
-
-        public bool AppliesTo(EventStream stream)
-        {
-            return stream.Events.Any(x => _aggregations.ContainsKey(x.Data.GetType()));
-        }
-    }
-
+    
     public class AggregateWithPrivateEventApply
     {
         public Guid Id { get; set; }
