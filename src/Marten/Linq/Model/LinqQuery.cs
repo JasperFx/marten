@@ -86,20 +86,28 @@ namespace Marten.Linq.Model
                 sql += " where " + filter;
             }
 
-            var orderBy = _query.ToOrderClause(_mapping);
+            var orderBy = determineOrderClause();
+
             if (orderBy.IsNotEmpty()) sql += orderBy;
 
+            // TODO -- this needs to use parameters instead
             sql = _query.AppendLimit(sql);
             sql = _query.AppendOffset(sql);
 
             command.AppendQuery(sql);
         }
 
+        private string determineOrderClause()
+        {
+            var orders = bodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
+            if (!orders.Any()) return string.Empty;
+
+            return " order by " + orders.Select(c => c.ToOrderClause(_mapping)).Join(", ");
+        }
+
         private IWhereFragment buildWhereFragment()
         {
-            var bodies = _subQuery == null 
-                ? _query.AllBodyClauses() 
-                : _query.BodyClauses.Take(_subQuery.Index);
+            var bodies = bodyClauses();
 
             var wheres = bodies.OfType<WhereClause>().ToArray();
             if (wheres.Length == 0) return _mapping.DefaultWhereFragment();
@@ -109,6 +117,14 @@ namespace Marten.Linq.Model
                 : new CompoundWhereFragment(_schema.Parser, _mapping, "and", wheres);
 
             return _mapping.FilterDocuments(_query, where);
+        }
+
+        private IEnumerable<IBodyClause> bodyClauses()
+        {
+            var bodies = _subQuery == null
+                ? _query.AllBodyClauses()
+                : _query.BodyClauses.Take(_subQuery.Index);
+            return bodies;
         }
     }
 }

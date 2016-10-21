@@ -55,6 +55,7 @@ namespace Marten.Linq
             return query.AllResultOperators().Any(x => x is T);
         }
 
+        [Obsolete("Moving to LinqQuery")]
         public static string ToOrderClause(this QueryModel query, IQueryableDocument mapping)
         {
             var orders = query.AllBodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
