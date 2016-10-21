@@ -69,6 +69,7 @@ namespace Marten.Linq
             // Added
             new IsOneOf(),
             new IsInGenericEnumerable(),
+            new IsEmpty(),
 
             // soft deletes
             new MaybeDeletedParser(),

@@ -15,15 +15,12 @@ namespace Marten.Linq.Parsing
         public bool Matches(MethodCallExpression expression)
         {
             return expression.Method.Name == nameof(LinqExtensions.IsOneOf)
-                   && expression.Method.DeclaringType.Equals(typeof (LinqExtensions));
+                   && expression.Method.DeclaringType == typeof (LinqExtensions);
         }
 
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
-            var finder = new FindMembers();
-            finder.Visit(expression);
-
-            var members = finder.Members;
+            var members = FindMembers.Determine(expression);
 
             var locator = mapping.FieldFor(members).SqlLocator;
             var values = expression.Arguments.Last().Value();
