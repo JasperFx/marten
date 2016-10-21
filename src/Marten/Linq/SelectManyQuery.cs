@@ -44,6 +44,8 @@ namespace Marten.Linq
 
         }
 
+        public string SqlLocator => _field.SqlLocator;
+
         public bool IsDistinct { get; }
     }
 }
