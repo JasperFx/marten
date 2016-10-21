@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
 using Baseline;
+using Baseline.Conversion;
 using Marten.Events;
 using Marten.Schema;
-using Marten.Services;
 using Marten.Transforms;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -19,6 +15,8 @@ namespace Marten.Linq
 {
     public static class QueryModelExtensions
     {
+        private static readonly Conversions conversions = new Conversions();
+
         public static Type SourceType(this QueryModel query)
         {
             return query.MainFromClause.ItemType;
@@ -27,33 +25,24 @@ namespace Marten.Linq
         public static IEnumerable<ResultOperatorBase> AllResultOperators(this QueryModel query)
         {
             foreach (var @operator in query.ResultOperators)
-            {
                 yield return @operator;
-            }
 
             if (query.MainFromClause.FromExpression is SubQueryExpression)
-            {
-                foreach (var @operator in query.MainFromClause.FromExpression.As<SubQueryExpression>().QueryModel.ResultOperators)
-                {
+                foreach (
+                    var @operator in
+                    query.MainFromClause.FromExpression.As<SubQueryExpression>().QueryModel.ResultOperators)
                     yield return @operator;
-                }
-            }
         }
 
         public static IEnumerable<IBodyClause> AllBodyClauses(this QueryModel query)
         {
             foreach (var clause in query.BodyClauses)
-            {
                 yield return clause;
-            }
 
             if (query.MainFromClause.FromExpression is SubQueryExpression)
-            {
-                foreach (var clause in query.MainFromClause.FromExpression.As<SubQueryExpression>().QueryModel.BodyClauses)
-                {
+                foreach (
+                    var clause in query.MainFromClause.FromExpression.As<SubQueryExpression>().QueryModel.BodyClauses)
                     yield return clause;
-                }
-            }
         }
 
         public static IEnumerable<T> FindOperators<T>(this QueryModel query) where T : ResultOperatorBase
@@ -82,7 +71,8 @@ namespace Marten.Linq
                 : locator + " desc";
         }
 
-        public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, IQueryableDocument mapping, QueryModel query)
+        public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, IQueryableDocument mapping,
+            QueryModel query)
         {
             var wheres = query.AllBodyClauses().OfType<WhereClause>().ToArray();
             if (wheres.Length == 0) return mapping.DefaultWhereFragment();
@@ -91,7 +81,7 @@ namespace Marten.Linq
                 ? schema.Parser.ParseWhereFragment(mapping, wheres.Single().Predicate)
                 : new CompoundWhereFragment(schema.Parser, mapping, "and", wheres);
 
-            return mapping.FilterDocuments(query, @where);
+            return mapping.FilterDocuments(query, where);
         }
 
         public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, QueryModel query)
@@ -122,35 +112,28 @@ namespace Marten.Linq
                        AdditionalFromClause;
         }
 
-        public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, IQueryableDocument mapping, QueryModel query)
+        public static ISelector<T> BuildSelector<T>(this IDocumentSchema schema, IQueryableDocument mapping,
+            QueryModel query)
         {
             var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
             if (selectable != null)
-            {
                 return selectable.BuildSelector<T>(schema, mapping);
-            }
 
             if (query.SelectClause.Selector.Type == query.SourceType())
             {
-                if (typeof (T) == typeof (string))
-                {
+                if (typeof(T) == typeof(string))
                     return (ISelector<T>) new JsonSelector();
-                }
 
                 // I'm so ashamed of this hack, but "simplest thing that works"
                 if (typeof(T) == typeof(IEvent))
-                {
                     return mapping.As<EventQueryMapping>().Selector.As<ISelector<T>>();
-                }
 
                 var resolver = schema.ResolverFor<T>();
                 return new WholeDocumentSelector<T>(mapping, resolver);
             }
 
             if (query.HasSelectMany())
-            {
                 return buildSelectorForSelectMany<T>(mapping, query);
-            }
 
             return createSelectTransformSelector<T>(schema, mapping, query);
         }
@@ -167,7 +150,13 @@ namespace Marten.Linq
 
             var isDistinct = query.HasOperator<DistinctResultOperator>();
 
-            return new SingleFieldSelector<T>(isDistinct, $"jsonb_array_elements_text({field.SqlLocator}) as x");
+            if (typeof(T) == typeof(string))
+            {
+                return new SingleFieldSelector<T>(isDistinct, $"jsonb_array_elements_text({field.SqlLocator})");
+            }
+
+            return new ArrayElementFieldSelector<T>(isDistinct, field, conversions);
+            
         }
 
         private static ISelector<T> createSelectTransformSelector<T>(IDocumentSchema schema, IQueryableDocument mapping,
@@ -189,9 +178,5 @@ namespace Marten.Linq
         {
             return schema.MappingFor(model.SourceType());
         }
-
-
     }
-
-
 }

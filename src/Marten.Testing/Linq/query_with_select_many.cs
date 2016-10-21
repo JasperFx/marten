@@ -21,22 +21,6 @@ namespace Marten.Testing.Linq
                 session.SaveChanges();
             }
 
-            using (var conn = theStore.Advanced.OpenConnection())
-            {
-                conn.Execute(c =>
-                {
-                    var sql = @"select distinct jsonb_array_elements(data -> 'Tags') as x
-from mt_doc_product
-order by x;";
-
-                    var reader = c.Sql(sql).ExecuteReader();
-                    while (reader.Read())
-                    {
-                        Console.WriteLine(reader.GetString(0));
-                    }
-                });
-            }
-
             using (var query = theStore.QuerySession())
             {
                 var distinct = query.Query<Product>().SelectMany(x => x.Tags).Distinct().ToList();
@@ -47,6 +31,33 @@ order by x;";
                 names
                     .Count().ShouldBe(9);
             }
+
+        }
+
+        [Fact]
+        public void select_many_against_integer_array()
+        {
+            var product1 = new ProductWithNumbers() { Tags = new[] { 1,2,3 } };
+            var product2 = new ProductWithNumbers { Tags = new[] { 2,3,4 } };
+            var product3 = new ProductWithNumbers { Tags = new[] { 3, 4,5 } };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(product1, product2, product3);
+                session.SaveChanges();
+            }
+
+
+            using (var query = theStore.QuerySession())
+            {
+                var distinct = query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).Distinct().ToList();
+
+                distinct.OrderBy(x => x).ShouldHaveTheSameElementsAs(1, 2, 3, 4, 5);
+
+                var names = query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).ToList();
+                names
+                    .Count().ShouldBe(9);
+            }
         }
     }
 
@@ -54,6 +65,13 @@ order by x;";
     {
         public Guid Id;
         public string[] Tags { get; set; }
+
+    }
+
+    public class ProductWithNumbers
+    {
+        public Guid Id;
+        public int[] Tags { get; set; }
 
     }
 }
