@@ -62,6 +62,32 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
+        public async Task select_many_against_integer_array_async()
+        {
+            var product1 = new ProductWithNumbers() { Tags = new[] { 1, 2, 3 } };
+            var product2 = new ProductWithNumbers { Tags = new[] { 2, 3, 4 } };
+            var product3 = new ProductWithNumbers { Tags = new[] { 3, 4, 5 } };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(product1, product2, product3);
+                await session.SaveChangesAsync();
+            }
+
+
+            using (var query = theStore.QuerySession())
+            {
+                var distinct = await query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).Distinct().ToListAsync();
+
+                distinct.OrderBy(x => x).ShouldHaveTheSameElementsAs(1, 2, 3, 4, 5);
+
+                var names = query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).ToList();
+                names
+                    .Count().ShouldBe(9);
+            }
+        }
+
+        [Fact]
         public void select_many_against_complex_type_without_transformation()
         {
             var targets = Target.GenerateRandomData(10).ToArray();
@@ -182,6 +208,8 @@ namespace Marten.Testing.Linq
 
             }
         }
+
+
     }
 
     public class Product
