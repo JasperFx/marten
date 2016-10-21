@@ -122,6 +122,7 @@ namespace Marten.Linq
 
         public Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token)
         {
+           
             return executeAsync(q => new LinqQueryHandler<TResult>(Schema, q, Includes.ToArray(), Statistics), token);
         }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
@@ -68,6 +69,8 @@ namespace Marten.Linq
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
         {
             Schema.EnsureStorageExists(queryModel.SourceType());
+
+            var query = new LinqQuery<T>(queryModel, Schema, _includes.ToArray(), Statistics);
 
             var handler = new LinqQueryHandler<T>(Schema, queryModel, _includes.ToArray(), Statistics);
 

@@ -4,6 +4,7 @@ using System.Linq;
 using Baseline;
 using Baseline.Conversion;
 using Marten.Events;
+using Marten.Linq.Model;
 using Marten.Schema;
 using Marten.Transforms;
 using Marten.Util;
@@ -144,9 +145,10 @@ namespace Marten.Linq
             return createSelectTransformSelector<T>(schema, mapping, query);
         }
 
+        [Obsolete("Going to replace this with the new LinqQuery model soon")]
         public static SelectManyQuery ToSelectManyQuery(this QueryModel query, IQueryableDocument mapping)
         {
-            return new SelectManyQuery(mapping, query);
+            return new SelectManyQuery(mapping, query, 0);
         }
 
         private static ISelector<T> buildSelectorForSelectMany<T>(IQueryableDocument mapping, QueryModel query, ISerializer serializer)
