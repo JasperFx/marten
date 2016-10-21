@@ -6,6 +6,7 @@ using Baseline.Conversion;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Transforms;
+using Marten.Util;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
@@ -119,6 +120,12 @@ namespace Marten.Linq
             if (selectable != null)
                 return selectable.BuildSelector<T>(schema, mapping);
 
+
+            if (query.HasSelectMany())
+            {
+                return buildSelectorForSelectMany<T>(mapping, query, schema.StoreOptions.Serializer());
+            }
+
             if (query.SelectClause.Selector.Type == query.SourceType())
             {
                 if (typeof(T) == typeof(string))
@@ -132,13 +139,12 @@ namespace Marten.Linq
                 return new WholeDocumentSelector<T>(mapping, resolver);
             }
 
-            if (query.HasSelectMany())
-                return buildSelectorForSelectMany<T>(mapping, query);
+
 
             return createSelectTransformSelector<T>(schema, mapping, query);
         }
 
-        private static ISelector<T> buildSelectorForSelectMany<T>(IQueryableDocument mapping, QueryModel query)
+        private static ISelector<T> buildSelectorForSelectMany<T>(IQueryableDocument mapping, QueryModel query, ISerializer serializer)
         {
             var expression = query.SelectClause.Selector.As<QuerySourceReferenceExpression>();
             var from = expression.ReferencedQuerySource.As<AdditionalFromClause>().FromExpression;
@@ -154,8 +160,12 @@ namespace Marten.Linq
             {
                 return new SingleFieldSelector<T>(isDistinct, $"jsonb_array_elements_text({field.SqlLocator})");
             }
+            else if (TypeMappings.HasTypeMapping(typeof(T)))
+            {
+                return new ArrayElementFieldSelector<T>(isDistinct, field, conversions);
+            }
 
-            return new ArrayElementFieldSelector<T>(isDistinct, field, conversions);
+            return new DeserializeSelector<T>(serializer, $"jsonb_array_elements_text({field.SqlLocator})");
             
         }
 

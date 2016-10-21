@@ -59,6 +59,28 @@ namespace Marten.Testing.Linq
                     .Count().ShouldBe(9);
             }
         }
+
+        [Fact]
+        public void select_many_against_complex_type_without_transformation()
+        {
+            var targets = Target.GenerateRandomData(10).ToArray();
+            var expectedCount = targets.SelectMany(x => x.Children).Count();
+
+            expectedCount.ShouldBeGreaterThan(0);
+
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(targets);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                var list = query.Query<Target>().SelectMany(x => x.Children).ToList();
+                list.Count.ShouldBe(expectedCount);
+            }
+        }
     }
 
     public class Product
