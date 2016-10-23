@@ -86,7 +86,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             var comb = CombGuidIdGeneration.Create(Guid.NewGuid(), timestamp);
             var roundtrip = CombGuidIdGeneration.GetTimestamp(comb);
 
-            timestamp.ToUnixTimeMilliseconds().ShouldBeTheSameAs(roundtrip.ToUnixTimeMilliseconds());
+            roundtrip.ToUnixTimeMilliseconds().ShouldBe(timestamp.ToUnixTimeMilliseconds());
         }
 
         private static string FormatIdAsByteArrayString(UserWithGuid[] users, string user1)
