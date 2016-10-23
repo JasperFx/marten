@@ -45,16 +45,33 @@ namespace Marten.Schema.Identity
             var unixTimeBytes = BitConverter.GetBytes(unixTime);
 
             var result = new byte[NumDateBytes];
-            Array.Copy(unixTimeBytes, 2, result, 0, 4);
-            Array.Copy(unixTimeBytes, 0, result, 4, 2);
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Copy(unixTimeBytes, 2, result, 0, 4);
+                Array.Copy(unixTimeBytes, 0, result, 4, 2);
+            }
+            else
+            {
+                Array.Copy(unixTimeBytes, 2, result, 0, 6);
+            }
+
             return result;
         }
 
         private static DateTimeOffset BytesToDateTime(byte[] value)
         {
             var unixTimeBytes = new byte[8];
-            Array.Copy(value, 4, unixTimeBytes, 0, 2);
-            Array.Copy(value, 0, unixTimeBytes, 2, 4);
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Copy(value, 4, unixTimeBytes, 0, 2);
+                Array.Copy(value, 0, unixTimeBytes, 2, 4);
+            }
+            else
+            {
+                Array.Copy(value, 0, unixTimeBytes, 2, 6);
+            }
 
             var unixTime = BitConverter.ToInt64(unixTimeBytes, 0);
             var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(0).AddMilliseconds(unixTime);
@@ -71,12 +88,10 @@ namespace Marten.Schema.Identity
             return new Guid(bytes);
         }
 
-		public static DateTimeOffset GetTimestamp(Guid comb)
+        public static DateTimeOffset GetTimestamp(Guid comb)
         {
             var bytes = comb.ToByteArray();
-            var dtbytes = new byte[NumDateBytes];
-            Array.Copy(bytes, 0, dtbytes, 0, NumDateBytes);
-            return BytesToDateTime(dtbytes);
+            return BytesToDateTime(bytes);
         }
     }
 }
