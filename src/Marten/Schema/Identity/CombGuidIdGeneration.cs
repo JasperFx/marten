@@ -9,10 +9,7 @@ namespace Marten.Schema.Identity
     public class CombGuidIdGeneration : IIdGeneration
     {
         private const int NumDateBytes = 6;
-        private const double TicksPerMillisecond = 3d/10d;
 
-        private static readonly DateTime _minCombDate = new DateTime(1900, 1, 1);
-        private static readonly DateTime _maxCombDate = _minCombDate.AddDays(ushort.MaxValue);
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(Guid)};
 
         public IIdGenerator<T> Build<T>(IDocumentSchema schema)
@@ -36,51 +33,50 @@ namespace Marten.Schema.Identity
         */
 
         /// <summary>
-        ///     Returns a new Guid COMB, consisting of a random Guid combined with the provided timestap.
+        ///     Returns a new Guid COMB, consisting of a random Guid combined with the provided timestamp.
         /// </summary>
-        public static Guid NewGuid(DateTime timestamp) => Create(Guid.NewGuid(), timestamp);
+        public static Guid NewGuid(DateTimeOffset timestamp) => Create(Guid.NewGuid(), timestamp);
 
-        public static Guid NewGuid() => Create(Guid.NewGuid(), DateTime.UtcNow);
+        public static Guid NewGuid() => Create(Guid.NewGuid(), DateTimeOffset.UtcNow);
 
-        private static byte[] DateTimeToBytes(DateTime timestamp)
+        private static byte[] DateTimeToBytes(DateTimeOffset timestamp)
         {
-            if (timestamp < _minCombDate)
-                throw new ArgumentException($"COMB values only support dates on or after {_minCombDate}");
-            if (timestamp > _maxCombDate)
-                throw new ArgumentException($"COMB values only support dates through {_maxCombDate}");
+            var unixTime = timestamp.ToUnixTimeMilliseconds();
+            var unixTimeBytes = BitConverter.GetBytes(unixTime);
 
-            // Convert the time to 300ths of a second. SQL Server uses float math for this before converting to an integer, so this does as well
-            // to avoid rounding errors. This is confirmed in MSSQL by SELECT CONVERT(varchar, CAST(CAST(2 as binary(8)) AS datetime), 121),
-            // which would return .006 if it were integer math, but it returns .007.
-            var ticks = (int) (timestamp.TimeOfDay.TotalMilliseconds*TicksPerMillisecond);
-            var days = (ushort) (timestamp - _minCombDate).TotalDays;
-            var tickBytes = BitConverter.GetBytes(ticks);
-            var dayBytes = BitConverter.GetBytes(days);
-
-            if (BitConverter.IsLittleEndian)
-            {
-                // x86 platforms store the LEAST significant bytes first, we want the opposite for our arrays
-                Array.Reverse(dayBytes);
-                Array.Reverse(tickBytes);
-            }
-
-            var result = new byte[6];
-            Array.Copy(dayBytes, 0, result, 0, 2);
-            Array.Copy(tickBytes, 0, result, 2, 4);
+            var result = new byte[NumDateBytes];
+            Array.Copy(unixTimeBytes, 2, result, 0, 4);
+            Array.Copy(unixTimeBytes, 0, result, 4, 2);
             return result;
         }
 
-        public static Guid Create(Guid value, DateTime timestamp)
+        private static DateTimeOffset BytesToDateTime(byte[] value)
+        {
+            var unixTimeBytes = new byte[8];
+            Array.Copy(value, 4, unixTimeBytes, 0, 2);
+            Array.Copy(value, 0, unixTimeBytes, 2, 4);
+
+            var unixTime = BitConverter.ToInt64(unixTimeBytes, 0);
+            var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(0).AddMilliseconds(unixTime);
+            return timestamp;
+        }
+
+        public static Guid Create(Guid value, DateTimeOffset timestamp)
         {
             var bytes = value.ToByteArray();
             var dtbytes = DateTimeToBytes(timestamp);
-            // Nybble 6-9 move left to 5-8. Nybble 9 is set to "4" (the version)
-            dtbytes[2] = (byte) ((byte) (dtbytes[2] << 4) | (byte) (dtbytes[3] >> 4));
-            dtbytes[3] = (byte) ((byte) (dtbytes[3] << 4) | (byte) (dtbytes[4] >> 4));
-            dtbytes[4] = (byte) (0x40 | (byte) (dtbytes[4] & 0x0F));
-            // Overwrite the first six bytes
+
+            // Overwrite the first six bytes with unix time
             Array.Copy(dtbytes, 0, bytes, 0, NumDateBytes);
             return new Guid(bytes);
+        }
+
+		public static DateTimeOffset GetTimestamp(Guid comb)
+        {
+            var bytes = comb.ToByteArray();
+            var dtbytes = new byte[NumDateBytes];
+            Array.Copy(bytes, 0, dtbytes, 0, NumDateBytes);
+            return BytesToDateTime(dtbytes);
         }
     }
 }
