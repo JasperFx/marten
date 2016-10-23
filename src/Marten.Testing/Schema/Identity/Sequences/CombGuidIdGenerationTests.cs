@@ -79,6 +79,16 @@ namespace Marten.Testing.Schema.Identity.Sequences
             }
         }
 
+        [Fact]
+        public void Can_Roundtrip_CombGuid_DateTimeOffset()
+        {
+            var timestamp = DateTimeOffset.UtcNow;
+            var comb = CombGuidIdGeneration.Create(Guid.NewGuid(), timestamp);
+            var roundtrip = CombGuidIdGeneration.GetTimestamp(comb);
+
+            timestamp.ToUnixTimeMilliseconds().ShouldBeTheSameAs(roundtrip.ToUnixTimeMilliseconds());
+        }
+
         private static string FormatIdAsByteArrayString(UserWithGuid[] users, string user1)
         {
             var id = users.Single(user => user.LastName == user1).Id;
@@ -87,9 +97,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
         private static string Format(Guid id)
         {
-            var bytes = id.ToByteArray();
-
-            return BitConverter.ToString(bytes);
+            return id.ToString();
         }
 
         private UserWithGuid[] GetUsers(IDocumentStore documentStore)
