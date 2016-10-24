@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
-using Baseline;
 using Marten.Linq.Model;
 using Marten.Schema;
 using Marten.Services.Includes;
-using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 
@@ -19,16 +16,17 @@ namespace Marten.Linq.QueryHandlers
             _query = query;
         }
 
-        public LinqQueryHandler(IDocumentSchema schema, QueryModel queryModel, IIncludeJoin[] includeJoins, QueryStatistics statistics) : this(new LinqQuery<T>(queryModel, schema, includeJoins, statistics))
+        [Obsolete("Just have LinqQuery injected in, or replace w/ LinqQuery")]
+        public LinqQueryHandler(IDocumentSchema schema, QueryModel queryModel, IIncludeJoin[] includeJoins,
+            QueryStatistics statistics) : this(new LinqQuery<T>(queryModel, schema, includeJoins, statistics))
         {
         }
 
         public override Type SourceType => _query.SourceType;
+
         public override void ConfigureCommand(NpgsqlCommand command)
         {
             _query.ConfigureCommand(command);
         }
-
-
     }
 }
