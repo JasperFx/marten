@@ -9,6 +9,7 @@ using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.Model
 {
@@ -71,7 +72,7 @@ namespace Marten.Linq.Model
         }
 
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(NpgsqlCommand command, int limit = 0)
         {
             var sql = Selector.ToSelectClause(_mapping);
 
@@ -90,9 +91,26 @@ namespace Marten.Linq.Model
 
             if (orderBy.IsNotEmpty()) sql += orderBy;
 
-            // TODO -- this needs to use parameters instead
-            sql = _query.AppendLimit(sql);
-            sql = _query.AppendOffset(sql);
+            if (limit > 0)
+            {
+                sql += " LIMIT " + limit;
+            }
+            else
+            {
+                var take = _query.FindOperators<TakeResultOperator>().LastOrDefault();
+                if (take != null)
+                {
+                    var param = command.AddParameter(take.Count.Value());
+                    sql += " LIMIT :" + param.ParameterName;
+                }
+            }
+
+            var skip = _query.FindOperators<SkipResultOperator>().LastOrDefault();
+            if (skip != null)
+            {
+                var param = command.AddParameter(skip.Count.Value());
+                sql += " OFFSET :" + param.ParameterName;
+            }
 
             command.AppendQuery(sql);
         }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Linq;
@@ -9,10 +6,27 @@ using Marten.Services;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Linq
+namespace Marten.Testing.Bugs
 {
-    public class Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause :
+        DocumentSessionFixture<NulloIdentityMap>
     {
+        private IEnumerable<Target> Make(int count)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                var mod2 = i%2 == 0;
+                var mod3 = i%3 == 0;
+                var color = mod3 ? Colors.Red : mod2 ? Colors.Blue : Colors.Green;
+
+                yield return new Target
+                {
+                    Number = i + 1,
+                    Color = color
+                };
+            }
+        }
+
         [Fact]
         public async Task return_the_correct_number_of_results_when_skip_take_is_after_select_statement()
         {
@@ -59,22 +73,6 @@ namespace Marten.Testing.Linq
 
             stats.TotalResults.ShouldBe(33);
             queryable.Count.ShouldBe(10);
-        }
-
-        private IEnumerable<Target> Make(int count)
-        {
-            for (var i = 0; i < count; i++)
-            {
-                var mod2 = i % 2 == 0;
-                var mod3 = i % 3 == 0;
-                var color = mod3 ? Colors.Red : mod2 ? Colors.Blue : Colors.Green;
-
-                yield return new Target
-                {
-                    Number = i + 1,
-                    Color = color
-                };
-            }
         }
     }
 }

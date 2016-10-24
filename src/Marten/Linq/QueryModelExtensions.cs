@@ -92,6 +92,7 @@ namespace Marten.Linq
             return schema.BuildWhereFragment(mapping, query);
         }
 
+        [Obsolete("Subsumed by LinqQuery")]
         public static string AppendOffset(this QueryModel query, string sql)
         {
             var skip = query.FindOperators<SkipResultOperator>().LastOrDefault();
@@ -99,6 +100,7 @@ namespace Marten.Linq
             return skip == null ? sql : sql + " OFFSET " + skip.Count + " ";
         }
 
+        [Obsolete("Subsumed by LinqQuery")]
         public static string AppendLimit(this QueryModel query, string sql)
         {
             var take = query.FindOperators<TakeResultOperator>().LastOrDefault();
