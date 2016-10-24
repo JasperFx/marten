@@ -21,7 +21,7 @@ namespace Marten.Services
             _connection = new Lazy<TransactionState>(() => new TransactionState(factory, mode, isolationLevel, commandTimeout));
         }
 
-        public IMartenSessionLogger Logger { get; set; } = new NulloMartenLogger();
+        public IMartenSessionLogger Logger { get; set; } = NulloMartenLogger.Flyweight;
 
         public int RequestCount { get; private set; }
 
@@ -32,7 +32,18 @@ namespace Marten.Services
 
         public void Rollback()
         {
-            _connection.Value.Rollback();
+            try
+            {
+                _connection.Value.Rollback();
+            }
+            catch (RollbackException e)
+            {
+                if (e.InnerException != null) Logger.LogFailure(new NpgsqlCommand(), e.InnerException);
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(new NpgsqlCommand(), e);
+            }
         }
 
         public void BeginTransaction()

@@ -70,6 +70,8 @@ namespace Marten
         public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
         }
+
+        public static IMartenSessionLogger Flyweight { get; } = new NulloMartenLogger();
     }
 
     // SAMPLE: ConsoleMartenLogger

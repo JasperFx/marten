@@ -19,6 +19,8 @@ namespace Marten.Services
             Connection.Open();
         }
 
+        public IMartenSessionLogger Logger { get; set; } = NulloMartenLogger.Flyweight;
+
         public void BeginTransaction()
         {
             if (Transaction != null) return;
@@ -58,9 +60,19 @@ namespace Marten.Services
 
         public void Rollback()
         {
-            Transaction?.Rollback();
-            Transaction?.Dispose();
-            Transaction = null;
+            if (Transaction != null && !Transaction.IsCompleted)
+            {
+                try
+                {
+                    Transaction?.Rollback();
+                    Transaction?.Dispose();
+                    Transaction = null;
+                }
+                catch (Exception e)
+                {
+                    throw new RollbackException(e);
+                }
+            }
         }
 
         public void Dispose()
@@ -79,6 +91,13 @@ namespace Marten.Services
             if (Transaction != null) cmd.Transaction = Transaction;
 
             return cmd;
+        }
+    }
+
+    public class RollbackException : Exception
+    {
+        public RollbackException(Exception innerException) : base("Failed while trying to rollback an exception", innerException)
+        {
         }
     }
 }

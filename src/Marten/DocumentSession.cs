@@ -173,6 +173,8 @@ namespace Marten
             }
             catch (Exception)
             {
+                // This code has a try/catch in it to stop
+                // any errors from propogating from the rollback
                 _connection.Rollback();
                 
                 throw;
@@ -200,7 +202,18 @@ namespace Marten
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
 
 
-            _connection.Commit();
+            try
+            {
+                _connection.Commit();
+            }
+            catch (Exception)
+            {
+                // This code has a try/catch in it to stop
+                // any errors from propogating from the rollback
+                _connection.Rollback();
+
+                throw;
+            }
 
             Logger.RecordSavedChanges(this, changes);
 
