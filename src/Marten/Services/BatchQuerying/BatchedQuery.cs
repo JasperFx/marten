@@ -202,7 +202,7 @@ namespace Marten.Services.BatchQuerying
             var query = QueryParser.GetParsedQuery(expression);
 
 
-            return AddItem(new LinqQuery<T>(_schema, query, queryable.Includes.ToArray(), queryable.Statistics));
+            return AddItem(new LinqQuery<T>(_schema, query, queryable.Includes.ToArray(), queryable.Statistics).ToList());
         }
 
 

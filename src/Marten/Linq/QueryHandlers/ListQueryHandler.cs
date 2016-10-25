@@ -3,33 +3,37 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Linq.Model;
 using Marten.Services;
 using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public abstract class ListQueryHandler<T> : IQueryHandler<IList<T>>
+    public class ListQueryHandler<T> : IQueryHandler<IList<T>>
     {
-        private readonly ISelector<T> _selector;
+        private readonly LinqQuery<T> _query;
 
-        public ListQueryHandler(ISelector<T> selector)
+        public ListQueryHandler(LinqQuery<T> query)
         {
-            _selector = selector;
+            _query = query;
         }
 
         public IList<T> Handle(DbDataReader reader, IIdentityMap map)
         {
-            return _selector.Read(reader, map);
+            return _query.Selector.Read(reader, map);
         }
 
         public Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            return _selector.ReadAsync(reader, map, token);
+            return _query.Selector.ReadAsync(reader, map, token);
         }
 
-        public ISelector<T> Selector => _selector;
 
-        public abstract void ConfigureCommand(NpgsqlCommand command);
-        public abstract Type SourceType { get; }
+        public void ConfigureCommand(NpgsqlCommand command)
+        {
+            _query.ConfigureCommand(command);
+        }
+
+        public Type SourceType => _query.SourceType;
     }
 }

@@ -123,8 +123,7 @@ namespace Marten.Linq
 
         public Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token)
         {
-           
-            return executeAsync(q => new LinqQuery<TResult>(Schema, q, Includes.ToArray(), Statistics), token);
+            return executeAsync(q => new LinqQuery<TResult>(Schema, q, Includes.ToArray(), Statistics).ToList(), token);
         }
 
         public Task<bool> AnyAsync(CancellationToken token)
@@ -198,7 +197,7 @@ namespace Marten.Linq
                     return new AnyQueryHandler(model, Schema);
 
                 case FetchType.FetchMany:
-                    return new LinqQuery<T>(Schema, model, Includes.ToArray(), Statistics);
+                    return new LinqQuery<T>(Schema, model, Includes.ToArray(), Statistics).ToList();
 
                 case FetchType.FetchOne:
                     return OneResultHandler<T>.First(Schema, model, Includes.ToArray());
