@@ -92,22 +92,6 @@ namespace Marten.Linq
             return schema.BuildWhereFragment(mapping, query);
         }
 
-        [Obsolete("Subsumed by LinqQuery")]
-        public static string AppendOffset(this QueryModel query, string sql)
-        {
-            var skip = query.FindOperators<SkipResultOperator>().LastOrDefault();
-
-            return skip == null ? sql : sql + " OFFSET " + skip.Count + " ";
-        }
-
-        [Obsolete("Subsumed by LinqQuery")]
-        public static string AppendLimit(this QueryModel query, string sql)
-        {
-            var take = query.FindOperators<TakeResultOperator>().LastOrDefault();
-
-            return take == null ? sql : sql + " LIMIT " + take.Count + " ";
-        }
-
         public static bool HasSelectMany(this QueryModel query)
         {
             return query.SelectClause.Selector is QuerySourceReferenceExpression
