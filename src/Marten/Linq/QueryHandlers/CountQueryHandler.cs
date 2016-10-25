@@ -32,27 +32,8 @@ namespace Marten.Linq.QueryHandlers
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
-            var mapping = _schema.MappingFor(_query.SourceType()).ToQueryableDocument();
-
-            var select = "select count(*) as number";
-
-            if (_query.HasSelectMany())
-            {
-                if (_query.HasOperator<DistinctResultOperator>())
-                {
-                    throw new NotSupportedException("Marten does not yet support SelectMany() with both a Distinct() and Count() operator");
-                }
-
-                var selectMany = new SelectManyQuery(mapping, _query, 0);
-
-                select = $"select sum(jsonb_array_length({selectMany.SqlLocator})) as number";
-            }
-
-            var sql = $"{select} from {mapping.Table.QualifiedName} as d";
-
-            sql = new LinqQuery<T>(_schema, _query, new IIncludeJoin[0], null).AppendWhere(command, sql);
-
-            command.AppendQuery(sql);
+            new LinqQuery<T>(_schema, _query, new IIncludeJoin[0], null)
+                .ConfigureCount(command);
         }
 
         public T Handle(DbDataReader reader, IIdentityMap map)

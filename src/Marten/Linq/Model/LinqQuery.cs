@@ -158,5 +158,27 @@ namespace Marten.Linq.Model
 
             return bodies;
         }
+
+        public void ConfigureCount(NpgsqlCommand command)
+        {
+            var select = "select count(*) as number";
+
+            if (_subQuery != null)
+            {
+                if (Model.HasOperator<DistinctResultOperator>())
+                {
+                    throw new NotSupportedException("Marten does not yet support SelectMany() with both a Distinct() and Count() operator");
+                }
+
+                // TODO -- this will need to be smarter
+                select = $"select sum(jsonb_array_length({_subQuery.SqlLocator})) as number";
+            }
+
+            var sql = $"{select} from {_mapping.Table.QualifiedName} as d";
+
+            sql = AppendWhere(command, sql);
+
+            command.AppendQuery(sql);
+        }
     }
 }
