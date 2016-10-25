@@ -44,6 +44,31 @@ namespace Marten.Testing
         }
 
         [Fact]
+        public void query_by_one_named_parameter()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                using (var session = container.GetInstance<IDocumentStore>().OpenSession())
+                {
+                    session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Max", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                    session.SaveChanges();
+
+                    var firstnames =
+                        session.Query<User>("where data ->> 'LastName' = :Name", new { Name = "Miller" }).OrderBy(x => x.FirstName)
+                            .Select(x => x.FirstName).ToArray();
+
+                    firstnames.Length.ShouldBe(3);
+                    firstnames[0].ShouldBe("Jeremy");
+                    firstnames[1].ShouldBe("Lindsey");
+                    firstnames[2].ShouldBe("Max");
+                }
+            }
+        }
+
+        [Fact]
         public void query_by_two_parameters()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -68,6 +93,48 @@ namespace Marten.Testing
         }
 
         // ENDSAMPLE
+
+        [Fact]
+        public void query_by_two_named_parameters()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                using (var session = container.GetInstance<IDocumentStore>().OpenSession())
+                {
+                    session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Max", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                    session.SaveChanges();
+                    var user =
+                        session.Query<User>("where data ->> 'FirstName' = :FirstName and data ->> 'LastName' = :LastName", new { FirstName = "Jeremy", LastName = "Miller"})
+                            .Single();
+
+                    user.ShouldNotBeNull();
+                }
+            }
+        }
+
+        [Fact]
+        public void query_two_fields_by_one_named_parameter()
+        {
+            using (var container = Container.For<DevelopmentModeRegistry>())
+            {
+                using (var session = container.GetInstance<IDocumentStore>().OpenSession())
+                {
+                    session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Max", LastName = "Miller" });
+                    session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                    session.SaveChanges();
+                    var user =
+                        session.Query<User>("where data ->> 'FirstName' = :Name or data ->> 'LastName' = :Name", new { Name = "Jeremy" })
+                            .Single();
+
+                    user.ShouldNotBeNull();
+                }
+            }
+        }
 
         [Fact]
         public void query_for_multiple_documents()
