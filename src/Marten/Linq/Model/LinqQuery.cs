@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services.Includes;
+using Marten.Transforms;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
@@ -50,7 +52,7 @@ namespace Marten.Linq.Model
                 }
             }
 
-            Selector = schema.HandlerFactory.BuildSelector<T>(model, joins, stats);
+            Selector = BuildSelector(joins, stats);
             SourceType = Model.SourceType();
 
             Where = buildWhereFragment();
@@ -216,6 +218,70 @@ namespace Marten.Linq.Model
         public IQueryHandler<bool> ToAny()
         {
             return new AnyQueryHandler(this);
+        }
+
+        // Leave this code here, because it will need to use the SubQuery logic in its selection
+        public ISelector<T> BuildSelector(IIncludeJoin[] joins, QueryStatistics stats)
+        {
+            var selector = buildSelector<T>(_schema, _mapping, Model);
+
+            if (stats != null)
+            {
+                selector = new StatsSelector<T>(stats, selector);
+            }
+
+            if (joins.Any())
+            {
+                selector = new IncludeSelector<T>(_schema, selector, joins);
+            }
+
+            return selector;
+        }
+
+        private static ISelector<T> buildSelector<T>(IDocumentSchema schema, IQueryableDocument mapping,
+            QueryModel query)
+        {
+            var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
+            if (selectable != null)
+            {
+                return selectable.BuildSelector<T>(schema, mapping);
+            }
+
+
+            if (query.HasSelectMany())
+            {
+                return new SelectManyQuery(mapping, query, 0).ToSelector<T>(schema.StoreOptions.Serializer());
+            }
+
+            if (query.SelectClause.Selector.Type == query.SourceType())
+            {
+                if (typeof(T) == typeof(string))
+                {
+                    return (ISelector<T>)new JsonSelector();
+                }
+
+                // I'm so ashamed of this hack, but "simplest thing that works"
+                if (typeof(T) == typeof(IEvent))
+                {
+                    return mapping.As<EventQueryMapping>().Selector.As<ISelector<T>>();
+                }
+
+                if (typeof(T) != query.SourceType())
+                {
+                    // TODO -- going to have to come back to this one.
+                    return null;
+                }
+
+                var resolver = schema.ResolverFor<T>();
+
+                return new WholeDocumentSelector<T>(mapping, resolver);
+            }
+
+
+            var visitor = new SelectorParser(query);
+            visitor.Visit(query.SelectClause.Selector);
+
+            return visitor.ToSelector<T>(schema, mapping);
         }
     }
 }

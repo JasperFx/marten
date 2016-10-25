@@ -3,11 +3,8 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq.Model;
-using Marten.Schema;
 using Marten.Services;
-using Marten.Services.Includes;
 using Npgsql;
-using Remotion.Linq;
 
 namespace Marten.Linq.QueryHandlers
 {
@@ -17,13 +14,12 @@ namespace Marten.Linq.QueryHandlers
         private const string MoreThanOneElementMessage = "Sequence contains more than one element";
         private readonly bool _canBeMultiples;
         private readonly bool _canBeNull;
-        private readonly int _rowLimit;
         private readonly LinqQuery<T> _linqQuery;
+        private readonly int _rowLimit;
 
         public OneResultHandler(int rowLimit, LinqQuery<T> linqQuery,
             bool canBeNull = true, bool canBeMultiples = true)
         {
-
             _rowLimit = rowLimit;
             _linqQuery = linqQuery;
             _canBeNull = canBeNull;
