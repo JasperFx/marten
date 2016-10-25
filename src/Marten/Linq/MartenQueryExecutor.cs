@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
@@ -39,7 +40,7 @@ namespace Marten.Linq
 
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
-            var handler = Schema.HandlerFactory.HandlerForScalarQuery<T>(queryModel);
+            var handler = Schema.HandlerFactory.HandlerForScalarQuery<T>(queryModel, Includes.ToArray(), Statistics);
 
             if (handler == null)
             {
@@ -53,7 +54,7 @@ namespace Marten.Linq
 
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
-            var handler = Schema.HandlerFactory.HandlerForSingleQuery<T>(queryModel, _includes.ToArray(),
+            var handler = Schema.HandlerFactory.HandlerForSingleQuery<T>(queryModel, _includes.ToArray(), Statistics,
                 returnDefaultWhenEmpty);
 
             if (handler == null)
@@ -69,7 +70,7 @@ namespace Marten.Linq
         {
             Schema.EnsureStorageExists(queryModel.SourceType());
 
-            var handler = new LinqQueryHandler<T>(Schema, queryModel, _includes.ToArray(), Statistics);
+            var handler = new LinqQuery<T>(Schema, queryModel, _includes.ToArray(), Statistics).ToList();
 
             return Connection.Fetch(handler, IdentityMap.ForQuery());
         }

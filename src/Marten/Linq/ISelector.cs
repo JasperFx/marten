@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,29 @@ namespace Marten.Linq
         string[] SelectFields();
 
         string ToSelectClause(IQueryableDocument mapping);
+    }
+
+    public class StandInSelector<T> : ISelector<T>
+    {
+        public T Resolve(DbDataReader reader, IIdentityMap map)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            throw new NotSupportedException();
+        }
+
+        public string[] SelectFields()
+        {
+            throw new NotSupportedException();
+        }
+
+        public string ToSelectClause(IQueryableDocument mapping)
+        {
+            throw new NotSupportedException();
+        }
     }
 
     public abstract class BasicSelector

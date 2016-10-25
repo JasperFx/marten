@@ -1,11 +1,17 @@
 using System;
+using System.Collections.Generic;
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
+using Marten.Linq;
 using Marten.Linq.QueryHandlers;
+using Marten.Services;
 using Marten.Util;
 using Npgsql;
 
 namespace Marten.Events
 {
-    internal class EventQueryHandler : ListQueryHandler<IEvent>
+    internal class EventQueryHandler : IQueryHandler<IList<IEvent>>
     {
         private readonly EventSelector _selector;
         private readonly Guid _streamId;
@@ -13,7 +19,6 @@ namespace Marten.Events
         private readonly int _version;
 
         public EventQueryHandler(EventSelector selector, Guid streamId, int version = 0, DateTime? timestamp = null)
-            : base(selector)
         {
             if (timestamp != null && timestamp.Value.Kind != DateTimeKind.Utc)
             {
@@ -26,9 +31,9 @@ namespace Marten.Events
             _timestamp = timestamp;
         }
 
-        public override Type SourceType => typeof(IEvent);
+        public Type SourceType => typeof(IEvent);
 
-        public override void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(NpgsqlCommand command)
         {
             var sql = _selector.ToSelectClause(null);
 
@@ -51,5 +56,16 @@ namespace Marten.Events
 
             command.AppendQuery(sql);
         }
+
+        public IList<IEvent> Handle(DbDataReader reader, IIdentityMap map)
+        {
+            return _selector.Read(reader, map);
+        }
+
+        public Task<IList<IEvent>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        {
+            return _selector.ReadAsync(reader, map, token);
+        }
+
     }
 }

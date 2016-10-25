@@ -12,12 +12,15 @@ namespace Marten.Linq.QueryHandlers
         void ConfigureCommand(NpgsqlCommand command);
     }
 
-    public interface IQueryHandler<T> : IQueryHandler
+    public interface IReaderHandler<T>
     {
-        Type SourceType { get; }
-
         T Handle(DbDataReader reader, IIdentityMap map);
 
         Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token);
+    }
+
+    public interface IQueryHandler<T> : IQueryHandler, IReaderHandler<T>
+    {
+        Type SourceType { get; }
     }
 }

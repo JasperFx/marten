@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Util;
+using Remotion.Linq.Clauses;
 using Shouldly;
 using Xunit;
 
@@ -209,6 +210,22 @@ namespace Marten.Testing.Linq
             }
         }
 
+
+
+        [Fact]
+        public void playing()
+        {
+            using (var query = theStore.QuerySession())
+            {
+                var targets = query.Query<Target>()
+                    .Where(x => x.Flag)
+                    .Where(x => x.Decimal > 5)
+                    .SelectMany(x => x.Children)
+                    .Where(x => x.Flag)
+                    .OrderBy(x => x.Color)
+                    .ToList();
+            }
+        }
 
     }
 

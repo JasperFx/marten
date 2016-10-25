@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
 using Marten.Linq.Compiled;
+using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers.CompiledInclude;
 using Marten.Schema;
 using Marten.Services.Includes;
@@ -17,8 +18,13 @@ namespace Marten.Linq.QueryHandlers
     public interface IQueryHandlerFactory
     {
         IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model);
+        IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model, IIncludeJoin[] toArray, QueryStatistics statistics);
+
+
         IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, bool returnDefaultWhenEmpty);
 
+        IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics statistics,
+            bool returnDefaultWhenEmpty);
 
         IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats);
 
@@ -27,11 +33,9 @@ namespace Marten.Linq.QueryHandlers
 
     public class QueryHandlerFactory : IQueryHandlerFactory
     {
+        private readonly ConcurrentCache<Type, CachedQuery> _cache = new ConcurrentCache<Type, CachedQuery>();
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
-        private readonly ConcurrentCache<Type, CachedQuery> _cache = new ConcurrentCache<Type, CachedQuery>();
-
-        public QueryStatistics Stats { get; set; }
 
         public QueryHandlerFactory(IDocumentSchema schema, ISerializer serializer)
         {
@@ -39,109 +43,40 @@ namespace Marten.Linq.QueryHandlers
             _serializer = serializer;
         }
 
+        public QueryStatistics Stats { get; set; }
+
         public IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
-            return tryFindScalarQuery<T>(model) ?? tryFindSingleQuery<T>(model, joins) ?? listHandlerFor<T>(model, joins, stats);
-        }
-
-        private IQueryHandler<T> listHandlerFor<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
-        {
-            if (model.HasOperator<ToJsonArrayResultOperator>())
-            {
-                return new JsonQueryHandler(_schema, model).As<IQueryHandler<T>>();
-            }
-
-            if (!typeof (T).IsGenericEnumerable())
-            {
-                return null;
-            }
-
-            var elementType = typeof (T).GetGenericArguments().First();
-            var handlerType = typeof(LinqQueryHandler<>);
-
-            if (typeof (T).GetGenericTypeDefinition() == typeof (IEnumerable<>))
-            {
-                handlerType = typeof (EnumerableQueryHandler<>);
-            }
-            return Activator.CreateInstance(handlerType.MakeGenericType(elementType), new object[] {_schema, model, joins, stats}).As<IQueryHandler<T>>();
+            return tryFindScalarQuery<T>(model, joins, stats) ??
+                   tryFindSingleQuery<T>(model, joins, stats) ?? listHandlerFor<T>(model, joins, stats);
         }
 
         public IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model)
         {
-            _schema.EnsureStorageExists(model.SourceType());
-
-            return tryFindScalarQuery<T>(model);
+            return HandlerForScalarQuery<T>(model, new IIncludeJoin[0], null);
         }
 
-        private IQueryHandler<T> tryFindScalarQuery<T>(QueryModel model)
-        {
-            if (model.HasOperator<CountResultOperator>() || model.HasOperator<LongCountResultOperator>())
-            {
-                return new CountQueryHandler<T>(model, _schema);
-            }
-
-            if (model.HasOperator<SumResultOperator>())
-            {
-                return AggregateQueryHandler<T>.Sum(_schema, model);
-            }
-
-            if (model.HasOperator<AverageResultOperator>())
-            {
-                return AggregateQueryHandler<T>.Average(_schema, model);
-            }
-
-            if (model.HasOperator<AnyResultOperator>())
-            {
-                return new AnyQueryHandler(model, _schema).As<IQueryHandler<T>>();
-            }
-
-            return null;
-        }
-
-        public IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, bool returnDefaultWhenEmpty)
+        public IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model, IIncludeJoin[] joins,
+            QueryStatistics statistics)
         {
             _schema.EnsureStorageExists(model.SourceType());
 
-            return tryFindSingleQuery<T>(model, joins);
+            return tryFindScalarQuery<T>(model, joins, statistics);
         }
 
-        private IQueryHandler<T> tryFindSingleQuery<T>(QueryModel model, IIncludeJoin[] joins)
+        public IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins,
+            QueryStatistics statistics,
+            bool returnDefaultWhenEmpty)
         {
-            var choice = model.FindOperators<ChoiceResultOperatorBase>().FirstOrDefault();
+            _schema.EnsureStorageExists(model.SourceType());
 
-            if (choice == null) return null;
+            return tryFindSingleQuery<T>(model, joins, statistics);
+        }
 
-            if (choice is FirstResultOperator)
-            {
-                return choice.ReturnDefaultWhenEmpty
-                    ? OneResultHandler<T>.FirstOrDefault(_schema, model, joins)
-                    : OneResultHandler<T>.First(_schema, model, joins);
-            }
-
-            if (choice is SingleResultOperator)
-            {
-                return choice.ReturnDefaultWhenEmpty
-                    ? OneResultHandler<T>.SingleOrDefault(_schema, model, joins)
-                    : OneResultHandler<T>.Single(_schema, model, joins);
-            }
-
-            if (choice is MinResultOperator)
-            {
-                return AggregateQueryHandler<T>.Min(_schema, model);
-            }
-
-            if (choice is MaxResultOperator)
-            {
-                return AggregateQueryHandler<T>.Max(_schema, model);
-            }
-
-            if (model.HasOperator<LastResultOperator>())
-            {
-                throw new InvalidOperationException(
-                    "Marten does not support Last()/LastOrDefault(). Use reverse ordering and First()/FirstOrDefault() instead");
-            }
-
-            return null;
+        public IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins,
+            bool returnDefaultWhenEmpty)
+        {
+            return HandlerForSingleQuery<T>(model, joins, null, returnDefaultWhenEmpty);
         }
 
         public IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
@@ -150,7 +85,7 @@ namespace Marten.Linq.QueryHandlers
             CachedQuery cachedQuery;
             if (!_cache.Has(queryType))
             {
-                cachedQuery = buildCachedQuery<TDoc, TOut>(queryType, query);
+                cachedQuery = buildCachedQuery(queryType, query);
 
                 _cache[queryType] = cachedQuery;
             }
@@ -162,13 +97,95 @@ namespace Marten.Linq.QueryHandlers
             return cachedQuery.CreateHandler<TOut>(query);
         }
 
+        private IQueryHandler<T> listHandlerFor<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
+        {
+            if (model.HasOperator<ToJsonArrayResultOperator>())
+            {
+                var query = new LinqQuery<T>(_schema, model, joins, stats);
+                return new JsonQueryHandler(query.As<LinqQuery<string>>()).As<IQueryHandler<T>>();
+            }
 
-        private CachedQuery buildCachedQuery<TDoc, TOut>(Type queryType, ICompiledQuery<TDoc,TOut> query)
+            if (!typeof(T).IsGenericEnumerable())
+                return null;
+
+            var elementType = typeof(T).GetGenericArguments().First();
+            var handlerType = typeof(LinqQuery<>);
+
+            if (typeof(T).GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                handlerType = typeof(EnumerableQueryHandler<>);
+
+            // TODO -- WTH?
+            return
+                Activator.CreateInstance(handlerType.MakeGenericType(elementType), _schema, model, joins, stats)
+                    .As<IQueryHandler<T>>();
+        }
+
+        private IQueryHandler<T> tryFindScalarQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
+        {
+            if (model.HasOperator<CountResultOperator>() || model.HasOperator<LongCountResultOperator>())
+                return new LinqQuery<T>(_schema, model, joins, stats).ToCount<T>();
+
+            if (model.HasOperator<SumResultOperator>())
+                return AggregateQueryHandler<T>.Sum(new LinqQuery<T>(_schema, model, joins, stats));
+
+            if (model.HasOperator<AverageResultOperator>())
+                return AggregateQueryHandler<T>.Average(new LinqQuery<T>(_schema, model, joins, stats));
+
+            if (model.HasOperator<AnyResultOperator>())
+                return new LinqQuery<T>(_schema, model, joins, stats).ToAny().As<IQueryHandler<T>>();
+
+            return null;
+        }
+
+        private IQueryHandler<T> tryFindSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
+        {
+            var choice = model.FindOperators<ChoiceResultOperatorBase>().FirstOrDefault();
+
+            if (choice == null) return null;
+
+            var query = new LinqQuery<T>(_schema, model, joins, stats);
+
+            if (choice is FirstResultOperator)
+            {
+                return choice.ReturnDefaultWhenEmpty
+                    ? OneResultHandler<T>.FirstOrDefault(query)
+                    : OneResultHandler<T>.First(query);
+            }
+
+            if (choice is SingleResultOperator)
+            {
+                return choice.ReturnDefaultWhenEmpty
+                    ? OneResultHandler<T>.SingleOrDefault(query)
+                    : OneResultHandler<T>.Single(query);
+            }
+
+            if (choice is MinResultOperator)
+            {
+                return AggregateQueryHandler<T>.Min(query);
+            }
+
+            if (choice is MaxResultOperator)
+            {
+                return AggregateQueryHandler<T>.Max(query);
+            }
+
+            if (model.HasOperator<LastResultOperator>())
+            {
+                throw new InvalidOperationException(
+                    "Marten does not support Last()/LastOrDefault(). Use reverse ordering and First()/FirstOrDefault() instead");
+                
+            }
+            return null;
+        }
+
+
+        private CachedQuery buildCachedQuery<TDoc, TOut>(Type queryType, ICompiledQuery<TDoc, TOut> query)
         {
             Expression expression = query.QueryIs();
             var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
 
-            var setters = findSetters(_schema.MappingFor(typeof(TDoc)).ToQueryableDocument(), queryType, expression, _serializer);
+            var setters = findSetters(_schema.MappingFor(typeof(TDoc)).ToQueryableDocument(), queryType, expression,
+                _serializer);
 
             var model = MartenQueryParser.TransformQueryFlyweight.GetParsedQuery(invocation);
             _schema.EnsureStorageExists(typeof(TDoc));
@@ -180,11 +197,9 @@ namespace Marten.Linq.QueryHandlers
                 var builder = new CompiledIncludeJoinBuilder<TDoc, TOut>(_schema);
                 includeJoins = builder.BuildIncludeJoins(model, query);
             }
-            
+
             if (model.HasOperator<StatsResultOperator>())
-            {
                 SetStats(query, model);
-            }
 
             var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins, Stats);
             var cmd = new NpgsqlCommand();
@@ -198,6 +213,7 @@ namespace Marten.Linq.QueryHandlers
             };
         }
 
+        // TODO -- this can't be on QueryHandlerFactory!
         private void SetStats<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, QueryModel model)
         {
             var statsOperator = model.FindOperators<StatsResultOperator>().First();
@@ -207,7 +223,8 @@ namespace Marten.Linq.QueryHandlers
             prop.Invoke(query, new[] {Stats});
         }
 
-        private static IList<IDbParameterSetter> findSetters(IQueryableDocument mapping, Type queryType, Expression expression, ISerializer serializer)
+        private static IList<IDbParameterSetter> findSetters(IQueryableDocument mapping, Type queryType,
+            Expression expression, ISerializer serializer)
         {
             var visitor = new CompiledQueryMemberExpressionVisitor(mapping, queryType, serializer);
             visitor.Visit(expression);

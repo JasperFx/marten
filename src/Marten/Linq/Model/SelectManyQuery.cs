@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Collections.Generic;
+using System.Linq.Expressions;
 using Baseline;
 using Baseline.Conversion;
 using Marten.Schema;
@@ -8,18 +9,22 @@ using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
 
-namespace Marten.Linq
+namespace Marten.Linq.Model
 {
     public class SelectManyQuery
     {
+        public int Index { get; set; }
         private static readonly Conversions conversions = new Conversions();
 
         private readonly IField _field;
         private readonly QuerySourceReferenceExpression _expression;
         private readonly Expression _from;
 
-        public SelectManyQuery(IQueryableDocument mapping, QueryModel query)
+        public SelectManyQuery(IQueryableDocument mapping, QueryModel query, int index)
         {
+            Index = index;
+            // TODO -- use the index;)
+
             _expression = query.SelectClause.Selector.As<QuerySourceReferenceExpression>();
             _from = _expression.ReferencedQuerySource.As<AdditionalFromClause>().FromExpression;
 
