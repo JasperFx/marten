@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
+using System.Reflection;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
@@ -62,6 +64,22 @@ namespace Marten.Util
             }
 
             return command;
+        }
+
+        public static void AddParameters(this NpgsqlCommand command, object parameters)
+        {
+            if (parameters == null) return;
+
+            var parameterDictionary = parameters.GetType().GetProperties().ToDictionary(x => x.Name, x => x.GetValue(parameters, null));
+
+            foreach (var item in parameterDictionary)
+            {
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = item.Key;
+                parameter.Value = item.Value ?? DBNull.Value;
+
+                command.Parameters.Add(parameter);
+            }
         }
 
         public static NpgsqlParameter AddParameter(this NpgsqlCommand command, object value, NpgsqlDbType? dbType = null)

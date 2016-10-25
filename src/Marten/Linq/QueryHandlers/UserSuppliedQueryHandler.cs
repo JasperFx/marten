@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -38,11 +40,20 @@ namespace Marten.Linq.QueryHandlers
                 sql = "select data from {0} {1}".ToFormat(tableName, sql);
             }
 
-            _parameters.Each(x =>
+            var firstParameter = _parameters.FirstOrDefault();
+
+            if (_parameters.Length == 1 && firstParameter != null && firstParameter.IsAnonymousType())
             {
-                var param = command.AddParameter(x);
-                sql = sql.UseParameter(param);
-            });
+                command.AddParameters(firstParameter);
+            }
+            else
+            {
+                _parameters.Each(x =>
+                {
+                    var param = command.AddParameter(x);
+                    sql = sql.UseParameter(param);
+                });
+            }
 
             command.AppendQuery(sql);
         }
@@ -59,5 +70,7 @@ namespace Marten.Linq.QueryHandlers
 
             return selector.ReadAsync(reader, map, token);
         }
+
+        
     }
 }

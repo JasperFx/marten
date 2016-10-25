@@ -79,5 +79,14 @@ namespace Marten.Util
         {
             return type.GetTypeInfo().IsGenericType && type.GetGenericTypeDefinition() == typeof (IDictionary<,>);
         }
+
+        // http://stackoverflow.com/a/15273117/426840
+        public static bool IsAnonymousType(this object instance)
+        {
+            if (instance == null)
+                return false;
+
+            return instance.GetType().Namespace == null;
+        }
     }
 }
