@@ -123,62 +123,62 @@ namespace Marten.Linq
 
         public Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => new LinqQuery<TResult>(Schema, q, Includes.ToArray(), Statistics).ToList(), token);
+            return executeAsync(q => q.ToList().As<IQueryHandler<IList<TResult>>>(), token);
         }
 
         public Task<bool> AnyAsync(CancellationToken token)
         {
-            return executeAsync(q => new AnyQueryHandler(q, Schema), token);
+            return executeAsync(q => new AnyQueryHandler(q.Model, Schema), token);
         }
 
         public Task<int> CountAsync(CancellationToken token)
         {
-            return executeAsync(q => new CountQueryHandler<int>(q, Schema), token);
+            return executeAsync(q => new CountQueryHandler<int>(q.Model, Schema), token);
         }
 
         public Task<long> CountLongAsync(CancellationToken token)
         {
-            return executeAsync(q => new CountQueryHandler<long>(q, Schema), token);
+            return executeAsync(q => new CountQueryHandler<long>(q.Model, Schema), token);
         }
 
         public Task<TResult> FirstAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => OneResultHandler<TResult>.First(Schema, q, Includes.ToArray()), token);
+            return executeAsync(q => OneResultHandler<TResult>.First(Schema, q.Model, Includes.ToArray()), token);
         }
 
         public Task<TResult> FirstOrDefaultAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => OneResultHandler<TResult>.FirstOrDefault(Schema, q, Includes.ToArray()), token);
+            return executeAsync(q => OneResultHandler<TResult>.FirstOrDefault(Schema, q.Model, Includes.ToArray()), token);
         }
 
         public Task<TResult> SingleAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => OneResultHandler<TResult>.Single(Schema, q, Includes.ToArray()), token);
+            return executeAsync(q => OneResultHandler<TResult>.Single(Schema, q.Model, Includes.ToArray()), token);
         }
 
         public Task<TResult> SingleOrDefaultAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => OneResultHandler<TResult>.SingleOrDefault(Schema, q, Includes.ToArray()), token);
+            return executeAsync(q => OneResultHandler<TResult>.SingleOrDefault(Schema, q.Model, Includes.ToArray()), token);
         }
 
         public Task<TResult> SumAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => AggregateQueryHandler<TResult>.Sum(Schema, q), token);
+            return executeAsync(q => AggregateQueryHandler<TResult>.Sum(Schema, q.Model), token);
         }
 
         public Task<TResult> MinAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => AggregateQueryHandler<TResult>.Min(Schema, q), token);
+            return executeAsync(q => AggregateQueryHandler<TResult>.Min(Schema, q.Model), token);
         }
 
         public Task<TResult> MaxAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => AggregateQueryHandler<TResult>.Max(Schema, q), token);
+            return executeAsync(q => AggregateQueryHandler<TResult>.Max(Schema, q.Model), token);
         }
 
         public Task<double> AverageAsync(CancellationToken token)
         {
-            return executeAsync(q => AggregateQueryHandler<double>.Average(Schema, q), token);
+            return executeAsync(q => AggregateQueryHandler<double>.Average(Schema, q.Model), token);
         }
 
         public QueryModel ToQueryModel()
@@ -219,13 +219,15 @@ namespace Marten.Linq
         }
 
 
-        private Task<TResult> executeAsync<TResult>(Func<QueryModel, IQueryHandler<TResult>> source,
+        private Task<TResult> executeAsync<TResult>(Func<LinqQuery<T>, IQueryHandler<TResult>> source,
             CancellationToken token)
         {
             var query = ToQueryModel();
             Schema.EnsureStorageExists(query.SourceType());
 
-            var handler = source(query);
+            var linq = new LinqQuery<T>(Schema, query, Includes.ToArray(), Statistics);
+
+            var handler = source(linq);
 
             return Executor.Connection.FetchAsync(handler, Executor.IdentityMap.ForQuery(), token);
         }

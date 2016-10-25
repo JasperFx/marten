@@ -17,36 +17,37 @@ namespace Marten.Linq.Model
 {
     public class LinqQuery<T>
     {
-        private readonly QueryModel _query;
         private readonly IDocumentSchema _schema;
         private readonly IQueryableDocument _mapping;
 
         private readonly SelectManyQuery _subQuery;
 
-        public LinqQuery(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins, QueryStatistics stats)
+        public LinqQuery(IDocumentSchema schema, QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
-            _query = query;
+            Model = model;
             _schema = schema;
-            _mapping = schema.MappingFor(query).ToQueryableDocument();
+            _mapping = schema.MappingFor(model).ToQueryableDocument();
 
-            for (int i = 0; i < query.BodyClauses.Count; i++)
+            for (int i = 0; i < model.BodyClauses.Count; i++)
             {
-                var clause = query.BodyClauses[i];
+                var clause = model.BodyClauses[i];
                 if (clause is AdditionalFromClause)
                 {
                     // TODO -- to be able to go recursive, have _subQuery start to read the BodyClauses
-                    _subQuery = new SelectManyQuery(_mapping, query, i + 1);
+                    _subQuery = new SelectManyQuery(_mapping, model, i + 1);
 
 
                     break;
                 }
             }
 
-            Selector = BuildSelector(schema, query, joins, stats);
-            SourceType = _query.SourceType();
+            Selector = BuildSelector(schema, model, joins, stats);
+            SourceType = Model.SourceType();
 
             Where = buildWhereFragment();
         }
+
+        public QueryModel Model { get; }
 
         public ISelector<T> Selector { get; }
 
@@ -156,7 +157,7 @@ namespace Marten.Linq.Model
             }
             else
             {
-                var take = _query.FindOperators<TakeResultOperator>().LastOrDefault();
+                var take = Model.FindOperators<TakeResultOperator>().LastOrDefault();
                 if (take != null)
                 {
                     var param = command.AddParameter(take.Count.Value());
@@ -168,7 +169,7 @@ namespace Marten.Linq.Model
 
         private string applySkip(NpgsqlCommand command, string sql)
         {
-            var skip = _query.FindOperators<SkipResultOperator>().LastOrDefault();
+            var skip = Model.FindOperators<SkipResultOperator>().LastOrDefault();
             if (skip != null)
             {
                 var param = command.AddParameter(skip.Count.Value());
@@ -204,14 +205,14 @@ namespace Marten.Linq.Model
                 ? _schema.Parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
                 : new CompoundWhereFragment(_schema.Parser, _mapping, "and", wheres);
 
-            return _mapping.FilterDocuments(_query, where);
+            return _mapping.FilterDocuments(Model, where);
         }
 
         private IEnumerable<IBodyClause> bodyClauses()
         {
             var bodies = _subQuery == null
-                ? _query.AllBodyClauses()
-                : _query.BodyClauses.Take(_subQuery.Index);
+                ? Model.AllBodyClauses()
+                : Model.BodyClauses.Take(_subQuery.Index);
 
             return bodies;
         }
