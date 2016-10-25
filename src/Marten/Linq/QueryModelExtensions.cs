@@ -55,23 +55,6 @@ namespace Marten.Linq
             return query.AllResultOperators().Any(x => x is T);
         }
 
-        [Obsolete("Moving to LinqQuery")]
-        public static string ToOrderClause(this QueryModel query, IQueryableDocument mapping)
-        {
-            var orders = query.AllBodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
-            if (!orders.Any()) return string.Empty;
-
-            return " order by " + orders.Select(c => ToOrderClause(c, mapping)).Join(", ");
-        }
-
-        public static string ToOrderClause(this Ordering clause, IQueryableDocument mapping)
-        {
-            var locator = mapping.JsonLocator(clause.Expression);
-            return clause.OrderingDirection == OrderingDirection.Asc
-                ? locator
-                : locator + " desc";
-        }
-
         [Obsolete("Moving this functionality to LinqQuery")]
         public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, IQueryableDocument mapping,
             QueryModel query)

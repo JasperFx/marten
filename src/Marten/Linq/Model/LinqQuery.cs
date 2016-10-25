@@ -122,7 +122,15 @@ namespace Marten.Linq.Model
             var orders = bodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
             if (!orders.Any()) return string.Empty;
 
-            return " order by " + orders.Select(c => c.ToOrderClause(_mapping)).Join(", ");
+            return " order by " + orders.Select(toOrderClause).Join(", ");
+        }
+
+        private string toOrderClause(Ordering clause)
+        {
+            var locator = _mapping.JsonLocator(clause.Expression);
+            return clause.OrderingDirection == OrderingDirection.Asc
+                ? locator
+                : locator + " desc";
         }
 
         private IWhereFragment buildWhereFragment()
@@ -144,6 +152,7 @@ namespace Marten.Linq.Model
             var bodies = _subQuery == null
                 ? _query.AllBodyClauses()
                 : _query.BodyClauses.Take(_subQuery.Index);
+
             return bodies;
         }
     }
