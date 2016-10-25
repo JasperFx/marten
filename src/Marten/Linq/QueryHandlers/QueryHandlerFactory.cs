@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
 using Marten.Linq.Compiled;
+using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers.CompiledInclude;
 using Marten.Schema;
 using Marten.Services.Includes;
@@ -48,7 +49,8 @@ namespace Marten.Linq.QueryHandlers
         {
             if (model.HasOperator<ToJsonArrayResultOperator>())
             {
-                return new JsonQueryHandler(_schema, model).As<IQueryHandler<T>>();
+                var query = new LinqQuery<T>(model, _schema, joins, stats);
+                return new JsonQueryHandler(query.As<LinqQuery<string>>()).As<IQueryHandler<T>>();
             }
 
             if (!typeof (T).IsGenericEnumerable())
