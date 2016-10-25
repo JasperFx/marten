@@ -4,15 +4,18 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Schema;
+using Marten.Linq.Model;
 using Marten.Services.Includes;
-using Remotion.Linq;
 
 namespace Marten.Linq
 {
-
+    // TODO -- change the signature of this in 2.0 so that all the First/Single
+    // methods are on IMartenQueryable<T>
     public interface IMartenQueryable
     {
+        IEnumerable<IIncludeJoin> Includes { get; }
+
+        QueryStatistics Statistics { get; }
         Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token);
         Task<bool> AnyAsync(CancellationToken token);
         Task<int> CountAsync(CancellationToken token);
@@ -21,9 +24,6 @@ namespace Marten.Linq
         Task<TResult> FirstOrDefaultAsync<TResult>(CancellationToken token);
         Task<TResult> SingleAsync<TResult>(CancellationToken token);
         Task<TResult> SingleOrDefaultAsync<TResult>(CancellationToken token);
-        IEnumerable<IIncludeJoin> Includes { get; }
-
-        QueryStatistics Statistics { get; }
 
         Task<TResult> SumAsync<TResult>(CancellationToken token);
         Task<TResult> MinAsync<TResult>(CancellationToken token);
@@ -32,8 +32,8 @@ namespace Marten.Linq
         QueryPlan Explain(FetchType fetchType = FetchType.FetchMany);
 
         /// <summary>
-        /// Applies a pre-loaded Javascript transformation to the documents
-        /// returned by this query
+        ///     Applies a pre-loaded Javascript transformation to the documents
+        ///     returned by this query
         /// </summary>
         /// <typeparam name="TDoc"></typeparam>
         /// <param name="transformName"></param>
@@ -44,12 +44,19 @@ namespace Marten.Linq
 
     public interface IMartenQueryable<T> : IQueryable<T>, IMartenQueryable
     {
-        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, JoinType joinType = JoinType.Inner);
-        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list, JoinType joinType = JoinType.Inner);
-        IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource, IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner);
+        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback,
+            JoinType joinType = JoinType.Inner);
+
+        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list,
+            JoinType joinType = JoinType.Inner);
+
+        IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
+            IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner);
 
 
         IMartenQueryable<T> Stats(out QueryStatistics stats);
+
+        LinqQuery<T> ToLinqQuery();
     }
 
     public class QueryStatistics
