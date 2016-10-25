@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq.Model;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
@@ -35,7 +36,7 @@ namespace Marten.Linq.QueryHandlers
 
             if (_query.HasSelectMany())
             {
-                var selectMany = _query.ToSelectManyQuery(mapping);
+                var selectMany = new SelectManyQuery(mapping, _query, 0);
 
                 select = $"select (sum(jsonb_array_length({selectMany.SqlLocator})) > 0) as result";
             }

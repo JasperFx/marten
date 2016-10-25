@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq.Model;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
@@ -41,7 +42,7 @@ namespace Marten.Linq.QueryHandlers
                     throw new NotSupportedException("Marten does not yet support SelectMany() with both a Distinct() and Count() operator");
                 }
 
-                var selectMany = _query.ToSelectManyQuery(mapping);
+                var selectMany = new SelectManyQuery(mapping, _query, 0);
 
                 select = $"select sum(jsonb_array_length({selectMany.SqlLocator})) as number";
             }

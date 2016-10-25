@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services.Includes;
+using Marten.Transforms;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
@@ -54,7 +56,7 @@ namespace Marten.Linq.Model
             IIncludeJoin[] joins, QueryStatistics stats)
         {
             var mapping = schema.MappingFor(query).ToQueryableDocument();
-            var selector = schema.BuildSelector<T>(mapping, query);
+            var selector = buildSelector<T>(schema, mapping, query);
 
             if (stats != null)
             {
@@ -67,6 +69,46 @@ namespace Marten.Linq.Model
             }
 
             return selector;
+        }
+
+        private static ISelector<T> buildSelector<T>(IDocumentSchema schema, IQueryableDocument mapping,
+            QueryModel query)
+        {
+            var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
+            if (selectable != null)
+            {
+                return selectable.BuildSelector<T>(schema, mapping);
+            }
+
+
+            if (query.HasSelectMany())
+            {
+                return new SelectManyQuery(mapping, query, 0).ToSelector<T>(schema.StoreOptions.Serializer());
+            }
+
+            if (query.SelectClause.Selector.Type == query.SourceType())
+            {
+                if (typeof(T) == typeof(string))
+                {
+                    return (ISelector<T>)new JsonSelector();
+                }
+
+                // I'm so ashamed of this hack, but "simplest thing that works"
+                if (typeof(T) == typeof(IEvent))
+                {
+                    return mapping.As<EventQueryMapping>().Selector.As<ISelector<T>>();
+                }
+
+                var resolver = schema.ResolverFor<T>();
+
+                return new WholeDocumentSelector<T>(mapping, resolver);
+            }
+
+
+            var visitor = new SelectorParser(query);
+            visitor.Visit(query.SelectClause.Selector);
+
+            return visitor.ToSelector<T>(schema, mapping);
         }
 
         public override void ConfigureCommand(NpgsqlCommand command)
@@ -93,6 +135,14 @@ namespace Marten.Linq.Model
 
             if (orderBy.IsNotEmpty()) sql += orderBy;
 
+            sql = applySkip(command, sql);
+            sql = applyTake(command, limit, sql);
+
+            command.AppendQuery(sql);
+        }
+
+        private string applyTake(NpgsqlCommand command, int limit, string sql)
+        {
             if (limit > 0)
             {
                 sql += " LIMIT " + limit;
@@ -106,15 +156,18 @@ namespace Marten.Linq.Model
                     sql += " LIMIT :" + param.ParameterName;
                 }
             }
+            return sql;
+        }
 
+        private string applySkip(NpgsqlCommand command, string sql)
+        {
             var skip = _query.FindOperators<SkipResultOperator>().LastOrDefault();
             if (skip != null)
             {
                 var param = command.AddParameter(skip.Count.Value());
                 sql += " OFFSET :" + param.ParameterName;
             }
-
-            command.AppendQuery(sql);
+            return sql;
         }
 
         private string determineOrderClause()
