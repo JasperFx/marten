@@ -17,14 +17,15 @@ namespace Marten.Linq.QueryHandlers
         private const string MoreThanOneElementMessage = "Sequence contains more than one element";
         private readonly bool _canBeMultiples;
         private readonly bool _canBeNull;
-        private readonly LinqQuery<T> _linqQuery;
         private readonly int _rowLimit;
+        private readonly LinqQuery<T> _linqQuery;
 
-        public OneResultHandler(int rowLimit, IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins,
+        public OneResultHandler(int rowLimit, LinqQuery<T> linqQuery,
             bool canBeNull = true, bool canBeMultiples = true)
         {
-            _linqQuery = new LinqQuery<T>(schema, query, joins, null);
+
             _rowLimit = rowLimit;
+            _linqQuery = linqQuery;
             _canBeNull = canBeNull;
             _canBeMultiples = canBeMultiples;
         }
@@ -72,24 +73,24 @@ namespace Marten.Linq.QueryHandlers
             return result;
         }
 
-        public static IQueryHandler<T> Single(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins)
+        public static IQueryHandler<T> Single(LinqQuery<T> query)
         {
-            return new OneResultHandler<T>(2, schema, query, joins, false, false);
+            return new OneResultHandler<T>(2, query, false, false);
         }
 
-        public static IQueryHandler<T> SingleOrDefault(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins)
+        public static IQueryHandler<T> SingleOrDefault(LinqQuery<T> query)
         {
-            return new OneResultHandler<T>(2, schema, query, joins, true, false);
+            return new OneResultHandler<T>(2, query, true, false);
         }
 
-        public static IQueryHandler<T> First(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins)
+        public static IQueryHandler<T> First(LinqQuery<T> query)
         {
-            return new OneResultHandler<T>(1, schema, query, joins, false, true);
+            return new OneResultHandler<T>(1, query, false, true);
         }
 
-        public static IQueryHandler<T> FirstOrDefault(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins)
+        public static IQueryHandler<T> FirstOrDefault(LinqQuery<T> query)
         {
-            return new OneResultHandler<T>(1, schema, query, joins, true, true);
+            return new OneResultHandler<T>(1, query, true, true);
         }
     }
 }

@@ -205,41 +205,32 @@ namespace Marten.Services.BatchQuerying
             return AddItem(new LinqQuery<T>(_schema, query, queryable.Includes.ToArray(), queryable.Statistics).ToList());
         }
 
-
         public Task<T> First<T>(IMartenQueryable<T> queryable)
         {
-            var expression = queryable.Expression;
+            var query = queryable.ToLinqQuery();
 
-            var query = QueryParser.GetParsedQuery(expression);
-
-            return AddItem(OneResultHandler<T>.First(_schema, query, queryable.Includes.ToArray()));
+            return AddItem(OneResultHandler<T>.First(query));
         }
 
         public Task<T> FirstOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            var expression = queryable.Expression;
+            var query = queryable.ToLinqQuery();
 
-            var query = QueryParser.GetParsedQuery(expression);
-
-            return AddItem(OneResultHandler<T>.FirstOrDefault(_schema, query, queryable.Includes.ToArray()));
+            return AddItem(OneResultHandler<T>.FirstOrDefault(query));
         }
 
         public Task<T> Single<T>(IMartenQueryable<T> queryable)
         {
-            var expression = queryable.Expression;
+            var query = queryable.ToLinqQuery();
 
-            var query = QueryParser.GetParsedQuery(expression);
-
-            return AddItem(OneResultHandler<T>.Single(_schema, query, queryable.Includes.ToArray()));
+            return AddItem(OneResultHandler<T>.Single(query));
         }
 
         public Task<T> SingleOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            var expression = queryable.Expression;
+            var query = queryable.ToLinqQuery();
 
-            var query = QueryParser.GetParsedQuery(expression);
-
-            return AddItem(OneResultHandler<T>.SingleOrDefault(_schema, query, queryable.Includes.ToArray()));
+            return AddItem(OneResultHandler<T>.SingleOrDefault(query));
         }
 
         public Task<TResult> Min<TResult>(IQueryable<TResult> queryable)

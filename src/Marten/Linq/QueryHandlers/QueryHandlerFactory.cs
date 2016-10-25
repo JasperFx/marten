@@ -66,7 +66,8 @@ namespace Marten.Linq.QueryHandlers
                 handlerType = typeof (EnumerableQueryHandler<>);
             }
 
-            return Activator.CreateInstance(handlerType.MakeGenericType(elementType), new object[] {_schema, model, joins, stats}).As<IQueryHandler<T>>();
+            // TODO -- WTH?
+            return Activator.CreateInstance(handlerType.MakeGenericType(elementType), new object[] { _schema, model, joins, stats}).As<IQueryHandler<T>>();
         }
 
         public IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model)
@@ -114,18 +115,20 @@ namespace Marten.Linq.QueryHandlers
 
             if (choice == null) return null;
 
+            var query = new LinqQuery<T>(_schema, model, joins, Stats);
+
             if (choice is FirstResultOperator)
             {
                 return choice.ReturnDefaultWhenEmpty
-                    ? OneResultHandler<T>.FirstOrDefault(_schema, model, joins)
-                    : OneResultHandler<T>.First(_schema, model, joins);
+                    ? OneResultHandler<T>.FirstOrDefault(query)
+                    : OneResultHandler<T>.First(query);
             }
 
             if (choice is SingleResultOperator)
             {
                 return choice.ReturnDefaultWhenEmpty
-                    ? OneResultHandler<T>.SingleOrDefault(_schema, model, joins)
-                    : OneResultHandler<T>.Single(_schema, model, joins);
+                    ? OneResultHandler<T>.SingleOrDefault(query)
+                    : OneResultHandler<T>.Single(query);
             }
 
             if (choice is MinResultOperator)

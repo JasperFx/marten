@@ -143,22 +143,22 @@ namespace Marten.Linq
 
         public Task<TResult> FirstAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => OneResultHandler<TResult>.First(Schema, q.Model, Includes.ToArray()), token);
+            return executeAsync(q => OneResultHandler<TResult>.First(q.As<LinqQuery<TResult>>()), token);
         }
 
         public Task<TResult> FirstOrDefaultAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => OneResultHandler<TResult>.FirstOrDefault(Schema, q.Model, Includes.ToArray()), token);
+            return executeAsync(q => OneResultHandler<TResult>.FirstOrDefault(q.As<LinqQuery<TResult>>()), token);
         }
 
         public Task<TResult> SingleAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => OneResultHandler<TResult>.Single(Schema, q.Model, Includes.ToArray()), token);
+            return executeAsync(q => OneResultHandler<TResult>.Single(q.As<LinqQuery<TResult>>()), token);
         }
 
         public Task<TResult> SingleOrDefaultAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => OneResultHandler<TResult>.SingleOrDefault(Schema, q.Model, Includes.ToArray()), token);
+            return executeAsync(q => OneResultHandler<TResult>.SingleOrDefault(q.As<LinqQuery<TResult>>()), token);
         }
 
         public Task<TResult> SumAsync<TResult>(CancellationToken token)
@@ -186,6 +186,13 @@ namespace Marten.Linq
             return MartenQueryParser.Flyweight.GetParsedQuery(Expression);
         }
 
+        public LinqQuery<T> ToLinqQuery()
+        {
+            var query = MartenQueryParser.Flyweight.GetParsedQuery(Expression);
+            return new LinqQuery<T>(Schema, query, Includes.ToArray(), Statistics);
+        }
+
+
         private IQueryHandler toDiagnosticHandler(QueryModel model, FetchType fetchType)
         {
             switch (fetchType)
@@ -200,7 +207,7 @@ namespace Marten.Linq
                     return new LinqQuery<T>(Schema, model, Includes.ToArray(), Statistics).ToList();
 
                 case FetchType.FetchOne:
-                    return OneResultHandler<T>.First(Schema, model, Includes.ToArray());
+                    return OneResultHandler<T>.First(ToLinqQuery());
             }
 
             throw new ArgumentOutOfRangeException(nameof(fetchType));
