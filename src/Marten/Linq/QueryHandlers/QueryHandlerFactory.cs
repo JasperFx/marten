@@ -110,7 +110,7 @@ namespace Marten.Linq.QueryHandlers
 
             if (model.HasOperator<AnyResultOperator>())
             {
-                return new AnyQueryHandler(model, _schema).As<IQueryHandler<T>>();
+                return new LinqQuery<T>(_schema, model, joins, stats).ToAny().As<IQueryHandler<T>>();
             }
 
             return null;

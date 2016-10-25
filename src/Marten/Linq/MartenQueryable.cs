@@ -32,8 +32,7 @@ namespace Marten.Linq
 
         public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany)
         {
-            var model = MartenQueryParser.Flyweight.GetParsedQuery(Expression);
-            var handler = toDiagnosticHandler(model, fetchType);
+            var handler = toDiagnosticHandler(fetchType);
 
             var cmd = new NpgsqlCommand();
             handler.ConfigureCommand(cmd);
@@ -128,7 +127,7 @@ namespace Marten.Linq
 
         public Task<bool> AnyAsync(CancellationToken token)
         {
-            return executeAsync(q => new AnyQueryHandler(q.Model, Schema), token);
+            return executeAsync(q => q.ToAny(), token);
         }
 
         public Task<int> CountAsync(CancellationToken token)
@@ -193,18 +192,18 @@ namespace Marten.Linq
         }
 
 
-        private IQueryHandler toDiagnosticHandler(QueryModel model, FetchType fetchType)
+        private IQueryHandler toDiagnosticHandler(FetchType fetchType)
         {
             switch (fetchType)
             {
                 case FetchType.Count:
-                    return new CountQueryHandler<int>(ToLinqQuery());
+                    return ToLinqQuery().ToCount<int>();
 
                 case FetchType.Any:
-                    return new AnyQueryHandler(model, Schema);
+                    return ToLinqQuery().ToAny();
 
                 case FetchType.FetchMany:
-                    return new LinqQuery<T>(Schema, model, Includes.ToArray(), Statistics).ToList();
+                    return ToLinqQuery().ToList();
 
                 case FetchType.FetchOne:
                     return OneResultHandler<T>.First(ToLinqQuery());
@@ -215,10 +214,7 @@ namespace Marten.Linq
 
         public NpgsqlCommand BuildCommand(FetchType fetchType)
         {
-            // Need to do each fetch type
-            var model = new MartenQueryParser().GetParsedQuery(Expression);
-
-            var handler = toDiagnosticHandler(model, fetchType);
+            var handler = toDiagnosticHandler(fetchType);
             var cmd = new NpgsqlCommand();
             handler.ConfigureCommand(cmd);
 

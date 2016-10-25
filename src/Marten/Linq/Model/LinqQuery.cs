@@ -21,6 +21,7 @@ namespace Marten.Linq.Model
         void ConfigureCommand(NpgsqlCommand command, int limit);
         string AppendWhere(NpgsqlCommand command, string sql);
         void ConfigureCount(NpgsqlCommand command);
+        void ConfigureAny(NpgsqlCommand command);
     }
 
     public class LinqQuery<T> : ILinqQuery
@@ -194,6 +195,27 @@ namespace Marten.Linq.Model
         public IQueryHandler<TResult> ToCount<TResult>()
         {
             return new CountQueryHandler<TResult>(this);
+        }
+
+        public void ConfigureAny(NpgsqlCommand command)
+        {
+            var select = "select (count(*) > 0) as result";
+
+            if (_subQuery != null)
+            {
+                select = $"select (sum(jsonb_array_length({_subQuery.SqlLocator})) > 0) as result";
+            }
+
+            var sql = $"{select} from {_mapping.Table.QualifiedName} as d";
+
+            sql = new LinqQuery<bool>(_schema, Model, new IIncludeJoin[0], null).AppendWhere(command, sql);
+
+            command.AppendQuery(sql);
+        }
+
+        public IQueryHandler<bool> ToAny()
+        {
+            return new AnyQueryHandler(this);
         }
     }
 }
