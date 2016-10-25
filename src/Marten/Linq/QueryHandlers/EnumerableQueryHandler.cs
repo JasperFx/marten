@@ -16,12 +16,6 @@ namespace Marten.Linq.QueryHandlers
     {
         private readonly IQueryHandler<IList<T>> _inner;
 
-        public EnumerableQueryHandler(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins)
-            : this(schema, query, joins, null)
-        {
-            
-        }
-
         public EnumerableQueryHandler(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins, QueryStatistics stats)
         {
             _inner = new LinqQuery<T>(schema, query, joins, stats).ToList();
