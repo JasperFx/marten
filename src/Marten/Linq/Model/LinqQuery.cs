@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
-using Marten.Events;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services.Includes;
-using Marten.Transforms;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
@@ -17,8 +15,8 @@ namespace Marten.Linq.Model
 {
     public class LinqQuery<T>
     {
-        private readonly IDocumentSchema _schema;
         private readonly IQueryableDocument _mapping;
+        private readonly IDocumentSchema _schema;
 
         private readonly SelectManyQuery _subQuery;
 
@@ -28,7 +26,7 @@ namespace Marten.Linq.Model
             _schema = schema;
             _mapping = schema.MappingFor(model).ToQueryableDocument();
 
-            for (int i = 0; i < model.BodyClauses.Count; i++)
+            for (var i = 0; i < model.BodyClauses.Count; i++)
             {
                 var clause = model.BodyClauses[i];
                 if (clause is AdditionalFromClause)
@@ -41,7 +39,7 @@ namespace Marten.Linq.Model
                 }
             }
 
-            Selector = BuildSelector(schema, model, joins, stats);
+            Selector = schema.HandlerFactory.BuildSelector<T>(model, joins, stats);
             SourceType = Model.SourceType();
 
             Where = buildWhereFragment();
@@ -55,70 +53,6 @@ namespace Marten.Linq.Model
 
         public Type SourceType { get; }
 
-        public static ISelector<T> BuildSelector(IDocumentSchema schema, QueryModel query,
-            IIncludeJoin[] joins, QueryStatistics stats)
-        {
-            var mapping = schema.MappingFor(query).ToQueryableDocument();
-            var selector = buildSelector<T>(schema, mapping, query);
-
-            if (stats != null)
-            {
-                selector = new StatsSelector<T>(stats, selector);
-            }
-
-            if (joins.Any())
-            {
-                selector = new IncludeSelector<T>(schema, selector, joins);
-            }
-
-            return selector;
-        }
-
-        private static ISelector<T> buildSelector<T>(IDocumentSchema schema, IQueryableDocument mapping,
-            QueryModel query)
-        {
-            var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
-            if (selectable != null)
-            {
-                return selectable.BuildSelector<T>(schema, mapping);
-            }
-
-
-            if (query.HasSelectMany())
-            {
-                return new SelectManyQuery(mapping, query, 0).ToSelector<T>(schema.StoreOptions.Serializer());
-            }
-
-            if (query.SelectClause.Selector.Type == query.SourceType())
-            {
-                if (typeof(T) == typeof(string))
-                {
-                    return (ISelector<T>)new JsonSelector();
-                }
-
-                // I'm so ashamed of this hack, but "simplest thing that works"
-                if (typeof(T) == typeof(IEvent))
-                {
-                    return mapping.As<EventQueryMapping>().Selector.As<ISelector<T>>();
-                }
-
-                if (typeof(T) != query.SourceType())
-                {
-                    // TODO -- going to have to come back to this one.
-                    return null;
-                }
-
-                var resolver = schema.ResolverFor<T>();
-
-                return new WholeDocumentSelector<T>(mapping, resolver);
-            }
-
-
-            var visitor = new SelectorParser(query);
-            visitor.Visit(query.SelectClause.Selector);
-
-            return visitor.ToSelector<T>(schema, mapping);
-        }
 
         public IQueryHandler<IList<T>> ToList()
         {
@@ -150,14 +84,10 @@ namespace Marten.Linq.Model
         {
             string filter = null;
             if (Where != null)
-            {
                 filter = Where.ToSql(command);
-            }
 
             if (filter.IsNotEmpty())
-            {
                 sql += " where " + filter;
-            }
             return sql;
         }
 
