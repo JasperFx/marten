@@ -13,7 +13,17 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.Model
 {
-    public class LinqQuery<T>
+    public interface ILinqQuery
+    {
+        QueryModel Model { get; }
+        Type SourceType { get; }
+        void ConfigureCommand(NpgsqlCommand command);
+        void ConfigureCommand(NpgsqlCommand command, int limit);
+        string AppendWhere(NpgsqlCommand command, string sql);
+        void ConfigureCount(NpgsqlCommand command);
+    }
+
+    public class LinqQuery<T> : ILinqQuery
     {
         private readonly IQueryableDocument _mapping;
         private readonly IDocumentSchema _schema;
@@ -179,6 +189,11 @@ namespace Marten.Linq.Model
             sql = AppendWhere(command, sql);
 
             command.AppendQuery(sql);
+        }
+
+        public IQueryHandler<TResult> ToCount<TResult>()
+        {
+            return new CountQueryHandler<TResult>(this);
         }
     }
 }

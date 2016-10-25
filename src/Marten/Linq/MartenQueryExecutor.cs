@@ -40,7 +40,7 @@ namespace Marten.Linq
 
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
-            var handler = Schema.HandlerFactory.HandlerForScalarQuery<T>(queryModel);
+            var handler = Schema.HandlerFactory.HandlerForScalarQuery<T>(queryModel, Includes.ToArray(), Statistics);
 
             if (handler == null)
             {
@@ -54,7 +54,7 @@ namespace Marten.Linq
 
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
-            var handler = Schema.HandlerFactory.HandlerForSingleQuery<T>(queryModel, _includes.ToArray(),
+            var handler = Schema.HandlerFactory.HandlerForSingleQuery<T>(queryModel, _includes.ToArray(), Statistics,
                 returnDefaultWhenEmpty);
 
             if (handler == null)

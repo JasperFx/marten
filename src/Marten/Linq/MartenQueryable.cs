@@ -133,12 +133,12 @@ namespace Marten.Linq
 
         public Task<int> CountAsync(CancellationToken token)
         {
-            return executeAsync(q => new CountQueryHandler<int>(q.Model, Schema), token);
+            return executeAsync(q => q.ToCount<int>(), token);
         }
 
         public Task<long> CountLongAsync(CancellationToken token)
         {
-            return executeAsync(q => new CountQueryHandler<long>(q.Model, Schema), token);
+            return executeAsync(q => q.ToCount<long>(), token);
         }
 
         public Task<TResult> FirstAsync<TResult>(CancellationToken token)
@@ -198,7 +198,7 @@ namespace Marten.Linq
             switch (fetchType)
             {
                 case FetchType.Count:
-                    return new CountQueryHandler<int>(model, Schema);
+                    return new CountQueryHandler<int>(ToLinqQuery());
 
                 case FetchType.Any:
                     return new AnyQueryHandler(model, Schema);

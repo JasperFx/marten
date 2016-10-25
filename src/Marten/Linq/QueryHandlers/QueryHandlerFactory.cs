@@ -20,14 +20,19 @@ namespace Marten.Linq.QueryHandlers
     public interface IQueryHandlerFactory
     {
         IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model);
+        IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model, IIncludeJoin[] toArray, QueryStatistics statistics);
+
+
         IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, bool returnDefaultWhenEmpty);
 
+        IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics statistics, bool returnDefaultWhenEmpty);
 
         IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats);
 
         IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query);
 
         ISelector<T> BuildSelector<T>(QueryModel query, IIncludeJoin[] joins, QueryStatistics stats);
+        
     }
 
     public class QueryHandlerFactory : IQueryHandlerFactory
@@ -46,7 +51,7 @@ namespace Marten.Linq.QueryHandlers
 
         public IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
-            return tryFindScalarQuery<T>(model) ?? tryFindSingleQuery<T>(model, joins) ?? listHandlerFor<T>(model, joins, stats);
+            return tryFindScalarQuery<T>(model, joins, stats) ?? tryFindSingleQuery<T>(model, joins, stats) ?? listHandlerFor<T>(model, joins, stats);
         }
 
         private IQueryHandler<T> listHandlerFor<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
@@ -76,16 +81,21 @@ namespace Marten.Linq.QueryHandlers
 
         public IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model)
         {
-            _schema.EnsureStorageExists(model.SourceType());
-
-            return tryFindScalarQuery<T>(model);
+            return HandlerForScalarQuery<T>(model, new IIncludeJoin[0], null);
         }
 
-        private IQueryHandler<T> tryFindScalarQuery<T>(QueryModel model)
+        public IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics statistics)
+        {
+            _schema.EnsureStorageExists(model.SourceType());
+
+            return tryFindScalarQuery<T>(model, joins, statistics);
+        }
+
+        private IQueryHandler<T> tryFindScalarQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
             if (model.HasOperator<CountResultOperator>() || model.HasOperator<LongCountResultOperator>())
             {
-                return new CountQueryHandler<T>(model, _schema);
+                return new LinqQuery<T>(_schema, model, joins, stats).ToCount<T>();
             }
 
             if (model.HasOperator<SumResultOperator>())
@@ -106,20 +116,26 @@ namespace Marten.Linq.QueryHandlers
             return null;
         }
 
-        public IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, bool returnDefaultWhenEmpty)
+        public IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics statistics,
+            bool returnDefaultWhenEmpty)
         {
             _schema.EnsureStorageExists(model.SourceType());
 
-            return tryFindSingleQuery<T>(model, joins);
+            return tryFindSingleQuery<T>(model, joins, statistics);
         }
 
-        private IQueryHandler<T> tryFindSingleQuery<T>(QueryModel model, IIncludeJoin[] joins)
+        public IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, bool returnDefaultWhenEmpty)
+        {
+            return HandlerForSingleQuery<T>(model, joins, null, returnDefaultWhenEmpty);
+        }
+
+        private IQueryHandler<T> tryFindSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
             var choice = model.FindOperators<ChoiceResultOperatorBase>().FirstOrDefault();
 
             if (choice == null) return null;
 
-            var query = new LinqQuery<T>(_schema, model, joins, Stats);
+            var query = new LinqQuery<T>(_schema, model, joins, stats);
 
             if (choice is FirstResultOperator)
             {
@@ -208,6 +224,7 @@ namespace Marten.Linq.QueryHandlers
             };
         }
 
+        // TODO -- this can't be on QueryHandlerFactory!
         private void SetStats<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, QueryModel model)
         {
             var statsOperator = model.FindOperators<StatsResultOperator>().First();
