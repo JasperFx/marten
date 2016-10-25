@@ -6,6 +6,7 @@ using Baseline;
 using Marten.Linq.Model;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Includes;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
@@ -41,11 +42,9 @@ namespace Marten.Linq.QueryHandlers
                 select = $"select (sum(jsonb_array_length({selectMany.SqlLocator})) > 0) as result";
             }
 
-
             var sql = $"{select} from {mapping.Table.QualifiedName} as d";
 
-            var where = _schema.BuildWhereFragment(mapping, _query);
-            sql = sql.AppendWhere(@where, command);
+            sql = new LinqQuery<bool>(_schema, _query, new IIncludeJoin[0], null).AppendWhere(command, sql);
 
             command.AppendQuery(sql);
         }

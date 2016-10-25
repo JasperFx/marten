@@ -49,24 +49,18 @@ namespace Marten.Linq
             return query.AllResultOperators().Any(x => x is T);
         }
 
-        [Obsolete("Moving this functionality to LinqQuery")]
-        public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, IQueryableDocument mapping,
-            QueryModel query)
-        {
-            var wheres = query.AllBodyClauses().OfType<WhereClause>().ToArray();
-            if (wheres.Length == 0) return mapping.DefaultWhereFragment();
-
-            var where = wheres.Length == 1
-                ? schema.Parser.ParseWhereFragment(mapping, wheres.Single().Predicate)
-                : new CompoundWhereFragment(schema.Parser, mapping, "and", wheres);
-
-            return mapping.FilterDocuments(query, where);
-        }
-
+        [Obsolete("Fold this inside of LinqQuery someday")]
         public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, QueryModel query)
         {
             var mapping = schema.MappingFor(query.SourceType()).ToQueryableDocument();
-            return schema.BuildWhereFragment(mapping, query);
+            var wheres = query.AllBodyClauses().OfType<WhereClause>().ToArray();
+            if (wheres.Length == 0) return mapping.DefaultWhereFragment();
+
+            var @where = wheres.Length == 1
+                ? schema.Parser.ParseWhereFragment(mapping, wheres.Single().Predicate)
+                : new CompoundWhereFragment(schema.Parser, mapping, "and", wheres);
+
+            return mapping.FilterDocuments(query, @where);
         }
 
         public static bool HasSelectMany(this QueryModel query)

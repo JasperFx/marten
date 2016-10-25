@@ -102,6 +102,12 @@ namespace Marten.Linq.Model
                     return mapping.As<EventQueryMapping>().Selector.As<ISelector<T>>();
                 }
 
+                if (typeof(T) != query.SourceType())
+                {
+                    // TODO -- going to have to come back to this one.
+                    return null;
+                }
+
                 var resolver = schema.ResolverFor<T>();
 
                 return new WholeDocumentSelector<T>(mapping, resolver);
@@ -128,6 +134,20 @@ namespace Marten.Linq.Model
         {
             var sql = Selector.ToSelectClause(_mapping);
 
+            sql = AppendWhere(command, sql);
+
+            var orderBy = determineOrderClause();
+
+            if (orderBy.IsNotEmpty()) sql += orderBy;
+
+            sql = applySkip(command, sql);
+            sql = applyTake(command, limit, sql);
+
+            command.AppendQuery(sql);
+        }
+
+        public string AppendWhere(NpgsqlCommand command, string sql)
+        {
             string filter = null;
             if (Where != null)
             {
@@ -138,15 +158,7 @@ namespace Marten.Linq.Model
             {
                 sql += " where " + filter;
             }
-
-            var orderBy = determineOrderClause();
-
-            if (orderBy.IsNotEmpty()) sql += orderBy;
-
-            sql = applySkip(command, sql);
-            sql = applyTake(command, limit, sql);
-
-            command.AppendQuery(sql);
+            return sql;
         }
 
         private string applyTake(NpgsqlCommand command, int limit, string sql)

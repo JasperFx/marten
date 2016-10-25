@@ -5,8 +5,10 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq.Model;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Includes;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
@@ -72,10 +74,8 @@ namespace Marten.Linq.QueryHandlers
 
             var sql = $"select {field} from {mapping.Table.QualifiedName} as d";
 
-            var @where = _schema.BuildWhereFragment(mapping, _query);
-
-            sql = sql.AppendWhere(@where, command);
-
+            sql = new LinqQuery<T>(_schema, _query, new IIncludeJoin[0], null).AppendWhere(command, sql);
+            
             command.AppendQuery(sql);
 
         }
