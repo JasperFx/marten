@@ -49,7 +49,7 @@ namespace Marten.Linq.QueryHandlers
         {
             if (model.HasOperator<ToJsonArrayResultOperator>())
             {
-                var query = new LinqQuery<T>(model, _schema, joins, stats);
+                var query = new LinqQuery<T>(_schema, model, joins, stats);
                 return new JsonQueryHandler(query.As<LinqQuery<string>>()).As<IQueryHandler<T>>();
             }
 
@@ -59,12 +59,13 @@ namespace Marten.Linq.QueryHandlers
             }
 
             var elementType = typeof (T).GetGenericArguments().First();
-            var handlerType = typeof(LinqQueryHandler<>);
+            var handlerType = typeof(LinqQuery<>);
 
             if (typeof (T).GetGenericTypeDefinition() == typeof (IEnumerable<>))
             {
                 handlerType = typeof (EnumerableQueryHandler<>);
             }
+
             return Activator.CreateInstance(handlerType.MakeGenericType(elementType), new object[] {_schema, model, joins, stats}).As<IQueryHandler<T>>();
         }
 

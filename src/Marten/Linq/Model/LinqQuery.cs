@@ -13,7 +13,7 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.Model
 {
-    public class LinqQuery<T>
+    public class LinqQuery<T> : ListQueryHandler<T>
     {
         private readonly QueryModel _query;
         private readonly IDocumentSchema _schema;
@@ -21,7 +21,8 @@ namespace Marten.Linq.Model
 
         private readonly SelectManyQuery _subQuery;
 
-        public LinqQuery(QueryModel query, IDocumentSchema schema, IIncludeJoin[] joins, QueryStatistics stats)
+        public LinqQuery(IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins, QueryStatistics stats)
+            : base(BuildSelector(schema, query, joins, stats))
         {
             _query = query;
             _schema = schema;
@@ -41,16 +42,13 @@ namespace Marten.Linq.Model
             }
 
             SourceType = _query.SourceType();
-            Selector = BuildSelector(schema, query, joins, stats);
 
             Where = buildWhereFragment();
         }
 
         public IWhereFragment Where { get; set; }
 
-        public Type SourceType { get; }
-
-        public ISelector<T> Selector { get; }
+        public override Type SourceType { get; }
 
         public static ISelector<T> BuildSelector(IDocumentSchema schema, QueryModel query,
             IIncludeJoin[] joins, QueryStatistics stats)
@@ -71,8 +69,12 @@ namespace Marten.Linq.Model
             return selector;
         }
 
+        public override void ConfigureCommand(NpgsqlCommand command)
+        {
+            ConfigureCommand(command, 0);
+        }
 
-        public void ConfigureCommand(NpgsqlCommand command, int limit = 0)
+        public void ConfigureCommand(NpgsqlCommand command, int limit)
         {
             var sql = Selector.ToSelectClause(_mapping);
 

@@ -45,7 +45,7 @@ namespace Marten.Linq.QueryHandlers
         [Obsolete("Just take in LinqQuery instead.")]
         public OneResultHandler(int rowLimit, IDocumentSchema schema, QueryModel query, IIncludeJoin[] joins, bool canBeNull = true, bool canBeMultiples = true)
         {
-            _linqQuery = new LinqQuery<T>(query, schema, joins, null);
+            _linqQuery = new LinqQuery<T>(schema, query, joins, null);
             _rowLimit = rowLimit;
             _canBeNull = canBeNull;
             _canBeMultiples = canBeMultiples;

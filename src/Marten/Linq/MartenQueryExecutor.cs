@@ -70,9 +70,7 @@ namespace Marten.Linq
         {
             Schema.EnsureStorageExists(queryModel.SourceType());
 
-            var query = new LinqQuery<T>(queryModel, Schema, _includes.ToArray(), Statistics);
-
-            var handler = new LinqQueryHandler<T>(Schema, queryModel, _includes.ToArray(), Statistics);
+            var handler = new LinqQuery<T>(Schema, queryModel, _includes.ToArray(), Statistics);
 
             return Connection.Fetch(handler, IdentityMap.ForQuery());
         }
