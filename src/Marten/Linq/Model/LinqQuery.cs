@@ -24,6 +24,7 @@ namespace Marten.Linq.Model
         string AppendWhere(NpgsqlCommand command, string sql);
         void ConfigureCount(NpgsqlCommand command);
         void ConfigureAny(NpgsqlCommand command);
+        void ConfigureAggregate(NpgsqlCommand command, string @operator);
     }
 
     public class LinqQuery<T> : ILinqQuery
@@ -218,6 +219,18 @@ namespace Marten.Linq.Model
         public IQueryHandler<bool> ToAny()
         {
             return new AnyQueryHandler(this);
+        }
+
+        public void ConfigureAggregate(NpgsqlCommand command, string @operator)
+        {
+            var locator = _mapping.JsonLocator(Model.SelectClause.Selector);
+            var field = @operator.ToFormat(locator);
+
+            var sql = $"select {field} from {_mapping.Table.QualifiedName} as d";
+
+            sql = AppendWhere(command, sql);
+
+            command.AppendQuery(sql);
         }
 
         // Leave this code here, because it will need to use the SubQuery logic in its selection

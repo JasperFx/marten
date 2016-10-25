@@ -126,10 +126,10 @@ namespace Marten.Linq.QueryHandlers
                 return new LinqQuery<T>(_schema, model, joins, stats).ToCount<T>();
 
             if (model.HasOperator<SumResultOperator>())
-                return AggregateQueryHandler<T>.Sum(_schema, model);
+                return AggregateQueryHandler<T>.Sum(new LinqQuery<T>(_schema, model, joins, stats));
 
             if (model.HasOperator<AverageResultOperator>())
-                return AggregateQueryHandler<T>.Average(_schema, model);
+                return AggregateQueryHandler<T>.Average(new LinqQuery<T>(_schema, model, joins, stats));
 
             if (model.HasOperator<AnyResultOperator>())
                 return new LinqQuery<T>(_schema, model, joins, stats).ToAny().As<IQueryHandler<T>>();
@@ -146,25 +146,35 @@ namespace Marten.Linq.QueryHandlers
             var query = new LinqQuery<T>(_schema, model, joins, stats);
 
             if (choice is FirstResultOperator)
+            {
                 return choice.ReturnDefaultWhenEmpty
                     ? OneResultHandler<T>.FirstOrDefault(query)
                     : OneResultHandler<T>.First(query);
+            }
 
             if (choice is SingleResultOperator)
+            {
                 return choice.ReturnDefaultWhenEmpty
                     ? OneResultHandler<T>.SingleOrDefault(query)
                     : OneResultHandler<T>.Single(query);
+            }
 
             if (choice is MinResultOperator)
-                return AggregateQueryHandler<T>.Min(_schema, model);
+            {
+                return AggregateQueryHandler<T>.Min(query);
+            }
 
             if (choice is MaxResultOperator)
-                return AggregateQueryHandler<T>.Max(_schema, model);
+            {
+                return AggregateQueryHandler<T>.Max(query);
+            }
 
             if (model.HasOperator<LastResultOperator>())
+            {
                 throw new InvalidOperationException(
                     "Marten does not support Last()/LastOrDefault(). Use reverse ordering and First()/FirstOrDefault() instead");
-
+                
+            }
             return null;
         }
 

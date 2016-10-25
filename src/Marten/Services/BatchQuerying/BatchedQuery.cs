@@ -226,38 +226,29 @@ namespace Marten.Services.BatchQuerying
 
         public Task<TResult> Min<TResult>(IQueryable<TResult> queryable)
         {
-            var expression = queryable.Expression;
-
-            var query = QueryParser.GetParsedQuery(expression);
-
-            return AddItem(AggregateQueryHandler<TResult>.Min(_schema, query));
+            var linqQuery = queryable.As<IMartenQueryable<TResult>>().ToLinqQuery();
+            return AddItem(AggregateQueryHandler<TResult>.Min(linqQuery));
         }
 
         public Task<TResult> Max<TResult>(IQueryable<TResult> queryable)
         {
-            var expression = queryable.Expression;
+            var linqQuery = queryable.As<IMartenQueryable<TResult>>().ToLinqQuery();
 
-            var query = QueryParser.GetParsedQuery(expression);
-
-            return AddItem(AggregateQueryHandler<TResult>.Max(_schema, query));
+            return AddItem(AggregateQueryHandler<TResult>.Max(linqQuery));
         }
 
         public Task<TResult> Sum<TResult>(IQueryable<TResult> queryable)
         {
-            var expression = queryable.Expression;
+            var linqQuery = queryable.As<IMartenQueryable<TResult>>().ToLinqQuery();
 
-            var query = QueryParser.GetParsedQuery(expression);
-
-            return AddItem(AggregateQueryHandler<TResult>.Sum(_schema, query));
+            return AddItem(AggregateQueryHandler<TResult>.Sum(linqQuery));
         }
 
         public Task<double> Average<T>(IQueryable<T> queryable)
         {
-            var expression = queryable.Expression;
+            var linqQuery = queryable.As<IMartenQueryable<T>>().ToLinqQuery();
 
-            var query = QueryParser.GetParsedQuery(expression);
-
-            return AddItem(AggregateQueryHandler<double>.Average(_schema, query));
+            return AddItem(AggregateQueryHandler<double>.Average(linqQuery));
         }
 
         public class BatchLoadByKeys<TDoc> : IBatchLoadByKeys<TDoc> where TDoc : class

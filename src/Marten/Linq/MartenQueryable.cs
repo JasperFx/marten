@@ -162,22 +162,22 @@ namespace Marten.Linq
 
         public Task<TResult> SumAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => AggregateQueryHandler<TResult>.Sum(Schema, q.Model), token);
+            return executeAsync(AggregateQueryHandler<TResult>.Sum, token);
         }
 
         public Task<TResult> MinAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => AggregateQueryHandler<TResult>.Min(Schema, q.Model), token);
+            return executeAsync(AggregateQueryHandler<TResult>.Min, token);
         }
 
         public Task<TResult> MaxAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => AggregateQueryHandler<TResult>.Max(Schema, q.Model), token);
+            return executeAsync(AggregateQueryHandler<TResult>.Max, token);
         }
 
         public Task<double> AverageAsync(CancellationToken token)
         {
-            return executeAsync(q => AggregateQueryHandler<double>.Average(Schema, q.Model), token);
+            return executeAsync(AggregateQueryHandler<double>.Average, token);
         }
 
         public QueryModel ToQueryModel()
