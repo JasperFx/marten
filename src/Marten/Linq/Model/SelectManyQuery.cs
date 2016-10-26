@@ -120,7 +120,27 @@ namespace Marten.Linq.Model
                 sql += " where " + @where.ToSql(command);
             }
 
+            var orderBy = determineOrderClause(document);
+
+            if (orderBy.IsNotEmpty()) sql += orderBy;
+
             return sql;
+        }
+
+        private string determineOrderClause(ChildDocument document)
+        {
+            var orders = bodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
+            if (!orders.Any()) return string.Empty;
+
+            return " order by " + orders.Select(x => toOrderClause(document, x)).Join(", ");
+        }
+
+        private string toOrderClause(ChildDocument document, Ordering clause)
+        {
+            var locator = document.JsonLocator(clause.Expression);
+            return clause.OrderingDirection == OrderingDirection.Asc
+                ? locator
+                : locator + " desc";
         }
 
         private IWhereFragment buildWhereFragment(ChildDocument document)

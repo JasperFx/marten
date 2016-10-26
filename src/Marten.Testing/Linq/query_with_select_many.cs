@@ -212,16 +212,29 @@ namespace Marten.Testing.Linq
 
             using (var query = theStore.QuerySession())
             {
-                var totalChildren = query.Query<Target>().SelectMany(x => x.Children).Count();
-                totalChildren
-                    .ShouldBe(targets.SelectMany(x => x.Children).Count());
-
                 var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
                 expected.Any().ShouldBeTrue();
 
                 var results = query.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag).ToList();
 
                 results.Select(x => x.Id).OrderBy(x => x).ShouldHaveTheSameElementsAs(expected);
+            }
+        }
+
+        [Fact]
+        public void select_many_with_chained_where_and_order()
+        {
+            var targets = Target.GenerateRandomData(1000).ToArray();
+            theStore.BulkInsert(targets);
+
+            using (var query = theStore.QuerySession())
+            {
+                var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
+                expected.Any().ShouldBeTrue();
+
+                var results = query.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag).OrderBy(x => x.Id).ToList();
+
+                results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
             }
         }
     }
