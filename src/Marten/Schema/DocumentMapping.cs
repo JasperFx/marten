@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -16,8 +15,7 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-
-    public class DocumentMapping : IDocumentMapping, IQueryableDocument
+    public class DocumentMapping : FieldCollection, IDocumentMapping, IQueryableDocument
     {
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
@@ -31,7 +29,7 @@ namespace Marten.Schema
         public const string DeletedAtColumn = "mt_deleted_at";
 
         private static readonly Regex _aliasSanitizer = new Regex("<|>", RegexOptions.Compiled);
-        private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
+        
         private readonly StoreOptions _storeOptions;
 
         private readonly IList<SubClassMapping> _subClasses = new List<SubClassMapping>();
@@ -40,7 +38,7 @@ namespace Marten.Schema
         private readonly DocumentSchemaObjects _schemaObjects;
 
 
-        public DocumentMapping(Type documentType, StoreOptions storeOptions)
+        public DocumentMapping(Type documentType, StoreOptions storeOptions) : base("d.data", documentType, storeOptions)
         {
             if (documentType == null) throw new ArgumentNullException(nameof(documentType));
             if (storeOptions == null) throw new ArgumentNullException(nameof(storeOptions));
@@ -56,7 +54,9 @@ namespace Marten.Schema
 
             if (IdMember != null)
             {
-                _fields[IdMember.Name] = new IdField(IdMember);
+                var idField = new IdField(IdMember);
+                setField(IdMember.Name, idField);
+
                 IdStrategy = defineIdStrategy(documentType, storeOptions);
             }
 
@@ -92,7 +92,7 @@ namespace Marten.Schema
             set { _databaseSchemaName = value; }
         }
 
-        public IEnumerable<DuplicatedField> DuplicatedFields => _fields.Values.OfType<DuplicatedField>();
+        public IEnumerable<DuplicatedField> DuplicatedFields => fields().OfType<DuplicatedField>();
 
         public string Alias
         {
@@ -192,17 +192,7 @@ namespace Marten.Schema
 
         public string DdlTemplate { get; set; }
 
-        public IField FieldFor(IEnumerable<MemberInfo> members)
-        {
-            if (members.Count() == 1)
-            {
-                return FieldFor(members.Single());
-            }
 
-            var key = members.Select(x => x.Name).Join("");
-            return _fields.GetOrAdd(key,
-                _ => new JsonLocatorField(_storeOptions.Serializer().EnumStorage, members.ToArray()));
-        }
 
         public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
         {
@@ -413,29 +403,9 @@ namespace Marten.Schema
             return string.Join("_", parts);
         }
 
-        public IField FieldFor(MemberInfo member)
-        {
-            return _fields.GetOrAdd(member.Name,
-                name => new JsonLocatorField(_storeOptions, _storeOptions.Serializer().EnumStorage, member));
-        }
 
-        public IField FieldFor(string memberName)
-        {
-            return _fields.GetOrAdd(memberName, name =>
-            {
-                var member = DocumentType.GetProperties().FirstOrDefault(x => x.Name == name).As<MemberInfo>() ??
-                             DocumentType.GetFields().FirstOrDefault(x => x.Name == name);
 
-                if (member == null) return null;
 
-                return new JsonLocatorField(_storeOptions, _storeOptions.Serializer().EnumStorage, member);
-            });
-        }
-
-        public IField FieldForColumn(string columnName)
-        {
-            return _fields.Values.FirstOrDefault(x => x.ColumnName == columnName);
-        }
 
 
         public DuplicatedField DuplicateField(string memberName, string pgType = null)
@@ -447,7 +417,7 @@ namespace Marten.Schema
                 duplicate.PgType = pgType;
             }
 
-            _fields[memberName] = duplicate;
+            setField(memberName, duplicate);
 
             return duplicate;
         }
@@ -467,7 +437,7 @@ namespace Marten.Schema
                 duplicatedField.ColumnName = columnName;
             }
 
-            _fields[memberName] = duplicatedField;
+            setField(memberName, duplicatedField);
 
             return duplicatedField;
         }

@@ -86,7 +86,7 @@ namespace Marten.Testing.Schema
             var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);
             var number = ReflectionHelper.GetProperty<Target>(x => x.Number);
 
-            var twodeep = new JsonLocatorField(EnumStorage.AsInteger, new MemberInfo[] {inner, number});
+            var twodeep = new JsonLocatorField("d.data", EnumStorage.AsInteger, new MemberInfo[] {inner, number});
 
             twodeep.SqlLocator.ShouldBe("CAST(d.data -> 'Inner' ->> 'Number' as integer)");
         }
@@ -98,7 +98,7 @@ namespace Marten.Testing.Schema
             var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);
             var number = ReflectionHelper.GetProperty<Target>(x => x.Number);
 
-            var deep = new JsonLocatorField(EnumStorage.AsInteger, new MemberInfo[] { inner, inner, number });
+            var deep = new JsonLocatorField("d.data", EnumStorage.AsInteger, new MemberInfo[] { inner, inner, number });
 
             deep.SqlLocator.ShouldBe("CAST(d.data -> 'Inner' -> 'Inner' ->> 'Number' as integer)");
         }
@@ -109,7 +109,7 @@ namespace Marten.Testing.Schema
             var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);
             var stringProp = ReflectionHelper.GetProperty<Target>(x => x.String);
 
-            var deep = new JsonLocatorField(EnumStorage.AsInteger, new MemberInfo[] { inner, inner, stringProp });
+            var deep = new JsonLocatorField("d.data", EnumStorage.AsInteger, new MemberInfo[] { inner, inner, stringProp });
 
             deep.SqlLocator.ShouldBe("d.data -> 'Inner' -> 'Inner' ->> 'String'");
         }

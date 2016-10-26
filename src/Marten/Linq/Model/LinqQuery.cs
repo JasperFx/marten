@@ -46,7 +46,7 @@ namespace Marten.Linq.Model
                 if (clause is AdditionalFromClause)
                 {
                     // TODO -- to be able to go recursive, have _subQuery start to read the BodyClauses
-                    _subQuery = new SelectManyQuery(_mapping, model, i + 1);
+                    _subQuery = new SelectManyQuery(schema, _mapping, model, i + 1);
 
 
                     break;
@@ -91,6 +91,11 @@ namespace Marten.Linq.Model
             sql = applySkip(command, sql);
             sql = applyTake(command, limit, sql);
 
+            if (_subQuery != null && _subQuery.IsComplex)
+            {
+                sql = _subQuery.ConfigureCommand(command, sql);
+            }
+
             command.AppendQuery(sql);
         }
 
@@ -102,6 +107,7 @@ namespace Marten.Linq.Model
 
             if (filter.IsNotEmpty())
                 sql += " where " + filter;
+
             return sql;
         }
 
@@ -251,7 +257,7 @@ namespace Marten.Linq.Model
             return selector;
         }
 
-        private static ISelector<T> buildSelector<T>(IDocumentSchema schema, IQueryableDocument mapping,
+        private ISelector<T> buildSelector<T>(IDocumentSchema schema, IQueryableDocument mapping,
             QueryModel query)
         {
             var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
@@ -261,9 +267,9 @@ namespace Marten.Linq.Model
             }
 
 
-            if (query.HasSelectMany())
+            if (_subQuery != null)
             {
-                return new SelectManyQuery(mapping, query, 0).ToSelector<T>(schema.StoreOptions.Serializer());
+                return _subQuery.ToSelector<T>(schema.StoreOptions.Serializer());
             }
 
             if (query.SelectClause.Selector.Type == query.SourceType())

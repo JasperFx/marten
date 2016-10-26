@@ -46,6 +46,8 @@ namespace Marten.Testing
             target.AnotherString = _otherStrings[_random.Next(0, 10)];
             target.Number = _random.Next();
 
+            target.Flag = _random.Next(0, 10) > 5;
+
             target.Float = float.Parse(_random.NextDouble().ToString());
 
             target.NumberArray = new[] { _random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) };

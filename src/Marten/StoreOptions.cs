@@ -122,6 +122,16 @@ namespace Marten
             });
         }
 
+        private readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>> _childDocs 
+            = new ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>>();
+
+        internal ChildDocument GetChildDocument(string locator, Type documentType)
+        {
+            var byType = _childDocs.GetOrAdd(documentType, type => new ConcurrentDictionary<string, ChildDocument>());
+
+            return byType.GetOrAdd(locator, loc => new ChildDocument(locator, documentType, this));
+        }
+
         /// <summary>
         ///     Supply the connection string to the Postgresql database
         /// </summary>
