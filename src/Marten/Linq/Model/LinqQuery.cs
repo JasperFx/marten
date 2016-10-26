@@ -38,7 +38,7 @@ namespace Marten.Linq.Model
         {
             Model = model;
             _schema = schema;
-            _mapping = schema.MappingFor(model).ToQueryableDocument();
+            _mapping = schema.MappingFor(model.SourceType()).ToQueryableDocument();
 
             for (var i = 0; i < model.BodyClauses.Count; i++)
             {
@@ -88,12 +88,14 @@ namespace Marten.Linq.Model
 
             if (orderBy.IsNotEmpty()) sql += orderBy;
 
-            sql = applySkip(command, sql);
-            sql = applyTake(command, limit, sql);
-
             if (_subQuery != null && _subQuery.IsComplex)
             {
-                sql = _subQuery.ConfigureCommand(command, sql);
+                sql = _subQuery.ConfigureCommand(command, sql, limit);
+            }
+            else
+            {
+                sql = Model.ApplySkip(command, sql);
+                sql = Model.ApplyTake(command, limit, sql);
             }
 
             command.AppendQuery(sql);
@@ -111,34 +113,9 @@ namespace Marten.Linq.Model
             return sql;
         }
 
-        private string applyTake(NpgsqlCommand command, int limit, string sql)
-        {
-            if (limit > 0)
-            {
-                sql += " LIMIT " + limit;
-            }
-            else
-            {
-                var take = Model.FindOperators<TakeResultOperator>().LastOrDefault();
-                if (take != null)
-                {
-                    var param = command.AddParameter(take.Count.Value());
-                    sql += " LIMIT :" + param.ParameterName;
-                }
-            }
-            return sql;
-        }
 
-        private string applySkip(NpgsqlCommand command, string sql)
-        {
-            var skip = Model.FindOperators<SkipResultOperator>().LastOrDefault();
-            if (skip != null)
-            {
-                var param = command.AddParameter(skip.Count.Value());
-                sql += " OFFSET :" + param.ParameterName;
-            }
-            return sql;
-        }
+
+
 
         private string determineOrderClause()
         {

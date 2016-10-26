@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Util;
+using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq
 {
@@ -49,7 +52,6 @@ namespace Marten.Linq
             return query.AllResultOperators().Any(x => x is T);
         }
 
-        [Obsolete("Fold this inside of LinqQuery someday")]
         public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, QueryModel query)
         {
             var mapping = schema.MappingFor(query.SourceType()).ToQueryableDocument();
@@ -63,18 +65,34 @@ namespace Marten.Linq
             return mapping.FilterDocuments(query, @where);
         }
 
-        public static bool HasSelectMany(this QueryModel query)
+        public static string ApplyTake(this QueryModel model, NpgsqlCommand command, int limit, string sql)
         {
-            return query.SelectClause.Selector is QuerySourceReferenceExpression
-                   &&
-                   query.SelectClause.Selector.As<QuerySourceReferenceExpression>().ReferencedQuerySource is
-                       AdditionalFromClause;
+            if (limit > 0)
+            {
+                sql += " LIMIT " + limit;
+            }
+            else
+            {
+                var take = model.FindOperators<TakeResultOperator>().LastOrDefault();
+                if (take != null)
+                {
+                    var param = command.AddParameter(take.Count.Value());
+                    sql += " LIMIT :" + param.ParameterName;
+                }
+            }
+
+            return sql;
         }
 
-
-        public static IDocumentMapping MappingFor(this IDocumentSchema schema, QueryModel model)
+        public static string ApplySkip(this QueryModel model, NpgsqlCommand command, string sql)
         {
-            return schema.MappingFor(model.SourceType());
+            var skip = model.FindOperators<SkipResultOperator>().LastOrDefault();
+            if (skip != null)
+            {
+                var param = command.AddParameter(skip.Count.Value());
+                sql += " OFFSET :" + param.ParameterName;
+            }
+            return sql;
         }
     }
 }

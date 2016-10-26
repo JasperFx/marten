@@ -237,6 +237,38 @@ namespace Marten.Testing.Linq
                 results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
             }
         }
+
+        [Fact]
+        public void select_many_with_chained_where_and_order_and_skip_and_take()
+        {
+            var targets = Target.GenerateRandomData(1000).ToArray();
+            theStore.BulkInsert(targets);
+
+            using (var query = theStore.QuerySession())
+            {
+                var expected = targets
+                    .SelectMany(x => x.Children)
+                    .Where(x => x.Flag)
+                    .OrderBy(x => x.Id)
+                    .Skip(20)
+                    .Take(15)
+                    .Select(x => x.Id)
+                    .ToList();
+
+
+                expected.Any().ShouldBeTrue();
+
+                var results = query.Query<Target>()
+                    .SelectMany(x => x.Children)
+                    .Where(x => x.Flag)
+                    .OrderBy(x => x.Id)
+                    .Skip(20)
+                    .Take(15)
+                    .ToList();
+
+                results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
+            }
+        }
     }
 
     public class Product

@@ -96,7 +96,7 @@ namespace Marten.Linq.Model
 
         public bool IsDistinct { get; }
 
-        public string ConfigureCommand(NpgsqlCommand command, string sql)
+        public string ConfigureCommand(NpgsqlCommand command, string sql, int limit)
         {
             // Look for a select clause
             // Look for where clauses
@@ -123,6 +123,11 @@ namespace Marten.Linq.Model
             var orderBy = determineOrderClause(document);
 
             if (orderBy.IsNotEmpty()) sql += orderBy;
+
+            // TODO -- have to check for deep nesting here first
+            sql = _query.ApplyTake(command, limit, sql);
+            sql = _query.ApplySkip(command, sql);
+
 
             return sql;
         }
