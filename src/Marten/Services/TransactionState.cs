@@ -1,5 +1,7 @@
 using System;
 using System.Data;
+using System.Threading;
+using System.Threading.Tasks;
 using Npgsql;
 
 namespace Marten.Services
@@ -16,7 +18,18 @@ namespace Marten.Services
             _isolationLevel = isolationLevel;
             this._commandTimeout = commandTimeout;
             Connection = factory.Create();
+        }
+
+        public bool IsOpen => Connection.State != ConnectionState.Closed;
+
+        public void Open()
+        {
             Connection.Open();
+        }
+
+        public Task OpenAsync(CancellationToken token)
+        {
+            return Connection.OpenAsync(token);
         }
 
         public IMartenSessionLogger Logger { get; set; } = NulloMartenLogger.Flyweight;
@@ -58,6 +71,17 @@ namespace Marten.Services
             Transaction = null;
         }
 
+        public async Task CommitAsync(CancellationToken token)
+        {
+            if (Transaction != null)
+            {
+                await Transaction.CommitAsync(token).ConfigureAwait(false);
+
+                Transaction.Dispose();
+                Transaction = null;
+            }
+        }
+
         public void Rollback()
         {
             if (Transaction != null && !Transaction.IsCompleted)
@@ -66,6 +90,23 @@ namespace Marten.Services
                 {
                     Transaction?.Rollback();
                     Transaction?.Dispose();
+                    Transaction = null;
+                }
+                catch (Exception e)
+                {
+                    throw new RollbackException(e);
+                }
+            }
+        }
+
+        public async Task RollbackAsync(CancellationToken token)
+        {
+            if (Transaction != null && !Transaction.IsCompleted)
+            {
+                try
+                {
+                    await Transaction.RollbackAsync(token).ConfigureAwait(false);
+                    Transaction.Dispose();
                     Transaction = null;
                 }
                 catch (Exception e)

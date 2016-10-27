@@ -28,5 +28,8 @@ namespace Marten.Services
         int RequestCount { get; }
         void BeginTransaction();
         bool InTransaction();
+        Task BeginTransactionAsync(CancellationToken token);
+        Task CommitAsync(CancellationToken token);
+        Task RollbackAsync(CancellationToken token);
     }
 }

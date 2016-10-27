@@ -9,7 +9,11 @@ namespace Marten.Services
 {
     public class ManagedConnection : IManagedConnection
     {
-        private readonly Lazy<TransactionState> _connection; 
+        private readonly IConnectionFactory _factory;
+        private readonly CommandRunnerMode _mode;
+        private readonly IsolationLevel _isolationLevel;
+        private readonly int _commandTimeout;
+        private TransactionState _connection; 
 
         public ManagedConnection(IConnectionFactory factory) : this (factory, CommandRunnerMode.AutoCommit)
         {
@@ -18,7 +22,28 @@ namespace Marten.Services
         // 30 is NpgsqlCommand.DefaultTimeout - ok to burn it to the call site?
         public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int commandTimeout = 30)
         {
-            _connection = new Lazy<TransactionState>(() => new TransactionState(factory, mode, isolationLevel, commandTimeout));
+            _factory = factory;
+            _mode = mode;
+            _isolationLevel = isolationLevel;
+            _commandTimeout = commandTimeout;
+        }
+
+        private void buildConnection()
+        {
+            if (_connection == null)
+            {
+                _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout);
+                _connection.Open();
+            }
+        }
+
+        private async Task buildConnectionAsync(CancellationToken token)
+        {
+            if (_connection == null)
+            {
+                _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout);
+                await _connection.OpenAsync(token).ConfigureAwait(false);
+            }
         }
 
         public IMartenSessionLogger Logger { get; set; } = NulloMartenLogger.Flyweight;
@@ -27,14 +52,43 @@ namespace Marten.Services
 
         public void Commit()
         {
-            _connection.Value.Commit();
+            buildConnection();
+
+            _connection.Commit();
+        }
+
+        public async Task CommitAsync(CancellationToken token)
+        {
+            await buildConnectionAsync(token).ConfigureAwait(false);
+
+            await _connection.CommitAsync(token).ConfigureAwait(false);
         }
 
         public void Rollback()
         {
+            if (_connection == null) return;
+
             try
             {
-                _connection.Value.Rollback();
+                _connection.Rollback();
+            }
+            catch (RollbackException e)
+            {
+                if (e.InnerException != null) Logger.LogFailure(new NpgsqlCommand(), e.InnerException);
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailure(new NpgsqlCommand(), e);
+            }
+        }
+
+        public async Task RollbackAsync(CancellationToken token)
+        {
+            if (_connection == null) return;
+
+            try
+            {
+                await _connection.RollbackAsync(token).ConfigureAwait(false);
             }
             catch (RollbackException e)
             {
@@ -48,18 +102,37 @@ namespace Marten.Services
 
         public void BeginTransaction()
         {
-            _connection.Value.BeginTransaction();
+            buildConnection();
+
+            _connection.BeginTransaction();
+        }
+
+        public async Task BeginTransactionAsync(CancellationToken token)
+        {
+            await buildConnectionAsync(token).ConfigureAwait(false);
+
+            _connection.BeginTransaction();
         }
 
         public bool InTransaction()
         {
-            return _connection.IsValueCreated && _connection.Value.Transaction != null;
+            return _connection?.Transaction != null;
         }
 
-        public NpgsqlConnection Connection => _connection.Value.Connection;
+        public NpgsqlConnection Connection
+        {
+            get
+            {
+                buildConnection();
+
+                return _connection.Connection;
+            }
+        }
 
         public void Execute(NpgsqlCommand cmd, Action<NpgsqlCommand> action = null)
         {
+            buildConnection();
+
             RequestCount++;
 
             if (action == null)
@@ -67,7 +140,7 @@ namespace Marten.Services
                 action = c => c.ExecuteNonQuery();
             }
 
-            _connection.Value.Apply(cmd);
+            _connection.Apply(cmd);
             try
             {
                 action(cmd);
@@ -87,9 +160,11 @@ namespace Marten.Services
 
         public void Execute(Action<NpgsqlCommand> action)
         {
+            buildConnection();
+
             RequestCount++;
 
-            var cmd = _connection.Value.CreateCommand();
+            var cmd = _connection.CreateCommand();
             try
             {
                 action(cmd);
@@ -104,9 +179,11 @@ namespace Marten.Services
 
         public T Execute<T>(Func<NpgsqlCommand, T> func)
         {
+            buildConnection();
+
             RequestCount++;
 
-            var cmd = _connection.Value.CreateCommand();
+            var cmd = _connection.CreateCommand();
             try
             {
                 var returnValue = func(cmd);
@@ -122,9 +199,12 @@ namespace Marten.Services
 
         public T Execute<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, T> func)
         {
+            buildConnection();
+
             RequestCount++;
 
-            _connection.Value.Apply(cmd);
+            _connection.Apply(cmd);
+
             try
             {
                 var returnValue = func(cmd);
@@ -140,9 +220,11 @@ namespace Marten.Services
 
         public async Task ExecuteAsync(Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
         {
+            await buildConnectionAsync(token);
+
             RequestCount++;
 
-            var cmd = _connection.Value.CreateCommand();
+            var cmd = _connection.CreateCommand();
 
             try
             {
@@ -158,9 +240,11 @@ namespace Marten.Services
 
         public async Task ExecuteAsync(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
         {
+            await buildConnectionAsync(token);
+
             RequestCount++;
 
-            _connection.Value.Apply(cmd);
+            _connection.Apply(cmd);
 
             try
             {
@@ -176,9 +260,11 @@ namespace Marten.Services
 
         public async Task<T> ExecuteAsync<T>(Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
         {
+            await buildConnectionAsync(token);
+
             RequestCount++;
 
-            var cmd = _connection.Value.CreateCommand();
+            var cmd = _connection.CreateCommand();
 
             try
             {
@@ -195,9 +281,11 @@ namespace Marten.Services
 
         public async Task<T> ExecuteAsync<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
         {
+            await buildConnectionAsync(token);
+
             RequestCount++;
 
-            _connection.Value.Apply(cmd);
+            _connection.Apply(cmd);
 
             try
             {
@@ -216,10 +304,7 @@ namespace Marten.Services
 
         public void Dispose()
         {
-            if (_connection.IsValueCreated)
-            {
-                _connection.Value.Dispose();
-            }
+            _connection?.Dispose();
         }
     }
 }

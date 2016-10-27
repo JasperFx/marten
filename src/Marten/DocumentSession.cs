@@ -189,7 +189,7 @@ namespace Marten
         {
             if (!_unitOfWork.HasAnyUpdates()) return;
 
-            _connection.BeginTransaction();
+            await _connection.BeginTransactionAsync(token).ConfigureAwait(false);
 
             await applyProjectionsAsync(token).ConfigureAwait(false);
 
@@ -204,13 +204,13 @@ namespace Marten
 
             try
             {
-                _connection.Commit();
+                await _connection.CommitAsync(token).ConfigureAwait(false);
             }
             catch (Exception)
             {
                 // This code has a try/catch in it to stop
                 // any errors from propogating from the rollback
-                _connection.Rollback();
+                await _connection.RollbackAsync(token).ConfigureAwait(false);
 
                 throw;
             }
