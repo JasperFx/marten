@@ -117,6 +117,11 @@ namespace Marten.Events.Projections.Async
             return page;
         }
 
+        public void Reset()
+        {
+            _lastEncountered = 0;
+        }
+
         private async Task<EventPage> fetchNextPage(long lastEncountered)
         {
             using (var conn = _connectionFactory.Create())

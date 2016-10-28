@@ -168,10 +168,12 @@ namespace Marten.Events.Projections.Async
 
             await _fetcher.Stop().ConfigureAwait(false);
 
+            
 
             await _errorHandler.TryAction(async () =>
             {
                 await clearExistingState(token).ConfigureAwait(false);
+                _fetcher.Reset();
             }, this).ConfigureAwait(false);
 
             

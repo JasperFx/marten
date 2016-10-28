@@ -10,5 +10,6 @@ namespace Marten.Events.Projections.Async
         Task Stop();
         FetcherState State { get; }
         Task<EventPage> FetchNextPage(long lastEncountered);
+        void Reset();
     }
 }

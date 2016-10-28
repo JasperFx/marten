@@ -66,7 +66,15 @@ namespace Marten.Testing.AsyncDaemon
         public void LoadAllProjects()
         {
             var fileSystem = new FileSystem();
-            var folder = fileSystem.SearchUpForDirectory("CodeTracker");
+
+            var folder = AppContext.BaseDirectory;
+            while (!folder.EndsWith("Marten.Testing"))
+            {
+                folder = folder.ParentDirectory();
+            }
+
+            folder = folder.AppendPath("CodeTracker");
+
             var files = fileSystem.FindFiles(folder, FileSet.Shallow("*.json"));
 
             AllProjects = new Dictionary<Guid, GithubProject>();
