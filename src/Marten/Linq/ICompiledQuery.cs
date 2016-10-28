@@ -5,6 +5,13 @@ using System.Linq.Expressions;
 
 namespace Marten.Linq
 {
+    public class InvalidCompiledQueryException : Exception
+    {
+        public InvalidCompiledQueryException(string message) : base(message)
+        {
+        }
+    }
+
     /// <summary>
     /// Used to express a query expression that when used will be cached by class type implementing this interface
     /// </summary>

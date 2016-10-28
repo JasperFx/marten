@@ -188,6 +188,10 @@ namespace Marten.Linq.QueryHandlers
                 _serializer);
 
             var model = MartenQueryParser.TransformQueryFlyweight.GetParsedQuery(invocation);
+
+            validateCompiledQuery(model);
+
+
             _schema.EnsureStorageExists(typeof(TDoc));
 
             var includeJoins = new IIncludeJoin[0];
@@ -211,6 +215,23 @@ namespace Marten.Linq.QueryHandlers
                 ParameterSetters = setters,
                 Handler = handler
             };
+        }
+
+        private static void validateCompiledQuery(QueryModel model)
+        {
+            var skip = model.FindOperators<SkipResultOperator>().LastOrDefault();
+            var take = model.FindOperators<TakeResultOperator>().LastOrDefault();
+
+            if (skip != null && take != null)
+            {
+                var skipIndex = model.ResultOperators.IndexOf(skip);
+                var takeIndex = model.ResultOperators.IndexOf(take);
+
+                if (skipIndex > takeIndex)
+                {
+                    throw new InvalidCompiledQueryException("Skip() must precede Take() in compiled queries for proper parameter resolution");
+                }
+            }
         }
 
         // TODO -- this can't be on QueryHandlerFactory!
