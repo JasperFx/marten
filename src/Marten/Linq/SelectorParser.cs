@@ -34,6 +34,12 @@ namespace Marten.Linq
     {
         public static ISelector<T> ChooseSelector<T>(IDocumentSchema schema, IQueryableDocument mapping, QueryModel query, SelectManyQuery subQuery, IIncludeJoin[] joins)
         {
+            // I'm so ashamed of this hack, but "simplest thing that works"
+            if (typeof(T) == typeof(IEvent))
+            {
+                return mapping.As<EventQueryMapping>().Selector.As<ISelector<T>>();
+            }
+
             var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
             if (selectable != null)
             {
@@ -53,15 +59,10 @@ namespace Marten.Linq
                     return (ISelector<T>)new JsonSelector();
                 }
 
-                // I'm so ashamed of this hack, but "simplest thing that works"
-                if (typeof(T) == typeof(IEvent))
-                {
-                    return mapping.As<EventQueryMapping>().Selector.As<ISelector<T>>();
-                }
-
                 if (typeof(T) != query.SourceType())
                 {
                     // TODO -- going to have to come back to this one.
+                    // think this is related to hierarchical documents
                     return null;
                 }
 
@@ -71,7 +72,7 @@ namespace Marten.Linq
             }
 
 
-            var visitor = new Marten.Linq.SelectorParser(query);
+            var visitor = new SelectorParser(query);
             visitor.Visit(query.SelectClause.Selector);
 
             return visitor.ToSelector<T>(schema, mapping);

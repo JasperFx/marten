@@ -64,7 +64,27 @@ namespace Marten.Testing.Acceptance
         }
 
         // SAMPLE: using_transform_to_json
-    [Fact]
+
+
+        [Fact]
+        public void can_select_a_string_field_in_compiled_query()
+        {
+            var user = new User { FirstName = "Eric", LastName = "Berry" };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(user);
+                session.SaveChanges();
+
+                var name = session.Query<User>().Select(x => x.FirstName)
+                    .Single();
+
+                name.ShouldBe("Eric");
+            }
+        }
+
+
+        [Fact]
     public void can_transform_to_json()
     {
         var user = new User {FirstName = "Eric", LastName = "Berry"};
