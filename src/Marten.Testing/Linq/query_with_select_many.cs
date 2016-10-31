@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Linq;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -341,6 +342,30 @@ namespace Marten.Testing.Linq
                 dict.ContainsKey(user1.Id).ShouldBeTrue();
                 dict.ContainsKey(user2.Id).ShouldBeTrue();
 
+            }
+        }
+
+        [Fact]
+        public void select_many_with_select_transformation()
+        {
+            var targets = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(targets);
+
+            using (var query = theStore.QuerySession())
+            {
+                var actual = query.Query<Target>()
+                    .SelectMany(x => x.Children)
+                    .Where(x => x.Color == Colors.Green)
+                    .Select(x => new {Id = x.Id, Shade = x.Color})
+                    .ToList();
+
+                var expected = targets
+                    .SelectMany(x => x.Children)
+                    .Where(x => x.Color == Colors.Green).Count();
+
+                actual.Count.ShouldBe(expected);
+
+                actual.Each(x => x.Shade.ShouldBe(Colors.Green));
             }
         }
     }
