@@ -1,0 +1,14 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    rake (10.0.0)
+
+PLATFORMS
+  x86-mingw32
+
+DEPENDENCIES
+  bundler (>= 1.3.5)
+  rake (= 10.0.0)
+
+BUNDLED WITH
+   1.12.5
