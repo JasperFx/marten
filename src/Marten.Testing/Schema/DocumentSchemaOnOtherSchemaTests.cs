@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -14,6 +15,9 @@ namespace Marten.Testing.Schema
 {
     public class DocumentSchemaOnOtherSchemaTests : IntegratedFixture
     {
+        private readonly string _binAllsql = AppContext.BaseDirectory.AppendPath("bin", "allsql");
+        private readonly string _binAllsql2 = AppContext.BaseDirectory.AppendPath("bin", "allsql2");
+
         private IDocumentSchema theSchema => theStore.Schema;
 
         public DocumentSchemaOnOtherSchemaTests()
@@ -138,11 +142,11 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
-            var files = fileSystem.FindFiles(@"bin\allsql", FileSet.Shallow("*.sql")).ToArray();
+            var files = fileSystem.FindFiles(_binAllsql, FileSet.Shallow("*.sql")).ToArray();
 
             files.Select(Path.GetFileName)
                 .Where(x => x != "all.sql" && x != "database_schemas.sql").OrderBy(x => x)
@@ -173,10 +177,10 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
-            const string filename = @"bin\allsql\all.sql";
+            string filename = _binAllsql.AppendPath("all.sql");
 
             var fileSystem = new FileSystem();
             fileSystem.FileExists(filename).ShouldBeTrue();
@@ -205,10 +209,10 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
-            var filename = @"bin\allsql".AppendPath("all.sql");
+            var filename = _binAllsql.AppendPath("all.sql");
 
             var lines = new FileSystem().ReadStringFromFile(filename).ReadLines().Select(x => x.Trim()).ToArray();
 
@@ -237,11 +241,11 @@ namespace Marten.Testing.Schema
             }))
             {
                 store.Schema.Events.IsActive.ShouldBeFalse();
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
-            fileSystem.FindFiles(@"bin\allsql", FileSet.Shallow("*mt_streams.sql"))
+            fileSystem.FindFiles(_binAllsql, FileSet.Shallow("*mt_streams.sql"))
                 .Any().ShouldBeFalse();
         }
 
@@ -260,14 +264,14 @@ namespace Marten.Testing.Schema
             }))
             {
                 store.Schema.Events.IsActive.ShouldBeTrue();
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
-            fileSystem.FindFiles(@"bin\allsql", FileSet.Shallow("eventstore.sql"))
+            fileSystem.FindFiles(_binAllsql, FileSet.Shallow("eventstore.sql"))
                 .Any().ShouldBeTrue();
 
-            fileSystem.FindFiles(@"bin\allsql", FileSet.Shallow(".sql"))
+            fileSystem.FindFiles(_binAllsql, FileSet.Shallow(".sql"))
                 .Any().ShouldBeFalse();
         }
 
@@ -286,11 +290,11 @@ namespace Marten.Testing.Schema
             }))
             {
                 store.Schema.Events.IsActive.ShouldBeTrue();
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
-            fileSystem.FindFiles(@"bin\allsql", FileSet.Shallow(".sql"))
+            fileSystem.FindFiles(_binAllsql, FileSet.Shallow(".sql"))
                 .Any().ShouldBeFalse();
         }
 

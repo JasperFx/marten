@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Baseline;
 using Marten.Testing.Documents;
 using Xunit;
@@ -41,12 +42,13 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void not_part_of_the_by_type_dump()
         {
+            var directory = AppContext.BaseDirectory.AppendPath("sql");
             var fileSystem = new FileSystem();
-            fileSystem.CleanDirectory("sql");
+            fileSystem.CleanDirectory(directory);
             
-            theStore.Schema.WriteDDLByType("sql");
+            theStore.Schema.WriteDDLByType(directory);
 
-            fileSystem.FindFiles("sql", FileSet.Shallow("*.sql"))
+            fileSystem.FindFiles(directory, FileSet.Shallow("*.sql"))
                 .Any(x => x.EndsWith("mt_streams.sql"))
                 .ShouldBeFalse();
 

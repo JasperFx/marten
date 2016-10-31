@@ -21,6 +21,9 @@ namespace Marten.Testing.Schema
     [Collection("DefaultSchema")]
     public class DocumentSchemaTests : IntegratedFixture
     {
+        private readonly string _binAllsql = AppContext.BaseDirectory.AppendPath("bin", "allsql");
+        private readonly string _binAllsql2 = AppContext.BaseDirectory.AppendPath("bin", "allsql2");
+
         private DocumentSchema theSchema => theStore.Schema.As<DocumentSchema>();
 
         [Fact]
@@ -265,11 +268,11 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
-            var files = fileSystem.FindFiles(@"bin\allsql", FileSet.Shallow("*.sql")).ToArray();
+            var files = fileSystem.FindFiles(_binAllsql, FileSet.Shallow("*.sql")).ToArray();
 
             files.ShouldNotContain("database_schemas.sql");
 
@@ -294,11 +297,11 @@ namespace Marten.Testing.Schema
                 store.Advanced.Clean.CompletelyRemoveAll();
 
 
-                store.Schema.WritePatchByType(@"bin\allsql2");
+                store.Schema.WritePatchByType(_binAllsql2);
             }
 
             var fileSystem = new FileSystem();
-            var files = fileSystem.FindFiles(@"bin\allsql2", FileSet.Shallow("*.sql")).ToArray();
+            var files = fileSystem.FindFiles(_binAllsql2, FileSet.Shallow("*.sql")).ToArray();
 
             files.ShouldNotContain("database_schemas.sql");
 
@@ -324,10 +327,10 @@ namespace Marten.Testing.Schema
                 _.Transforms.LoadFile("get_fullname.js");
             }))
             {
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
-            var filename = @"bin\allsql".AppendPath("all.sql");
+            var filename = _binAllsql.AppendPath("all.sql");
 
             var lines = new FileSystem().ReadStringFromFile(filename).ReadLines().ToArray();
 
@@ -357,10 +360,10 @@ namespace Marten.Testing.Schema
                 _.Transforms.LoadFile("get_fullname.js");
             }))
             {
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
-            var file = @"bin\allsql".AppendPath("get_fullname.sql");
+            var file = _binAllsql.AppendPath("get_fullname.sql");
             var lines = new FileSystem().ReadStringFromFile(file).ReadLines().ToArray();
 
 
@@ -380,11 +383,11 @@ namespace Marten.Testing.Schema
             }))
             {
                 store.Schema.Events.IsActive.ShouldBeFalse();
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
-            fileSystem.FindFiles(@"bin\allsql", FileSet.Shallow("*mt_streams.sql"))
+            fileSystem.FindFiles(_binAllsql, FileSet.Shallow("*mt_streams.sql"))
                 .Any().ShouldBeFalse();
         }
 
@@ -403,11 +406,11 @@ namespace Marten.Testing.Schema
             }))
             {
                 store.Schema.Events.IsActive.ShouldBeFalse();
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
-            fileSystem.FindFiles(@"bin\allsql", FileSet.Shallow("*mt_streams.sql"))
+            fileSystem.FindFiles(_binAllsql, FileSet.Shallow("*mt_streams.sql"))
                 .Any().ShouldBeFalse();
         }
 
@@ -426,11 +429,11 @@ namespace Marten.Testing.Schema
             }))
             {
                 store.Schema.Events.IsActive.ShouldBeTrue();
-                store.Schema.WriteDDLByType(@"bin\allsql");
+                store.Schema.WriteDDLByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
-            fileSystem.FindFiles(@"bin\allsql", FileSet.Shallow("eventstore.sql"))
+            fileSystem.FindFiles(_binAllsql, FileSet.Shallow("eventstore.sql"))
                 .Any().ShouldBeTrue();
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Baseline;
 
 namespace Marten.Transforms
@@ -32,12 +33,22 @@ namespace Marten.Transforms
 
         public void LoadFile(string file, string name = null)
         {
+            if (!Path.IsPathRooted(file))
+            {
+                file = AppContext.BaseDirectory.AppendPath(file);
+            }
+
             var function = TransformFunction.ForFile(_options, file, name);
             _functions.Add(function.Name, function);
         }
 
         public void LoadDirectory(string directory)
         {
+            if (!Path.IsPathRooted(directory))
+            {
+                directory = AppContext.BaseDirectory.AppendPath(directory);
+            }
+
             new FileSystem().FindFiles(directory, FileSet.Deep("*.js")).Each(file =>
             {
                 LoadFile(file);

@@ -95,7 +95,7 @@ task :test => [:compile] do
 
   #sh "packages/xunit.runner.console/tools/xunit.console.exe src/Marten.Testing/bin/#{COMPILE_TARGET}/Marten.Testing.dll -html results/xunit.htm"
   cd './src/Marten.Testing'
-  sh 'dotnet test'
+  sh 'dotnet test --framework netcoreapp1.0'
   cd '../../'
 
   #puts "Running the unit tests under the '9.5 Upsert' mode"

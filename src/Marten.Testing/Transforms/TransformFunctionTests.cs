@@ -14,6 +14,7 @@ namespace Marten.Testing.Transforms
 {
     public class TransformFunctionTests
     {
+        private readonly string _getFullnameJs = AppContext.BaseDirectory.AppendPath("get_fullname.js");
 
         [Fact]
         public void derive_function_name_from_logical_name()
@@ -54,7 +55,7 @@ namespace Marten.Testing.Transforms
         public void create_function_for_file()
         {
             var options = new StoreOptions();
-            var func = TransformFunction.ForFile(options, "get_fullname.js");
+            var func = TransformFunction.ForFile(options, _getFullnameJs);
 
             func.Name.ShouldBe("get_fullname");
 
@@ -72,7 +73,7 @@ namespace Marten.Testing.Transforms
             var dbobjects = Substitute.For<IDbObjects>();
             schema.DbObjects.Returns(dbobjects);
 
-            var func = TransformFunction.ForFile(new StoreOptions {AutoCreateSchemaObjects = AutoCreate.All}, "get_fullname.js");
+            var func = TransformFunction.ForFile(new StoreOptions {AutoCreateSchemaObjects = AutoCreate.All}, _getFullnameJs);
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
@@ -93,7 +94,7 @@ namespace Marten.Testing.Transforms
             var dbobjects = Substitute.For<IDbObjects>();
             schema.DbObjects.Returns(dbobjects);
 
-            var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.CreateOnly }, "get_fullname.js");
+            var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.CreateOnly }, _getFullnameJs);
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
@@ -115,7 +116,7 @@ namespace Marten.Testing.Transforms
             var dbobjects = Substitute.For<IDbObjects>();
             schema.DbObjects.Returns(dbobjects);
 
-            var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.None }, "get_fullname.js");
+            var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.None }, _getFullnameJs);
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
@@ -137,7 +138,7 @@ namespace Marten.Testing.Transforms
             var dbobjects = Substitute.For<IDbObjects>();
             schema.DbObjects.Returns(dbobjects);
 
-            var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate }, "get_fullname.js");
+            var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate }, _getFullnameJs);
 
             dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
 
@@ -162,7 +163,7 @@ namespace Marten.Testing.Transforms
             var dbobjects = Substitute.For<IDbObjects>();
             schema.DbObjects.Returns(dbobjects);
 
-            var func = TransformFunction.ForFile(new StoreOptions(), "get_fullname.js");
+            var func = TransformFunction.ForFile(new StoreOptions(), _getFullnameJs);
 
             var body = new FunctionBody(func.Function, new string[0], func.GenerateFunction());
 
@@ -186,7 +187,7 @@ namespace Marten.Testing.Transforms
                 var user = new User {FirstName = "Jeremy", LastName = "Miller"};
                 var json = new TestsSerializer().ToCleanJson(user);
 
-                var func = TransformFunction.ForFile(new StoreOptions(), "get_fullname.js");
+                var func = TransformFunction.ForFile(new StoreOptions(), _getFullnameJs);
 
                 using (var conn = store.Advanced.OpenConnection())
                 {

@@ -240,6 +240,11 @@ namespace Marten.Schema
 
         public void WritePatch(string filename, bool withSchemas = true)
         {
+            if (!Path.IsPathRooted(filename))
+            {
+                filename = AppContext.BaseDirectory.AppendPath(filename);
+            }
+
             var patch = ToPatch(withSchemas);
 
             patch.WriteUpdateFile(filename);

@@ -1,7 +1,7 @@
 ﻿{
   "testRunner": "xunit",
   "dependencies": {
-    "xunit": "2.2.0-beta2-build3300",
+    "xunit": "2.2.0-beta3-build3402",
     "dotnet-test-xunit": "2.2.0-preview2-build1029",
     "Marten": { "target": "project" },
     "Marten.Testing.OtherAssembly": { "target": "project" },
@@ -13,7 +13,7 @@
     "copyToOutput": {
       "include": [ "**.js", "connection.txt" ],
       "exclude": "bin"
-    } 
+    }
   },
   "frameworks": {
     "netcoreapp1.0": {
