@@ -7,7 +7,10 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Baseline;
 using Baseline.Reflection;
+using Marten.Events;
+using Marten.Linq.Model;
 using Marten.Schema;
+using Marten.Services.Includes;
 using Marten.Transforms;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.ResultOperators;
@@ -29,11 +32,58 @@ namespace Marten.Linq
 
     public class SelectorParser : RelinqExpressionVisitor
     {
+        public static ISelector<T> ChooseSelector<T>(IDocumentSchema schema, IQueryableDocument mapping, QueryModel query, SelectManyQuery subQuery, IIncludeJoin[] joins)
+        {
+            var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
+            if (selectable != null)
+            {
+                return selectable.BuildSelector<T>(schema, mapping);
+            }
+
+
+            if (subQuery != null)
+            {
+                return subQuery.ToSelector<T>(schema.StoreOptions.Serializer(), joins);
+            }
+
+            if (query.SelectClause.Selector.Type == query.SourceType())
+            {
+                if (typeof(T) == typeof(string))
+                {
+                    return (ISelector<T>)new JsonSelector();
+                }
+
+                // I'm so ashamed of this hack, but "simplest thing that works"
+                if (typeof(T) == typeof(IEvent))
+                {
+                    return mapping.As<EventQueryMapping>().Selector.As<ISelector<T>>();
+                }
+
+                if (typeof(T) != query.SourceType())
+                {
+                    // TODO -- going to have to come back to this one.
+                    return null;
+                }
+
+                var resolver = schema.ResolverFor<T>();
+
+                return new WholeDocumentSelector<T>(mapping, resolver);
+            }
+
+
+            var visitor = new Marten.Linq.SelectorParser(query);
+            visitor.Visit(query.SelectClause.Selector);
+
+            return visitor.ToSelector<T>(schema, mapping);
+        }
+
+
+
         private SelectedField _currentField = new SelectedField();
         private SelectionType _selectionType = SelectionType.WholeDoc;
         private TargetObject _target;
         private string _transformName;
-        private bool _distinct;
+        private readonly bool _distinct;
 
 
         public SelectorParser(QueryModel query)
