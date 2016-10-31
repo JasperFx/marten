@@ -161,14 +161,9 @@ namespace Marten.Schema
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback)
         {
-            var joinOperator = joinType == JoinType.Inner ? "INNER JOIN" : "LEFT OUTER JOIN";
-
             var tableAlias = members.ToTableAlias();
-            var locator = FieldFor(members).SqlLocator;
 
-            var joinText = $"{joinOperator} {other.Table.QualifiedName} as {tableAlias} ON {locator} = {tableAlias}.id";
-
-            return new IncludeJoin<TOther>(other, joinText, tableAlias, callback);
+            return new IncludeJoin<TOther>(other, FieldFor(members), tableAlias, callback, joinType);
         }
 
         public IIdGeneration IdStrategy { get; set; }

@@ -118,6 +118,12 @@ namespace Marten.Schema
             return MemberType.IsOneOf(typeof(DateTime), typeof(DateTime?), typeof(DateTimeOffset),
                 typeof(DateTimeOffset?));
         }
+
+        public string LocatorFor(string rootTableAlias)
+        {
+            // Super hokey. 
+            return SqlLocator.Replace("d.", rootTableAlias + ".");
+        }
     }
 
     

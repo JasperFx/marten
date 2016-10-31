@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using Baseline;
 using Baseline.Conversion;
 using Marten.Schema;
+using Marten.Services.Includes;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
@@ -55,7 +56,7 @@ namespace Marten.Linq.Model
             
         }
 
-        public bool IsComplex => bodyClauses().Any();
+        public bool IsComplex(IIncludeJoin[] joins) => joins.Any() || bodyClauses().Any();
 
         private T findOperator<T>()
         {
@@ -72,9 +73,9 @@ namespace Marten.Linq.Model
             return _query.BodyClauses.Skip(Index).Take(_take);
         }
 
-        public ISelector<T> ToSelector<T>(ISerializer serializer)
+        public ISelector<T> ToSelector<T>(ISerializer serializer, IIncludeJoin[] joins)
         {
-            if (IsComplex)
+            if (IsComplex(joins))
             {
                 return new DeserializeSelector<T>(serializer, $"jsonb_array_elements({_field.SqlLocator}) as x");
             }
@@ -96,7 +97,7 @@ namespace Marten.Linq.Model
 
         public bool IsDistinct { get; }
 
-        public string ConfigureCommand(ISelector selector, NpgsqlCommand command, string sql, int limit)
+        public string ConfigureCommand(IIncludeJoin[] joins, ISelector selector, NpgsqlCommand command, string sql, int limit)
         {
             var docType = _field.MemberType.GetElementType();
             
@@ -108,6 +109,11 @@ namespace Marten.Linq.Model
             fields[0] = "x";
 
             sql = $"select {fields.Join(", ")} from  ({sql}) as {subName}";
+            if (joins.Any())
+            {
+                sql += " " + joins.Select(x => x.JoinTextFor(subName, document)).Join(" ");
+            }
+
 
             var @where = buildWhereFragment(document);
             if (@where != null)

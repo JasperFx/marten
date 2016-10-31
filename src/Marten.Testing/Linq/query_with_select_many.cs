@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Linq;
+using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 
@@ -294,6 +296,51 @@ namespace Marten.Testing.Linq
                     .OrderBy(x => x.Id).LongCount();
 
                 stats.TotalResults.ShouldBe(expectedCount);
+            }
+        }
+
+        [Fact]
+        public void select_many_with_includes()
+        {
+            var user1 = new User();
+            var user2 = new User();
+            var user3 = new User();
+
+            theStore.BulkInsert(new [] {user1, user2, user3});
+
+            var targets = Target.GenerateRandomData(1000).ToArray();
+
+            foreach (var target in targets)
+            {
+                if (target.Children.Any())
+                {
+                    target.Children[0].UserId = user1.Id;
+                }
+
+                if (target.Children.Length >= 2)
+                {
+                    target.Children[1].UserId = user2.Id;
+                }
+            }
+
+            theStore.BulkInsert(targets);
+
+
+
+            using (var query = theStore.QuerySession())
+            {
+                var dict = new Dictionary<Guid, User>();
+
+                var results = query.Query<Target>()
+                    .SelectMany(x => x.Children)
+                    .Include(x => x.UserId, dict)
+                    .ToList();
+
+                dict.Count.ShouldBe(2);
+
+                dict.ContainsKey(user1.Id).ShouldBeTrue();
+                dict.ContainsKey(user2.Id).ShouldBeTrue();
+
             }
         }
     }

@@ -35,5 +35,10 @@ namespace Marten.Schema
         {
             return false;
         }
+
+        public string LocatorFor(string rootTableAlias)
+        {
+            return rootTableAlias + ".id";
+        }
     }
 }

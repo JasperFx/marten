@@ -133,6 +133,8 @@ namespace Marten.Testing
 
         public IDictionary<string,string> StringDict { get; set; }
 
+        public Guid UserId { get; set; }
+
     }
 
     public class Address

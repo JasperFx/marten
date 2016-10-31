@@ -8,5 +8,6 @@ namespace Marten.Services.Includes
         string JoinText { get; }
         string TableAlias { get; }
         ISelector<TSearched> WrapSelector<TSearched>(IDocumentSchema schema, ISelector<TSearched> inner);
+        string JoinTextFor(string rootTableAlias, IQueryableDocument document);
     }
 }

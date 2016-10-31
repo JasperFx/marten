@@ -90,6 +90,11 @@ namespace Marten.Schema
             return false;
         }
 
+        public string LocatorFor(string rootTableAlias)
+        {
+            return $"{rootTableAlias}.{_columnName}";
+        }
+
 
         public string SqlLocator { get; set; }
 

@@ -21,5 +21,6 @@ namespace Marten.Schema
 
         Type MemberType { get; }
         bool ShouldUseContainmentOperator();
+        string LocatorFor(string rootTableAlias);
     }
 }

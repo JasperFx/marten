@@ -85,7 +85,7 @@ namespace Marten.Linq.Model
 
         public void ConfigureCommand(NpgsqlCommand command, int limit)
         {
-            var isComplexSubQuery = _subQuery != null && _subQuery.IsComplex;
+            var isComplexSubQuery = _subQuery != null && _subQuery.IsComplex(_joins);
             var sql = isComplexSubQuery ? _innerSelector.ToSelectClause(_mapping) : Selector.ToSelectClause(_mapping);
             sql = AppendWhere(command, sql);
 
@@ -95,7 +95,7 @@ namespace Marten.Linq.Model
 
             if (isComplexSubQuery)
             {
-                sql = _subQuery.ConfigureCommand(Selector, command, sql, limit);
+                sql = _subQuery.ConfigureCommand(_joins, Selector, command, sql, limit);
             }
             else
             {
@@ -251,7 +251,7 @@ namespace Marten.Linq.Model
 
             if (_subQuery != null)
             {
-                return _subQuery.ToSelector<T>(schema.StoreOptions.Serializer());
+                return _subQuery.ToSelector<T>(schema.StoreOptions.Serializer(), _joins);
             }
 
             if (query.SelectClause.Selector.Type == query.SourceType())
