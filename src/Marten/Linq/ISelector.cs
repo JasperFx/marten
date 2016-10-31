@@ -9,15 +9,20 @@ using Marten.Services;
 
 namespace Marten.Linq
 {
-    public interface ISelector<T>
+    public interface ISelector
+    {
+        string[] SelectFields();
+
+        string ToSelectClause(IQueryableDocument mapping);
+    }
+
+    public interface ISelector<T> : ISelector
     {
         T Resolve(DbDataReader reader, IIdentityMap map);
 
         Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token);
 
-        string[] SelectFields();
 
-        string ToSelectClause(IQueryableDocument mapping);
     }
 
     public class StandInSelector<T> : ISelector<T>

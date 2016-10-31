@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Linq;
 using Shouldly;
 using Xunit;
 
@@ -267,6 +268,32 @@ namespace Marten.Testing.Linq
                     .ToList();
 
                 results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
+            }
+        }
+
+        [Fact]
+        public void select_many_with_stats()
+        {
+            var targets = Target.GenerateRandomData(1000).ToArray();
+            theStore.BulkInsert(targets);
+
+            using (var query = theStore.QuerySession())
+            {
+                QueryStatistics stats = null;
+
+                var actual = query.Query<Target>()
+                    .Stats(out stats)
+                    .SelectMany(x => x.Children)
+                    .Where(x => x.Flag)
+                    .OrderBy(x => x.Id)
+                    .Take(10).ToList();
+
+                var expectedCount = targets
+                    .SelectMany(x => x.Children)
+                    .Where(x => x.Flag)
+                    .OrderBy(x => x.Id).LongCount();
+
+                stats.TotalResults.ShouldBe(expectedCount);
             }
         }
     }

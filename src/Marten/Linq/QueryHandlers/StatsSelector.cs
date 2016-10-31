@@ -11,7 +11,7 @@ namespace Marten.Linq.QueryHandlers
         private readonly QueryStatistics _stats;
         private readonly ISelector<T> _inner;
 
-        public StatsSelector(QueryStatistics stats, ISelector<T> inner) : base(inner.SelectFields().Concat(new[] { "count(1) OVER() as total_rows" }).ToArray())
+        public StatsSelector(QueryStatistics stats, ISelector<T> inner) : base(inner.SelectFields().Concat(new[] { LinqConstants.StatsColumn }).ToArray())
         {
             _stats = stats;
             _inner = inner;

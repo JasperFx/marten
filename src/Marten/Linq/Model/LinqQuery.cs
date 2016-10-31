@@ -31,13 +31,18 @@ namespace Marten.Linq.Model
     {
         private readonly IQueryableDocument _mapping;
         private readonly IDocumentSchema _schema;
+        private readonly IIncludeJoin[] _joins;
+        private readonly QueryStatistics _stats;
 
         private readonly SelectManyQuery _subQuery;
+        private ISelector<T> _innerSelector;
 
         public LinqQuery(IDocumentSchema schema, QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
             Model = model;
             _schema = schema;
+            _joins = joins;
+            _stats = stats;
             _mapping = schema.MappingFor(model.SourceType()).ToQueryableDocument();
 
             for (var i = 0; i < model.BodyClauses.Count; i++)
@@ -80,17 +85,17 @@ namespace Marten.Linq.Model
 
         public void ConfigureCommand(NpgsqlCommand command, int limit)
         {
-            var sql = Selector.ToSelectClause(_mapping);
-
+            var isComplexSubQuery = _subQuery != null && _subQuery.IsComplex;
+            var sql = isComplexSubQuery ? _innerSelector.ToSelectClause(_mapping) : Selector.ToSelectClause(_mapping);
             sql = AppendWhere(command, sql);
 
             var orderBy = determineOrderClause();
 
             if (orderBy.IsNotEmpty()) sql += orderBy;
 
-            if (_subQuery != null && _subQuery.IsComplex)
+            if (isComplexSubQuery)
             {
-                sql = _subQuery.ConfigureCommand(command, sql, limit);
+                sql = _subQuery.ConfigureCommand(Selector, command, sql, limit);
             }
             else
             {
@@ -219,7 +224,7 @@ namespace Marten.Linq.Model
         // Leave this code here, because it will need to use the SubQuery logic in its selection
         public ISelector<T> BuildSelector(IIncludeJoin[] joins, QueryStatistics stats)
         {
-            var selector = buildSelector<T>(_schema, _mapping, Model);
+            var selector = _innerSelector = buildSelector<T>(_schema, _mapping, Model);
 
             if (stats != null)
             {

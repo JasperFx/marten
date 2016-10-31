@@ -96,23 +96,18 @@ namespace Marten.Linq.Model
 
         public bool IsDistinct { get; }
 
-        public string ConfigureCommand(NpgsqlCommand command, string sql, int limit)
+        public string ConfigureCommand(ISelector selector, NpgsqlCommand command, string sql, int limit)
         {
-            // Look for a select clause
-            // Look for where clauses
-            // Look for order by clauses
-            // Look for Take/Skip
-
             var docType = _field.MemberType.GetElementType();
             
 
             var subName = "sub" + Index;
             var document = _schema.StoreOptions.GetChildDocument(subName + ".x", docType);
 
-            var select = "select x from ";
-            // TODO -- look for a Select() clause
+            var fields = selector.SelectFields().ToArray();
+            fields[0] = "x";
 
-            sql = $"{select} ({sql}) as {subName}";
+            sql = $"select {fields.Join(", ")} from  ({sql}) as {subName}";
 
             var @where = buildWhereFragment(document);
             if (@where != null)
