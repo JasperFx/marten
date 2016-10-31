@@ -69,6 +69,8 @@ namespace Marten.Services
             Transaction?.Commit();
             Transaction?.Dispose();
             Transaction = null;
+
+            Connection.Close();
         }
 
         public async Task CommitAsync(CancellationToken token)
@@ -79,6 +81,8 @@ namespace Marten.Services
 
                 Transaction.Dispose();
                 Transaction = null;
+
+                Connection.Close();
             }
         }
 
@@ -96,6 +100,10 @@ namespace Marten.Services
                 {
                     throw new RollbackException(e);
                 }
+                finally
+                {
+                    Connection.Close();
+                }
             }
         }
 
@@ -112,6 +120,10 @@ namespace Marten.Services
                 catch (Exception e)
                 {
                     throw new RollbackException(e);
+                }
+                finally
+                {
+                    Connection.Close();
                 }
             }
         }

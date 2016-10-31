@@ -55,6 +55,9 @@ namespace Marten.Services
             buildConnection();
 
             _connection.Commit();
+
+            _connection.Dispose();
+            _connection = null;
         }
 
         public async Task CommitAsync(CancellationToken token)
@@ -62,6 +65,9 @@ namespace Marten.Services
             await buildConnectionAsync(token).ConfigureAwait(false);
 
             await _connection.CommitAsync(token).ConfigureAwait(false);
+
+            _connection.Dispose();
+            _connection = null;
         }
 
         public void Rollback()
@@ -80,6 +86,11 @@ namespace Marten.Services
             {
                 Logger.LogFailure(new NpgsqlCommand(), e);
             }
+            finally
+            {
+                _connection.Dispose();
+                _connection = null;
+            }
         }
 
         public async Task RollbackAsync(CancellationToken token)
@@ -97,6 +108,11 @@ namespace Marten.Services
             catch (Exception e)
             {
                 Logger.LogFailure(new NpgsqlCommand(), e);
+            }
+            finally
+            {
+                _connection.Dispose();
+                _connection = null;
             }
         }
 
