@@ -165,9 +165,9 @@ namespace Marten.Linq.Model
 
             if (orderBy.IsNotEmpty()) sql += orderBy;
 
-            // TODO -- have to check for deep nesting here first
-            sql = _query.ApplyTake(command, limit, sql);
             sql = _query.ApplySkip(command, sql);
+            sql = _query.ApplyTake(command, limit, sql);
+            
 
 
             return sql;
