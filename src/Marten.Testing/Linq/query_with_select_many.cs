@@ -360,12 +360,34 @@ namespace Marten.Testing.Linq
                     .ToList();
 
                 var expected = targets
-                    .SelectMany(x => x.Children)
-                    .Where(x => x.Color == Colors.Green).Count();
+                    .SelectMany(x => x.Children).Count(x => x.Color == Colors.Green);
 
                 actual.Count.ShouldBe(expected);
 
                 actual.Each(x => x.Shade.ShouldBe(Colors.Green));
+            }
+        }
+
+
+        [Fact]
+        public void select_many_with_select_and_as_json()
+        {
+            var targets = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(targets);
+
+            using (var query = theStore.QuerySession())
+            {
+                var actual = query.Query<Target>()
+                    .SelectMany(x => x.Children)
+                    .Where(x => x.Color == Colors.Green)
+                    .Select(x => new { Id = x.Id, Shade = x.Color })
+                    .AsJson()
+                    .ToList();
+
+                var expected = targets
+                    .SelectMany(x => x.Children).Count(x => x.Color == Colors.Green);
+
+                actual.Count.ShouldBe(expected);
             }
         }
     }

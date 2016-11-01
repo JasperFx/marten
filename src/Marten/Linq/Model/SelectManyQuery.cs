@@ -21,11 +21,13 @@ namespace Marten.Linq.Model
         private static readonly Conversions conversions = new Conversions();
 
         private readonly IField _field;
-        private readonly QuerySourceReferenceExpression _expression;
-        private readonly Expression _from;
+        private readonly AdditionalFromClause _from;
         private readonly IDocumentSchema _schema;
         private readonly QueryModel _query;
         private readonly int _take;
+        private readonly string _tableAlias;
+        private readonly Type _documentType;
+        private readonly ChildDocument _document;
 
 
         public SelectManyQuery(IDocumentSchema schema, IQueryableDocument mapping, QueryModel query, int index)
@@ -35,10 +37,9 @@ namespace Marten.Linq.Model
             _schema = schema;
             _query = query;
 
-            _expression = query.SelectClause.Selector.As<QuerySourceReferenceExpression>();
-            _from = _expression.ReferencedQuerySource.As<AdditionalFromClause>().FromExpression;
+            _from = query.BodyClauses[index - 1].As<AdditionalFromClause>();
 
-            var members = FindMembers.Determine(_from);
+            var members = FindMembers.Determine(_from.FromExpression);
             _field = mapping.FieldFor(members);
 
             IsDistinct = query.HasOperator<DistinctResultOperator>();
@@ -53,10 +54,13 @@ namespace Marten.Linq.Model
                 _take = _query.BodyClauses.Count - index;
             }
 
-            
+
+            _tableAlias = "sub" + Index;
+            _documentType = _field.MemberType.GetElementType();
+            _document = _schema.StoreOptions.GetChildDocument(_tableAlias + ".x", _documentType);
         }
 
-        public bool IsComplex(IIncludeJoin[] joins) => joins.Any() || bodyClauses().Any();
+        public bool IsComplex(IIncludeJoin[] joins) => joins.Any() || bodyClauses().Any() || HasSelectTransform();
 
         private T findOperator<T>()
         {
@@ -77,7 +81,28 @@ namespace Marten.Linq.Model
         {
             if (IsComplex(joins))
             {
-                return new DeserializeSelector<T>(serializer, $"jsonb_array_elements({_field.SqlLocator}) as x");
+                if (HasSelectTransform())
+                {
+                    var visitor = new SelectorParser(_query);
+                    visitor.Visit(_query.SelectClause.Selector);
+
+                    return visitor.ToSelector<T>(_schema, _document);
+                }
+
+                if (typeof(T) == typeof(string))
+                {
+                    return (ISelector<T>)new JsonSelector();
+                }
+
+                if (typeof(T) != _documentType)
+                {
+                    // TODO -- going to have to come back to this one.
+                    // think this is related to hierarchical documents
+                    return null;
+                }
+
+                return new DeserializeSelector<T>(serializer, RawChildElementField());
+
             }
 
             if (typeof(T) == typeof(string))
@@ -93,35 +118,50 @@ namespace Marten.Linq.Model
 
         }
 
+        public string RawChildElementField()
+        {
+            return $"jsonb_array_elements({_field.SqlLocator}) as x";
+        }
+
+        public bool HasSelectTransform()
+        {
+            return _query.SelectClause.Selector.Type != _documentType;
+        }
+
         public string SqlLocator => _field.SqlLocator;
 
         public bool IsDistinct { get; }
 
         public string ConfigureCommand(IIncludeJoin[] joins, ISelector selector, NpgsqlCommand command, string sql, int limit)
         {
-            var docType = _field.MemberType.GetElementType();
-            
-
-            var subName = "sub" + Index;
-            var document = _schema.StoreOptions.GetChildDocument(subName + ".x", docType);
-
             var fields = selector.SelectFields().ToArray();
-            fields[0] = "x";
 
-            sql = $"select {fields.Join(", ")} from  ({sql}) as {subName}";
-            if (joins.Any())
+
+            if (HasSelectTransform())
             {
-                sql += " " + joins.Select(x => x.JoinTextFor(subName, document)).Join(" ");
+                sql = $"select {fields[0]} from ({sql}) as {_tableAlias}";
+            }
+            else
+            {
+                fields[0] = "x";
+
+                sql = $"select {fields.Join(", ")} from  ({sql}) as {_tableAlias}";
             }
 
 
-            var @where = buildWhereFragment(document);
+            if (joins.Any())
+            {
+                sql += " " + joins.Select(x => x.JoinTextFor(_tableAlias, _document)).Join(" ");
+            }
+
+
+            var @where = buildWhereFragment(_document);
             if (@where != null)
             {
                 sql += " where " + @where.ToSql(command);
             }
 
-            var orderBy = determineOrderClause(document);
+            var orderBy = determineOrderClause(_document);
 
             if (orderBy.IsNotEmpty()) sql += orderBy;
 

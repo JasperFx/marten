@@ -84,7 +84,23 @@ namespace Marten.Linq.Model
         public void ConfigureCommand(NpgsqlCommand command, int limit)
         {
             var isComplexSubQuery = _subQuery != null && _subQuery.IsComplex(_joins);
-            var sql = isComplexSubQuery ? _innerSelector.ToSelectClause(_mapping) : Selector.ToSelectClause(_mapping);
+            string sql = "";
+            if (isComplexSubQuery)
+            {
+                if (_subQuery.HasSelectTransform())
+                {
+                    sql = $"select {_subQuery.RawChildElementField()} from {_mapping.Table.QualifiedName} as d";
+                }
+                else
+                {
+                    sql = _innerSelector.ToSelectClause(_mapping);
+                }
+            }
+            else
+            {
+                sql = Selector.ToSelectClause(_mapping);
+            }
+
             sql = AppendWhere(command, sql);
 
             var orderBy = determineOrderClause();
