@@ -32,11 +32,11 @@ namespace Marten.Transforms
             return input;
         }
 
-        public ISelector<T> BuildSelector<T>(IDocumentSchema schema, IQueryableDocument document)
+        public ISelector<T> BuildSelector<T>(string dataLocator, IDocumentSchema schema, IQueryableDocument document)
         {
             var transform = schema.TransformFor(_transformName);
 
-            return new TransformToTypeSelector<T>(transform, document);
+            return new TransformToTypeSelector<T>(dataLocator, transform, document);
         }
     }
 }

@@ -32,7 +32,7 @@ namespace Marten.Linq
 
     public class SelectorParser : RelinqExpressionVisitor
     {
-        public static ISelector<T> ChooseSelector<T>(IDocumentSchema schema, IQueryableDocument mapping, QueryModel query, SelectManyQuery subQuery, IIncludeJoin[] joins)
+        public static ISelector<T> ChooseSelector<T>(string dataLocator, IDocumentSchema schema, IQueryableDocument mapping, QueryModel query, SelectManyQuery subQuery, IIncludeJoin[] joins)
         {
             // I'm so ashamed of this hack, but "simplest thing that works"
             if (typeof(T) == typeof(IEvent))
@@ -43,7 +43,7 @@ namespace Marten.Linq
             var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
             if (selectable != null)
             {
-                return selectable.BuildSelector<T>(schema, mapping);
+                return selectable.BuildSelector<T>(dataLocator, schema, mapping);
             }
 
 
@@ -75,7 +75,7 @@ namespace Marten.Linq
             var visitor = new SelectorParser(query);
             visitor.Visit(query.SelectClause.Selector);
 
-            return visitor.ToSelector<T>(schema, mapping);
+            return visitor.ToSelector<T>(dataLocator, schema, mapping);
         }
 
 
@@ -171,7 +171,7 @@ namespace Marten.Linq
             return base.VisitMemberBinding(node);
         }
 
-        public ISelector<T> ToSelector<T>(IDocumentSchema schema, IQueryableDocument mapping)
+        public ISelector<T> ToSelector<T>(string dataLocator, IDocumentSchema schema, IQueryableDocument mapping)
         {
             if (_selectionType == SelectionType.AsJson && _target == null) return new JsonSelector().As<ISelector<T>>();
 
@@ -181,14 +181,14 @@ namespace Marten.Linq
             if (_selectionType == SelectionType.TransformToJson)
             {
                 var transform = schema.TransformFor(_transformName);
-                return new TransformToJsonSelector(transform, mapping).As<ISelector<T>>();
+                return new TransformToJsonSelector(dataLocator, transform, mapping).As<ISelector<T>>();
             }
 
             if (_selectionType == SelectionType.TransformTo)
             {
                 var transform = schema.TransformFor(_transformName);
 
-                return new TransformToTypeSelector<T>(transform, mapping );
+                return new TransformToTypeSelector<T>(dataLocator, transform, mapping );
             }
 
             if (_target == null || _target.Type != typeof(T))

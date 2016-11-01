@@ -5,6 +5,6 @@ namespace Marten.Transforms
 {
     public interface ISelectableOperator
     {
-        ISelector<T> BuildSelector<T>(IDocumentSchema schema, IQueryableDocument document);
+        ISelector<T> BuildSelector<T>(string dataLocator, IDocumentSchema schema, IQueryableDocument document);
     }
 }

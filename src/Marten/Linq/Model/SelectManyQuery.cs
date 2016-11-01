@@ -86,7 +86,7 @@ namespace Marten.Linq.Model
                     var visitor = new SelectorParser(_query);
                     visitor.Visit(_query.SelectClause.Selector);
 
-                    return visitor.ToSelector<T>(_schema, _document);
+                    return visitor.ToSelector<T>("x", _schema, _document);
                 }
 
                 if (typeof(T) == typeof(string))

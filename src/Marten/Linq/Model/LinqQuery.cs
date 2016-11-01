@@ -238,7 +238,7 @@ namespace Marten.Linq.Model
         // Leave this code here, because it will need to use the SubQuery logic in its selection
         public ISelector<T> BuildSelector(IIncludeJoin[] joins, QueryStatistics stats, SelectManyQuery subQuery, IIncludeJoin[] includeJoins)
         {
-            var selector = _innerSelector = SelectorParser.ChooseSelector<T>(_schema, _mapping, Model, subQuery, joins);
+            var selector = _innerSelector = SelectorParser.ChooseSelector<T>("d.data", _schema, _mapping, Model, subQuery, joins);
 
             if (stats != null)
             {

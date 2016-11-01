@@ -33,10 +33,10 @@ namespace Marten.Transforms
             return input;
         }
 
-        public ISelector<T> BuildSelector<T>(IDocumentSchema schema, IQueryableDocument document)
+        public ISelector<T> BuildSelector<T>(string dataLocator, IDocumentSchema schema, IQueryableDocument document)
         {
             var transform = schema.TransformFor(_transformName);
-            return new TransformToJsonSelector(transform, document).As<ISelector<T>>();
+            return new TransformToJsonSelector(dataLocator, transform, document).As<ISelector<T>>();
         }
     }
 }

@@ -12,10 +12,10 @@ namespace Marten.Transforms
         private readonly IQueryableDocument _document;
         private readonly string _fieldName;
 
-        public TransformToJsonSelector(TransformFunction transform, IQueryableDocument document)
+        public TransformToJsonSelector(string dataLocator, TransformFunction transform, IQueryableDocument document)
         {
             _document = document;
-            _fieldName = $"{transform.Function.QualifiedName}(d.data) as json";
+            _fieldName = $"{transform.Function.QualifiedName}({dataLocator}) as json";
         }
 
         public string Resolve(DbDataReader reader, IIdentityMap map)
