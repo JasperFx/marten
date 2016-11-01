@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Baseline;
 using Marten.Schema;
 using Marten.Util;
 
@@ -39,6 +40,24 @@ namespace Marten.Linq.Compiled
         }
 
         public IList<IDbParameterSetter> ParameterSetters => _parameterSetters;
+
+        protected override Expression VisitUnary(UnaryExpression node)
+        {
+            if (node.Operand is LambdaExpression && node.Operand.As<LambdaExpression>().ReturnType == typeof(bool))
+            {
+                var body = node.Operand.As<LambdaExpression>().Body;
+                if (node.NodeType == ExpressionType.Not)
+                {
+                    throw new NotImplementedException();
+                }
+                else if (body.NodeType == ExpressionType.MemberAccess)
+                {
+                    _parameterSetters.Add(new ConstantDbParameterSetter(true));
+                }
+            }
+
+            return base.VisitUnary(node);
+        }
 
         protected override Expression VisitMember(MemberExpression node)
         {

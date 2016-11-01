@@ -276,35 +276,7 @@ namespace Marten.Testing.Linq
             }
         }
 
-        [Fact]
-        public void smoke_test_running_inside_of_compiled_query()
-        {
-            var targets = Target.GenerateRandomData(1000).ToArray();
-            theStore.BulkInsert(targets);
 
-            using (var query = theStore.QuerySession())
-            {
-                var results = query.Query(new CompiledSelectMany());
-
-                results.Count().ShouldBe(15);
-
-            }
-        }
-
-        public class CompiledSelectMany : ICompiledListQuery<Target>
-        {
-            public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
-            {
-                return q => q.SelectMany(x => x.Children)
-                    .Where(x => x.Color == Colors.Green)
-                    .OrderBy(x => x.Id)
-                    .Skip(Skip)
-                    .Take(Take);
-            }
-
-            public int Skip { get; set; } = 20;
-            public int Take { get; set; } = 15;
-        }
 
         [Fact]
         public void select_many_with_stats()

@@ -82,8 +82,6 @@ namespace Marten.Linq
 
             protected override Expression VisitUnary(UnaryExpression node)
             {
-
-
                 switch (node.NodeType)
                 {
                     case ExpressionType.Not:
