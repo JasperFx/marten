@@ -12,6 +12,7 @@ namespace Marten.Schema
         public TableDefinition Table { get; }
         public FunctionBody Function { get; set; }
         public IDictionary<string, ActualIndex> ActualIndices { get; } = new Dictionary<string, ActualIndex>();
+        public IList<string> ForeignKeys { get; set; }
 
         public SchemaObjects(Type documentType, TableDefinition table, ActualIndex[] actualIndices, FunctionBody function)
         {

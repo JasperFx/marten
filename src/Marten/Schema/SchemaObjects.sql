@@ -50,3 +50,11 @@ LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
 WHERE  p.proname = :function
 AND    n.nspname = :schema;
 
+select constraint_name 
+from information_schema.table_constraints as c
+where 
+  c.constraint_name LIKE 'mt_%' and 
+  c.constraint_type = 'FOREIGN KEY' and 
+  c.table_schema = :schema and
+  c.table_name = :table_name;
+

@@ -239,9 +239,31 @@ AND    n.nspname = :schema;
                     }
 
                     FunctionBody functionBody = upsertDefinition.IsEmpty() ? null : new FunctionBody(mapping.UpsertFunction, drops.ToArray(), upsertDefinition);
-                    return new SchemaObjects(mapping.DocumentType, table, indices.ToArray(), functionBody);
+
+
+                    reader.NextResult();
+                    var constraints = new List<string>();
+                    while (reader.Read())
+                    {
+                        constraints.Add(reader.GetString(0));
+                    }
+
+                    return new SchemaObjects(mapping.DocumentType, table, indices.ToArray(), functionBody)
+                    {
+                        ForeignKeys = constraints
+                    };
                 });
             }
+        }
+
+        public ForeignKeyConstraint[] AllForeignKeys()
+        {
+            Func<DbDataReader, ForeignKeyConstraint> reader = r => new ForeignKeyConstraint(r.GetString(0), r.GetString(1), r.GetString(2));
+
+            var sql =
+                "select constraint_name, constraint_schema, table_name from information_schema.table_constraints where constraint_name LIKE 'mt_%' and constraint_type = 'FOREIGN KEY'";
+
+            return _factory.Fetch(sql, reader).ToArray();
         }
 
         private IEnumerable<TableColumn> findTableColumns(IDocumentMapping documentMapping)

@@ -48,5 +48,6 @@ namespace Marten.Schema
         TableDefinition TableSchema(Type documentType);
 
         SchemaObjects FindSchemaObjects(DocumentMapping mapping);
+        ForeignKeyConstraint[] AllForeignKeys();
     }
 }

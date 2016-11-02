@@ -42,7 +42,7 @@ namespace Marten.Schema
                     }
                 });
 
-                existing.ActualIndices.Values.Where(x => !mapping.Indexes.Any(_ => _.IndexName == x.Name)).Each(
+                existing.ActualIndices.Values.Where(x => mapping.Indexes.All(_ => _.IndexName != x.Name)).Each(
                     index =>
                     {
                         IndexRollbacks.Add(index.DDL);
@@ -52,12 +52,17 @@ namespace Marten.Schema
                 var expectedFunction = new UpsertFunction(mapping);
 
                 FunctionDiff = new FunctionDiff(expectedFunction.ToBody(rules), existing.Function);
+
+                var missingFKs = mapping.ForeignKeys.Where(x => !existing.ForeignKeys.Contains(x.KeyName));
+                MissingForeignKeys.AddRange(missingFKs);
             }
 
             _mapping = mapping;
 
 
         }
+
+        public IList<ForeignKeyDefinition> MissingForeignKeys { get; } = new List<ForeignKeyDefinition>();
 
         public FunctionDiff FunctionDiff { get; set; }
 
@@ -67,7 +72,7 @@ namespace Marten.Schema
             if (!TableDiff.Matches) return true;
             if (FunctionDiff.HasChanged) return true;
 
-            return IndexChanges.Any();
+            return IndexChanges.Any() || MissingForeignKeys.Any();
         }
 
         public bool CanPatch()
@@ -91,6 +96,8 @@ namespace Marten.Schema
 
             IndexChanges.Each(x => patch.Updates.Apply(this, x));
             IndexRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
+
+            MissingForeignKeys.Each(x => patch.Updates.Apply(this, x.ToDDL()));
         }
 
         public override string ToString()

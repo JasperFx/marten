@@ -144,8 +144,6 @@ namespace Marten.Schema
 
         public SchemaDiff CreateSchemaDiff(IDocumentSchema schema)
         {
-            
-
             var objects = schema.DbObjects.FindSchemaObjects(_mapping);
             return new SchemaDiff(objects, _mapping, schema.StoreOptions.DdlRules);
         }
