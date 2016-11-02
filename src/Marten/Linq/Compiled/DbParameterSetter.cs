@@ -1,4 +1,6 @@
 ﻿using System;
+using Baseline;
+using Marten.Linq.Parsing;
 using Marten.Util;
 using Npgsql;
 
@@ -18,9 +20,18 @@ namespace Marten.Linq.Compiled
             _getter = getter;
         }
 
+        public StringComparisonParser Parser { get; set; }
+
         public NpgsqlParameter AddParameter(object query, NpgsqlCommand command)
         {
             var newValue = _getter((TObject)query);
+
+
+            if (Parser != null)
+            {
+                newValue = Parser.FormatValue(null, newValue.ToString()).As<TProperty>();
+            }
+
             var param = command.AddParameter(newValue);
 
             return param;

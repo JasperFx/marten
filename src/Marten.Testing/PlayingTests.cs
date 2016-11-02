@@ -23,7 +23,34 @@ namespace Marten.Testing
             _output = output;
         }
 
+        [Fact]
+        public void read_as_text_reader()
+        {
+            using (var store = TestingDocumentStore.Basic())
+            {
+                var target = Target.Random(true);
 
+                using (var session = store.OpenSession())
+                {
+                    session.Store(target);
+                    session.SaveChanges();
+                }
+
+                using (var conn = store.Advanced.OpenConnection())
+                {
+                    var json = conn.Execute(cmd =>
+                    {
+                        using (var reader = cmd.Sql("select data from mt_doc_target").ExecuteReader())
+                        {
+                            reader.Read();
+                            return reader.GetTextReader(0).ReadToEnd();
+                        }
+                    });
+
+                    Console.WriteLine(json);
+                }
+            }
+        }
 
         [Fact]
         public void can_generate_a_computed_index()

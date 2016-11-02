@@ -44,7 +44,7 @@ namespace Marten.Linq.Parsing
         /// <param name="method"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        protected abstract string FormatValue(MethodInfo method, string value);
+        public abstract string FormatValue(MethodInfo method, string value);
 
         protected virtual bool IsCaseInsensitiveComparison(MethodCallExpression expression)
         {

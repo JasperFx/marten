@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Util;
 
@@ -11,6 +12,9 @@ namespace Marten.Linq.Compiled
 {
     public class CompiledQueryMemberExpressionVisitor : ExpressionVisitor
     {
+        private static readonly IList<StringComparisonParser> _stringMethods
+            = new List<StringComparisonParser> {new StringContains(), new StringEndsWith(), new StringStartsWith()};
+
         public static bool IsContainmentMethod(MethodInfo method)
         {
             if (method.Name == nameof(Enumerable.Any)) return true;
@@ -30,6 +34,7 @@ namespace Marten.Linq.Compiled
         private readonly ISerializer _serializer;
         private IField _lastMember;
         private static readonly string[] _skippedMethods = new[] {nameof(CompiledQueryExtensions.Include),nameof(CompiledQueryExtensions.Stats)};
+        private StringComparisonParser _parser;
 
         public CompiledQueryMemberExpressionVisitor(IQueryableDocument mapping, Type queryType, ISerializer serializer)
         {
@@ -92,13 +97,24 @@ namespace Marten.Linq.Compiled
             // skip Visiting Include or Stats method members
             if (_skippedMethods.Contains(node.Method.Name)) return node;
 
+            
+
             if (IsContainmentMethod(node.Method))
             {
                 var visitor = new ContainmentParameterVisitor(_serializer, _queryType, ParameterSetters);
                 return visitor.Visit(node);
             }
 
-            return base.VisitMethodCall(node);
+            _parser = _stringMethods.FirstOrDefault(x => x.Matches(node));
+
+            try
+            {
+                return base.VisitMethodCall(node);
+            }
+            finally
+            {
+                _parser = null;
+            }
         }
 
         private IDbParameterSetter CreateParameterSetter<TObject, TProperty>(PropertyInfo property)
@@ -113,7 +129,10 @@ namespace Marten.Linq.Compiled
                 };
             }
 
-            return new DbParameterSetter<TObject, object>(getter);
+            return new DbParameterSetter<TObject, object>(getter)
+            {
+                Parser = _parser
+            };
         }
     }
 }

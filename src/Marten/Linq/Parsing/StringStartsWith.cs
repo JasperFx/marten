@@ -17,7 +17,7 @@ namespace Marten.Linq.Parsing
         {
         }
 
-        protected override string FormatValue(MethodInfo method, string value)
+        public override string FormatValue(MethodInfo method, string value)
         {
             return value + "%";
         }
