@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
 using Shouldly;
@@ -156,7 +157,23 @@ namespace Marten.Testing.Linq
 
             var list = theSession.Query<IPapaSmurf>().ToList();
             list.Count().ShouldBe(3);
-            list.Where(s => s.Ability == "Invent").Count().ShouldBe(1);
+            list.Count(s => s.Ability == "Invent").ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task get_all_subclasses_of_an_interface_and_instantiate_them_async()
+        {
+            var smurf = new Smurf { Ability = "Follow the herd" };
+            var papa = new PapaSmurf { Ability = "Lead" };
+            var papy = new PapySmurf { Ability = "Lead" };
+            var brainy = new BrainySmurf { Ability = "Invent" };
+            theSession.Store(smurf, papa, brainy, papy);
+
+            await theSession.SaveChangesAsync().ConfigureAwait(false);
+
+            var list = await theSession.Query<IPapaSmurf>().ToListAsync().ConfigureAwait(false);
+            list.Count().ShouldBe(3);
+            list.Count(s => s.Ability == "Invent").ShouldBe(1);
         }
 
     }
