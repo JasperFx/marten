@@ -103,6 +103,11 @@ namespace Marten
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
 
+            if (typeof(T).IsGenericEnumerable())
+            {
+                throw new ArgumentOutOfRangeException(typeof(T).Name, "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
+            }
+
             if (typeof(T) == typeof(object))
             {
                 StoreObjects(entities.OfType<object>());
