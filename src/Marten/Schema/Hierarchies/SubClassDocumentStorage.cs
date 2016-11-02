@@ -16,10 +16,12 @@ namespace Marten.Schema.Hierarchies
         where TBase : class
     {
         private readonly IDocumentStorage _parent;
+        private readonly SubClassMapping _mapping;
 
-        public SubClassDocumentStorage(IDocumentStorage parent)
+        public SubClassDocumentStorage(IDocumentStorage parent, SubClassMapping mapping)
         {
             _parent = parent;
+            _mapping = mapping;
         }
 
         public Type DocumentType => typeof(T);
@@ -98,8 +100,11 @@ namespace Marten.Schema.Hierarchies
             var id = reader[startingIndex + 1];
 
             var version = reader.GetFieldValue<Guid>(3);
+            var typeAlias = reader.GetString(startingIndex + 2);
 
-            return map.Get<TBase>(id, typeof(T), json, version) as T;
+            var actualType = _mapping.TypeFor(typeAlias);
+
+            return map.Get<TBase>(id, actualType, json, version) as T;
         }
 
         public async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map,
@@ -109,8 +114,9 @@ namespace Marten.Schema.Hierarchies
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
             var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
+            var typeAlias = await reader.GetFieldValueAsync<string>(startingIndex + 2, token).ConfigureAwait(false);
 
-            return map.Get<TBase>(id, typeof(T), json, version) as T;
+            return map.Get<TBase>(id, _mapping.TypeFor(typeAlias), json, version) as T;
         }
 
 
