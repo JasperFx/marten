@@ -114,7 +114,7 @@ namespace Marten.Schema
         public IDocumentStorage BuildStorage(IDocumentSchema schema)
         {
             var parentStorage = Parent.As<IDocumentMapping>().BuildStorage(schema);
-            return typeof(SubClassDocumentStorage<,>).CloseAndBuildAs<IDocumentStorage>(parentStorage, DocumentType,
+            return typeof(SubClassDocumentStorage<,>).CloseAndBuildAs<IDocumentStorage>(parentStorage, this, DocumentType,
                 Parent.DocumentType);
         }
 
@@ -146,6 +146,11 @@ namespace Marten.Schema
             Action<TOther> callback)
         {
             return Parent.JoinToInclude(joinType, other, members, callback);
+        }
+
+        public Type TypeFor(string alias)
+        {
+            return Parent.TypeFor(alias);
         }
 
         private static string GetTypeMartenAlias(Type documentType)
