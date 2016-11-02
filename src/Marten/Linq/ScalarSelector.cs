@@ -10,7 +10,7 @@ namespace Marten.Linq
     {
         private static readonly string NullResultMessage = $"The cast to value type '{typeof(TResult).FullName}' failed because the materialized value is null. Either the result type's generic parameter or the query must use a nullable type.";
 
-        public TResult Resolve(DbDataReader reader, IIdentityMap map)
+        public TResult Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             try
             {
@@ -22,7 +22,7 @@ namespace Marten.Linq
             }
         }
 
-        public Task<TResult> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<TResult> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             return reader.GetFieldValueAsync<TResult>(0, token);
         }

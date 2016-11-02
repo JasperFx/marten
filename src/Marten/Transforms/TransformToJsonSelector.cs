@@ -18,12 +18,12 @@ namespace Marten.Transforms
             _fieldName = $"{transform.Function.QualifiedName}({dataLocator}) as json";
         }
 
-        public string Resolve(DbDataReader reader, IIdentityMap map)
+        public string Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             return reader.GetString(0);
         }
 
-        public async Task<string> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<string> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             return await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
         }

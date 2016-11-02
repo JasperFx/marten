@@ -34,12 +34,12 @@ namespace Marten.Linq.QueryHandlers
             command.AppendQuery(sql);
         }
 
-        public T Handle(DbDataReader reader, IIdentityMap map)
+        public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             return reader.Read() ? _resolver.Resolve(0, reader, map) : default(T);
         }
 
-        public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             return await reader.ReadAsync(token).ConfigureAwait(false) 
                 ? await _resolver.ResolveAsync(0, reader, map, token).ConfigureAwait(false) : default(T);

@@ -17,7 +17,7 @@ namespace Marten.Linq
             _converter = conversions.FindConverter(typeof(T));
         }
 
-        public T Resolve(DbDataReader reader, IIdentityMap map)
+        public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             if (reader.IsDBNull(0)) return default(T);
 
@@ -25,7 +25,7 @@ namespace Marten.Linq
             return (T) _converter(raw);
         }
 
-        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var isNull = await reader.IsDBNullAsync(0, token).ConfigureAwait(false);
 

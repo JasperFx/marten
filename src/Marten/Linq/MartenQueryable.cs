@@ -232,7 +232,7 @@ namespace Marten.Linq
 
             var handler = source(linq);
 
-            return Executor.Connection.FetchAsync(handler, Executor.IdentityMap.ForQuery(), token);
+            return Executor.Connection.FetchAsync(handler, Executor.IdentityMap.ForQuery(), Statistics, token);
         }
     }
 }

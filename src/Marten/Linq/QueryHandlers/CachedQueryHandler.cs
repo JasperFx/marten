@@ -39,14 +39,14 @@ namespace Marten.Linq.QueryHandlers
             command.AppendQuery(sql);
         }
 
-        public T Handle(DbDataReader reader, IIdentityMap map)
+        public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return _handler.Handle(reader, map);
+            return _handler.Handle(reader, map, stats);
         }
 
-        public Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            return _handler.HandleAsync(reader, map, token);
+            return _handler.HandleAsync(reader, map, stats, token);
         }
     }
 }

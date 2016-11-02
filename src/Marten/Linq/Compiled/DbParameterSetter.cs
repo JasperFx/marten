@@ -10,6 +10,11 @@ namespace Marten.Linq.Compiled
 
         public DbParameterSetter(Func<TObject, TProperty> getter)
         {
+            if (typeof(TProperty) == typeof(QueryStatistics))
+            {
+                throw new ArgumentOutOfRangeException($"Use {nameof(QueryStatisticsFinder<TObject>)} for QueryStatistics properties");
+            }
+
             _getter = getter;
         }
 

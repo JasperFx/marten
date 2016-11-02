@@ -32,7 +32,7 @@ namespace Marten.Testing.Linq
             var reader = Substitute.For<DbDataReader>();
             reader[0].Returns(name);
 
-            theSelector.Resolve(reader, null).ShouldBe(name);
+            theSelector.Resolve(reader, null, null).ShouldBe(name);
         }
 
         [Fact]

@@ -21,20 +21,20 @@ namespace Marten.Linq.QueryHandlers
             _inner = new LinqQuery<T>(schema, query, joins, stats).ToList();
         }
 
-        public Type SourceType => typeof (IEnumerable<T>);
+        public Type SourceType => typeof (T);
         public void ConfigureCommand(NpgsqlCommand command)
         {
             _inner.ConfigureCommand(command);
         }
 
-        public IEnumerable<T> Handle(DbDataReader reader, IIdentityMap map)
+        public IEnumerable<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return _inner.Handle(reader, map);
+            return _inner.Handle(reader, map, stats);
         }
 
-        public async Task<IEnumerable<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<IEnumerable<T>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            return (await _inner.HandleAsync(reader, map, token).ConfigureAwait(false));
+            return (await _inner.HandleAsync(reader, map, stats, token).ConfigureAwait(false));
         }
     }
 }

@@ -53,13 +53,13 @@ namespace Marten
         public IList<T> Query<T>(string sql, params object[] parameters)
         {
             var handler = new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters);
-            return _connection.Fetch(handler, _identityMap.ForQuery());
+            return _connection.Fetch(handler, _identityMap.ForQuery(), null);
         }
 
         public Task<IList<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
         {
             var handler = new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters);
-            return _connection.FetchAsync(handler, _identityMap.ForQuery(), token);
+            return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, token);
         }
 
         public IBatchedQuery CreateBatchQuery()
@@ -301,15 +301,17 @@ namespace Marten
 
         public TOut Query<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
         {
-            var handler = _schema.HandlerFactory.HandlerFor(query);
-            return _connection.Fetch(handler, _identityMap.ForQuery());
+            QueryStatistics stats;
+            var handler = _schema.HandlerFactory.HandlerFor(query, out stats);
+            return _connection.Fetch(handler, _identityMap.ForQuery(), stats);
         }
 
         public Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
             CancellationToken token = new CancellationToken())
         {
-            var handler = _schema.HandlerFactory.HandlerFor(query);
-            return _connection.FetchAsync(handler, _identityMap.ForQuery(), token);
+            QueryStatistics stats;
+            var handler = _schema.HandlerFactory.HandlerFor(query, out stats);
+            return _connection.FetchAsync(handler, _identityMap.ForQuery(), stats, token);
         }
 
         public NpgsqlConnection Connection => _connection.Connection;

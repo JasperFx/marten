@@ -46,17 +46,17 @@ namespace Marten.Linq.QueryHandlers
         }
 
 
-        public T Handle(DbDataReader reader, IIdentityMap map)
+        public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return reader.Read() ? _selector.Resolve(reader, map) : default(T);
+            return reader.Read() ? _selector.Resolve(reader, map, stats) : default(T);
         }
 
-        public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var hasValue = await reader.ReadAsync(token).ConfigureAwait(false);
 
             return hasValue
-                ? await _selector.ResolveAsync(reader, map, token).ConfigureAwait(false)
+                ? await _selector.ResolveAsync(reader, map, stats, token).ConfigureAwait(false)
                 : default(T);
         }
 

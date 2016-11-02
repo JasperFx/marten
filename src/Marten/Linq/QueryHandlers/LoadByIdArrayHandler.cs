@@ -36,7 +36,7 @@ namespace Marten.Linq.QueryHandlers
             command.AppendQuery(sql);
         }
 
-        public IList<T> Handle(DbDataReader reader, IIdentityMap map)
+        public IList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             var list = new List<T>();
 
@@ -48,7 +48,7 @@ namespace Marten.Linq.QueryHandlers
             return list;
         }
 
-        public async Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var list = new List<T>();
 

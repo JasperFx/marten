@@ -17,12 +17,12 @@ namespace Marten.Linq
             _resolver = resolver;
         }
 
-        public T Resolve(DbDataReader reader, IIdentityMap map)
+        public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             return _resolver.Resolve(0, reader, map);
         }
 
-        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             return _resolver.ResolveAsync(0, reader, map, token);
         }

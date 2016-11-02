@@ -8,12 +8,10 @@ namespace Marten.Linq.QueryHandlers
 {
     internal class StatsSelector<T> : BasicSelector, ISelector<T>
     {
-        private readonly QueryStatistics _stats;
         private readonly ISelector<T> _inner;
 
-        public StatsSelector(QueryStatistics stats, ISelector<T> inner) : base(inner.SelectFields().Concat(new[] { LinqConstants.StatsColumn }).ToArray())
+        public StatsSelector(ISelector<T> inner) : base(inner.SelectFields().Concat(new[] { LinqConstants.StatsColumn }).ToArray())
         {
-            _stats = stats;
             _inner = inner;
 
             StartingIndex = _inner.SelectFields().Length;
@@ -21,18 +19,18 @@ namespace Marten.Linq.QueryHandlers
 
         public int StartingIndex { get; }
 
-        public T Resolve(DbDataReader reader, IIdentityMap map)
+        public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            _stats.TotalResults = reader.GetInt64(StartingIndex);
+            stats.TotalResults = reader.GetInt64(StartingIndex);
 
-            return _inner.Resolve(reader, map);
+            return _inner.Resolve(reader, map, stats);
         }
 
-        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            _stats.TotalResults = await reader.GetFieldValueAsync<long>(StartingIndex, token).ConfigureAwait(false);
+            stats.TotalResults = await reader.GetFieldValueAsync<long>(StartingIndex, token).ConfigureAwait(false);
 
-            return _inner.Resolve(reader, map);
+            return _inner.Resolve(reader, map, stats);
         }
     }
 }

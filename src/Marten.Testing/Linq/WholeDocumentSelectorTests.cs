@@ -39,7 +39,7 @@ namespace Marten.Testing.Linq
 
             theResolver.Resolve(0, reader, map).Returns(user);
 
-            theSelector.Resolve(reader, map).ShouldBe(user);
+            theSelector.Resolve(reader, map, null).ShouldBe(user);
         }
     }
 }

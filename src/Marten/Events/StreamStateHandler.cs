@@ -35,19 +35,19 @@ namespace Marten.Events
 
         public Type SourceType => typeof (StreamState);
 
-        public StreamState Handle(DbDataReader reader, IIdentityMap map)
+        public StreamState Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return reader.Read() ? Resolve(reader, map) : null;
+            return reader.Read() ? Resolve(reader, map, stats) : null;
         }
 
-        public async Task<StreamState> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<StreamState> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             return await reader.ReadAsync(token).ConfigureAwait(false) 
-                ? await ResolveAsync(reader, map, token).ConfigureAwait(false) 
+                ? await ResolveAsync(reader, map, stats, token).ConfigureAwait(false) 
                 : null;
         }
 
-        public StreamState Resolve(DbDataReader reader, IIdentityMap map)
+        public StreamState Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             var id = reader.GetFieldValue<Guid>(0);
             var version = reader.GetFieldValue<int>(1);
@@ -63,7 +63,7 @@ namespace Marten.Events
             return new StreamState(id, version, aggregateType, timestamp.ToUniversalTime());
         }
 
-        public async Task<StreamState> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<StreamState> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(1, token).ConfigureAwait(false);

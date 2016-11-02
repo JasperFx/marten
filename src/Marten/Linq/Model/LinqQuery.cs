@@ -242,7 +242,7 @@ namespace Marten.Linq.Model
 
             if (stats != null)
             {
-                selector = new StatsSelector<T>(stats, selector);
+                selector = new StatsSelector<T>(selector);
             }
 
             if (joins.Any())

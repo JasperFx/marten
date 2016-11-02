@@ -28,7 +28,7 @@ namespace Marten.Linq.QueryHandlers
 
         IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats);
 
-        IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query);
+        IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, out QueryStatistics stats);
     }
 
     public class QueryHandlerFactory : IQueryHandlerFactory
@@ -42,8 +42,6 @@ namespace Marten.Linq.QueryHandlers
             _schema = schema;
             _serializer = serializer;
         }
-
-        public QueryStatistics Stats { get; set; }
 
         public IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
@@ -79,7 +77,7 @@ namespace Marten.Linq.QueryHandlers
             return HandlerForSingleQuery<T>(model, joins, null, returnDefaultWhenEmpty);
         }
 
-        public IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
+        public IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, out QueryStatistics stats)
         {
             var queryType = query.GetType();
             CachedQuery cachedQuery;
@@ -94,7 +92,7 @@ namespace Marten.Linq.QueryHandlers
                 cachedQuery = _cache[queryType];
             }
 
-            return cachedQuery.CreateHandler<TOut>(query);
+            return cachedQuery.CreateHandler<TOut>(query, out stats);
         }
 
         private IQueryHandler<T> listHandlerFor<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
@@ -184,8 +182,9 @@ namespace Marten.Linq.QueryHandlers
             Expression expression = query.QueryIs();
             var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
 
-            var setters = findSetters(_schema.MappingFor(typeof(TDoc)).ToQueryableDocument(), queryType, expression,
-                _serializer);
+            var queryableDocument = _schema.MappingFor(typeof(TDoc)).ToQueryableDocument();
+
+            var setters = findSetters(queryableDocument, queryType, expression, _serializer);
 
             var model = MartenQueryParser.TransformQueryFlyweight.GetParsedQuery(invocation);
 
@@ -202,19 +201,32 @@ namespace Marten.Linq.QueryHandlers
                 includeJoins = builder.BuildIncludeJoins(model, query);
             }
 
-            if (model.HasOperator<StatsResultOperator>())
-                SetStats(query, model);
+            // Hokey. Need a non-null stats to trigger LinqQuery into "knowing" that it needs
+            // to create a StatsSelector decorator
+            var stats = model.HasOperator<StatsResultOperator>() ? new QueryStatistics() : null;
 
-            var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins, Stats);
+            var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins, stats);
             var cmd = new NpgsqlCommand();
             handler.ConfigureCommand(cmd);
 
-            return new CachedQuery
+            var cachedQuery = new CachedQuery
             {
                 Command = cmd,
                 ParameterSetters = setters,
-                Handler = handler
+                Handler = handler,
             };
+
+            if (model.HasOperator<StatsResultOperator>())
+            {
+                var prop = queryType.GetProperties().FirstOrDefault(x => x.PropertyType == typeof(QueryStatistics));
+                if (prop != null)
+                {
+                    cachedQuery.StatisticsFinder =
+                        typeof(QueryStatisticsFinder<>).CloseAndBuildAs<IQueryStatisticsFinder>(prop, queryType);
+                }
+            }
+
+            return cachedQuery;
         }
 
         private static void validateCompiledQuery(QueryModel model)
@@ -234,22 +246,13 @@ namespace Marten.Linq.QueryHandlers
             }
         }
 
-        // TODO -- this can't be on QueryHandlerFactory!
-        private void SetStats<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, QueryModel model)
-        {
-            var statsOperator = model.FindOperators<StatsResultOperator>().First();
-            var propExp = (MemberExpression) statsOperator.Stats.Body;
-            var prop = ((PropertyInfo) propExp.Member).SetMethod;
-            Stats = new QueryStatistics();
-            prop.Invoke(query, new[] {Stats});
-        }
-
-        private static IList<IDbParameterSetter> findSetters(IQueryableDocument mapping, Type queryType,
-            Expression expression, ISerializer serializer)
+        private static IList<IDbParameterSetter> findSetters(IQueryableDocument mapping, Type queryType, Expression expression, ISerializer serializer)
         {
             var visitor = new CompiledQueryMemberExpressionVisitor(mapping, queryType, serializer);
             visitor.Visit(expression);
+
             var parameterSetters = visitor.ParameterSetters;
+
             return parameterSetters;
         }
     }

@@ -24,7 +24,7 @@ namespace Marten.Linq.QueryHandlers
             _query.ConfigureAny(command);
         }
 
-        public bool Handle(DbDataReader reader, IIdentityMap map)
+        public bool Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             if (!reader.Read())
                 return false;
@@ -32,7 +32,7 @@ namespace Marten.Linq.QueryHandlers
             return !reader.IsDBNull(0) && reader.GetBoolean(0);
         }
 
-        public async Task<bool> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<bool> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var hasRow = await reader.ReadAsync(token).ConfigureAwait(false);
 

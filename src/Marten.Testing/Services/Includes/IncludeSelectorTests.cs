@@ -51,9 +51,9 @@ namespace Marten.Testing.Services.Includes
             var map = new NulloIdentityMap(null);
 
             theResolver.Resolve(3, reader, map).Returns(user);
-            inner.Resolve(reader, map).Returns(issue);
+            inner.Resolve(reader, map, null).Returns(issue);
 
-            theSelector.Resolve(reader, map).ShouldBe(issue);
+            theSelector.Resolve(reader, map, null).ShouldBe(issue);
 
             theCallback.Received().Invoke(user);
         }

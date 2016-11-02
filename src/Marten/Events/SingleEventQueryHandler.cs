@@ -2,6 +2,7 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
@@ -34,15 +35,15 @@ namespace Marten.Events
         }
 
         public Type SourceType => typeof(IEvent);
-        public IEvent Handle(DbDataReader reader, IIdentityMap map)
+        public IEvent Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return reader.Read() ? _selector.Resolve(reader, map) : null;
+            return reader.Read() ? _selector.Resolve(reader, map, stats) : null;
         }
 
-        public async Task<IEvent> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<IEvent> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             return await reader.ReadAsync(token).ConfigureAwait(false) 
-                ? await _selector.ResolveAsync(reader, map, token).ConfigureAwait(false) 
+                ? await _selector.ResolveAsync(reader, map, stats, token).ConfigureAwait(false) 
                 : null;
         }
     }

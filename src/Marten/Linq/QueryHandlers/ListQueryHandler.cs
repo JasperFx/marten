@@ -18,14 +18,14 @@ namespace Marten.Linq.QueryHandlers
             _query = query;
         }
 
-        public IList<T> Handle(DbDataReader reader, IIdentityMap map)
+        public IList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return _query.Selector.Read(reader, map);
+            return _query.Selector.Read(reader, map, stats);
         }
 
-        public Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            return _query.Selector.ReadAsync(reader, map, token);
+            return _query.Selector.ReadAsync(reader, map, stats, token);
         }
 
 

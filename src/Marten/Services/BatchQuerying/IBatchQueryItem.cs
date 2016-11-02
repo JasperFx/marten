@@ -1,6 +1,7 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Linq;
 using Marten.Schema;
 using Npgsql;
 
@@ -14,5 +15,6 @@ namespace Marten.Services.BatchQuerying
 
         void Read(DbDataReader reader, IIdentityMap map);
 
+        QueryStatistics Stats { get; }
     }
 }

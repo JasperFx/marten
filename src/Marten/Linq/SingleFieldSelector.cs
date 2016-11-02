@@ -24,13 +24,13 @@ namespace Marten.Linq
         {
         }
 
-        public T Resolve(DbDataReader reader, IIdentityMap map)
+        public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             var raw = reader[0];
             return raw == DBNull.Value ? default(T) : (T) raw;
         }
 
-        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             return reader.GetFieldValueAsync<T>(0, token);
         }

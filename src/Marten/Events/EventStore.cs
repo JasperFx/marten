@@ -80,14 +80,14 @@ namespace Marten.Events
         public IList<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
         {
             var handler = new EventQueryHandler(_selector, streamId, version, timestamp);
-            return _connection.Fetch(handler, null);
+            return _connection.Fetch(handler, null, null);
         }
 
         public Task<IList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null,
             CancellationToken token = new CancellationToken())
         {
             var handler = new EventQueryHandler(_selector, streamId, version, timestamp);
-            return _connection.FetchAsync(handler, null, token);
+            return _connection.FetchAsync(handler, null, null, token);
         }
 
         public T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new()
@@ -96,7 +96,7 @@ namespace Marten.Events
             var aggregator = _schema.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
 
-            var aggregate = _connection.Fetch(handler, null);
+            var aggregate = _connection.Fetch(handler, null, null);
 
             var assignment = _schema.IdAssignmentFor<T>();
             assignment.Assign(aggregate, streamId);
@@ -112,7 +112,7 @@ namespace Marten.Events
             var aggregator = _schema.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
 
-            var aggregate = await _connection.FetchAsync(handler, null, token).ConfigureAwait(false);
+            var aggregate = await _connection.FetchAsync(handler, null, null, token).ConfigureAwait(false);
 
             var assignment = _schema.IdAssignmentFor<T>();
             assignment.Assign(aggregate, streamId);
@@ -161,25 +161,25 @@ namespace Marten.Events
         public IEvent Load(Guid id)
         {
             var handler = new SingleEventQueryHandler(id, _schema.Events, _serializer);
-            return _connection.Fetch(handler, new NulloIdentityMap(_serializer));
+            return _connection.Fetch(handler, new NulloIdentityMap(_serializer), null);
         }
 
         public Task<IEvent> LoadAsync(Guid id, CancellationToken token = default(CancellationToken))
         {
             var handler = new SingleEventQueryHandler(id, _schema.Events, _serializer);
-            return _connection.FetchAsync(handler, new NulloIdentityMap(_serializer), token);
+            return _connection.FetchAsync(handler, new NulloIdentityMap(_serializer), null, token);
         }
 
         public StreamState FetchStreamState(Guid streamId)
         {
             var handler = new StreamStateHandler(_schema.Events, streamId);
-            return _connection.Fetch(handler, null);
+            return _connection.Fetch(handler, null, null);
         }
 
         public Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = new CancellationToken())
         {
             var handler = new StreamStateHandler(_schema.Events, streamId);
-            return _connection.FetchAsync(handler, null, token);
+            return _connection.FetchAsync(handler, null, null, token);
         }
     }
 }

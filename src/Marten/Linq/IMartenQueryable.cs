@@ -58,9 +58,4 @@ namespace Marten.Linq
 
         LinqQuery<T> ToLinqQuery();
     }
-
-    public class QueryStatistics
-    {
-        public long TotalResults { get; set; }
-    }
 }

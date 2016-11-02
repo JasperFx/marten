@@ -24,14 +24,14 @@ namespace Marten.Linq
             _inner = selector;
         }
 
-        public T Resolve(DbDataReader reader, IIdentityMap map)
+        public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return _inner.Resolve(reader, map);
+            return _inner.Resolve(reader, map, stats);
         }
 
-        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            return _inner.ResolveAsync(reader, map, token);
+            return _inner.ResolveAsync(reader, map, stats, token);
         }
 
         public string[] SelectFields()

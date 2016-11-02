@@ -58,17 +58,17 @@ namespace Marten.Linq.QueryHandlers
             command.AppendQuery(sql);
         }
 
-        public IList<T> Handle(DbDataReader reader, IIdentityMap map)
+        public IList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             var selector = new DeserializeSelector<T>(_serializer);
-            return selector.Read(reader, map);
+            return selector.Read(reader, map, stats);
         }
 
-        public Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var selector = new DeserializeSelector<T>(_serializer);
 
-            return selector.ReadAsync(reader, map, token);
+            return selector.ReadAsync(reader, map, stats, token);
         }
 
         

@@ -14,9 +14,9 @@ namespace Marten.Linq.QueryHandlers
 
     public interface IReaderHandler<T>
     {
-        T Handle(DbDataReader reader, IIdentityMap map);
+        T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats);
 
-        Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token);
+        Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token);
     }
 
     public interface IQueryHandler<T> : IQueryHandler, IReaderHandler<T>

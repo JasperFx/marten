@@ -35,22 +35,22 @@ namespace Marten.Services.Includes
 
         public int StartingIndex { get; }
 
-        public TSearched Resolve(DbDataReader reader, IIdentityMap map)
+        public TSearched Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             var included = _resolver.Resolve(StartingIndex, reader, map);
             _callback(included);
 
-            return _inner.Resolve(reader, map);
+            return _inner.Resolve(reader, map, stats);
         }
 
 
-        public async Task<TSearched> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<TSearched> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var included = await _resolver.ResolveAsync(StartingIndex, reader, map, token).ConfigureAwait(false);
 
             _callback(included);
 
-            return await _inner.ResolveAsync(reader, map, token).ConfigureAwait(false);
+            return await _inner.ResolveAsync(reader, map, stats, token).ConfigureAwait(false);
         }
     }
 }

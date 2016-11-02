@@ -25,7 +25,6 @@ namespace Marten.Linq.Compiled
             return false;
         }
 
-        private readonly IList<IDbParameterSetter> _parameterSetters = new List<IDbParameterSetter>();
         private readonly IQueryableDocument _mapping;
         private readonly Type _queryType;
         private readonly ISerializer _serializer;
@@ -39,7 +38,7 @@ namespace Marten.Linq.Compiled
             _serializer = serializer;
         }
 
-        public IList<IDbParameterSetter> ParameterSetters => _parameterSetters;
+        internal IList<IDbParameterSetter> ParameterSetters { get; } = new List<IDbParameterSetter>();
 
         protected override Expression VisitUnary(UnaryExpression node)
         {
@@ -52,7 +51,7 @@ namespace Marten.Linq.Compiled
                 }
                 else if (body.NodeType == ExpressionType.MemberAccess)
                 {
-                    _parameterSetters.Add(new ConstantDbParameterSetter(true));
+                    ParameterSetters.Add(new ConstantDbParameterSetter(true));
                 }
             }
 
@@ -66,9 +65,10 @@ namespace Marten.Linq.Compiled
             if (node.NodeType == ExpressionType.MemberAccess && node.Member.DeclaringType == _queryType)
             {
                 var property = (PropertyInfo)node.Member;
+
                 var method = GetType().GetMethod(nameof(CreateParameterSetter), BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(_queryType, property.PropertyType);
-                var result = (IDbParameterSetter)method.Invoke(this, new []{property});
-                _parameterSetters.Add(result);              
+                var result = (IDbParameterSetter)method.Invoke(this, new[] { property });
+                ParameterSetters.Add(result);
             }
 
             return base.VisitMember(node);
@@ -81,7 +81,7 @@ namespace Marten.Linq.Compiled
                 var value = _lastMember.GetValue(node);
 
                 var setter = new ConstantDbParameterSetter(value);
-                _parameterSetters.Add(setter);
+                ParameterSetters.Add(setter);
             }
 
             return base.VisitConstant(node);
@@ -94,7 +94,7 @@ namespace Marten.Linq.Compiled
 
             if (IsContainmentMethod(node.Method))
             {
-                var visitor = new ContainmentParameterVisitor(_serializer, _queryType, _parameterSetters);
+                var visitor = new ContainmentParameterVisitor(_serializer, _queryType, ParameterSetters);
                 return visitor.Visit(node);
             }
 

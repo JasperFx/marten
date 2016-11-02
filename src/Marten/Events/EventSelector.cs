@@ -27,7 +27,7 @@ namespace Marten.Events
             _serializer = serializer;
         }
 
-        public IEvent Resolve(DbDataReader reader, IIdentityMap map)
+        public IEvent Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             var id = reader.GetGuid(0);
             var eventTypeName = reader.GetString(1);
@@ -59,7 +59,7 @@ namespace Marten.Events
             return @event;
         }
 
-        public async Task<IEvent> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<IEvent> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var eventTypeName = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);

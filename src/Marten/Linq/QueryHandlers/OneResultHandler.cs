@@ -33,7 +33,7 @@ namespace Marten.Linq.QueryHandlers
             _linqQuery.ConfigureCommand(command, _rowLimit);
         }
 
-        public T Handle(DbDataReader reader, IIdentityMap map)
+        public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             var hasResult = reader.Read();
             if (!hasResult)
@@ -43,7 +43,7 @@ namespace Marten.Linq.QueryHandlers
                 throw new InvalidOperationException(NoElementsMessage);
             }
 
-            var result = _linqQuery.Selector.Resolve(reader, map);
+            var result = _linqQuery.Selector.Resolve(reader, map, stats);
 
             if (!_canBeMultiples && reader.Read())
                 throw new InvalidOperationException(MoreThanOneElementMessage);
@@ -51,7 +51,7 @@ namespace Marten.Linq.QueryHandlers
             return result;
         }
 
-        public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var hasResult = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!hasResult)
@@ -61,7 +61,7 @@ namespace Marten.Linq.QueryHandlers
                 throw new InvalidOperationException(NoElementsMessage);
             }
 
-            var result = await _linqQuery.Selector.ResolveAsync(reader, map, token).ConfigureAwait(false);
+            var result = await _linqQuery.Selector.ResolveAsync(reader, map, stats, token).ConfigureAwait(false);
 
             if (!_canBeMultiples && await reader.ReadAsync(token).ConfigureAwait(false))
                 throw new InvalidOperationException(MoreThanOneElementMessage);

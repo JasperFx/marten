@@ -18,21 +18,19 @@ namespace Marten.Linq
 
     public interface ISelector<T> : ISelector
     {
-        T Resolve(DbDataReader reader, IIdentityMap map);
+        T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats);
 
-        Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token);
-
-
+        Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token);
     }
 
     public class StandInSelector<T> : ISelector<T>
     {
-        public T Resolve(DbDataReader reader, IIdentityMap map)
+        public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             throw new NotSupportedException();
         }
 
-        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             throw new NotSupportedException();
         }
@@ -74,25 +72,25 @@ namespace Marten.Linq
 
     public static class SelectorExtensions
     {
-        public static IList<T> Read<T>(this ISelector<T> selector, DbDataReader reader, IIdentityMap map)
+        public static IList<T> Read<T>(this ISelector<T> selector, DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             var list = new List<T>();
 
             while (reader.Read())
             {
-                list.Add(selector.Resolve(reader, map));
+                list.Add(selector.Resolve(reader, map, stats));
             }
 
             return list;
         }
 
-        public static async Task<IList<T>> ReadAsync<T>(this ISelector<T> selector, DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public static async Task<IList<T>> ReadAsync<T>(this ISelector<T> selector, DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var list = new List<T>();
 
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                list.Add(await selector.ResolveAsync(reader, map, token).ConfigureAwait(false));
+                list.Add(await selector.ResolveAsync(reader, map, stats, token).ConfigureAwait(false));
             }
 
             return list;

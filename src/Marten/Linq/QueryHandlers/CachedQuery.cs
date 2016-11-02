@@ -14,8 +14,12 @@ namespace Marten.Linq.QueryHandlers
 
         public NpgsqlCommand Command { get; set; }
 
-        public IQueryHandler<T> CreateHandler<T>(object model)
+        public IQueryStatisticsFinder StatisticsFinder { get; set; }
+
+        public IQueryHandler<T> CreateHandler<T>(object model, out QueryStatistics stats)
         {
+            stats = StatisticsFinder?.Find(model);
+
             return new CachedQueryHandler<T>(model, Command, Handler.As<IQueryHandler<T>>(), ParameterSetters.ToArray());
         }
     }

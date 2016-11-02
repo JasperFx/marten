@@ -19,7 +19,7 @@ namespace Marten.Testing.Linq
             var selector = new DeserializeSelector<Target>(serializer);
             reader.GetString(0).Returns(json);
 
-            selector.Resolve(reader, null).ShouldNotBeNull();
+            selector.Resolve(reader, null, null).ShouldNotBeNull();
         }
 
         [Fact]

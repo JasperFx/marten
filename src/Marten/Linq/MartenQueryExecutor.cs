@@ -48,7 +48,7 @@ namespace Marten.Linq
                                                 queryModel.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
             }
 
-            return Connection.Fetch(handler, IdentityMap.ForQuery());
+            return Connection.Fetch(handler, IdentityMap.ForQuery(), Statistics);
         }
 
 
@@ -63,7 +63,7 @@ namespace Marten.Linq
                                                 queryModel.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
             }
 
-            return Connection.Fetch(handler, IdentityMap.ForQuery());
+            return Connection.Fetch(handler, IdentityMap.ForQuery(), Statistics);
         }
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
@@ -72,7 +72,7 @@ namespace Marten.Linq
 
             var handler = new LinqQuery<T>(Schema, queryModel, _includes.ToArray(), Statistics).ToList();
 
-            return Connection.Fetch(handler, IdentityMap.ForQuery());
+            return Connection.Fetch(handler, IdentityMap.ForQuery(), Statistics);
         }
 
     }

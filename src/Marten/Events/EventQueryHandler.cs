@@ -57,14 +57,14 @@ namespace Marten.Events
             command.AppendQuery(sql);
         }
 
-        public IList<IEvent> Handle(DbDataReader reader, IIdentityMap map)
+        public IList<IEvent> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return _selector.Read(reader, map);
+            return _selector.Read(reader, map, stats);
         }
 
-        public Task<IList<IEvent>> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public Task<IList<IEvent>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            return _selector.ReadAsync(reader, map, token);
+            return _selector.ReadAsync(reader, map, stats, token);
         }
 
     }

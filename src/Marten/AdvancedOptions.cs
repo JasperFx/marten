@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
@@ -93,7 +94,7 @@ namespace Marten
 
             using (var connection = OpenConnection())
             {
-                return connection.Fetch(handler, null);
+                return connection.Fetch(handler, null, null);
             }
         }
 
@@ -150,7 +151,7 @@ namespace Marten
 
         public Type SourceType => _storage.DocumentType;
 
-        public DocumentMetadata Handle(DbDataReader reader, IIdentityMap map)
+        public DocumentMetadata Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             if (!reader.Read()) return null;
 
@@ -160,7 +161,7 @@ namespace Marten
             return new DocumentMetadata(timestamp, version);
         }
 
-        public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var hasAny = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!hasAny) return null;

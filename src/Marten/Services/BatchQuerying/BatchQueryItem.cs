@@ -1,6 +1,7 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Npgsql;
@@ -11,12 +12,15 @@ namespace Marten.Services.BatchQuerying
     {
         private readonly IQueryHandler<T> _handler;
 
-        public BatchQueryItem(IQueryHandler<T> handler)
+        public BatchQueryItem(IQueryHandler<T> handler, QueryStatistics stats)
         {
             _handler = handler;
 
             Completion = new TaskCompletionSource<T>();
+            Stats = stats;
         }
+
+        public QueryStatistics Stats { get; }
 
 
         public TaskCompletionSource<T> Completion { get; }
@@ -29,13 +33,13 @@ namespace Marten.Services.BatchQuerying
 
         public async Task Read(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            var result = await _handler.HandleAsync(reader, map, token).ConfigureAwait(false);
+            var result = await _handler.HandleAsync(reader, map, Stats, token).ConfigureAwait(false);
             Completion.SetResult(result);
         }
 
         public void Read(DbDataReader reader, IIdentityMap map)
         {
-            var result = _handler.Handle(reader, map);
+            var result = _handler.Handle(reader, map, Stats);
             Completion.SetResult(result);
         }
 

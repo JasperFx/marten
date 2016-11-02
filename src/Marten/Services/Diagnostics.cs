@@ -25,7 +25,8 @@ namespace Marten.Services
         /// <returns></returns>
         public NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query)
         {
-            var handler = _schema.HandlerFactory.HandlerFor(query);
+            QueryStatistics stats;
+            var handler = _schema.HandlerFactory.HandlerFor(query, out stats);
             var cmd = new NpgsqlCommand();
             handler.ConfigureCommand(cmd);
 

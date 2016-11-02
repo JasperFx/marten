@@ -27,14 +27,14 @@ namespace Marten.Linq.QueryHandlers
             _query.ConfigureCommand(command);
         }
 
-        public string Handle(DbDataReader reader, IIdentityMap map)
+        public string Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return $"[{_query.Selector.Read(reader, map).ToArray().Join(",")}]";
+            return $"[{_query.Selector.Read(reader, map, stats).ToArray().Join(",")}]";
         }
 
-        public async Task<string> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<string> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            var result = await _query.Selector.ReadAsync(reader, map, token).ConfigureAwait(false);
+            var result = await _query.Selector.ReadAsync(reader, map, stats, token).ConfigureAwait(false);
             return $"[{result}]";
         }
     }

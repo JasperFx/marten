@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
+using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Npgsql;
@@ -29,16 +30,16 @@ namespace Marten.Events
 
         public Type SourceType => typeof (IEvent);
 
-        public T Handle(DbDataReader reader, IIdentityMap map)
+        public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            var @events = _inner.Handle(reader, map);
+            var @events = _inner.Handle(reader, map, stats);
 
             return _aggregator.Build(@events, _session);
         }
 
-        public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            var @events = await _inner.HandleAsync(reader, map, token).ConfigureAwait(false);
+            var @events = await _inner.HandleAsync(reader, map, stats, token).ConfigureAwait(false);
 
             return _aggregator.Build(@events, _session);
         }

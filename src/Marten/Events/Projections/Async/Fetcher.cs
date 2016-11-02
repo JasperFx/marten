@@ -186,7 +186,7 @@ select seq_id from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id 
                 {
                     await reader.NextResultAsync(_token).ConfigureAwait(false);
 
-                    events = await _selector.ReadAsync(reader, _map, _token).ConfigureAwait(false);
+                    events = await _selector.ReadAsync(reader, _map, null, _token).ConfigureAwait(false);
                 }
                 else
                 {

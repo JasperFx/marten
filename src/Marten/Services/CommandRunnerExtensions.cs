@@ -31,7 +31,7 @@ namespace Marten.Services
             });
         }
 
-        public static T Fetch<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map)
+        public static T Fetch<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats)
         {
             var command = new NpgsqlCommand();
             handler.ConfigureCommand(command);
@@ -40,12 +40,12 @@ namespace Marten.Services
             {
                 using (var reader = command.ExecuteReader())
                 {
-                    return handler.Handle(reader, map);
+                    return handler.Handle(reader, map, stats);
                 }
             });
         }
 
-        public static async Task<T> FetchAsync<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, CancellationToken token)
+        public static async Task<T> FetchAsync<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var command = new NpgsqlCommand();
             handler.ConfigureCommand(command);
@@ -54,12 +54,12 @@ namespace Marten.Services
             {
                 using (var reader = await command.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                 {
-                    return await handler.HandleAsync(reader, map, tkn).ConfigureAwait(false);
+                    return await handler.HandleAsync(reader, map, stats, tkn).ConfigureAwait(false);
                 }
             }, token).ConfigureAwait(false);
         }
 
-        public static IList<T> Resolve<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map)
+        public static IList<T> Resolve<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map, QueryStatistics stats)
         {
             var selectMap = map.ForQuery();
 
@@ -71,7 +71,7 @@ namespace Marten.Services
                 {
                     while (reader.Read())
                     {
-                        list.Add(selector.Resolve(reader, selectMap));
+                        list.Add(selector.Resolve(reader, selectMap, stats));
                     }
                 }
 
@@ -79,7 +79,7 @@ namespace Marten.Services
             });
         }
 
-        public static Task<IList<T>> ResolveAsync<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map, CancellationToken token)
+        public static Task<IList<T>> ResolveAsync<T>(this IManagedConnection runner, NpgsqlCommand cmd, ISelector<T> selector, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var selectMap = map.ForQuery();
 
@@ -90,7 +90,7 @@ namespace Marten.Services
                 {
                     while (await reader.ReadAsync(tkn).ConfigureAwait(false))
                     {
-                        list.Add(selector.Resolve(reader, selectMap));
+                        list.Add(selector.Resolve(reader, selectMap, stats));
                     }
                 }
 

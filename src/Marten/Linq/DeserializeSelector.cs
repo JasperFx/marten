@@ -19,12 +19,12 @@ namespace Marten.Linq
             _serializer = serializer;
         }
 
-        public T Resolve(DbDataReader reader, IIdentityMap map)
+        public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             return _serializer.FromJson<T>(reader.GetString(0));
         }
 
-        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, CancellationToken token)
+        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             return _serializer.FromJson<T>(await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false));
         }
