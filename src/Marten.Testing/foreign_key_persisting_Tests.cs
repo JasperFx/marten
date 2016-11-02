@@ -65,7 +65,7 @@ namespace Marten.Testing
                 session.SaveChanges();
             }
 
-            Exception<PostgresException>.ShouldBeThrownBy(() =>
+            Exception<MartenCommandException>.ShouldBeThrownBy(() =>
             {
                 using (var session = theStore.OpenSession())
                 {

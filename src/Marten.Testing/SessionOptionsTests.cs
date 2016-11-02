@@ -30,12 +30,12 @@ public void ConfigureCommandTimeout(IDocumentStore store)
 
             using (var session = store.OpenSession(options))
             {
-                var e = Assert.Throws<NpgsqlException>(() =>
+                var e = Assert.Throws<MartenCommandException>(() =>
                 {
                     session.Query<QuerySessionTests.FryGuy>("select pg_sleep(2)");
                 });
 
-                Assert.Contains("connected party did not properly respond after a period of time", e.InnerException.Message);
+                Assert.Contains("connected party did not properly respond after a period of time", e.InnerException.InnerException.Message);
             }
         }
 

@@ -162,10 +162,16 @@ namespace Marten.Services
                 action(cmd);
                 Logger.LogSuccess(cmd);
             }
-            catch (NpgsqlException e) when (e.Message.IndexOf(EventContracts.UnexpectedMaxEventIdForStream, StringComparison.Ordinal) > -1)
+            catch (NpgsqlException e)
+                when (e.Message.IndexOf(EventContracts.UnexpectedMaxEventIdForStream, StringComparison.Ordinal) > -1)
             {
                 Logger.LogFailure(cmd, e);
                 throw new EventStreamUnexpectedMaxEventIdException(e);
+            }
+            catch (NpgsqlException e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw new MartenCommandException(cmd, e);
             }
             catch (Exception e)
             {
@@ -186,6 +192,11 @@ namespace Marten.Services
                 action(cmd);
                 Logger.LogSuccess(cmd);
             }
+            catch (NpgsqlException e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw new MartenCommandException(cmd, e);
+            }
             catch (Exception e)
             {
                 Logger.LogFailure(cmd, e);
@@ -205,6 +216,11 @@ namespace Marten.Services
                 var returnValue = func(cmd);
                 Logger.LogSuccess(cmd);
                 return returnValue;
+            }
+            catch (NpgsqlException e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw new MartenCommandException(cmd, e);
             }
             catch (Exception e)
             {
@@ -227,6 +243,11 @@ namespace Marten.Services
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }
+            catch (NpgsqlException e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw new MartenCommandException(cmd, e);
+            }
             catch (Exception e)
             {
                 Logger.LogFailure(cmd, e);
@@ -247,6 +268,11 @@ namespace Marten.Services
                 await action(cmd, token).ConfigureAwait(false);
                 Logger.LogSuccess(cmd);
             }
+            catch (NpgsqlException e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw new MartenCommandException(cmd, e);
+            }
             catch (Exception e)
             {
                 Logger.LogFailure(cmd, e);
@@ -266,6 +292,11 @@ namespace Marten.Services
             {
                 await action(cmd, token).ConfigureAwait(false);
                 Logger.LogSuccess(cmd);
+            }
+            catch (NpgsqlException e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw new MartenCommandException(cmd, e);
             }
             catch (Exception e)
             {
@@ -288,6 +319,11 @@ namespace Marten.Services
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }
+            catch (NpgsqlException e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw new MartenCommandException(cmd, e);
+            }
             catch (Exception e)
             {
                 Logger.LogFailure(cmd, e);
@@ -308,6 +344,11 @@ namespace Marten.Services
                 var returnValue = await func(cmd, token).ConfigureAwait(false);
                 Logger.LogSuccess(cmd);
                 return returnValue;
+            }
+            catch (NpgsqlException e)
+            {
+                Logger.LogFailure(cmd, e);
+                throw new MartenCommandException(cmd, e);
             }
             catch (Exception e)
             {
