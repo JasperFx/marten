@@ -29,6 +29,23 @@ namespace Marten
         /// <returns></returns>
         object FromJson(Type type, string json);
 
+
+        /// <summary>
+        /// Deserialize a JSON string into an object of type T
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="reader"></param>
+        /// <returns></returns>
+        T FromJson<T>(TextReader reader);
+
+        /// <summary>
+        /// Deserialize a JSON string into the supplied Type
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="reader"></param>
+        /// <returns></returns>
+        object FromJson(Type type, TextReader reader);
+
         /// <summary>
         /// Serialize a document without any extra
         /// type handling metadata

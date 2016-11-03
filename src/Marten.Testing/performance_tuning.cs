@@ -42,6 +42,16 @@ namespace Marten.Testing
             return JSON.Deserialize(json, type, _options);
         }
 
+        public T FromJson<T>(TextReader reader)
+        {
+            return JSON.Deserialize<T>(reader);
+        }
+
+        public object FromJson(Type type, TextReader reader)
+        {
+            return JSON.Deserialize(reader, type);
+        }
+
         public string ToCleanJson(object document)
         {
             return ToJson(document);
