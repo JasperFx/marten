@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.IO;
 using Marten.Linq;
 using Marten.Services;
 using NSubstitute;
@@ -17,7 +18,7 @@ namespace Marten.Testing.Linq
             var json = serializer.ToJson(target);
 
             var selector = new DeserializeSelector<Target>(serializer);
-            reader.GetString(0).Returns(json);
+            reader.GetTextReader(0).Returns(new StringReader(json));
 
             selector.Resolve(reader, null, null).ShouldNotBeNull();
         }

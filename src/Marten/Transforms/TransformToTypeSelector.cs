@@ -20,7 +20,7 @@ namespace Marten.Transforms
 
         public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            var json = reader.GetString(0);
+            var json = reader.GetTextReader(0);
             return map.Serializer.FromJson<T>(json);
         }
 

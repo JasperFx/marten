@@ -60,6 +60,16 @@ namespace Marten.Services
             return _serializer.Deserialize(new JsonTextReader(new StringReader(json)), type);
         }
 
+        public T FromJson<T>(TextReader reader)
+        {
+            return _serializer.Deserialize<T>(new JsonTextReader(reader));
+        }
+
+        public object FromJson(Type type, TextReader reader)
+        {
+            return _serializer.Deserialize(new JsonTextReader(reader), type);
+        }
+
         public string ToCleanJson(object document)
         {
             var writer = new StringWriter();

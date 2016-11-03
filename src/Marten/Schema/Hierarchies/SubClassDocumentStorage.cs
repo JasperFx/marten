@@ -160,7 +160,7 @@ namespace Marten.Schema.Hierarchies
 
         public T Resolve(DbDataReader reader, ISerializer serializer)
         {
-            var json = reader.GetString(0);
+            var json = reader.GetTextReader(0);
 
             // TODO -- what if it's not the right type?
             return serializer.FromJson<T>(json);

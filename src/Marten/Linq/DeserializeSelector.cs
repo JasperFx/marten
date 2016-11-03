@@ -21,7 +21,7 @@ namespace Marten.Linq
 
         public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return _serializer.FromJson<T>(reader.GetString(0));
+            return _serializer.FromJson<T>(reader.GetTextReader(0));
         }
 
         public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
