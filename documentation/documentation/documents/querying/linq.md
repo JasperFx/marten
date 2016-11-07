@@ -143,6 +143,16 @@ A few notes on the `SelectMany()` usage and limitations:
   rather than the parent document regardless of the order in which the operators appear in the Linq query
 * You cannot use `SelectMany()` with both a `Distinct()` and a `Count()` operator at this point. 
 
+## Distinct()
+
+New in Marten 1.2 is support for the Linq `Distinct()` operator:
+
+<[sample:get_distinct_strings]>
+
+Do note that the `Distinct()` keyword can be used with `Select()` transforms as well:
+
+<[sample:get_distinct_numbers]>
+
 ## Searching with Boolean Flags
 
 Linq queries against boolean properties can use shorthand mechanisms in `Where()` clauses like so:
