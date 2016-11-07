@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Batched Queries</title>
-		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/getting_started">Getting Started</a>
+              <a href="/marten/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/documentation">Documentation</a>
+		          <a href="/marten/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/documentation/documents/querying/compiled_queries" title="Compiled Queries">Previous</a></li>
-		      	<li><a href="/documentation/documents/querying/paging" title="Paging">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/querying/compiled_queries" title="Compiled Queries">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/querying/paging" title="Paging">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/querying">Querying Documents</a></li><li class="active">Batched Queries</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/querying">Querying Documents</a></li><li class="active">Batched Queries</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/querying/paging">Paging</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/querying/compiled_queries">Compiled Queries</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/querying/paging">Paging</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/querying/compiled_queries">Compiled Queries</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -102,7 +102,7 @@ the data returned and sets the results of the <code>Task</code> objects handed o
 <p>This functionality is demonstrated below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;// Start a new IBatchQuery from an active session&#xD;&#xA;var batch = theSession.CreateBatchQuery();&#xD;&#xA;&#xD;&#xA;// Fetch a single document by its Id&#xD;&#xA;var user1 = batch.Load&lt;User&gt;(&quot;username&quot;);&#xD;&#xA;&#xD;&#xA;// Fetch multiple documents by their id&#x27;s&#xD;&#xA;var admins = batch.LoadMany&lt;User&gt;().ById(&quot;user2&quot;, &quot;user3&quot;);&#xD;&#xA;&#xD;&#xA;// User-supplied sql&#xD;&#xA;var toms = batch.Query&lt;User&gt;(&quot;where first_name == ?&quot;, &quot;Tom&quot;);&#xD;&#xA;&#xD;&#xA;// Where with Linq&#xD;&#xA;var jills = batch.Query&lt;User&gt;().Where(x =&gt; x.FirstName == &quot;Jill&quot;).ToList();&#xD;&#xA;&#xD;&#xA;// Any() queries&#xD;&#xA;var anyBills = batch.Query&lt;User&gt;().Any(x =&gt; x.FirstName == &quot;Bill&quot;);&#xD;&#xA;&#xD;&#xA;// Count() queries&#xD;&#xA;var countJims = batch.Query&lt;User&gt;().Count(x =&gt; x.FirstName == &quot;Jim&quot;);&#xD;&#xA;&#xD;&#xA;// The Batch querying supports First/FirstOrDefault/Single/SingleOrDefault() selectors:&#xD;&#xA;var firstInternal = batch.Query&lt;User&gt;().OrderBy(x =&gt; x.LastName).First(x =&gt; x.Internal);&#xD;&#xA;&#xD;&#xA;// Kick off the batch query&#xD;&#xA;await batch.Execute();&#xD;&#xA;&#xD;&#xA;// All of the query mechanisms of the BatchQuery return&#xD;&#xA;// Task&#x27;s that are completed by the Execute() method above&#xD;&#xA;var internalUser = await firstInternal;&#xD;&#xA;Debug.WriteLine($&quot;The first internal user is {internalUser.FirstName} {internalUser.LastName}&quot;);&#xD;&#xA;</code></pre>
 <h2>Combining Compiled Queries and Batch Queries</h2>
-<p>As of v0.8.10, Marten allows you to incorporate <a href="/documentation/documents/querying/compiled_queries">compiled queries</a> as part of a batch query. The Marten team is hoping that this combination will make it easier to create performant applications where you may need to aggregate many documents in a single HTTP request or other operation.</p>
+<p>As of v0.8.10, Marten allows you to incorporate <a href="/marten/documentation/documents/querying/compiled_queries">compiled queries</a> as part of a batch query. The Marten team is hoping that this combination will make it easier to create performant applications where you may need to aggregate many documents in a single HTTP request or other operation.</p>
 <p>Say you have a compiled query that finds the first user with a given first name:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class FindByFirstName : ICompiledQuery&lt;User, User&gt;&#xD;&#xA;{&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;&#xD;&#xA;    public Expression&lt;Func&lt;IQueryable&lt;User&gt;, User&gt;&gt; QueryIs()&#xD;&#xA;    {&#xD;&#xA;        return q =&gt; q.FirstOrDefault(x =&gt; x.FirstName == FirstName);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>To use that compiled query class in a batch query, you simply use the <code>IBatchedQuery.Query(ICompiledQuery)</code> syntax shown below:</p>
@@ -118,12 +118,12 @@ the data returned and sets the results of the <code>Task</code> objects handed o
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/documentation/documents/querying/compiled_queries">Compiled Queries</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/querying/compiled_queries">Compiled Queries</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/documentation/documents/querying/paging">Paging</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/querying/paging">Paging</a>
 
 				        </span>
 			      	</nav>
@@ -140,10 +140,10 @@ the data returned and sets the results of the <code>Task</code> objects handed o
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/content/embed.js"></script>
-        <script type="text/javascript" src="/content/prism.js"></script>
-        <script type="text/javascript" src="/content/sidebar.js"></script>
-        <script type="text/javascript" src="/content/affix.js"></script>
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

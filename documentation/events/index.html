@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Marten as Event Store</title>
-		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/getting_started">Getting Started</a>
+              <a href="/marten/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/documentation">Documentation</a>
+		          <a href="/marten/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/documentation/documents" title="Marten as Document Db">Previous</a></li>
-		      	<li><a href="/documentation/events/schema" title="Event Store Schema Objects">Next</a></li>
+		      	<li><a href="/marten/documentation/documents" title="Marten as Document Db">Previous</a></li>
+		      	<li><a href="/marten/documentation/events/schema" title="Event Store Schema Objects">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li class="active">Marten as Event Store</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li class="active">Marten as Event Store</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/events/schema">Event Store Schema Objects</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents">Marten as Document Db</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/schema">Event Store Schema Objects</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents">Marten as Document Db</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -95,9 +95,9 @@
 <p>Marten's Event Store functionality is a powerful way to utilize Postgresql in the <a href="http://martinfowler.com/eaaDev/EventSourcing.html">event sourcing</a> style of persistence in your application. Beyond simple event capture and access to the raw event
 stream data, Marten also helps you create &quot;read side&quot; views of the raw event data through its support for projections.</p>
 <h2>Event Store Documentation</h2>
-<ul class="table-of-contents"><li><a href="/documentation/events/schema">Event Store Schema Objects</a></li><li><a href="/documentation/events/appending">Appending Events</a></li><li><a href="/documentation/events/streams">Querying Event and Stream Data</a></li><li><a href="/documentation/events/projections">Projections</a><ul><li><a href="/documentation/events/projections/async_daemon">Async Projections Daemon</a></li><li><a href="/documentation/events/projections/custom">Custom Projections</a></li></ul></li></ul>
+<ul class="table-of-contents"><li><a href="/marten/documentation/events/schema">Event Store Schema Objects</a></li><li><a href="/marten/documentation/events/appending">Appending Events</a></li><li><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a></li><li><a href="/marten/documentation/events/projections">Projections</a><ul><li><a href="/marten/documentation/events/projections/async_daemon">Async Projections Daemon</a></li><li><a href="/marten/documentation/events/projections/custom">Custom Projections</a></li></ul></li></ul>
 <h2>Event Store Quickstart</h2>
-<p>There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in <a href="/documentation/schema">Marten and the Postgresql Schema</a>. Marten is just a client library,
+<p>There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in <a href="/marten/documentation/schema">Marten and the Postgresql Schema</a>. Marten is just a client library,
 and there's nothing to install other than the Marten nuget.</p>
 <p>Because I’ve read way too much epic fantasy series, my sample problem domain is an application that records, analyses, and visualizes the status of quests. During a quest,  you may want to record events like:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class ArrivedAtLocation&#xD;&#xA;{&#xD;&#xA;&#xD;&#xA;    public int Day { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Location { get; set; }&#xD;&#xA;&#xD;&#xA;    public override string ToString()&#xD;&#xA;    {&#xD;&#xA;        return $&quot;Arrived at {Location} on Day {Day}&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class MembersJoined&#xD;&#xA;{&#xD;&#xA;&#xD;&#xA;    public MembersJoined()&#xD;&#xA;    {&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public MembersJoined(int day, string location, params string[] members)&#xD;&#xA;    {&#xD;&#xA;        Day = day;&#xD;&#xA;        Location = location;&#xD;&#xA;        Members = members;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public Guid QuestId { get; set; }&#xD;&#xA;&#xD;&#xA;    public int Day { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Location { get; set; }&#xD;&#xA;&#xD;&#xA;    public string[] Members { get; set; }&#xD;&#xA;&#xD;&#xA;    public override string ToString()&#xD;&#xA;    {&#xD;&#xA;        return $&quot;Members {Members.Join(&quot;, &quot;)} joined at {Location} on Day {Day}&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;public class QuestStarted&#xD;&#xA;{&#xD;&#xA;    public string Name { get; set; }&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public override string ToString()&#xD;&#xA;    {&#xD;&#xA;        return $&quot;Quest {Name} started&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class MembersDeparted&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public int Day { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Location { get; set; }&#xD;&#xA;&#xD;&#xA;    public string[] Members { get; set; }&#xD;&#xA;&#xD;&#xA;    public override string ToString()&#xD;&#xA;    {&#xD;&#xA;        return $&quot;Members {Members.Join(&quot;, &quot;)} departed at {Location} on Day {Day}&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
@@ -110,12 +110,12 @@ and there's nothing to install other than the Marten nuget.</p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/documentation/documents">Marten as Document Db</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents">Marten as Document Db</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/documentation/events/schema">Event Store Schema Objects</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/events/schema">Event Store Schema Objects</a>
 
 				        </span>
 			      	</nav>
@@ -132,10 +132,10 @@ and there's nothing to install other than the Marten nuget.</p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/content/embed.js"></script>
-        <script type="text/javascript" src="/content/prism.js"></script>
-        <script type="text/javascript" src="/content/sidebar.js"></script>
-        <script type="text/javascript" src="/content/affix.js"></script>
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

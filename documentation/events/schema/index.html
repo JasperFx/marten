@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Event Store Schema Objects</title>
-		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/getting_started">Getting Started</a>
+              <a href="/marten/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/documentation">Documentation</a>
+		          <a href="/marten/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/documentation/events" title="Marten as Event Store">Previous</a></li>
-		      	<li><a href="/documentation/events/appending" title="Appending Events">Next</a></li>
+		      	<li><a href="/marten/documentation/events" title="Marten as Event Store">Previous</a></li>
+		      	<li><a href="/marten/documentation/events/appending" title="Appending Events">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/events">Marten as Event Store</a></li><li class="active">Event Store Schema Objects</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/events">Marten as Event Store</a></li><li class="active">Event Store Schema Objects</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/events/appending">Appending Events</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/documentation/events">Marten as Event Store</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/appending">Appending Events</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events">Marten as Event Store</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -123,7 +123,7 @@ and to retain a potential way to uniquely identify events across databases.</p>
 <p>Hopefully, it's relatively clear how the fields in <code>mt_events</code> maps to the <code>IEvent</code> interface in Marten:</p>
 <pre><code class="language-csharp">&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// A reference to the stream that contains&#xD;&#xA;/// this event&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public Guid StreamId { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// An alternative Guid identifier to identify&#xD;&#xA;/// events across databases&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// An event&#x27;s version position within its event stream&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public int Version { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// A global sequential number identifying the Event&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public long Sequence { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// The actual event data&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public T Data { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// The UTC time that this event was originally captured&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public DateTimeOffset Timestamp { get; set; }&#xD;&#xA;</code></pre>
 <p>The full event data is available on <code>EventStream</code> and <code>IEvent</code> objects immediately after committing a transaction that involves
-event capture. See <a href="/documentation/documents/diagnostics">Diagnostics and Instrumentation</a> for more information on capturing event data in the instrumentation
+event capture. See <a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a> for more information on capturing event data in the instrumentation
 hooks.</p>
 
 			      	</div>
@@ -132,12 +132,12 @@ hooks.</p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/documentation/events">Marten as Event Store</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/events">Marten as Event Store</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/documentation/events/appending">Appending Events</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/events/appending">Appending Events</a>
 
 				        </span>
 			      	</nav>
@@ -154,10 +154,10 @@ hooks.</p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/content/embed.js"></script>
-        <script type="text/javascript" src="/content/prism.js"></script>
-        <script type="text/javascript" src="/content/sidebar.js"></script>
-        <script type="text/javascript" src="/content/affix.js"></script>
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){
