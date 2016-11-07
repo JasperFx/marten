@@ -321,6 +321,7 @@ namespace Marten.Testing.Linq
                 .Where(x => x.CategoryArray.Any(s => interests.Contains(s)) && x.Published)
                 .OrderBy(x => x.Long)
                 .ToList();
+
             res.Count.ShouldBe(2);
             res[0].Long.ShouldBe(1);
             res[1].Long.ShouldBe(4);
@@ -542,20 +543,23 @@ namespace Marten.Testing.Linq
             var doc1 = new DocWithLists { Numbers = new List<int> { 1, 2, 3 } };
             var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
             var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7 } };
+            var doc4 = new DocWithLists { Numbers = new List<int> {  } };
 
 
-            theSession.Store(doc1);
-            theSession.Store(doc2);
-            theSession.Store(doc3);
+            theSession.Store(doc1, doc2, doc3, doc4);
 
             theSession.SaveChanges();
 
             theSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToArray()
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
+
+            // Or without any predicate
+            theSession.Query<DocWithLists>()
+                .Count(x => x.Numbers.Any()).ShouldBe(3);
         }
         // ENDSAMPLE
 
-
+        // SAMPLE: query_against_number_list_with_count_method
         [Fact]
         public void query_against_number_list_with_count_method()
         {
@@ -573,6 +577,7 @@ namespace Marten.Testing.Linq
             theSession.Query<DocWithLists>()
                 .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
         }
+        // ENDSAMPLE
 
         [Fact]
         public void query_against_number_list_with_count_property()

@@ -23,8 +23,10 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void negated_contains()
         {
+            // SAMPLE: negated-contains
             theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
                 .ShouldBe(2);
+            // ENDSAMPLE
 
         }
 

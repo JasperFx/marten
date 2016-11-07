@@ -41,6 +41,10 @@ using the `&&` operator:
 
 <[sample:any-query-through-child-collection-with-and]>
 
+Finally, you can query for child collections that do **not** contain a value:
+
+<[sample:negated-contains]>
+
 ## Searching for NULL Values
 
 Regardless of your feelings about _NULL_, they do exist in databases and Marten allows you to search for documents that have (or don't have) null values:
@@ -123,6 +127,11 @@ As of now, Marten allows you to do "contains" searches within Arrays, Lists & IL
 Marten also allows you to query over IEnumerables using the Any method for equality (similar to Contains):
 
 <[sample:query_any_string_array]>
+
+As of 1.2, you can also query against the `Count()` or `Length` of a child collection with the normal comparison
+operators (`==`, `>`, `>=`, etc.):
+
+<[sample:query_against_number_list_with_count_method]>
 
 ## SelectMany()
 
