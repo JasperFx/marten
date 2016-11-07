@@ -26,3 +26,10 @@ The best resource for this topic might just be [the unit tests](https://github.c
 You can also query asynchronously with user supplied SQL:
 
 <[sample:using-queryasync]>
+
+## Named Parameter Queries
+
+Some of the Postgresql operators include the "?" character that Marten normally uses to denote an input parameter in user supplied queries. 
+To solve that conflict, Marten 1.2 introduces support for named parameters in the user supplied queries:
+
+<[sample:query_by_two_named_parameters]>

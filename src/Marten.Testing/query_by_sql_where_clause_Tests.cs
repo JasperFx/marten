@@ -94,6 +94,7 @@ namespace Marten.Testing
 
         // ENDSAMPLE
 
+        // SAMPLE: query_by_two_named_parameters
         [Fact]
         public void query_by_two_named_parameters()
         {
@@ -114,6 +115,7 @@ namespace Marten.Testing
                 }
             }
         }
+        // ENDSAMPLE
 
         [Fact]
         public void query_two_fields_by_one_named_parameter()
