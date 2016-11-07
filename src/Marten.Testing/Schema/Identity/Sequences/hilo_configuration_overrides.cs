@@ -12,9 +12,13 @@ namespace Marten.Testing.Schema.Identity.Sequences
         [Fact]
         public void can_establish_the_hilo_starting_point()
         {
+            // SAMPLE: ResetHiloSequenceFloor
             var store = DocumentStore.For(ConnectionSource.ConnectionString);
 
+            // Resets the minimum Id number for the IntDoc document
+            // type to 2500
             store.Advanced.ResetHiloSequenceFloor<IntDoc>(2500);
+            // ENDSAMPLE
 
             using (var session = store.OpenSession())
             {

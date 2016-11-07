@@ -15,6 +15,10 @@ First, some terminology that we're going to use throughout this section:
 * _Async Projections_ - projection's that run in some kind of background process using an [eventual consistency](https://en.wikipedia.org/wiki/Eventual_consistency) strategy
 * _Live Projections_ - evaluating a projected view from the raw event data on demand within Marten
 
+## Event Metadata in Projections
+
+First off, please be aware that **event metadata like stream version and sequence number are not available duing the execution of
+inline projections.** If you need to use event metadata in your projections, please use asynchronous or inline projections.
 
 ## Projecting from One Event to One Document    
 
@@ -40,6 +44,13 @@ on your aggregate class to do all incremental updates to an aggregate object. St
 could be used to aggregate streams of quest data:
 
 <[sample:QuestParty]>
+
+New in Marten 1.2 is the ability to use `Event<T>` metadata within your projections -- assuming that you're not trying to run the aggregations inline.
+
+The syntax using the built in aggregation technique is to take in `Event<T>` as the argument to your `Apply(event)` methods,
+where "T" is the event type you're interested in:
+
+<[sample:QuestPartyWithEvents]>
 
 ## Aggregated Views Across Multiple Streams
 

@@ -1,6 +1,13 @@
 <!--Title:Customizing Document Storage-->
 <!--Url:customizing-->
 
+<div class="alert alert-warning">
+To enable Marten's built in schema comparison and data migration tools to work properly, all indexes must
+start with the "mt_" prefix. This limitation may be removed in the future, but for now, Marten will throw
+an exception if you leave off the required prefix in index definitions.
+</div>
+
+
 While you can certainly write your own [DDL](https://en.wikipedia.org/wiki/Data_definition_language) 
 and SQL queries for optimizing data fetching, Marten gives you a couple options for speeding up queries -- 
 which all come at the cost of slower inserts because it's an imperfect world. Marten supports the ability to configure:
@@ -19,6 +26,18 @@ Marten has you covered with the various configuration options shown here.
 The configuration options you'll most likely use are:
 
 <[TableOfContents]>
+
+
+## Postgresql Limits on Naming
+
+Postgresql out of the box has a limitation on the length of database object names to 64. This can be overridden in a
+Postgresql database by [setting the `NAMEDATALEN` property](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS).
+
+This can unfortunately have a negative impact on Marten's ability to detect changes to the schema configuration when Postgresql quietly
+truncates the name of database objects. To guard against this, Marten will now warn you if a schema name exceeds the `NAMEDATALEN` value,
+but you do need to tell Marten about any non-default length limit like so:
+
+<[sample:setting-name-data-length]>
 
 
 ## Custom StoreOptions

@@ -307,5 +307,17 @@ namespace Marten.Testing
                 options.AssertValidIdentifier(text);
             });
         }
+
+        public void set_the_maximum_name_length()
+        {
+            // SAMPLE: setting-name-data-length
+            var store = DocumentStore.For(_ =>
+            {
+                // If you have overridden NAMEDATALEN in your
+                // Postgresql database to 100
+                _.NameDataLength = 100;
+            });
+            // ENDSAMPLE
+        }
     }
 }
