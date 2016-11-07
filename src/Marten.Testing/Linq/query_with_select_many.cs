@@ -14,6 +14,7 @@ namespace Marten.Testing.Linq
 {
     public class query_with_select_many : IntegratedFixture
     {
+        // SAMPLE: can_do_simple_select_many_against_simple_array
         [Fact]
         public void can_do_simple_select_many_against_simple_array()
         {
@@ -38,6 +39,7 @@ namespace Marten.Testing.Linq
                     .Count().ShouldBe(9);
             }
         }
+        // ENDSAMPLE
 
 
 
@@ -264,6 +266,7 @@ namespace Marten.Testing.Linq
 
                 expected.Any().ShouldBeTrue();
 
+                // SAMPLE: using-select-many
                 var results = query.Query<Target>()
                     .SelectMany(x => x.Children)
                     .Where(x => x.Flag)
@@ -271,6 +274,7 @@ namespace Marten.Testing.Linq
                     .Skip(20)
                     .Take(15)
                     .ToList();
+                // ENDSAMPLE
 
                 results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
             }
