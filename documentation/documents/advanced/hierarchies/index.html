@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Document Hierarchies</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/advanced" title="Advanced Topics">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/advanced/customizing_linq" title="Extending Marten's Linq Support">Next</a></li>
+		      	<li><a href="/documentation/documents/advanced" title="Advanced Topics">Previous</a></li>
+		      	<li><a href="/documentation/documents/advanced/customizing_linq" title="Extending Marten's Linq Support">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/advanced">Advanced Topics</a></li><li class="active">Document Hierarchies</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/advanced">Advanced Topics</a></li><li class="active">Document Hierarchies</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/advanced/customizing_linq">Extending Marten's Linq Support</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced">Advanced Topics</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/advanced/customizing_linq">Extending Marten's Linq Support</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/advanced">Advanced Topics</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -98,28 +98,7 @@ to query for either the base class or any of the subclasses.</p>
 <p>To make that concrete, let's say you have a document type named <code>User</code> that has a pair of specialized subclasses
 called <code>SuperUser</code> and <code>AdminUser</code>. To use the document hierarchy storage, we need to tell Marten that
 <code>SuperUser</code> and <code>AdminUser</code> should just be stored as subclasses of <code>User</code> like this:</p>
-<pre><code class="language-csharp">
-            var store = DocumentStore.For(_ =&gt;
-            {
-                _.Connection(&quot;connection to your database&quot;);
-
-                _.Schema.For&lt;User&gt;()
-                    // generic version
-                    .AddSubClass&lt;AdminUser&gt;()
-
-                    // By document type object
-                    .AddSubClass(typeof (SuperUser));
-            });
-
-            using (var session = store.QuerySession())
-            {
-                // query for all types of User and User itself
-                session.Query&lt;User&gt;().ToList();
-
-                // query for only SuperUser
-                session.Query&lt;SuperUser&gt;().ToList();
-            }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;connection to your database&quot;);&#xD;&#xA;&#xD;&#xA;    _.Schema.For&lt;User&gt;()&#xD;&#xA;        // generic version&#xD;&#xA;        .AddSubClass&lt;AdminUser&gt;()&#xD;&#xA;&#xD;&#xA;        // By document type object&#xD;&#xA;        .AddSubClass(typeof (SuperUser));&#xD;&#xA;});&#xD;&#xA;&#xD;&#xA;using (var session = store.QuerySession())&#xD;&#xA;{&#xD;&#xA;    // query for all types of User and User itself&#xD;&#xA;    session.Query&lt;User&gt;().ToList();&#xD;&#xA;&#xD;&#xA;    // query for only SuperUser&#xD;&#xA;    session.Query&lt;SuperUser&gt;().ToList();&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>With the configuration above, you can now query by <code>User</code> and get <code>AdminUser</code> and <code>SuperUser</code> documents as part of the results,
 or query directly for any of the subclasses to limit the query.</p>
 <p>The best description of what is possible with hierarchical storage is to read the <a href="https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs">acceptance tests for this feature</a>.</p>
@@ -138,115 +117,16 @@ banging my head on my desk were required to add this feature.</li>
 <p>Say you have a document type named <code>ISmurf</code> that is implemented by <code>Smurf</code>. Now, say the latter has a pair of specialized
 subclasses called <code>PapaSmurf</code> and <code>PapySmurf</code> and that both implement <code>IPapaSmurf</code> and that <code>PapaSmurf</code> has the subclass
 <code>BrainySmurf</code> like so:</p>
-<pre><code class="language-csharp">
-    public interface ISmurf
-    {
-        string Ability { get; set; }
-        Guid Id { get; set; }
-    }
-    public class Smurf : ISmurf
-    {
-        public string Ability { get; set; }
-        public Guid Id { get; set; }
-    }
-    public interface IPapaSmurf : ISmurf{}
-    public class PapaSmurf : Smurf, IPapaSmurf{}
-    public class PapySmurf : Smurf, IPapaSmurf{}
-    public class BrainySmurf : PapaSmurf{ }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public interface ISmurf&#xD;&#xA;{&#xD;&#xA;    string Ability { get; set; }&#xD;&#xA;    Guid Id { get; set; }&#xD;&#xA;}&#xD;&#xA;public class Smurf : ISmurf&#xD;&#xA;{&#xD;&#xA;    public string Ability { get; set; }&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;}&#xD;&#xA;public interface IPapaSmurf : ISmurf{}&#xD;&#xA;public class PapaSmurf : Smurf, IPapaSmurf{}&#xD;&#xA;public class PapySmurf : Smurf, IPapaSmurf{}&#xD;&#xA;public class BrainySmurf : PapaSmurf{ }&#xD;&#xA;</code></pre>
 <p>If you wish to query over one of hierarchy classes and be able to get all of its documents as well as its subclasses,
 first you will need to map the hierarchy like so:</p>
-<pre><code class="language-csharp">
-        public query_with_inheritance()
-        {
-            StoreOptions(_ =&gt;
-            {
-                _.Schema.For&lt;ISmurf&gt;()
-                    .AddSubClassHierarchy(typeof(Smurf), typeof(PapaSmurf), typeof(PapySmurf), typeof(IPapaSmurf), typeof(BrainySmurf));
-
-                // Alternatively, you can use the following:
-                // _.Schema.For&lt;ISmurf&gt;().AddSubClassHierarchy();
-                // this, however, will use the assembly
-                // of type ISmurf to get all its&#39; subclasses/implementations. 
-                // In projects with many types, this approach will be undvisable.
-
-
-                _.Connection(ConnectionSource.ConnectionString);
-                _.AutoCreateSchemaObjects = AutoCreate.All;
-
-                _.Schema.For&lt;ISmurf&gt;().GinIndexJsonData();
-            });
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public query_with_inheritance()&#xD;&#xA;{&#xD;&#xA;    StoreOptions(_ =&gt;&#xD;&#xA;    {&#xD;&#xA;        _.Schema.For&lt;ISmurf&gt;()&#xD;&#xA;            .AddSubClassHierarchy(typeof(Smurf), typeof(PapaSmurf), typeof(PapySmurf), typeof(IPapaSmurf), typeof(BrainySmurf));&#xD;&#xA;&#xD;&#xA;        // Alternatively, you can use the following:&#xD;&#xA;        // _.Schema.For&lt;ISmurf&gt;().AddSubClassHierarchy();&#xD;&#xA;        // this, however, will use the assembly&#xD;&#xA;        // of type ISmurf to get all its&#x27; subclasses/implementations. &#xD;&#xA;        // In projects with many types, this approach will be undvisable.&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;        _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;        _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;&#xD;&#xA;        _.Schema.For&lt;ISmurf&gt;().GinIndexJsonData();&#xD;&#xA;    });&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Note that if you wish to use aliases on certain subclasses, you could pass a <code>MappedType</code>, which contains the type to map
 and its alias. Since <code>Type</code> implicitly converts to <code>MappedType</code> and the methods takes in <code>params MappedType[]</code>, you could
 use a mix of both like so:</p>
-<pre><code class="language-csharp">
-                _.Schema.For&lt;ISmurf&gt;()
-                    .AddSubClassHierarchy(
-                        typeof(Smurf), 
-                        new MappedType(typeof(PapaSmurf), &quot;papa&quot;), 
-                        typeof(PapySmurf), 
-                        typeof(IPapaSmurf), 
-                        typeof(BrainySmurf)
-                    );
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;_.Schema.For&lt;ISmurf&gt;()&#xD;&#xA;    .AddSubClassHierarchy(&#xD;&#xA;        typeof(Smurf), &#xD;&#xA;        new MappedType(typeof(PapaSmurf), &quot;papa&quot;), &#xD;&#xA;        typeof(PapySmurf), &#xD;&#xA;        typeof(IPapaSmurf), &#xD;&#xA;        typeof(BrainySmurf)&#xD;&#xA;    );&#xD;&#xA;</code></pre>
 <p>Now you can query the &quot;complex&quot; hierarchy in the following ways:</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public void get_all_subclasses_of_a_subclass()
-        {
-            var smurf = new Smurf {Ability = &quot;Follow the herd&quot;};
-            var papa = new PapaSmurf {Ability = &quot;Lead&quot;};
-            var brainy = new BrainySmurf{Ability = &quot;Invent&quot;};
-            theSession.Store(smurf,papa,brainy);
-
-            theSession.SaveChanges();
-
-            theSession.Query&lt;Smurf&gt;().Count().ShouldBe(3);
-        }
-
-        [Fact]
-        public void get_all_subclasses_of_a_subclass2()
-        {
-            var smurf = new Smurf {Ability = &quot;Follow the herd&quot;};
-            var papa = new PapaSmurf {Ability = &quot;Lead&quot;};
-            var brainy = new BrainySmurf{Ability = &quot;Invent&quot;};
-            theSession.Store(smurf,papa,brainy);
-
-            theSession.SaveChanges();
-
-            theSession.Query&lt;PapaSmurf&gt;().Count().ShouldBe(2);
-        }
-
-        [Fact]
-        public void get_all_subclasses_of_a_subclass_with_where()
-        {
-            var smurf = new Smurf {Ability = &quot;Follow the herd&quot;};
-            var papa = new PapaSmurf {Ability = &quot;Lead&quot;};
-            var brainy = new BrainySmurf{Ability = &quot;Invent&quot;};
-            theSession.Store(smurf,papa,brainy);
-
-            theSession.SaveChanges();
-
-            theSession.Query&lt;PapaSmurf&gt;().Count(s=&gt;s.Ability == &quot;Invent&quot;).ShouldBe(1);
-        }
-
-        [Fact]
-        public void get_all_subclasses_of_an_interface()
-        {
-            var smurf = new Smurf { Ability = &quot;Follow the herd&quot; };
-            var papa = new PapaSmurf { Ability = &quot;Lead&quot; };
-            var papy = new PapySmurf { Ability = &quot;Lead&quot; };
-            var brainy = new BrainySmurf { Ability = &quot;Invent&quot; };
-            theSession.Store(smurf, papa, brainy, papy);
-
-            theSession.SaveChanges();
-
-            theSession.Query&lt;IPapaSmurf&gt;().Count().ShouldBe(3);
-        }
-</code></pre>
-
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void get_all_subclasses_of_a_subclass()&#xD;&#xA;{&#xD;&#xA;    var smurf = new Smurf {Ability = &quot;Follow the herd&quot;};&#xD;&#xA;    var papa = new PapaSmurf {Ability = &quot;Lead&quot;};&#xD;&#xA;    var brainy = new BrainySmurf{Ability = &quot;Invent&quot;};&#xD;&#xA;    theSession.Store(smurf,papa,brainy);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;Smurf&gt;().Count().ShouldBe(3);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;[Fact]&#xD;&#xA;public void get_all_subclasses_of_a_subclass2()&#xD;&#xA;{&#xD;&#xA;    var smurf = new Smurf {Ability = &quot;Follow the herd&quot;};&#xD;&#xA;    var papa = new PapaSmurf {Ability = &quot;Lead&quot;};&#xD;&#xA;    var brainy = new BrainySmurf{Ability = &quot;Invent&quot;};&#xD;&#xA;    theSession.Store(smurf,papa,brainy);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;PapaSmurf&gt;().Count().ShouldBe(2);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;[Fact]&#xD;&#xA;public void get_all_subclasses_of_a_subclass_with_where()&#xD;&#xA;{&#xD;&#xA;    var smurf = new Smurf {Ability = &quot;Follow the herd&quot;};&#xD;&#xA;    var papa = new PapaSmurf {Ability = &quot;Lead&quot;};&#xD;&#xA;    var brainy = new BrainySmurf{Ability = &quot;Invent&quot;};&#xD;&#xA;    theSession.Store(smurf,papa,brainy);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;PapaSmurf&gt;().Count(s=&gt;s.Ability == &quot;Invent&quot;).ShouldBe(1);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;[Fact]&#xD;&#xA;public void get_all_subclasses_of_an_interface()&#xD;&#xA;{&#xD;&#xA;    var smurf = new Smurf { Ability = &quot;Follow the herd&quot; };&#xD;&#xA;    var papa = new PapaSmurf { Ability = &quot;Lead&quot; };&#xD;&#xA;    var papy = new PapySmurf { Ability = &quot;Lead&quot; };&#xD;&#xA;    var brainy = new BrainySmurf { Ability = &quot;Invent&quot; };&#xD;&#xA;    theSession.Store(smurf, papa, brainy, papy);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;IPapaSmurf&gt;().Count().ShouldBe(3);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
 			      	</div>
 
@@ -254,12 +134,12 @@ use a mix of both like so:</p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/advanced">Advanced Topics</a>
+				        	<strong>Previous: </strong><a href="/documentation/documents/advanced">Advanced Topics</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/advanced/customizing_linq">Extending Marten's Linq Support</a>
+				        	<strong>Next: </strong><a href="/documentation/documents/advanced/customizing_linq">Extending Marten's Linq Support</a>
 
 				        </span>
 			      	</nav>
@@ -276,10 +156,10 @@ use a mix of both like so:</p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

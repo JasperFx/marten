@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Optimistic Concurrency</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/advanced/javascript_transformations" title="Javascript Transformations">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/advanced/soft_deletes" title="Soft Deletes">Next</a></li>
+		      	<li><a href="/documentation/documents/advanced/javascript_transformations" title="Javascript Transformations">Previous</a></li>
+		      	<li><a href="/documentation/documents/advanced/soft_deletes" title="Soft Deletes">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/advanced">Advanced Topics</a></li><li class="active">Optimistic Concurrency</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/advanced">Advanced Topics</a></li><li class="active">Optimistic Concurrency</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/advanced/soft_deletes">Soft Deletes</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced/javascript_transformations">Javascript Transformations</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/advanced/soft_deletes">Soft Deletes</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/advanced/javascript_transformations">Javascript Transformations</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -95,71 +95,12 @@
 <p>I first learned about this concept from Martin Fowler's <a href="http://martinfowler.com/eaaCatalog/">PEAA book</a>. From <a href="http://martinfowler.com/eaaCatalog/optimisticOfflineLock.html">Fowler's definition</a>, offline optimistic concurrency:</p>
 <blockquote><i>Prevents conflicts between concurrent business transactions by detecting a conflict and rolling back the transaction.</i></blockquote>
 <p>In Marten's case, you have to explicitly opt into optimistic versioning for each document type. You can do that with either an attribute on your document type like so:</p>
-<pre><code class="language-csharp">
-    [UseOptimisticConcurrency]
-    public class CoffeeShop : Shop
-    {
-        // Guess where I&#39;m at as I code this?
-        public string Name { get; set; } = &quot;Starbucks&quot;;
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[UseOptimisticConcurrency]&#xD;&#xA;public class CoffeeShop : Shop&#xD;&#xA;{&#xD;&#xA;    // Guess where I&#x27;m at as I code this?&#xD;&#xA;    public string Name { get; set; } = &quot;Starbucks&quot;;&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Or by using Marten's configuration API to do it programmatically:</p>
-<pre><code class="language-csharp">
-    var store = DocumentStore.For(_ =&gt;
-    {
-        // Adds optimistic concurrency checking to Issue
-        _.Schema.For&lt;Issue&gt;().UseOptimisticConcurrency(true);
-    });
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Adds optimistic concurrency checking to Issue&#xD;&#xA;    _.Schema.For&lt;Issue&gt;().UseOptimisticConcurrency(true);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>Once optimistic concurrency is turned on for the CoffeeShop document type, a session will now only be able to update a document if the document has been unchanged in the database since it was initially loaded.</p>
 <p>To demonstrate the failure case, consider the following  acceptance test from Marten's codebase:</p>
-<pre><code class="language-csharp">
-    [Fact]
-    public void update_with_stale_version_standard()
-    {
-        var doc1 = new CoffeeShop();
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(doc1);
-            session.SaveChanges();
-        }
-
-        var session1 = theStore.DirtyTrackedSession();
-        var session2 = theStore.DirtyTrackedSession();
-
-        var session1Copy = session1.Load&lt;CoffeeShop&gt;(doc1.Id);
-        var session2Copy = session2.Load&lt;CoffeeShop&gt;(doc1.Id);
-
-        try
-        {
-            session1Copy.Name = &quot;Mozart&#39;s&quot;;
-            session2Copy.Name = &quot;Dominican Joe&#39;s&quot;;
-
-            // Should go through just fine
-            session2.SaveChanges();
-
-
-            var ex = Exception&lt;AggregateException&gt;.ShouldBeThrownBy(() =&gt;
-            {
-                session1.SaveChanges();
-            });
-
-            var concurrency = ex.InnerExceptions.OfType&lt;ConcurrencyException&gt;().Single();
-            concurrency.Message.ShouldBe($&quot;Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}&quot;);
-        }
-        finally
-        {
-            session1.Dispose();
-            session2.Dispose();
-        }
-
-        using (var query = theStore.QuerySession())
-        {
-            query.Load&lt;CoffeeShop&gt;(doc1.Id).Name.ShouldBe(&quot;Dominican Joe&#39;s&quot;);
-        }
-
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void update_with_stale_version_standard()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new CoffeeShop();&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(doc1);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    var session1 = theStore.DirtyTrackedSession();&#xD;&#xA;    var session2 = theStore.DirtyTrackedSession();&#xD;&#xA;&#xD;&#xA;    var session1Copy = session1.Load&lt;CoffeeShop&gt;(doc1.Id);&#xD;&#xA;    var session2Copy = session2.Load&lt;CoffeeShop&gt;(doc1.Id);&#xD;&#xA;&#xD;&#xA;    try&#xD;&#xA;    {&#xD;&#xA;        session1Copy.Name = &quot;Mozart&#x27;s&quot;;&#xD;&#xA;        session2Copy.Name = &quot;Dominican Joe&#x27;s&quot;;&#xD;&#xA;&#xD;&#xA;        // Should go through just fine&#xD;&#xA;        session2.SaveChanges();&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;        var ex = Exception&lt;AggregateException&gt;.ShouldBeThrownBy(() =&gt;&#xD;&#xA;        {&#xD;&#xA;            session1.SaveChanges();&#xD;&#xA;        });&#xD;&#xA;&#xD;&#xA;        var concurrency = ex.InnerExceptions.OfType&lt;ConcurrencyException&gt;().Single();&#xD;&#xA;        concurrency.Message.ShouldBe($&quot;Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}&quot;);&#xD;&#xA;    }&#xD;&#xA;    finally&#xD;&#xA;    {&#xD;&#xA;        session1.Dispose();&#xD;&#xA;        session2.Dispose();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;CoffeeShop&gt;(doc1.Id).Name.ShouldBe(&quot;Dominican Joe&#x27;s&quot;);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Marten is throwing an AggregateException for the entire batch of changes being persisted from SaveChanges()/SaveChangesAsync() after rolling back the current database transaction. The individual ConcurrencyException's inside of the aggregated exception expose information about the actual document type and identity that failed.</p>
 <h2>How it works</h2>
 <p>The optimistic concurrency checks work by adding a new argument to the <em>upsert</em> function for a document type to represent the
@@ -171,36 +112,8 @@ with all the detected violations.</p>
 <h2>Storing a Document with a Given Version</h2>
 <p>To designate the version of the document you're trying to store, you can use the <code>IDocumentSession.Store(doc, version)</code> method
 shown below:</p>
-<pre><code class="language-csharp">
-    [Fact]
-    public void store_with_the_right_version()
-    {
-        var doc1 = new CoffeeShop();
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(doc1);
-            session.SaveChanges();
-        }
-
-        var metadata = theStore.Advanced.MetadataFor(doc1);
-
-        using (var session = theStore.OpenSession())
-        {
-            doc1.Name = &quot;Mozart&#39;s&quot;;
-            session.Store(doc1, metadata.CurrentVersion);
-
-            session.SaveChanges();
-        }
-
-        using (var query = theStore.QuerySession())
-        {
-            query.Load&lt;CoffeeShop&gt;(doc1.Id).Name
-                .ShouldBe(&quot;Mozart&#39;s&quot;);
-        }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void store_with_the_right_version()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new CoffeeShop();&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(doc1);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    var metadata = theStore.Advanced.MetadataFor(doc1);&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        doc1.Name = &quot;Mozart&#x27;s&quot;;&#xD;&#xA;        session.Store(doc1, metadata.CurrentVersion);&#xD;&#xA;&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;CoffeeShop&gt;(doc1.Id).Name&#xD;&#xA;            .ShouldBe(&quot;Mozart&#x27;s&quot;);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>This method might come in handy if you detect that a document in your current session has been changed by another session.</p>
-
 
 			      	</div>
 
@@ -208,12 +121,12 @@ shown below:</p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/advanced/javascript_transformations">Javascript Transformations</a>
+				        	<strong>Previous: </strong><a href="/documentation/documents/advanced/javascript_transformations">Javascript Transformations</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/advanced/soft_deletes">Soft Deletes</a>
+				        	<strong>Next: </strong><a href="/documentation/documents/advanced/soft_deletes">Soft Deletes</a>
 
 				        </span>
 			      	</nav>
@@ -230,10 +143,10 @@ shown below:</p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - The Patching API</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/advanced/cleaning" title="Tearing Down Document Storage">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/diagnostics" title="Diagnostics and Instrumentation">Next</a></li>
+		      	<li><a href="/documentation/documents/advanced/cleaning" title="Tearing Down Document Storage">Previous</a></li>
+		      	<li><a href="/documentation/documents/diagnostics" title="Diagnostics and Instrumentation">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/advanced">Advanced Topics</a></li><li class="active">The Patching API</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/advanced">Advanced Topics</a></li><li class="active">The Patching API</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced/cleaning">Tearing Down Document Storage</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/diagnostics">Diagnostics and Instrumentation</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/advanced/cleaning">Tearing Down Document Storage</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -97,258 +97,74 @@ Using the Patching API in Marten requires the usage of Postgresql's <a href="htt
 <p>Marten's Patching API is a mechanism to update persisted documents without having to first load the document into memory.
 &quot;Patching&quot; can be much more efficient at runtime in some scenarios because you avoid the &quot;deserialize from JSON, edit, serialize
 back to JSON&quot; workflow.</p>
-<p>As of 1.0, Marten supports mechanisms to:</p>
+<p>As of 1.2, Marten supports mechanisms to:</p>
 <ol>
 <li>Set the value of a persisted field or property</li>
+<li>Add a field or property with value</li>
+<li>Duplicate a field or property to one or more destinations</li>
 <li>Increment a numeric value by some increment (1 by default)</li>
 <li>Append an element to a child array, list, or collection at the end</li>
 <li>Insert an element into a child array, list, or collection at a given position</li>
 <li>Remove an element from a child array, list, or collection</li>
 <li>Rename a persisted field or property to a new name for structural document changes</li>
+<li>Delete a persisted field or property</li>
 </ol>
 <p>The patch operation can be configured to either execute against a single document by supplying its id, or with a <em>Where</em> clause expression.
 In all cases, the property or field being updated can be a deep accessor like <code>Target.Inner.Color</code>.</p>
 <h2>Patching by Where Expression</h2>
 <p>To apply a patch to all documents matching a given criteria, use the following syntax:</p>
-<pre><code class="language-csharp">
-            // Change every Target document where the Color is Blue
-    theSession.Patch&lt;Target&gt;(x =&gt; x.Color == Colors.Blue).Set(x =&gt; x.Number, 2);
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;// Change every Target document where the Color is Blue&#xD;&#xA;theSession.Patch&lt;Target&gt;(x =&gt; x.Color == Colors.Blue).Set(x =&gt; x.Number, 2);&#xD;&#xA;</code></pre>
 <h2>Setting a single Property/Field</h2>
 <p>The usage of <code>IDocumentSession.Patch().Set()</code> to change the value of a single persisted field is
 shown below:</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public void set_an_immediate_property_by_id()
-        {
-            var target = Target.Random(true);
-            target.Number = 5;
-
-
-            theSession.Store(target);
-            theSession.SaveChanges();
-
-            theSession.Patch&lt;Target&gt;(target.Id).Set(x =&gt; x.Number, 10);
-            theSession.SaveChanges();
-
-
-            using (var query = theStore.QuerySession())
-            {
-                query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(10);
-            }
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void set_an_immediate_property_by_id()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    target.Number = 5;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Set(x =&gt; x.Number, 10);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(10);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<h2>Initialize a new Property/Field</h2>
+<p>To initialize a new property on existing documents:</p>
+<pre><code class="language-csharp">&#xD;&#xA;const string where = &quot;where (data -&gt;&gt; &#x27;UpdatedAt&#x27;) is null&quot;;&#xD;&#xA;theSession.Query&lt;Target&gt;(where).Count.ShouldBe(3);&#xD;&#xA;theSession.Patch&lt;Target&gt;(new WhereFragment(where)).Set(&quot;UpdatedAt&quot;, DateTime.UtcNow);&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;using (var query = theStore.QuerySession())&#xD;&#xA;{&#xD;&#xA;    query.Query&lt;Target&gt;(where).Count.ShouldBe(0);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<h2>Duplicating an existing Property/Field</h2>
+<p>To copy an existing value to a new location:</p>
+<pre><code class="language-csharp">&#xD;&#xA;var target = Target.Random();&#xD;&#xA;target.AnotherString = null;&#xD;&#xA;theSession.Store(target);&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;theSession.Patch&lt;Target&gt;(target.Id).Duplicate(t =&gt; t.String, t =&gt; t.AnotherString);&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;using (var query = theStore.QuerySession())&#xD;&#xA;{&#xD;&#xA;    var result = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;    result.AnotherString.ShouldBe(target.String);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>The same value can be copied to multiple new locations:</p>
+<pre><code class="language-csharp">&#xD;&#xA;theSession.Patch&lt;Target&gt;(target.Id).Duplicate(t =&gt; t.String,&#xD;&#xA;    t =&gt; t.StringField,&#xD;&#xA;    t =&gt; t.Inner.String,&#xD;&#xA;    t =&gt; t.Inner.AnotherString);&#xD;&#xA;</code></pre>
+<p>The new locations need not exist in the persisted document, null or absent parents will be initialized</p>
 <h2>Incrementing an Existing Value</h2>
 <p>To increment a persisted value in the persisted document, use this operation:</p>
-<pre><code class="language-csharp">
-    [Fact]
-    public void increment_for_int()
-    {
-        var target = Target.Random();
-        target.Number = 6;
-
-        theSession.Store(target);
-        theSession.SaveChanges();
-
-        theSession.Patch&lt;Target&gt;(target.Id).Increment(x =&gt; x.Number);
-        theSession.SaveChanges();
-
-        using (var query = theStore.QuerySession())
-        {
-            query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(7);
-        }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void increment_for_int()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random();&#xD;&#xA;    target.Number = 6;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Increment(x =&gt; x.Number);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(7);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>By default, the <code>Increment()</code> operation will add 1 to the existing value. You can optionally override the increment:</p>
-<pre><code class="language-csharp">
-    [Fact]
-    public void increment_for_int_with_explicit_increment()
-    {
-        var target = Target.Random();
-        target.Number = 6;
-
-        theSession.Store(target);
-        theSession.SaveChanges();
-
-        theSession.Patch&lt;Target&gt;(target.Id).Increment(x =&gt; x.Number, 3);
-        theSession.SaveChanges();
-
-        using (var query = theStore.QuerySession())
-        {
-            query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(9);
-        }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void increment_for_int_with_explicit_increment()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random();&#xD;&#xA;    target.Number = 6;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Increment(x =&gt; x.Number, 3);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(9);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2>Append an Element to a Child Collection</h2>
 <p>The <code>Patch.Append()</code> operation adds a new item to the end of a child collection:</p>
-<pre><code class="language-csharp">
-    [Fact]
-    public void append_complex_element()
-    {
-        var target = Target.Random(true);
-        var initialCount = target.Children.Length;
-
-        var child = Target.Random();
-
-        theSession.Store(target);
-        theSession.SaveChanges();
-
-        theSession.Patch&lt;Target&gt;(target.Id).Append(x =&gt; x.Children, child);
-        theSession.SaveChanges();
-
-        using (var query = theStore.QuerySession())
-        {
-            var target2 = query.Load&lt;Target&gt;(target.Id);
-            target2.Children.Length.ShouldBe(initialCount + 1);
-
-            target2.Children.Last().Id.ShouldBe(child.Id);
-        }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void append_complex_element()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    var initialCount = target.Children.Length;&#xD;&#xA;&#xD;&#xA;    var child = Target.Random();&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Append(x =&gt; x.Children, child);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Children.Length.ShouldBe(initialCount &#x2B; 1);&#xD;&#xA;&#xD;&#xA;        target2.Children.Last().Id.ShouldBe(child.Id);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Marten can append either complex, value object values or primitives like numbers or strings.</p>
 <h2>Insert an Element into a Child Collection</h2>
 <p>Instead of adding an item to the end of a child collection, the <code>Insert()</code> operation allows you
 to put a new item into a persisted collection with a given index -- with the default index
 being 0 so that a new item would be inserted at the beginning of the child collection.</p>
-<pre><code class="language-csharp">
-    [Fact]
-    public void insert_first_complex_element()
-    {
-        var target = Target.Random(true);
-        var initialCount = target.Children.Length;
-
-        var child = Target.Random();
-
-        theSession.Store(target);
-        theSession.SaveChanges();
-
-        theSession.Patch&lt;Target&gt;(target.Id).Insert(x =&gt; x.Children, child);
-        theSession.SaveChanges();
-
-        using (var query = theStore.QuerySession())
-        {
-            var target2 = query.Load&lt;Target&gt;(target.Id);
-            target2.Children.Length.ShouldBe(initialCount + 1);
-
-            target2.Children.First().Id.ShouldBe(child.Id);
-        }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void insert_first_complex_element()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    var initialCount = target.Children.Length;&#xD;&#xA;&#xD;&#xA;    var child = Target.Random();&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Insert(x =&gt; x.Children, child);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Children.Length.ShouldBe(initialCount &#x2B; 1);&#xD;&#xA;&#xD;&#xA;        target2.Children.First().Id.ShouldBe(child.Id);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2>Remove an Element from a Child Collection</h2>
 <p>The <code>Patch.Remove()</code> operation removes the given item from a child collection:</p>
-<pre><code class="language-csharp">
-    [Fact]
-    public void remove_primitive_element()
-    {
-        var target = Target.Random();
-        var initialCount = target.NumberArray.Length;
-
-        var random = new Random();
-        var child = target.NumberArray[random.Next(0, initialCount)];
-
-        theSession.Store(target);
-        theSession.SaveChanges();
-
-        theSession.Patch&lt;Target&gt;(target.Id).Remove(x =&gt; x.NumberArray, child);
-        theSession.SaveChanges();
-
-        using (var query = theStore.QuerySession())
-        {
-            var target2 = query.Load&lt;Target&gt;(target.Id);
-            target2.NumberArray.Length.ShouldBe(initialCount - 1);
-
-            target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.ExceptFirst(child));
-        }
-    }
-
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void remove_primitive_element()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random();&#xD;&#xA;    var initialCount = target.NumberArray.Length;&#xD;&#xA;&#xD;&#xA;    var random = new Random();&#xD;&#xA;    var child = target.NumberArray[random.Next(0, initialCount)];&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Remove(x =&gt; x.NumberArray, child);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.NumberArray.Length.ShouldBe(initialCount - 1);&#xD;&#xA;&#xD;&#xA;        target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.ExceptFirst(child));&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>Removing complex items can also be accomplished, matching is performed on all fields:</p>
-<pre><code class="language-csharp">
-    [Fact]
-    public void remove_complex_element()
-    {
-        var target = Target.Random(true);
-        var initialCount = target.Children.Length;
-
-        var random = new Random();
-        var child = target.Children[random.Next(0, initialCount)];
-
-        theSession.Store(target);
-        theSession.SaveChanges();
-
-        theSession.Patch&lt;Target&gt;(target.Id).Remove(x =&gt; x.Children, child);
-        theSession.SaveChanges();
-
-        using (var query = theStore.QuerySession())
-        {
-            var target2 = query.Load&lt;Target&gt;(target.Id);
-            target2.Children.Length.ShouldBe(initialCount - 1);
-
-            target2.Children.ShouldNotContain(t =&gt; t.Id == child.Id);
-        }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void remove_complex_element()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    var initialCount = target.Children.Length;&#xD;&#xA;&#xD;&#xA;    var random = new Random();&#xD;&#xA;    var child = target.Children[random.Next(0, initialCount)];&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Remove(x =&gt; x.Children, child);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Children.Length.ShouldBe(initialCount - 1);&#xD;&#xA;&#xD;&#xA;        target2.Children.ShouldNotContain(t =&gt; t.Id == child.Id);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>To remove reoccurring values from a collection specify <code>RemoveAction.RemoveAll</code>:</p>
-<pre><code class="language-csharp">
-    [Fact]
-    public void remove_repeated_primitive_elements()
-    {
-        var target = Target.Random();
-        var initialCount = target.NumberArray.Length;
-
-        var random = new Random();
-        var child = target.NumberArray[random.Next(0, initialCount)];
-        var occurances = target.NumberArray.Count(e =&gt; e == child);
-        if (occurances &lt; 2)
-        {
-            target.NumberArray = target.NumberArray.Concat(new[] {child}).ToArray();
-            ++occurances;
-            ++initialCount;
-        }
-
-        theSession.Store(target);
-        theSession.SaveChanges();
-
-        theSession.Patch&lt;Target&gt;(target.Id).Remove(x =&gt; x.NumberArray, child, RemoveAction.RemoveAll);
-        theSession.SaveChanges();
-
-        using (var query = theStore.QuerySession())
-        {
-            var target2 = query.Load&lt;Target&gt;(target.Id);
-            target2.NumberArray.Length.ShouldBe(initialCount - occurances);
-
-            target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.Except(new[] {child}));
-        }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void remove_repeated_primitive_elements()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random();&#xD;&#xA;    var initialCount = target.NumberArray.Length;&#xD;&#xA;&#xD;&#xA;    var random = new Random();&#xD;&#xA;    var child = target.NumberArray[random.Next(0, initialCount)];&#xD;&#xA;    var occurances = target.NumberArray.Count(e =&gt; e == child);&#xD;&#xA;    if (occurances &lt; 2)&#xD;&#xA;    {&#xD;&#xA;        target.NumberArray = target.NumberArray.Concat(new[] {child}).ToArray();&#xD;&#xA;        &#x2B;&#x2B;occurances;&#xD;&#xA;        &#x2B;&#x2B;initialCount;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Remove(x =&gt; x.NumberArray, child, RemoveAction.RemoveAll);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.NumberArray.Length.ShouldBe(initialCount - occurances);&#xD;&#xA;&#xD;&#xA;        target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.Except(new[] {child}));&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2>Rename a Property/Field</h2>
 <p>In the case of changing the name of a property or field in your document type that's already persisted
 in your Marten database, you have the option to apply a patch that will move the value from the
 old name to the new name.</p>
-<pre><code class="language-csharp">
-    [Fact]
-    public void rename_deep_prop()
-    {
-        var target = Target.Random(true);
-        target.Inner.String = &quot;Foo&quot;;
-        target.Inner.AnotherString = &quot;Bar&quot;;
-
-        theSession.Store(target);
-        theSession.SaveChanges();
-
-        theSession.Patch&lt;Target&gt;(target.Id).Rename(&quot;String&quot;, x =&gt; x.Inner.AnotherString);
-        theSession.SaveChanges();
-
-        using (var query = theStore.QuerySession())
-        {
-            var target2 = query.Load&lt;Target&gt;(target.Id);
-            target2.Inner.AnotherString.ShouldBe(&quot;Foo&quot;);
-            target2.Inner.String.ShouldBeNull();
-        }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void rename_deep_prop()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    target.Inner.String = &quot;Foo&quot;;&#xD;&#xA;    target.Inner.AnotherString = &quot;Bar&quot;;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Rename(&quot;String&quot;, x =&gt; x.Inner.AnotherString);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Inner.AnotherString.ShouldBe(&quot;Foo&quot;);&#xD;&#xA;        target2.Inner.String.ShouldBeNull();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Renaming can be used on nested values.</p>
-
+<h2>Delete a Property/Field</h2>
+<p>The <code>Patch.Delete()</code> operation can be used to remove a persisted property or field without the need
+to load, deserialize, edit and save all affected documents</p>
+<p>To delete a redundant property no longer available on the class use the string overload:</p>
+<pre><code class="language-csharp">&#xD;&#xA;theSession.Patch&lt;Target&gt;(target.Id).Delete(&quot;String&quot;);&#xD;&#xA;</code></pre>
+<p>To delete a redundant property nested on a child class specify a location lambda:</p>
+<pre><code class="language-csharp">&#xD;&#xA;theSession.Patch&lt;Target&gt;(target.Id).Delete(&quot;String&quot;, t =&gt; t.Inner);&#xD;&#xA;</code></pre>
+<p>A current property may be erased simply with a lambda:</p>
+<pre><code class="language-csharp">&#xD;&#xA;theSession.Patch&lt;Target&gt;(target.Id).Delete(t =&gt; t.Inner);&#xD;&#xA;</code></pre>
+<p>Many documents may be patched using a where expressions:</p>
+<pre><code class="language-csharp">&#xD;&#xA;const string where = &quot;where (data -&gt;&gt; &#x27;String&#x27;) is not null&quot;;&#xD;&#xA;theSession.Query&lt;Target&gt;(where).Count.ShouldBe(15);&#xD;&#xA;theSession.Patch&lt;Target&gt;(new WhereFragment(where)).Delete(&quot;String&quot;);&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;using (var query = theStore.QuerySession())&#xD;&#xA;{&#xD;&#xA;    query.Query&lt;Target&gt;(where).Count(t =&gt; t.String != null).ShouldBe(0);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
 			      	</div>
 
@@ -356,12 +172,12 @@ old name to the new name.</p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/advanced/cleaning">Tearing Down Document Storage</a>
+				        	<strong>Previous: </strong><a href="/documentation/documents/advanced/cleaning">Tearing Down Document Storage</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a>
+				        	<strong>Next: </strong><a href="/documentation/documents/diagnostics">Diagnostics and Instrumentation</a>
 
 				        </span>
 			      	</nav>
@@ -378,10 +194,10 @@ old name to the new name.</p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

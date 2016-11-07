@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Querying with Postgresql SQL</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/querying/async" title="Asynchronous Querying">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/querying/projections" title="Document Projections">Next</a></li>
+		      	<li><a href="/documentation/documents/querying/async" title="Asynchronous Querying">Previous</a></li>
+		      	<li><a href="/documentation/documents/querying/projections" title="Document Projections">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/querying">Querying Documents</a></li><li class="active">Querying with Postgresql SQL</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/querying">Querying Documents</a></li><li class="active">Querying with Postgresql SQL</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/querying/projections">Document Projections</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/querying/async">Asynchronous Querying</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/querying/projections">Document Projections</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/querying/async">Asynchronous Querying</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -94,61 +94,20 @@
 <!--Url:sql-->
 <p>It's not too hard to imagine a scenario where the Linq querying support is either inadequate or you just want full control over the SQL for the purpose of optimizing a query. For that reason, Marten supports the <code>IQuerySession/IDocumentSession.Query&lt;T&gt;(sql)</code> method that allows you to supply the SQL yourself.</p>
 <p>In its easiest form, you just supply the SQL to the right of the FROM clause (<em>select data from [table] [your code]</em>) as in this sample below.</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public void query_for_single_document()
-        {
-            using (var container = Container.For&lt;DevelopmentModeRegistry&gt;())
-            {
-                using (var session = container.GetInstance&lt;IDocumentStore&gt;().OpenSession())
-                {
-                    var u = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};
-                    session.Store(u);
-                    session.SaveChanges();
-
-                    var user = session.Query&lt;User&gt;(&quot;where data -&gt;&gt; &#39;FirstName&#39; = &#39;Jeremy&#39;&quot;).Single();
-                    user.LastName.ShouldBe(&quot;Miller&quot;);
-                    user.Id.ShouldBe(u.Id);
-                }
-            }
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_for_single_document()&#xD;&#xA;{&#xD;&#xA;    using (var container = Container.For&lt;DevelopmentModeRegistry&gt;())&#xD;&#xA;    {&#xD;&#xA;        using (var session = container.GetInstance&lt;IDocumentStore&gt;().OpenSession())&#xD;&#xA;        {&#xD;&#xA;            var u = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};&#xD;&#xA;            session.Store(u);&#xD;&#xA;            session.SaveChanges();&#xD;&#xA;&#xD;&#xA;            var user = session.Query&lt;User&gt;(&quot;where data -&gt;&gt; &#x27;FirstName&#x27; = &#x27;Jeremy&#x27;&quot;).Single();&#xD;&#xA;            user.LastName.ShouldBe(&quot;Miller&quot;);&#xD;&#xA;            user.Id.ShouldBe(u.Id);&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>The actual JSONB data will always be a field called &quot;data&quot; in the database. If Marten does not spot a &quot;SELECT&quot; in the sql, it will fill in the &quot;select data from mt_doc_type&quot; SELECT and FROM clauses of the sql query for you.</p>
 <p>To completely specify the sql, you'll need to know the table name matching your document type. By default, it'll be &quot;mt_doc_[name of the class].&quot;</p>
-<pre><code class="language-csharp">
-    var user =
-        session.Query&lt;User&gt;(&quot;select data from mt_doc_user where data -&gt;&gt; &#39;FirstName&#39; = &#39;Jeremy&#39;&quot;)
-            .Single();
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var user =&#xD;&#xA;    session.Query&lt;User&gt;(&quot;select data from mt_doc_user where data -&gt;&gt; &#x27;FirstName&#x27; = &#x27;Jeremy&#x27;&quot;)&#xD;&#xA;        .Single();&#xD;&#xA;</code></pre>
 <p>The <code>Query&lt;T&gt;(sql)</code> mechanism will also allow you to use parameterized sql like so:</p>
-<pre><code class="language-csharp">
-    var user =
-        session.Query&lt;User&gt;(&quot;where data -&gt;&gt; &#39;FirstName&#39; = ? and data -&gt;&gt; &#39;LastName&#39; = ?&quot;, &quot;Jeremy&quot;,
-            &quot;Miller&quot;)
-            .Single();
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var user =&#xD;&#xA;    session.Query&lt;User&gt;(&quot;where data -&gt;&gt; &#x27;FirstName&#x27; = ? and data -&gt;&gt; &#x27;LastName&#x27; = ?&quot;, &quot;Jeremy&quot;,&#xD;&#xA;        &quot;Miller&quot;)&#xD;&#xA;        .Single();&#xD;&#xA;</code></pre>
 <p>The best resource for this topic might just be <a href="https://github.com/JasperFx/Marten/blob/master/src/Marten.Testing/query_by_sql_where_clause_Tests.cs">the unit tests</a>.</p>
 <h2>Asynchronous Queries</h2>
 <p>You can also query asynchronously with user supplied SQL:</p>
-<pre><code class="language-csharp">
-                using (var session = store.OpenSession())
-                {
-                    var u = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};
-                    session.Store(u);
-                    session.SaveChanges();
-
-                    var users =
-                        await
-                            session.QueryAsync&lt;User&gt;(
-                                &quot;select data from mt_doc_user where data -&gt;&gt; &#39;FirstName&#39; = &#39;Jeremy&#39;&quot;)
-                                .ConfigureAwait(false);
-                    var user = users.Single();
-
-                    user.LastName.ShouldBe(&quot;Miller&quot;);
-                    user.Id.ShouldBe(u.Id);
-                }
-</code></pre>
-
+<pre><code class="language-csharp">&#xD;&#xA;using (var session = store.OpenSession())&#xD;&#xA;{&#xD;&#xA;    var u = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};&#xD;&#xA;    session.Store(u);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;&#xD;&#xA;    var users =&#xD;&#xA;        await&#xD;&#xA;            session.QueryAsync&lt;User&gt;(&#xD;&#xA;                &quot;select data from mt_doc_user where data -&gt;&gt; &#x27;FirstName&#x27; = &#x27;Jeremy&#x27;&quot;)&#xD;&#xA;                .ConfigureAwait(false);&#xD;&#xA;    var user = users.Single();&#xD;&#xA;&#xD;&#xA;    user.LastName.ShouldBe(&quot;Miller&quot;);&#xD;&#xA;    user.Id.ShouldBe(u.Id);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<h2>Named Parameter Queries</h2>
+<p>Some of the Postgresql operators include the &quot;?&quot; character that Marten normally uses to denote an input parameter in user supplied queries.
+To solve that conflict, Marten 1.2 introduces support for named parameters in the user supplied queries:</p>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_by_two_named_parameters()&#xD;&#xA;{&#xD;&#xA;    using (var container = Container.For&lt;DevelopmentModeRegistry&gt;())&#xD;&#xA;    {&#xD;&#xA;        using (var session = container.GetInstance&lt;IDocumentStore&gt;().OpenSession())&#xD;&#xA;        {&#xD;&#xA;            session.Store(new User { FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;            session.Store(new User { FirstName = &quot;Lindsey&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;            session.Store(new User { FirstName = &quot;Max&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;            session.Store(new User { FirstName = &quot;Frank&quot;, LastName = &quot;Zombo&quot; });&#xD;&#xA;            session.SaveChanges();&#xD;&#xA;            var user =&#xD;&#xA;                session.Query&lt;User&gt;(&quot;where data -&gt;&gt; &#x27;FirstName&#x27; = :FirstName and data -&gt;&gt; &#x27;LastName&#x27; = :LastName&quot;, new { FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;})&#xD;&#xA;                    .Single();&#xD;&#xA;&#xD;&#xA;            user.ShouldNotBeNull();&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
 			      	</div>
 
@@ -156,12 +115,12 @@
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/querying/async">Asynchronous Querying</a>
+				        	<strong>Previous: </strong><a href="/documentation/documents/querying/async">Asynchronous Querying</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/querying/projections">Document Projections</a>
+				        	<strong>Next: </strong><a href="/documentation/documents/querying/projections">Document Projections</a>
 
 				        </span>
 			      	</nav>
@@ -178,10 +137,10 @@
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

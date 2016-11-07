@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Customizing Document Storage</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/querying" title="Querying Documents">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/customizing/computed_index" title="Calculated Index">Next</a></li>
+		      	<li><a href="/documentation/documents/querying" title="Querying Documents">Previous</a></li>
+		      	<li><a href="/documentation/documents/customizing/computed_index" title="Calculated Index">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Customizing Document Storage</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li class="active">Customizing Document Storage</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/querying">Querying Documents</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/customizing/computed_index">Calculated Index</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/querying">Querying Documents</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -92,6 +92,11 @@
 			      	<div id="main-pane">
 			      		<!--Title:Customizing Document Storage-->
 <!--Url:customizing-->
+<div class="alert alert-warning">
+To enable Marten's built in schema comparison and data migration tools to work properly, all indexes must
+start with the "mt_" prefix. This limitation may be removed in the future, but for now, Marten will throw
+an exception if you leave off the required prefix in index definitions.
+</div>
 <p>While you can certainly write your own <a href="https://en.wikipedia.org/wiki/Data_definition_language">DDL</a>
 and SQL queries for optimizing data fetching, Marten gives you a couple options for speeding up queries --
 which all come at the cost of slower inserts because it's an imperfect world. Marten supports the ability to configure:</p>
@@ -107,126 +112,49 @@ will prefer to use either attributes or the new embedded configuration option wi
 better to keep the persistence configuration on the document type itself for easier traceability. Either way,
 Marten has you covered with the various configuration options shown here.</p>
 <p>The configuration options you'll most likely use are:</p>
-<ul class="table-of-contents"><li><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></li><li><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></li><li><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a></li><li><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></li></ul>
+<ul class="table-of-contents"><li><a href="/documentation/documents/customizing/computed_index">Calculated Index</a></li><li><a href="/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></li><li><a href="/documentation/documents/customizing/foreign_keys">Foreign Keys</a></li><li><a href="/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></li></ul>
+<h2>Postgresql Limits on Naming</h2>
+<p>Postgresql out of the box has a limitation on the length of database object names to 64. This can be overridden in a
+Postgresql database by <a href="https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS">setting the <code>NAMEDATALEN</code> property</a>.</p>
+<p>This can unfortunately have a negative impact on Marten's ability to detect changes to the schema configuration when Postgresql quietly
+truncates the name of database objects. To guard against this, Marten will now warn you if a schema name exceeds the <code>NAMEDATALEN</code> value,
+but you do need to tell Marten about any non-default length limit like so:</p>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // If you have overridden NAMEDATALEN in your&#xD;&#xA;    // Postgresql database to 100&#xD;&#xA;    _.NameDataLength = 100;&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <h2>Custom StoreOptions</h2>
 <p>It's perfectly valid to create your own subclass of <code>StoreOptions</code> that configures itself, as shown below.</p>
-<pre><code class="language-csharp">
-public class MyStoreOptions : StoreOptions
-{
-    public static IDocumentStore ToStore()
-    {
-        return new DocumentStore(new MyStoreOptions());
-    }
-
-    public MyStoreOptions()
-    {
-        Connection(ConnectionSource.ConnectionString);
-
-        Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsString});
-
-        Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);
-    }
-}
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class MyStoreOptions : StoreOptions&#xD;&#xA;{&#xD;&#xA;    public static IDocumentStore ToStore()&#xD;&#xA;    {&#xD;&#xA;        return new DocumentStore(new MyStoreOptions());&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public MyStoreOptions()&#xD;&#xA;    {&#xD;&#xA;        Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;        Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsString});&#xD;&#xA;&#xD;&#xA;        Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>This strategy might be beneficial if you need to share Marten configuration across different applications
 or testing harnesses or custom migration tooling.</p>
 <h2>MartenRegistry</h2>
 <p>While there are some limited abilities to configure storage with attributes, the most complete option right now
 is a fluent interface implemented by the <code>MartenRegistry</code>. To configure a Marten document store, first write
 your own subclass of <code>MartenRegistry</code> and place declarations in the constructor function like this example:</p>
-<pre><code class="language-csharp">
-    public class MyMartenRegistry : MartenRegistry
-    {
-        public MyMartenRegistry()
-        {
-            // I&#39;m going to search for user by UserName
-            // pretty frequently, so I want that to be 
-            // a duplicated, searchable field
-            For&lt;User&gt;().Duplicate(x =&gt; x.UserName);
-
-
-            // Add a gin index to Company&#39;s json data storage
-            For&lt;Company&gt;().GinIndexJsonData();
-        }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class MyMartenRegistry : MartenRegistry&#xD;&#xA;{&#xD;&#xA;    public MyMartenRegistry()&#xD;&#xA;    {&#xD;&#xA;        // I&#x27;m going to search for user by UserName&#xD;&#xA;        // pretty frequently, so I want that to be &#xD;&#xA;        // a duplicated, searchable field&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName);&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;        // Add a gin index to Company&#x27;s json data storage&#xD;&#xA;        For&lt;Company&gt;().GinIndexJsonData();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>To apply your new <code>MartenRegistry</code>, just include it when you bootstrap the <code>IDocumentStore</code> as in this example:</p>
-<pre><code class="language-csharp">
-var store = DocumentStore.For(_ =&gt;
-{
-    _.Connection(&quot;your connection string&quot;);
-    _.Schema.Include&lt;MyMartenRegistry&gt;();
-});
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;your connection string&quot;);&#xD;&#xA;    _.Schema.Include&lt;MyMartenRegistry&gt;();&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>Do note that you could happily use multiple <code>MartenRegistry</code> classes in larger applications if that is advantageous.</p>
 <p>If you dislike using infrastructure attributes in your application code, you will probably prefer to use MartenRegistry.</p>
 <h2>Custom Attributes</h2>
 <p>If there's some kind of customization you'd like to use attributes for that isn't already supported by Marten,
 you're still in luck. If you write a subclass of the <code>MartenAttribute</code> shown below:</p>
-<pre><code class="language-csharp">
-    public abstract class MartenAttribute : Attribute
-    {
-        /// &lt;summary&gt;
-        /// Customize Document storage at the document level
-        /// &lt;/summary&gt;
-        /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;
-        public virtual void Modify(DocumentMapping mapping) { }
-
-        /// &lt;summary&gt;
-        /// Customize the Document storage for a single member
-        /// &lt;/summary&gt;
-        /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;
-        /// &lt;param name=&quot;member&quot;&gt;&lt;/param&gt;
-        public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public abstract class MartenAttribute : Attribute&#xD;&#xA;{&#xD;&#xA;    /// &lt;summary&gt;&#xD;&#xA;    /// Customize Document storage at the document level&#xD;&#xA;    /// &lt;/summary&gt;&#xD;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xD;&#xA;    public virtual void Modify(DocumentMapping mapping) { }&#xD;&#xA;&#xD;&#xA;    /// &lt;summary&gt;&#xD;&#xA;    /// Customize the Document storage for a single member&#xD;&#xA;    /// &lt;/summary&gt;&#xD;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xD;&#xA;    /// &lt;param name=&quot;member&quot;&gt;&lt;/param&gt;&#xD;&#xA;    public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>And decorate either classes or individual field or properties on a document type, your custom attribute will be
 picked up and used by Marten to configure the underlying <code>DocumentMapping</code> model for that document type. The
 <code>MartenRegistry</code> is just a fluent interface over the top of this same <code>DocumentMapping</code> model.</p>
 <p>As an example, an attribute to add a gin index to the JSONB storage for more efficient adhoc querying of a document
 would look like this:</p>
-<pre><code class="language-csharp">
-    public class GinIndexedAttribute : MartenAttribute
-    {
-        public override void Modify(DocumentMapping mapping, MemberInfo member)
-        {
-            mapping.AddGinIndexToData();
-        }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class GinIndexedAttribute : MartenAttribute&#xD;&#xA;{&#xD;&#xA;    public override void Modify(DocumentMapping mapping, MemberInfo member)&#xD;&#xA;    {&#xD;&#xA;        mapping.AddGinIndexToData();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2>Embedding Configuration in Document Types</h2>
 <p>Lastly, Marten can examine the document types themselves for a <code>public static ConfigureMarten()</code> method
 and invoke that to let the document type make its own customizations for its storage. Here's an example from
 the unit tests:</p>
-<pre><code class="language-csharp">
-public class ConfiguresItself
-{
-    public static void ConfigureMarten(DocumentMapping mapping)
-    {
-        mapping.Alias = &quot;different&quot;;
-    }
-
-    public Guid Id;
-}
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItself&#xD;&#xA;{&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Alias = &quot;different&quot;;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public Guid Id;&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>The <code>DocumentMapping</code> type is the core configuration class representing how a document type is persisted or
 queried from within a Marten application. All the other configuration options end up writing to a
 <code>DocumentMapping</code> object.</p>
 <p>You can optionally take in the more specific <code>DocumentMapping&lt;T&gt;</code> for your document type to get at
 some convenience methods for indexing or duplicating fields that depend on .Net Expression's:</p>
-<pre><code class="language-csharp">
-public class ConfiguresItselfSpecifically
-{
-    public static void ConfigureMarten(DocumentMapping&lt;ConfiguresItselfSpecifically&gt; mapping)
-    {
-        mapping.Duplicate(x =&gt; x.Name);
-    }
-
-    public Guid Id;
-    public string Name;
-}
-</code></pre>
-
+<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItselfSpecifically&#xD;&#xA;{&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping&lt;ConfiguresItselfSpecifically&gt; mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Duplicate(x =&gt; x.Name);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public Guid Id;&#xD;&#xA;    public string Name;&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
 			      	</div>
 
@@ -234,12 +162,12 @@ public class ConfiguresItselfSpecifically
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/querying">Querying Documents</a>
+				        	<strong>Previous: </strong><a href="/documentation/documents/querying">Querying Documents</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a>
+				        	<strong>Next: </strong><a href="/documentation/documents/customizing/computed_index">Calculated Index</a>
 
 				        </span>
 			      	</nav>
@@ -256,10 +184,10 @@ public class ConfiguresItselfSpecifically
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

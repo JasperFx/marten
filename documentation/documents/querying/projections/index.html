@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Document Projections</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/querying/sql" title="Querying with Postgresql SQL">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/querying/query_json" title="Query for Raw JSON">Next</a></li>
+		      	<li><a href="/documentation/documents/querying/sql" title="Querying with Postgresql SQL">Previous</a></li>
+		      	<li><a href="/documentation/documents/querying/query_json" title="Query for Raw JSON">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/querying">Querying Documents</a></li><li class="active">Document Projections</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/querying">Querying Documents</a></li><li class="active">Document Projections</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/querying/query_json">Query for Raw JSON</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/querying/sql">Querying with Postgresql SQL</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/querying/query_json">Query for Raw JSON</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/querying/sql">Querying with Postgresql SQL</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -95,97 +95,16 @@
 <p>Marten has now the capacity to run <a href="https://en.wikipedia.org/wiki/Projection_(relational_algebra)">projection queries</a>, where only specific document properties are retrieved. The projection queries are executed by using the linq <code>IQueryable.Select()</code> method.</p>
 <h2>Projection Queries</h2>
 <p>When you wish to retrieve an IEnumerable of a certain document property for example:</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public void use_select_in_query_for_one_field()
-        {
-            theSession.Store(new User {FirstName = &quot;Hank&quot;});
-            theSession.Store(new User {FirstName = &quot;Bill&quot;});
-            theSession.Store(new User {FirstName = &quot;Sam&quot;});
-            theSession.Store(new User {FirstName = &quot;Tom&quot;});
-
-            theSession.SaveChanges();
-
-            theSession.Query&lt;User&gt;().OrderBy(x =&gt; x.FirstName).Select(x =&gt; x.FirstName)
-                .ShouldHaveTheSameElementsAs(&quot;Bill&quot;, &quot;Hank&quot;, &quot;Sam&quot;, &quot;Tom&quot;);
-
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void use_select_in_query_for_one_field()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new User {FirstName = &quot;Hank&quot;});&#xD;&#xA;    theSession.Store(new User {FirstName = &quot;Bill&quot;});&#xD;&#xA;    theSession.Store(new User {FirstName = &quot;Sam&quot;});&#xD;&#xA;    theSession.Store(new User {FirstName = &quot;Tom&quot;});&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;User&gt;().OrderBy(x =&gt; x.FirstName).Select(x =&gt; x.FirstName)&#xD;&#xA;        .ShouldHaveTheSameElementsAs(&quot;Bill&quot;, &quot;Hank&quot;, &quot;Sam&quot;, &quot;Tom&quot;);&#xD;&#xA;&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>When you wish to retrieve certain properties and transform them into another type:</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public void use_select_with_multiple_fields_to_other_type()
-        {
-            theSession.Store(new User { FirstName = &quot;Hank&quot;, LastName = &quot;Aaron&quot; });
-            theSession.Store(new User { FirstName = &quot;Bill&quot;, LastName = &quot;Laimbeer&quot; });
-            theSession.Store(new User { FirstName = &quot;Sam&quot;, LastName = &quot;Mitchell&quot; });
-            theSession.Store(new User { FirstName = &quot;Tom&quot;, LastName = &quot;Chambers&quot; });
-
-            theSession.SaveChanges();
-
-            var users = theSession.Query&lt;User&gt;().Select(x =&gt; new User2{ First = x.FirstName, Last = x.LastName }).ToList();
-
-            users.Count.ShouldBe(4);
-
-            users.Each(x =&gt;
-            {
-                x.First.ShouldNotBeNull();
-                x.Last.ShouldNotBeNull();
-            });
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void use_select_with_multiple_fields_to_other_type()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Hank&quot;, LastName = &quot;Aaron&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Bill&quot;, LastName = &quot;Laimbeer&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Sam&quot;, LastName = &quot;Mitchell&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Tom&quot;, LastName = &quot;Chambers&quot; });&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    var users = theSession.Query&lt;User&gt;().Select(x =&gt; new User2{ First = x.FirstName, Last = x.LastName }).ToList();&#xD;&#xA;&#xD;&#xA;    users.Count.ShouldBe(4);&#xD;&#xA;&#xD;&#xA;    users.Each(x =&gt;&#xD;&#xA;    {&#xD;&#xA;        x.First.ShouldNotBeNull();&#xD;&#xA;        x.Last.ShouldNotBeNull();&#xD;&#xA;    });&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>When you wish to retrieve certain properties and transform them into an anonymous type:</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public void use_select_to_transform_to_an_anonymous_type()
-        {
-            theSession.Store(new User { FirstName = &quot;Hank&quot; });
-            theSession.Store(new User { FirstName = &quot;Bill&quot; });
-            theSession.Store(new User { FirstName = &quot;Sam&quot; });
-            theSession.Store(new User { FirstName = &quot;Tom&quot; });
-
-            theSession.SaveChanges();
-
-            theSession.Query&lt;User&gt;().OrderBy(x =&gt; x.FirstName).Select(x =&gt; new { Name = x.FirstName })
-                .ToArray()
-                .Select(x =&gt; x.Name)
-                .ShouldHaveTheSameElementsAs(&quot;Bill&quot;, &quot;Hank&quot;, &quot;Sam&quot;, &quot;Tom&quot;);
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void use_select_to_transform_to_an_anonymous_type()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Hank&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Bill&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Sam&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Tom&quot; });&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;User&gt;().OrderBy(x =&gt; x.FirstName).Select(x =&gt; new { Name = x.FirstName })&#xD;&#xA;        .ToArray()&#xD;&#xA;        .Select(x =&gt; x.Name)&#xD;&#xA;        .ShouldHaveTheSameElementsAs(&quot;Bill&quot;, &quot;Hank&quot;, &quot;Sam&quot;, &quot;Tom&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Marten also allows you to run projection queries on deep (nested) properties:</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public void transform_with_deep_properties()
-        {
-            var targets = Target.GenerateRandomData(100).ToArray();
-
-            theStore.BulkInsert(targets);
-
-            var actual = theSession.Query&lt;Target&gt;().Where(x =&gt; x.Number == targets[0].Number).Select(x =&gt; x.Inner.Number).ToList().Distinct();
-
-            var expected = targets.Where(x =&gt; x.Number == targets[0].Number).Select(x =&gt; x.Inner.Number).Distinct();
-
-            actual.ShouldHaveTheSameElementsAs(expected);
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void transform_with_deep_properties()&#xD;&#xA;{&#xD;&#xA;    var targets = Target.GenerateRandomData(100).ToArray();&#xD;&#xA;&#xD;&#xA;    theStore.BulkInsert(targets);&#xD;&#xA;&#xD;&#xA;    var actual = theSession.Query&lt;Target&gt;().Where(x =&gt; x.Number == targets[0].Number).Select(x =&gt; x.Inner.Number).ToList().Distinct();&#xD;&#xA;&#xD;&#xA;    var expected = targets.Where(x =&gt; x.Number == targets[0].Number).Select(x =&gt; x.Inner.Number).Distinct();&#xD;&#xA;&#xD;&#xA;    actual.ShouldHaveTheSameElementsAs(expected);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2>Chaining other Linq Methods</h2>
 <p>After calling Select, you'd be able to chain other linq methods such as <code>First()</code>, <code>FirstOrDefault()</code>, <code>Single()</code> and so on, like so:</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public void use_select_to_another_type_with_first()
-        {
-            theSession.Store(new User { FirstName = &quot;Hank&quot; });
-            theSession.Store(new User { FirstName = &quot;Bill&quot; });
-            theSession.Store(new User { FirstName = &quot;Sam&quot; });
-            theSession.Store(new User { FirstName = &quot;Tom&quot; });
-
-            theSession.SaveChanges();
-
-            theSession.Query&lt;User&gt;().OrderBy(x =&gt; x.FirstName).Select(x =&gt; new UserName { Name = x.FirstName })
-                .FirstOrDefault()
-                .Name.ShouldBe(&quot;Bill&quot;);
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void use_select_to_another_type_with_first()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Hank&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Bill&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Sam&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Tom&quot; });&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;User&gt;().OrderBy(x =&gt; x.FirstName).Select(x =&gt; new UserName { Name = x.FirstName })&#xD;&#xA;        .FirstOrDefault()&#xD;&#xA;        .Name.ShouldBe(&quot;Bill&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2>Async Projections</h2>
 <p>Marten also supports asynchronously running projection queries. You'd be able to achieve this by simply chaining the asynchronous resolving method you are after. For example:</p>
 <ul>
@@ -195,19 +114,18 @@
 </ul>
 <p>And so on...</p>
 
-
 			      	</div>
 
 			      	<hr />
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/querying/sql">Querying with Postgresql SQL</a>
+				        	<strong>Previous: </strong><a href="/documentation/documents/querying/sql">Querying with Postgresql SQL</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/querying/query_json">Query for Raw JSON</a>
+				        	<strong>Next: </strong><a href="/documentation/documents/querying/query_json">Query for Raw JSON</a>
 
 				        </span>
 			      	</nav>
@@ -224,10 +142,10 @@
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

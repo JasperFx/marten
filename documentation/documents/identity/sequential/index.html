@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Sequential Identifiers with Hilo</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/identity/guid" title="Guid Identifiers">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/basics" title="Document Basics">Next</a></li>
+		      	<li><a href="/documentation/documents/identity/guid" title="Guid Identifiers">Previous</a></li>
+		      	<li><a href="/documentation/documents/basics" title="Document Basics">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/identity">Document Identity</a></li><li class="active">Sequential Identifiers with Hilo</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/identity">Document Identity</a></li><li class="active">Sequential Identifiers with Hilo</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/basics">Document Basics</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/identity/guid">Guid Identifiers</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/basics">Document Basics</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/identity/guid">Guid Identifiers</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -93,34 +93,18 @@
 			      		<!--Title: Sequential Identifiers with Hilo-->
 <p>The <em>Hilo</em> sequence generation can be customized with either global defaults or document type specific overrides. By default, the Hilo sequence generation in Marten increments by 1 and uses a &quot;maximum lo&quot; number of 1000.</p>
 <p>To set different global defaults, use the <code>StoreOptions.HiloSequenceDefaults</code> property like this sample:</p>
-<pre><code class="language-csharp">
-            var store = DocumentStore.For(_ =&gt;
-            {
-                _.HiloSequenceDefaults.MaxLo = 55;
-                _.Connection(ConnectionSource.ConnectionString);
-            });
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.HiloSequenceDefaults.MaxLo = 55;&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>To override the Hilo configuration for a specific document type, you can decorate the document type with the <code>[HiloSequence]</code> attribute
 as in this example:</p>
-<pre><code class="language-csharp">
-    [HiloSequence(MaxLo = 33)]
-    public class OverriddenHiloDoc
-    {
-        public int Id { get; set; }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[HiloSequence(MaxLo = 33)]&#xD;&#xA;public class OverriddenHiloDoc&#xD;&#xA;{&#xD;&#xA;    public int Id { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>You can also use the <code>MartenRegistry</code> fluent interface to override the Hilo configuration for a document type as in this example:</p>
-<pre><code class="language-csharp">
-            var store = DocumentStore.For(_ =&gt;
-            {
-                // Overriding the Hilo settings for the document type &quot;IntDoc&quot;
-                _.Schema.For&lt;IntDoc&gt;()
-                    .HiloSettings(new HiloSettings {MaxLo = 66});
-
-                _.Connection(ConnectionSource.ConnectionString);
-            });
-</code></pre>
-
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Overriding the Hilo settings for the document type &quot;IntDoc&quot;&#xD;&#xA;    _.Schema.For&lt;IntDoc&gt;()&#xD;&#xA;        .HiloSettings(new HiloSettings {MaxLo = 66});&#xD;&#xA;&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<h2>Set the Identifier Floor</h2>
+<p>Marten 1.2 adds a convenience method to reset the &quot;floor&quot; of the Hilo sequence for a single document type:</p>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;// Resets the minimum Id number for the IntDoc document&#xD;&#xA;// type to 2500&#xD;&#xA;store.Advanced.ResetHiloSequenceFloor&lt;IntDoc&gt;(2500);&#xD;&#xA;</code></pre>
+<p>This functionality was added specifically to aid in importing data from an existing data source. Do note that this functionality simply guarantees
+that all new id's assigned for the document type will be higher than the new floor. It is perfectly possible and even likely that there will be some
+gaps in the id sequence.</p>
 
 			      	</div>
 
@@ -128,12 +112,12 @@ as in this example:</p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/identity/guid">Guid Identifiers</a>
+				        	<strong>Previous: </strong><a href="/documentation/documents/identity/guid">Guid Identifiers</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/basics">Document Basics</a>
+				        	<strong>Next: </strong><a href="/documentation/documents/basics">Document Basics</a>
 
 				        </span>
 			      	</nav>
@@ -150,10 +134,10 @@ as in this example:</p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

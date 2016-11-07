@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Marten and the Postgresql Schema</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation" title="Documentation">Previous</a></li>
-		      	<li><a href="/marten/documentation/schema/storage" title="How Documents are Stored">Next</a></li>
+		      	<li><a href="/documentation" title="Documentation">Previous</a></li>
+		      	<li><a href="/documentation/schema/storage" title="How Documents are Stored">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li class="active">Marten and the Postgresql Schema</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li class="active">Marten and the Postgresql Schema</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/schema/storage">How Documents are Stored</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation">Documentation</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/schema/storage">How Documents are Stored</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation">Documentation</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -92,35 +92,11 @@
 			      	<div id="main-pane">
 			      		<!--Title:Marten and the Postgresql Schema-->
 <!--Url:schema-->
-<p>Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a Postgresql schema. Marten will generate and add a table and matching &quot;upsert&quot; function for each unique document type as needed. It also adds some other tables and functions for the <a href="/marten/documentation/events">event store functionality</a> and <a href="/marten/documentation/documents/identity/sequential">HiLo id generation</a></p>
+<p>Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a Postgresql schema. Marten will generate and add a table and matching &quot;upsert&quot; function for each unique document type as needed. It also adds some other tables and functions for the <a href="/documentation/events">event store functionality</a> and <a href="/documentation/documents/identity/sequential">HiLo id generation</a></p>
 <p>In all cases, the Marten schema objects are all prefixed with &quot;mt_.&quot;</p>
 <p>As of Marten v0.8, you have much finer grained ability to control the automatic generation or updates of schema objects through the
 <code>StoreOptions.AutoCreateSchemaObjects</code> like so:</p>
-<pre><code class="language-csharp">
-var store = DocumentStore.For(_ =&gt;
-{
-    // Marten will create any new objects that are missing,
-    // attempt to update tables if it can, but drop and replace
-    // tables that it cannot patch. 
-    _.AutoCreateSchemaObjects = AutoCreate.All;
-
-
-    // Marten will create any new objects that are missing or
-    // attempt to update tables if it can. Will *never* drop
-    // any existing objects, so no data loss
-    _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-
-
-    // Marten will create missing objects on demand, but
-    // will not change any existing schema objects
-    _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
-
-    // Marten will not create or update any schema objects 
-    // and throws an exception in the case of a schema object
-    // not reflecting the Marten configuration
-    _.AutoCreateSchemaObjects = AutoCreate.None;
-});
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Marten will create any new objects that are missing,&#xD;&#xA;    // attempt to update tables if it can, but drop and replace&#xD;&#xA;    // tables that it cannot patch. &#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create any new objects that are missing or&#xD;&#xA;    // attempt to update tables if it can. Will *never* drop&#xD;&#xA;    // any existing objects, so no data loss&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create missing objects on demand, but&#xD;&#xA;    // will not change any existing schema objects&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;&#xD;&#xA;&#xD;&#xA;    // Marten will not create or update any schema objects &#xD;&#xA;    // and throws an exception in the case of a schema object&#xD;&#xA;    // not reflecting the Marten configuration&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.None;&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:</p>
 <ol>
 <li>Compare the current schema table to what's configured for that document type</li>
@@ -136,30 +112,15 @@ what is configured in the document store, and attempts to update these objects i
 All/None/CreateOnly/CreateOrUpdate rules as the table storage.</strong></p>
 <h2>Overriding Schema Name</h2>
 <p>By default marten will use the default <code>public</code> database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:</p>
-<pre><code class="language-csharp">
-                _.DatabaseSchemaName = &quot;other&quot;;
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;_.DatabaseSchemaName = &quot;other&quot;;&#xD;&#xA;</code></pre>
 <p>The <code>Hilo</code> sequence table is always created in this document store database schema.</p>
 <p>If you wish to assign certain document tables to different (new or existing) schemas, you can do so like that:</p>
-<pre><code class="language-csharp">
-            StoreOptions(_ =&gt;
-            {
-                _.MappingFor(typeof(User)).DatabaseSchemaName = &quot;other&quot;;
-                _.MappingFor(typeof(Issue)).DatabaseSchemaName = &quot;overriden&quot;;
-                _.MappingFor(typeof(Company));
-
-                // this will tell marten to use the default &#39;public&#39; schema name.
-                _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
-            });
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;StoreOptions(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.MappingFor(typeof(User)).DatabaseSchemaName = &quot;other&quot;;&#xD;&#xA;    _.MappingFor(typeof(Issue)).DatabaseSchemaName = &quot;overriden&quot;;&#xD;&#xA;    _.MappingFor(typeof(Company));&#xD;&#xA;&#xD;&#xA;    // this will tell marten to use the default &#x27;public&#x27; schema name.&#xD;&#xA;    _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>This will create the following tables in your database: <code>other.mt_doc_user</code>, <code>overriden.mt_doc_issue</code> and <code>public.mt_doc_company</code>. When a schema doesn't exist it will be generated in the database.</p>
 <h3>Event Store</h3>
 <p>The EventStore database object are by default created in the document store DatabaseSchemaName. This can be overridden by setting the DatabaseSchemaName property of the event store options.</p>
-<pre><code class="language-csharp">
-                _.Events.DatabaseSchemaName = &quot;event_store&quot;
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;_.Events.DatabaseSchemaName = &quot;event_store&quot;&#xD;&#xA;</code></pre>
 <p>This will ensure that all EventStore tables (mt_stream, mt_events, ...) and functions (mt_apply_transform, mt_apply_aggregation, ...) are created in the <code>event_store</code> schema.</p>
-
 
 			      	</div>
 
@@ -167,12 +128,12 @@ All/None/CreateOnly/CreateOrUpdate rules as the table storage.</strong></p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation">Documentation</a>
+				        	<strong>Previous: </strong><a href="/documentation">Documentation</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/schema/storage">How Documents are Stored</a>
+				        	<strong>Next: </strong><a href="/documentation/schema/storage">How Documents are Stored</a>
 
 				        </span>
 			      	</nav>
@@ -189,10 +150,10 @@ All/None/CreateOnly/CreateOrUpdate rules as the table storage.</strong></p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

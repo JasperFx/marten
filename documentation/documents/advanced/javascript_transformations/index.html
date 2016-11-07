@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Javascript Transformations</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/advanced/identitymap" title="Identity Map Mechanics">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/advanced/optimistic_concurrency" title="Optimistic Concurrency">Next</a></li>
+		      	<li><a href="/documentation/documents/advanced/identitymap" title="Identity Map Mechanics">Previous</a></li>
+		      	<li><a href="/documentation/documents/advanced/optimistic_concurrency" title="Optimistic Concurrency">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/advanced">Advanced Topics</a></li><li class="active">Javascript Transformations</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/advanced">Advanced Topics</a></li><li class="active">Javascript Transformations</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/advanced/optimistic_concurrency">Optimistic Concurrency</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced/identitymap">Identity Map Mechanics</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/advanced/optimistic_concurrency">Optimistic Concurrency</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/advanced/identitymap">Identity Map Mechanics</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -91,8 +91,8 @@
 
 			      	<div id="main-pane">
 			      		<!--title: Javascript Transformations-->
-<p>The <a href="/marten/documentation/documents/advanced/patch_api">Patch API</a> provides some out of the box recipes for common document transforms and
-the <a href="/marten/documentation/documents/querying/projections">Select() projections</a> in the Linq support gives you
+<p>The <a href="/documentation/documents/advanced/patch_api">Patch API</a> provides some out of the box recipes for common document transforms and
+the <a href="/documentation/documents/querying/projections">Select() projections</a> in the Linq support gives you
 the ability to do some basic transformations of the persisted JSON data in the database as part of querying. If your needs fall
 outside of these simple built in mechanism, you're still in luck because you can resort to using custom Javascript functions that will run inside of Postgresql
 itself to do more advanced document transformations.</p>
@@ -105,11 +105,7 @@ the application code no longer matches the JSON previously stored</li>
 </ol>
 <h2>Creating and Loading a Javascript Function</h2>
 <p>Javascript transformations work in Marten by first allowing you to write your Javascript function into a single file like this one:</p>
-<pre><code class="language-javascript">
-module.exports = function (doc) {
-    return {fullname: doc.FirstName + &#39; &#39; + doc.LastName};
-}
-</code></pre>
+<pre><code class="language-javascript">&#xD;&#xA;module.exports = function (doc) {&#xD;&#xA;    return {fullname: doc.FirstName &#x2B; &#x27; &#x27; &#x2B; doc.LastName};&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>You'll notice a couple things:</p>
 <ul>
 <li>Marten requires you to export the transformation function with the <code>module.exports =</code> syntax familiar from <a href="http://wiki.commonjs.org/wiki/CommonJS">CommonJS</a> or Node.js development.
@@ -121,101 +117,43 @@ There is some thought and even infrastructure for doing Javascript transformatio
 </div>
 <p>To load a Javascript function into your Marten-ized Postgresql database, use this syntax as part of bootstrapping
 your Marten <code>IDocumentStore</code>:</p>
-<pre><code class="language-csharp">
-    var store = DocumentStore.For(_ =&gt;
-    {
-        _.Connection(ConnectionSource.ConnectionString);
-
-        // Let Marten derive the transform name from the filename
-        _.Transforms.LoadFile(&quot;get_fullname.js&quot;);
-
-        // Explicitly define the transform name yourself
-        _.Transforms.LoadFile(&quot;default_username.js&quot;, &quot;set_default_username&quot;);
-    });
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // Let Marten derive the transform name from the filename&#xD;&#xA;    _.Transforms.LoadFile(&quot;get_fullname.js&quot;);&#xD;&#xA;&#xD;&#xA;    // Explicitly define the transform name yourself&#xD;&#xA;    _.Transforms.LoadFile(&quot;default_username.js&quot;, &quot;set_default_username&quot;);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>Behind the scenes, Marten creates a <code>TransformFunction</code> object in the document store that knows how governs the construction and update
 of a <a href="http://pgxn.org/dist/plv8/doc/plv8.html">PLV8 function</a> that will wrap your raw Javascript function to expose it to Postgresql:</p>
 <pre>
 CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc jsonb)
   RETURNS jsonb AS
 $BODY$
-<p>var module = {export: {}};</p>
-<p>module.exports = function (doc) {
-return {fullname: doc.FirstName + ' ' + doc.LastName};
-}</p>
-<p>var func = module.exports;</p>
-<p>return func(doc);</p>
-<p>$BODY$
-LANGUAGE plv8 IMMUTABLE STRICT
-COST 100;</p>
+
+  var module = {export: {}};
+
+module.exports = function (doc) {
+    return {fullname: doc.FirstName + ' ' + doc.LastName};
+}
+
+  var func = module.exports;
+
+  return func(doc);
+
+$BODY$
+  LANGUAGE plv8 IMMUTABLE STRICT
+  COST 100;
 </pre>
 <p>The Javascript functions are managed roughly the same way as all other schema objects. If you are running your <code>IDocumentStore</code> with
 the <code>StoreOptions.AutoCreateSchemaObjects</code> option set to anything but <code>None</code>, Marten will attempt to automatically update
 your database schema with the current version of the Javascript wrapper function. It does this on only the first usage of the
 named transform, and works by just doing a <code>string.Contains()</code> check against the existing function in the database schema.</p>
 <p>In the case of <code>StoreOptions.AutoCreateSchemaObjects = None</code>, the Javascript transform functions are evaluated and output through
-the <a href="/marten/documentation/schema/migrations">Schema Migrations and Patches</a>.</p>
+the <a href="/documentation/schema/migrations">Schema Migrations and Patches</a>.</p>
 <h2>Using a Javascript Transform in Linq Queries</h2>
 <p>Once you have a Javascript transform loaded into the <code>IDocumentStore</code>, you can do live transformations inside
 of Linq queries. If you only care about the transformed JSON, you use this syntax:</p>
-<pre><code class="language-csharp">
-    [Fact]
-    public void can_transform_to_json()
-    {
-        var user = new User {FirstName = &quot;Eric&quot;, LastName = &quot;Berry&quot;};
-
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(user);
-            session.SaveChanges();
-
-            var json = session.Query&lt;User&gt;()
-                .Where(x =&gt; x.Id == user.Id)
-                .TransformToJson(&quot;get_fullname&quot;).Single();
-
-            json.ShouldBe(&quot;{\&quot;fullname\&quot;: \&quot;Eric Berry\&quot;}&quot;);
-        }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    [Fact]&#xD;&#xA;    public void can_select_a_string_field_in_compiled_query()&#xD;&#xA;    {&#xD;&#xA;        var user = new User { FirstName = &quot;Eric&quot;, LastName = &quot;Berry&quot; };&#xD;&#xA;&#xD;&#xA;        using (var session = theStore.OpenSession())&#xD;&#xA;        {&#xD;&#xA;            session.Store(user);&#xD;&#xA;            session.SaveChanges();&#xD;&#xA;&#xD;&#xA;            var name = session.Query&lt;User&gt;().Select(x =&gt; x.FirstName)&#xD;&#xA;                .Single();&#xD;&#xA;&#xD;&#xA;            name.ShouldBe(&quot;Eric&quot;);&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    [Fact]&#xD;&#xA;public void can_transform_to_json()&#xD;&#xA;{&#xD;&#xA;    var user = new User {FirstName = &quot;Eric&quot;, LastName = &quot;Berry&quot;};&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(user);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        var json = session.Query&lt;User&gt;()&#xD;&#xA;            .Where(x =&gt; x.Id == user.Id)&#xD;&#xA;            .TransformToJson(&quot;get_fullname&quot;).Single();&#xD;&#xA;&#xD;&#xA;        json.ShouldBe(&quot;{\&quot;fullname\&quot;: \&quot;Eric Berry\&quot;}&quot;);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>If you want to retrieve the results deserialized to another type, you can use the <code>TransformTo&lt;T&gt;(transformName)</code>
 method shown below:</p>
-<pre><code class="language-csharp">
-        public class FullNameView
-        {
-            public string fullname { get; set; }
-        }
-
-        [Fact]
-        public void can_transform_to_another_doc()
-        {
-            var user = new User { FirstName = &quot;Eric&quot;, LastName = &quot;Berry&quot; };
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(user);
-                session.SaveChanges();
-
-                var view = session.Query&lt;User&gt;()
-                    .Where(x =&gt; x.Id == user.Id)
-                    .TransformTo&lt;FullNameView&gt;(&quot;get_fullname&quot;).Single();
-
-                view.fullname.ShouldBe(&quot;Eric Berry&quot;);
-            }
-        }
-</code></pre>
-<p>You can also use <code>TransformToJson()</code> inside of a <a href="/marten/documentation/documents/querying/compiled_queries">compiled query</a>:</p>
-<pre><code class="language-csharp">
-        public class JsonQuery : ICompiledQuery&lt;User, string&gt;
-        {
-            public Expression&lt;Func&lt;IQueryable&lt;User&gt;, string&gt;&gt; QueryIs()
-            {
-                return _ =&gt; _.Where(x =&gt; x.FirstName == FirstName)
-                .TransformToJson(&quot;get_fullname&quot;).Single();
-            }
-
-            public string FirstName { get; set; }
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class FullNameView&#xD;&#xA;{&#xD;&#xA;    public string fullname { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;[Fact]&#xD;&#xA;public void can_transform_to_another_doc()&#xD;&#xA;{&#xD;&#xA;    var user = new User { FirstName = &quot;Eric&quot;, LastName = &quot;Berry&quot; };&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(user);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        var view = session.Query&lt;User&gt;()&#xD;&#xA;            .Where(x =&gt; x.Id == user.Id)&#xD;&#xA;            .TransformTo&lt;FullNameView&gt;(&quot;get_fullname&quot;).Single();&#xD;&#xA;&#xD;&#xA;        view.fullname.ShouldBe(&quot;Eric Berry&quot;);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>You can also use <code>TransformToJson()</code> inside of a <a href="/documentation/documents/querying/compiled_queries">compiled query</a>:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class JsonQuery : ICompiledQuery&lt;User, string&gt;&#xD;&#xA;{&#xD;&#xA;    public Expression&lt;Func&lt;IQueryable&lt;User&gt;, string&gt;&gt; QueryIs()&#xD;&#xA;    {&#xD;&#xA;        return _ =&gt; _.Where(x =&gt; x.FirstName == FirstName)&#xD;&#xA;        .TransformToJson(&quot;get_fullname&quot;).Single();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2>Document Transformations</h2>
 <p>The persisted JSON documents in Marten are a reflection of your .Net classes. Great, that makes it absurdly easy to keep the database schema
 in synch with your application code at development time -- especially compared to the typical development process against a relational database.
@@ -224,28 +162,9 @@ persisted documents in your Marten database with the old structure?</p>
 <p>To that end, Marten allows you to use Javascript functions to alter the existing documents in the database. As an example,
 let's go back to the User document type and assume for some crazy reason that we didn't immediately issue a user name to some subset of users.
 As a default, we might just assign their user names by combining their first and last names like so:</p>
-<pre><code class="language-javascript">
-module.exports = function (doc) {
-    doc.UserName = (doc.FirstName + &#39;.&#39; + doc.LastName).toLowerCase();
-
-    return doc;
-}
-</code></pre>
+<pre><code class="language-javascript">&#xD;&#xA;module.exports = function (doc) {&#xD;&#xA;    doc.UserName = (doc.FirstName &#x2B; &#x27;.&#x27; &#x2B; doc.LastName).toLowerCase();&#xD;&#xA;&#xD;&#xA;    return doc;&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>To apply this transformation to existing rows in the database, Marten exposes this syntax:</p>
-<pre><code class="language-csharp">
-        private static void transform_example(IDocumentStore store)
-        {
-            // Transform User documents with a filter
-            store.Transform.Where&lt;User&gt;(&quot;default_username&quot;, x =&gt; x.UserName == null);
-
-            // Transform a single User document by Id
-            store.Transform.Document&lt;User&gt;(&quot;default_username&quot;, Guid.NewGuid());
-
-            // Transform all User documents
-            store.Transform.All&lt;User&gt;(&quot;default_username&quot;);
-        }
-</code></pre>
-
+<pre><code class="language-csharp">&#xD;&#xA;private static void transform_example(IDocumentStore store)&#xD;&#xA;{&#xD;&#xA;    // Transform User documents with a filter&#xD;&#xA;    store.Transform.Where&lt;User&gt;(&quot;default_username&quot;, x =&gt; x.UserName == null);&#xD;&#xA;&#xD;&#xA;    // Transform a single User document by Id&#xD;&#xA;    store.Transform.Document&lt;User&gt;(&quot;default_username&quot;, Guid.NewGuid());&#xD;&#xA;&#xD;&#xA;    // Transform all User documents&#xD;&#xA;    store.Transform.All&lt;User&gt;(&quot;default_username&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
 			      	</div>
 
@@ -253,12 +172,12 @@ module.exports = function (doc) {
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/advanced/identitymap">Identity Map Mechanics</a>
+				        	<strong>Previous: </strong><a href="/documentation/documents/advanced/identitymap">Identity Map Mechanics</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/advanced/optimistic_concurrency">Optimistic Concurrency</a>
+				        	<strong>Next: </strong><a href="/documentation/documents/advanced/optimistic_concurrency">Optimistic Concurrency</a>
 
 				        </span>
 			      	</nav>
@@ -275,10 +194,10 @@ module.exports = function (doc) {
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

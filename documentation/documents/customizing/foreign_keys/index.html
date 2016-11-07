@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Foreign Keys</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/customizing/duplicated_fields" title="Duplicated Fields for Faster Querying">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/customizing/gin_or_gist_index" title="Gin or Gist Indexes">Next</a></li>
+		      	<li><a href="/documentation/documents/customizing/duplicated_fields" title="Duplicated Fields for Faster Querying">Previous</a></li>
+		      	<li><a href="/documentation/documents/customizing/gin_or_gist_index" title="Gin or Gist Indexes">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Foreign Keys</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Foreign Keys</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -96,46 +96,18 @@ where they still add value? In this case, Marten allows for a special kind of &q
 that also adds a foreign key constraint to enforce referential integrity between document types.</p>
 <p>One of our sample document types in Marten is the <code>Issue</code> class that has
 a couple properties that link to the id's of related <code>User</code> documents:</p>
-<pre><code class="language-csharp">
-    public class Issue
-    {
-        public Issue()
-        {
-            Id = Guid.NewGuid();
-        }
-
-        public string[] Tags { get; set; }
-
-        public Guid Id { get; set; }
-
-        public string Title { get; set; }
-
-        public int Number { get; set; }
-
-        public Guid? AssigneeId { get; set; }
-
-        public Guid? ReporterId { get; set; }
-    }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Issue&#xD;&#xA;{&#xD;&#xA;    public Issue()&#xD;&#xA;    {&#xD;&#xA;        Id = Guid.NewGuid();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string[] Tags { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Title { get; set; }&#xD;&#xA;&#xD;&#xA;    public int Number { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? AssigneeId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? ReporterId { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>If I want to enforce referential integrity between the <code>Issue</code> document and the <code>User</code> documents,
 I can use this syntax shown below to configure Marten:</p>
-<pre><code class="language-csharp">
-var store = DocumentStore.For(_ =&gt;
-{
-    _.Connection(&quot;some database connection&quot;);
-
-    // In the following line of code, I&#39;m setting
-    // up a foreign key relationship to the User document
-    _.Schema.For&lt;Issue&gt;().ForeignKey&lt;User&gt;(x =&gt; x.AssigneeId);
-});
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;some database connection&quot;);&#xD;&#xA;&#xD;&#xA;    // In the following line of code, I&#x27;m setting&#xD;&#xA;    // up a foreign key relationship to the User document&#xD;&#xA;    _.Schema.For&lt;Issue&gt;().ForeignKey&lt;User&gt;(x =&gt; x.AssigneeId);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>With the configuration above, Marten will make an <code>assignee_id</code> field in the database table and build a
 foreign key constraint to the <code>User</code> document like so:</p>
 <pre>
 ALTER TABLE public.mt_doc_issue
 ADD CONSTRAINT mt_doc_issue_assignee_id_fkey FOREIGN KEY (assignee_id)
 REFERENCES public.mt_doc_user (id);
-<p>CREATE INDEX mt_doc_issue_idx_assignee_id ON public.mt_doc_issue (&quot;assignee_id&quot;);</p>
+
+CREATE INDEX mt_doc_issue_idx_assignee_id ON public.mt_doc_issue ("assignee_id");
 </pre>
 <p>And some other things you probably want to know about how this works internally:</p>
 <p>Marten is smart enough to order the &quot;upsert&quot; operations to make the dependent documents be updated last.
@@ -144,23 +116,7 @@ In the <code>Issue</code> referencing <code>User</code> example above, this mean
 to save the new user first so that the issue will not fail with referential integrity violations.</p>
 <h2>Configuring with Attributes</h2>
 <p>You can optionally configure properties or fields as foreign key relationships with the <code>[ForeignKey]</code> attribute:</p>
-<pre><code class="language-csharp">
-        public class Issue
-        {
-            public Issue()
-            {
-                Id = Guid.NewGuid();
-            }
-
-            public Guid Id { get; set; }
-
-            [ForeignKey(typeof(User))]
-            public Guid UserId { get; set; }
-
-            public Guid? OtherUserId { get; set; }
-        }
-</code></pre>
-
+<pre><code class="language-csharp">&#xD;&#xA;public class Issue&#xD;&#xA;{&#xD;&#xA;    public Issue()&#xD;&#xA;    {&#xD;&#xA;        Id = Guid.NewGuid();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [ForeignKey(typeof(User))]&#xD;&#xA;    public Guid UserId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? OtherUserId { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
 			      	</div>
 
@@ -168,12 +124,12 @@ to save the new user first so that the issue will not fail with referential inte
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a>
+				        	<strong>Previous: </strong><a href="/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a>
+				        	<strong>Next: </strong><a href="/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a>
 
 				        </span>
 			      	</nav>
@@ -190,10 +146,10 @@ to save the new user first so that the issue will not fail with referential inte
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

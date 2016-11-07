@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Custom Identity Strategies</title>
+		<title>Marten - Immutable projections as read model</title>
 		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/documentation/documents/identity" title="Document Identity">Previous</a></li>
-		      	<li><a href="/documentation/documents/identity/guid" title="Guid Identifiers">Next</a></li>
+		      	<li><a href="/documentation/scenarios" title="Scenarios">Previous</a></li>
+		      	
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/identity">Document Identity</a></li><li class="active">Custom Identity Strategies</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/scenarios">Scenarios</a></li><li class="active">Immutable projections as read model</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,28 +77,32 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/identity/guid">Guid Identifiers</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/identity">Document Identity</a></p>
+		        	
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/scenarios">Scenarios</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Custom Identity Strategies <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/identity/custom.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Immutable projections as read model <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/scenarios/immutable_projections_readmodel.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title:Custom Identity Strategies-->
-<p>A custom ID generator strategy should implement <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/IIdGeneration.cs">IIdGeneration</a>.</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class CustomdIdGeneration : IIdGeneration&#xD;&#xA;{&#xD;&#xA;    public IEnumerable&lt;Type&gt; KeyTypes { get; } = new Type[] {typeof(string)};&#xD;&#xA;&#xD;&#xA;    public IIdGenerator&lt;T&gt; Build&lt;T&gt;(IDocumentSchema schema)&#xD;&#xA;    {&#xD;&#xA;        return (IIdGenerator&lt;T&gt;) new CustomIdGenerator();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public class CustomIdGenerator : IIdGenerator&lt;string&gt;&#xD;&#xA;    {&#xD;&#xA;        public string Assign(string existing, out bool assigned)&#xD;&#xA;        {&#xD;&#xA;            assigned = true;&#xD;&#xA;            return &quot;newId&quot;;&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<p>The <code>Build()</code> method should return the actual <code>IdGenerator&lt;T&gt;</code> for the document type, where <code>T</code> is the type of the Id field.</p>
-<p>For more advances examples you can have a look at existing ID generator: <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Sequences/HiloIdGeneration.cs">HiloIdGeneration</a>, <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/CombGuidIdGeneration.cs">CombGuidGenerator</a> and the <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Sequences/IdentityKeyGeneration.cs">IdentityKeyGeneration</a>,</p>
-<p>To use custom id generation you should enabled it when configuring the document store. This defines that the strategy will be used for all the documents types.</p>
-<pre><code class="language-csharp">&#xD;&#xA;options =&gt; options.DefaultIdStrategy = (mapping, storeOptions) =&gt; new CustomdIdGeneration()))&#xD;&#xA;</code></pre>
-<p>It is also possible define a custom id generation algorithm for a specific document type.</p>
-<pre><code class="language-csharp">&#xD;&#xA;options =&gt; options.Schema.For&lt;UserWithString&gt;().IdStrategy(new CustomdIdGeneration())&#xD;&#xA;</code></pre>
+			      		<!--Title: Immutable projections as read model-->
+<p>This use case demonstrates how to create immutable projections from event streams.</p>
+<h2>Scenario</h2>
+<p>To make projections immutable, the event application methods invoked by aggregators need to be made private, as well as any property setters.</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class AggregateWithPrivateEventApply&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; private set; }&#xD;&#xA;    &#xD;&#xA;    private void Apply(QuestStarted started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Name { get; private set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>To run aggregators against such projections, aggregator lookup strategy is configured to use aggregators that look for private <code>Apply([Event Type])</code> methods. Furthermore, document deserialization is configured to look for private property setters, allowing hydration of the projected objects from the database.</p>
+<p>This can be done in the store configuration as follows:</p>
+<pre><code class="language-csharp">&#xD;&#xA;var serializer = new JsonNetSerializer();&#xD;&#xA;serializer.Customize(c =&gt; c.ContractResolver = new ResolvePrivateSetters());&#xD;&#xA;options.Serializer(serializer);&#xD;&#xA;options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);&#xD;&#xA;options.Events.InlineProjections.AggregateStreamsWith&lt;AggregateWithPrivateEventApply&gt;();&#xD;&#xA;</code></pre>
+<p>The serializer contract applied customises the default behaviour of the Json.NET serializer:</p>
+<pre><code class="language-csharp">&#xD;&#xA;internal class ResolvePrivateSetters : DefaultContractResolver&#xD;&#xA;{&#xD;&#xA;    protected override JsonProperty CreateProperty(&#xD;&#xA;        MemberInfo member,&#xD;&#xA;        MemberSerialization memberSerialization)&#xD;&#xA;    {            &#xD;&#xA;        var prop = base.CreateProperty(member, memberSerialization);&#xD;&#xA;&#xD;&#xA;        if (!prop.Writable)&#xD;&#xA;        {&#xD;&#xA;            var property = member as PropertyInfo;&#xD;&#xA;            if (property != null)&#xD;&#xA;            {&#xD;&#xA;                var hasPrivateSetter = property.GetSetMethod(true) != null;&#xD;&#xA;                prop.Writable = hasPrivateSetter;&#xD;&#xA;            }&#xD;&#xA;        }&#xD;&#xA;&#xD;&#xA;        return prop;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+ 
+Given the setup, a stream can now be projected using `AggregateWithPrivateEventApply` shown above. Furthermore, the created projection can be hydrated from the document store:
+<pre><code class="language-csharp">&#xD;&#xA;var quest = new QuestStarted {Name = &quot;Destroy the Ring&quot;};&#xD;&#xA;var questId = Guid.NewGuid();&#xD;&#xA;theSession.Events.StartStream&lt;QuestParty&gt;(questId, quest);&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;var projection = theSession.Load&lt;AggregateWithPrivateEventApply&gt;(questId);&#xD;&#xA;projection.Name.ShouldBe(&quot;Destroy the Ring&quot;);&#xD;&#xA;</code></pre>
 
 			      	</div>
 
@@ -106,12 +110,12 @@
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/documentation/documents/identity">Document Identity</a>
+				        	<strong>Previous: </strong><a href="/documentation/scenarios">Scenarios</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/documentation/documents/identity/guid">Guid Identifiers</a>
+				        	
 
 				        </span>
 			      	</nav>

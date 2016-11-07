@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Query for Raw JSON</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/querying/projections" title="Document Projections">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/querying/include" title="Including Related Documents">Next</a></li>
+		      	<li><a href="/documentation/documents/querying/projections" title="Document Projections">Previous</a></li>
+		      	<li><a href="/documentation/documents/querying/include" title="Including Related Documents">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/querying">Querying Documents</a></li><li class="active">Query for Raw JSON</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/querying">Querying Documents</a></li><li class="active">Query for Raw JSON</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/querying/include">Including Related Documents</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/querying/projections">Document Projections</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/documents/querying/include">Including Related Documents</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/documents/querying/projections">Document Projections</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -94,99 +94,18 @@
 <!--Url:query_json-->
 <p>Added in Marten v0.6 is the ability to retrieve just the raw JSON string for a document. The point is to be able to fetch the raw JSON from the database for a document and immediately stream that data to a web client without having to take the performance hit of deserializing and serializing the object to and from JSON.</p>
 <p>As of v0.6, Marten supplies the <code>IQuerySession/IDocumentSession.FindById&lt;T&gt;()</code> mechanism as shown below:</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public void when_find_then_a_json_should_be_returned()
-        {
-            var issue = new Issue { Title = &quot;Issue 1&quot; };
-
-            theSession.Store(issue);
-            theSession.SaveChanges();
-
-            var json = theSession.Json.FindById&lt;Issue&gt;(issue.Id);
-            json.ShouldBe($&quot;{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;Number\&quot;: 0, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}&quot;);
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void when_find_then_a_json_should_be_returned()&#xD;&#xA;{&#xD;&#xA;    var issue = new Issue { Title = &quot;Issue 1&quot; };&#xD;&#xA;&#xD;&#xA;    theSession.Store(issue);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    var json = theSession.Json.FindById&lt;Issue&gt;(issue.Id);&#xD;&#xA;    json.ShouldBe($&quot;{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;Number\&quot;: 0, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>There is also an asynchronous version:</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public async Task when_find_then_a_json_should_be_returned()
-        {
-            var issue = new Issue { Title = &quot;Issue 2&quot; };
-
-            theSession.Store(issue);
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
-
-            var json = await theSession.Json.FindByIdAsync&lt;Issue&gt;(issue.Id).ConfigureAwait(false);
-            json.ShouldBe($&quot;{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 2\&quot;, \&quot;Number\&quot;: 0, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}&quot;);
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public async Task when_find_then_a_json_should_be_returned()&#xD;&#xA;{&#xD;&#xA;    var issue = new Issue { Title = &quot;Issue 2&quot; };&#xD;&#xA;&#xD;&#xA;    theSession.Store(issue);&#xD;&#xA;    await theSession.SaveChangesAsync().ConfigureAwait(false);&#xD;&#xA;&#xD;&#xA;    var json = await theSession.Json.FindByIdAsync&lt;Issue&gt;(issue.Id).ConfigureAwait(false);&#xD;&#xA;    json.ShouldBe($&quot;{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 2\&quot;, \&quot;Number\&quot;: 0, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>As of v0.9, Marten supplies the following functionality to retrieve the raw JSON strings:</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public void when_get_json_then_raw_json_should_be_returned()
-        {
-            var issue = new Issue { Title = &quot;Issue 1&quot; };
-
-            theSession.Store(issue);
-            theSession.SaveChanges();
-
-            var json = theSession.Query&lt;Issue&gt;().Where(x =&gt; x.Title == &quot;Issue 1&quot;).ToJsonArray();
-            json.ShouldBe($&quot;[{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}]&quot;);
-            json = theSession.Query&lt;Issue&gt;().AsJson().First();
-            json.ShouldBe($&quot;{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}&quot;);
-            json = theSession.Query&lt;Issue&gt;().AsJson().FirstOrDefault();
-            json = theSession.Query&lt;Issue&gt;().AsJson().Single();
-            json = theSession.Query&lt;Issue&gt;().AsJson().SingleOrDefault();
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void when_get_json_then_raw_json_should_be_returned()&#xD;&#xA;{&#xD;&#xA;    var issue = new Issue { Title = &quot;Issue 1&quot; };&#xD;&#xA;&#xD;&#xA;    theSession.Store(issue);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    var json = theSession.Query&lt;Issue&gt;().Where(x =&gt; x.Title == &quot;Issue 1&quot;).ToJsonArray();&#xD;&#xA;    json.ShouldBe($&quot;[{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}]&quot;);&#xD;&#xA;    json = theSession.Query&lt;Issue&gt;().AsJson().First();&#xD;&#xA;    json.ShouldBe($&quot;{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}&quot;);&#xD;&#xA;    json = theSession.Query&lt;Issue&gt;().AsJson().FirstOrDefault();&#xD;&#xA;    json = theSession.Query&lt;Issue&gt;().AsJson().Single();&#xD;&#xA;    json = theSession.Query&lt;Issue&gt;().AsJson().SingleOrDefault();&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>And the asynchronous version:</p>
-<pre><code class="language-csharp">
-        [Fact]
-        public async Task when_get_json_then_raw_json_should_be_returned_async()
-        {
-            var issue = new Issue { Title = &quot;Issue 1&quot; };
-
-            theSession.Store(issue);
-            theSession.SaveChanges();
-
-            var json = await theSession.Query&lt;Issue&gt;().Where(x =&gt; x.Title == &quot;Issue 1&quot;).ToJsonArrayAsync().ConfigureAwait(false);
-            json.ShouldBe($&quot;[{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}]&quot;);
-            json = await theSession.Query&lt;Issue&gt;().AsJson().FirstAsync().ConfigureAwait(false);
-            json.ShouldBe($&quot;{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}&quot;);
-            json = await theSession.Query&lt;Issue&gt;().AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
-            json = await theSession.Query&lt;Issue&gt;().AsJson().SingleAsync().ConfigureAwait(false);
-            json = await theSession.Query&lt;Issue&gt;().AsJson().SingleOrDefaultAsync().ConfigureAwait(false);
-        }
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public async Task when_get_json_then_raw_json_should_be_returned_async()&#xD;&#xA;{&#xD;&#xA;    var issue = new Issue { Title = &quot;Issue 1&quot; };&#xD;&#xA;&#xD;&#xA;    theSession.Store(issue);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    var json = await theSession.Query&lt;Issue&gt;().Where(x =&gt; x.Title == &quot;Issue 1&quot;).ToJsonArrayAsync().ConfigureAwait(false);&#xD;&#xA;    json.ShouldBe($&quot;[{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}]&quot;);&#xD;&#xA;    json = await theSession.Query&lt;Issue&gt;().AsJson().FirstAsync().ConfigureAwait(false);&#xD;&#xA;    json.ShouldBe($&quot;{{\&quot;Id\&quot;: \&quot;{issue.Id}\&quot;, \&quot;Tags\&quot;: null, \&quot;Title\&quot;: \&quot;Issue 1\&quot;, \&quot;AssigneeId\&quot;: null, \&quot;ReporterId\&quot;: null}}&quot;);&#xD;&#xA;    json = await theSession.Query&lt;Issue&gt;().AsJson().FirstOrDefaultAsync().ConfigureAwait(false);&#xD;&#xA;    json = await theSession.Query&lt;Issue&gt;().AsJson().SingleAsync().ConfigureAwait(false);&#xD;&#xA;    json = await theSession.Query&lt;Issue&gt;().AsJson().SingleOrDefaultAsync().ConfigureAwait(false);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2>Using AsJson() with Select() Transforms</h2>
 <p>New for Marten v0.9.1 is the ability to combine the <code>AsJson()</code> mechanics to the result of a <code>Select()</code> transform:</p>
-<pre><code class="language-csharp">
-            theSession
-                .Query&lt;User&gt;()
-                .OrderBy(x =&gt; x.FirstName)
-                
-                // Transform the User class to a different type
-                .Select(x =&gt; new UserName { Name = x.FirstName })
-                .AsJson()
-                .First()
-                .ShouldBe(&quot;{\&quot;Name\&quot; : \&quot;Bill\&quot;}&quot;);
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;theSession&#xD;&#xA;    .Query&lt;User&gt;()&#xD;&#xA;    .OrderBy(x =&gt; x.FirstName)&#xD;&#xA;    &#xD;&#xA;    // Transform the User class to a different type&#xD;&#xA;    .Select(x =&gt; new UserName { Name = x.FirstName })&#xD;&#xA;    .AsJson()&#xD;&#xA;    .First()&#xD;&#xA;    .ShouldBe(&quot;{\&quot;Name\&quot;: \&quot;Bill\&quot;}&quot;);&#xD;&#xA;</code></pre>
 <p>And another example, but this time transforming to an anonymous type:</p>
-<pre><code class="language-csharp">
-            theSession
-                .Query&lt;User&gt;()
-                .OrderBy(x =&gt; x.FirstName)
-                
-                // Transform to an anonymous type
-                .Select(x =&gt; new { Name = x.FirstName })
-
-                // Select only the raw JSON
-                .AsJson()
-                .FirstOrDefault()
-                .ShouldBe(&quot;{\&quot;Name\&quot; : \&quot;Bill\&quot;}&quot;);
-</code></pre>
-
+<pre><code class="language-csharp">&#xD;&#xA;theSession&#xD;&#xA;    .Query&lt;User&gt;()&#xD;&#xA;    .OrderBy(x =&gt; x.FirstName)&#xD;&#xA;    &#xD;&#xA;    // Transform to an anonymous type&#xD;&#xA;    .Select(x =&gt; new { Name = x.FirstName })&#xD;&#xA;&#xD;&#xA;    // Select only the raw JSON&#xD;&#xA;    .AsJson()&#xD;&#xA;    .FirstOrDefault()&#xD;&#xA;    .ShouldBe(&quot;{\&quot;Name\&quot;: \&quot;Bill\&quot;}&quot;);&#xD;&#xA;</code></pre>
 
 			      	</div>
 
@@ -194,12 +113,12 @@
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/querying/projections">Document Projections</a>
+				        	<strong>Previous: </strong><a href="/documentation/documents/querying/projections">Document Projections</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/querying/include">Including Related Documents</a>
+				        	<strong>Next: </strong><a href="/documentation/documents/querying/include">Including Related Documents</a>
 
 				        </span>
 			      	</nav>
@@ -216,10 +135,10 @@
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){

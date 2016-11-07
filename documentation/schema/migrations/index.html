@@ -6,9 +6,9 @@
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<title>Marten - Schema Migrations and Patches</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/content/theme.css" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
         
 
@@ -18,7 +18,7 @@
 
 
         <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+        <link href="/content/affix.css" rel="stylesheet" type="text/css" />
     </head>
     
     <!-- HTML code from Bootply.com editor -->
@@ -30,21 +30,21 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.0</a>
+		      <a href="/" class="navbar-brand">Marten 1.2</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
             <li>
-              <a href="/marten/getting_started">Getting Started</a>
+              <a href="/getting_started">Getting Started</a>
             </li>
 		        <li>
-		          <a href="/marten/documentation">Documentation</a>
+		          <a href="/documentation">Documentation</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/schema/schema" title="Configuring the Database Schema">Previous</a></li>
-		      	<li><a href="/marten/documentation/schema/exporting" title="Exporting the Schema Definition">Next</a></li>
+		      	<li><a href="/documentation/schema/schema" title="Configuring the Database Schema">Previous</a></li>
+		      	<li><a href="/documentation/schema/exporting" title="Exporting the Schema Definition">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/schema">Marten and the Postgresql Schema</a></li><li class="active">Schema Migrations and Patches</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/schema">Marten and the Postgresql Schema</a></li><li class="active">Schema Migrations and Patches</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,8 +77,8 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/schema/exporting">Exporting the Schema Definition</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/schema/schema">Configuring the Database Schema</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/documentation/schema/exporting">Exporting the Schema Definition</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/documentation/schema/schema">Configuring the Database Schema</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -97,31 +97,7 @@ with the Marten <code>StoreOptions</code> configuration in your system.</p>
 <h2>Development Time with &quot;Auto Create&quot; Mode</h2>
 <p>As long as you have rights to alter your Postgresql database, you can happily set up Marten in one of the permissive &quot;AutoCreate&quot;
 modes and not worry about schema changes at all as you happily code new features and change existing document types:</p>
-<pre><code class="language-csharp">
-var store = DocumentStore.For(_ =&gt;
-{
-    // Marten will create any new objects that are missing,
-    // attempt to update tables if it can, but drop and replace
-    // tables that it cannot patch. 
-    _.AutoCreateSchemaObjects = AutoCreate.All;
-
-
-    // Marten will create any new objects that are missing or
-    // attempt to update tables if it can. Will *never* drop
-    // any existing objects, so no data loss
-    _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-
-
-    // Marten will create missing objects on demand, but
-    // will not change any existing schema objects
-    _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
-
-    // Marten will not create or update any schema objects 
-    // and throws an exception in the case of a schema object
-    // not reflecting the Marten configuration
-    _.AutoCreateSchemaObjects = AutoCreate.None;
-});
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Marten will create any new objects that are missing,&#xD;&#xA;    // attempt to update tables if it can, but drop and replace&#xD;&#xA;    // tables that it cannot patch. &#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create any new objects that are missing or&#xD;&#xA;    // attempt to update tables if it can. Will *never* drop&#xD;&#xA;    // any existing objects, so no data loss&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create missing objects on demand, but&#xD;&#xA;    // will not change any existing schema objects&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;&#xD;&#xA;&#xD;&#xA;    // Marten will not create or update any schema objects &#xD;&#xA;    // and throws an exception in the case of a schema object&#xD;&#xA;    // not reflecting the Marten configuration&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.None;&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>As long as you're using a permissive auto creation mode (i.e., not <em>None</em>), you should be able to code in your application model
 and let Marten change your development database as needed behind the scenes to match the active configuration.</p>
 <h2>Exporting Schema Patches</h2>
@@ -131,27 +107,12 @@ Fortunately, we've got a decent start on doing just that with the <code>IDocumen
 will dump a SQL file with all the <a href="https://en.wikipedia.org/wiki/Data_definition_language">Data Definition Language</a> (DDL) commands necessary
 to bring a database schema into alignment with the current Marten configuration.</p>
 <p>In usage, you would need to tell Marten about every possible document type, any event store usage, and any
-<a href="/marten/documentation/documents/advanced/javascript_transformations">javascript transorms</a> so that Marten
+<a href="/documentation/documents/advanced/javascript_transformations">javascript transorms</a> so that Marten
 &quot;knows&quot; how to make the full comparison:</p>
-<pre><code class="language-csharp">
-    var store = DocumentStore.For(_ =&gt;
-    {
-        // This is enough to tell Marten that the User
-        // document is persisted and needs schema objects
-        _.Schema.For&lt;User&gt;();
-
-        // Lets Marten know that the event store is active
-        _.Events.AddEventType(typeof(MembersJoined));
-
-        // Tell Marten about all the javascript functions
-        _.Transforms.LoadFile(&quot;default_username.js&quot;);
-    });
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // This is enough to tell Marten that the User&#xD;&#xA;    // document is persisted and needs schema objects&#xD;&#xA;    _.Schema.For&lt;User&gt;();&#xD;&#xA;&#xD;&#xA;    // Lets Marten know that the event store is active&#xD;&#xA;    _.Events.AddEventType(typeof(MembersJoined));&#xD;&#xA;&#xD;&#xA;    // Tell Marten about all the javascript functions&#xD;&#xA;    _.Transforms.LoadFile(&quot;default_username.js&quot;);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>Then to write a patch DDL file, bootstrap your <code>IDocumentStore</code> pointing to the database connection you
 want to update, and use:</p>
-<pre><code class="language-csharp">
-    store.Schema.WritePatch(&quot;1.initial.sql&quot;);
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;store.Schema.WritePatch(&quot;1.initial.sql&quot;);&#xD;&#xA;</code></pre>
 <p>The command above will generate a file called &quot;1.initial.sql&quot; to update the schema, and a second file called
 &quot;1.initial.drop.sql&quot; that attempts to rollback all of the changes from &quot;1.initial.sql.&quot; Today, the <code>WritePatch()</code>
 mechanism covers:</p>
@@ -165,18 +126,13 @@ mechanism covers:</p>
 <h2>Apply All Outstanding Changes Upfront</h2>
 <p>To programmatically apply all detectable schema changes upfront when an application is first
 bootstrapped, you can use this mechanism:</p>
-<pre><code class="language-csharp">
-    store.Schema.ApplyAllConfiguredChangesToDatabase();
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;store.Schema.ApplyAllConfiguredChangesToDatabase();&#xD;&#xA;</code></pre>
 <h2>Assert that a Schema Matches the Configuration</h2>
 <p>As a possible <a href="http://codebetter.com/jeremymiller/2006/04/06/environment-tests-and-self-diagnosing-configuration-with-structuremap/">environment test</a>,
 Marten can do a complete check of its known configuration versus the active Postgresql database and assert any differences
 by throwing an exception:</p>
-<pre><code class="language-csharp">
-    store.Schema.AssertDatabaseMatchesConfiguration();
-</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;store.Schema.AssertDatabaseMatchesConfiguration();&#xD;&#xA;</code></pre>
 <p>The exception will list out all the DDL changes that are missing.</p>
-
 
 			      	</div>
 
@@ -184,12 +140,12 @@ by throwing an exception:</p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/schema/schema">Configuring the Database Schema</a>
+				        	<strong>Previous: </strong><a href="/documentation/schema/schema">Configuring the Database Schema</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/schema/exporting">Exporting the Schema Definition</a>
+				        	<strong>Next: </strong><a href="/documentation/schema/exporting">Exporting the Schema Definition</a>
 
 				        </span>
 			      	</nav>
@@ -206,10 +162,10 @@ by throwing an exception:</p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
+        <script type="text/javascript" src="/content/embed.js"></script>
+        <script type="text/javascript" src="/content/prism.js"></script>
+        <script type="text/javascript" src="/content/sidebar.js"></script>
+        <script type="text/javascript" src="/content/affix.js"></script>
 
 <script>
 $('#search').keyup(function(e){
