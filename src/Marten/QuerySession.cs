@@ -27,6 +27,7 @@ namespace Marten
         private readonly IManagedConnection _connection;
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
+        private bool _disposed;
 
         public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
         {
@@ -42,8 +43,15 @@ namespace Marten
 
         public IJsonLoader Json => new JsonLoader(_connection, _schema);
 
+        protected void assertNotDisposed()
+        {
+            if (_disposed) throw new ObjectDisposedException("This session has been disposed");
+        }
+
         public IMartenQueryable<T> Query<T>()
         {
+            assertNotDisposed();
+
             var executor = new MartenQueryExecutor(_connection, _schema, _identityMap);
 
             var queryProvider = new MartenQueryProvider(typeof (MartenQueryable<>), _parser, executor);
@@ -52,18 +60,23 @@ namespace Marten
 
         public IList<T> Query<T>(string sql, params object[] parameters)
         {
+            assertNotDisposed();
+
             var handler = new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters);
             return _connection.Fetch(handler, _identityMap.ForQuery(), null);
         }
 
         public Task<IList<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
         {
+            assertNotDisposed();
+
             var handler = new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters);
             return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, token);
         }
 
         public IBatchedQuery CreateBatchQuery()
         {
+            assertNotDisposed();
             return new BatchedQuery(_connection, _schema, _identityMap.ForQuery(), this, _serializer);
         }
 
@@ -74,6 +87,8 @@ namespace Marten
 
         public FetchResult<T> LoadDocument<T>(object id) where T : class
         {
+            assertNotDisposed();
+
             var storage = storage<T>();
             var resolver = storage.As<IResolver<T>>();
 
@@ -89,6 +104,8 @@ namespace Marten
 
         public Task<FetchResult<T>> LoadDocumentAsync<T>(object id, CancellationToken token) where T : class
         {
+            assertNotDisposed();
+
             var storage = storage<T>();
             var resolver = storage.As<IResolver<T>>();
 
@@ -120,16 +137,19 @@ namespace Marten
 
         private T load<T>(object id)
         {
+            assertNotDisposed();
             return storage<T>().As<IResolver<T>>().Resolve(_identityMap, this, id);
         }
 
         private Task<T> loadAsync<T>(object id, CancellationToken token)
         {
+            assertNotDisposed();
             return storage<T>().As<IResolver<T>>().ResolveAsync(_identityMap, this, token, id);
         }
 
         public ILoadByKeys<T> LoadMany<T>()
         {
+            assertNotDisposed();
             return new LoadByKeys<T>(this);
         }
 
@@ -138,21 +158,25 @@ namespace Marten
 
         public IList<T> LoadMany<T>(params string[] ids)
         {
+            assertNotDisposed();
             return LoadMany<T>().ById(ids);
         }
 
         public IList<T> LoadMany<T>(params Guid[] ids)
         {
+            assertNotDisposed();
             return LoadMany<T>().ById(ids);
         }
 
         public IList<T> LoadMany<T>(params int[] ids)
         {
+            assertNotDisposed();
             return LoadMany<T>().ById(ids);
         }
 
         public IList<T> LoadMany<T>(params long[] ids)
         {
+            assertNotDisposed();
             return LoadMany<T>().ById(ids);
         }
 
@@ -301,6 +325,8 @@ namespace Marten
 
         public TOut Query<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
         {
+            assertNotDisposed();
+
             QueryStatistics stats;
             var handler = _schema.HandlerFactory.HandlerFor(query, out stats);
             return _connection.Fetch(handler, _identityMap.ForQuery(), stats);
@@ -309,12 +335,21 @@ namespace Marten
         public Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
             CancellationToken token = new CancellationToken())
         {
+            assertNotDisposed();
+
             QueryStatistics stats;
             var handler = _schema.HandlerFactory.HandlerFor(query, out stats);
             return _connection.FetchAsync(handler, _identityMap.ForQuery(), stats, token);
         }
 
-        public NpgsqlConnection Connection => _connection.Connection;
+        public NpgsqlConnection Connection
+        {
+            get
+            {
+                assertNotDisposed();
+                return _connection.Connection;
+            }
+        }
 
         public IMartenSessionLogger Logger
         {
@@ -326,6 +361,7 @@ namespace Marten
 
         public void Dispose()
         {
+            _disposed = true;
             _connection.Dispose();
         }
 

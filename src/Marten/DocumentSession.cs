@@ -49,6 +49,8 @@ namespace Marten
 
         public void Delete<T>(T entity)
         {
+            assertNotDisposed();
+
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
             var storage = _schema.StorageFor(typeof(T));
@@ -66,6 +68,7 @@ namespace Marten
 
         private void delete<T>(object id)
         {
+            assertNotDisposed();
             var storage = _schema.StorageFor(typeof(T));
             var deletion = storage.DeletionForId(id);
             _unitOfWork.Add(deletion);
@@ -90,6 +93,8 @@ namespace Marten
 
         public void DeleteWhere<T>(Expression<Func<T, bool>> expression)
         {
+            assertNotDisposed();
+
             var model = Query<T>().Where(expression).As<MartenQueryable<T>>().ToQueryModel();
 
             var where = _schema.BuildWhereFragment(model);
@@ -101,6 +106,8 @@ namespace Marten
 
         public void Store<T>(params T[] entities)
         {
+            assertNotDisposed();
+
             if (entities == null) throw new ArgumentNullException(nameof(entities));
 
             if (typeof(T).IsGenericEnumerable())
@@ -137,6 +144,8 @@ namespace Marten
 
         public void Store<T>(T entity, Guid version)
         {
+            assertNotDisposed();
+
             var storage = _schema.StorageFor(typeof(T));
             var id = storage.Identity(entity);
 
@@ -149,6 +158,8 @@ namespace Marten
 
         public void StoreObjects(IEnumerable<object> documents)
         {
+            assertNotDisposed();
+
             documents.Where(x => x != null).GroupBy(x => x.GetType()).Each(group =>
             {
                 var handler = typeof(Handler<>).CloseAndBuildAs<IHandler>(group.Key);
@@ -161,6 +172,8 @@ namespace Marten
         public void SaveChanges()
         {
             if (!_unitOfWork.HasAnyUpdates()) return;
+
+            assertNotDisposed();
 
             _connection.BeginTransaction();
 
@@ -193,6 +206,8 @@ namespace Marten
         public async Task SaveChangesAsync(CancellationToken token)
         {
             if (!_unitOfWork.HasAnyUpdates()) return;
+
+            assertNotDisposed();
 
             await _connection.BeginTransactionAsync(token).ConfigureAwait(false);
 
@@ -250,12 +265,16 @@ namespace Marten
 
         private IPatchExpression<T> patchById<T>(object id)
         {
+            assertNotDisposed();
+
             var @where = new WhereFragment("where d.id = ?", id);
             return new PatchExpression<T>(@where, _schema, _unitOfWork);
         }
 
         public IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> @where)
         {
+            assertNotDisposed();
+
             var model = Query<T>().Where(@where).As<MartenQueryable<T>>().ToQueryModel();
 
             var fragment = _schema.BuildWhereFragment(model);
@@ -265,11 +284,14 @@ namespace Marten
 
         public IPatchExpression<T> Patch<T>(IWhereFragment fragment)
         {
+            assertNotDisposed();
+
             return new PatchExpression<T>(fragment, _schema, _unitOfWork);
         }
 
         public void QueueOperation(IStorageOperation storageOperation)
         {
+            assertNotDisposed();
             _unitOfWork.Add(storageOperation);
         }
 
