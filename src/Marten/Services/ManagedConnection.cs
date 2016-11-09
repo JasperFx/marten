@@ -2,6 +2,7 @@
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Services.Events;
 using Npgsql;
 
@@ -13,14 +14,15 @@ namespace Marten.Services
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;
         private readonly int _commandTimeout;
-        private TransactionState _connection; 
+        private TransactionState _connection;
 
-        public ManagedConnection(IConnectionFactory factory) : this (factory, CommandRunnerMode.AutoCommit)
+        public ManagedConnection(IConnectionFactory factory) : this(factory, CommandRunnerMode.AutoCommit)
         {
         }
 
         // 30 is NpgsqlCommand.DefaultTimeout - ok to burn it to the call site?
-        public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int commandTimeout = 30)
+        public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int commandTimeout = 30)
         {
             _factory = factory;
             _mode = mode;
@@ -145,6 +147,22 @@ namespace Marten.Services
             }
         }
 
+        private void handleCommandException(NpgsqlCommand cmd, Exception e)
+        {
+            this.SafeDispose();
+            Logger.LogFailure(cmd, e);
+
+            if (e is NpgsqlException)
+            {
+                if (e.Message.IndexOf(EventContracts.UnexpectedMaxEventIdForStream, StringComparison.Ordinal) > -1)
+                {
+                    throw new EventStreamUnexpectedMaxEventIdException(e);
+                }
+
+                throw new MartenCommandException(cmd, e);
+            }
+        }
+
         public void Execute(NpgsqlCommand cmd, Action<NpgsqlCommand> action = null)
         {
             buildConnection();
@@ -162,20 +180,9 @@ namespace Marten.Services
                 action(cmd);
                 Logger.LogSuccess(cmd);
             }
-            catch (NpgsqlException e)
-                when (e.Message.IndexOf(EventContracts.UnexpectedMaxEventIdForStream, StringComparison.Ordinal) > -1)
-            {
-                Logger.LogFailure(cmd, e);
-                throw new EventStreamUnexpectedMaxEventIdException(e);
-            }
-            catch (NpgsqlException e)
-            {
-                Logger.LogFailure(cmd, e);
-                throw new MartenCommandException(cmd, e);
-            }
             catch (Exception e)
             {
-                Logger.LogFailure(cmd, e);
+                handleCommandException(cmd, e);
                 throw;
             }
         }
@@ -192,14 +199,9 @@ namespace Marten.Services
                 action(cmd);
                 Logger.LogSuccess(cmd);
             }
-            catch (NpgsqlException e)
-            {
-                Logger.LogFailure(cmd, e);
-                throw new MartenCommandException(cmd, e);
-            }
             catch (Exception e)
             {
-                Logger.LogFailure(cmd, e);
+                handleCommandException(cmd, e);
                 throw;
             }
         }
@@ -217,14 +219,9 @@ namespace Marten.Services
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }
-            catch (NpgsqlException e)
-            {
-                Logger.LogFailure(cmd, e);
-                throw new MartenCommandException(cmd, e);
-            }
             catch (Exception e)
             {
-                Logger.LogFailure(cmd, e);
+                handleCommandException(cmd, e);
                 throw;
             }
         }
@@ -243,14 +240,9 @@ namespace Marten.Services
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }
-            catch (NpgsqlException e)
-            {
-                Logger.LogFailure(cmd, e);
-                throw new MartenCommandException(cmd, e);
-            }
             catch (Exception e)
             {
-                Logger.LogFailure(cmd, e);
+                handleCommandException(cmd, e);
                 throw;
             }
         }
@@ -268,14 +260,9 @@ namespace Marten.Services
                 await action(cmd, token).ConfigureAwait(false);
                 Logger.LogSuccess(cmd);
             }
-            catch (NpgsqlException e)
-            {
-                Logger.LogFailure(cmd, e);
-                throw new MartenCommandException(cmd, e);
-            }
             catch (Exception e)
             {
-                Logger.LogFailure(cmd, e);
+                handleCommandException(cmd, e);
                 throw;
             }
         }
@@ -293,14 +280,9 @@ namespace Marten.Services
                 await action(cmd, token).ConfigureAwait(false);
                 Logger.LogSuccess(cmd);
             }
-            catch (NpgsqlException e)
-            {
-                Logger.LogFailure(cmd, e);
-                throw new MartenCommandException(cmd, e);
-            }
             catch (Exception e)
             {
-                Logger.LogFailure(cmd, e);
+                handleCommandException(cmd, e);
                 throw;
             }
         }
@@ -319,14 +301,9 @@ namespace Marten.Services
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }
-            catch (NpgsqlException e)
-            {
-                Logger.LogFailure(cmd, e);
-                throw new MartenCommandException(cmd, e);
-            }
             catch (Exception e)
             {
-                Logger.LogFailure(cmd, e);
+                handleCommandException(cmd, e);
                 throw;
             }
         }
@@ -345,14 +322,9 @@ namespace Marten.Services
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }
-            catch (NpgsqlException e)
-            {
-                Logger.LogFailure(cmd, e);
-                throw new MartenCommandException(cmd, e);
-            }
             catch (Exception e)
             {
-                Logger.LogFailure(cmd, e);
+                handleCommandException(cmd, e);
                 throw;
             }
         }
