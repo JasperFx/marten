@@ -70,6 +70,8 @@ namespace Marten
         /// <param name="options"></param>
         public DocumentStore(StoreOptions options)
         {
+            options.CreatePatching();
+
             _options = options;
             _connectionFactory = options.ConnectionFactory();
 

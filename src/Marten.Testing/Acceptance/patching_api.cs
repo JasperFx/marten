@@ -11,6 +11,11 @@ namespace Marten.Testing.Acceptance
 {
     public class patching_api : DocumentSessionFixture<NulloIdentityMap>
     {
+        public patching_api()
+        {
+            StoreOptions(_ => _.DatabaseSchemaName = "other");
+        }
+
         [Fact]
         public void can_use_patch_api_when_autocreate_is_none()
         {
@@ -22,6 +27,7 @@ namespace Marten.Testing.Acceptance
 
             var store = DocumentStore.For(o =>
             {
+                o.DatabaseSchemaName = "other";
                 o.Connection(ConnectionSource.ConnectionString);
                 o.Serializer<TestsSerializer>();
                 o.AutoCreateSchemaObjects = AutoCreate.None;
@@ -34,6 +40,10 @@ namespace Marten.Testing.Acceptance
         }
 
         // SAMPLE: set_an_immediate_property_by_id
+
+
+
+
     [Fact]
     public void set_an_immediate_property_by_id()
     {

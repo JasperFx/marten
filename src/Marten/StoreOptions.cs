@@ -61,7 +61,10 @@ namespace Marten
             Events = new EventGraph(this);
             Schema = new MartenRegistry(this);
             Transforms = new Transforms.Transforms(this);
+        }
 
+        internal void CreatePatching()
+        {
             var patching = new TransformFunction(this, PatchDoc, SchemaBuilder.GetJavascript(this, "mt_patching"));
             patching.OtherArgs.Add("patch");
 
