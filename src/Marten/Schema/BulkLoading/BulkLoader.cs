@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Schema.Arguments;
 using Marten.Schema.Identity;
 using Marten.Util;
 using Npgsql;
@@ -35,7 +36,7 @@ namespace Marten.Schema.BulkLoading
             var alias = Expression.Parameter(typeof(string), "alias");
             var serializerParam = Expression.Parameter(typeof(ISerializer), "serializer");
 
-            var arguments = upsertFunction.OrderedArguments().ToArray();
+            var arguments = upsertFunction.OrderedArguments().Where(x => !(x is CurrentVersionArgument)).ToArray();
             var expressions =
                 arguments.Select(
                     x => x.CompileBulkImporter(serializer.EnumStorage, writer, document, alias, serializerParam));

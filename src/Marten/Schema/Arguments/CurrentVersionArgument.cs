@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System;
+using System.Linq.Expressions;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
@@ -17,7 +18,7 @@ namespace Marten.Schema.Arguments
             ParameterExpression document,
             ParameterExpression alias, ParameterExpression serializer)
         {
-            return null;
+            throw new NotSupportedException("This should not be used for CurrentVersionArgument");
         }
 
         public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion)
