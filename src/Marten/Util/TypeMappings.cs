@@ -47,6 +47,8 @@ namespace Marten.Util
 
                 case "boolean":
                 case "Boolean":
+                case "bool":
+                case "Bool":
                     return "boolean";
 
                 case "decimal":
@@ -77,6 +79,7 @@ namespace Marten.Util
                 .Replace("LANGUAGE plpgsql AS $function$", "")
                 .Replace("character varying", "varchar")
                 .Replace("Boolean", "boolean")
+                .Replace("bool,", "boolean,")
                 .Replace("numeric", "decimal").TrimEnd(';').TrimEnd();
 
             if (replaced.Contains("PLV8", StringComparison.OrdinalIgnoreCase))
