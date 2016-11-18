@@ -14,39 +14,33 @@ namespace DinnerParty.Modules
             : base("/search")
         {
             Post["/GetMostPopularDinners"] = parameters =>
+            {
+                // Default the limit to 40, if not supplied.
+                var limit = 40;
+                if (Request.Form.limit.HasValue && !string.IsNullOrWhiteSpace(Request.Form.limit))
                 {
+                    limit = (int) Request.Form.limit;
+                }
 
-                    // Default the limit to 40, if not supplied.
-                    if (!Request.Form.limit.HasValue || String.IsNullOrWhiteSpace(Request.Form.limit))
-                        Request.Form.limit = 40;
+                var jsonDinners = documentSession.Query<Dinner>()
+                    .Where(x => x.EventDate >= DateTime.Now.Date)
+                    .Take(limit)
+//                  .OrderByDescending(x => x.RSVPs)
+                    .ToList()
+                    .Select(x => new JsonDinner
+                    {
+                        EventDate = x.EventDate,
+                        Description = x.Description,
+                        DinnerID = x.DinnerID,
+                        Longitude = x.Longitude,
+                        Latitude = x.Latitude,
+                        Title = x.Title,
+                        Url = x.DinnerID,
+                        RSVPCount = x.RSVPs?.Count ?? 0
+                    }).ToList();
 
-                    //var jsonDinners = documentSession.Query<Dinner>()
-                    //    .Where(x => x.EventDate >= DateTime.Now.Date)
-                    //    .Take((int)this.Request.Form.limit)
-                    //    .OrderByDescending(x => x.RSVPCount)
-                    //    .AsProjection<JsonDinner>()
-                    //    .ToList();
-
-                    // TODO: Not sure this will work
-                    var jsonDinners = documentSession.Query<Dinner>()
-                                                     .Where(x => x.EventDate >= DateTime.Now.Date)
-                                                     .Take((int)Request.Form.limit)
-                                                     .OrderByDescending(x => x.RSVPs.Count)
-                                                     .Select(x => new JsonDinner
-                                                                  {
-                                                                      EventDate = x.EventDate,
-                                                                      Description = x.Description,
-                                                                      DinnerID = x.DinnerID,
-                                                                      Longitude = x.Longitude,
-                                                                      Latitude = x.Latitude,
-                                                                      Title = x.Title,
-                                                                      Url = x.DinnerID,
-                                                                      RSVPCount = x.RSVPs.Count
-                                                                  })
-                                                     .ToList();
-
-                    return Response.AsJson(jsonDinners);
-                };
+                return Response.AsJson(jsonDinners);
+            };
 
             Post["/SearchByLocation"] = parameters =>
             {
@@ -137,7 +131,7 @@ namespace DinnerParty.Modules
                 Longitude = dinner.Longitude,
                 Title = dinner.Title,
                 Description = dinner.Description,
-                RSVPCount = dinner.RSVPs.Count,
+                RSVPCount = dinner.RSVPs?.Count ?? 0,
 
                 //TODO: Need to mock this out for testing...
                 //Url = Url.RouteUrl("PrettyDetails", new { Id = dinner.DinnerID } )
