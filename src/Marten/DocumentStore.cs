@@ -263,21 +263,23 @@ namespace Marten
 
         public IDocumentSession OpenSession(SessionOptions options)
         {
-            var map = createMap(options.Tracking);
-            var session = new DocumentSession(this, _options, Schema, _serializer,
-                new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, options.IsolationLevel, options.Timeout), _parser, map);
-
-            session.Logger = _logger.StartSession(session);
-
-            return session;
+            var connection = new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, options.IsolationLevel, options.Timeout);
+            return openSession(options.Tracking, connection);
         }
 
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
+            var connection = new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel);
+            return openSession(tracking, connection);
+        }
+
+        private IDocumentSession openSession(DocumentTracking tracking, ManagedConnection connection)
+        {
             var map = createMap(tracking);
-            var session = new DocumentSession(this, _options, Schema, _serializer,
-                new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel), _parser, map);
+            var session = new DocumentSession(this, _options, Schema, _serializer, connection, _parser, map);
+
+            connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
 

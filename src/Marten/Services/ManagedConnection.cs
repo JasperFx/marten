@@ -9,7 +9,7 @@ using Npgsql;
 namespace Marten.Services
 {
     public class ManagedConnection : IManagedConnection
-    {
+    {        
         private readonly IConnectionFactory _factory;
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;
@@ -118,6 +118,14 @@ namespace Marten.Services
             }
         }
 
+        public void BeginSession()
+        {
+            if (_isolationLevel == IsolationLevel.Serializable)
+            {
+                BeginTransaction();
+            }
+        }
+
         public void BeginTransaction()
         {
             buildConnection();
@@ -151,6 +159,11 @@ namespace Marten.Services
         {
             this.SafeDispose();
             Logger.LogFailure(cmd, e);
+
+            if ((e as PostgresException)?.SqlState == PostgresErrorCodes.SerializationFailure)
+            {
+                throw new ConcurrentUpdateException(e);
+            }
 
             if (e is NpgsqlException)
             {
@@ -329,11 +342,14 @@ namespace Marten.Services
             }
         }
 
-
-
         public void Dispose()
         {
             _connection?.Dispose();
         }
+    }
+
+    public static class PostgresErrorCodes
+    {
+        public const string SerializationFailure = "40001";
     }
 }
