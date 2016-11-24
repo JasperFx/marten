@@ -1,0 +1,11 @@
+naming
+escaping
+types
+casting
+casing
+slow_queries
+indexing
+indexing_jsonb
+if_statements
+dates
+backup-restore

@@ -1,0 +1,4 @@
+unique-values
+case-insensitive-data
+queries
+using-duplicate-fields
