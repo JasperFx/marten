@@ -76,6 +76,19 @@ namespace Marten.Schema
 
             writer.WriteLine();
             writer.WriteLine();
+
+            if (schema.FullTextSearch.Enabled)
+            {
+                foreach (var ftDDL in schema.FullTextSearch.GetDDL())
+                {
+                    ftDDL.Write(writer);
+                    writer.WriteLine();
+                    writer.WriteLine();
+                }
+            }
+
+            writer.WriteLine();
+            writer.WriteLine();
         }
 
         public void RemoveSchemaObjects(IManagedConnection connection)
