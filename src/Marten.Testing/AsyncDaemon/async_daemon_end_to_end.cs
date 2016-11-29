@@ -261,6 +261,32 @@ namespace Marten.Testing.AsyncDaemon
         }
 
         [Fact]
+        public async Task do_a_complete_rebuild_and_check_if_load_and_query_return_document_and_increment_project_count()
+        {
+            _fixture.LoadSingleProjects();
+
+            StoreOptions(_ => { _.Events.AsyncProjections.Add(new TestLoadAndQueryProjection()); });
+
+            _fixture.PublishAllProjectEvents(theStore);
+
+            using (var daemon = theStore.BuildProjectionDaemon(
+                logger: _logger,
+                viewTypes: new Type[] { typeof(TestLoadAndQueryProjection) },
+                settings: new DaemonSettings
+                {
+                    LeadingEdgeBuffer = 0.Seconds()
+                }))
+            {
+                await daemon.Rebuild(typeof(TestLoadAndQueryProjection)).ConfigureAwait(false);
+            }
+
+            using (var session = theStore.LightweightSession())
+            {
+                Assert.Equal(3, session.Query<TestLoadAndQueryProjection>().First().ProjectCount);
+            }
+        }
+
+        [Fact]
         public async Task do_a_complete_rebuild_of_the_project_count_with_seq_id_gap_at_100()
         {
             _fixture.LoadTwoProjectsWithOneEventEach();
@@ -327,6 +353,56 @@ namespace Marten.Testing.AsyncDaemon
             using (var session = theStore.LightweightSession())
             {
                 Assert.Equal(2, session.Query<ProjectCountProjection>().Count());
+            }
+        }
+
+        public class TestLoadAndQueryProjection : IProjection
+        {
+            public Guid Id { get; set; }
+
+            IDocumentSession _session;
+
+            public Type[] Consumes { get; } = new Type[] { typeof(ProjectStarted) };
+            public Type Produces { get; } = typeof(TestLoadAndQueryProjection);
+            public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
+            public void Apply(IDocumentSession session, EventStream[] streams)
+            {
+            }
+
+            public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+            {
+                _session = session;
+
+                var projectEvents = streams.SelectMany(s => s.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
+
+                foreach (var e in projectEvents)
+                {
+                    Apply((ProjectStarted)e);
+                }
+
+                return Task.CompletedTask;
+            }
+
+            public int ProjectCount { get; set; }
+
+            public void Apply(ProjectStarted @event)
+            {
+                var newId = Guid.NewGuid();
+                var model = new TestLoadAndQueryProjection();
+                model.Id = newId;
+                model.ProjectCount++;
+                _session.Store(model);
+
+                var loadModel = _session.Load<TestLoadAndQueryProjection>(newId);
+                loadModel.ProjectCount++;
+                _session.Store(loadModel);
+
+                var queryModel = _session.Query<TestLoadAndQueryProjection>().Where(_ => _.Id == newId).FirstOrDefault();
+                if (queryModel != null)
+                {
+                    queryModel.ProjectCount++;
+                    _session.Store(queryModel);
+                }
             }
         }
 
