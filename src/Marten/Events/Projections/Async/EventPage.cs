@@ -41,7 +41,21 @@ namespace Marten.Events.Projections.Async
         public int Count { get; set; }
         public EventPage Next { get; set; }
 
-        public IList<long> Sequences { get; set; }
+        public IList<long> Sequences { get; set; } = new List<long>();
+
+        public long NextKnownSequence { get; set; }
+
+        public long LastKnownSequence { get; set; }
+
+        public long LastEncountered()
+        {
+            if (Streams.Any())
+            {
+                return Sequences.Any() ? Sequences.Last() : Streams.SelectMany(x => x.Events).Max(x => x.Sequence);
+            }
+
+            return NextKnownSequence > 0 ? NextKnownSequence - 1 : LastKnownSequence;
+        }
 
         public EventPage(long from, long to, IList<IEvent> events)
         {

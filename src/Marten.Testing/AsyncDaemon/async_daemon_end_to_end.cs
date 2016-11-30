@@ -10,6 +10,7 @@ using Marten.Testing.CodeTracker;
 using Xunit;
 using Xunit.Abstractions;
 using System.Linq;
+using Shouldly;
 
 namespace Marten.Testing.AsyncDaemon
 {
@@ -282,7 +283,7 @@ namespace Marten.Testing.AsyncDaemon
 
             using (var session = theStore.LightweightSession())
             {
-                Assert.Equal(3, session.Query<TestLoadAndQueryProjection>().First().ProjectCount);
+                session.Query<TestLoadAndQueryProjection>().First().ProjectCount.ShouldBe(3);
             }
         }
 
@@ -317,7 +318,7 @@ namespace Marten.Testing.AsyncDaemon
 
             using (var session = theStore.LightweightSession())
             {
-                Assert.Equal(2, session.Query<ProjectCountProjection>().Count());
+                session.Query<ProjectCountProjection>().Count().ShouldBe(2);
             }
         }
 

@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
+using Marten.Events;
 using Marten.Events.Projections.Async;
+using Marten.Testing.CodeTracker;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections.Async
@@ -23,5 +26,47 @@ namespace Marten.Testing.Events.Projections.Async
             EventPage.IsCompletelySequential(list)
                 .ShouldBeFalse();
         }
+
+        [Fact]
+        public void last_encountered_empty_page()
+        {
+            var page = new EventPage(0, 100, new List<IEvent>())
+            {
+                NextKnownSequence = 150,
+                LastKnownSequence = 1000
+            };
+
+            page.LastEncountered().ShouldBe(149);
+        }
+
+        [Fact]
+        public void last_encountered_with_no_known_sequence()
+        {
+            var page = new EventPage(0, 100, new List<IEvent>())
+            {
+                NextKnownSequence = 0,
+                LastKnownSequence = 1000
+            };
+
+            page.LastEncountered().ShouldBe(1000);
+        }
+
+        [Fact]
+        public void last_encountered_with_non_zero_page()
+        {
+            var page = new EventPage(0, 100, new List<IEvent> {new Event<ProjectStarted>(new ProjectStarted())})
+            {
+                NextKnownSequence = 0,
+                LastKnownSequence = 1000
+            };
+
+            page.Sequences.Add(97);
+            page.Sequences.Add(98);
+            page.Sequences.Add(99);
+
+            page.LastEncountered().ShouldBe(99);
+        }
+
+
     }
 }
