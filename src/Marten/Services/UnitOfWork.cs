@@ -213,7 +213,7 @@ namespace Marten.Services
             if (documentMapping == null)
                 return Enumerable.Empty<Type>();
 
-            return documentMapping.ForeignKeys.Select(keyDefinition => keyDefinition.ReferenceDocumentType);
+            return documentMapping.ForeignKeys.Where(x => x.ReferenceDocumentType != type).Select(keyDefinition => keyDefinition.ReferenceDocumentType);
         }
 
         private DocumentChange[] detectTrackerChanges()

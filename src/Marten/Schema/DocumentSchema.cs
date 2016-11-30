@@ -100,6 +100,7 @@ namespace Marten.Schema
                 }
 
                 return documentMapping.ForeignKeys
+                    .Where(x => x.ReferenceDocumentType != documentMapping.DocumentType)
                     .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
                     .Select(MappingFor);
             });
