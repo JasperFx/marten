@@ -353,7 +353,7 @@ namespace Marten.Testing.AsyncDaemon
 
             using (var session = theStore.LightweightSession())
             {
-                Assert.Equal(2, session.Query<ProjectCountProjection>().Count());
+                session.Query<ProjectCountProjection>().Count().ShouldBe(2);
             }
         }
 

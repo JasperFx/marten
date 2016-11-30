@@ -64,9 +64,49 @@ namespace Marten.Testing.Events.Projections.Async
             page.Sequences.Add(98);
             page.Sequences.Add(99);
 
-            page.LastEncountered().ShouldBe(99);
+            page.LastEncountered().ShouldBe(1000);
         }
 
+        [Fact]
+        public void should_pause_if_empty_with_no_known_next()
+        {
+            var page = new EventPage(0, 100, new List<IEvent>())
+            {
+                NextKnownSequence = 0,
+                LastKnownSequence = 1000
+            };
 
+            page.ShouldPause().ShouldBeTrue();
+
+        }
+
+        [Fact]
+        public void should_not_pause_if_there_is_a_next_known_sequence()
+        {
+            var page = new EventPage(0, 100, new List<IEvent>())
+            {
+                NextKnownSequence = 300,
+                LastKnownSequence = 1000
+            };
+
+            page.ShouldPause().ShouldBeFalse();
+        }
+
+        [Fact]
+        public void should_pause_if_there_are_any_events()
+        {
+            var page = new EventPage(0, 100, new List<IEvent> { new Event<ProjectStarted>(new ProjectStarted()) })
+            {
+                NextKnownSequence = 0,
+                LastKnownSequence = 1000
+            };
+
+            page.Sequences.Add(97);
+            page.Sequences.Add(98);
+            page.Sequences.Add(99);
+
+            page.ShouldPause().ShouldBeTrue();
+
+        }
     }
 }

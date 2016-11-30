@@ -49,12 +49,13 @@ namespace Marten.Events.Projections.Async
 
         public long LastEncountered()
         {
-            if (Streams.Any())
-            {
-                return Sequences.Any() ? Sequences.Last() : Streams.SelectMany(x => x.Events).Max(x => x.Sequence);
-            }
+            var candidate = NextKnownSequence > 0 ? NextKnownSequence - 1 : LastKnownSequence;
 
-            return NextKnownSequence > 0 ? NextKnownSequence - 1 : LastKnownSequence;
+            if (candidate > 0) return candidate;
+
+            if (Sequences.Any()) return Sequences.Last();
+
+            return From;
         }
 
         public EventPage(long from, long to, IList<IEvent> events)
@@ -62,6 +63,7 @@ namespace Marten.Events.Projections.Async
             From = @from;
             To = to;
             Streams = ToStreams(events);
+            Count = events.Count;
         }
 
         public EventPage(long @from, IList<long> sequences, IList<IEvent> events)
@@ -85,6 +87,16 @@ namespace Marten.Events.Projections.Async
             if (IsSequential()) return true;
 
             return (Sequences ?? new List<long>()).SequenceEqual(previous);
+        }
+
+        public bool ShouldPause()
+        {
+            return NextKnownSequence == 0;
+        }
+
+        public long Ending()
+        {
+            return Sequences.Any() ? To : From;
         }
 
         public override string ToString()

@@ -233,7 +233,7 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
             {
                 var page = await FetchNextPage(_lastEncountered).ConfigureAwait(false);
 
-                if (page.Count == 0)
+                if (page.ShouldPause())
                 {
                     if (lifecycle == DaemonLifecycle.Continuous)
                     {
@@ -253,16 +253,18 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
                         State = FetcherState.Paused;
 
                         _logger.FetchingIsAtEndOfEvents(track);
-                        track.Finished(_lastEncountered);
+                        track.Finished(page.Ending());
+
+                        _lastEncountered = page.LastEncountered();
+                        track.QueuePage(page);
 
                         break;
                     }
                 }
-                else
-                {
-                    _lastEncountered = page.LastEncountered();
-                    track.QueuePage(page);
-                }
+
+                _lastEncountered = page.LastEncountered();
+                track.QueuePage(page);
+
             }
         }
     }
