@@ -172,7 +172,7 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
             }
         }
 
-        private async Task<EventPage> buildEventPage(long lastEncountered, NpgsqlCommand cmd)
+        private async Task<EventPage> buildEventPage(long @from, NpgsqlCommand cmd)
         {
             IList<IEvent> events = null;
             IList<long> sequences = new List<long>();
@@ -203,7 +203,7 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
                 lastKnown = await getLong(reader).ConfigureAwait(false);
             }
 
-            return new EventPage(lastEncountered, sequences, events)
+            return new EventPage(@from, sequences, events)
             {
                 Count = events.Count,
                 NextKnownSequence = nextKnown,
@@ -260,7 +260,7 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
                 }
                 else
                 {
-                    _lastEncountered = page.To;
+                    _lastEncountered = page.LastEncountered();
                     track.QueuePage(page);
                 }
             }

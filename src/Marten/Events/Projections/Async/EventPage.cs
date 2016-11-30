@@ -64,10 +64,10 @@ namespace Marten.Events.Projections.Async
             Streams = ToStreams(events);
         }
 
-        public EventPage(long lastEncountered, IList<long> sequences, IList<IEvent> events)
+        public EventPage(long @from, IList<long> sequences, IList<IEvent> events)
         {
             Sequences = sequences;
-            From = lastEncountered;
+            From = @from;
             To = Sequences.LastOrDefault();
             Streams = ToStreams(events);
         }

@@ -205,7 +205,8 @@ namespace Marten.Events.Projections.Async
 
                 _logger.PageExecuted(page, this);
 
-                LastEncountered = page.To;
+                // This is a change to accomodate the big gap problem
+                LastEncountered = page.LastEncountered();
 
                 evaluateWaiters();
 
