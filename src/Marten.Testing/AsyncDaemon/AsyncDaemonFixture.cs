@@ -90,6 +90,22 @@ namespace Marten.Testing.AsyncDaemon
             PublishAllProjectEvents(_store);
         }
 
+        public void LoadTwoProjectsWithOneEventEach()
+        {
+            var project1 = new GithubProject("org", "name", DateTimeOffset.UtcNow);
+            project1.Events = new Timestamped[] { new ProjectStarted { Name = "p1", Organization = "o1", Timestamp = DateTime.UtcNow } };
+            var project2 = new GithubProject("org2", "name2", DateTimeOffset.UtcNow);
+            project2.Events = new Timestamped[] { new ProjectStarted { Name = "p2", Organization = "o12", Timestamp = DateTime.UtcNow } };
+
+            AllProjects = new Dictionary<Guid, GithubProject>
+            {
+                { Guid.NewGuid(), project1 }, { Guid.NewGuid(), project2 }
+            };
+
+            _store.Advanced.Clean.DeleteAllDocuments();
+            PublishAllProjectEvents(_store);
+        }
+
         public void LoadSingleProjects()
         {
             AllProjects = new Dictionary<Guid, GithubProject>

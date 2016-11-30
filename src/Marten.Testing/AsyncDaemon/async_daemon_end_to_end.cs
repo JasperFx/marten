@@ -9,6 +9,7 @@ using Marten.Events.Projections.Async;
 using Marten.Testing.CodeTracker;
 using Xunit;
 using Xunit.Abstractions;
+using System.Linq;
 
 namespace Marten.Testing.AsyncDaemon
 {
@@ -257,6 +258,189 @@ namespace Marten.Testing.AsyncDaemon
             }
 
             _fixture.CompareActiveProjects(theStore);
+        }
+
+        [Fact]
+        public async Task do_a_complete_rebuild_and_check_if_load_and_query_return_document_and_increment_project_count()
+        {
+            _fixture.LoadSingleProjects();
+
+            StoreOptions(_ => { _.Events.AsyncProjections.Add(new TestLoadAndQueryProjection()); });
+
+            _fixture.PublishAllProjectEvents(theStore);
+
+            using (var daemon = theStore.BuildProjectionDaemon(
+                logger: _logger,
+                viewTypes: new Type[] { typeof(TestLoadAndQueryProjection) },
+                settings: new DaemonSettings
+                {
+                    LeadingEdgeBuffer = 0.Seconds()
+                }))
+            {
+                await daemon.Rebuild(typeof(TestLoadAndQueryProjection)).ConfigureAwait(false);
+            }
+
+            using (var session = theStore.LightweightSession())
+            {
+                Assert.Equal(3, session.Query<TestLoadAndQueryProjection>().First().ProjectCount);
+            }
+        }
+
+        [Fact]
+        public async Task do_a_complete_rebuild_of_the_project_count_with_seq_id_gap_at_100()
+        {
+            _fixture.LoadTwoProjectsWithOneEventEach();
+
+            StoreOptions(_ => { _.Events.AsyncProjections.Add(new ProjectCountProjection()); });
+
+            _fixture.PublishAllProjectEvents(theStore);
+
+            // Increment seq_id so events have a respective 1 and 101 seq_id
+            using (var conn = theStore.Advanced.OpenConnection())
+            {
+                var command = conn.Connection.CreateCommand();
+                command.CommandText = "UPDATE mt_events SET seq_id = 101 WHERE seq_id = 2";
+                command.CommandType = System.Data.CommandType.Text;
+                conn.Execute(command);
+            }
+
+            using (var daemon = theStore.BuildProjectionDaemon(
+                logger: _logger,
+                viewTypes: new Type[] { typeof(ProjectCountProjection) },
+                settings: new DaemonSettings
+                {
+                    LeadingEdgeBuffer = 0.Seconds()
+                }))
+            {
+                await daemon.Rebuild(typeof(ProjectCountProjection)).ConfigureAwait(false);
+            }
+
+            using (var session = theStore.LightweightSession())
+            {
+                Assert.Equal(2, session.Query<ProjectCountProjection>().Count());
+            }
+        }
+
+        [Fact]
+        public async Task do_a_complete_rebuild_of_the_project_count_with_seq_id_gap_at_101()
+        {
+            _fixture.LoadTwoProjectsWithOneEventEach();
+
+            StoreOptions(_ => { _.Events.AsyncProjections.Add(new ProjectCountProjection()); });
+
+            _fixture.PublishAllProjectEvents(theStore);
+
+            // Increment seq_id so events have a respective 1 and 102 seq_id
+            using (var conn = theStore.Advanced.OpenConnection())
+            {
+                var command = conn.Connection.CreateCommand();
+                command.CommandText = "UPDATE mt_events SET seq_id = 102 WHERE seq_id = 2";
+                command.CommandType = System.Data.CommandType.Text;
+                conn.Execute(command);
+            }
+
+            using (var daemon = theStore.BuildProjectionDaemon(
+                logger: _logger,
+                viewTypes: new Type[] { typeof(ProjectCountProjection) },
+                settings: new DaemonSettings
+                {
+                    LeadingEdgeBuffer = 0.Seconds()
+                }))
+            {
+                await daemon.Rebuild(typeof(ProjectCountProjection)).ConfigureAwait(false);
+            }
+
+            using (var session = theStore.LightweightSession())
+            {
+                Assert.Equal(2, session.Query<ProjectCountProjection>().Count());
+            }
+        }
+
+        public class TestLoadAndQueryProjection : IProjection
+        {
+            public Guid Id { get; set; }
+
+            IDocumentSession _session;
+
+            public Type[] Consumes { get; } = new Type[] { typeof(ProjectStarted) };
+            public Type Produces { get; } = typeof(TestLoadAndQueryProjection);
+            public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
+            public void Apply(IDocumentSession session, EventStream[] streams)
+            {
+            }
+
+            public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+            {
+                _session = session;
+
+                var projectEvents = streams.SelectMany(s => s.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
+
+                foreach (var e in projectEvents)
+                {
+                    Apply((ProjectStarted)e);
+                }
+
+                return Task.CompletedTask;
+            }
+
+            public int ProjectCount { get; set; }
+
+            public void Apply(ProjectStarted @event)
+            {
+                var newId = Guid.NewGuid();
+                var model = new TestLoadAndQueryProjection();
+                model.Id = newId;
+                model.ProjectCount++;
+                _session.Store(model);
+
+                var loadModel = _session.Load<TestLoadAndQueryProjection>(newId);
+                loadModel.ProjectCount++;
+                _session.Store(loadModel);
+
+                var queryModel = _session.Query<TestLoadAndQueryProjection>().Where(_ => _.Id == newId).FirstOrDefault();
+                if (queryModel != null)
+                {
+                    queryModel.ProjectCount++;
+                    _session.Store(queryModel);
+                }
+            }
+        }
+
+        public class ProjectCountProjection : IProjection
+        {
+            public Guid Id { get; set; }
+
+            IDocumentSession _session;
+
+            public Type[] Consumes { get; } = new Type[] { typeof(ProjectStarted) };
+            public Type Produces { get; } = typeof(ProjectCountProjection);
+            public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
+            public void Apply(IDocumentSession session, EventStream[] streams)
+            {
+            }
+
+            public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+            {
+                _session = session;
+
+                var projectEvents = streams.SelectMany(s => s.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
+
+                foreach (var e in projectEvents)
+                {
+                    Apply((ProjectStarted)e);
+                }
+
+                return Task.CompletedTask;
+            }
+
+            public int ProjectCount { get; set; }
+
+            public void Apply(ProjectStarted @event)
+            {
+                var model = new ProjectCountProjection();
+                model.ProjectCount++;
+                _session.Store(model);
+            }
         }
 
         public class OccasionalErroringProjection : IProjection
