@@ -6,6 +6,7 @@ using Marten.Testing.Documents;
 using Marten.Util;
 using Shouldly;
 using Xunit;
+using System.Collections.Generic;
 
 namespace Marten.Testing.Acceptance
 {
@@ -17,6 +18,7 @@ namespace Marten.Testing.Acceptance
             StoreOptions(_ =>
             {
                 _.Schema.For<User>().SoftDeleted();
+                _.Schema.For<File>().SoftDeleted();
             });
         }
 
@@ -94,9 +96,9 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void soft_delete_a_document_by_where_row_state()
         {
-            var user1 = new User {UserName = "foo"};
-            var user2 = new User {UserName = "bar"};
-            var user3 = new User {UserName = "baz"};
+            var user1 = new User { UserName = "foo" };
+            var user2 = new User { UserName = "bar" };
+            var user3 = new User { UserName = "baz" };
 
             using (var session = theStore.OpenSession())
             {
@@ -113,94 +115,94 @@ namespace Marten.Testing.Acceptance
         }
 
         // SAMPLE: query_soft_deleted_docs
-    [Fact]
-    public void query_soft_deleted_docs()
-    {
-        var user1 = new User { UserName = "foo" };
-        var user2 = new User { UserName = "bar" };
-        var user3 = new User { UserName = "baz" };
-        var user4 = new User { UserName = "jack" };
-
-        using (var session = theStore.OpenSession())
+        [Fact]
+        public void query_soft_deleted_docs()
         {
-            session.Store(user1, user2, user3, user4);
-            session.SaveChanges();
+            var user1 = new User { UserName = "foo" };
+            var user2 = new User { UserName = "bar" };
+            var user3 = new User { UserName = "baz" };
+            var user4 = new User { UserName = "jack" };
 
-            // Deleting 'bar' and 'baz'
-            session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-            session.SaveChanges();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(user1, user2, user3, user4);
+                session.SaveChanges();
 
-            // no where clause, deleted docs should be filtered out
-            session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-                .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+                // Deleting 'bar' and 'baz'
+                session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+                session.SaveChanges();
 
-            // with a where clause
+                // no where clause, deleted docs should be filtered out
+                session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+                    .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+
+                // with a where clause
                 session.Query<User>().Where(x => x.UserName != "jack")
                 .ToList().Single().UserName.ShouldBe("foo");
+            }
         }
-    }
         // ENDSAMPLE
 
         // SAMPLE: query_maybe_soft_deleted_docs
-    [Fact]
-    public void query_maybe_soft_deleted_docs()
-    {
-        var user1 = new User { UserName = "foo" };
-        var user2 = new User { UserName = "bar" };
-        var user3 = new User { UserName = "baz" };
-        var user4 = new User { UserName = "jack" };
-
-        using (var session = theStore.OpenSession())
+        [Fact]
+        public void query_maybe_soft_deleted_docs()
         {
-            session.Store(user1, user2, user3, user4);
-            session.SaveChanges();
+            var user1 = new User { UserName = "foo" };
+            var user2 = new User { UserName = "bar" };
+            var user3 = new User { UserName = "baz" };
+            var user4 = new User { UserName = "jack" };
 
-            session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-            session.SaveChanges();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(user1, user2, user3, user4);
+                session.SaveChanges();
 
-            // no where clause, all documents are returned
-            session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-                .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
+                session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+                session.SaveChanges();
 
-            // with a where clause, all documents are returned
-            session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
-                .OrderBy(x => x.UserName)
-                .ToList()
-                .Select(x => x.UserName)
-                .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
+                // no where clause, all documents are returned
+                session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+                    .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
+
+                // with a where clause, all documents are returned
+                session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
+                    .OrderBy(x => x.UserName)
+                    .ToList()
+                    .Select(x => x.UserName)
+                    .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
+            }
         }
-    }
         // ENDSAMPLE
 
         // SAMPLE: query_is_soft_deleted_docs
-    [Fact]
-    public void query_is_soft_deleted_docs()
-    {
-        var user1 = new User { UserName = "foo" };
-        var user2 = new User { UserName = "bar" };
-        var user3 = new User { UserName = "baz" };
-        var user4 = new User { UserName = "jack" };
-
-        using (var session = theStore.OpenSession())
+        [Fact]
+        public void query_is_soft_deleted_docs()
         {
-            session.Store(user1, user2, user3, user4);
-            session.SaveChanges();
+            var user1 = new User { UserName = "foo" };
+            var user2 = new User { UserName = "bar" };
+            var user3 = new User { UserName = "baz" };
+            var user4 = new User { UserName = "jack" };
 
-            session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-            session.SaveChanges();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(user1, user2, user3, user4);
+                session.SaveChanges();
 
-            // no where clause
-            session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-                .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
+                session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+                session.SaveChanges();
 
-            // with a where clause
-            session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
-                .OrderBy(x => x.UserName)
-                .ToList()
-                .Select(x => x.UserName)
-                .Single().ShouldBe("bar");
+                // no where clause
+                session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+                    .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
+
+                // with a where clause
+                session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
+                    .OrderBy(x => x.UserName)
+                    .ToList()
+                    .Select(x => x.UserName)
+                    .Single().ShouldBe("bar");
+            }
         }
-    }
         // ENDSAMPLE
 
         [Fact]
@@ -346,6 +348,42 @@ namespace Marten.Testing.Acceptance
                     .Select(x => x.UserName)
                     .ToList().ShouldHaveTheSameElementsAs("baz");
             }
+        }
+
+        [Fact]
+        public void soft_deleted_documents_work_with_linq_include()
+        {
+            theStore.Schema.EnsureStorageExists(typeof(User));
+            theStore.Schema.EnsureStorageExists(typeof(File));
+
+            using (var session = theStore.OpenSession())
+            {
+                var user = new User();
+                session.Store(user);
+                var file1 = new File() { UserId = user.Id };
+                session.Store(file1);
+                var file2 = new File() { UserId = user.Id };
+                session.Store(file2);
+                session.SaveChanges();
+                session.Delete(file2);
+                session.SaveChanges();
+
+                var users = new List<User>();
+                var files = session.Query<File>().Include(u => u.UserId, users).ToList();
+                files.Count.ShouldBe(1);
+                users.Count.ShouldBe(1);
+                files = session.Query<File>().Where(f => f.MaybeDeleted()).Include(u => u.UserId, users).ToList();
+                files.Count.ShouldBe(2);
+                files = session.Query<File>().Where(f => f.IsDeleted()).Include(u => u.UserId, users).ToList();
+                files.Count.ShouldBe(1);
+            }
+        }
+
+        public class File
+        {
+            public Guid Id { get; set; } = Guid.NewGuid();
+            public Guid UserId { get; set; }
+            public string Path { get; set; }
         }
     }
 }

@@ -115,7 +115,7 @@ namespace Marten.Schema
 
         public static IWhereFragment ExcludeSoftDeletedDocuments()
         {
-            return new WhereFragment($"{DeletedColumn} = False");
+            return new WhereFragment($"d.{DeletedColumn} = False");
         }
 
         IDocumentStorage IDocumentMapping.BuildStorage(IDocumentSchema schema)
