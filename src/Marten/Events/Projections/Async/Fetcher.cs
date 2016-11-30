@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -135,6 +136,8 @@ namespace Marten.Events.Projections.Async
                         $@"
 select seq_id from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :last and seq_id <= :limit and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer order by seq_id;
 {_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer order by seq_id;
+select min(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :limit and type = ANY(:types) and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer;
+select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id >= :limit and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer
 ".Replace(" as d", "");
 
                     var cmd = conn.CreateCommand(sql)
@@ -174,6 +177,9 @@ select seq_id from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id 
             IList<IEvent> events = null;
             IList<long> sequences = new List<long>();
 
+            long nextKnown = 0;
+            long lastKnown = 0;
+
             using (var reader = await cmd.ExecuteReaderAsync(_token).ConfigureAwait(false))
             {
                 while (await reader.ReadAsync(_token).ConfigureAwait(false))
@@ -192,9 +198,32 @@ select seq_id from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id 
                 {
                     events = new List<IEvent>();
                 }
+
+                nextKnown = await getLong(reader).ConfigureAwait(false);
+                lastKnown = await getLong(reader).ConfigureAwait(false);
             }
 
-            return new EventPage(lastEncountered, sequences, events) {Count = events.Count};
+            return new EventPage(lastEncountered, sequences, events)
+            {
+                Count = events.Count,
+                NextKnownSequence = nextKnown,
+                LastKnownSequence = lastKnown
+            };
+        }
+
+        private async Task<long> getLong(DbDataReader reader)
+        {
+            await reader.NextResultAsync(_token).ConfigureAwait(false);
+            bool isAny = await reader.ReadAsync(_token).ConfigureAwait(false);
+
+            if (!isAny) return 0;
+
+            if (await reader.IsDBNullAsync(0, _token).ConfigureAwait(false))
+            {
+                return 0;
+            }
+
+            return await reader.GetFieldValueAsync<long>(0, _token).ConfigureAwait(false);
         }
 
 
