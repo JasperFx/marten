@@ -87,7 +87,7 @@ namespace Marten.Testing.AsyncDaemon
             }
 
             _store.Advanced.Clean.DeleteAllDocuments();
-            PublishAllProjectEvents(_store);
+            PublishAllProjectEvents(_store, true);
         }
 
         public void LoadTwoProjectsWithOneEventEach()
@@ -103,7 +103,7 @@ namespace Marten.Testing.AsyncDaemon
             };
 
             _store.Advanced.Clean.DeleteAllDocuments();
-            PublishAllProjectEvents(_store);
+            PublishAllProjectEvents(_store, false);
         }
 
         public void LoadSingleProjects()
@@ -114,20 +114,20 @@ namespace Marten.Testing.AsyncDaemon
             };
 
             _store.Advanced.Clean.DeleteAllDocuments();
-            PublishAllProjectEvents(_store);
+            PublishAllProjectEvents(_store, true);
         }
 
         public Dictionary<Guid, GithubProject> AllProjects { get; private set; }
 
-        public Task PublishAllProjectEventsAsync(IDocumentStore store)
+        public Task PublishAllProjectEventsAsync(IDocumentStore store, bool createEventGaps)
         {
-            var tasks = AllProjects.Values.Select(project => project.PublishEvents(store, 10)).ToArray();
+            var tasks = AllProjects.Values.Select(project => project.PublishEvents(store, 10, createEventGaps)).ToArray();
             return Task.WhenAll(tasks);
         }
 
-        public void PublishAllProjectEvents(IDocumentStore store)
+        public void PublishAllProjectEvents(IDocumentStore store, bool createEventGaps)
         {
-            var tasks = AllProjects.Values.Select(project => project.PublishEvents(store, 0)).ToArray();
+            var tasks = AllProjects.Values.Select(project => project.PublishEvents(store, 0, createEventGaps)).ToArray();
             Task.WaitAll(tasks.ToArray());
         }
 

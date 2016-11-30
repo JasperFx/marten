@@ -133,7 +133,7 @@ namespace Marten.Testing.CodeTracker
         }
         */
 
-        public async Task PublishEvents(IDocumentStore store, int pause)
+        public async Task PublishEvents(IDocumentStore store, int pause, bool createEventGaps)
         {
             var events = Events.OrderBy(x => x.Timestamp).ToList();
             var started = events.OfType<ProjectStarted>().Single();
@@ -148,6 +148,16 @@ namespace Marten.Testing.CodeTracker
                 using (var session = store.LightweightSession())
                 {
                     session.Events.Append(Id, page);
+
+
+                    if (createEventGaps)
+                    {
+                        for (int i = 0; i < 200; i++)
+                        {
+                            session.Events.Append(Id, new PlaceHolder());
+                        }
+                    }
+
                     await session.SaveChangesAsync().ConfigureAwait(false);
                 }
 
@@ -159,5 +169,10 @@ namespace Marten.Testing.CodeTracker
             }
 
         }
+    }
+
+    public class PlaceHolder
+    {
+        
     }
 }

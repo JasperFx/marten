@@ -46,7 +46,7 @@ namespace Marten.Testing.AsyncDaemon
             {
                 daemon.StartAll();
 
-                await _fixture.PublishAllProjectEventsAsync(theStore);
+                await _fixture.PublishAllProjectEventsAsync(theStore, true);
                 //_fixture.PublishAllProjectEvents(theStore);
 
                 // Runs all projections until there are no more events coming in
@@ -66,7 +66,7 @@ namespace Marten.Testing.AsyncDaemon
 
             StoreOptions(_ => { _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>(); });
 
-            _fixture.PublishAllProjectEvents(theStore);
+            _fixture.PublishAllProjectEvents(theStore, true);
 
 
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
@@ -103,7 +103,7 @@ namespace Marten.Testing.AsyncDaemon
             {
                 daemon.StartAll();
 
-                await _fixture.PublishAllProjectEventsAsync(theStore);
+                await _fixture.PublishAllProjectEventsAsync(theStore, true);
                 //_fixture.PublishAllProjectEvents(theStore);
 
                 // Runs all projections until there are no more events coming in
@@ -134,7 +134,7 @@ namespace Marten.Testing.AsyncDaemon
             {
                 daemon.StartAll();
 
-                await _fixture.PublishAllProjectEventsAsync(theStore);
+                await _fixture.PublishAllProjectEventsAsync(theStore, true);
                 //_fixture.PublishAllProjectEvents(theStore);
 
                 // Runs all projections until there are no more events coming in
@@ -158,7 +158,7 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.DatabaseSchemaName = "events";
             });
 
-            _fixture.PublishAllProjectEvents(theStore);
+            _fixture.PublishAllProjectEvents(theStore, true);
 
 
             
@@ -186,7 +186,7 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.DatabaseSchemaName = "events";
             });
 
-            _fixture.PublishAllProjectEvents(theStore);
+            _fixture.PublishAllProjectEvents(theStore, true);
 
 
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
@@ -211,7 +211,7 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.DatabaseSchemaName = "events";
             });
 
-            _fixture.PublishAllProjectEvents(theStore);
+            _fixture.PublishAllProjectEvents(theStore, true);
 
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
             {
@@ -249,7 +249,7 @@ namespace Marten.Testing.AsyncDaemon
             {
                 daemon.StartAll();
 
-                await _fixture.PublishAllProjectEventsAsync(theStore);
+                await _fixture.PublishAllProjectEventsAsync(theStore, true);
                 //_fixture.PublishAllProjectEvents(theStore);
 
                 // Runs all projections until there are no more events coming in
@@ -268,7 +268,7 @@ namespace Marten.Testing.AsyncDaemon
 
             StoreOptions(_ => { _.Events.AsyncProjections.Add(new TestLoadAndQueryProjection()); });
 
-            _fixture.PublishAllProjectEvents(theStore);
+            _fixture.PublishAllProjectEvents(theStore, true);
 
             using (var daemon = theStore.BuildProjectionDaemon(
                 logger: _logger,
@@ -294,13 +294,13 @@ namespace Marten.Testing.AsyncDaemon
 
             StoreOptions(_ => { _.Events.AsyncProjections.Add(new ProjectCountProjection()); });
 
-            _fixture.PublishAllProjectEvents(theStore);
+            _fixture.PublishAllProjectEvents(theStore, true);
 
             // Increment seq_id so events have a respective 1 and 101 seq_id
             using (var conn = theStore.Advanced.OpenConnection())
             {
                 var command = conn.Connection.CreateCommand();
-                command.CommandText = "UPDATE mt_events SET seq_id = 101 WHERE seq_id = 2";
+                command.CommandText = "UPDATE mt_events SET seq_id = 20000 WHERE seq_id = 2";
                 command.CommandType = System.Data.CommandType.Text;
                 conn.Execute(command);
             }
@@ -327,9 +327,15 @@ namespace Marten.Testing.AsyncDaemon
         {
             _fixture.LoadTwoProjectsWithOneEventEach();
 
-            StoreOptions(_ => { _.Events.AsyncProjections.Add(new ProjectCountProjection()); });
+            StoreOptions(_ =>
+            {
+                _.Events.AddEventType(typeof(ProjectStarted));
+                _.Events.AsyncProjections.Add(new ProjectCountProjection());
+            });
 
-            _fixture.PublishAllProjectEvents(theStore);
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            _fixture.PublishAllProjectEvents(theStore, false);
 
             // Increment seq_id so events have a respective 1 and 102 seq_id
             using (var conn = theStore.Advanced.OpenConnection())
