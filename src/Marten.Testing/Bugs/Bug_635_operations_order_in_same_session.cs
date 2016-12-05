@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class operations_order_in_same_session : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_635_operations_order_in_same_session : DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void deletewhere_and_store()
