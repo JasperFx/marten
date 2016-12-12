@@ -6,7 +6,7 @@ using Marten.Services;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_pagedresult_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_pagedlist_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         private void buildUpTargetData()
         {
@@ -25,10 +25,10 @@ namespace Marten.Testing.Linq
             var pageIndex = 1;
             var pageSize = 10;
 
-            theSession.Query<Target>().PagedResult(pageIndex, pageSize)
+            theSession.Query<Target>().PagedList(pageIndex, pageSize)
                 .Count().ShouldBe<int>(pageSize);
 
-            theSession.Query<Target>().PagedResult(pageIndex+1, pageSize)
+            theSession.Query<Target>().PagedList(pageIndex+1, pageSize)
                 .Count().ShouldBe<int>(5);
         }
 
@@ -43,7 +43,7 @@ namespace Marten.Testing.Linq
             Func<IQueryable<Target>, IQueryable<Target>> order = null;
             order = q => q.OrderBy(m => m.Date);
 
-            var results = theSession.Query<Target>().PagedResult(pageIndex, pageSize, order);
+            var results = theSession.Query<Target>().PagedList(pageIndex, pageSize, order);
 
             results[0].Date.ShouldBeLessThan(results[results.Count() - 1].Date);
         }
@@ -56,14 +56,14 @@ namespace Marten.Testing.Linq
             var pageIndex = 1;
             var pageSize = 10;
 
-            theSession.Query<Target>().PagedResultAsync(pageIndex, pageSize)
+            theSession.Query<Target>().PagedListAsync(pageIndex, pageSize)
                 .ConfigureAwait(false)
                 .GetAwaiter()
                 .GetResult()
                 .Count()
                 .ShouldBe<int>(pageSize);
 
-            theSession.Query<Target>().PagedResultAsync(pageIndex+1, pageSize)
+            theSession.Query<Target>().PagedListAsync(pageIndex+1, pageSize)
                .ConfigureAwait(false)
                .GetAwaiter()
                .GetResult()
@@ -83,7 +83,7 @@ namespace Marten.Testing.Linq
 
             order = q => q.OrderByDescending(m => m.Date);
 
-            var results = theSession.Query<Target>().PagedResultAsync(pageIndex, pageSize, order)
+            var results = theSession.Query<Target>().PagedListAsync(pageIndex, pageSize, order)
                 .ConfigureAwait(false)
                 .GetAwaiter()
                 .GetResult();

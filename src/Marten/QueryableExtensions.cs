@@ -231,22 +231,22 @@ namespace Marten
         #endregion
 
         #region PagedResult
-        public static IList<T> PagedResult<T>(this IQueryable<T> queryable, int current, int size, Func<IQueryable<T>, IQueryable<T>> order = null)
+        public static IList<T> PagedList<T>(this IQueryable<T> queryable, int pageNumber, int pageSize, Func<IQueryable<T>, IQueryable<T>> order = null)
         {
             if (order != null)
             {
                 queryable = order(queryable);
             }
 
-            var skipCount = current > 0 ? (current - 1) * size : 0;
+            var skipCount = pageNumber > 0 ? (pageNumber - 1) * pageSize : 0;
 
-            return queryable.Skip(skipCount).Take(size).ToList();
+            return queryable.Skip(skipCount).Take(pageSize).ToList();
         }
 
-        public static Task<IList<T>> PagedResultAsync<T>(
+        public static Task<IList<T>> PagedListAsync<T>(
             this IQueryable<T> queryable,
-            int current,
-            int size,
+            int pageNumber,
+            int pageSize,
             Func<IQueryable<T>, IQueryable<T>> order = null,
             CancellationToken token = default(CancellationToken))
         {
@@ -255,9 +255,9 @@ namespace Marten
                 queryable = order(queryable);
             }
 
-            var skipCount = current > 0 ? (current - 1) * size : 0;
+            var skipCount = pageNumber > 0 ? (pageNumber - 1) * pageSize : 0;
 
-            return queryable.Skip(skipCount).Take(size).As<IMartenQueryable>().ToListAsync<T>(token);
+            return queryable.Skip(skipCount).Take(pageSize).As<IMartenQueryable>().ToListAsync<T>(token);
         }
         #endregion
 
