@@ -230,6 +230,37 @@ namespace Marten
 
         #endregion
 
+        #region PagedResult
+        public static IList<T> PagedResult<T>(this IQueryable<T> queryable, int current, int size, Func<IQueryable<T>, IQueryable<T>> order = null)
+        {
+            if (order != null)
+            {
+                queryable = order(queryable);
+            }
+
+            var skipCount = current > 0 ? (current - 1) * size : 0;
+
+            return queryable.Skip(skipCount).Take(size).ToList();
+        }
+
+        public static Task<IList<T>> PagedResultAsync<T>(
+            this IQueryable<T> queryable,
+            int current,
+            int size,
+            Func<IQueryable<T>, IQueryable<T>> order = null,
+            CancellationToken token = default(CancellationToken))
+        {
+            if (order != null)
+            {
+                queryable = order(queryable);
+            }
+
+            var skipCount = current > 0 ? (current - 1) * size : 0;
+
+            return queryable.Skip(skipCount).Take(size).As<IMartenQueryable>().ToListAsync<T>(token);
+        }
+        #endregion
+
         #region Shared
 
         private static IMartenQueryable<T> CastToMartenQueryable<T>(IQueryable<T> queryable)
