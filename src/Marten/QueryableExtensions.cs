@@ -13,7 +13,6 @@ namespace Marten
 {
     public static class QueryableExtensions
     {
-
         public static QueryPlan Explain<T>(this IQueryable<T> queryable)
         {
             return queryable.As<IMartenQueryable<T>>().Explain();
@@ -228,37 +227,6 @@ namespace Marten
             return source.Where(predicate).SingleOrDefaultAsync(token);
         }
 
-        #endregion
-
-        #region PagedResult
-        public static IList<T> PagedList<T>(this IQueryable<T> queryable, int pageNumber, int pageSize, Func<IQueryable<T>, IQueryable<T>> order = null)
-        {
-            if (order != null)
-            {
-                queryable = order(queryable);
-            }
-
-            var skipCount = pageNumber > 0 ? (pageNumber - 1) * pageSize : 0;
-
-            return queryable.Skip(skipCount).Take(pageSize).ToList();
-        }
-
-        public static Task<IList<T>> PagedListAsync<T>(
-            this IQueryable<T> queryable,
-            int pageNumber,
-            int pageSize,
-            Func<IQueryable<T>, IQueryable<T>> order = null,
-            CancellationToken token = default(CancellationToken))
-        {
-            if (order != null)
-            {
-                queryable = order(queryable);
-            }
-
-            var skipCount = pageNumber > 0 ? (pageNumber - 1) * pageSize : 0;
-
-            return queryable.Skip(skipCount).Take(pageSize).As<IMartenQueryable>().ToListAsync<T>(token);
-        }
         #endregion
 
         #region Shared
