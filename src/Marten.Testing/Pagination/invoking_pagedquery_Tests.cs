@@ -9,7 +9,7 @@ namespace Marten.Testing.Pagination
 {
     public class invoking_pagedquery_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
-        private void buildUpTargetData()
+        private void BuildUpTargetData()
         {
             var targets = Target.GenerateRandomData(15).ToArray();
 
@@ -21,7 +21,7 @@ namespace Marten.Testing.Pagination
         [Fact]
         public void can_return_paged_result()
         {
-            buildUpTargetData();
+            this.BuildUpTargetData();
 
             var pageIndex = 1;
             var pageSize = 10;
@@ -36,13 +36,13 @@ namespace Marten.Testing.Pagination
             result.MetaData.HasNextPage.ShouldBeTrue();
 
             theSession.Query<Target>().PagedQuery(pageIndex+1, pageSize)
-                .Count.ShouldBe<int>(5);
+                .Count.ShouldBe(5);
         }
 
         [Fact]
         public void can_return_paged_result_with_orderby()
         {
-            buildUpTargetData();
+            this.BuildUpTargetData();
 
             var pageIndex = 1;
             var pageSize = 10;
@@ -58,7 +58,7 @@ namespace Marten.Testing.Pagination
         [Fact]
         public void can_return_paged_result_async()
         {
-            buildUpTargetData();
+            this.BuildUpTargetData();
 
             var pageIndex = 1;
             var pageSize = 10;
@@ -81,7 +81,7 @@ namespace Marten.Testing.Pagination
         [Fact]
         public void can_return_paged_result_async_with_orderby()
         {
-            buildUpTargetData();
+            this.BuildUpTargetData();
 
             var pageIndex = 1;
             var pageSize = 10;
