@@ -82,7 +82,7 @@ namespace Marten
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_connectionFactory, Schema.As<DocumentSchema>());
-            Advanced = new AdvancedOptions(cleaner, options, _serializer, Schema);
+            Advanced = new AdvancedOptions(cleaner, options, _serializer, Schema, _writerPool);
 
             Diagnostics = new Diagnostics(Schema);
 
@@ -98,11 +98,17 @@ namespace Marten
             {
                 Schema.As<DocumentSchema>().RebuildSystemFunctions();
             }
+
+            if (options.UseCharBufferPooling)
+            {
+                _writerPool = CharArrayTextWriter.Pool.Instance;
+            }
         }
 
         private readonly StoreOptions _options;
         private readonly IConnectionFactory _connectionFactory;
         private readonly IMartenLogger _logger;
+        private readonly CharArrayTextWriter.Pool _writerPool;
 
         public virtual void Dispose()
         {
@@ -277,7 +283,7 @@ namespace Marten
         private IDocumentSession openSession(DocumentTracking tracking, ManagedConnection connection)
         {
             var map = createMap(tracking);
-            var session = new DocumentSession(this, _options, Schema, _serializer, connection, _parser, map);
+            var session = new DocumentSession(this, _options, Schema, _serializer, connection, _parser, map, _writerPool);
 
             connection.BeginSession();
 

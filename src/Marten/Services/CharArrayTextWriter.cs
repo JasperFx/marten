@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -89,7 +93,37 @@ namespace Marten.Services
 
         public ArraySegment<char> ToRawArraySegment()
         {
-            return new ArraySegment<char>(_chars,0, _next);
+            return new ArraySegment<char>(_chars, 0, _next);
+        }
+
+        public class Pool
+        {
+            public static readonly Pool Instance = new Pool();
+
+            readonly ConcurrentStack<CharArrayTextWriter> _cache = new ConcurrentStack<CharArrayTextWriter>();
+
+            public CharArrayTextWriter Lease()
+            {
+                CharArrayTextWriter writer;
+                if (_cache.TryPop(out writer))
+                {
+                    return writer;
+                }
+
+                return new CharArrayTextWriter();
+            }
+
+            public void Release(CharArrayTextWriter writer)
+            {
+                // currently, all writers are cached. This might be changed to hold only N writers in the cache.
+                _cache.Push(writer);
+            }
+
+            public void Release(IEnumerable<CharArrayTextWriter> writer)
+            {
+                // currently, all writers are cached. This might be changed to hold only N writers in the cache.
+                _cache.PushRange(writer.ToArray());
+            }
         }
     }
 }
