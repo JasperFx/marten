@@ -24,8 +24,9 @@ namespace Marten.Schema.Arguments
             var argName = Expression.Constant(Arg);
 
             var serializer = Expression.Call(updateBatch, _serializer);
-            var json = Expression.Call(serializer, _tojson, doc);
 
+
+            var json = Expression.Call(serializer, _tojson, doc);
             return Expression.Call(call, _paramMethod, argName, json, Expression.Constant(NpgsqlDbType.Jsonb));
         }
 
