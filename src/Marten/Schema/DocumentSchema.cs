@@ -143,7 +143,7 @@ namespace Marten.Schema
 
                 if (mapping is DocumentMapping)
                 {
-                    return new BulkLoader<T>(StoreOptions.Serializer(), mapping.As<DocumentMapping>(), assignment);
+                    return new BulkLoader<T>(StoreOptions.Serializer(), mapping.As<DocumentMapping>(), assignment, StoreOptions.UseCharBufferPooling);
                 }
 
                 

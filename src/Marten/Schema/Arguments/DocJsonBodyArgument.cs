@@ -19,7 +19,7 @@ namespace Marten.Schema.Arguments
             Column = "data";
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion, bool useCharBufferPooling)
         {
             var argName = Expression.Constant(Arg);
 
@@ -29,7 +29,7 @@ namespace Marten.Schema.Arguments
             return Expression.Call(call, _paramMethod, argName, json, Expression.Constant(NpgsqlDbType.Jsonb));
         }
 
-        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer)
+        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, bool useCharBufferPooling)
         {
             var json = Expression.Call(serializer, _tojson, document);
             var method = writeMethod.MakeGenericMethod(typeof(string));
