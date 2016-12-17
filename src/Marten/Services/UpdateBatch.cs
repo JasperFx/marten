@@ -11,14 +11,14 @@ namespace Marten.Services
 {
     public class UpdateBatch : IDisposable
     {
-        private readonly Stack<BatchCommand> _commands = new Stack<BatchCommand>();
-        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private readonly StoreOptions _options;
-        private readonly CharArrayTextWriter.Pool _writerPool;
+        private readonly ISerializer _serializer;
+        private readonly CharArrayTextWriter.IPool _writerPool;
+        private readonly Stack<BatchCommand> _commands = new Stack<BatchCommand>(); 
+        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private readonly List<CharArrayTextWriter> _writers = new List<CharArrayTextWriter>();
-
-        public UpdateBatch(StoreOptions options, ISerializer serializer, IManagedConnection connection,
-            VersionTracker versions, CharArrayTextWriter.Pool writerPool)
+        
+        public UpdateBatch(StoreOptions options, ISerializer serializer, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool)
         {
             if (versions == null) throw new ArgumentNullException(nameof(versions));
 
