@@ -14,14 +14,12 @@ namespace Marten.Schema.Arguments
             Column = null;
         }
 
-        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer,
-            ParameterExpression document,
-            ParameterExpression alias, ParameterExpression serializer)
+        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, bool useCharBufferPooling)
         {
             throw new NotSupportedException("This should not be used for CurrentVersionArgument");
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion, bool useCharBufferPooling)
         {
             var argName = Expression.Constant(Arg);
 
