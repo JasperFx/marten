@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +17,7 @@ namespace Marten.Services
         int _length = InitialSize;
 
         public override Encoding Encoding => EncodingValue;
+        public static readonly IPool DefaultPool = new Pool();
 
         public override void Write(char value)
         {
@@ -91,15 +91,18 @@ namespace Marten.Services
             return Task.CompletedTask;
         }
 
-        public ArraySegment<char> ToRawArraySegment()
+        public char[] Buffer => _chars;
+        public int Size => _next;
+        
+        public interface IPool
         {
-            return new ArraySegment<char>(_chars, 0, _next);
+            CharArrayTextWriter Lease();
+            void Release(CharArrayTextWriter writer);
+            void Release(IEnumerable<CharArrayTextWriter> writer);
         }
 
-        public class Pool
+        public class Pool : IPool
         {
-            public static readonly Pool Instance = new Pool();
-
             readonly ConcurrentStack<CharArrayTextWriter> _cache = new ConcurrentStack<CharArrayTextWriter>();
 
             public CharArrayTextWriter Lease()

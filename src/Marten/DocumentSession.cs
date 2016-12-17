@@ -17,14 +17,14 @@ namespace Marten
     public class DocumentSession : QuerySession, IDocumentSession
     {
         private readonly IManagedConnection _connection;
-        private readonly CharArrayTextWriter.Pool _writerPool;
+        private readonly CharArrayTextWriter.IPool _writerPool;
         private readonly StoreOptions _options;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
         private readonly UnitOfWork _unitOfWork;
 
         public DocumentSession(IDocumentStore store, StoreOptions options, IDocumentSchema schema,
-            ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, CharArrayTextWriter.Pool writerPool)
+            ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, CharArrayTextWriter.IPool writerPool)
             : base(store, schema, serializer, connection, parser, identityMap)
         {
             _options = options;

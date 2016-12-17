@@ -101,14 +101,14 @@ namespace Marten
 
             if (options.UseCharBufferPooling)
             {
-                _writerPool = CharArrayTextWriter.Pool.Instance;
+                _writerPool = CharArrayTextWriter.DefaultPool;
             }
         }
 
         private readonly StoreOptions _options;
         private readonly IConnectionFactory _connectionFactory;
         private readonly IMartenLogger _logger;
-        private readonly CharArrayTextWriter.Pool _writerPool;
+        private readonly CharArrayTextWriter.IPool _writerPool;
 
         public virtual void Dispose()
         {
