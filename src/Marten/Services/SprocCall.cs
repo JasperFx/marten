@@ -76,6 +76,16 @@ namespace Marten.Services
             return this;
         }
 
+        public SprocCall Param(string argName, object value, NpgsqlDbType dbType, int size)
+        {
+            var param = _parent.AddParameter(value, dbType);
+            param.Size = size;
+
+            _parameters.Add(new ParameterArg(argName, param));
+
+            return this;
+        }
+
         public struct ParameterArg
         {
             public string ArgName;

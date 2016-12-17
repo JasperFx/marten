@@ -13,7 +13,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<User>();
             mapping.DeleteStyle = DeleteStyle.Remove;
 
-            var resolver = new Resolver<User>(new TestsSerializer(), mapping);
+            var resolver = new Resolver<User>(new TestsSerializer(), mapping, false);
 
             resolver.DeleteByIdSql.ShouldBe("delete from public.mt_doc_user where id = ?");
         }
@@ -24,7 +24,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<User>();
             mapping.DeleteStyle = DeleteStyle.SoftDelete;
 
-            var resolver = new Resolver<User>(new TestsSerializer(), mapping);
+            var resolver = new Resolver<User>(new TestsSerializer(), mapping, false);
 
             resolver.DeleteByIdSql.ShouldBe("update public.mt_doc_user set mt_deleted = True, mt_deleted_at = now() where id = ?");
         }
@@ -35,7 +35,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<User>();
             mapping.DeleteStyle = DeleteStyle.Remove;
 
-            var resolver = new Resolver<User>(new TestsSerializer(), mapping);
+            var resolver = new Resolver<User>(new TestsSerializer(), mapping, false);
 
             resolver.DeleteByWhereSql.ShouldBe("delete from public.mt_doc_user as d where ?");
         }
@@ -47,7 +47,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<User>();
             mapping.DeleteStyle = DeleteStyle.SoftDelete;
 
-            var resolver = new Resolver<User>(new TestsSerializer(), mapping);
+            var resolver = new Resolver<User>(new TestsSerializer(), mapping, false);
 
             resolver.DeleteByWhereSql.ShouldBe("update public.mt_doc_user as d set mt_deleted = True, mt_deleted_at = now() where ?");
         }
