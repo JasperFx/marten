@@ -7,6 +7,13 @@ namespace Marten
     public interface ISerializer
     {
         /// <summary>
+        /// Serialize the document object into <paramref name="writer"/>.
+        /// </summary>
+        /// <param name="document"></param>
+        /// <param name="writer"></param>
+        void ToJson(object document, TextWriter writer);
+
+        /// <summary>
         /// Serialize the document object into a JSON string
         /// </summary>
         /// <param name="document"></param>

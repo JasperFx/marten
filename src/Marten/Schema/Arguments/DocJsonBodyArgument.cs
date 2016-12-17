@@ -9,7 +9,7 @@ namespace Marten.Schema.Arguments
     public class DocJsonBodyArgument : UpsertArgument
     {
         private static readonly MethodInfo _serializer = ReflectionHelper.GetProperty<UpdateBatch>(x => x.Serializer).GetMethod;
-        private static readonly MethodInfo _tojson = typeof(ISerializer).GetMethod(nameof(ISerializer.ToJson));
+        private static readonly MethodInfo _tojson = typeof(ISerializer).GetMethod(nameof(ISerializer.ToJson), new[] { typeof(object) });
 
         public DocJsonBodyArgument()
         {
