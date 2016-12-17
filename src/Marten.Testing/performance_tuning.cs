@@ -22,6 +22,11 @@ namespace Marten.Testing
         private readonly Options _options 
             = new Options(dateFormat: DateTimeFormat.ISO8601, includeInherited:true);
 
+        public void ToJson(object document, TextWriter writer)
+        {
+            JSON.Serialize(document, writer, _options);
+        }
+
         public string ToJson(object document)
         {
             return JSON.Serialize(document, _options);

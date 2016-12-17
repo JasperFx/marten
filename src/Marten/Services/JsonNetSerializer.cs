@@ -37,6 +37,11 @@ namespace Marten.Services
             _clean.TypeNameHandling = TypeNameHandling.None;
         }
 
+        public void ToJson(object document, TextWriter writer)
+        {
+            _serializer.Serialize(writer, document);
+        }
+
         public string ToJson(object document)
         {
             var writer = new StringWriter();
