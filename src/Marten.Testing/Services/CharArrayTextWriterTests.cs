@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Marten.Services;
 using Shouldly;
 using Xunit;
@@ -14,7 +15,7 @@ namespace Marten.Testing.Services
 
             writer.Write('z');
 
-            var written = writer.ToRawArraySegment();
+            var written = ToCharSegment(writer);
 
             written.ShouldBe('z'.ToString());
         }
@@ -30,7 +31,7 @@ namespace Marten.Testing.Services
             const int take = 1;
             writer.Write(chars, offset, take);
 
-            var written = writer.ToRawArraySegment();
+            var written = ToCharSegment(writer);
 
             written.ShouldBe(chars.Skip(offset).Take(take));
         }
@@ -42,7 +43,7 @@ namespace Marten.Testing.Services
 
             writer.Write("test");
 
-            var written = writer.ToRawArraySegment();
+            var written = ToCharSegment(writer);
 
             written.ShouldBe("test");
         }
@@ -56,9 +57,14 @@ namespace Marten.Testing.Services
 
             writer.Write(s);
 
-            var written = writer.ToRawArraySegment();
+            var written = ToCharSegment(writer);
 
             written.ShouldBe(s);
+        }
+
+        static ArraySegment<char> ToCharSegment(CharArrayTextWriter writer)
+        {
+            return new ArraySegment<char>(writer.Buffer,0,writer.Size);
         }
     }
 }

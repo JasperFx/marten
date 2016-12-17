@@ -17,9 +17,9 @@ namespace Marten
     public class AdvancedOptions
     {
         private readonly IDocumentSchema _schema;
-        private readonly CharArrayTextWriter.Pool _writerPool;
+        private readonly CharArrayTextWriter.IPool _writerPool;
 
-        public AdvancedOptions(IDocumentCleaner cleaner, StoreOptions options, ISerializer serializer, IDocumentSchema schema, CharArrayTextWriter.Pool writerPool)
+        public AdvancedOptions(IDocumentCleaner cleaner, StoreOptions options, ISerializer serializer, IDocumentSchema schema, CharArrayTextWriter.IPool writerPool)
         {
             Serializer = serializer;
             _schema = schema;
