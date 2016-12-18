@@ -62,9 +62,31 @@ namespace Marten.Testing.Services
             written.ShouldBe(s);
         }
 
+        [Fact]
+        public void has_offset_reset_when_returned_to_pool_via_single_release()
+        {
+            var pool = new CharArrayTextWriter.Pool();
+            var writer = pool.Lease();
+            writer.Write('a');
+            pool.Release(writer);
+
+            writer.Size.ShouldBe(0);
+        }
+
+        [Fact]
+        public void has_offset_reset_when_returned_to_pool_via_collection_release()
+        {
+            var pool = new CharArrayTextWriter.Pool();
+            var writer = pool.Lease();
+            writer.Write('a');
+            pool.Release(new[] { writer });
+
+            writer.Size.ShouldBe(0);
+        }
+
         static ArraySegment<char> ToCharSegment(CharArrayTextWriter writer)
         {
-            return new ArraySegment<char>(writer.Buffer,0,writer.Size);
+            return new ArraySegment<char>(writer.Buffer, 0, writer.Size);
         }
     }
 }
