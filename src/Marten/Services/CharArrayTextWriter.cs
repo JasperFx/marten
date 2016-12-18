@@ -119,13 +119,21 @@ namespace Marten.Services
             public void Release(CharArrayTextWriter writer)
             {
                 // currently, all writers are cached. This might be changed to hold only N writers in the cache.
+
+                writer._next = 0;
                 _cache.Push(writer);
             }
 
             public void Release(IEnumerable<CharArrayTextWriter> writer)
             {
                 // currently, all writers are cached. This might be changed to hold only N writers in the cache.
-                _cache.PushRange(writer.ToArray());
+                var writers = writer.ToArray();
+                // ReSharper disable once ForCanBeConvertedToForeach
+                for (var i = 0; i < writers.Length; i++)
+                {
+                    writers[i]._next = 0;
+                }
+                _cache.PushRange(writers);
             }
         }
     }
