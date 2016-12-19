@@ -4,3 +4,4 @@ documents
 events
 precompiling
 scenarios
+admin
