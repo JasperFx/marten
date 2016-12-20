@@ -16,11 +16,11 @@ This means that the plv8 extension doesn't exist for you to install.
 
 ## Download
 
-You can download the binaries from:
+You can download the appropriate binaries for PostgreSQL 9.5/PostgreSQL 9.6 from:
 
 http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html
 
-Note: This can be used for both 9.5 and 9.6, at the time of writing this, there is no compiled extension specific for 9.6.
+http://www.postgresonline.com/journal/archives/367-PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit.html
 
 Download the version that corresponds to the version of PostgreSQL you installed (32 or 64 bit)
 
