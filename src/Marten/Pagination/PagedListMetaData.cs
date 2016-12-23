@@ -6,31 +6,31 @@ namespace Marten.Pagination
     {
         public PagedListMetaData(int pageNumber, int pageSize, int totalItemCount)
         {
-            this.TotalItemCount = totalItemCount;
-            this.PageSize = pageSize;
-            this.PageNumber = pageNumber;
+            TotalItemCount = totalItemCount;
+            PageSize = pageSize;
+            PageNumber = pageNumber;
 
             // compute the nunber of pages based on page size and total records
-            this.PageCount = this.TotalItemCount > 0 ? (int)Math.Ceiling(this.TotalItemCount / (double)this.PageSize) : 0;
+            PageCount = TotalItemCount > 0 ? (int)Math.Ceiling(TotalItemCount / (double)PageSize) : 0;
 
             // compute if there is a previous page
-            this.HasPreviousPage = this.PageNumber > 1;
+            HasPreviousPage = PageNumber > 1;
 
             // compute if there is next page
-            this.HasNextPage = this.PageNumber < this.PageCount;
+            HasNextPage = PageNumber < PageCount;
 
             // compute if the current page is first page
-            this.IsFirstPage = this.PageNumber == 1;
+            IsFirstPage = PageNumber == 1;
 
             // compute if the current page is last page
-            this.IsLastPage = this.PageNumber >= this.PageCount;
+            IsLastPage = PageNumber >= PageCount;
 
             // compute one-based index of first item on a specific page 
-            this.FirstItemOnPage = ((this.PageNumber - 1) * this.PageSize) + 1;
+            FirstItemOnPage = ((PageNumber - 1) * PageSize) + 1;
 
             // compute one-based index of last item on a specific page
-            var numberOfLastItemOnPage = this.FirstItemOnPage + this.PageSize - 1;
-            this.LastItemOnPage = numberOfLastItemOnPage > this.TotalItemCount ? this.TotalItemCount : numberOfLastItemOnPage;
+            var numberOfLastItemOnPage = FirstItemOnPage + PageSize - 1;
+            LastItemOnPage = numberOfLastItemOnPage > TotalItemCount ? TotalItemCount : numberOfLastItemOnPage;
         }
 
         /// <summary>

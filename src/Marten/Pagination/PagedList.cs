@@ -33,7 +33,7 @@ namespace Marten.Pagination
 
             if (items != null)
             {
-                this._subset.AddRange(items);
+                _subset.AddRange(items);
             }
         }
 
@@ -44,7 +44,7 @@ namespace Marten.Pagination
         /// <returns>/returns item from paged query result</returns>
         public T this[int index]
         {
-            get { return this._subset[index]; }
+            get { return _subset[index]; }
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Marten.Pagination
         /// </summary>
         public int Count
         {
-            get { return this._subset.Count(); }   
+            get { return _subset.Count(); }   
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Marten.Pagination
         /// </summary>
         public PagedListMetaData MetaData
         {
-            get { return this._metaData; }
+            get { return _metaData; }
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace Marten.Pagination
         /// <returns>Generic Enumerator of paged query result</returns>
         public IEnumerator<T> GetEnumerator()
         {
-            return ((IEnumerable<T>)this._subset).GetEnumerator();
+            return ((IEnumerable<T>)_subset).GetEnumerator();
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace Marten.Pagination
         /// <returns>Enumerator of paged query result</returns>
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((IEnumerable<T>)this._subset).GetEnumerator();
+            return ((IEnumerable<T>)_subset).GetEnumerator();
         }
     }
 }

@@ -4,6 +4,7 @@ using Xunit;
 using Shouldly;
 using Marten.Services;
 using Marten.Pagination;
+using System.Threading.Tasks;
 
 namespace Marten.Testing.Pagination
 {
@@ -56,30 +57,24 @@ namespace Marten.Testing.Pagination
         }
 
         [Fact]
-        public void can_return_paged_result_async()
+        public async Task can_return_paged_result_async()
         {
             this.BuildUpTargetData();
 
             var pageIndex = 1;
             var pageSize = 10;
 
-            theSession.Query<Target>().PagedQueryAsync(pageIndex, pageSize)
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult()
-                .Count
-                .ShouldBe<int>(pageSize);
+            var result = await theSession.Query<Target>().PagedQueryAsync(pageIndex, pageSize)
+                .ConfigureAwait(false);
+            result.Count.ShouldBe<int>(pageSize);
 
-            theSession.Query<Target>().PagedQueryAsync(pageIndex+1, pageSize)
-               .ConfigureAwait(false)
-               .GetAwaiter()
-               .GetResult()
-               .Count
-               .ShouldBe<int>(5);
+            result = await theSession.Query<Target>().PagedQueryAsync(pageIndex+1, pageSize)
+                .ConfigureAwait(false);
+            result.Count.ShouldBe<int>(5);
         }
 
         [Fact]
-        public void can_return_paged_result_async_with_orderby()
+        public async Task can_return_paged_result_async_with_orderby()
         {
             this.BuildUpTargetData();
 
@@ -90,11 +85,8 @@ namespace Marten.Testing.Pagination
 
             order = q => q.OrderByDescending(m => m.Date);
 
-            var result = theSession.Query<Target>().PagedQueryAsync(pageIndex, pageSize, order)
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult();
-
+            var result = await theSession.Query<Target>().PagedQueryAsync(pageIndex, pageSize, order)
+                .ConfigureAwait(false);
             result[0].Date.ShouldBeGreaterThan(result[result.Count - 1].Date);
         }
     }
