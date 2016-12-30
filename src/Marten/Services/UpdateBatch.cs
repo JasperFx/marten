@@ -102,8 +102,11 @@ namespace Marten.Services
             }
             finally
             {
-                _writerPool.Release(_writers);
-                _writers.Clear();
+                if (_writerPool != null)
+                {
+                    _writerPool?.Release(_writers);
+                    _writers.Clear();
+                }
             }
         }
 
@@ -154,8 +157,11 @@ namespace Marten.Services
             }
             finally
             {
-                _writerPool.Release(_writers);
-                _writers.Clear();
+                if (_writerPool != null)
+                {
+                    _writerPool?.Release(_writers);
+                    _writers.Clear();
+                }
             }
         }
 
