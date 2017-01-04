@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -101,13 +101,13 @@ Marten combines all the queries into a single command sent to the underlying Pos
 the data returned and sets the results of the <code>Task</code> objects handed out earlier.</p>
 <p>This functionality is demonstrated below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;// Start a new IBatchQuery from an active session&#xD;&#xA;var batch = theSession.CreateBatchQuery();&#xD;&#xA;&#xD;&#xA;// Fetch a single document by its Id&#xD;&#xA;var user1 = batch.Load&lt;User&gt;(&quot;username&quot;);&#xD;&#xA;&#xD;&#xA;// Fetch multiple documents by their id&#x27;s&#xD;&#xA;var admins = batch.LoadMany&lt;User&gt;().ById(&quot;user2&quot;, &quot;user3&quot;);&#xD;&#xA;&#xD;&#xA;// User-supplied sql&#xD;&#xA;var toms = batch.Query&lt;User&gt;(&quot;where first_name == ?&quot;, &quot;Tom&quot;);&#xD;&#xA;&#xD;&#xA;// Where with Linq&#xD;&#xA;var jills = batch.Query&lt;User&gt;().Where(x =&gt; x.FirstName == &quot;Jill&quot;).ToList();&#xD;&#xA;&#xD;&#xA;// Any() queries&#xD;&#xA;var anyBills = batch.Query&lt;User&gt;().Any(x =&gt; x.FirstName == &quot;Bill&quot;);&#xD;&#xA;&#xD;&#xA;// Count() queries&#xD;&#xA;var countJims = batch.Query&lt;User&gt;().Count(x =&gt; x.FirstName == &quot;Jim&quot;);&#xD;&#xA;&#xD;&#xA;// The Batch querying supports First/FirstOrDefault/Single/SingleOrDefault() selectors:&#xD;&#xA;var firstInternal = batch.Query&lt;User&gt;().OrderBy(x =&gt; x.LastName).First(x =&gt; x.Internal);&#xD;&#xA;&#xD;&#xA;// Kick off the batch query&#xD;&#xA;await batch.Execute();&#xD;&#xA;&#xD;&#xA;// All of the query mechanisms of the BatchQuery return&#xD;&#xA;// Task&#x27;s that are completed by the Execute() method above&#xD;&#xA;var internalUser = await firstInternal;&#xD;&#xA;Debug.WriteLine($&quot;The first internal user is {internalUser.FirstName} {internalUser.LastName}&quot;);&#xD;&#xA;</code></pre>
-<h2>Combining Compiled Queries and Batch Queries</h2>
+<h2 id="combining-compiled-queries-and-batch-queries">Combining Compiled Queries and Batch Queries</h2>
 <p>As of v0.8.10, Marten allows you to incorporate <a href="/marten/documentation/documents/querying/compiled_queries">compiled queries</a> as part of a batch query. The Marten team is hoping that this combination will make it easier to create performant applications where you may need to aggregate many documents in a single HTTP request or other operation.</p>
 <p>Say you have a compiled query that finds the first user with a given first name:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class FindByFirstName : ICompiledQuery&lt;User, User&gt;&#xD;&#xA;{&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;&#xD;&#xA;    public Expression&lt;Func&lt;IQueryable&lt;User&gt;, User&gt;&gt; QueryIs()&#xD;&#xA;    {&#xD;&#xA;        return q =&gt; q.FirstOrDefault(x =&gt; x.FirstName == FirstName);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>To use that compiled query class in a batch query, you simply use the <code>IBatchedQuery.Query(ICompiledQuery)</code> syntax shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var batch = theSession.CreateBatchQuery();&#xD;&#xA;&#xD;&#xA;var justin = batch.Query(new FindByFirstName {FirstName = &quot;Justin&quot;});&#xD;&#xA;var tamba = batch.Query(new FindByFirstName {FirstName = &quot;Tamba&quot;});&#xD;&#xA;&#xD;&#xA;await batch.Execute().ConfigureAwait(false);&#xD;&#xA;&#xD;&#xA;(await justin).Id.ShouldBe(user1.Id);&#xD;&#xA;(await tamba).Id.ShouldBe(user2.Id);&#xD;&#xA;</code></pre>
-<h2>Running Synchronously</h2>
+<h2 id="running-synchronously">Running Synchronously</h2>
 <p>As of v0.9.1, Marten also exposes the batch querying functionality with a synchronous option:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var batch = theSession.CreateBatchQuery();&#xD;&#xA;&#xD;&#xA;var justin = batch.Query(new FindByFirstName { FirstName = &quot;Justin&quot; });&#xD;&#xA;var tamba = batch.Query(new FindByFirstName { FirstName = &quot;Tamba&quot; });&#xD;&#xA;&#xD;&#xA;batch.ExecuteSynchronously();&#xD;&#xA;&#xD;&#xA;justin.Result.Id.ShouldBe(user1.Id);&#xD;&#xA;tamba.Result.Id.ShouldBe(user2.Id);&#xD;&#xA;</code></pre>
 <p>The mechanics of running synchronously are identical except for calling <code>IBatchedQuery.ExecuteSynchronously()</code>.</p>

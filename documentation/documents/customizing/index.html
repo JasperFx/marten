@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -113,19 +113,19 @@ better to keep the persistence configuration on the document type itself for eas
 Marten has you covered with the various configuration options shown here.</p>
 <p>The configuration options you'll most likely use are:</p>
 <ul class="table-of-contents"><li><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></li><li><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></li><li><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a></li><li><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></li></ul>
-<h2>Postgresql Limits on Naming</h2>
+<h2 id="postgresql-limits-on-naming">Postgresql Limits on Naming</h2>
 <p>Postgresql out of the box has a limitation on the length of database object names to 64. This can be overridden in a
 Postgresql database by <a href="https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS">setting the <code>NAMEDATALEN</code> property</a>.</p>
 <p>This can unfortunately have a negative impact on Marten's ability to detect changes to the schema configuration when Postgresql quietly
 truncates the name of database objects. To guard against this, Marten will now warn you if a schema name exceeds the <code>NAMEDATALEN</code> value,
 but you do need to tell Marten about any non-default length limit like so:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // If you have overridden NAMEDATALEN in your&#xD;&#xA;    // Postgresql database to 100&#xD;&#xA;    _.NameDataLength = 100;&#xD;&#xA;});&#xD;&#xA;</code></pre>
-<h2>Custom StoreOptions</h2>
+<h2 id="custom-storeoptions">Custom StoreOptions</h2>
 <p>It's perfectly valid to create your own subclass of <code>StoreOptions</code> that configures itself, as shown below.</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class MyStoreOptions : StoreOptions&#xD;&#xA;{&#xD;&#xA;    public static IDocumentStore ToStore()&#xD;&#xA;    {&#xD;&#xA;        return new DocumentStore(new MyStoreOptions());&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public MyStoreOptions()&#xD;&#xA;    {&#xD;&#xA;        Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;        Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsString});&#xD;&#xA;&#xD;&#xA;        Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>This strategy might be beneficial if you need to share Marten configuration across different applications
 or testing harnesses or custom migration tooling.</p>
-<h2>MartenRegistry</h2>
+<h2 id="martenregistry">MartenRegistry</h2>
 <p>While there are some limited abilities to configure storage with attributes, the most complete option right now
 is a fluent interface implemented by the <code>MartenRegistry</code>. To configure a Marten document store, first write
 your own subclass of <code>MartenRegistry</code> and place declarations in the constructor function like this example:</p>
@@ -134,7 +134,7 @@ your own subclass of <code>MartenRegistry</code> and place declarations in the c
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;your connection string&quot;);&#xD;&#xA;    _.Schema.Include&lt;MyMartenRegistry&gt;();&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>Do note that you could happily use multiple <code>MartenRegistry</code> classes in larger applications if that is advantageous.</p>
 <p>If you dislike using infrastructure attributes in your application code, you will probably prefer to use MartenRegistry.</p>
-<h2>Custom Attributes</h2>
+<h2 id="custom-attributes">Custom Attributes</h2>
 <p>If there's some kind of customization you'd like to use attributes for that isn't already supported by Marten,
 you're still in luck. If you write a subclass of the <code>MartenAttribute</code> shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public abstract class MartenAttribute : Attribute&#xD;&#xA;{&#xD;&#xA;    /// &lt;summary&gt;&#xD;&#xA;    /// Customize Document storage at the document level&#xD;&#xA;    /// &lt;/summary&gt;&#xD;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xD;&#xA;    public virtual void Modify(DocumentMapping mapping) { }&#xD;&#xA;&#xD;&#xA;    /// &lt;summary&gt;&#xD;&#xA;    /// Customize the Document storage for a single member&#xD;&#xA;    /// &lt;/summary&gt;&#xD;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xD;&#xA;    /// &lt;param name=&quot;member&quot;&gt;&lt;/param&gt;&#xD;&#xA;    public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }&#xD;&#xA;}&#xD;&#xA;</code></pre>
@@ -144,7 +144,7 @@ picked up and used by Marten to configure the underlying <code>DocumentMapping</
 <p>As an example, an attribute to add a gin index to the JSONB storage for more efficient adhoc querying of a document
 would look like this:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class GinIndexedAttribute : MartenAttribute&#xD;&#xA;{&#xD;&#xA;    public override void Modify(DocumentMapping mapping, MemberInfo member)&#xD;&#xA;    {&#xD;&#xA;        mapping.AddGinIndexToData();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Embedding Configuration in Document Types</h2>
+<h2 id="embedding-configuration-in-document-types">Embedding Configuration in Document Types</h2>
 <p>Lastly, Marten can examine the document types themselves for a <code>public static ConfigureMarten()</code> method
 and invoke that to let the document type make its own customizations for its storage. Here's an example from
 the unit tests:</p>

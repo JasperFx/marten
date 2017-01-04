@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -103,7 +103,7 @@ the application code no longer matches the JSON previously stored</li>
 <li>Creating a &quot;readside&quot; view of a persisted document as part of a Linq query.</li>
 <li>Transform the raw document data to a completely different .Net type as part of a Linq query</li>
 </ol>
-<h2>Creating and Loading a Javascript Function</h2>
+<h2 id="creating-and-loading-a-javascript-function">Creating and Loading a Javascript Function</h2>
 <p>Javascript transformations work in Marten by first allowing you to write your Javascript function into a single file like this one:</p>
 <pre><code class="language-javascript">&#xD;&#xA;module.exports = function (doc) {&#xD;&#xA;    return {fullname: doc.FirstName &#x2B; &#x27; &#x27; &#x2B; doc.LastName};&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>You'll notice a couple things:</p>
@@ -145,7 +145,7 @@ your database schema with the current version of the Javascript wrapper function
 named transform, and works by just doing a <code>string.Contains()</code> check against the existing function in the database schema.</p>
 <p>In the case of <code>StoreOptions.AutoCreateSchemaObjects = None</code>, the Javascript transform functions are evaluated and output through
 the <a href="/marten/documentation/schema/migrations">Schema Migrations and Patches</a>.</p>
-<h2>Using a Javascript Transform in Linq Queries</h2>
+<h2 id="using-a-javascript-transform-in-linq-queries">Using a Javascript Transform in Linq Queries</h2>
 <p>Once you have a Javascript transform loaded into the <code>IDocumentStore</code>, you can do live transformations inside
 of Linq queries. If you only care about the transformed JSON, you use this syntax:</p>
 <pre><code class="language-csharp">&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    [Fact]&#xD;&#xA;    public void can_select_a_string_field_in_compiled_query()&#xD;&#xA;    {&#xD;&#xA;        var user = new User { FirstName = &quot;Eric&quot;, LastName = &quot;Berry&quot; };&#xD;&#xA;&#xD;&#xA;        using (var session = theStore.OpenSession())&#xD;&#xA;        {&#xD;&#xA;            session.Store(user);&#xD;&#xA;            session.SaveChanges();&#xD;&#xA;&#xD;&#xA;            var name = session.Query&lt;User&gt;().Select(x =&gt; x.FirstName)&#xD;&#xA;                .Single();&#xD;&#xA;&#xD;&#xA;            name.ShouldBe(&quot;Eric&quot;);&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    [Fact]&#xD;&#xA;public void can_transform_to_json()&#xD;&#xA;{&#xD;&#xA;    var user = new User {FirstName = &quot;Eric&quot;, LastName = &quot;Berry&quot;};&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(user);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        var json = session.Query&lt;User&gt;()&#xD;&#xA;            .Where(x =&gt; x.Id == user.Id)&#xD;&#xA;            .TransformToJson(&quot;get_fullname&quot;).Single();&#xD;&#xA;&#xD;&#xA;        json.ShouldBe(&quot;{\&quot;fullname\&quot;: \&quot;Eric Berry\&quot;}&quot;);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
@@ -154,7 +154,7 @@ method shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class FullNameView&#xD;&#xA;{&#xD;&#xA;    public string fullname { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;[Fact]&#xD;&#xA;public void can_transform_to_another_doc()&#xD;&#xA;{&#xD;&#xA;    var user = new User { FirstName = &quot;Eric&quot;, LastName = &quot;Berry&quot; };&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(user);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        var view = session.Query&lt;User&gt;()&#xD;&#xA;            .Where(x =&gt; x.Id == user.Id)&#xD;&#xA;            .TransformTo&lt;FullNameView&gt;(&quot;get_fullname&quot;).Single();&#xD;&#xA;&#xD;&#xA;        view.fullname.ShouldBe(&quot;Eric Berry&quot;);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>You can also use <code>TransformToJson()</code> inside of a <a href="/marten/documentation/documents/querying/compiled_queries">compiled query</a>:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class JsonQuery : ICompiledQuery&lt;User, string&gt;&#xD;&#xA;{&#xD;&#xA;    public Expression&lt;Func&lt;IQueryable&lt;User&gt;, string&gt;&gt; QueryIs()&#xD;&#xA;    {&#xD;&#xA;        return _ =&gt; _.Where(x =&gt; x.FirstName == FirstName)&#xD;&#xA;        .TransformToJson(&quot;get_fullname&quot;).Single();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Document Transformations</h2>
+<h2 id="document-transformations">Document Transformations</h2>
 <p>The persisted JSON documents in Marten are a reflection of your .Net classes. Great, that makes it absurdly easy to keep the database schema
 in synch with your application code at development time -- especially compared to the typical development process against a relational database.
 However, what happens when you really do need to make breaking changes or additions to a document type but you already have loads of

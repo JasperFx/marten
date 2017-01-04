@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -94,10 +94,10 @@
 <!--Url:loading-->
 <p>Documents can be loaded by id from the <code>IDocumentSession</code> interface, either one at a time or by an enumerable of id values. The load by id functionality
 again supports Guid's, integers, long integers, and strings.</p>
-<h2>Synchronous Loading</h2>
+<h2 id="synchronous-loading">Synchronous Loading</h2>
 <p>The syntax is shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void load_by_id(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    &#xD;&#xA;    var userId = Guid.NewGuid();&#xD;&#xA;&#xD;&#xA;    // Load a single document identified by a Guid&#xD;&#xA;    var user = session.Load&lt;User&gt;(userId);&#xD;&#xA;&#xD;&#xA;    // There&#x27;s an overload of Load for integers and longs&#xD;&#xA;    var doc = session.Load&lt;IntDoc&gt;(15);&#xD;&#xA;&#xD;&#xA;    // Another overload for documents identified by strings&#xD;&#xA;    var doc2 = session.Load&lt;StringDoc&gt;(&quot;Hank&quot;);&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Load multiple documents by a group of id&#x27;s&#xD;&#xA;    var users = session.LoadMany&lt;User&gt;(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());&#xD;&#xA;&#xD;&#xA;    var ids = new Guid[] {Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()};&#xD;&#xA;&#xD;&#xA;    // If you already have an array of id values&#xD;&#xA;    var users2 = session.LoadMany&lt;User&gt;(ids);&#xD;&#xA;} &#xD;&#xA;</code></pre>
-<h2>Asynchronous Loading</h2>
+<h2 id="asynchronous-loading">Asynchronous Loading</h2>
 <p>TODO(need a sample of async loading)</p>
 
 			      	</div>

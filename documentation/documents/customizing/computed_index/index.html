@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -113,7 +113,7 @@ CREATE INDEX mt_doc_user_idx_user_name ON public.mt_doc_user ((data ->> 'UserNam
 <pre>
 CREATE INDEX mt_doc_target_idx_inner_color ON public.mt_doc_target (((data -> 'Inner' ->> 'Color')::int));
 </pre>
-<h2>Customizing a Calculated Index</h2>
+<h2 id="customizing-a-calculated-index">Customizing a Calculated Index</h2>
 <p>You have some ability to customize the calculated index by passing a second Lambda <code>Action</code> into
 the <code>Index()</code> method as shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // The second, optional argument to Index()&#xD;&#xA;    // allows you to customize the calculated index&#xD;&#xA;    _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Number, x =&gt;&#xD;&#xA;    {&#xD;&#xA;        // Change the index method to &quot;brin&quot;&#xD;&#xA;        x.Method = IndexMethod.brin;&#xD;&#xA;&#xD;&#xA;        // Force the index to be generated with casing rules&#xD;&#xA;        x.Casing = ComputedIndex.Casings.Lower;&#xD;&#xA;&#xD;&#xA;        // Override the index name if you want&#xD;&#xA;        x.IndexName = &quot;mt_my_name&quot;;&#xD;&#xA;&#xD;&#xA;        // Toggle whether or not the index is concurrent&#xD;&#xA;        // Default is false&#xD;&#xA;        x.IsConcurrent = true;&#xD;&#xA;&#xD;&#xA;        // Toggle whether or not the index is a UNIQUE&#xD;&#xA;        // index&#xD;&#xA;        x.IsUnique = true;&#xD;&#xA;&#xD;&#xA;        // Partial index by supplying a condition&#xD;&#xA;        x.Where = &quot;(data -&gt;&gt; &#x27;Number&#x27;)::int &gt; 10&quot;;&#xD;&#xA;    });&#xD;&#xA;});&#xD;&#xA;</code></pre>

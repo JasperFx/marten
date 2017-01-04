@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -91,11 +91,11 @@
 
 			      	<div id="main-pane">
 			      		<!--Title:Event Store Schema Objects-->
-<h2>Overriding the Schema</h2>
+<h2 id="overriding-the-schema">Overriding the Schema</h2>
 <p>By default, the event store database objects are created in the default schema for the active <code>IDocumentStore</code>. If you wish,
 you can segregate the event store objects into a separate schema with this syntax:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;some connection string&quot;);&#xD;&#xA;&#xD;&#xA;    // Places all the Event Store schema objects&#xD;&#xA;    // into the &quot;events&quot; schema&#xD;&#xA;    _.Events.DatabaseSchemaName = &quot;events&quot;;&#xD;&#xA;});&#xD;&#xA;</code></pre>
-<h2>Database Tables</h2>
+<h2 id="database-tables">Database Tables</h2>
 <p>The events are stored in the <code>mt_events</code> table, with these columns:</p>
 <ul>
 <li><code>seq_id</code> - A sequential identifier that acts as the primary key</li>
@@ -119,7 +119,7 @@ and to retain a potential way to uniquely identify events across databases.</p>
 <li><code>mt_append_event</code> - Writes event data to the <code>mt_events</code> and <code>mt_streams</code> tables</li>
 <li><code>mt_mark_event_progression</code> - Updates the <code>mt_event_progression</code> table</li>
 </ul>
-<h2>Event Metadata in Code</h2>
+<h2 id="event-metadata-in-code">Event Metadata in Code</h2>
 <p>Hopefully, it's relatively clear how the fields in <code>mt_events</code> maps to the <code>IEvent</code> interface in Marten:</p>
 <pre><code class="language-csharp">&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// A reference to the stream that contains&#xD;&#xA;/// this event&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public Guid StreamId { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// An alternative Guid identifier to identify&#xD;&#xA;/// events across databases&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// An event&#x27;s version position within its event stream&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public int Version { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// A global sequential number identifying the Event&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public long Sequence { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// The actual event data&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public T Data { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// The UTC time that this event was originally captured&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public DateTimeOffset Timestamp { get; set; }&#xD;&#xA;</code></pre>
 <p>The full event data is available on <code>EventStream</code> and <code>IEvent</code> objects immediately after committing a transaction that involves

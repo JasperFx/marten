@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -94,7 +94,7 @@
 <!--Url:hierarchies-->
 <p>Marten now allows you to specify that hierarchies of document types should be stored in one table and allow you
 to query for either the base class or any of the subclasses.</p>
-<h2>One Level Hierarchies</h2>
+<h2 id="one-level-hierarchies">One Level Hierarchies</h2>
 <p>To make that concrete, let's say you have a document type named <code>User</code> that has a pair of specialized subclasses
 called <code>SuperUser</code> and <code>AdminUser</code>. To use the document hierarchy storage, we need to tell Marten that
 <code>SuperUser</code> and <code>AdminUser</code> should just be stored as subclasses of <code>User</code> like this:</p>
@@ -113,7 +113,7 @@ but may in the future</li>
 <li>Internally, the subclass type documents are also stored as the parent type in the Identity Map mechanics. Many, many hours of
 banging my head on my desk were required to add this feature.</li>
 </ul>
-<h2>Multi Level Hierarchies</h2>
+<h2 id="multi-level-hierarchies">Multi Level Hierarchies</h2>
 <p>Say you have a document type named <code>ISmurf</code> that is implemented by <code>Smurf</code>. Now, say the latter has a pair of specialized
 subclasses called <code>PapaSmurf</code> and <code>PapySmurf</code> and that both implement <code>IPapaSmurf</code> and that <code>PapaSmurf</code> has the subclass
 <code>BrainySmurf</code> like so:</p>

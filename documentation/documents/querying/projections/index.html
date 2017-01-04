@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -93,7 +93,7 @@
 			      		<!--Title:Document Projections-->
 <!--Url:projections-->
 <p>Marten has now the capacity to run <a href="https://en.wikipedia.org/wiki/Projection_(relational_algebra)">projection queries</a>, where only specific document properties are retrieved. The projection queries are executed by using the linq <code>IQueryable.Select()</code> method.</p>
-<h2>Projection Queries</h2>
+<h2 id="projection-queries">Projection Queries</h2>
 <p>When you wish to retrieve an IEnumerable of a certain document property for example:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void use_select_in_query_for_one_field()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new User {FirstName = &quot;Hank&quot;});&#xD;&#xA;    theSession.Store(new User {FirstName = &quot;Bill&quot;});&#xD;&#xA;    theSession.Store(new User {FirstName = &quot;Sam&quot;});&#xD;&#xA;    theSession.Store(new User {FirstName = &quot;Tom&quot;});&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;User&gt;().OrderBy(x =&gt; x.FirstName).Select(x =&gt; x.FirstName)&#xD;&#xA;        .ShouldHaveTheSameElementsAs(&quot;Bill&quot;, &quot;Hank&quot;, &quot;Sam&quot;, &quot;Tom&quot;);&#xD;&#xA;&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>When you wish to retrieve certain properties and transform them into another type:</p>
@@ -102,10 +102,10 @@
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void use_select_to_transform_to_an_anonymous_type()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Hank&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Bill&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Sam&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Tom&quot; });&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;User&gt;().OrderBy(x =&gt; x.FirstName).Select(x =&gt; new { Name = x.FirstName })&#xD;&#xA;        .ToArray()&#xD;&#xA;        .Select(x =&gt; x.Name)&#xD;&#xA;        .ShouldHaveTheSameElementsAs(&quot;Bill&quot;, &quot;Hank&quot;, &quot;Sam&quot;, &quot;Tom&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Marten also allows you to run projection queries on deep (nested) properties:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void transform_with_deep_properties()&#xD;&#xA;{&#xD;&#xA;    var targets = Target.GenerateRandomData(100).ToArray();&#xD;&#xA;&#xD;&#xA;    theStore.BulkInsert(targets);&#xD;&#xA;&#xD;&#xA;    var actual = theSession.Query&lt;Target&gt;().Where(x =&gt; x.Number == targets[0].Number).Select(x =&gt; x.Inner.Number).ToList().Distinct();&#xD;&#xA;&#xD;&#xA;    var expected = targets.Where(x =&gt; x.Number == targets[0].Number).Select(x =&gt; x.Inner.Number).Distinct();&#xD;&#xA;&#xD;&#xA;    actual.ShouldHaveTheSameElementsAs(expected);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Chaining other Linq Methods</h2>
+<h2 id="chaining-other-linq-methods">Chaining other Linq Methods</h2>
 <p>After calling Select, you'd be able to chain other linq methods such as <code>First()</code>, <code>FirstOrDefault()</code>, <code>Single()</code> and so on, like so:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void use_select_to_another_type_with_first()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Hank&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Bill&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Sam&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Tom&quot; });&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;User&gt;().OrderBy(x =&gt; x.FirstName).Select(x =&gt; new UserName { Name = x.FirstName })&#xD;&#xA;        .FirstOrDefault()&#xD;&#xA;        .Name.ShouldBe(&quot;Bill&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Async Projections</h2>
+<h2 id="async-projections">Async Projections</h2>
 <p>Marten also supports asynchronously running projection queries. You'd be able to achieve this by simply chaining the asynchronous resolving method you are after. For example:</p>
 <ul>
 <li><code>ToListAsync()</code></li>

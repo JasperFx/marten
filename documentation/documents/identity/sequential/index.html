@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -99,7 +99,7 @@ as in this example:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[HiloSequence(MaxLo = 33)]&#xD;&#xA;public class OverriddenHiloDoc&#xD;&#xA;{&#xD;&#xA;    public int Id { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>You can also use the <code>MartenRegistry</code> fluent interface to override the Hilo configuration for a document type as in this example:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Overriding the Hilo settings for the document type &quot;IntDoc&quot;&#xD;&#xA;    _.Schema.For&lt;IntDoc&gt;()&#xD;&#xA;        .HiloSettings(new HiloSettings {MaxLo = 66});&#xD;&#xA;&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;});&#xD;&#xA;</code></pre>
-<h2>Set the Identifier Floor</h2>
+<h2 id="set-the-identifier-floor">Set the Identifier Floor</h2>
 <p>Marten 1.2 adds a convenience method to reset the &quot;floor&quot; of the Hilo sequence for a single document type:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;// Resets the minimum Id number for the IntDoc document&#xD;&#xA;// type to 2500&#xD;&#xA;store.Advanced.ResetHiloSequenceFloor&lt;IntDoc&gt;(2500);&#xD;&#xA;</code></pre>
 <p>This functionality was added specifically to aid in importing data from an existing data source. Do note that this functionality simply guarantees

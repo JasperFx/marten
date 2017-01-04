@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -44,7 +44,7 @@
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
 		      	<li><a href="/marten/documentation/scenarios" title="Scenarios">Previous</a></li>
-		      	
+		      	<li><a href="/marten/documentation/admin" title="Managing PostgreSQL Instance">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -77,7 +77,7 @@
 
 		        </ul>
 
-		        	
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/admin">Managing PostgreSQL Instance</a></p>
 		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/scenarios">Scenarios</a></p>
 
 		        </ul>
@@ -92,7 +92,7 @@
 			      	<div id="main-pane">
 			      		<!--Title: Immutable projections as read model-->
 <p>This use case demonstrates how to create immutable projections from event streams.</p>
-<h2>Scenario</h2>
+<h2 id="scenario">Scenario</h2>
 <p>To make projections immutable, the event application methods invoked by aggregators need to be made private, as well as any property setters.</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class AggregateWithPrivateEventApply&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; private set; }&#xD;&#xA;    &#xD;&#xA;    private void Apply(QuestStarted started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Name { get; private set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>To run aggregators against such projections, aggregator lookup strategy is configured to use aggregators that look for private <code>Apply([Event Type])</code> methods. Furthermore, document deserialization is configured to look for private property setters, allowing hydration of the projected objects from the database.</p>
@@ -115,7 +115,7 @@ Given the setup, a stream can now be projected using `AggregateWithPrivateEventA
 				        </span>
 				        <span class="pull-right">
 
-				        	
+				        	<strong>Next: </strong><a href="/marten/documentation/admin">Managing PostgreSQL Instance</a>
 
 				        </span>
 			      	</nav>

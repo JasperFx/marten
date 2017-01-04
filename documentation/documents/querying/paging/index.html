@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -94,7 +94,7 @@
 <p>For paged access to data in Marten, just use the <code>Take()</code> and <code>Skip()</code> Linq operators. To get the total number of
 documents matching a query without having to execute the query twice, use the new <code>Stats()</code> Linq operator to
 also capture the total as shown in this sample:</p>
-<p class="bg-warning" style="padding:10px"><b>Missing code sample &#x27;using-query-statistics&#x27;</b><small> -- Wait for ST to catch up reading samples or CTRL&#x2B;SHIFT&#x2B;R to force refresh</small></p>
+<p class="bg-warning" style="padding:10px"><b>Missing code sample &#x27;using-query-statistics&#x27;</b><small> -- Wait for dotnet stdocs to catch up reading samples or CTRL&#x2B;SHIFT&#x2B;R to force refresh</small></p>
 <p>For the sake of completeness, the SQL generated in the operation above by Marten would be:</p>
 <pre>
 select d.data, d.id, count(1) OVER() as total_rows from public.mt_doc_target as d where CAST(d.data ->> 'Number' as integer) > :arg0 LIMIT 5

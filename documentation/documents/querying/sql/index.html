@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -101,10 +101,10 @@
 <p>The <code>Query&lt;T&gt;(sql)</code> mechanism will also allow you to use parameterized sql like so:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var user =&#xD;&#xA;    session.Query&lt;User&gt;(&quot;where data -&gt;&gt; &#x27;FirstName&#x27; = ? and data -&gt;&gt; &#x27;LastName&#x27; = ?&quot;, &quot;Jeremy&quot;,&#xD;&#xA;        &quot;Miller&quot;)&#xD;&#xA;        .Single();&#xD;&#xA;</code></pre>
 <p>The best resource for this topic might just be <a href="https://github.com/JasperFx/Marten/blob/master/src/Marten.Testing/query_by_sql_where_clause_Tests.cs">the unit tests</a>.</p>
-<h2>Asynchronous Queries</h2>
+<h2 id="asynchronous-queries">Asynchronous Queries</h2>
 <p>You can also query asynchronously with user supplied SQL:</p>
 <pre><code class="language-csharp">&#xD;&#xA;using (var session = store.OpenSession())&#xD;&#xA;{&#xD;&#xA;    var u = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};&#xD;&#xA;    session.Store(u);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;&#xD;&#xA;    var users =&#xD;&#xA;        await&#xD;&#xA;            session.QueryAsync&lt;User&gt;(&#xD;&#xA;                &quot;select data from mt_doc_user where data -&gt;&gt; &#x27;FirstName&#x27; = &#x27;Jeremy&#x27;&quot;)&#xD;&#xA;                .ConfigureAwait(false);&#xD;&#xA;    var user = users.Single();&#xD;&#xA;&#xD;&#xA;    user.LastName.ShouldBe(&quot;Miller&quot;);&#xD;&#xA;    user.Id.ShouldBe(u.Id);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Named Parameter Queries</h2>
+<h2 id="named-parameter-queries">Named Parameter Queries</h2>
 <p>Some of the Postgresql operators include the &quot;?&quot; character that Marten normally uses to denote an input parameter in user supplied queries.
 To solve that conflict, Marten 1.2 introduces support for named parameters in the user supplied queries:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_by_two_named_parameters()&#xD;&#xA;{&#xD;&#xA;    using (var container = Container.For&lt;DevelopmentModeRegistry&gt;())&#xD;&#xA;    {&#xD;&#xA;        using (var session = container.GetInstance&lt;IDocumentStore&gt;().OpenSession())&#xD;&#xA;        {&#xD;&#xA;            session.Store(new User { FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;            session.Store(new User { FirstName = &quot;Lindsey&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;            session.Store(new User { FirstName = &quot;Max&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;            session.Store(new User { FirstName = &quot;Frank&quot;, LastName = &quot;Zombo&quot; });&#xD;&#xA;            session.SaveChanges();&#xD;&#xA;            var user =&#xD;&#xA;                session.Query&lt;User&gt;(&quot;where data -&gt;&gt; &#x27;FirstName&#x27; = :FirstName and data -&gt;&gt; &#x27;LastName&#x27; = :LastName&quot;, new { FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;})&#xD;&#xA;                    .Single();&#xD;&#xA;&#xD;&#xA;            user.ShouldNotBeNull();&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>

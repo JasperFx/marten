@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -94,13 +94,13 @@
 <p>While it's going to be far less mechanical work than persisting an application via relational tables, Marten still needs to create
 matching schema objects in your Postgresql database and you'll need some mechanism for keeping your database schema up to date
 with the Marten <code>StoreOptions</code> configuration in your system.</p>
-<h2>Development Time with &quot;Auto Create&quot; Mode</h2>
+<h2 id="development-time-with-auto-create-mode">Development Time with &quot;Auto Create&quot; Mode</h2>
 <p>As long as you have rights to alter your Postgresql database, you can happily set up Marten in one of the permissive &quot;AutoCreate&quot;
 modes and not worry about schema changes at all as you happily code new features and change existing document types:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Marten will create any new objects that are missing,&#xD;&#xA;    // attempt to update tables if it can, but drop and replace&#xD;&#xA;    // tables that it cannot patch. &#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create any new objects that are missing or&#xD;&#xA;    // attempt to update tables if it can. Will *never* drop&#xD;&#xA;    // any existing objects, so no data loss&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create missing objects on demand, but&#xD;&#xA;    // will not change any existing schema objects&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;&#xD;&#xA;&#xD;&#xA;    // Marten will not create or update any schema objects &#xD;&#xA;    // and throws an exception in the case of a schema object&#xD;&#xA;    // not reflecting the Marten configuration&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.None;&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>As long as you're using a permissive auto creation mode (i.e., not <em>None</em>), you should be able to code in your application model
 and let Marten change your development database as needed behind the scenes to match the active configuration.</p>
-<h2>Exporting Schema Patches</h2>
+<h2 id="exporting-schema-patches">Exporting Schema Patches</h2>
 <p>It's somewhat unlikely that any self-respecting DBA is going to allow your application to have rights to execute schema changes programmatically,
 so we're stuck needing some kind of migration strategy as we add document types, Javascript transformations, and retrofit indexes.
 Fortunately, we've got a decent start on doing just that with the <code>IDocumentStore.Schema.WritePatch(string file)</code> command that
@@ -123,11 +123,11 @@ mechanism covers:</p>
 <li>The Hilo support table</li>
 <li>The Event Store schema objects</li>
 </ol>
-<h2>Apply All Outstanding Changes Upfront</h2>
+<h2 id="apply-all-outstanding-changes-upfront">Apply All Outstanding Changes Upfront</h2>
 <p>To programmatically apply all detectable schema changes upfront when an application is first
 bootstrapped, you can use this mechanism:</p>
 <pre><code class="language-csharp">&#xD;&#xA;store.Schema.ApplyAllConfiguredChangesToDatabase();&#xD;&#xA;</code></pre>
-<h2>Assert that a Schema Matches the Configuration</h2>
+<h2 id="assert-that-a-schema-matches-the-configuration">Assert that a Schema Matches the Configuration</h2>
 <p>As a possible <a href="http://codebetter.com/jeremymiller/2006/04/06/environment-tests-and-self-diagnosing-configuration-with-structuremap/">environment test</a>,
 Marten can do a complete check of its known configuration versus the active Postgresql database and assert any differences
 by throwing an exception:</p>

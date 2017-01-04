@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -98,13 +98,13 @@ Marten using the <code>IQuerySession.Query&lt;T&gt;()</code> or <code>IDocumentS
 <pre><code class="language-csharp">&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// Use Linq operators to query the documents&#xD;&#xA;/// stored in Postgresql&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;/// &lt;typeparam name=&quot;T&quot;&gt;&lt;/typeparam&gt;&#xD;&#xA;/// &lt;returns&gt;&lt;/returns&gt;&#xD;&#xA;IMartenQueryable&lt;T&gt; Query&lt;T&gt;();&#xD;&#xA;</code></pre>
 <p>To query for all documents of a type - not that you would do this very often outside of testing - use the <code>Query&lt;T&gt;()</code> method like this:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void get_all_documents_of_a_type(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    // Calling ToArray() just forces the query to be executed&#xD;&#xA;    var targets = session.Query&lt;Target&gt;().ToArray();&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Basic Operators</h2>
+<h2 id="basic-operators">Basic Operators</h2>
 <p>Since you usually don't want to pull down the entire database at one time, Marten supports these basic operators in Linq searches:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void basic_operators(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    // Field equals a value&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5);&#xD;&#xA;&#xD;&#xA;    // Field does not equal a value&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number != 5);&#xD;&#xA;&#xD;&#xA;    // Field compared to values&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number &gt; 5);&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number &gt;= 5);&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number &lt; 5);&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number &lt;= 5);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>And and Or Queries</h2>
+<h2 id="and-and-or-queries">And and Or Queries</h2>
 <p>Right now, Marten supports both <em>and</em> and <em>or</em> queries with Linq:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void and_or(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    // AND queries&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number &gt; 0 &amp;&amp; x.Number &lt;= 5);&#xD;&#xA;&#xD;&#xA;    // OR queries&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5 || x.Date == DateTime.Today);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Searching within Child Collections</h2>
+<h2 id="searching-within-child-collections">Searching within Child Collections</h2>
 <p>As of v0.7, Marten supports simple <code>Any()</code> queries within child collections, <strong>but only for checking
 equality</strong> of members of the child collection elements (this feature uses the <a href="http://www.postgresql.org/docs/9.5/static/datatype-json.html">Postgresql JSONB containment operator</a> to compose the underlying SQL).</p>
 <p>Marten will also allow you to use the <code>Contains</code> method to search within arrays or lists of simple elements like strings.</p>
@@ -115,42 +115,42 @@ using the <code>&amp;&amp;</code> operator:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var results = theSession&#xD;&#xA;    .Query&lt;Target&gt;()&#xD;&#xA;    .Where(x =&gt; x.Children.Any(_ =&gt; _.Number == 6 &amp;&amp; _.Double == -1))&#xD;&#xA;    .ToArray();&#xD;&#xA;</code></pre>
 <p>Finally, you can query for child collections that do <strong>not</strong> contain a value:</p>
 <pre><code class="language-csharp">&#xD;&#xA;theSession.Query&lt;DocWithArrays&gt;().Count(x =&gt; !x.Strings.Contains(&quot;c&quot;))&#xD;&#xA;    .ShouldBe(2);&#xD;&#xA;</code></pre>
-<h2>Searching for NULL Values</h2>
+<h2 id="searching-for-null-values">Searching for NULL Values</h2>
 <p>Regardless of your feelings about <em>NULL</em>, they do exist in databases and Marten allows you to search for documents that have (or don't have) null values:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void query_by_nullable_type_nulls(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    // You can use Nullable&lt;T&gt;.HasValue in Linq queries&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; !x.NullableNumber.HasValue).ToArray();&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.NullableNumber.HasValue).ToArray();&#xD;&#xA;&#xD;&#xA;    // You can always search by field is NULL&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Inner == null);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Deep Queries</h2>
+<h2 id="deep-queries">Deep Queries</h2>
 <p>Marten's Linq support will allow you to make &quot;deep&quot; searches on properties of properties (or fields):</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void deep_queries(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Inner.Number == 3);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Searching on String Fields</h2>
+<h2 id="searching-on-string-fields">Searching on String Fields</h2>
 <p>Marten supports a subset of the common sub/string searches:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void string_fields(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.StartsWith(&quot;A&quot;));&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.EndsWith(&quot;Suffix&quot;));&#xD;&#xA;&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.Contains(&quot;something&quot;));&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.Equals(&quot;The same thing&quot;));&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Marten also supports case insensitive substring searches:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void case_insensitive_string_fields(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.StartsWith(&quot;A&quot;, StringComparison.OrdinalIgnoreCase));&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.EndsWith(&quot;SuFfiX&quot;, StringComparison.OrdinalIgnoreCase));&#xD;&#xA;&#xD;&#xA;    // using Marten.Util&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.Contains(&quot;soMeThiNg&quot;, StringComparison.OrdinalIgnoreCase));&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Count()</h2>
+<h2 id="count">Count()</h2>
 <p>Marten supports the <code>IQueryable.Count()</code> method:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void count_with_a_where_clause()&#xD;&#xA;{&#xD;&#xA;    // theSession is an IDocumentSession in this test&#xD;&#xA;    theSession.Store(new Target { Number = 1 });&#xD;&#xA;    theSession.Store(new Target { Number = 2 });&#xD;&#xA;    theSession.Store(new Target { Number = 3 });&#xD;&#xA;    theSession.Store(new Target { Number = 4 });&#xD;&#xA;    theSession.Store(new Target { Number = 5 });&#xD;&#xA;    theSession.Store(new Target { Number = 6 });&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;Target&gt;().Count(x =&gt; x.Number &gt; 3).ShouldBe(3);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Min()</h2>
+<h2 id="min">Min()</h2>
 <p>Marten supports the <code>IQueryable.Min()</code> method:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void get_min()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Blue, Number = 1 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Red, Number = 2 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Green, Number = -5 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Blue, Number = 42 });&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;    var minNumber = theSession.Query&lt;Target&gt;().Min(t =&gt; t.Number);&#xD;&#xA;    minNumber.ShouldBe(-5);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Max()</h2>
+<h2 id="max">Max()</h2>
 <p>Marten supports the <code>IQueryable.Max()</code> method:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void get_max()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Blue, Number = 1 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Red, Number = 42 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Green, Number = 3 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Blue, Number = 4 });&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;    var maxNumber = theSession.Query&lt;Target&gt;().Max(t =&gt; t.Number);&#xD;&#xA;    maxNumber.ShouldBe(42);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Average()</h2>
+<h2 id="average">Average()</h2>
 <p>Marten supports the <code>IQueryable.Average()</code> method:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void get_average()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Blue, Number = 1 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Red, Number = 2 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Green, Number = -5 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Blue, Number = 42 });&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;    var average = theSession.Query&lt;Target&gt;().Average(t =&gt; t.Number);&#xD;&#xA;    average.ShouldBe(10);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Sum()</h2>
+<h2 id="sum">Sum()</h2>
 <p>Marten supports the <code>IQueryable.Sum()</code> method:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void get_sum_of_integers()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 1});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Red, Number = 2});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Green, Number = 3});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 4});&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;    theSession.Query&lt;Target&gt;().Sum(x =&gt; x.Number)&#xD;&#xA;        .ShouldBe(10);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Ordering Results</h2>
+<h2 id="ordering-results">Ordering Results</h2>
 <p>Marten contains support for expressing ordering in both ascending and descending order in Linq queries:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void order_by(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    // Sort in ascending order&#xD;&#xA;    session.Query&lt;Target&gt;().OrderBy(x =&gt; x.Date);&#xD;&#xA;&#xD;&#xA;    // Sort in descending order&#xD;&#xA;    session.Query&lt;Target&gt;().OrderByDescending(x =&gt; x.Date);&#xD;&#xA;&#xD;&#xA;    // You can use multiple order by&#x27;s&#xD;&#xA;    session.Query&lt;Target&gt;().OrderBy(x =&gt; x.Date).ThenBy(x =&gt; x.Number);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Take() and Skip() for Paging</h2>
+<h2 id="take-and-skip-for-paging">Take() and Skip() for Paging</h2>
 <p>For simple paging, Marten supports the <code>IQueryable.Take()</code> and <code>IQueryable.Skip()</code> methods:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void using_take_and_skip(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    // gets records 11-20 from the database&#xD;&#xA;    session.Query&lt;Target&gt;().Skip(10).Take(10).OrderBy(x =&gt; x.Number).ToArray();&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Searching for a Single Document</h2>
+<h2 id="searching-for-a-single-document">Searching for a Single Document</h2>
 <p>Marten supports the <code>IQueryable</code> methods for returning only a single document at a time:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void select_a_single_value(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    // Single()/SingleOrDefault() will throw exceptions if more than &#xD;&#xA;    // one result is returned from the database&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).Single();&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).SingleOrDefault();&#xD;&#xA;&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).First();&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).FirstOrDefault();&#xD;&#xA;&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).Last();&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).LastOrDefault();&#xD;&#xA;&#xD;&#xA;    // Using the query inside of Single/Last/First is supported as well&#xD;&#xA;    session.Query&lt;Target&gt;().Single(x =&gt; x.Number == 5);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Querying within Value IEnumerables</h2>
+<h2 id="querying-within-value-ienumerables">Querying within Value IEnumerables</h2>
 <p>As of now, Marten allows you to do &quot;contains&quot; searches within Arrays, Lists &amp; ILists of primitive values like string or numbers:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void query_against_string_array()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new DocWithArrays { Strings = new string[] { &quot;a&quot;, &quot;b&quot;, &quot;c&quot; } };&#xD;&#xA;    var doc2 = new DocWithArrays { Strings = new string[] { &quot;c&quot;, &quot;d&quot;, &quot;e&quot; } };&#xD;&#xA;    var doc3 = new DocWithArrays { Strings = new string[] { &quot;d&quot;, &quot;e&quot;, &quot;f&quot; } };&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    theSession.Store(doc1);&#xD;&#xA;    theSession.Store(doc2);&#xD;&#xA;    theSession.Store(doc3);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;DocWithArrays&gt;().Where(x =&gt; x.Strings.Contains(&quot;c&quot;)).ToArray()&#xD;&#xA;        .Select(x =&gt; x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Marten also allows you to query over IEnumerables using the Any method for equality (similar to Contains):</p>
@@ -158,7 +158,7 @@ using the <code>&amp;&amp;</code> operator:</p>
 <p>As of 1.2, you can also query against the <code>Count()</code> or <code>Length</code> of a child collection with the normal comparison
 operators (<code>==</code>, <code>&gt;</code>, <code>&gt;=</code>, etc.):</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_against_number_list_with_count_method()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new DocWithLists { Numbers = new List&lt;int&gt; { 1, 2, 3 } };&#xD;&#xA;    var doc2 = new DocWithLists { Numbers = new List&lt;int&gt; { 3, 4, 5 } };&#xD;&#xA;    var doc3 = new DocWithLists { Numbers = new List&lt;int&gt; { 5, 6, 7, 8 } };&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    theSession.Store(doc1);&#xD;&#xA;    theSession.Store(doc2);&#xD;&#xA;    theSession.Store(doc3);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;DocWithLists&gt;()&#xD;&#xA;        .Single(x =&gt; x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>SelectMany()</h2>
+<h2 id="selectmany">SelectMany()</h2>
 <p>Marten 1.2 adds the ability to use the <code>SelectMany()</code> operator to issue queries against child collections. You can use
 <code>SelectMany()</code> against primitive collections like so:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void can_do_simple_select_many_against_simple_array()&#xD;&#xA;{&#xD;&#xA;    var product1 = new Product {Tags = new[] {&quot;a&quot;, &quot;b&quot;, &quot;c&quot;}};&#xD;&#xA;    var product2 = new Product {Tags = new[] {&quot;b&quot;, &quot;c&quot;, &quot;d&quot;}};&#xD;&#xA;    var product3 = new Product {Tags = new[] {&quot;d&quot;, &quot;e&quot;, &quot;f&quot;}};&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(product1, product2, product3);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var distinct = query.Query&lt;Product&gt;().SelectMany(x =&gt; x.Tags).Distinct().ToList();&#xD;&#xA;&#xD;&#xA;        distinct.OrderBy(x =&gt; x).ShouldHaveTheSameElementsAs(&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;e&quot;, &quot;f&quot;);&#xD;&#xA;&#xD;&#xA;        var names = query.Query&lt;Product&gt;().SelectMany(x =&gt; x.Tags).ToList();&#xD;&#xA;        names&#xD;&#xA;            .Count().ShouldBe(9);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
@@ -172,22 +172,22 @@ operators (<code>==</code>, <code>&gt;</code>, <code>&gt;=</code>, etc.):</p>
 rather than the parent document regardless of the order in which the operators appear in the Linq query</li>
 <li>You cannot use <code>SelectMany()</code> with both a <code>Distinct()</code> and a <code>Count()</code> operator at this point.</li>
 </ul>
-<h2>Distinct()</h2>
+<h2 id="distinct">Distinct()</h2>
 <p>New in Marten 1.2 is support for the Linq <code>Distinct()</code> operator:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void get_distinct_string()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target {String = &quot;one&quot;});&#xD;&#xA;    theSession.Store(new Target {String = &quot;one&quot;});&#xD;&#xA;    theSession.Store(new Target {String = &quot;two&quot;});&#xD;&#xA;    theSession.Store(new Target {String = &quot;two&quot;});&#xD;&#xA;    theSession.Store(new Target {String = &quot;three&quot;});&#xD;&#xA;    theSession.Store(new Target {String = &quot;three&quot;});&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    var queryable = theSession.Query&lt;Target&gt;().Select(x =&gt; x.String).Distinct();&#xD;&#xA;&#xD;&#xA;    queryable.ToList().Count.ShouldBe(3);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>Do note that the <code>Distinct()</code> keyword can be used with <code>Select()</code> transforms as well:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void get_distinct_numbers()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target {Number = 1, Decimal = 1.0M});&#xD;&#xA;    theSession.Store(new Target {Number = 1, Decimal = 2.0M});&#xD;&#xA;    theSession.Store(new Target {Number = 1, Decimal = 2.0M});&#xD;&#xA;    theSession.Store(new Target {Number = 2, Decimal = 1.0M});&#xD;&#xA;    theSession.Store(new Target {Number = 2, Decimal = 2.0M});&#xD;&#xA;    theSession.Store(new Target {Number = 2, Decimal = 1.0M});&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    var queryable = theSession.Query&lt;Target&gt;().Select(x =&gt; new&#xD;&#xA;    {&#xD;&#xA;        x.Number,&#xD;&#xA;        x.Decimal&#xD;&#xA;    }).Distinct();&#xD;&#xA;&#xD;&#xA;    queryable.ToList().Count.ShouldBe(4);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Searching with Boolean Flags</h2>
+<h2 id="searching-with-boolean-flags">Searching with Boolean Flags</h2>
 <p>Linq queries against boolean properties can use shorthand mechanisms in <code>Where()</code> clauses like so:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void query_by_booleans(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    // Flag is a boolean property.&#xD;&#xA;&#xD;&#xA;    // Where Flag is true&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Flag).ToArray();&#xD;&#xA;    // or&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Flag == true).ToArray();&#xD;&#xA;&#xD;&#xA;    // Where Flag is false&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; !x.Flag).ToArray();&#xD;&#xA;    // or&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Flag == false).ToArray();&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>IsOneOf</h2>
+<h2 id="isoneof">IsOneOf</h2>
 <p>Marten v0.8 added a new extension method called <code>IsOneOf()</code> that can be used to query for documents having
 a field or property matching one of many supplied values:</p>
 <pre><code class="language-csharp">&#xD;&#xA;// Finds all SuperUser&#x27;s whose role is either&#xD;&#xA;// Admin, Supervisor, or Director&#xD;&#xA;var users = theSession.Query&lt;SuperUser&gt;()&#xD;&#xA;    .Where(x =&gt; x.Role.IsOneOf(&quot;Admin&quot;, &quot;Supervisor&quot;, &quot;Director&quot;));&#xD;&#xA;&#xD;&#xA;</code></pre>
-<h2>Modulo Queries</h2>
+<h2 id="modulo-queries">Modulo Queries</h2>
 <p>Marten v0.8 added the ability to use the modulo operator in Linq queries:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void use_modulo()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 1});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 2});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 3});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 4});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 5});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Green, Number = 6});&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;Target&gt;().Where(x =&gt; x.Number % 2 == 0 &amp;&amp; x.Color == Colors.Blue).ToArray()&#xD;&#xA;        .Select(x =&gt; x.Number)&#xD;&#xA;        .ShouldHaveTheSameElementsAs(2, 4);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Supported Types</h2>
+<h2 id="supported-types">Supported Types</h2>
 <p>At this point, Marten's Linq support has been tested against these .Net types:</p>
 <ol>
 <li>String</li>

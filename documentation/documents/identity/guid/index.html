@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -95,7 +95,7 @@
 As of Marten 1.0-alpha, the default Guid mechanism is a sequential or "Comb" Guid. While more expensive to
 generate, this makes inserts into the underlying document tables more efficient.
 </div>
-<h2>CombGuid</h2>
+<h2 id="combguid">CombGuid</h2>
 <p>To use <em>CombGuid</em> generation you should enabled it when configuring the document store. This defines that the <em>CombGuid</em> generation strategy will be used for all the documents types.</p>
 <pre><code class="language-csharp">&#xD;&#xA;options =&gt; options.DefaultIdStrategy = (mapping, storeOptions) =&gt; new CombGuidIdGeneration()&#xD;&#xA;</code></pre>
 <p>It is also possible use the SequentialGuid id generation algorithm for a specific document type.</p>

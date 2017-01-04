@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -114,7 +114,7 @@ CREATE INDEX mt_doc_issue_idx_assignee_id ON public.mt_doc_issue ("assignee_id")
 In the <code>Issue</code> referencing <code>User</code> example above, this means that if you create a new <code>User</code> and a new
 <code>Issue</code> in the same session, when you call <code>IDocumentSession.SaveChanges()/SaveChangesAsync()</code>, Marten will know
 to save the new user first so that the issue will not fail with referential integrity violations.</p>
-<h2>Configuring with Attributes</h2>
+<h2 id="configuring-with-attributes">Configuring with Attributes</h2>
 <p>You can optionally configure properties or fields as foreign key relationships with the <code>[ForeignKey]</code> attribute:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class Issue&#xD;&#xA;{&#xD;&#xA;    public Issue()&#xD;&#xA;    {&#xD;&#xA;        Id = Guid.NewGuid();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [ForeignKey(typeof(User))]&#xD;&#xA;    public Guid UserId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? OtherUserId { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 

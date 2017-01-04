@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Deleting Documents</title>
+		<title>Marten - Managing PostgreSQL Instance</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/basics/loading" title="Loading Documents by Id">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/basics/bulk_insert" title="Bulk Insert">Next</a></li>
+		      	<li><a href="/marten/documentation/scenarios" title="Scenarios">Previous</a></li>
+		      	<li><a href="/marten/documentation/admin/installing-plv8-windows" title="Installing plv8 on Windows">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/basics">Document Basics</a></li><li class="active">Deleting Documents</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li class="active">Managing PostgreSQL Instance</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,36 +77,23 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/basics/bulk_insert">Bulk Insert</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/basics/loading">Loading Documents by Id</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/admin/installing-plv8-windows">Installing plv8 on Windows</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/scenarios">Scenarios</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Deleting Documents <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/basics/deleting.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Managing PostgreSQL Instance <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/admin/index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title:Deleting Documents-->
-<!--Url:deleting-->
-<h2 id="delete-by-id-or-by-document">Delete by Id or by Document</h2>
-<p>You can register document deletions with an active <code>IDocumentSession</code> by either the document itself or just by the document id to avoid having to fetch
-a document from the database just to turn around and delete it. Deletions are executed within the single database transaction when you call
-<code>IDocumentSession.SaveChanges()</code>.</p>
-<p>The usage is shown below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public void delete_documents(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    var user = new User();&#xD;&#xA;&#xD;&#xA;    session.Delete(user);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;&#xD;&#xA;    // OR&#xD;&#xA;&#xD;&#xA;    session.Delete(user.Id);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;} &#xD;&#xA;</code></pre>
-<h2 id="delete-by-linq-queries">Delete by Linq Queries</h2>
-<p>New for Marten v0.8 is the ability to delete any documents of a certain type meeting a Linq expression using the new <code>IDocumentSession.DeleteWhere&lt;T&gt;()</code> method:</p>
-<pre><code class="language-csharp">&#xD;&#xA;theSession.DeleteWhere&lt;Target&gt;(x =&gt; x.Double == 578);&#xD;&#xA;&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;</code></pre>
-<p>A couple things to note:</p>
-<ol>
-<li>The actual Sql command to delete documents by a query is not executed until <code>IDocumentSession.SaveChanges()</code> is called</li>
-<li>The bulk delete command runs in the same batched sql command and transaction as any other document updates or deletes
-in the session</li>
-</ol>
+			      		<!--Title:Managing PostgreSQL Instance-->
+<!--Url:admin-->
+<p>A list of helpful information to manage your PostgreSQL instance.</p>
+<ul class="table-of-contents"><li><a href="/marten/documentation/admin/installing-plv8-windows">Installing plv8 on Windows</a></li></ul>
 
 			      	</div>
 
@@ -114,12 +101,12 @@ in the session</li>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/basics/loading">Loading Documents by Id</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/scenarios">Scenarios</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/basics/bulk_insert">Bulk Insert</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/admin/installing-plv8-windows">Installing plv8 on Windows</a>
 
 				        </span>
 			      	</nav>

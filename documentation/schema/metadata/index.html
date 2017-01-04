@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -99,7 +99,7 @@ that further describe the document:</p>
 <li><code>mt_version</code> - A sequential (as of 1.0-alpha) Guid designating the revision of the document. Marten uses
 this column in its optimistic concurrency checks</li>
 </ol>
-<h2>Finding the Metadata for a Document</h2>
+<h2 id="finding-the-metadata-for-a-document">Finding the Metadata for a Document</h2>
 <p>You can find the metadata values for a given document object with the following mechanism
 on <code>IDocumentStore.Advanced</code>:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void hit_returns_values()&#xD;&#xA;{&#xD;&#xA;    var shop = new CoffeeShop();&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(shop);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    var metadata = theStore.Advanced.MetadataFor(shop);&#xD;&#xA;&#xD;&#xA;    metadata.ShouldNotBeNull();&#xD;&#xA;    metadata.CurrentVersion.ShouldNotBe(Guid.Empty);&#xD;&#xA;    metadata.LastModified.ShouldNotBe(default(DateTime));&#xD;&#xA;}&#xD;&#xA;</code></pre>

@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Deleting Documents</title>
+		<title>Marten - Installing plv8 on Windows</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/basics/loading" title="Loading Documents by Id">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/basics/bulk_insert" title="Bulk Insert">Next</a></li>
+		      	<li><a href="/marten/documentation/admin" title="Managing PostgreSQL Instance">Previous</a></li>
+		      	
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/basics">Document Basics</a></li><li class="active">Deleting Documents</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/admin">Managing PostgreSQL Instance</a></li><li class="active">Installing plv8 on Windows</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,36 +77,85 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/basics/bulk_insert">Bulk Insert</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/basics/loading">Loading Documents by Id</a></p>
+		        	
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/admin">Managing PostgreSQL Instance</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Deleting Documents <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/basics/deleting.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Installing plv8 on Windows <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/admin/installing-plv8-windows.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title:Deleting Documents-->
-<!--Url:deleting-->
-<h2 id="delete-by-id-or-by-document">Delete by Id or by Document</h2>
-<p>You can register document deletions with an active <code>IDocumentSession</code> by either the document itself or just by the document id to avoid having to fetch
-a document from the database just to turn around and delete it. Deletions are executed within the single database transaction when you call
-<code>IDocumentSession.SaveChanges()</code>.</p>
-<p>The usage is shown below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public void delete_documents(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    var user = new User();&#xD;&#xA;&#xD;&#xA;    session.Delete(user);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;&#xD;&#xA;    // OR&#xD;&#xA;&#xD;&#xA;    session.Delete(user.Id);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;} &#xD;&#xA;</code></pre>
-<h2 id="delete-by-linq-queries">Delete by Linq Queries</h2>
-<p>New for Marten v0.8 is the ability to delete any documents of a certain type meeting a Linq expression using the new <code>IDocumentSession.DeleteWhere&lt;T&gt;()</code> method:</p>
-<pre><code class="language-csharp">&#xD;&#xA;theSession.DeleteWhere&lt;Target&gt;(x =&gt; x.Double == 578);&#xD;&#xA;&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;</code></pre>
-<p>A couple things to note:</p>
-<ol>
-<li>The actual Sql command to delete documents by a query is not executed until <code>IDocumentSession.SaveChanges()</code> is called</li>
-<li>The bulk delete command runs in the same batched sql command and transaction as any other document updates or deletes
-in the session</li>
-</ol>
+			      		<!--Title:Installing plv8 on Windows-->
+<!--Url:installing-plv8-windows-->
+<p>In order to use the JavaScript functions, you need to install plv8. The Windows install of PostgreSQL 9.5 / 9.6, and possibly future versions, do not come with plv8 installed.</p>
+<p>If you attempt to install the extension for your database:</p>
+<pre><code>CREATE EXTENSION plv8;
+</code></pre>
+<p>You may be greeted with the following:</p>
+<pre><code>sql&gt; create extension plv8
+[2016-12-06 22:53:22] [58P01] ERROR: could not open extension control file &quot;C:/Program Files/PostgreSQL/9.5/share/extension/plv8.control&quot;: No such file or directory
+</code></pre>
+<p>This means that the plv8 extension doesn't exist for you to install.</p>
+<h2 id="download">Download</h2>
+<p>You can download the appropriate binaries for PostgreSQL 9.5/PostgreSQL 9.6 from:</p>
+<p>http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html</p>
+<p>http://www.postgresonline.com/journal/archives/367-PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit.html</p>
+<p>Download the version that corresponds to the version of PostgreSQL you installed (32 or 64 bit)</p>
+<h2 id="install">Install</h2>
+<p>The zip should contain 3 folders:</p>
+<ul>
+<li>bin</li>
+<li>lib</li>
+<li>share</li>
+</ul>
+<p>Move the contents of bin to:</p>
+<blockquote>
+<p>C:\Program Files\PostgreSQL\9.5\bin</p>
+</blockquote>
+<p>Move the contents of lib to:</p>
+<blockquote>
+<p>C:\Program Files\PostgreSQL\9.5\lib</p>
+</blockquote>
+<p>Move the contents of share/extension to:</p>
+<blockquote>
+<p>C:\Program Files\PostgreSQL\9.5\share\extension</p>
+</blockquote>
+<p>The <code>Program Files</code> and <code>9.5</code> folders should correspond to the bit and version of PostgreSQL you installed. For example if you installed the 32 bit version of 9.6 then your path would be:</p>
+<blockquote>
+<p>C:\Program Files (x86)\PostgreSQL\9.6\</p>
+</blockquote>
+<h2 id="create-extension">Create Extension</h2>
+<p>Once you have moved all the files to the correct folder, you can now call the create extension again:</p>
+<pre><code>CREATE EXTENSION plv8;
+</code></pre>
+<p>This time you should get the message like:</p>
+<pre><code>sql&gt; create extension plv8
+[2016-12-06 23:12:10] completed in 2s 271ms
+</code></pre>
+<h2 id="testing-out-the-extension">Testing out the extension</h2>
+<p>To test out the extension you can create a super basic function which manipulates a string input and returns the value.</p>
+<pre><code>create or replace function test_js_func(value text) returns text as $$
+
+var thing = 'I\' a JavaScript string';
+
+var result = thing.replace(/JavaScript/g, value);
+
+return result;
+
+$$ language plv8;
+</code></pre>
+<p>Then we can invoke it:</p>
+<pre><code>select test_js_func('Manipulated');
+</code></pre>
+<p>And we should get a result that reads:</p>
+<blockquote>
+<p>I' a Manipulated string</p>
+</blockquote>
 
 			      	</div>
 
@@ -114,12 +163,12 @@ in the session</li>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/basics/loading">Loading Documents by Id</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/admin">Managing PostgreSQL Instance</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/basics/bulk_insert">Bulk Insert</a>
+				        	
 
 				        </span>
 			      	</nav>

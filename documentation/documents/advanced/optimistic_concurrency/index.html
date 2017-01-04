@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -102,14 +102,14 @@
 <p>To demonstrate the failure case, consider the following  acceptance test from Marten's codebase:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void update_with_stale_version_standard()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new CoffeeShop();&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(doc1);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    var session1 = theStore.DirtyTrackedSession();&#xD;&#xA;    var session2 = theStore.DirtyTrackedSession();&#xD;&#xA;&#xD;&#xA;    var session1Copy = session1.Load&lt;CoffeeShop&gt;(doc1.Id);&#xD;&#xA;    var session2Copy = session2.Load&lt;CoffeeShop&gt;(doc1.Id);&#xD;&#xA;&#xD;&#xA;    try&#xD;&#xA;    {&#xD;&#xA;        session1Copy.Name = &quot;Mozart&#x27;s&quot;;&#xD;&#xA;        session2Copy.Name = &quot;Dominican Joe&#x27;s&quot;;&#xD;&#xA;&#xD;&#xA;        // Should go through just fine&#xD;&#xA;        session2.SaveChanges();&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;        var ex = Exception&lt;AggregateException&gt;.ShouldBeThrownBy(() =&gt;&#xD;&#xA;        {&#xD;&#xA;            session1.SaveChanges();&#xD;&#xA;        });&#xD;&#xA;&#xD;&#xA;        var concurrency = ex.InnerExceptions.OfType&lt;ConcurrencyException&gt;().Single();&#xD;&#xA;        concurrency.Message.ShouldBe($&quot;Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}&quot;);&#xD;&#xA;    }&#xD;&#xA;    finally&#xD;&#xA;    {&#xD;&#xA;        session1.Dispose();&#xD;&#xA;        session2.Dispose();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;CoffeeShop&gt;(doc1.Id).Name.ShouldBe(&quot;Dominican Joe&#x27;s&quot;);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Marten is throwing an AggregateException for the entire batch of changes being persisted from SaveChanges()/SaveChangesAsync() after rolling back the current database transaction. The individual ConcurrencyException's inside of the aggregated exception expose information about the actual document type and identity that failed.</p>
-<h2>How it works</h2>
+<h2 id="how-it-works">How it works</h2>
 <p>The optimistic concurrency checks work by adding a new argument to the <em>upsert</em> function for a document type to represent the
 current version that was loaded by the current session. If that argument matches the value in the database column, everything works
 as normal. If the current version does not match the existing version in the database, the upsert function returns some data
 that tells the Marten client that there was a version mismatch. After Marten submits all the document changes in a call to
 <code>SaveChanges()/SaveChangesAsync()</code>, it checks for concurrency violations across all documents and throws a single <code>AggregatedException</code>
 with all the detected violations.</p>
-<h2>Storing a Document with a Given Version</h2>
+<h2 id="storing-a-document-with-a-given-version">Storing a Document with a Given Version</h2>
 <p>To designate the version of the document you're trying to store, you can use the <code>IDocumentSession.Store(doc, version)</code> method
 shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void store_with_the_right_version()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new CoffeeShop();&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(doc1);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    var metadata = theStore.Advanced.MetadataFor(doc1);&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        doc1.Name = &quot;Mozart&#x27;s&quot;;&#xD;&#xA;        session.Store(doc1, metadata.CurrentVersion);&#xD;&#xA;&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;CoffeeShop&gt;(doc1.Id).Name&#xD;&#xA;            .ShouldBe(&quot;Mozart&#x27;s&quot;);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>

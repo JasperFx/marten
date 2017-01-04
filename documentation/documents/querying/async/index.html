@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -92,7 +92,7 @@
 			      	<div id="main-pane">
 			      		<!--Title:Asynchronous Querying-->
 <!--Url:async-->
-<h2>Linq Operators</h2>
+<h2 id="linq-operators">Linq Operators</h2>
 <p>Marten adds extension methods to <code>IQueryable</code> for the asynchronous invocation of the common Linq operators:</p>
 <ul>
 <li><code>AnyAsync()</code></li>
@@ -108,7 +108,7 @@
 </ul>
 <p>An example usage of <code>ToListAsync()</code> is shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public async Task use_to_list_async_in_query()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Hank&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Bill&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Sam&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Tom&quot; });&#xD;&#xA;&#xD;&#xA;    await theSession.SaveChangesAsync().ConfigureAwait(false);&#xD;&#xA;&#xD;&#xA;    var users = await theSession&#xD;&#xA;        .Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.FirstName == &quot;Sam&quot;)&#xD;&#xA;        .ToListAsync().ConfigureAwait(false);&#xD;&#xA;&#xD;&#xA;    users.Single().FirstName.ShouldBe(&quot;Sam&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Querying by SQL</h2>
+<h2 id="querying-by-sql">Querying by SQL</h2>
 <p>To query for results with user-supplied SQL, use:</p>
 <pre><code class="language-csharp">&#xD;&#xA;using (var session = store.OpenSession())&#xD;&#xA;{&#xD;&#xA;    var u = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};&#xD;&#xA;    session.Store(u);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;&#xD;&#xA;    var users =&#xD;&#xA;        await&#xD;&#xA;            session.QueryAsync&lt;User&gt;(&#xD;&#xA;                &quot;select data from mt_doc_user where data -&gt;&gt; &#x27;FirstName&#x27; = &#x27;Jeremy&#x27;&quot;)&#xD;&#xA;                .ConfigureAwait(false);&#xD;&#xA;    var user = users.Single();&#xD;&#xA;&#xD;&#xA;    user.LastName.ShouldBe(&quot;Miller&quot;);&#xD;&#xA;    user.Id.ShouldBe(u.Id);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 

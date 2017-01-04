@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -92,25 +92,25 @@
 			      	<div id="main-pane">
 			      		<!--Title:Including Related Documents-->
 <!--Url:include-->
-<h2>Join a Single Document</h2>
+<h2 id="join-a-single-document">Join a Single Document</h2>
 <p>Marten supports the ability to run include queries that execute a <code>join</code> SQL query behind the curtains, in order to fetch a referenced document as well as the queried document. Suppose you are querying for a github <code>Issue</code> that contains a property <code>AssigneeId</code>, which references the Id of the <code>User</code> assigned to the Issue. If you wish to fetch the <code>User</code> as well in one trip to the database, you can use the <code>.Include()</code> method like so:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void simple_include_for_a_single_document()&#xD;&#xA;{&#xD;&#xA;    var user = new User();&#xD;&#xA;    var issue = new Issue {AssigneeId = user.Id, Title = &quot;Garage Door is busted&quot;};&#xD;&#xA;&#xD;&#xA;    theSession.Store&lt;object&gt;(user, issue);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        User included = null;&#xD;&#xA;        var issue2 = query.Query&lt;Issue&gt;()&#xD;&#xA;            .Include&lt;User&gt;(x =&gt; x.AssigneeId, x =&gt; included = x)&#xD;&#xA;            .Where(x =&gt; x.Title == issue.Title)&#xD;&#xA;            .Single();&#xD;&#xA;&#xD;&#xA;        included.ShouldNotBeNull();&#xD;&#xA;        included.Id.ShouldBe(user.Id);&#xD;&#xA;&#xD;&#xA;        issue2.ShouldNotBeNull();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>The first parameter of the <code>Include()</code> method takes an expression that specifies the document properties on which the join will be done (<code>AssigneeId</code> in this case). The second parameter is the expression that will assign the fetched related document to a previously declared variable (<code>included</code> in our case). By default, Marten will use an inner join. This means that any <code>Issue</code> with no corresponding <code>User</code> (or no <code>AssigneeId</code>), will not be fetched. If you wish to override this behaviour, you can add as a third parameter the enum <code>JoinType.LeftOuter</code>.</p>
-<h2>Join Many Documents</h2>
+<h2 id="join-many-documents">Join Many Documents</h2>
 <p>If you wish to fetch a list of related documents, you can declare a <code>List&lt;User&gt;</code> variable and pass it as the second parameter. The <code>Include()</code> method should be appended with <code>ToList()</code> or <code>ToArray()</code>.</p>
 <p>Instead of a List, you could also use a Dictionary with a key type corresponding to the Id type and a value type corresponding to the Document type:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void include_to_dictionary()&#xD;&#xA;{&#xD;&#xA;    var user1 = new User();&#xD;&#xA;    var user2 = new User();&#xD;&#xA;&#xD;&#xA;    var issue1 = new Issue { AssigneeId = user1.Id, Title = &quot;Garage Door is busted&quot; };&#xD;&#xA;    var issue2 = new Issue { AssigneeId = user2.Id, Title = &quot;Garage Door is busted&quot; };&#xD;&#xA;    var issue3 = new Issue { AssigneeId = user2.Id, Title = &quot;Garage Door is busted&quot; };&#xD;&#xA;&#xD;&#xA;    theSession.Store(user1, user2);&#xD;&#xA;    theSession.Store(issue1, issue2, issue3);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var dict = new Dictionary&lt;Guid, User&gt;();&#xD;&#xA;&#xD;&#xA;        query.Query&lt;Issue&gt;().Include(x =&gt; x.AssigneeId, dict).ToArray();&#xD;&#xA;&#xD;&#xA;        dict.Count.ShouldBe(2);&#xD;&#xA;        dict.ContainsKey(user1.Id).ShouldBeTrue();&#xD;&#xA;        dict.ContainsKey(user2.Id).ShouldBeTrue();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Include Multiple Document Types</h2>
+<h2 id="include-multiple-document-types">Include Multiple Document Types</h2>
 <p>Marten also allows you to chain multiple <code>Include()</code> calls:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void multiple_includes()&#xD;&#xA;{&#xD;&#xA;    var assignee = new User();&#xD;&#xA;    var reporter = new User();&#xD;&#xA;&#xD;&#xA;    var issue1 = new Issue { AssigneeId = assignee.Id, ReporterId = reporter.Id, Title = &quot;Garage Door is busted&quot; };&#xD;&#xA;&#xD;&#xA;    theSession.Store(assignee, reporter);&#xD;&#xA;    theSession.Store(issue1);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;&#xD;&#xA;        User assignee2 = null;&#xD;&#xA;        User reporter2 = null;&#xD;&#xA;&#xD;&#xA;        query&#xD;&#xA;            .Query&lt;Issue&gt;()&#xD;&#xA;            .Include&lt;User&gt;(x =&gt; x.AssigneeId, x =&gt; assignee2 = x)&#xD;&#xA;            .Include&lt;User&gt;(x =&gt; x.ReporterId, x =&gt; reporter2 = x).Single()&#xD;&#xA;            .ShouldNotBeNull();&#xD;&#xA;&#xD;&#xA;        assignee2.Id.ShouldBe(assignee.Id);&#xD;&#xA;        reporter2.Id.ShouldBe(reporter.Id);&#xD;&#xA;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<h2>Chaining other Linq Methods</h2>
+<h2 id="chaining-other-linq-methods">Chaining other Linq Methods</h2>
 <p>Marten supports chaining other linq methods to allow more complex quries such as:</p>
 <ul>
 <li><code>Where()</code></li>
 <li><code>OrderBy()</code></li>
 <li><code>OrderByDescending()</code></li>
 </ul>
-<h2>Asynchronous Support</h2>
+<h2 id="asynchronous-support">Asynchronous Support</h2>
 <p>Marten supports Include within an asynchronous context. The query will be run asynchronously when you append your query with the corresponding Async method, like:</p>
 <ul>
 <li><code>ToListAsync()</code></li>

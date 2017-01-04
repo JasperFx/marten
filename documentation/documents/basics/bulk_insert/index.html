@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -97,12 +97,12 @@
 <p>The bulk insert is done with a single transaction. For really large document collections, you may need to page the calls to <code>IDocumentStore.BulkInsert()</code>.</p>
 <p><strong>By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and the existing database data.</strong></p>
 <p>If you want to use the bulk insert feature, but you know that you could have duplicate documents, you can use one of the two following optional modes:</p>
-<h2>Ignore Duplicate Values</h2>
+<h2 id="ignore-duplicate-values">Ignore Duplicate Values</h2>
 <p>In this case, you only want to insert brand new documents and just throwaway any potential changes to existing documents.</p>
 <pre><code class="language-csharp">&#xD;&#xA;var data = Target.GenerateRandomData(100).ToArray();&#xD;&#xA;&#xD;&#xA;theStore.BulkInsert(data, BulkInsertMode.IgnoreDuplicates);&#xD;&#xA;</code></pre>
 <p>Internally, Marten creates a temporary table matching the targeted document table and inserts the new values into that table. After writing those documents, Marten issues
 an INSERT command to copy rows from the temporary table to the real table, filtering out any matches in existing id's.</p>
-<h2>Overwrite Duplicates</h2>
+<h2 id="overwrite-duplicates">Overwrite Duplicates</h2>
 <p>In the second case, you want to use the bulk insert to write a batch of documents and overwrite any existing data with matching id's:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var data = Target.GenerateRandomData(100).ToArray();&#xD;&#xA;&#xD;&#xA;theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting);&#xD;&#xA;</code></pre>
 <p>Internally, Marten creates a temporary table matching the targeted document table and inserts the new values into that table. After writing those documents, Marten issues
