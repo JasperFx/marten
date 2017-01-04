@@ -218,3 +218,5 @@ project.lock.json
 src/DinnerParty/public/*.js
 src/DinnerParty/public/*.css
 src/DinnerParty/public/*.map
+
+doc-target
