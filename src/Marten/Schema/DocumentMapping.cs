@@ -542,5 +542,13 @@ namespace Marten.Schema
             var indexDefinition = AddIndex(foreignKeyDefinition.ColumnName);
             indexConfiguration?.Invoke(indexDefinition);
         }
+
+        public string UpdateSqlForDuplicatedFields()
+        {
+            var fields = DuplicatedFields.ToArray();
+            return fields.Any()
+                ? $"update {Table.QualifiedName} set {fields.Select(x => x.UpdateSqlFragment()).Join(", ")}"
+                : null;
+        }
     }
 }
