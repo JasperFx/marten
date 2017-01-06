@@ -44,5 +44,6 @@ namespace Marten.Schema
         }
 
         public DuplicatedField[] DuplicatedFields { get; }
+        public DeleteStyle DeleteStyle { get; }
     }
 }

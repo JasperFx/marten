@@ -24,5 +24,7 @@ namespace Marten.Schema
         TableName Table { get; }
 
         DuplicatedField[] DuplicatedFields { get; }
+
+        DeleteStyle DeleteStyle { get; }
     }
 }

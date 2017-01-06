@@ -20,6 +20,7 @@ namespace Marten.Services.Includes
             TableAlias = tableAlias;
             JoinType = joinType;
 
+            IsSoftDeleted = mapping.DeleteStyle == DeleteStyle.SoftDelete;
         }
 
         public string JoinTextFor(string rootTableAlias, IQueryableDocument document = null)
@@ -30,10 +31,16 @@ namespace Marten.Services.Includes
                 
             var joinOperator = JoinType == JoinType.Inner ? "INNER JOIN" : "LEFT OUTER JOIN";
 
+            // Right here, if this doc type is soft deleted, use a subquery in place of the table name
 
+            var subquery =  IsSoftDeleted 
+                ? $"(select * from {_mapping.Table.QualifiedName} where {DocumentMapping.DeletedColumn} = False)" 
+                : _mapping.Table.QualifiedName;
 
-            return $"{joinOperator} {_mapping.Table.QualifiedName} as {TableAlias} ON {locator} = {TableAlias}.id";
+            return $"{joinOperator} {subquery} as {TableAlias} ON {locator} = {TableAlias}.id";
         }
+
+        public bool IsSoftDeleted { get;}
 
         public string JoinText => JoinTextFor("d", null);
 

@@ -58,6 +58,7 @@ namespace Marten.Schema
         }
 
         public IEnumerable<DuplicatedField> DuplicatedFields => Parent.DuplicatedFields;
+        public DeleteStyle DeleteStyle { get; }
 
         public Type DocumentType { get; }
 
