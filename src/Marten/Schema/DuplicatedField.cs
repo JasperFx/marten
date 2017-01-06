@@ -72,12 +72,16 @@ namespace Marten.Schema
         {
             patch.Updates.Apply(mapping, $"ALTER TABLE {mapping.Table.QualifiedName} ADD COLUMN {ColumnName} {PgType};");
 
-            var jsonField = new JsonLocatorField("d.data", _enumStorage, Members);
+            patch.Updates.Apply(mapping, $"update {mapping.Table.QualifiedName} set {UpdateSqlFragment()};");
+        }
 
+        public string UpdateSqlFragment()
+        {
+            var jsonField = new JsonLocatorField("d.data", _enumStorage, Members);
             // HOKEY, but I'm letting it pass for now.
             var sqlLocator = jsonField.SqlLocator.Replace("d.", "");
 
-            patch.Updates.Apply(mapping, $"update {mapping.Table.QualifiedName} set {ColumnName} = {sqlLocator};");
+            return $"{ColumnName} = {sqlLocator}";
         }
 
         public object GetValue(Expression valueExpression)
