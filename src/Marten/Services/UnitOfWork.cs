@@ -244,5 +244,10 @@ namespace Marten.Services
         {
             return Updates().Any() || _inserts.Any() || _events.Any() || _operations.Any();
         }
+
+        public bool Contains<T>(T entity)
+        {
+            return UpdatesFor<T>().Contains(entity) || InsertsFor<T>().Contains(entity);
+        }
     }
 }

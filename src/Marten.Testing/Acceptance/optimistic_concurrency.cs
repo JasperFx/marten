@@ -63,8 +63,18 @@ namespace Marten.Testing.Acceptance
             }
         }
 
+        [Fact]
+        public void can_store_same_document_multiple_times_with_optimistic_concurrency()
+        {
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                session.Store(doc1);
 
-
+                session.SaveChanges();
+            }
+        }
 
         [Fact]
         public void can_update_with_optimistic_concurrency_95()
