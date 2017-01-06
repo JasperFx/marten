@@ -13,7 +13,11 @@ namespace Marten.Testing.Acceptance
     {
         public patching_api()
         {
-            StoreOptions(_ => _.DatabaseSchemaName = "other");
+            StoreOptions(_ =>
+            {
+                _.DatabaseSchemaName = "other";
+                _.UseDefaultSerialization(EnumStorage.AsString);
+            });
         }
 
         [Fact]

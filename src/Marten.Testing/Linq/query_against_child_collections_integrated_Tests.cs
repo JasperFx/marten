@@ -12,6 +12,11 @@ namespace Marten.Testing.Linq
 {
     public class query_against_child_collections_integrated_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
+        public query_against_child_collections_integrated_Tests()
+        {
+            StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
+        }
+
         private Target[] targets;
 
         private void buildUpTargetData()

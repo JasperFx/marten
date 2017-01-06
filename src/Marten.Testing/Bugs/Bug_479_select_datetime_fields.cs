@@ -8,6 +8,10 @@ namespace Marten.Testing.Bugs
 {
     public class Bug_479_select_datetime_fields : IntegratedFixture
     {
+        public Bug_479_select_datetime_fields()
+        {
+            StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
+        }
 
         [Fact]
         public void select_date_time_as_utc()
