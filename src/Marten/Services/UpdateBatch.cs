@@ -76,9 +76,13 @@ namespace Marten.Services
                 Connection.Execute(cmd, c =>
                 {
                     if (batch.HasCallbacks())
+                    {
                         executeCallbacks(cmd, batch, list);
+                    }
                     else
+                    {
                         cmd.ExecuteNonQuery();
+                    }
                 });
             }
 
@@ -96,7 +100,10 @@ namespace Marten.Services
 
                     for (var i = 1; i < batch.Callbacks.Count; i++)
                     {
-                        reader.NextResult();
+                        if (!(batch.Calls[i - 1] is NoDataReturnedCall))
+                        {
+                            reader.NextResult();
+                        }
 
                         batch.Callbacks[i]?.Postprocess(reader, list);
                     }
@@ -113,9 +120,13 @@ namespace Marten.Services
                 await Connection.ExecuteAsync(cmd, async (c, tkn) =>
                 {
                     if (batch.HasCallbacks())
+                    {
                         await executeCallbacksAsync(c, tkn, batch, list);
+                    }
                     else
+                    {
                         await c.ExecuteNonQueryAsync(tkn);
+                    }
                 }, token).ConfigureAwait(false);
             }
 
@@ -135,10 +146,17 @@ namespace Marten.Services
 
                     for (var i = 1; i < batch.Callbacks.Count; i++)
                     {
-                        await reader.NextResultAsync(tkn).ConfigureAwait(false);
+                        if (!(batch.Calls[i - 1] is NoDataReturnedCall))
+                        {
+                            await reader.NextResultAsync(tkn).ConfigureAwait(false);
+                        }
+
+                        
 
                         if (batch.Callbacks[i] != null)
+                        {
                             await batch.Callbacks[i].PostprocessAsync(reader, list, tkn).ConfigureAwait(false);
+                        }
                     }
                 }
             }
