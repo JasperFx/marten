@@ -182,6 +182,11 @@ namespace Marten.Patching
             var operation = new PatchOperation(transform, document, _fragment, Patch);
 
             _unitOfWork.Patch(operation);
+
+            if (document.DuplicatedFields.Any())
+            {
+                _unitOfWork.Add(operation.UpdateDuplicateFieldOperation());
+            }
         }
     }
 }

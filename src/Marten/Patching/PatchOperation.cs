@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Marten.Linq;
 using Marten.Schema;
@@ -7,6 +8,7 @@ using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Transforms;
 using NpgsqlTypes;
+using Baseline;
 
 namespace Marten.Patching
 {
@@ -17,6 +19,7 @@ namespace Marten.Patching
         private readonly IDictionary<string, object> _patch;
         private readonly TransformFunction _transform;
         private string _sql;
+        private string _where;
 
         public PatchOperation(TransformFunction transform, IQueryableDocument document, IWhereFragment fragment,
             IDictionary<string, object> patch)
@@ -38,15 +41,43 @@ namespace Marten.Patching
             var patchParam = batch.AddParameter(patchJson, NpgsqlDbType.Jsonb);
             var versionParam = batch.AddParameter(CombGuidIdGeneration.NewGuid(), NpgsqlDbType.Uuid);
 
-            var where = _fragment.ToSql(batch.Command);
-            if (!where.StartsWith("where "))
-                where = "where " + where;
+            _where = _fragment.ToSql(batch.Command);
+            if (!_where.StartsWith("where "))
+                _where = "where " + _where;
 
             _sql = $@"
 update {_document.Table.QualifiedName} as d 
 set data = {_transform.Function.QualifiedName}(data, :{patchParam.ParameterName}), {DocumentMapping.LastModifiedColumn} = (now() at time zone 'utc'), {DocumentMapping.VersionColumn} = :{versionParam.ParameterName}
-{where}";
+{_where}";
 
         }
+
+        public IStorageOperation UpdateDuplicateFieldOperation()
+        {
+            return new UpdateDuplicateFields(this);
+        }
+
+        public class UpdateDuplicateFields : IStorageOperation
+        {
+            private readonly PatchOperation _parent;
+
+            public UpdateDuplicateFields(PatchOperation parent)
+            {
+                _parent = parent;
+            }
+
+            public void WriteToSql(StringBuilder builder)
+            {
+                var setters = _parent._document.DuplicatedFields.Select(x => x.UpdateSqlFragment()).Join(", ");
+                builder.Append($"update {_parent._document.Table.QualifiedName} as d set {setters} {_parent._where}");
+            }
+
+            public void AddParameters(IBatchCommand batch)
+            {
+                // nothing here
+            }
+        }
     }
+
+
 }

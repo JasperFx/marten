@@ -837,34 +837,5 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("CREATE OR REPLACE FUNCTION overriden.mt_upsert_documentmappingtests_myspecialdocument");
         }
 
-        [Fact]
-        public void no_update_sql_for_duplicated_fields_if_no_duplicated_fields()
-        {
-            var mapping = DocumentMapping.For<User>();
-
-            mapping.UpdateSqlForDuplicatedFields()
-                .ShouldBeNull();
-        }
-
-        [Fact]
-        public void update_sql_for_single_duplicated_field()
-        {
-            var mapping = DocumentMapping.For<User>();
-            mapping.Duplicate(x => x.UserName);
-
-            mapping.UpdateSqlForDuplicatedFields()
-                .ShouldBe("update public.mt_doc_user set user_name = data ->> 'UserName'");
-        }
-
-        [Fact]
-        public void update_sql_for_multiple_duplicated_fields()
-        {
-            var mapping = DocumentMapping.For<User>();
-            mapping.Duplicate(x => x.UserName);
-            mapping.Duplicate(x => x.FirstName);
-
-            mapping.UpdateSqlForDuplicatedFields()
-                .ShouldBe("update public.mt_doc_user set first_name = data ->> 'FirstName', user_name = data ->> 'UserName'");
-        }
     }
 }

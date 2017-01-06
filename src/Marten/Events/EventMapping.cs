@@ -43,6 +43,7 @@ namespace Marten.Events
         public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
 
         public TableName Table =>  new TableName(_options.Events.DatabaseSchemaName, "mt_events");
+        public DuplicatedField[] DuplicatedFields { get; }
 
         public string DatabaseSchemaName
         {

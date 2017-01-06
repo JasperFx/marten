@@ -92,7 +92,7 @@ namespace Marten.Schema
             set { _databaseSchemaName = value; }
         }
 
-        public IEnumerable<DuplicatedField> DuplicatedFields => fields().OfType<DuplicatedField>();
+        public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
 
         public string Alias
         {
@@ -446,6 +446,7 @@ namespace Marten.Schema
         {
             return $"Storage for {DocumentType}, Table: {Table}";
         }
+
     }
 
     public class DocumentMapping<T> : DocumentMapping
@@ -541,14 +542,6 @@ namespace Marten.Schema
 
             var indexDefinition = AddIndex(foreignKeyDefinition.ColumnName);
             indexConfiguration?.Invoke(indexDefinition);
-        }
-
-        public string UpdateSqlForDuplicatedFields()
-        {
-            var fields = DuplicatedFields.ToArray();
-            return fields.Any()
-                ? $"update {Table.QualifiedName} set {fields.Select(x => x.UpdateSqlFragment()).Join(", ")}"
-                : null;
         }
     }
 }

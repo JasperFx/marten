@@ -63,6 +63,11 @@ namespace Marten.Schema
 
         public TableName Table => Parent.Table;
 
+        DuplicatedField[] IQueryableDocument.DuplicatedFields
+        {
+            get { throw new NotImplementedException(); }
+        }
+
         public PropertySearching PropertySearching => Parent.PropertySearching;
 
         public string[] SelectFields()
