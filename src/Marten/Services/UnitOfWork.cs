@@ -171,6 +171,11 @@ namespace Marten.Services
                 .TopologicalSort(GetTypeDependencies)
                 .ToDictionary(x => x, x => index++);
 
+
+            // HOKEY! Fixes #635
+            var deletes = _operations.OfType<IDeletion>();
+            batch.Add(deletes);
+
             _inserts.Keys.OrderBy(type => order[type]).Each(type =>
             {
                 var upsert = _schema.UpsertFor(type);
@@ -187,8 +192,8 @@ namespace Marten.Services
 
             writeEvents(batch);
 
-
-            batch.Add(_operations);
+            // HOKEY! Fixes #635
+            batch.Add(_operations.Where(x => !(x is IDeletion)));
 
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
