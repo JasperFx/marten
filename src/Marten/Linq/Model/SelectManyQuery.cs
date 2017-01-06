@@ -56,7 +56,7 @@ namespace Marten.Linq.Model
 
 
             _tableAlias = "sub" + Index;
-            _documentType = _field.MemberType.GetElementType();
+            _documentType = _field.MemberType.DeriveElementType();
             _document = _schema.StoreOptions.GetChildDocument(_tableAlias + ".x", _documentType);
         }
 
