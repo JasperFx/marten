@@ -1,21 +1,40 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Marten.Pagination
 {
     /// <summary>
-    /// Class to return The paged list from a paged query.
+    /// Class to return The async paged list from a paged query.
     /// </summary>
     /// <typeparam name="T">Document Type</typeparam>
-    public class PagedList<T> : BasePagedList<T>
+    public class AsyncPagedList<T> : BasePagedList<T>
     {
+        private AsyncPagedList()
+        {
+        }
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="PagedList{T}" /> class.
+        /// Async static method to create a new instance of the <see cref="AsyncPagedList{T}
+        /// </summary>
+        /// <param name="superset"></param>
+        /// <param name="pageNumber"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        public static async Task<AsyncPagedList<T>> CreateAsync(IQueryable<T> superset, int pageNumber, int pageSize)
+        {
+            var pagedList = new AsyncPagedList<T>();
+            await pagedList.InitAsync(superset, pageNumber, pageSize).ConfigureAwait(false);
+            return pagedList;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AsyncPagedList{T}" /> class.
         /// </summary>
         /// <param name="subset">Query for which data has to be fetched</param>
         /// <param name="pageSize">Page size</param>
         /// <param name="totalItemCount">Total count of all records</param>
-        public PagedList(IQueryable<T> superset, int pageNumber, int pageSize)
+        public async Task InitAsync(IQueryable<T> superset, int pageNumber, int pageSize)
         {
             // throw an argument exception if page number is less than one
             if (pageNumber < 1)
@@ -30,7 +49,7 @@ namespace Marten.Pagination
             }
 
             // fetch the total record count
-            var totalItemCount = superset == null? 0 : superset.Count();
+            var totalItemCount = superset == null ? 0 : await superset.CountAsync().ConfigureAwait(false);
 
             // if there are zero records then don't proceed further
             if (totalItemCount == 0)
@@ -76,12 +95,12 @@ namespace Marten.Pagination
             {
                 if (pageNumber == 1)
                 {
-                    _subset.AddRange(superset.Take(pageSize).ToList());
+                    _subset.AddRange(await superset.Take<T>(pageSize).ToListAsync<T>().ConfigureAwait(false));
                 }
                 else
                 {
                     var skipCount = (pageNumber - 1) * pageSize;
-                    _subset.AddRange(superset.Skip(skipCount).Take(pageSize).ToList());
+                    _subset.AddRange(await superset.Skip<T>(skipCount).Take<T>(pageSize).ToListAsync<T>().ConfigureAwait(false));
                 }
             }
         }
