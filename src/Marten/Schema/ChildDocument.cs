@@ -42,5 +42,8 @@ namespace Marten.Schema
         {
             get { throw new NotSupportedException(); }
         }
+
+        public DuplicatedField[] DuplicatedFields { get; }
+        public DeleteStyle DeleteStyle { get; }
     }
 }

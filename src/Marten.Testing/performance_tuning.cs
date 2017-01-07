@@ -62,12 +62,7 @@ namespace Marten.Testing
     // ENDSAMPLE
 #endif
 
-    public class TestsSerializer
-#if NET46
-        : JilSerializer
-#else
-        : JsonNetSerializer
-#endif
+    public class TestsSerializer : JsonNetSerializer
     {
         
     }

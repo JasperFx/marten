@@ -58,10 +58,16 @@ namespace Marten.Schema
         }
 
         public IEnumerable<DuplicatedField> DuplicatedFields => Parent.DuplicatedFields;
+        public DeleteStyle DeleteStyle { get; }
 
         public Type DocumentType { get; }
 
         public TableName Table => Parent.Table;
+
+        DuplicatedField[] IQueryableDocument.DuplicatedFields
+        {
+            get { throw new NotImplementedException(); }
+        }
 
         public PropertySearching PropertySearching => Parent.PropertySearching;
 

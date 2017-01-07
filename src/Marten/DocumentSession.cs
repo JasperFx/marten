@@ -126,6 +126,8 @@ namespace Marten
 
                 foreach (var entity in entities)
                 {
+                    if (_unitOfWork.Contains<T>(entity)) continue;
+
                     var assigned = false;
                     var id = idAssignment.Assign(entity, out assigned);
 

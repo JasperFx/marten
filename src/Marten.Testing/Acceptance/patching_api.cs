@@ -13,7 +13,11 @@ namespace Marten.Testing.Acceptance
     {
         public patching_api()
         {
-            StoreOptions(_ => _.DatabaseSchemaName = "other");
+            StoreOptions(_ =>
+            {
+                _.DatabaseSchemaName = "other";
+                _.UseDefaultSerialization(EnumStorage.AsString);
+            });
         }
 
         [Fact]
@@ -601,6 +605,59 @@ namespace Marten.Testing.Acceptance
     }
             // ENDSAMPLE
         }
+
+
+
+
+        [Fact]
+        public void bug_611_duplicate_field_is_updated_by_set_operation()
+        {
+            var mapping = theStore.Schema.StoreOptions.MappingFor(typeof(Target));
+            var field = mapping.DuplicateField("String");
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            var entity = Target.Random();
+            theSession.Store(entity);
+            theSession.SaveChanges();
+
+            var newval = new string(entity.String.Reverse().ToArray());
+            theSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
+            theSession.SaveChanges();
+
+            using (var command = theSession.Connection.CreateCommand())
+            {
+                command.CommandText = $"select count(*) from {mapping.Table.QualifiedName} " +
+                                      $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
+                var count = (long)(command.ExecuteScalar() ?? 0);
+                count.ShouldBe(1);
+            }
+        }
+
+        [Fact]
+        public void bug_611_duplicate_field_is_updated_by_set_operation_with_multiple_duplicates_smoke_test()
+        {
+            var mapping = theStore.Schema.StoreOptions.MappingFor(typeof(Target));
+            var field = mapping.DuplicateField("String");
+            var field2 = mapping.DuplicateField(nameof(Target.Number));
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            var entity = Target.Random();
+            theSession.Store(entity);
+            theSession.SaveChanges();
+
+            var newval = new string(entity.String.Reverse().ToArray());
+            theSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
+            theSession.SaveChanges();
+
+            using (var command = theSession.Connection.CreateCommand())
+            {
+                command.CommandText = $"select count(*) from {mapping.Table.QualifiedName} " +
+                                      $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
+                var count = (long)(command.ExecuteScalar() ?? 0);
+                count.ShouldBe(1);
+            }
+        }
+
     }
 
     internal static class EnumerableExtensions

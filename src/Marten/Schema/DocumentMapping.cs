@@ -92,7 +92,7 @@ namespace Marten.Schema
             set { _databaseSchemaName = value; }
         }
 
-        public IEnumerable<DuplicatedField> DuplicatedFields => fields().OfType<DuplicatedField>();
+        public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
 
         public string Alias
         {
@@ -446,6 +446,7 @@ namespace Marten.Schema
         {
             return $"Storage for {DocumentType}, Table: {Table}";
         }
+
     }
 
     public class DocumentMapping<T> : DocumentMapping

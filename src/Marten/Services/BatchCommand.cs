@@ -22,8 +22,6 @@ namespace Marten.Services
     {
         public ISerializer Serializer { get; }
         private int _counter = 0;
-        private readonly IList<ICall> _calls = new List<ICall>();
-        private readonly IList<ICallback> _callbacks = new List<ICallback>();
 
         public BatchCommand(ISerializer serializer)
         {
@@ -32,7 +30,7 @@ namespace Marten.Services
 
         public NpgsqlCommand Command { get; } = new NpgsqlCommand();
 
-        public int Count => _calls.Count;
+        public int Count => Calls.Count;
 
         public NpgsqlParameter AddParameter(object value, NpgsqlDbType dbType)
         {
@@ -43,12 +41,14 @@ namespace Marten.Services
             return param;
         }
 
-        public IList<ICallback> Callbacks => _callbacks;
+        public IList<ICallback> Callbacks { get; } = new List<ICallback>();
+
+        public IList<ICall> Calls { get; } = new List<ICall>();
 
         public NpgsqlCommand BuildCommand()
         {
             var builder = new StringBuilder();
-            _calls.Each(x =>
+            Calls.Each(x =>
             {
                 x.WriteToSql(builder);
                 builder.Append(";");
@@ -61,8 +61,8 @@ namespace Marten.Services
 
         public void AddCall(ICall call, ICallback callback = null)
         {
-            _calls.Add(call);
-            _callbacks.Add(callback);
+            Calls.Add(call);
+            Callbacks.Add(callback);
         }
 
         public SprocCall Sproc(FunctionName function, ICallback callback = null)
@@ -77,7 +77,7 @@ namespace Marten.Services
 
         public bool HasCallbacks()
         {
-            return _callbacks.Any(x => x != null);
+            return Callbacks.Any(x => x != null);
         }
 
     }

@@ -41,7 +41,30 @@ namespace Marten.Testing.Linq
         }
         // ENDSAMPLE
 
+        [Fact]
+        public void can_do_simple_select_many_against_generic_list()
+        {
+            var product1 = new ProductWithList { Tags = new List<string> { "a", "b", "c" } };
+            var product2 = new ProductWithList { Tags = new List<string> { "b", "c", "d" } };
+            var product3 = new ProductWithList { Tags = new List<string> { "d", "e", "f" } };
 
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(product1, product2, product3);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                var distinct = query.Query<ProductWithList>().SelectMany(x => x.Tags).Distinct().ToList();
+
+                distinct.OrderBy(x => x).ShouldHaveTheSameElementsAs("a", "b", "c", "d", "e", "f");
+
+                var names = query.Query<ProductWithList>().SelectMany(x => x.Tags).ToList();
+                names
+                    .Count().ShouldBe(9);
+            }
+        }
 
         [Fact]
         public void select_many_against_complex_type_with_count()
@@ -453,5 +476,11 @@ namespace Marten.Testing.Linq
     {
         public Guid Id;
         public int[] Tags { get; set; }
+    }
+
+    public class ProductWithList
+    {
+        public Guid Id;
+        public IList<string> Tags { get; set; }
     }
 }

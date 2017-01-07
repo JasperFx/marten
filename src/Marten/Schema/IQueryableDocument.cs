@@ -22,5 +22,9 @@ namespace Marten.Schema
         PropertySearching PropertySearching { get; }
 
         TableName Table { get; }
+
+        DuplicatedField[] DuplicatedFields { get; }
+
+        DeleteStyle DeleteStyle { get; }
     }
 }

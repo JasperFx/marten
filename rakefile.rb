@@ -2,17 +2,18 @@ require 'json'
 
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '1.2.4';
+BUILD_VERSION = '1.2.5';
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
 build_revision = tc_build_number || Time.new.strftime('5%H%M')
-build_number = "1.2.4.#{build_revision}"
+build_number = "1.2.5.#{build_revision}"
 BUILD_NUMBER = build_number
 
-task :ci => [:connection, :version, :default, 'nuget:pack']
+task :ci => [:connection, :version, :default, 'pack']
 
-task :default => [:mocha, :test, :storyteller]
+# TODO: put :storyteller back -- task :default => [:mocha, :test, :storyteller]
+task :default => [:mocha, :test]
 
 desc "Prepares the working directory for a new build"
 task :clean do
@@ -81,25 +82,13 @@ task :mocha do
 end
 
 desc 'Compile the code'
-task :compile => [:clean, 'nuget:restore'] do
-  msbuild = '"C:\Program Files (x86)\MSBuild\14.0\Bin\msbuild.exe"'
-
-  #sh "ILMerge.exe /out:src/Marten/bin/#{COMPILE_TARGET}/Marten.dll /lib:src/Marten/bin/#{COMPILE_TARGET} /target:library /targetplatform:v4 /internalize /ndebug src/Marten/bin/#{COMPILE_TARGET}/Marten.dll src/Marten/bin/#{COMPILE_TARGET}/Newtonsoft.Json.dll src/Marten/bin/#{COMPILE_TARGET}/Baseline.dll  src/Marten/bin/#{COMPILE_TARGET}/Remotion.Linq.dll"
-
+task :compile => [:clean, :restore] do
   sh "dotnet build ./src/Marten.Testing/ --configuration #{COMPILE_TARGET}"
 end
 
 desc 'Run the unit tests'
 task :test => [:compile] do
-  Dir.mkdir RESULTS_DIR
-
-  #sh "packages/xunit.runner.console/tools/xunit.console.exe src/Marten.Testing/bin/#{COMPILE_TARGET}/Marten.Testing.dll -html results/xunit.htm"
-  cd './src/Marten.Testing'
-  sh 'dotnet test --framework netcoreapp1.0'
-  cd '../../'
-
-  #puts "Running the unit tests under the '9.5 Upsert' mode"
-  #sh "packages/Fixie/lib/net45/Fixie.Console.exe src/Marten.Testing/bin/#{COMPILE_TARGET}/Marten.Testing.dll --NUnitXml results/TestResult.xml --upsert Standard"
+  sh 'dotnet test src/Marten.Testing --framework netcoreapp1.0'
 end
 
 
@@ -120,39 +109,54 @@ task :open_st => [:compile] do
   sh "#{storyteller_cmd} open src/Marten.Testing"
 end
 
-desc "Launches the documentation project in editable mode"
-task :docs => ['nuget:restore'] do
-  storyteller_cmd = storyteller_path()
-  sh "#{storyteller_cmd} doc-run -v #{BUILD_VERSION}"
+"Launches the documentation project in editable mode"
+task :docs do
+	sh "dotnet restore"
+	sh "dotnet stdocs run -v #{BUILD_VERSION}"
 end
 
-namespace :nuget do
-  desc 'Pulls the latest paket.exe into .paket folder'
-  task :bootstrap do
-    #sh '.paket/paket.bootstrapper.exe' unless File.exists? '.paket/paket.exe'
-  end
+"Exports the documentation to structuremap.github.io - requires Git access to that repo though!"
+task :publish do
+	FileUtils.remove_dir('doc-target') if Dir.exists?('doc-target')
 
-  desc 'Restores nuget packages with paket'
-  task :restore => [:bootstrap] do
+	if !Dir.exists? 'doc-target' 
+		Dir.mkdir 'doc-target'
+		sh "git clone -b gh-pages https://github.com/jasperfx/marten.git doc-target"
+	else
+		Dir.chdir "doc-target" do
+			sh "git checkout --force"
+			sh "git clean -xfd"
+			sh "git pull origin master"
+		end
+	end
+	
+	sh "dotnet restore"
+	sh "dotnet stdocs export doc-target ProjectWebsite --version #{BUILD_VERSION} --project marten"
+	
+	Dir.chdir "doc-target" do
+		sh "git add --all"
+		sh "git commit -a -m \"Documentation Update for #{BUILD_VERSION}\" --allow-empty"
+		sh "git push origin gh-pages"
+	end
+	
+
+	
+
+end
+
+desc 'Restores nuget packages'
+task :restore do
     sh 'dotnet restore src/Marten'
     sh 'dotnet restore src/Marten.CommandLine'
     sh 'dotnet restore src/Marten.Testing.OtherAssembly'
     sh 'dotnet restore src/Marten.Testing'
-    #sh '.paket/paket.exe restore'
-  end
+end
 
-  desc 'Setup paket.exe symlink for convenience (requires elevation)'
-  task :symlink do
-    #sh '.paket/paket.bootstrapper.exe'
-    #sh 'cmd.exe /c mklink .\paket.exe .paket\paket.exe'
-  end
 
-  desc 'Build the Nupkg file'
-  task :pack => [:compile] do
-    sh "dotnet pack ./src/Marten -o artifacts"
-    sh "dotnet pack ./src/Marten.CommandLine -o artifacts"
-    #sh ".paket/paket.exe pack output artifacts version #{BUILD_NUMBER}"
-  end
+desc 'Build the Nupkg file'
+task :pack => [:compile] do
+	sh "dotnet pack ./src/Marten -o artifacts"
+	sh "dotnet pack ./src/Marten.CommandLine -o artifacts"
 end
 
 def storyteller_path()
