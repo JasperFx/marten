@@ -41,7 +41,7 @@ namespace Marten.Testing.Pagination
             var pageNumber = 2;
             var pageSize = 10;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
 
             pagedList.Count.ShouldBe(pageSize);
         }
@@ -56,7 +56,7 @@ namespace Marten.Testing.Pagination
 
             var ex = await Exception<ArgumentOutOfRangeException>.ShouldBeThrownByAsync(async () =>
             {
-                await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+                await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             });
 
             ex.Message.ShouldContain("pageNumber = 0. PageNumber cannot be below 1.");
@@ -72,7 +72,7 @@ namespace Marten.Testing.Pagination
 
             var ex = await Exception<ArgumentOutOfRangeException>.ShouldBeThrownByAsync(async () =>
             {
-                await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+                await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             });
 
             ex.Message.ShouldContain($"pageSize = 0. PageSize cannot be below 1.");
@@ -88,7 +88,7 @@ namespace Marten.Testing.Pagination
 
             var ex = await Exception<ArgumentOutOfRangeException>.ShouldBeThrownByAsync(async () =>
             {
-                await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+                await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             });
 
             ex.Message.ShouldContain($"pageNumber = 11. PageNumber is the outside the valid range.");
@@ -104,7 +104,7 @@ namespace Marten.Testing.Pagination
 
             var expectedPageCount = await theSession.Query<Target>().CountAsync().ConfigureAwait(false) / pageSize;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.PageCount.ShouldBe(expectedPageCount);
         }
 
@@ -117,7 +117,7 @@ namespace Marten.Testing.Pagination
 
             var expectedTotalItemsCount = await theSession.Query<Target>().CountAsync().ConfigureAwait(false);
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = theSession.Query<Target>().AsPagedList(pageNumber, pageSize);
             pagedList.TotalItemCount.ShouldBe(expectedTotalItemsCount);
         }
 
@@ -130,7 +130,7 @@ namespace Marten.Testing.Pagination
 
             var expectedHasPreviousPage = true;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.HasPreviousPage.ShouldBe(expectedHasPreviousPage);
         }
 
@@ -143,7 +143,7 @@ namespace Marten.Testing.Pagination
 
             var expectedHasPreviousPage = false;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.HasPreviousPage.ShouldBe(expectedHasPreviousPage);
         }
 
@@ -156,7 +156,7 @@ namespace Marten.Testing.Pagination
 
             var expectedHasNextPage = true;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.HasNextPage.ShouldBe(expectedHasNextPage);
         }
 
@@ -169,7 +169,7 @@ namespace Marten.Testing.Pagination
 
             var expectedHasNextPage = false;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.HasNextPage.ShouldBe(expectedHasNextPage);
         }
 
@@ -182,7 +182,7 @@ namespace Marten.Testing.Pagination
 
             var expectedIsFirstPage = true;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.IsFirstPage.ShouldBe(expectedIsFirstPage);
         }
 
@@ -195,7 +195,7 @@ namespace Marten.Testing.Pagination
 
             var expectedIsFirstPage = false;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.IsFirstPage.ShouldBe(expectedIsFirstPage);
         }
 
@@ -208,7 +208,7 @@ namespace Marten.Testing.Pagination
 
             var expectedIsLastPage = true;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.IsLastPage.ShouldBe(expectedIsLastPage);
         }
 
@@ -221,7 +221,7 @@ namespace Marten.Testing.Pagination
 
             var expectedIsLastPage = false;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.IsLastPage.ShouldBe(expectedIsLastPage);
         }
 
@@ -234,7 +234,7 @@ namespace Marten.Testing.Pagination
 
             var expectedFirstItemOnPage = 11;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.FirstItemOnPage.ShouldBe(expectedFirstItemOnPage);
         }
 
@@ -247,7 +247,7 @@ namespace Marten.Testing.Pagination
 
             var expectedLastItemOnPage = 20;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.LastItemOnPage.ShouldBe(expectedLastItemOnPage);
         }
 
@@ -260,7 +260,7 @@ namespace Marten.Testing.Pagination
 
             var pageSize = 10;
 
-            var pagedList = await theSession.Query<PaginationTestDocument>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<PaginationTestDocument>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
             pagedList.TotalItemCount.ShouldBe(0);
             pagedList.PageCount.ShouldBe(0);
             pagedList.IsFirstPage.ShouldBe(false);
