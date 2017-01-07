@@ -17,7 +17,7 @@ namespace Marten.Pagination
         /// <param name="pageNumber">one based page number</param>
         /// <param name="pageSize">Page size</param>
         /// <returns>return paged result</returns>
-        public static IPagedList<T> ToPagedList<T>(
+        public static IPagedList<T> AsPagedList<T>(
             this IQueryable<T> queryable, 
             int pageNumber, 
             int pageSize)
@@ -35,7 +35,7 @@ namespace Marten.Pagination
         /// <param name="pageSize">Page size</param>
         /// <param name="token">Cancellation token</param>
         /// <returns>return paged result</returns>
-        public static async Task<IPagedList<T>> ToPagedListAsync<T>(
+        public static async Task<IPagedList<T>> AsPagedListAsync<T>(
             this IQueryable<T> queryable, 
             int pageNumber, 
             int pageSize, 
