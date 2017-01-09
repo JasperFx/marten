@@ -5,22 +5,24 @@ In order to use the JavaScript functions, you need to install plv8. The Windows 
 
 If you attempt to install the extension for your database:
 
-    CREATE EXTENSION plv8;
+```sql
+CREATE EXTENSION plv8;
+```
 
 You may be greeted with the following:
 
     sql> create extension plv8
     [2016-12-06 22:53:22] [58P01] ERROR: could not open extension control file "C:/Program Files/PostgreSQL/9.5/share/extension/plv8.control": No such file or directory
 
-This means that the plv8 extension doesn't exist for you to install.
+This means that the plv8 extension isn't installed so you're unable to create it in the database for usage.
 
 ## Download
 
 You can download the appropriate binaries for PostgreSQL 9.5/PostgreSQL 9.6 from:
 
-http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html
+[PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html)
 
-http://www.postgresonline.com/journal/archives/367-PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit.html
+[PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit](http://www.postgresonline.com/journal/archives/367-PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit.html)
 
 Download the version that corresponds to the version of PostgreSQL you installed (32 or 64 bit)
 
@@ -52,7 +54,9 @@ The `Program Files` and `9.5` folders should correspond to the bit and version o
 
 Once you have moved all the files to the correct folder, you can now call the create extension again:
 
-    CREATE EXTENSION plv8;
+```sql
+CREATE EXTENSION plv8;
+```
 
 This time you should get the message like:
 
@@ -63,7 +67,8 @@ This time you should get the message like:
 
 To test out the extension you can create a super basic function which manipulates a string input and returns the value.
 
-    create or replace function test_js_func(value text) returns text as $$
+```sql
+create or replace function test_js_func(value text) returns text as $$
 
     var thing = 'I\' a JavaScript string';
 
@@ -71,11 +76,14 @@ To test out the extension you can create a super basic function which manipulate
 
     return result;
 
-    $$ language plv8;
+$$ language plv8;
+```
 
 Then we can invoke it:
 
-    select test_js_func('Manipulated');
+```sql
+select test_js_func('Manipulated');
+```
 
 And we should get a result that reads:
 
