@@ -93,7 +93,7 @@ namespace Marten.Services
 
         public char[] Buffer => _chars;
         public int Size => _next;
-        
+
         public interface IPool
         {
             CharArrayTextWriter Lease();
@@ -101,10 +101,19 @@ namespace Marten.Services
             void Release(IEnumerable<CharArrayTextWriter> writer);
         }
 
-        public class Pool : IPool
+        public class Pool : IPool, IDisposable
         {
+            readonly IPool _parent;
             readonly ConcurrentStack<CharArrayTextWriter> _cache = new ConcurrentStack<CharArrayTextWriter>();
 
+            public Pool(IPool parent)
+            {
+                _parent = parent;
+            }
+
+            public Pool() : this(null)
+            {}
+            
             public CharArrayTextWriter Lease()
             {
                 CharArrayTextWriter writer;
@@ -113,13 +122,18 @@ namespace Marten.Services
                     return writer;
                 }
 
+                writer = _parent?.Lease();
+                if (writer != null)
+                {
+                    return writer;
+                }
+                
                 return new CharArrayTextWriter();
             }
 
             public void Release(CharArrayTextWriter writer)
             {
                 // currently, all writers are cached. This might be changed to hold only N writers in the cache.
-
                 writer._next = 0;
                 _cache.Push(writer);
             }
@@ -134,6 +148,15 @@ namespace Marten.Services
                     writers[i]._next = 0;
                 }
                 _cache.PushRange(writers);
+            }
+
+            public void Dispose()
+            {
+                if (_parent != null)
+                {
+                    _parent.Release(_cache);
+                    _cache.Clear();
+                }
             }
         }
     }

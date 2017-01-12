@@ -84,6 +84,28 @@ namespace Marten.Testing.Services
             writer.Size.ShouldBe(0);
         }
 
+        [Fact]
+        public void respects_pool_hierarchy()
+        {
+            var root = new CharArrayTextWriter.Pool();
+            CharArrayTextWriter writer1, writer2;
+            
+            using (var pool = new CharArrayTextWriter.Pool(root))
+            {
+                writer1 = pool.Lease();
+                pool.Release(writer1 );
+            }
+
+            using (var pool = new CharArrayTextWriter.Pool(root))
+            {
+                writer2 = pool.Lease();
+                pool.Release(writer2);
+            }
+
+            writer2.ShouldBe(writer1);
+        }
+
+
         static ArraySegment<char> ToCharSegment(CharArrayTextWriter writer)
         {
             return new ArraySegment<char>(writer.Buffer, 0, writer.Size);

@@ -6,9 +6,16 @@ namespace Marten.Services
 {
     public class DirtyTrackingIdentityMap : IdentityMap<TrackedEntity>, IDocumentTracker
     {
-        public DirtyTrackingIdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners) : base(serializer, listeners)
+        readonly CharArrayTextWriter.IPool _pool;
+
+        public DirtyTrackingIdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners, CharArrayTextWriter.IPool pool) : base(serializer, listeners)
         {
+            _pool = pool;
         }
+
+        // TEST PURPOSES ONLY
+        public DirtyTrackingIdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners) : this(serializer, listeners, new CharArrayTextWriter.Pool())
+        {}
 
         protected override TrackedEntity ToCache(object id, Type concreteType, object document, string json)
         {
