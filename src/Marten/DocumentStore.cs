@@ -282,9 +282,11 @@ namespace Marten
 
         private IDocumentSession openSession(DocumentTracking tracking, ManagedConnection connection)
         {
-            var map = createMap(tracking);
-            var session = new DocumentSession(this, _options, Schema, _serializer, connection, _parser, map, _writerPool);
+            var sessionPool = new CharArrayTextWriter.Pool(_writerPool);
+            var map = createMap(tracking, sessionPool);
 
+
+            var session = new DocumentSession(this, _options, Schema, _serializer, connection, _parser, map, sessionPool);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
@@ -292,7 +294,7 @@ namespace Marten
             return session;
         }
 
-        private IIdentityMap createMap(DocumentTracking tracking)
+        private IIdentityMap createMap(DocumentTracking tracking, CharArrayTextWriter.IPool sessionPool)
         {
             switch (tracking)
             {
@@ -303,7 +305,7 @@ namespace Marten
                     return new IdentityMap(_serializer, _options.Listeners);
 
                 case DocumentTracking.DirtyTracking:
-                    return new DirtyTrackingIdentityMap(_serializer, _options.Listeners);
+                    return new DirtyTrackingIdentityMap(_serializer, _options.Listeners, sessionPool);
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(tracking));
@@ -326,7 +328,7 @@ namespace Marten
 
             var session = new QuerySession(this, Schema, _serializer,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout), parser,
-                new NulloIdentityMap(_serializer));
+                new NulloIdentityMap(_serializer), new CharArrayTextWriter.Pool(_writerPool));
 
             session.Logger = _logger.StartSession(session);
 
@@ -339,7 +341,7 @@ namespace Marten
 
             var session = new QuerySession(this, Schema, _serializer,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser,
-                new NulloIdentityMap(_serializer));
+                new NulloIdentityMap(_serializer), new CharArrayTextWriter.Pool(_writerPool));
 
             session.Logger = _logger.StartSession(session);
 

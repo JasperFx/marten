@@ -17,21 +17,19 @@ namespace Marten
     public class DocumentSession : QuerySession, IDocumentSession
     {
         private readonly IManagedConnection _connection;
-        private readonly CharArrayTextWriter.IPool _writerPool;
         private readonly StoreOptions _options;
         private readonly IDocumentSchema _schema;
         private readonly ISerializer _serializer;
         private readonly UnitOfWork _unitOfWork;
 
         public DocumentSession(IDocumentStore store, StoreOptions options, IDocumentSchema schema,
-            ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, CharArrayTextWriter.IPool writerPool)
-            : base(store, schema, serializer, connection, parser, identityMap)
+            ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, CharArrayTextWriter.Pool writerPool)
+            : base(store, schema, serializer, connection, parser, identityMap, writerPool)
         {
             _options = options;
             _schema = schema;
             _serializer = serializer;
             _connection = connection;
-            _writerPool = writerPool;
 
             IdentityMap = identityMap;
 
@@ -185,7 +183,7 @@ namespace Marten
 
             _options.Listeners.Each(x => x.BeforeSaveChanges(this));
 
-            var batch = new UpdateBatch(_options, _serializer, _connection, IdentityMap.Versions, _writerPool);
+            var batch = new UpdateBatch(_options, _serializer, _connection, IdentityMap.Versions, WriterPool);
             var changes = _unitOfWork.ApplyChanges(batch);
 
             try
@@ -221,7 +219,7 @@ namespace Marten
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
             }
 
-            var batch = new UpdateBatch(_options, _serializer, _connection, IdentityMap.Versions, _writerPool);
+            var batch = new UpdateBatch(_options, _serializer, _connection, IdentityMap.Versions, WriterPool);
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
 
 
@@ -297,7 +295,7 @@ namespace Marten
             assertNotDisposed();
             _unitOfWork.Add(storageOperation);
         }
-
+        
         private void applyProjections()
         {
             var streams = PendingChanges.Streams().ToArray();
