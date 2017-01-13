@@ -82,6 +82,11 @@ namespace Marten
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_connectionFactory, Schema.As<DocumentSchema>());
+            if (options.UseCharBufferPooling)
+            {
+                _writerPool = CharArrayTextWriter.DefaultPool;
+            }
+
             Advanced = new AdvancedOptions(cleaner, options, _serializer, Schema, _writerPool);
 
             Diagnostics = new Diagnostics(Schema);
@@ -99,10 +104,7 @@ namespace Marten
                 Schema.As<DocumentSchema>().RebuildSystemFunctions();
             }
 
-            if (options.UseCharBufferPooling)
-            {
-                _writerPool = CharArrayTextWriter.DefaultPool;
-            }
+          
         }
 
         private readonly StoreOptions _options;
@@ -282,7 +284,7 @@ namespace Marten
 
         private IDocumentSession openSession(DocumentTracking tracking, ManagedConnection connection)
         {
-            var sessionPool = new CharArrayTextWriter.Pool(_writerPool);
+            var sessionPool = CreateWriterPool();
             var map = createMap(tracking, sessionPool);
 
 
@@ -292,6 +294,11 @@ namespace Marten
             session.Logger = _logger.StartSession(session);
 
             return session;
+        }
+
+        CharArrayTextWriter.Pool CreateWriterPool()
+        {
+            return _options.UseCharBufferPooling ? new CharArrayTextWriter.Pool(_writerPool) : null;
         }
 
         private IIdentityMap createMap(DocumentTracking tracking, CharArrayTextWriter.IPool sessionPool)
@@ -328,7 +335,7 @@ namespace Marten
 
             var session = new QuerySession(this, Schema, _serializer,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout), parser,
-                new NulloIdentityMap(_serializer), new CharArrayTextWriter.Pool(_writerPool));
+                new NulloIdentityMap(_serializer), CreateWriterPool());
 
             session.Logger = _logger.StartSession(session);
 
@@ -341,7 +348,7 @@ namespace Marten
 
             var session = new QuerySession(this, Schema, _serializer,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser,
-                new NulloIdentityMap(_serializer), new CharArrayTextWriter.Pool(_writerPool));
+                new NulloIdentityMap(_serializer), CreateWriterPool());
 
             session.Logger = _logger.StartSession(session);
 

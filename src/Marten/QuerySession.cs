@@ -365,7 +365,7 @@ namespace Marten
         {
             _disposed = true;
             _connection.Dispose();
-            WriterPool.Dispose();
+            WriterPool?.Dispose();
         }
 
         public T Load<T>(int id)

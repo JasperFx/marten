@@ -142,6 +142,11 @@ namespace Marten.Services
             {
                 // currently, all writers are cached. This might be changed to hold only N writers in the cache.
                 var writers = writer.ToArray();
+                if (writers.Length == 0)
+                {
+                    return;
+                }
+
                 // ReSharper disable once ForCanBeConvertedToForeach
                 for (var i = 0; i < writers.Length; i++)
                 {
