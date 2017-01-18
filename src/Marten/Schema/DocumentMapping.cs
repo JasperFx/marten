@@ -290,6 +290,15 @@ namespace Marten.Schema
             return index;
         }
 
+        public IndexDefinition AddLastModifiedIndex(Action<IndexDefinition> configure = null)
+        {
+            var index = new IndexDefinition(this, LastModifiedColumn);
+            configure?.Invoke(index);
+            Indexes.Add(index);
+
+            return index;
+        }
+
         public IndexDefinition AddIndex(params string[] columns)
         {
             var existing = Indexes.OfType<IndexDefinition>().FirstOrDefault(x => x.Columns.SequenceEqual(columns));
