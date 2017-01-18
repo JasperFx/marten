@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.LastModified;
 using Marten.Linq.Parsing;
 using Marten.Linq.SoftDeletes;
 using Marten.Schema;
@@ -74,6 +75,10 @@ namespace Marten.Linq
             // soft deletes
             new MaybeDeletedParser(),
             new IsDeletedParser(),
+
+            // last modified
+            new ModifiedSinceParser(),
+            new ModifiedBeforeParser(),
 
             // dictionaries
             new DictionaryExpressions()
