@@ -4,7 +4,6 @@ using Baseline;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing
@@ -82,6 +81,16 @@ namespace Marten.Testing
             mapping.PropertySearching.ShouldBe(PropertySearching.ContainmentOperator);
         }
 
+        [Fact]
+        public void mt_last_modified_index_is_added()
+        {
+            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
+
+            var index = mapping.IndexesFor(DocumentMapping.LastModifiedColumn).Single();
+
+            index.IsConcurrent.ShouldBe(true);
+        }
+
         public class TestRegistry : MartenRegistry
         {
             public TestRegistry()
@@ -91,7 +100,8 @@ namespace Marten.Testing
                     {
                         x.IndexName = "mt_special";
                     })
-                    .GinIndexJsonData(x => x.IndexName = "my_gin_index");
+                    .GinIndexJsonData(x => x.IndexName = "my_gin_index")
+                    .IndexLastModified(x => x.IsConcurrent = true);
 
                 For<User>().PropertySearching(PropertySearching.JSON_Locator_Only);
             }

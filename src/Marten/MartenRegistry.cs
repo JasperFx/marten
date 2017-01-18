@@ -158,6 +158,18 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Creates an index on the predefined Last Modified column
+            /// </summary>
+            /// <param name="configure"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> IndexLastModified(Action<IndexDefinition> configure = null)
+            {
+                alter = m => m.AddLastModifiedIndex(configure);
+
+                return this;
+            }
+
             public DocumentMappingExpression<T> ForeignKey<TReference>(
                 Expression<Func<T, object>> expression,
                 Action<ForeignKeyDefinition> foreignKeyConfiguration = null,
