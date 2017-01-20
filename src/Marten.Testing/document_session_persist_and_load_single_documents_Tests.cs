@@ -63,6 +63,30 @@ namespace Marten.Testing
         }
 
         [Fact]
+        public void persist_and_reload_a_document_using_buffers()
+        {
+            var user = new User { FirstName = "James", LastName = "Worthy" };
+
+            using (var store = TestingDocumentStore.For(_ => { _.UseCharBufferPooling = true; }))
+            {
+                using (var session1 = store.OpenSession())
+                {
+                    session1.Store(user);
+                    session1.SaveChanges();
+                }
+
+                using (var session2 = store.OpenSession())
+                {
+                    var user2 = session2.Load<User>(user.Id);
+
+                    user.ShouldNotBeSameAs(user2);
+                    user2.FirstName.ShouldBe(user.FirstName);
+                    user2.LastName.ShouldBe(user.LastName);
+                }
+            }
+        }
+
+        [Fact]
         public async Task persist_and_reload_a_document_async()
         {
             var user = new User { FirstName = "James", LastName = "Worthy" };
@@ -80,6 +104,30 @@ namespace Marten.Testing
                 user.ShouldNotBeSameAs(user2);
                 user2.FirstName.ShouldBe(user.FirstName);
                 user2.LastName.ShouldBe(user.LastName);
+            }
+        }
+
+        [Fact]
+        public async Task persist_and_reload_a_document_async_using_buffers()
+        {
+            var user = new User { FirstName = "James", LastName = "Worthy" };
+
+            using (var store = TestingDocumentStore.For(_ => { _.UseCharBufferPooling = true; }))
+            {
+                using (var session1 = store.OpenSession())
+                {
+                    session1.Store(user);
+                    await session1.SaveChangesAsync().ConfigureAwait(false);
+                }
+
+                using (var session2 = store.OpenSession())
+                {
+                    var user2 = await session2.LoadAsync<User>(user.Id).ConfigureAwait(false);
+
+                    user.ShouldNotBeSameAs(user2);
+                    user2.FirstName.ShouldBe(user.FirstName);
+                    user2.LastName.ShouldBe(user.LastName);
+                }
             }
         }
 
