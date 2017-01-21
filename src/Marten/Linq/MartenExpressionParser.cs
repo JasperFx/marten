@@ -75,6 +75,8 @@ namespace Marten.Linq
             // soft deletes
             new MaybeDeletedParser(),
             new IsDeletedParser(),
+            new DeletedSinceParser(),
+            new DeletedBeforeParser(),
 
             // last modified
             new ModifiedSinceParser(),
