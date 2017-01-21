@@ -22,7 +22,7 @@ namespace Marten.Testing.Acceptance
                 session.Store(user1, user2, user3, user4);
                 session.SaveChanges();
 
-                var beforeChange = DateTimeOffset.UtcNow.DateTime;
+                var beforeChange = DateTimeOffset.UtcNow;
                 session.Store(user3, user4);
                 session.SaveChanges();
 
