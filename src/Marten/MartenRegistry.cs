@@ -305,6 +305,14 @@ namespace Marten
                 return this;
             }
 
+            public DocumentMappingExpression<T> SoftDeletedWithIndex(Action<IndexDefinition> configure = null)
+            {
+                SoftDeleted();
+                alter = m => m.AddDeletedAtIndex(configure);
+
+                return this;
+            }
+
             /// <summary>
             /// Direct this document type's DDL to be created with the named template
             /// </summary>

@@ -299,6 +299,18 @@ namespace Marten.Schema
             return index;
         }
 
+        public IndexDefinition AddDeletedAtIndex(Action<IndexDefinition> configure = null)
+        {
+            if (DeleteStyle != DeleteStyle.SoftDelete)
+                throw new InvalidOperationException($"DocumentMapping for {DocumentType.FullName} is not configured to use Soft Delete");
+
+            var index = new IndexDefinition(this, DeletedAtColumn) {Modifier = $"WHERE {DeletedColumn}"};
+            configure?.Invoke(index);
+            Indexes.Add(index);
+
+            return index;
+        }
+
         public IndexDefinition AddIndex(params string[] columns)
         {
             var existing = Indexes.OfType<IndexDefinition>().FirstOrDefault(x => x.Columns.SequenceEqual(columns));

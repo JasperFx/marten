@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Testing.Documents;
@@ -9,8 +10,6 @@ namespace Marten.Testing.Schema
 {
     public class configuring_mapping_deletion_style
     {
-
-
         [Fact]
         public void default_delete_style_is_remove()
         {
@@ -19,11 +18,11 @@ namespace Marten.Testing.Schema
         }
 
         // SAMPLE: SoftDeletedAttribute
-    [SoftDeleted]
-    public class SoftDeletedDoc
-    {
-        public Guid Id;
-    }
+        [SoftDeleted]
+        public class SoftDeletedDoc
+        {
+            public Guid Id;
+        }
         // ENDSAMPLE
 
         [Fact]
@@ -33,16 +32,30 @@ namespace Marten.Testing.Schema
                 .DeleteStyle.ShouldBe(DeleteStyle.SoftDelete);
         }
 
+        [Fact]
+        public void can_configure_index_via_attribute()
+        {
+            DocumentMapping.For<IndexedSoftDeletedDoc>()
+                .IndexesFor(DocumentMapping.DeletedAtColumn)
+                .Count()
+                .ShouldBe(1);
+        }
+
+        [SoftDeleted(Indexed = true)]
+        public class IndexedSoftDeletedDoc
+        {
+        }
+
         public void example_of_using_fi_to_configure()
         {
             // SAMPLE: soft-delete-configuration-via-fi
-    var store = DocumentStore.For(_ =>
-    {
-        _.Connection(ConnectionSource.ConnectionString);
-        _.Schema.For<User>().SoftDeleted();
-    });
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<User>().SoftDeleted();
+            });
 
-    store.Dispose();
+            store.Dispose();
             // ENDSAMPLE
         }
 
@@ -58,7 +71,6 @@ namespace Marten.Testing.Schema
                 store.Schema.MappingFor(typeof(User)).As<DocumentMapping>()
                     .DeleteStyle.ShouldBe(DeleteStyle.SoftDelete);
             }
-            
         }
     }
 }
