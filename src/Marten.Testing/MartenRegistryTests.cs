@@ -91,17 +91,29 @@ namespace Marten.Testing
             index.IsConcurrent.ShouldBe(true);
         }
 
+        [Fact]
+        public void mt_deleted_at_index_is_added()
+        {
+            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
+
+            var index = mapping.IndexesFor(DocumentMapping.DeletedAtColumn).Single();
+
+            index.Modifier.ShouldBe("WHERE mt_deleted");
+            index.Method.ShouldBe(IndexMethod.brin);
+        }
+
         public class TestRegistry : MartenRegistry
         {
             public TestRegistry()
             {
                 For<Organization>()
-                    .Duplicate(x => x.Name).Duplicate(x => x.OtherName, configure:x =>
+                    .Duplicate(x => x.Name).Duplicate(x => x.OtherName, configure: x =>
                     {
                         x.IndexName = "mt_special";
                     })
                     .GinIndexJsonData(x => x.IndexName = "my_gin_index")
-                    .IndexLastModified(x => x.IsConcurrent = true);
+                    .IndexLastModified(x => x.IsConcurrent = true)
+                    .SoftDeletedWithIndex(x => x.Method = IndexMethod.brin);
 
                 For<User>().PropertySearching(PropertySearching.JSON_Locator_Only);
             }

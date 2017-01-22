@@ -837,5 +837,10 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("CREATE OR REPLACE FUNCTION overriden.mt_upsert_documentmappingtests_myspecialdocument");
         }
 
+        [Fact]
+        public void trying_to_index_deleted_at_when_not_soft_deleted_document_throws()
+        {
+            Exception<InvalidOperationException>.ShouldBeThrownBy(() => DocumentMapping.For<IntId>().AddDeletedAtIndex());
+        }
     }
 }

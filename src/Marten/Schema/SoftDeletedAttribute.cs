@@ -11,6 +11,13 @@ namespace Marten.Schema
         public override void Modify(DocumentMapping mapping)
         {
             mapping.DeleteStyle = DeleteStyle.SoftDelete;
+            if (!Indexed) return;
+            mapping.AddDeletedAtIndex();
         }
+
+        /// <summary>
+        /// Creates an index on deleted documents
+        /// </summary>
+        public bool Indexed { get; set; }
     }
 }

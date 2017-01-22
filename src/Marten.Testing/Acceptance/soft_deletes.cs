@@ -17,7 +17,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<User>().SoftDeleted();
+                _.Schema.For<User>().SoftDeletedWithIndex();
                 _.Schema.For<File>().SoftDeleted();
             });
         }
