@@ -23,13 +23,15 @@ namespace Marten.Schema
         private readonly string _loaderSql;
         private readonly ISerializer _serializer;
         private readonly DocumentMapping _mapping;
+        private readonly bool _useCharBufferPooling;
         private readonly FunctionName _upsertName;
         private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid> _sprocWriter;
 
-        public Resolver(ISerializer serializer, DocumentMapping mapping)
+        public Resolver(ISerializer serializer, DocumentMapping mapping, bool useCharBufferPooling)
         {
             _serializer = serializer;
             _mapping = mapping;
+            _useCharBufferPooling = useCharBufferPooling;
             IdType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
 
 
@@ -75,7 +77,7 @@ namespace Marten.Schema
 
             var arguments = new UpsertFunction(mapping).OrderedArguments().Select(x =>
             {
-                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, currentVersion, newVersion);
+                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, currentVersion, newVersion, _useCharBufferPooling);
             });
 
             var block = Expression.Block(arguments);

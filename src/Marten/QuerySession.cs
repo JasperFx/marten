@@ -27,9 +27,10 @@ namespace Marten
         private readonly IManagedConnection _connection;
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
+        protected readonly CharArrayTextWriter.Pool WriterPool;
         private bool _disposed;
 
-        public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
+        public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, CharArrayTextWriter.Pool writerPool)
         {
             DocumentStore = store;
             _schema = schema;
@@ -37,6 +38,7 @@ namespace Marten
             _connection = connection;
             _parser = parser;
             _identityMap = identityMap;
+            WriterPool = writerPool;
         }
 
         public IDocumentStore DocumentStore { get; }
@@ -54,7 +56,7 @@ namespace Marten
 
             var executor = new MartenQueryExecutor(_connection, _schema, _identityMap);
 
-            var queryProvider = new MartenQueryProvider(typeof (MartenQueryable<>), _parser, executor);
+            var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, executor);
             return new MartenQueryable<T>(queryProvider);
         }
 
@@ -82,7 +84,7 @@ namespace Marten
 
         private IDocumentStorage storage<T>()
         {
-            return _schema.StorageFor(typeof (T));
+            return _schema.StorageFor(typeof(T));
         }
 
         public FetchResult<T> LoadDocument<T>(object id) where T : class
@@ -278,7 +280,7 @@ namespace Marten
 
             private IEnumerable<TDoc> fetchDocuments<TKey>(TKey[] keys)
             {
-                var storage = _parent._schema.StorageFor(typeof (TDoc));
+                var storage = _parent._schema.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IResolver<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
@@ -301,7 +303,7 @@ namespace Marten
 
             private async Task<IEnumerable<TDoc>> fetchDocumentsAsync<TKey>(TKey[] keys, CancellationToken token)
             {
-                var storage = _parent._schema.StorageFor(typeof (TDoc));
+                var storage = _parent._schema.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IResolver<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
@@ -363,6 +365,7 @@ namespace Marten
         {
             _disposed = true;
             _connection.Dispose();
+            WriterPool?.Dispose();
         }
 
         public T Load<T>(int id)
@@ -375,7 +378,7 @@ namespace Marten
             return load<T>(id);
         }
 
-        public T Load<T>(Guid id) 
+        public T Load<T>(Guid id)
         {
             return load<T>(id);
         }

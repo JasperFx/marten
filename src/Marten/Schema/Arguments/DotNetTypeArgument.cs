@@ -22,7 +22,7 @@ namespace Marten.Schema.Arguments
             PostgresType = "varchar";
         }
 
-        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer)
+        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, bool useCharBufferPooling)
         {
             var getType = Expression.Call(document, _getType);
             var getName = Expression.Call(getType, _fullName);
@@ -34,7 +34,7 @@ namespace Marten.Schema.Arguments
             return Expression.Call(writer, method, getName, dbType);
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion, bool useCharBufferPooling)
         {
             var getType = Expression.Call(doc, _getType);
             var getName = Expression.Call(getType, _fullName);

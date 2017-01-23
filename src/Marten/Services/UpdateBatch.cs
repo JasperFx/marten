@@ -11,17 +11,19 @@ namespace Marten.Services
 {
     public class UpdateBatch : IDisposable
     {
-        private readonly Stack<BatchCommand> _commands = new Stack<BatchCommand>();
-        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private readonly StoreOptions _options;
-
-
-        public UpdateBatch(StoreOptions options, ISerializer serializer, IManagedConnection connection,
-            VersionTracker versions)
+        private readonly ISerializer _serializer;
+        private readonly CharArrayTextWriter.IPool _writerPool;
+        private readonly Stack<BatchCommand> _commands = new Stack<BatchCommand>(); 
+        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
+        private readonly List<CharArrayTextWriter> _writers = new List<CharArrayTextWriter>();
+        
+        public UpdateBatch(StoreOptions options, ISerializer serializer, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool)
         {
             if (versions == null) throw new ArgumentNullException(nameof(versions));
 
             _options = options;
+            _writerPool = writerPool;
             Serializer = serializer;
             Versions = versions;
 
@@ -34,6 +36,13 @@ namespace Marten.Services
         public VersionTracker Versions { get; }
 
         public IManagedConnection Connection { get; }
+
+        public CharArrayTextWriter GetWriter()
+        {
+            var writer = _writerPool.Lease();
+            _writers.Add(writer);
+            return writer;
+        }
 
         public void Dispose()
         {
@@ -70,24 +79,35 @@ namespace Marten.Services
         {
             var list = new List<Exception>();
 
-            foreach (var batch in _commands.ToArray())
+            try
             {
-                var cmd = batch.BuildCommand();
-                Connection.Execute(cmd, c =>
+                foreach (var batch in _commands.ToArray())
                 {
-                    if (batch.HasCallbacks())
+                    var cmd = batch.BuildCommand();
+                    Connection.Execute(cmd, c =>
                     {
-                        executeCallbacks(cmd, batch, list);
-                    }
-                    else
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-                });
-            }
+                        if (batch.HasCallbacks())
+                        {
+                            executeCallbacks(cmd, batch, list);
+                        }
+                        else
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                    });
+                }
 
-            if (list.Any())
-                throw new AggregateException(list);
+                if (list.Any())
+                    throw new AggregateException(list);
+            }
+            finally
+            {
+                if (_writerPool != null)
+                {
+                    _writerPool?.Release(_writers);
+                    _writers.Clear();
+                }
+            }
         }
 
         private static void executeCallbacks(NpgsqlCommand cmd, BatchCommand batch, List<Exception> list)
@@ -113,25 +133,36 @@ namespace Marten.Services
 
         public async Task ExecuteAsync(CancellationToken token)
         {
-            var list = new List<Exception>();
-            foreach (var batch in _commands.ToArray())
+            try
             {
-                var cmd = batch.BuildCommand();
-                await Connection.ExecuteAsync(cmd, async (c, tkn) =>
+                var list = new List<Exception>();
+                foreach (var batch in _commands.ToArray())
                 {
-                    if (batch.HasCallbacks())
+                    var cmd = batch.BuildCommand();
+                    await Connection.ExecuteAsync(cmd, async (c, tkn) =>
                     {
-                        await executeCallbacksAsync(c, tkn, batch, list);
-                    }
-                    else
-                    {
-                        await c.ExecuteNonQueryAsync(tkn);
-                    }
-                }, token).ConfigureAwait(false);
-            }
+                        if (batch.HasCallbacks())
+                        {
+                            await executeCallbacksAsync(c, tkn, batch, list);
+                        }
+                        else
+                        {
+                            await c.ExecuteNonQueryAsync(tkn);
+                        }
+                    }, token).ConfigureAwait(false);
+                }
 
-            if (list.Any())
-                throw new AggregateException(list);
+                if (list.Any())
+                    throw new AggregateException(list);
+            }
+            finally
+            {
+                if (_writerPool != null)
+                {
+                    _writerPool?.Release(_writers);
+                    _writers.Clear();
+                }
+            }
         }
 
         private static async Task executeCallbacksAsync(NpgsqlCommand cmd, CancellationToken tkn, BatchCommand batch,
@@ -151,7 +182,7 @@ namespace Marten.Services
                             await reader.NextResultAsync(tkn).ConfigureAwait(false);
                         }
 
-                        
+
 
                         if (batch.Callbacks[i] != null)
                         {
