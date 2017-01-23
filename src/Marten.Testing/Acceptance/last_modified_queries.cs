@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using Marten.Linq.LastModified;
 using Marten.Testing.Documents;
@@ -22,16 +21,16 @@ namespace Marten.Testing.Acceptance
                 session.Store(user1, user2, user3, user4);
                 session.SaveChanges();
 
-                var beforeChange = DateTimeOffset.UtcNow;
+                var epoch = session.DocumentStore.Advanced.MetadataFor(user4).LastModified;
                 session.Store(user3, user4);
                 session.SaveChanges();
 
                 // no where clause
-                session.Query<User>().Where(x => x.ModifiedSince(beforeChange)).OrderBy(x => x.UserName).Select(x => x.UserName)
+                session.Query<User>().Where(x => x.ModifiedSince(epoch)).OrderBy(x => x.UserName).Select(x => x.UserName)
                     .ToList().ShouldHaveTheSameElementsAs("baz", "jack");
 
                 // with a where clause
-                session.Query<User>().Where(x => x.UserName != "baz" && x.ModifiedSince(beforeChange))
+                session.Query<User>().Where(x => x.UserName != "baz" && x.ModifiedSince(epoch))
                     .OrderBy(x => x.UserName)
                     .ToList()
                     .Select(x => x.UserName)
@@ -52,9 +51,10 @@ namespace Marten.Testing.Acceptance
                 session.Store(user1, user2, user3, user4);
                 session.SaveChanges();
 
-                var epoch = DateTimeOffset.UtcNow;
                 session.Store(user3, user4);
                 session.SaveChanges();
+
+                var epoch = session.DocumentStore.Advanced.MetadataFor(user4).LastModified;
 
                 // no where clause
                 session.Query<User>().Where(x => x.ModifiedBefore(epoch)).OrderBy(x => x.UserName).Select(x => x.UserName)
