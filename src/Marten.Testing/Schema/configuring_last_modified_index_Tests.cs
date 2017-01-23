@@ -16,9 +16,11 @@ namespace Marten.Testing.Schema
             indexDefinition.Method.ShouldBe(IndexMethod.btree);
         }
 
+        // SAMPLE: index-last-modified-via-attribute
         [IndexedLastModified]
         public class Customer
         {
         }
+        // ENDSAMPLE
     }
 }
