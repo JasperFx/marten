@@ -18,8 +18,8 @@ var store = DocumentStore.For(_ =>
 });
             // ENDSAMPLE
 
-            var sql = store.Schema.ToDDL();
-            Console.WriteLine(sql);
+            //var sql = store.Schema.ToDDL();
+            //Console.WriteLine(sql);
 
         }
     }
