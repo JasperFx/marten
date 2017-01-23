@@ -42,3 +42,12 @@ as shown below:
 
 <[sample:query_is_soft_deleted_docs]>
 
+## Fetching Documents Deleted before or after a specific time
+
+To search for documents that have been deleted before a specific time use Marten's `DeletedBefore(DateTimeOffset)` method
+and the counterpart `DeletedSince(DateTimeOffset)` as show below:
+
+<[sample:query_soft_deleted_since]>
+
+_Neither `DeletedSince` nor `DeletedBefore` are inclusive searches as shown_
+
