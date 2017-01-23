@@ -45,6 +45,7 @@ For more information on the query support within Marten, see:
 * <[linkto:documentation/documents/querying/batched_queries]>
 * <[linkto:documentation/documents/querying/query_json]>
 * <[linkto:documentation/documents/querying/compiled_queries]>
+* <[linkto:documentation/documents/querying/metadata_queries]>
 
 
 ## Persisting Documents

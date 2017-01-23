@@ -1,27 +1,26 @@
 ﻿using Marten.Schema;
 using Marten.Testing.Documents;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Examples
 {
     public class MartenRegistryExamples
     {
-        private readonly ITestOutputHelper _output;
-
-        public MartenRegistryExamples(ITestOutputHelper output)
+        public MartenRegistryExamples()
         {
-            _output = output;
-        }
+            // SAMPLE: using_marten_registry_to_bootstrap_document_store
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection("your connection string");
+                _.Schema.Include<MyMartenRegistry>();
+            });
+            // ENDSAMPLE
 
-        public void building_document_store()
-        {
-// SAMPLE: using_marten_registry_to_bootstrap_document_store
-var store = DocumentStore.For(_ =>
-{
-    _.Connection("your connection string");
-    _.Schema.Include<MyMartenRegistry>();
-});
-// ENDSAMPLE
+            // SAMPLE: index-last-modified-via-fi
+            DocumentStore.For(_ =>
+            {
+                _.Schema.For<User>().IndexLastModified();
+            });
+            // ENDSAMPLE
         }
     }
 
@@ -80,8 +79,4 @@ var store = DocumentStore.For(_ =>
         }
     }
     // ENDSAMPLE
-
-
-
-
 }

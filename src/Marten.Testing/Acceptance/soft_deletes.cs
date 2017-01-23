@@ -205,6 +205,7 @@ namespace Marten.Testing.Acceptance
         }
         // ENDSAMPLE
 
+        // SAMPLE: query_soft_deleted_since
         [Fact]
         public void query_is_soft_deleted_since_docs()
         {
@@ -229,6 +230,7 @@ namespace Marten.Testing.Acceptance
                     .ToList().ShouldHaveTheSameElementsAs("jack");
             }
         }
+        // ENDSAMPLE
 
         [Fact]
         public void query_is_soft_deleted_before_docs()
