@@ -22,10 +22,6 @@ namespace Marten.Testing.Bugs
             objects.ActualIndices.Keys.Single()
                 .ShouldBe("mt_doc_docwithfk_idx_user_id");
 
-            foreach (var index in objects.ActualIndices)
-            {
-                Console.WriteLine(index);
-            }
 
         }
 

@@ -96,8 +96,9 @@ namespace Marten
 
         /// <summary>
         /// Configures the store to use char buffer pooling, greatly reducing allocations for serializing documents and events.
+        /// The default is true.
         /// </summary>
-        public bool UseCharBufferPooling { get; set; } = false;
+        public bool UseCharBufferPooling { get; set; } = true;
 
         /// <summary>
         ///     Set the default Id strategy for the document mapping.

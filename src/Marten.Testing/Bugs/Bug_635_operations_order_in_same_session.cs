@@ -12,11 +12,6 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void deletewhere_and_store()
         {
-            StoreOptions(_ =>
-            {
-                _.Logger(new ConsoleMartenLogger());
-            });
-
             var batchSize = 256;
 
             for (var i = 0; i < batchSize; i++)

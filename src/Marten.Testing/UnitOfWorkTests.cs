@@ -38,7 +38,7 @@ namespace Marten.Testing
 
             using (var connection = theStore.Advanced.OpenConnection())
             {
-                var batch = new UpdateBatch(theStore.Advanced.Options, new JsonNetSerializer(), connection, new VersionTracker(), null);
+                var batch = new UpdateBatch(theStore.Advanced.Options, new JsonNetSerializer(), connection, new VersionTracker(), CharArrayTextWriter.DefaultPool);
 
                 uow.ApplyChanges(batch);
             }
