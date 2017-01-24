@@ -18,7 +18,7 @@ namespace Marten.Schema.Arguments
             PostgresType = "varchar";
         }
 
-        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer)
+        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, bool useCharBufferPooling)
         {
             var method = writeMethod.MakeGenericMethod(typeof(string));
             var dbType = Expression.Constant(DbType);
@@ -26,7 +26,7 @@ namespace Marten.Schema.Arguments
             return Expression.Call(writer, method, alias, dbType);
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion, bool useCharBufferPooling)
         {
             var argName = Expression.Constant(Arg);
             var dbType = Expression.Constant(NpgsqlDbType.Varchar);

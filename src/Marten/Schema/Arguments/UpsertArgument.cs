@@ -17,6 +17,9 @@ namespace Marten.Schema.Arguments
         protected static readonly MethodInfo _paramMethod = typeof(SprocCall)
             .GetMethod("Param", new[] {typeof(string), typeof(object), typeof(NpgsqlDbType)});
 
+        protected static readonly MethodInfo _paramWithSizeMethod = typeof(SprocCall)
+            .GetMethod("Param", new[] { typeof(string), typeof(object), typeof(NpgsqlDbType), typeof(int) });
+
         private MemberInfo[] _members;
         private string _postgresType;
         public string Arg { get; set; }
@@ -61,7 +64,7 @@ namespace Marten.Schema.Arguments
             return $"{Arg} {PostgresType}";
         }
 
-        public virtual Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer)
+        public virtual Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, bool useCharBufferPooling)
         {
             var memberType = Members.Last().GetMemberType();
 
@@ -82,7 +85,7 @@ namespace Marten.Schema.Arguments
         }
 
 
-        public virtual Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion)
+        public virtual Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion, bool useCharBufferPooling)
         {
             var argName = Expression.Constant(Arg);
 

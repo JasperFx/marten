@@ -17,7 +17,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<User>().SoftDeleted();
+                _.Schema.For<User>().SoftDeletedWithIndex();
                 _.Schema.For<File>().SoftDeleted();
             });
         }
@@ -204,6 +204,56 @@ namespace Marten.Testing.Acceptance
             }
         }
         // ENDSAMPLE
+
+        [Fact]
+        public void query_is_soft_deleted_since_docs()
+        {
+            var user1 = new User { UserName = "foo" };
+            var user2 = new User { UserName = "bar" };
+            var user3 = new User { UserName = "baz" };
+            var user4 = new User { UserName = "jack" };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(user1, user2, user3, user4);
+                session.SaveChanges();
+
+                session.Delete(user3);
+                session.SaveChanges();
+
+                var epoch = DateTimeOffset.UtcNow;
+                session.Delete(user4);
+                session.SaveChanges();
+
+                session.Query<User>().Where(x => x.DeletedSince(epoch)).Select(x => x.UserName)
+                    .ToList().ShouldHaveTheSameElementsAs("jack");
+            }
+        }
+
+        [Fact]
+        public void query_is_soft_deleted_before_docs()
+        {
+            var user1 = new User { UserName = "foo" };
+            var user2 = new User { UserName = "bar" };
+            var user3 = new User { UserName = "baz" };
+            var user4 = new User { UserName = "jack" };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(user1, user2, user3, user4);
+                session.SaveChanges();
+
+                session.Delete(user3);
+                session.SaveChanges();
+
+                var epoch = DateTimeOffset.UtcNow;
+                session.Delete(user4);
+                session.SaveChanges();
+
+                session.Query<User>().Where(x => x.DeletedBefore(epoch)).Select(x => x.UserName)
+                    .ToList().ShouldHaveTheSameElementsAs("baz");
+            }
+        }
 
         [Fact]
         public void top_level_of_hierarchy()

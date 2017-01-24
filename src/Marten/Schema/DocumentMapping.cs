@@ -124,7 +124,7 @@ namespace Marten.Schema
 
             var closedType = resolverType.MakeGenericType(DocumentType);
 
-            return Activator.CreateInstance(closedType, schema.StoreOptions.Serializer(), this)
+            return Activator.CreateInstance(closedType, schema.StoreOptions.Serializer(), this, schema.StoreOptions.UseCharBufferPooling)
                 .As<IDocumentStorage>();
         }
 
@@ -286,6 +286,27 @@ namespace Marten.Schema
             index.Expression = "? jsonb_path_ops";
 
             PropertySearching = PropertySearching.ContainmentOperator;
+
+            return index;
+        }
+
+        public IndexDefinition AddLastModifiedIndex(Action<IndexDefinition> configure = null)
+        {
+            var index = new IndexDefinition(this, LastModifiedColumn);
+            configure?.Invoke(index);
+            Indexes.Add(index);
+
+            return index;
+        }
+
+        public IndexDefinition AddDeletedAtIndex(Action<IndexDefinition> configure = null)
+        {
+            if (DeleteStyle != DeleteStyle.SoftDelete)
+                throw new InvalidOperationException($"DocumentMapping for {DocumentType.FullName} is not configured to use Soft Delete");
+
+            var index = new IndexDefinition(this, DeletedAtColumn) {Modifier = $"WHERE {DeletedColumn}"};
+            configure?.Invoke(index);
+            Indexes.Add(index);
 
             return index;
         }

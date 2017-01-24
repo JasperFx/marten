@@ -82,7 +82,12 @@ namespace Marten
             _serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_connectionFactory, Schema.As<DocumentSchema>());
-            Advanced = new AdvancedOptions(cleaner, options, _serializer, Schema);
+            if (options.UseCharBufferPooling)
+            {
+                _writerPool = CharArrayTextWriter.DefaultPool;
+            }
+
+            Advanced = new AdvancedOptions(cleaner, options, _serializer, Schema, _writerPool);
 
             Diagnostics = new Diagnostics(Schema);
 
@@ -98,11 +103,14 @@ namespace Marten
             {
                 Schema.As<DocumentSchema>().RebuildSystemFunctions();
             }
+
+          
         }
 
         private readonly StoreOptions _options;
         private readonly IConnectionFactory _connectionFactory;
         private readonly IMartenLogger _logger;
+        private readonly CharArrayTextWriter.IPool _writerPool;
 
         public virtual void Dispose()
         {
@@ -276,9 +284,11 @@ namespace Marten
 
         private IDocumentSession openSession(DocumentTracking tracking, ManagedConnection connection)
         {
-            var map = createMap(tracking);
-            var session = new DocumentSession(this, _options, Schema, _serializer, connection, _parser, map);
+            var sessionPool = CreateWriterPool();
+            var map = createMap(tracking, sessionPool);
 
+
+            var session = new DocumentSession(this, _options, Schema, _serializer, connection, _parser, map, sessionPool);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
@@ -286,7 +296,12 @@ namespace Marten
             return session;
         }
 
-        private IIdentityMap createMap(DocumentTracking tracking)
+        CharArrayTextWriter.Pool CreateWriterPool()
+        {
+            return _options.UseCharBufferPooling ? new CharArrayTextWriter.Pool(_writerPool) : null;
+        }
+
+        private IIdentityMap createMap(DocumentTracking tracking, CharArrayTextWriter.IPool sessionPool)
         {
             switch (tracking)
             {
@@ -297,7 +312,7 @@ namespace Marten
                     return new IdentityMap(_serializer, _options.Listeners);
 
                 case DocumentTracking.DirtyTracking:
-                    return new DirtyTrackingIdentityMap(_serializer, _options.Listeners);
+                    return new DirtyTrackingIdentityMap(_serializer, _options.Listeners, sessionPool);
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(tracking));
@@ -320,7 +335,7 @@ namespace Marten
 
             var session = new QuerySession(this, Schema, _serializer,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout), parser,
-                new NulloIdentityMap(_serializer));
+                new NulloIdentityMap(_serializer), CreateWriterPool());
 
             session.Logger = _logger.StartSession(session);
 
@@ -333,7 +348,7 @@ namespace Marten
 
             var session = new QuerySession(this, Schema, _serializer,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser,
-                new NulloIdentityMap(_serializer));
+                new NulloIdentityMap(_serializer), CreateWriterPool());
 
             session.Logger = _logger.StartSession(session);
 

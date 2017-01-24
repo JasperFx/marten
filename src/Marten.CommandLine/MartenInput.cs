@@ -30,7 +30,6 @@ namespace Marten.CommandLine
 
         public void WriteLine(string text)
         {
-            Console.WriteLine(text);
             _log.WriteLine(text);
         }
 

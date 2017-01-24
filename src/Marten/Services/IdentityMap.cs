@@ -27,7 +27,7 @@ namespace Marten.Services
 
         private void storeFetched<T>(object id, FetchResult<T> fetched)
         {
-            if (fetched != null && fetched.Version.HasValue)
+            if (fetched?.Version != null)
             {
                 Versions.Store<T>(id, fetched.Version.Value);
             }

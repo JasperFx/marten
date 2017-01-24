@@ -17,12 +17,13 @@ namespace Marten
     public class AdvancedOptions
     {
         private readonly IDocumentSchema _schema;
+        private readonly CharArrayTextWriter.IPool _writerPool;
 
-        public AdvancedOptions(IDocumentCleaner cleaner, StoreOptions options, ISerializer serializer,
-            IDocumentSchema schema)
+        public AdvancedOptions(IDocumentCleaner cleaner, StoreOptions options, ISerializer serializer, IDocumentSchema schema, CharArrayTextWriter.IPool writerPool)
         {
             Serializer = serializer;
             _schema = schema;
+            _writerPool = writerPool;
             Options = options;
             Clean = cleaner;
         }
@@ -58,7 +59,7 @@ namespace Marten
         /// <returns></returns>
         public UpdateBatch CreateUpdateBatch()
         {
-            return new UpdateBatch(Options, Serializer, OpenConnection(), new VersionTracker());
+            return new UpdateBatch(Options, Serializer, OpenConnection(), new VersionTracker(), _writerPool);
         }
 
         /// <summary>

@@ -4,7 +4,6 @@ using Baseline;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing
@@ -82,16 +81,39 @@ namespace Marten.Testing
             mapping.PropertySearching.ShouldBe(PropertySearching.ContainmentOperator);
         }
 
+        [Fact]
+        public void mt_last_modified_index_is_added()
+        {
+            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
+
+            var index = mapping.IndexesFor(DocumentMapping.LastModifiedColumn).Single();
+
+            index.IsConcurrent.ShouldBe(true);
+        }
+
+        [Fact]
+        public void mt_deleted_at_index_is_added()
+        {
+            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
+
+            var index = mapping.IndexesFor(DocumentMapping.DeletedAtColumn).Single();
+
+            index.Modifier.ShouldBe("WHERE mt_deleted");
+            index.Method.ShouldBe(IndexMethod.brin);
+        }
+
         public class TestRegistry : MartenRegistry
         {
             public TestRegistry()
             {
                 For<Organization>()
-                    .Duplicate(x => x.Name).Duplicate(x => x.OtherName, configure:x =>
+                    .Duplicate(x => x.Name).Duplicate(x => x.OtherName, configure: x =>
                     {
                         x.IndexName = "mt_special";
                     })
-                    .GinIndexJsonData(x => x.IndexName = "my_gin_index");
+                    .GinIndexJsonData(x => x.IndexName = "my_gin_index")
+                    .IndexLastModified(x => x.IsConcurrent = true)
+                    .SoftDeletedWithIndex(x => x.Method = IndexMethod.brin);
 
                 For<User>().PropertySearching(PropertySearching.JSON_Locator_Only);
             }
