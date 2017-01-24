@@ -198,5 +198,7 @@ namespace Marten.Services
             foreach (var op in operations)
                 Add(op);
         }
+
+        public bool UseCharBufferPooling => _options.UseCharBufferPooling;
     }
 }
