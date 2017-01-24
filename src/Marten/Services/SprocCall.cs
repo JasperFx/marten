@@ -67,6 +67,11 @@ namespace Marten.Services
             return Param(argName, bodies, NpgsqlDbType.Jsonb | NpgsqlDbType.Array);
         }
 
+        public SprocCall JsonBodies(string argName, ArraySegment<char>[] bodies)
+        {
+            return Param(argName, bodies, NpgsqlDbType.Jsonb | NpgsqlDbType.Array);
+        }
+
         public SprocCall Param(string argName, object value, NpgsqlDbType dbType)
         {
             var param = _parent.AddParameter(value, dbType);
