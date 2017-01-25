@@ -1,0 +1,32 @@
+﻿{
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "emitEntryPoint": true
+  },
+
+  "dependencies": {
+    "Marten.Testing": { "target": "project" },
+    "Storyteller": "4.0.0-alpha-467"
+  },
+
+  "tools": {
+    "dotnet-storyteller": {
+      "version": "1.0.0-alpha-467"
+    }  
+  },
+
+  "frameworks": {
+    "netcoreapp1.0": {
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        }
+      },
+      "imports": [
+        "dotnet5.4",
+        "portable-net451+win8"
+      ]
+    }
+  }
+}
