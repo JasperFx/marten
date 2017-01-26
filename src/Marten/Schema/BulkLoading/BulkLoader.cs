@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using Baseline;
 using Marten.Schema.Arguments;
 using Marten.Schema.Identity;
+using Marten.Services;
 using Marten.Util;
 using Npgsql;
 
@@ -18,7 +19,7 @@ namespace Marten.Schema.BulkLoading
         private readonly DocumentMapping _mapping;
         private readonly string _sql;
 
-        private readonly Action<T, string, ISerializer, NpgsqlBinaryImporter> _transferData;
+        private readonly Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter> _transferData;
         private readonly string _tempTableName;
 
 
@@ -35,11 +36,12 @@ namespace Marten.Schema.BulkLoading
             var document = Expression.Parameter(typeof(T), "document");
             var alias = Expression.Parameter(typeof(string), "alias");
             var serializerParam = Expression.Parameter(typeof(ISerializer), "serializer");
+            var textWriter = Expression.Parameter(typeof(CharArrayTextWriter), "writer");
 
             var arguments = upsertFunction.OrderedArguments().Where(x => !(x is CurrentVersionArgument)).ToArray();
             var expressions =
                 arguments.Select(
-                    x => x.CompileBulkImporter(serializer.EnumStorage, writer, document, alias, serializerParam, useCharBufferPooling));
+                    x => x.CompileBulkImporter(serializer.EnumStorage, writer, document, alias, serializerParam, textWriter, useCharBufferPooling));
 
             var columns = arguments.Select(x => $"\"{x.Column}\"").Join(", ");
             _baseSql = $"COPY %TABLE%({columns}) FROM STDIN BINARY";
@@ -47,27 +49,27 @@ namespace Marten.Schema.BulkLoading
 
             var block = Expression.Block(expressions);
 
-            var lambda = Expression.Lambda<Action<T, string, ISerializer, NpgsqlBinaryImporter>>(block, document, alias,
-                serializerParam, writer);
+            var lambda = Expression.Lambda<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter>>(block, document, alias,
+                serializerParam, writer, textWriter);
 
             _transferData = lambda.Compile();
         }
 
-        public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
+        public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
         {
-            load(serializer, conn, documents, _sql);
+            load(serializer, conn, documents, _sql, textWriter);
         }
 
-        public void Load(TableName table, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
+        public void Load(TableName table, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
         {
             var sql = _baseSql.Replace("%TABLE%", table.QualifiedName);
-            load(serializer, conn, documents, sql);
+            load(serializer, conn, documents, sql, textWriter);
         }
 
-        public void LoadIntoTempTable(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
+        public void LoadIntoTempTable(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
         {
             var sql = _baseSql.Replace("%TABLE%", _tempTableName);
-            load(serializer, conn, documents, sql);
+            load(serializer, conn, documents, sql, textWriter);
         }
 
         public string CopyNewDocumentsFromTempTable()
@@ -102,7 +104,7 @@ namespace Marten.Schema.BulkLoading
 
         public TableName StorageTable => _mapping.Table;
 
-        private void load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, string sql)
+        private void load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, string sql, CharArrayTextWriter textWriter)
         {
             using (var writer = conn.BeginBinaryImport(sql))
             {
@@ -113,10 +115,10 @@ namespace Marten.Schema.BulkLoading
 
                     writer.StartRow();
 
-                    _transferData(document, _mapping.AliasFor(document.GetType()), serializer, writer);
+                    _transferData(document, _mapping.AliasFor(document.GetType()), serializer, writer, textWriter);
+                    textWriter.Clear();
                 }
             }
         }
     }
 }
- 

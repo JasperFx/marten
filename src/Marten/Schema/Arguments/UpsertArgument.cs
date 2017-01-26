@@ -64,7 +64,7 @@ namespace Marten.Schema.Arguments
             return $"{Arg} {PostgresType}";
         }
 
-        public virtual Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, bool useCharBufferPooling)
+        public virtual Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, bool useCharBufferPooling)
         {
             var memberType = Members.Last().GetMemberType();
 

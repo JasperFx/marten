@@ -15,7 +15,7 @@ namespace Marten.Testing.Services
 
             writer.Write('z');
 
-            var written = ToCharSegment(writer);
+            var written = writer.ToCharSegment();
 
             written.ShouldBe('z'.ToString());
         }
@@ -31,7 +31,7 @@ namespace Marten.Testing.Services
             const int take = 1;
             writer.Write(chars, offset, take);
 
-            var written = ToCharSegment(writer);
+            var written = writer.ToCharSegment();
 
             written.ShouldBe(chars.Skip(offset).Take(take));
         }
@@ -43,7 +43,7 @@ namespace Marten.Testing.Services
 
             writer.Write("test");
 
-            var written = ToCharSegment(writer);
+            var written = writer.ToCharSegment();
 
             written.ShouldBe("test");
         }
@@ -57,7 +57,7 @@ namespace Marten.Testing.Services
 
             writer.Write(s);
 
-            var written = ToCharSegment(writer);
+            var written = writer.ToCharSegment();
 
             written.ShouldBe(s);
         }
@@ -103,12 +103,6 @@ namespace Marten.Testing.Services
             }
 
             writer2.ShouldBe(writer1);
-        }
-
-
-        static ArraySegment<char> ToCharSegment(CharArrayTextWriter writer)
-        {
-            return new ArraySegment<char>(writer.Buffer, 0, writer.Size);
         }
     }
 }

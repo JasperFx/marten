@@ -14,7 +14,7 @@ namespace Marten.Schema.Arguments
             Column = null;
         }
 
-        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, bool useCharBufferPooling)
+        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, bool useCharBufferPooling)
         {
             throw new NotSupportedException("This should not be used for CurrentVersionArgument");
         }
