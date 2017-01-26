@@ -216,39 +216,50 @@ namespace Marten
                 conn.RunSql(sql);
             }
 
-            if (documents.Length <= batchSize)
+            var writer = _options.UseCharBufferPooling ? _writerPool.Lease() : null;
+            try
             {
-                if (mode == BulkInsertMode.InsertsOnly)
+                if (documents.Length <= batchSize)
                 {
-                    loader.Load(_serializer, conn, documents);
-                }
-                else
-                {
-                    loader.LoadIntoTempTable(_serializer, conn, documents);
-                }
-                
-            }
-            else
-            {
-                var total = 0;
-                var page = 0;
-
-                while (total < documents.Length)
-                {
-                    var batch = documents.Skip(page*batchSize).Take(batchSize).ToArray();
-
                     if (mode == BulkInsertMode.InsertsOnly)
                     {
-                        loader.Load(_serializer, conn, batch);
+                        loader.Load(_serializer, conn, documents, writer);
                     }
                     else
                     {
-                        loader.LoadIntoTempTable(_serializer, conn, batch);
+                        loader.LoadIntoTempTable(_serializer, conn, documents, writer);
                     }
 
+                }
+                else
+                {
+                    var total = 0;
+                    var page = 0;
 
-                    page++;
-                    total += batch.Length;
+                    while (total < documents.Length)
+                    {
+                        var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
+
+                        if (mode == BulkInsertMode.InsertsOnly)
+                        {
+                            loader.Load(_serializer, conn, batch, writer);
+                        }
+                        else
+                        {
+                            loader.LoadIntoTempTable(_serializer, conn, batch, writer);
+                        }
+
+
+                        page++;
+                        total += batch.Length;
+                    }
+                }
+            }
+            finally
+            {
+                if (writer != null)
+                {
+                    _writerPool.Release(writer);
                 }
             }
 
