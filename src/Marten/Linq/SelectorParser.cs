@@ -1,12 +1,9 @@
-﻿using System;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Baseline;
-using Baseline.Reflection;
 using Marten.Events;
 using Marten.Linq.Model;
 using Marten.Schema;
@@ -18,7 +15,6 @@ using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
 {
-
     public enum SelectionType
     {
         AsJson,
@@ -28,7 +24,6 @@ namespace Marten.Linq
         TransformToJson,
         TransformTo
     }
-
 
     public class SelectorParser : RelinqExpressionVisitor
     {
@@ -78,14 +73,11 @@ namespace Marten.Linq
             return visitor.ToSelector<T>(dataLocator, schema, mapping);
         }
 
-
-
         private SelectedField _currentField = new SelectedField();
         private SelectionType _selectionType = SelectionType.WholeDoc;
         private TargetObject _target;
         private string _transformName;
         private readonly bool _distinct;
-
 
         public SelectorParser(QueryModel query)
         {
@@ -93,8 +85,6 @@ namespace Marten.Linq
             {
                 _selectionType = SelectionType.AsJson;
             }
-
-
 
             if (query.SelectClause.Selector is MethodCallExpression)
             {
@@ -106,7 +96,6 @@ namespace Marten.Linq
             {
                 _distinct = true;
             }
-            
         }
 
         public SelectionType DetermineSelectionType(MethodInfo method)
@@ -116,7 +105,6 @@ namespace Marten.Linq
             {
                 return SelectionType.AsJson;
             }
-
 
             if (method.DeclaringType == typeof(TransformExtensions))
             {
@@ -136,37 +124,30 @@ namespace Marten.Linq
 
         protected override Expression VisitNew(NewExpression expression)
         {
-            if (_target == null)
+            if (_target != null) return base.VisitNew(expression);
+
+            _target = new TargetObject(expression.Type);
+
+            var parameters = expression.Constructor.GetParameters();
+
+            for (var i = 0; i < parameters.Length; i++)
             {
-                _target = new TargetObject(expression.Type);
-                if (expression.Type.HasAttribute<CompilerGeneratedAttribute>())
-                {
-                    // it's anonymous, and the rules are different
-                    var parameters = expression.Constructor.GetParameters();
-
-                    for (var i = 0; i < parameters.Length; i++)
-                    {
-                        var prop = expression.Type.GetProperty(parameters[i].Name);
-                        _currentField = _target.StartBinding(prop);
-                        Visit(expression.Arguments[i]);
-                    }
-
-                    return null;
-                }
+                _currentField = _target.StartBinding(parameters[i].Name);
+                Visit(expression.Arguments[i]);
             }
 
-            return base.VisitNew(expression);
+            return expression;
         }
 
         protected override Expression VisitMember(MemberExpression node)
         {
-            _currentField.Members.Add(node.Member);
+            _currentField.Add(node.Member);
             return base.VisitMember(node);
         }
 
         protected override MemberBinding VisitMemberBinding(MemberBinding node)
         {
-            _currentField = _target.StartBinding(node.Member);
+            _currentField = _target.StartBinding(node.Member.Name);
 
             return base.VisitMemberBinding(node);
         }
@@ -176,7 +157,6 @@ namespace Marten.Linq
             if (_selectionType == SelectionType.AsJson && _target == null) return new JsonSelector().As<ISelector<T>>();
 
             if (_selectionType == SelectionType.AsJson && _target != null) return _target.ToJsonSelector<T>(mapping);
-
 
             if (_selectionType == SelectionType.TransformToJson)
             {
@@ -193,7 +173,7 @@ namespace Marten.Linq
 
             if (_target == null || _target.Type != typeof(T))
             {
-                return new SingleFieldSelector<T>(mapping, _currentField.Members.Reverse().ToArray(), _distinct);
+                return new SingleFieldSelector<T>(mapping, _currentField.ToArray(), _distinct);
             }
 
             return _target.ToSelector<T>(mapping, _distinct);
@@ -225,30 +205,5 @@ namespace Marten.Linq
 
             return base.VisitMethodCall(node);
         }
-
-    }
-
-    public class SetterBinding
-    {
-        public SetterBinding(MemberInfo setter)
-        {
-            Setter = setter;
-        }
-
-        public MemberInfo Setter { get; }
-        public SelectedField Field { get; } = new SelectedField();
-
-        public string ToJsonBuildObjectPair(IQueryableDocument mapping)
-        {
-            var locator = mapping.FieldFor(Field.Members).SelectionLocator;
-
-
-            return $"'{Setter.Name}', {locator}";
-        }
-    }
-
-    public class SelectedField
-    {
-        public readonly IList<MemberInfo> Members = new List<MemberInfo>();
     }
 }
