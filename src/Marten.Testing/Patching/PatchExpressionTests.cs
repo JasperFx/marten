@@ -16,6 +16,14 @@ namespace Marten.Testing.Patching
 
         public PatchExpressionTests()
         {
+            var queryable = Substitute.For<IQueryableDocument>();
+            queryable.DocumentType.Returns(typeof(Target));
+
+            var mapping = Substitute.For<IDocumentMapping>();
+            mapping.ToQueryableDocument().Returns(queryable);
+
+            _schema.MappingFor(typeof(Target)).Returns(mapping);
+
             _expression = new PatchExpression<Target>(null, _schema, new UnitOfWork(_schema));
         }
 

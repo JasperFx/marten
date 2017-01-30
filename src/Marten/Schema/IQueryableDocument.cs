@@ -26,5 +26,7 @@ namespace Marten.Schema
         DuplicatedField[] DuplicatedFields { get; }
 
         DeleteStyle DeleteStyle { get; }
+
+        Type DocumentType { get; }
     }
 }

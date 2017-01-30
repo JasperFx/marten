@@ -2,7 +2,6 @@ using System;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
-using Npgsql;
 using Xunit;
 
 namespace Marten.Testing

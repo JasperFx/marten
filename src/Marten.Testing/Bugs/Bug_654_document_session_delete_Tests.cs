@@ -3,9 +3,9 @@ using Marten.Services;
 using Marten.Testing.Documents;
 using Xunit;
 
-namespace Marten.Testing.Session
+namespace Marten.Testing.Bugs
 {
-    public class document_session_delete_Tests : DocumentSessionFixture<IdentityMap>
+    public class Bug_654_document_session_delete_Tests : DocumentSessionFixture<IdentityMap>
     {
         [Fact]
         public void upsert_then_delete_should_delete()

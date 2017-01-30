@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using Marten.Schema;
 using Marten.Services;
@@ -31,5 +32,7 @@ namespace Marten.Events.Projections.Async
             _nameArg = batch.AddParameter(_key, NpgsqlDbType.Varchar);
             _numberArg = batch.AddParameter(_number, NpgsqlDbType.Bigint);
         }
+
+        public Type DocumentType => null;
     }
 }

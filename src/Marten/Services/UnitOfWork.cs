@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -17,16 +18,14 @@ namespace Marten.Services
     {
         private readonly ConcurrentDictionary<Guid, EventStream> _events = new ConcurrentDictionary<Guid, EventStream>();
 
-        private readonly ConcurrentDictionary<Type, IEnumerable> _inserts =
-            new ConcurrentDictionary<Type, IEnumerable>();
-
-        private readonly IList<IStorageOperation> _operations = new List<IStorageOperation>();
         private readonly IDocumentSchema _schema;
 
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>();
 
-        private readonly ConcurrentDictionary<Type, IEnumerable> _updates =
-            new ConcurrentDictionary<Type, IEnumerable>();
+        private readonly ConcurrentDictionary<Type, IList<IStorageOperation>> _operations =
+            new ConcurrentDictionary<Type, IList<IStorageOperation>>();
+
+        private readonly IList<IStorageOperation> _ancillaryOperations = new List<IStorageOperation>();
 
         public UnitOfWork(IDocumentSchema schema)
         {
@@ -35,22 +34,26 @@ namespace Marten.Services
 
         public IEnumerable<IDeletion> Deletions()
         {
-            return _operations.OfType<IDeletion>();
+            return _operations.Values.SelectMany(x => x).OfType<IDeletion>();
         }
 
         public IEnumerable<IDeletion> DeletionsFor<T>()
         {
-            return _operations.OfType<IDeletion>().Where(x => x.DocumentType == typeof(T));
+            return _operations.ContainsKey(typeof(T)) 
+                ? _operations[typeof(T)].OfType<IDeletion>() 
+                : Enumerable.Empty<IDeletion>();
         }
 
         public IEnumerable<IDeletion> DeletionsFor(Type documentType)
         {
-            return _operations.OfType<IDeletion>().Where(x => x.DocumentType == documentType);
+            return _operations.ContainsKey(documentType) 
+                ? _operations[documentType].OfType<IDeletion>() 
+                : Enumerable.Empty<IDeletion>();
         }
 
         public IEnumerable<object> Updates()
         {
-            return _updates.Values.SelectMany(x => x.OfType<object>())
+            return _operations.Values.SelectMany(x => x.OfType<UpdateDocument>().Select(u => u.Document))
                 .Union(detectTrackerChanges().Select(x => x.Document));
         }
 
@@ -61,7 +64,7 @@ namespace Marten.Services
 
         public IEnumerable<object> Inserts()
         {
-            return _inserts.Values.SelectMany(x => x.OfType<object>());
+            return _operations.Values.SelectMany(x => x).OfType<InsertDocument>().Select(x => x.Document);
         }
 
         public IEnumerable<T> InsertsFor<T>()
@@ -112,21 +115,24 @@ namespace Marten.Services
 
         public void Patch(PatchOperation patch)
         {
-            _operations.Add(patch);
+            var list = _operations.GetOrAdd(patch.DocumentType, type => new List<IStorageOperation>());
+
+            list.Add(patch);
         }
 
         public void StoreUpdates<T>(params T[] documents)
         {
-            var list = _updates.GetOrAdd(typeof(T), type => new List<T>()).As<List<T>>();
+            var list = _operations.GetOrAdd(typeof(T), type => new List<IStorageOperation>());
 
-            list.AddRange(documents);
+            list.AddRange(documents.Select(x => new UpdateDocument(x)));
+
         }
 
         public void StoreInserts<T>(params T[] documents)
         {
-            var list = _inserts.GetOrAdd(typeof(T), type => new List<T>()).As<List<T>>();
+            var list = _operations.GetOrAdd(typeof(T), type => new List<IStorageOperation>());
 
-            list.AddRange(documents);
+            list.AddRange(documents.Select(x => new InsertDocument(x)));
         }
 
 
@@ -145,10 +151,14 @@ namespace Marten.Services
         {
             var documentChanges = determineChanges(batch);
             var changes = new ChangeSet(documentChanges);
+
+            // TODO -- make these be calculated properties on ChangeSet
             changes.Updated.Fill(Updates());
             changes.Inserted.Fill(Inserts());
+
             changes.Streams.AddRange(_events.Values);
-            changes.Operations.AddRange(_operations);
+            changes.Operations.AddRange(_operations.Values.SelectMany(x => x));
+            changes.Operations.AddRange(_ancillaryOperations);
 
             return changes;
         }
@@ -166,34 +176,33 @@ namespace Marten.Services
 
         private DocumentChange[] determineChanges(UpdateBatch batch)
         {
-            var index = 0;
-            var order = _inserts.Keys.Union(_updates.Keys)
-                .TopologicalSort(GetTypeDependencies)
-                .ToDictionary(x => x, x => index++);
+            var types = _operations.Select(x => x.Key).TopologicalSort(GetTypeDependencies);
 
-
-            // HOKEY! Fixes #635
-            var deletes = _operations.OfType<IDeletion>();
-            batch.Add(deletes);
-
-            _inserts.Keys.OrderBy(type => order[type]).Each(type =>
+            foreach (var type in types)
             {
-                var upsert = _schema.UpsertFor(type);
+                if (!_operations.ContainsKey(type))
+                {
+                    continue;
+                }
 
-                _inserts[type].Each(o => upsert.RegisterUpdate(batch, o));
-            });
-
-            _updates.Keys.OrderBy(type => order[type]).Each(type =>
-            {
-                var upsert = _schema.UpsertFor(type);
-
-                _updates[type].Each(o => upsert.RegisterUpdate(batch, o));
-            });
+                foreach (var operation in _operations[type])
+                {
+                    // No Virginia, I do not approve of this but I'm pulling all my hair
+                    // out as is trying to make this work
+                    if (operation is Upsert)
+                    {
+                        operation.As<Upsert>().Persist(batch, _schema);
+                    }
+                    else
+                    {
+                        batch.Add(operation);
+                    }
+                }
+            }
 
             writeEvents(batch);
 
-            // HOKEY! Fixes #635
-            batch.Add(_operations.Where(x => !(x is IDeletion)));
+            batch.Add(_ancillaryOperations);
 
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
@@ -228,26 +237,83 @@ namespace Marten.Services
 
         public void Add(IStorageOperation operation)
         {
-            _operations.Add(operation);
+            if (operation.DocumentType == null)
+            {
+                _ancillaryOperations.Add(operation);
+            }
+            else
+            {
+                var list = _operations.GetOrAdd(operation.DocumentType, type => new List<IStorageOperation>());
+                list.Add(operation);
+            }
+
+
         }
 
         private void ClearChanges(DocumentChange[] changes)
         {
             _operations.Clear();
-            _updates.Clear();
-            _inserts.Clear();
             _events.Clear();
             changes.Each(x => x.ChangeCommitted());
         }
 
         public bool HasAnyUpdates()
         {
-            return Updates().Any() || _inserts.Any() || _events.Any() || _operations.Any();
+            return Updates().Any() || _events.Any() || _operations.Any() || _ancillaryOperations.Any();
         }
 
         public bool Contains<T>(T entity)
         {
-            return UpdatesFor<T>().Contains(entity) || InsertsFor<T>().Contains(entity);
+            if (_operations.ContainsKey(typeof(T)))
+            {
+                return _operations[typeof(T)].OfType<Upsert>().Any(x => object.ReferenceEquals(entity, x.Document));
+            }
+
+            return false;
+        }
+    }
+
+    public abstract class Upsert : IStorageOperation
+    {
+        protected Upsert(object document)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            Document = document;
+        }
+
+        public Type DocumentType => Document.GetType();
+
+        public object Document { get; }
+
+        public void WriteToSql(StringBuilder builder)
+        {
+        }
+
+        public void AddParameters(IBatchCommand batch)
+        {
+        }
+
+        public bool Persist(UpdateBatch batch, IDocumentSchema schema)
+        {
+            var upsert = schema.UpsertFor(Document.GetType());
+            upsert.RegisterUpdate(batch, Document);
+
+            return true;
+        }
+    }
+
+    public class UpdateDocument : Upsert
+    {
+        public UpdateDocument(object document) : base(document)
+        {
+        }
+    }
+
+    public class InsertDocument : Upsert
+    {
+        public InsertDocument(object document) : base(document)
+        {
         }
     }
 }

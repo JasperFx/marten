@@ -42,5 +42,7 @@ RAISE EXCEPTION '{EventContracts.UnexpectedMaxEventIdForStream.Value}'; END IF; 
         {
             return _sql;
         }
+
+        public Type DocumentType => null;
     }
 }
