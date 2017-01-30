@@ -31,7 +31,7 @@
   "dependencies": {
     "Newtonsoft.Json": "9.0.1",
     "Remotion.Linq": "2.1.1",
-    "Npgsql": "3.1.6",
+    "Npgsql": "3.2.0",
     "Baseline": "1.1.0",
     "System.Threading.Tasks.Dataflow": "4.6.0"
   },
