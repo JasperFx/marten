@@ -1,0 +1,17 @@
+﻿{
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "emitEntryPoint": true
+  },
+
+  "dependencies": {
+    "Marten.Testing": { "target": "project" },
+    "BenchmarkDotNet": "0.10.2" 
+  },
+
+  "frameworks": {
+    "net46": {
+      
+    } 
+  }
+}

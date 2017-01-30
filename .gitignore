@@ -220,3 +220,5 @@ src/DinnerParty/public/*.css
 src/DinnerParty/public/*.map
 
 doc-target
+
+BenchmarkDotNet.Artifacts

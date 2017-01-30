@@ -146,10 +146,12 @@ end
 
 desc 'Restores nuget packages'
 task :restore do
-    sh 'dotnet restore src/Marten'
-    sh 'dotnet restore src/Marten.CommandLine'
-    sh 'dotnet restore src/Marten.Testing.OtherAssembly'
-    sh 'dotnet restore src/Marten.Testing'
+    sh 'dotnet restore src'
+end
+
+desc 'Run Benchmarks'
+task :benchmarks => [:restore] do
+	sh 'dotnet run --project src/MartenBenchmarks --configuration Release'
 end
 
 
