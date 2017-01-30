@@ -159,6 +159,8 @@ namespace Marten.Schema
             return this.As<IDocumentMapping>().BuildStorage(schema).As<IDocumentUpsert>();
         }
 
+        public Type IdType => IdMember?.GetMemberType();
+
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback)
         {
             var tableAlias = members.ToTableAlias();

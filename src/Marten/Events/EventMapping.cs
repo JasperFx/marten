@@ -42,6 +42,8 @@ namespace Marten.Events
         public MemberInfo IdMember { get; }
         public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
 
+        Type IDocumentMapping.IdType => typeof(Guid);
+
         public TableName Table =>  new TableName(_options.Events.DatabaseSchemaName, "mt_events");
         public DuplicatedField[] DuplicatedFields { get; }
         public DeleteStyle DeleteStyle { get; }

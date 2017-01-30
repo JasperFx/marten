@@ -173,5 +173,7 @@ namespace Marten.Schema
                        .Replace(" ", "_")
                        .ToLowerInvariant();
         }
+
+        public Type IdType => Parent.IdType;
     }
 }

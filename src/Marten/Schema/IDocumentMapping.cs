@@ -24,6 +24,9 @@ namespace Marten.Schema
 
         // More methods for creating a deleter? Queryable document?
 
+
+        Type IdType { get; }
+
     }
 
     public static class DocumentMappingExtensions
