@@ -4,12 +4,15 @@ using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes.Jobs;
 using Marten;
 using Marten.Linq;
 using Marten.Testing;
 
 namespace MartenBenchmarks
 {
+    [SimpleJob(warmupCount: 2)]
+
     public class LinqActions
     {
         [Setup]

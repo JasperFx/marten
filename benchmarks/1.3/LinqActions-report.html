@@ -17,16 +17,17 @@ BenchmarkDotNet=v0.10.1, OS=Microsoft Windows NT 6.1.7601 Service Pack 1
 Processor=Intel(R) Core(TM) i7-4980HQ CPU 2.80GHz, ProcessorCount=4
 Frequency=10000000 Hz, Resolution=100.0000 ns, Timer=UNKNOWN
   [Host]     : Clr 4.0.30319.42000, 64bit RyuJIT-v4.6.1076.0
-  DefaultJob : Clr 4.0.30319.42000, 64bit RyuJIT-v4.6.1076.0
+  Job-DNINOD : Clr 4.0.30319.42000, 64bit RyuJIT-v4.6.1076.0
 </code></pre>
-<pre><code></code></pre>
+<pre><code>WarmupCount=2  
+</code></pre>
 
 <table>
-<thead><tr><th>     Method</th><th>     Mean</th><th> StdDev</th><th>Gen 0</th><th>Allocated</th>
+<thead><tr><th>     Method</th><th>     Mean</th><th> StdDev</th><th>Gen 0</th><th>Gen 1</th><th>Allocated</th>
 </tr>
-</thead><tbody><tr><td>CreateLinqCommand</td><td>181.6628 us</td><td>13.3724 us</td><td>1.6276</td><td>45.11 kB</td>
-</tr><tr><td>RunLinqQuery</td><td>102,898.3882 us</td><td>6,838.4035 us</td><td>4825.0000</td><td>34.03 MB</td>
-</tr><tr><td>CompiledQueries</td><td>22,776.0196 us</td><td>361.1419 us</td><td>858.3333</td><td>8.7 MB</td>
+</thead><tbody><tr><td>CreateLinqCommand</td><td>179.9882 us</td><td>6.0692 us</td><td>2.6693</td><td>-</td><td>45.11 kB</td>
+</tr><tr><td>RunLinqQuery</td><td>112,916.1908 us</td><td>2,069.6093 us</td><td>4925.0000</td><td>-</td><td>34.03 MB</td>
+</tr><tr><td>CompiledQueries</td><td>27,084.0787 us</td><td>210.1911 us</td><td>941.6667</td><td>66.6667</td><td>8.7 MB</td>
 </tr></tbody></table>
 </body>
 </html>

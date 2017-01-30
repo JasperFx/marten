@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes.Jobs;
 using Marten.Testing.CodeTracker;
 
 namespace MartenBenchmarks
 {
+    [SimpleJob(warmupCount: 2)]
     public class EventActions
     {
         public Dictionary<Guid, GithubProject> AllProjects { get; private set; } = new Dictionary<Guid, GithubProject>();
@@ -38,6 +40,7 @@ namespace MartenBenchmarks
 
         }
 
+        
         [Benchmark]
         [MemoryDiagnoser]
         public void AppendEvents()

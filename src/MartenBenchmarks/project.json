@@ -6,7 +6,8 @@
 
   "dependencies": {
     "Marten.Testing": { "target": "project" },
-    "BenchmarkDotNet": "0.10.2" 
+    "BenchmarkDotNet": "0.10.2",
+    "System.Data.Common": "4.1.0"
   },
 
   "frameworks": {
