@@ -26,6 +26,7 @@ namespace Marten.Events.Projections.Async
         private long _lastEncountered;
         private CancellationToken _token = default(CancellationToken);
         private IProjectionTrack _track;
+        private readonly string _sql;
 
         public Fetcher(IDocumentStore store, DaemonSettings settings, AsyncOptions options, IDaemonLogger logger, IDaemonErrorHandler errorHandler, IEnumerable<Type> eventTypes)
         {
@@ -41,6 +42,14 @@ namespace Marten.Events.Projections.Async
             _map = new NulloIdentityMap(store.Advanced.Serializer);
 
             EventTypeNames = eventTypes.Select(x => store.Schema.Events.EventMappingFor(x).Alias).ToArray();
+
+            _sql =
+    $@"
+select seq_id from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :last and seq_id <= :limit and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer order by seq_id;
+{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer order by seq_id;
+select min(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :limit and type = ANY(:types) and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer;
+select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id >= :limit and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer
+".Replace(" as d", "");
         }
 
         public Fetcher(IDocumentStore store, DaemonSettings settings, IProjection projection, IDaemonLogger logger, IDaemonErrorHandler errorHandler)
@@ -132,15 +141,8 @@ namespace Marten.Events.Projections.Async
                     await conn.OpenAsync(_token).ConfigureAwait(false);
 
                     var lastPossible = lastEncountered + _options.PageSize;
-                    var sql =
-                        $@"
-select seq_id from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :last and seq_id <= :limit and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer order by seq_id;
-{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer order by seq_id;
-select min(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :limit and type = ANY(:types) and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer;
-select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id >= :limit and age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp) >= :buffer
-".Replace(" as d", "");
 
-                    var cmd = conn.CreateCommand(sql)
+                    var cmd = conn.CreateCommand(_sql)
                         .With("last", lastEncountered)
                         .With("limit", lastPossible)
                         .With("buffer", _settings.LeadingEdgeBuffer)
