@@ -100,12 +100,12 @@ namespace Marten.Linq.Model
                 }
                 else
                 {
-                    sql.Append(_innerSelector.ToSelectClause(_mapping));
+                    _innerSelector.WriteSelectClause(sql, _mapping);
                 }
             }
             else
             {
-                sql.Append(Selector.ToSelectClause(_mapping));
+                Selector.WriteSelectClause(sql, _mapping);
             }
 
             AppendWhere(command, sql);

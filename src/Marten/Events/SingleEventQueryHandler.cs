@@ -27,7 +27,7 @@ namespace Marten.Events
             // TODO -- use the pool. This isn't worth using StringBuilder *now*,
             // but will be when we use StringBuilder's inside of ToSelectClause()
             var sql = new StringBuilder();
-            sql.Append(_selector.ToSelectClause(null));
+            _selector.WriteSelectClause(sql, null);
             
             var param = command.AddParameter(_id);
             sql.Append(" where id = :");

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -14,8 +15,9 @@ namespace Marten.Linq
         string[] SelectFields();
 
         // TODO -- have this take in StringBuilder too
-        string ToSelectClause(IQueryableDocument mapping);
+        void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping);
     }
+
 
     public interface ISelector<T> : ISelector
     {
@@ -41,7 +43,7 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        public string ToSelectClause(IQueryableDocument mapping)
+        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
         {
             throw new NotSupportedException();
         }
@@ -65,14 +67,39 @@ namespace Marten.Linq
 
         public string[] SelectFields() => _selectFields;
 
-        public string ToSelectClause(IQueryableDocument mapping)
+        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
         {
-            return $"select {(_distinct ? "distinct " : "")}{SelectFields().Join(", ")} from {mapping.Table.QualifiedName} as d";
+            sql.Append("select ");
+            if (_distinct)
+            {
+                sql.Append("distinct ");
+            }
+
+            var fields = SelectFields();
+            sql.Append(fields[0]);
+            for (int i = 1; i < fields.Length; i++)
+            {
+                sql.Append(", ");
+                sql.Append(fields[i]);
+            }
+
+            sql.Append(" from ");
+            sql.Append(mapping.Table.QualifiedName);
+            sql.Append(" as d");
         }
     }
 
     public static class SelectorExtensions
     {
+        // Polyfill for the Async Daemon where it doesn't do any harm
+        public static string ToSelectClause(this ISelector selector, IQueryableDocument mapping)
+        {
+            var builder = new StringBuilder();
+            selector.WriteSelectClause(builder, mapping);
+
+            return builder.ToString();
+        }
+
         public static IList<T> Read<T>(this ISelector<T> selector, DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             var list = new List<T>();
