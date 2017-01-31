@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
@@ -187,11 +188,24 @@ namespace Marten
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
-            var sql = "select " +
-                      string.Join(", ", _fields.OrderBy(kv => kv.Value).Select(kv => kv.Key)) +
-                      $" from {_mapping.Table.QualifiedName} where id = :id";
+            // TODO -- pull from the pool
+            var sql = new StringBuilder();
+            sql.Append("select ");
 
-            command.AppendQuery(sql);
+            var fields = _fields.OrderBy(kv => kv.Value).Select(kv => kv.Key).ToArray();
+
+            sql.Append(fields[0]);
+            for (int i = 1; i < fields.Length; i++)
+            {
+                sql.Append(", ");
+                sql.Append(fields[i]);
+            }
+
+            sql.Append(" from ");
+            sql.Append(_mapping.Table.QualifiedName);
+            sql.Append(" where id = :id");
+
+            command.AppendQuery(sql.ToString());
 
             command.AddParameter("id", _id);
         }

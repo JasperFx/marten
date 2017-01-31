@@ -1,5 +1,6 @@
 using System;
 using System.Data.Common;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -26,11 +27,16 @@ namespace Marten.Events
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
-            var sql = ToSelectClause(null);
-            var param = command.AddParameter(_streamId);
-            sql += " where id = :" + param.ParameterName;
+            // TODO -- use the pool
+            var sql = new StringBuilder();
+            sql.Append(ToSelectClause(null));
 
-            command.AppendQuery(sql);
+
+            var param = command.AddParameter(_streamId);
+            sql.Append(" where id = :");
+            sql.Append(param.ParameterName);
+
+            command.AppendQuery(sql.ToString());
         }
 
         public Type SourceType => typeof (StreamState);

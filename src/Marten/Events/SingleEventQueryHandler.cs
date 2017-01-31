@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Data.Common;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema;
 using Marten.Services;
-using Marten.Services.Includes;
 using Marten.Util;
 using Npgsql;
-using Remotion.Linq;
 
 namespace Marten.Events
 {
@@ -26,24 +24,30 @@ namespace Marten.Events
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
-            var sql = _selector.ToSelectClause(null);
-
+            // TODO -- use the pool. This isn't worth using StringBuilder *now*,
+            // but will be when we use StringBuilder's inside of ToSelectClause()
+            var sql = new StringBuilder();
+            sql.Append(_selector.ToSelectClause(null));
+            
             var param = command.AddParameter(_id);
-            sql += " where id = :" + param.ParameterName;
+            sql.Append(" where id = :");
+            sql.Append(param.ParameterName);
 
-            command.AppendQuery(sql);
+            command.AppendQuery(sql.ToString());
         }
 
         public Type SourceType => typeof(IEvent);
+
         public IEvent Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             return reader.Read() ? _selector.Resolve(reader, map, stats) : null;
         }
 
-        public async Task<IEvent> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public async Task<IEvent> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats,
+            CancellationToken token)
         {
-            return await reader.ReadAsync(token).ConfigureAwait(false) 
-                ? await _selector.ResolveAsync(reader, map, stats, token).ConfigureAwait(false) 
+            return await reader.ReadAsync(token).ConfigureAwait(false)
+                ? await _selector.ResolveAsync(reader, map, stats, token).ConfigureAwait(false)
                 : null;
         }
     }
