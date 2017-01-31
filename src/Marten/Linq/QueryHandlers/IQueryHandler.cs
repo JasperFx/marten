@@ -24,4 +24,5 @@ namespace Marten.Linq.QueryHandlers
     {
         Type SourceType { get; }
     }
+
 }
