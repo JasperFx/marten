@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Data.Common;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
@@ -27,11 +27,26 @@ namespace Marten.Linq.QueryHandlers
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
-            var parameter = command.AddParameter(_id);
-            var sql =
-                $"select {_mapping.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d where id = :{parameter.ParameterName}";
+            // TODO -- use the Pool
+            var sql = new StringBuilder();
+            sql.Append("select ");
 
-            command.AppendQuery(sql);
+            var fields = _mapping.SelectFields();
+            sql.Append(fields[0]);
+            for (int i = 1; i < fields.Length; i++)
+            {
+                sql.Append(", ");
+                sql.Append(fields[i]);
+            }
+
+            sql.Append(" from ");
+            sql.Append(_mapping.Table.QualifiedName);
+            sql.Append(" as d where id = :");
+            
+            var parameter = command.AddParameter(_id);
+            sql.Append(parameter.ParameterName);
+
+            command.AppendQuery(sql.ToString());
         }
 
         public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

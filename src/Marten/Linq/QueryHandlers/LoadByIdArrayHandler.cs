@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -29,11 +30,30 @@ namespace Marten.Linq.QueryHandlers
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
-            var parameter = command.AddParameter(_ids);
-            var sql =
-                $"select {_mapping.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d where id = ANY(:{parameter.ParameterName})";
+            // TODO -- use the StringBuilder Pool here
+            var sql = new StringBuilder();
+            sql.Append("select ");
 
-            command.AppendQuery(sql);
+            var fields = _mapping.SelectFields();
+
+            sql.Append(fields[0]);
+            for (int i = 1; i < fields.Length; i++)
+            {
+                sql.Append(", ");
+                sql.Append(fields[i]);
+            }
+
+            sql.Append(" from ");
+            sql.Append(_mapping.Table.QualifiedName);
+            sql.Append(" as d where id = ANY(:");
+            
+
+
+            var parameter = command.AddParameter(_ids);
+            sql.Append(parameter.ParameterName);
+            sql.Append(")");
+
+            command.AppendQuery(sql.ToString());
         }
 
         public IList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
