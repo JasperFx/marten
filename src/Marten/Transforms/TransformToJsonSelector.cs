@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
@@ -33,9 +34,13 @@ namespace Marten.Transforms
             return new[] {_fieldName};
         }
 
-        public string ToSelectClause(IQueryableDocument mapping)
+        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
         {
-            return $"select {_fieldName} from {_document.Table.QualifiedName} as d";
+            sql.Append("select ");
+            sql.Append(_fieldName);
+            sql.Append(" from ");
+            sql.Append(_document.Table.QualifiedName);
+            sql.Append(" as d");
         }
     }
 }

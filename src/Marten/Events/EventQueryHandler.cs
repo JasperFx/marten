@@ -39,7 +39,7 @@ namespace Marten.Events
             // TODO -- pull from StringBuilder pool
 
             var sql = new StringBuilder();
-            sql.Append(_selector.ToSelectClause(null));
+            _selector.WriteSelectClause(sql, null);
 
  
             var param = command.AddParameter(_streamId);

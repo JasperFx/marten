@@ -1,5 +1,6 @@
 using System;
 using System.Data.Common;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -94,9 +95,11 @@ namespace Marten.Events
             return new[] {"id", "type", "version", "data", "seq_id", "stream_id", "timestamp"};
         }
 
-        public string ToSelectClause(IQueryableDocument mapping)
+        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
         {
-            return $"select id, type, version, data, seq_id, stream_id, timestamp from {Events.DatabaseSchemaName}.mt_events as d";
+            sql.Append("select id, type, version, data, seq_id, stream_id, timestamp from ");
+            sql.Append(Events.DatabaseSchemaName);
+            sql.Append(".mt_events as d");
         }
     }
 }

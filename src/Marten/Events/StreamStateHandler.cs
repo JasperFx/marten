@@ -29,7 +29,7 @@ namespace Marten.Events
         {
             // TODO -- use the pool
             var sql = new StringBuilder();
-            sql.Append(ToSelectClause(null));
+            WriteSelectClause(sql, null);
 
 
             var param = command.AddParameter(_streamId);
@@ -90,9 +90,11 @@ namespace Marten.Events
             return new string[] { "id", "version", "type", "timestamp" };
         }
 
-        public string ToSelectClause(IQueryableDocument mapping)
+        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
         {
-            return $"select id, version, type, timestamp as timestamp from {_events.DatabaseSchemaName}.mt_streams";
+            sql.Append("select id, version, type, timestamp as timestamp from ");
+            sql.Append(_events.DatabaseSchemaName);
+            sql.Append(".mt_streams");
         }
     }
 }

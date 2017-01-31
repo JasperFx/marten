@@ -1,5 +1,6 @@
 ﻿using System.Data.Common;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -39,10 +40,14 @@ namespace Marten.Linq
             return _inner.SelectFields();
         }
 
-        public string ToSelectClause(IQueryableDocument mapping)
+        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
         {
-            var select = _inner.ToSelectClause(mapping);
-            return $"{select} {_joins.Select(x => x.JoinText).Join(" ")}";
+            _inner.WriteSelectClause(sql, mapping);
+            foreach (var @join in _joins)
+            {
+                sql.Append(" ");
+                @join.AppendJoin(sql, "d", mapping);
+            }
         }
     }
 }
