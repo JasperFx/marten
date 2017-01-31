@@ -23,10 +23,11 @@ namespace Marten
         private readonly UnitOfWork _unitOfWork;
         private readonly IList<IDocumentSessionListener> _sessionListeners;
 
-        public DocumentSession(IDocumentStore store, StoreOptions options, IDocumentSchema schema,
+        public DocumentSession(DocumentStore store, StoreOptions options, IDocumentSchema schema,
             ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, 
             CharArrayTextWriter.Pool writerPool, IList<IDocumentSessionListener> localListeners)
-            : base(store, schema, serializer, connection, parser, identityMap, writerPool)
+            : base(store, connection, parser, identityMap)
+
         {
             _options = options;
             _schema = schema;

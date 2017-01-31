@@ -100,14 +100,14 @@ namespace Marten.Services
         public char[] Buffer => _chars;
         public int Size => _next;
 
-        public interface IPool
+        public interface IPool : IDisposable
         {
             CharArrayTextWriter Lease();
             void Release(CharArrayTextWriter writer);
             void Release(IEnumerable<CharArrayTextWriter> writer);
         }
 
-        public class Pool : IPool, IDisposable
+        public class Pool : IPool
         {
             readonly IPool _parent;
             readonly ConcurrentStack<CharArrayTextWriter> _cache = new ConcurrentStack<CharArrayTextWriter>();

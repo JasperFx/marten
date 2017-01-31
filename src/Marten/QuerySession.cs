@@ -9,6 +9,7 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
+using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Parsing.Structure;
 
@@ -30,16 +31,20 @@ namespace Marten
         protected readonly CharArrayTextWriter.Pool WriterPool;
         private bool _disposed;
 
-        public QuerySession(IDocumentStore store, IDocumentSchema schema, ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, CharArrayTextWriter.Pool writerPool)
+        public QuerySession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
         {
             DocumentStore = store;
-            _schema = schema;
-            _serializer = serializer;
+            _schema = store.Schema;
+            _serializer = store.Advanced.Serializer;
             _connection = connection;
             _parser = parser;
             _identityMap = identityMap;
-            WriterPool = writerPool;
+
+            WriterPool = store.CreateWriterPool();
+            StringBuilderPool = store.CreateStringBuilderPool();
         }
+
+        public StringBuilderPool StringBuilderPool { get; }
 
         public IDocumentStore DocumentStore { get; }
 
@@ -403,6 +408,7 @@ namespace Marten
             _disposed = true;
             _connection.Dispose();
             WriterPool?.Dispose();
+            StringBuilderPool?.Dispose();
         }
 
         public T Load<T>(int id)

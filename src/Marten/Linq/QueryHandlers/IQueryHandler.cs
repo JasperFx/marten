@@ -9,6 +9,7 @@ namespace Marten.Linq.QueryHandlers
 {
     public interface IQueryHandler
     {
+        // TODO -- might break this to introduce a StringBuilder
         void ConfigureCommand(NpgsqlCommand command);
     }
 
