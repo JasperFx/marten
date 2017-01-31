@@ -7,6 +7,8 @@ namespace Marten.Util
 {
     public class StringBuilderPool
     {
+        public static readonly StringBuilderPool Default = new StringBuilderPool(null);
+
 
         private readonly StringBuilderPool _parent;
         private readonly ConcurrentStack<StringBuilder> _cache = new ConcurrentStack<StringBuilder>();
