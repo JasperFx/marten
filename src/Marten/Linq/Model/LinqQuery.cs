@@ -14,6 +14,13 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.Model
 {
+    /*
+     * TODO's
+     * 1. OrderBy uses the string builder
+     * 2. Join uses the string builder
+     * 3. Use the pool for the StringBuilder's
+     */
+
     public interface ILinqQuery
     {
         QueryModel Model { get; }
@@ -103,12 +110,7 @@ namespace Marten.Linq.Model
 
             AppendWhere(command, sql);
 
-            var orderBy = determineOrderClause();
-
-            if (orderBy.IsNotEmpty())
-            {
-                sql.Append(orderBy);
-            }
+            writeOrderClause(sql);
 
             if (isComplexSubQuery)
             {
@@ -221,22 +223,31 @@ namespace Marten.Linq.Model
             return new ListQueryHandler<T>(this);
         }
 
-        // TODO -- eliminate the string concatenations
-        private string determineOrderClause()
+        private void writeOrderClause(StringBuilder sql)
         {
             var orders = bodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
-            if (!orders.Any()) return string.Empty;
+            if (!orders.Any()) return;
 
-            return " order by " + orders.Select(toOrderClause).Join(", ");
+            sql.Append(" order by ");
+            writeOrderByFragment(sql, orders[0]);
+            for (int i = 1; i < orders.Length; i++)
+            {
+                sql.Append(", ");
+                writeOrderByFragment(sql, orders[i]);
+            }
         }
 
-        // TODO -- eliminate the string concatenations
-        private string toOrderClause(Ordering clause)
+
+
+        private void writeOrderByFragment(StringBuilder sql, Ordering clause)
         {
             var locator = _mapping.JsonLocator(clause.Expression);
-            return clause.OrderingDirection == OrderingDirection.Asc
-                ? locator
-                : locator + " desc";
+            sql.Append(locator);
+
+            if (clause.OrderingDirection == OrderingDirection.Desc)
+            {
+                sql.Append(" desc");
+            }
         }
 
         private IWhereFragment buildWhereFragment()
