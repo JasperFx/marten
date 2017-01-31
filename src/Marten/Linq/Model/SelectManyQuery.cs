@@ -178,7 +178,7 @@ namespace Marten.Linq.Model
                 foreach (var @join in joins)
                 {
                     sql.Append(" ");
-                    sql.Append(@join.JoinTextFor(_tableAlias, _document));
+                    join.AppendJoin(sql, _tableAlias, _document);
                 }
             }
 

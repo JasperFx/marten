@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Marten.Linq;
 using Marten.Schema;
 
@@ -6,7 +7,9 @@ namespace Marten.Services.Includes
 {
     public class IncludeJoin<T> : IIncludeJoin
     {
-        
+        public const string InnerJoin = "INNER JOIN";
+        public const string OuterJoin = "LEFT OUTER JOIN";
+
         private readonly IQueryableDocument _mapping;
         private readonly IField _field;
         private readonly Action<T> _callback;
@@ -23,26 +26,53 @@ namespace Marten.Services.Includes
             IsSoftDeleted = mapping.DeleteStyle == DeleteStyle.SoftDelete;
         }
 
-        public string JoinTextFor(string rootTableAlias, IQueryableDocument document = null)
+        public void AppendJoin(StringBuilder sql, string rootTableAlias, IQueryableDocument document)
         {
             var locator = document == null
                 ? _field.LocatorFor(rootTableAlias)
                 : document.FieldFor(_field.Members).LocatorFor(rootTableAlias);
                 
-            var joinOperator = JoinType == JoinType.Inner ? "INNER JOIN" : "LEFT OUTER JOIN";
+            var joinOperator = JoinType == JoinType.Inner ? InnerJoin : OuterJoin;
 
-            // Right here, if this doc type is soft deleted, use a subquery in place of the table name
 
-            var subquery =  IsSoftDeleted 
-                ? $"(select * from {_mapping.Table.QualifiedName} where {DocumentMapping.DeletedColumn} = False)" 
-                : _mapping.Table.QualifiedName;
+            sql.Append(joinOperator);
+            sql.Append(" ");
 
-            return $"{joinOperator} {subquery} as {TableAlias} ON {locator} = {TableAlias}.id";
+            if (IsSoftDeleted)
+            {
+                sql.Append("(select * from ");
+                sql.Append(_mapping.Table.QualifiedName);
+                sql.Append(" where ");
+                sql.Append(DocumentMapping.DeletedColumn);
+                sql.Append(" = False)");
+            }
+            else
+            {
+                sql.Append(_mapping.Table.QualifiedName);
+            }
+
+            sql.Append(" as ");
+            sql.Append(TableAlias);
+            sql.Append(" ON ");
+            sql.Append(locator);
+            sql.Append(" = ");
+            sql.Append(TableAlias);
+            sql.Append(".id");
         }
 
         public bool IsSoftDeleted { get;}
 
-        public string JoinText => JoinTextFor("d", null);
+        // TODO -- remove this when we tackle moving ISelector to using StringBUilder's
+        public string JoinText
+        {
+            get
+            {
+                var sql = new StringBuilder();
+                AppendJoin(sql, "d", null);
+
+                return sql.ToString();
+            }
+        }
 
         public string TableAlias { get; }
         public JoinType JoinType { get; set; }
