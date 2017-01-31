@@ -504,6 +504,18 @@ namespace Marten.Testing.Linq
                 transformed.Count.ShouldBe(count);
             }
         }
+
+        [Fact]
+        public void Bug_665()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                QueryStatistics stats = null;
+                var attributes = session.Query<Product>().Stats(out stats).SelectMany(x => x.Attributes)
+                    .Select(x => x.Attribute.Name).Distinct();
+
+            }
+        }
     }
 
     public class TargetNumbers
@@ -516,6 +528,18 @@ namespace Marten.Testing.Linq
     {
         public Guid Id;
         public string[] Tags { get; set; }
+
+        public IList<ProductAttribute> Attributes { get; set; }
+    }
+
+    public class ProductAttribute
+    {
+        public Attribute Attribute { get; set; }
+    }
+
+    public class Attribute
+    {
+        public string Name { get; set; }
     }
 
     public class ProductWithNumbers

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Baseline;
 using Marten.Schema;
 using Marten.Util;
@@ -65,11 +66,12 @@ namespace Marten.Linq
             return mapping.FilterDocuments(query, @where);
         }
 
-        public static string ApplyTake(this QueryModel model, NpgsqlCommand command, int limit, string sql)
+        public static void ApplyTake(this QueryModel model, NpgsqlCommand command, int limit, StringBuilder sql)
         {
             if (limit > 0)
             {
-                sql += " LIMIT " + limit;
+                sql.Append(" LIMIT ");
+                sql.Append(limit);
             }
             else
             {
@@ -77,22 +79,22 @@ namespace Marten.Linq
                 if (take != null)
                 {
                     var param = command.AddParameter(take.Count.Value());
-                    sql += " LIMIT :" + param.ParameterName;
+                    sql.Append(" LIMIT :");
+                    sql.Append(param.ParameterName);
                 }
             }
 
-            return sql;
         }
 
-        public static string ApplySkip(this QueryModel model, NpgsqlCommand command, string sql)
+        public static void ApplySkip(this QueryModel model, NpgsqlCommand command, StringBuilder sql)
         {
             var skip = model.FindOperators<SkipResultOperator>().LastOrDefault();
             if (skip != null)
             {
                 var param = command.AddParameter(skip.Count.Value());
-                sql += " OFFSET :" + param.ParameterName;
+                sql.Append(" OFFSET :");
+                sql.Append(param.ParameterName);
             }
-            return sql;
         }
     }
 }

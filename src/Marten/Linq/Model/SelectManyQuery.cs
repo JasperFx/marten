@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 using Baseline;
 using Baseline.Conversion;
 using Marten.Schema;
@@ -132,45 +133,77 @@ namespace Marten.Linq.Model
 
         public bool IsDistinct { get; }
 
-        public string ConfigureCommand(IIncludeJoin[] joins, ISelector selector, NpgsqlCommand command, string sql, int limit)
+        // TODO -- this will have to be rethought. Needs to return a different StringBuilder
+        public void ConfigureCommand(IIncludeJoin[] joins, ISelector selector, NpgsqlCommand command, StringBuilder sql, int limit)
         {
+            var innerSql = sql.ToString();
+            sql.Clear();
+
             var fields = selector.SelectFields().ToArray();
 
 
             if (HasSelectTransform())
             {
-                sql = $"select {fields[0]} from ({sql}) as {_tableAlias}";
+                sql.Append("select ");
+                sql.Append(fields[0]);
+                sql.Append(" from (");
+                sql.Append(innerSql);
+                sql.Append(") as ");
+                sql.Append(_tableAlias);
+
             }
             else
             {
                 fields[0] = "x";
 
-                sql = $"select {fields.Join(", ")} from  ({sql}) as {_tableAlias}";
+                sql.Append("select ");
+                sql.Append(fields[0]);
+
+                for (int i = 1; i < fields.Length; i++)
+                {
+                    sql.Append(", ");
+                    sql.Append(fields[i]);
+                }
+
+                sql.Append(" from (");
+                sql.Append(innerSql);
+                sql.Append(") as ");
+                sql.Append(_tableAlias);
+
             }
 
 
             if (joins.Any())
             {
-                sql += " " + joins.Select(x => x.JoinTextFor(_tableAlias, _document)).Join(" ");
+                foreach (var @join in joins)
+                {
+                    sql.Append(" ");
+                    sql.Append(@join.JoinTextFor(_tableAlias, _document));
+                }
             }
 
 
             var @where = buildWhereFragment(_document);
             if (@where != null)
             {
-                sql += " where " + @where.ToSql(command);
+                sql.Append(" where ");
+                sql.Append(@where.ToSql(command));
             }
 
             var orderBy = determineOrderClause(_document);
 
-            if (orderBy.IsNotEmpty()) sql += orderBy;
+            if (orderBy.IsNotEmpty())
+            {
+                sql.Append(orderBy);
+            }
 
-            sql = _query.ApplySkip(command, sql);
-            sql = _query.ApplyTake(command, limit, sql);
-            
+            _query.ApplySkip(command, sql);
+            _query.ApplyTake(command, limit, sql);
 
 
-            return sql;
+
+            command.CommandText = sql.ToString();
+            // TODO -- return the StringBuilder to a pool
         }
 
         private string determineOrderClause(ChildDocument document)

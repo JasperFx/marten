@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Baseline;
-using Marten.Events;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services.Includes;
-using Marten.Transforms;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
@@ -21,7 +20,7 @@ namespace Marten.Linq.Model
         Type SourceType { get; }
         void ConfigureCommand(NpgsqlCommand command);
         void ConfigureCommand(NpgsqlCommand command, int limit);
-        string AppendWhere(NpgsqlCommand command, string sql);
+        void AppendWhere(NpgsqlCommand command, StringBuilder sql);
         void ConfigureCount(NpgsqlCommand command);
         void ConfigureAny(NpgsqlCommand command);
         void ConfigureAggregate(NpgsqlCommand command, string @operator);
@@ -29,9 +28,9 @@ namespace Marten.Linq.Model
 
     public class LinqQuery<T> : ILinqQuery
     {
+        private readonly IIncludeJoin[] _joins;
         private readonly IQueryableDocument _mapping;
         private readonly IDocumentSchema _schema;
-        private readonly IIncludeJoin[] _joins;
 
         private readonly SelectManyQuery _subQuery;
         private ISelector<T> _innerSelector;
@@ -62,19 +61,13 @@ namespace Marten.Linq.Model
             Where = buildWhereFragment();
         }
 
-        public QueryModel Model { get; }
-
         public ISelector<T> Selector { get; }
 
         public IWhereFragment Where { get; set; }
 
+        public QueryModel Model { get; }
+
         public Type SourceType { get; }
-
-
-        public IQueryHandler<IList<T>> ToList()
-        {
-            return new ListQueryHandler<T>(this);
-        }
 
         public void ConfigureCommand(NpgsqlCommand command)
         {
@@ -84,58 +77,151 @@ namespace Marten.Linq.Model
         public void ConfigureCommand(NpgsqlCommand command, int limit)
         {
             var isComplexSubQuery = _subQuery != null && _subQuery.IsComplex(_joins);
-            string sql = "";
+
+            // TODO -- move this to pool of StringBuilder's
+            var sql = new StringBuilder();
             if (isComplexSubQuery)
             {
                 if (_subQuery.HasSelectTransform())
                 {
-                    sql = $"select {_subQuery.RawChildElementField()} from {_mapping.Table.QualifiedName} as d";
+                    sql.Append("select ");
+                    sql.Append(_subQuery.RawChildElementField());
+                    sql.Append(" from ");
+                    sql.Append(_mapping.Table.QualifiedName);
+                    sql.Append(" as d");
+
                 }
                 else
                 {
-                    sql = _innerSelector.ToSelectClause(_mapping);
+                    sql.Append(_innerSelector.ToSelectClause(_mapping));
                 }
             }
             else
             {
-                sql = Selector.ToSelectClause(_mapping);
+                sql.Append(Selector.ToSelectClause(_mapping));
             }
 
-            sql = AppendWhere(command, sql);
+            AppendWhere(command, sql);
 
             var orderBy = determineOrderClause();
 
-            if (orderBy.IsNotEmpty()) sql += orderBy;
+            if (orderBy.IsNotEmpty())
+            {
+                sql.Append(orderBy);
+            }
 
             if (isComplexSubQuery)
             {
-                sql = _subQuery.ConfigureCommand(_joins, Selector, command, sql, limit);
+                _subQuery.ConfigureCommand(_joins, Selector, command, sql, limit);
             }
             else
             {
-                sql = Model.ApplySkip(command, sql);
-                sql = Model.ApplyTake(command, limit, sql);
+                Model.ApplySkip(command, sql);
+                Model.ApplyTake(command, limit, sql);
             }
 
-            command.AppendQuery(sql);
+            command.AppendQuery(sql.ToString());
         }
 
-        public string AppendWhere(NpgsqlCommand command, string sql)
+
+        public void AppendWhere(NpgsqlCommand command, StringBuilder sql)
         {
             string filter = null;
             if (Where != null)
+            {
                 filter = Where.ToSql(command);
+            }
 
             if (filter.IsNotEmpty())
-                sql += " where " + filter;
+            {
+                sql.Append(" where ");
+                sql.Append(filter);
+            }
+        }
 
-            return sql;
+        public void ConfigureCount(NpgsqlCommand command)
+        {
+            // TODO -- take it from a pool
+            var sql = new StringBuilder();
+
+
+            if (_subQuery != null)
+            {
+                if (Model.HasOperator<DistinctResultOperator>())
+                    throw new NotSupportedException(
+                        "Marten does not yet support SelectMany() with both a Distinct() and Count() operator");
+
+                // TODO -- this will need to be smarter
+                sql.Append("select sum(jsonb_array_length(");
+                sql.Append(_subQuery.SqlLocator);
+                sql.Append(")) as number");
+            }
+            else
+            {
+                sql.Append("select count(*) as number");
+            }
+
+            sql.Append(" from ");
+            sql.Append(_mapping.Table.QualifiedName);
+            sql.Append(" as d");
+
+            AppendWhere(command, sql);
+
+            command.AppendQuery(sql.ToString());
+        }
+
+        public void ConfigureAny(NpgsqlCommand command)
+        {
+            // TODO -- pull from an object pool
+            var sql = new StringBuilder();
+
+            if (_subQuery != null)
+            {
+                sql.Append("select (sum(jsonb_array_length(");
+                sql.Append(_subQuery.SqlLocator);
+                sql.Append(")) > 0) as result");
+            }
+            else
+            {
+                sql.Append("select (count(*) > 0) as result");
+            }
+
+            sql.Append(" from ");
+            sql.Append(_mapping.Table.QualifiedName);
+            sql.Append(" as d");
+
+
+            new LinqQuery<bool>(_schema, Model, new IIncludeJoin[0], null).AppendWhere(command, sql);
+
+            command.AppendQuery(sql.ToString());
+        }
+
+        public void ConfigureAggregate(NpgsqlCommand command, string @operator)
+        {
+            var locator = _mapping.JsonLocator(Model.SelectClause.Selector);
+            var field = @operator.ToFormat(locator);
+
+            // TODO -- pull from a pool
+            var sql = new StringBuilder();
+
+            sql.Append("select ");
+            sql.Append(field);
+            sql.Append(" from ");
+            sql.Append(_mapping.Table.QualifiedName);
+            sql.Append(" as d");
+
+            AppendWhere(command, sql);
+
+            command.AppendQuery(sql.ToString());
         }
 
 
+        public IQueryHandler<IList<T>> ToList()
+        {
+            return new ListQueryHandler<T>(this);
+        }
 
-
-
+        // TODO -- eliminate the string concatenations
         private string determineOrderClause()
         {
             var orders = bodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
@@ -144,6 +230,7 @@ namespace Marten.Linq.Model
             return " order by " + orders.Select(toOrderClause).Join(", ");
         }
 
+        // TODO -- eliminate the string concatenations
         private string toOrderClause(Ordering clause)
         {
             var locator = _mapping.JsonLocator(clause.Expression);
@@ -175,47 +262,9 @@ namespace Marten.Linq.Model
             return bodies;
         }
 
-        public void ConfigureCount(NpgsqlCommand command)
-        {
-            var select = "select count(*) as number";
-
-            if (_subQuery != null)
-            {
-                if (Model.HasOperator<DistinctResultOperator>())
-                {
-                    throw new NotSupportedException("Marten does not yet support SelectMany() with both a Distinct() and Count() operator");
-                }
-
-                // TODO -- this will need to be smarter
-                select = $"select sum(jsonb_array_length({_subQuery.SqlLocator})) as number";
-            }
-
-            var sql = $"{select} from {_mapping.Table.QualifiedName} as d";
-
-            sql = AppendWhere(command, sql);
-
-            command.AppendQuery(sql);
-        }
-
         public IQueryHandler<TResult> ToCount<TResult>()
         {
             return new CountQueryHandler<TResult>(this);
-        }
-
-        public void ConfigureAny(NpgsqlCommand command)
-        {
-            var select = "select (count(*) > 0) as result";
-
-            if (_subQuery != null)
-            {
-                select = $"select (sum(jsonb_array_length({_subQuery.SqlLocator})) > 0) as result";
-            }
-
-            var sql = $"{select} from {_mapping.Table.QualifiedName} as d";
-
-            sql = new LinqQuery<bool>(_schema, Model, new IIncludeJoin[0], null).AppendWhere(command, sql);
-
-            command.AppendQuery(sql);
         }
 
         public IQueryHandler<bool> ToAny()
@@ -223,22 +272,12 @@ namespace Marten.Linq.Model
             return new AnyQueryHandler(this);
         }
 
-        public void ConfigureAggregate(NpgsqlCommand command, string @operator)
-        {
-            var locator = _mapping.JsonLocator(Model.SelectClause.Selector);
-            var field = @operator.ToFormat(locator);
-
-            var sql = $"select {field} from {_mapping.Table.QualifiedName} as d";
-
-            sql = AppendWhere(command, sql);
-
-            command.AppendQuery(sql);
-        }
-
         // Leave this code here, because it will need to use the SubQuery logic in its selection
-        public ISelector<T> BuildSelector(IIncludeJoin[] joins, QueryStatistics stats, SelectManyQuery subQuery, IIncludeJoin[] includeJoins)
+        public ISelector<T> BuildSelector(IIncludeJoin[] joins, QueryStatistics stats, SelectManyQuery subQuery,
+            IIncludeJoin[] includeJoins)
         {
-            var selector = _innerSelector = SelectorParser.ChooseSelector<T>("d.data", _schema, _mapping, Model, subQuery, joins);
+            var selector =
+                _innerSelector = SelectorParser.ChooseSelector<T>("d.data", _schema, _mapping, Model, subQuery, joins);
 
             if (stats != null)
             {

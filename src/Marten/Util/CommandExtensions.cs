@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
@@ -52,6 +53,7 @@ namespace Marten.Util
             return sql + " where " + where.ToSql(command);
         }
 
+        // TODO -- have this use a StringBuilder!
         public static NpgsqlCommand AppendQuery(this NpgsqlCommand command, string sql)
         {
             if (command.CommandText.IsEmpty())

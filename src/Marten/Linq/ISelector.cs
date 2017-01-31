@@ -13,6 +13,7 @@ namespace Marten.Linq
     {
         string[] SelectFields();
 
+        // TODO -- have this take in StringBuilder too
         string ToSelectClause(IQueryableDocument mapping);
     }
 
