@@ -133,8 +133,7 @@ namespace Marten.Linq.Model
 
         public bool IsDistinct { get; }
 
-        // TODO -- this will have to be rethought. Needs to return a different StringBuilder
-        public void ConfigureCommand(IIncludeJoin[] joins, ISelector selector, NpgsqlCommand command, StringBuilder sql, int limit)
+        public void ConfigureCommand(IIncludeJoin[] joins, ISelector selector, CommandBuilder sql, int limit)
         {
             var innerSql = sql.ToString();
             sql.Clear();
@@ -187,7 +186,7 @@ namespace Marten.Linq.Model
             if (@where != null)
             {
                 sql.Append(" where ");
-                sql.Append(@where.ToSql(command));
+                sql.Append(@where.ToSql(sql));
             }
 
             var orderBy = determineOrderClause(_document);
@@ -197,13 +196,8 @@ namespace Marten.Linq.Model
                 sql.Append(orderBy);
             }
 
-            _query.ApplySkip(command, sql);
-            _query.ApplyTake(command, limit, sql);
-
-
-
-            command.CommandText = sql.ToString();
-            // TODO -- return the StringBuilder to a pool
+            _query.ApplySkip(sql);
+            _query.ApplyTake(limit, sql);
         }
 
         private string determineOrderClause(ChildDocument document)

@@ -4,6 +4,7 @@ using System.Reflection;
 using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Util;
 using Npgsql;
 using Xunit;
 
@@ -29,7 +30,9 @@ namespace Marten.Testing.Linq.SoftDeletes
         {
             var result = _parser.Parse(_mapping, new JsonNetSerializer(), _expression);
 
-            result.ToSql(new NpgsqlCommand()).ShouldContain("d.mt_deleted and d.mt_deleted_at >");
+            var builder = new CommandBuilder(new NpgsqlCommand());
+
+            result.ToSql(builder).ShouldContain("d.mt_deleted and d.mt_deleted_at >");
         }
 
         [Fact]

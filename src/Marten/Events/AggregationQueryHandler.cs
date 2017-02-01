@@ -6,6 +6,7 @@ using Marten.Events.Projections;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
+using Marten.Util;
 using Npgsql;
 
 namespace Marten.Events
@@ -23,9 +24,9 @@ namespace Marten.Events
             _session = session;
         }
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder builder)
         {
-            _inner.ConfigureCommand(command);
+            _inner.ConfigureCommand(builder);
         }
 
         public Type SourceType => typeof (IEvent);

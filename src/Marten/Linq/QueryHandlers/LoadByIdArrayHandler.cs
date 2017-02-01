@@ -4,11 +4,9 @@ using System.Data.Common;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
@@ -28,10 +26,8 @@ namespace Marten.Linq.QueryHandlers
         public Type SourceType => typeof(T);
 
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder sql)
         {
-            // TODO -- use the StringBuilder Pool here
-            var sql = new StringBuilder();
             sql.Append("select ");
 
             var fields = _mapping.SelectFields();
@@ -46,14 +42,11 @@ namespace Marten.Linq.QueryHandlers
             sql.Append(" from ");
             sql.Append(_mapping.Table.QualifiedName);
             sql.Append(" as d where id = ANY(:");
-            
 
-
-            var parameter = command.AddParameter(_ids);
+            var parameter = sql.AddParameter(_ids);
             sql.Append(parameter.ParameterName);
             sql.Append(")");
 
-            command.AppendQuery(sql.ToString());
         }
 
         public IList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

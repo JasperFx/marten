@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using Marten.Schema;
 using Marten.Services;
-using Npgsql;
+using Marten.Util;
 using NpgsqlTypes;
 
 namespace Marten.Events.Projections.Async
@@ -11,8 +11,6 @@ namespace Marten.Events.Projections.Async
     {
         private readonly string _key;
         private readonly long _number;
-        private NpgsqlParameter _nameArg;
-        private NpgsqlParameter _numberArg;
         private readonly FunctionName _sproc;
 
         public EventProgressWrite(EventGraph events, string key, long number)
@@ -22,16 +20,13 @@ namespace Marten.Events.Projections.Async
             _number = number;
         }
 
-        public void WriteToSql(StringBuilder builder)
+        public void ConfigureCommand(CommandBuilder builder)
         {
-            builder.Append($"select {_sproc}(:{_nameArg.ParameterName}, :{_numberArg.ParameterName})");
+            var nameArg = builder.AddParameter(_key, NpgsqlDbType.Varchar);
+            var numberArg = builder.AddParameter(_number, NpgsqlDbType.Bigint);
+            builder.Append($"select {_sproc}(:{nameArg.ParameterName}, :{numberArg.ParameterName})");
         }
 
-        public void AddParameters(IBatchCommand batch)
-        {
-            _nameArg = batch.AddParameter(_key, NpgsqlDbType.Varchar);
-            _numberArg = batch.AddParameter(_number, NpgsqlDbType.Bigint);
-        }
 
         public Type DocumentType => null;
     }

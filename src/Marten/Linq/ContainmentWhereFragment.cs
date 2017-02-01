@@ -28,7 +28,7 @@ namespace Marten.Linq
             CreateDictionaryForSearch(binary, _dictionary);
         }
 
-        public string ToSql(NpgsqlCommand command)
+        public string ToSql(CommandBuilder command)
         {
             var json = _serializer.ToCleanJson(_dictionary);
             var param = command.AddParameter(json);

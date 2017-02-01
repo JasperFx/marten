@@ -4,7 +4,6 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
@@ -50,10 +49,10 @@ namespace Marten.Util
         {
             if (where == null) return sql;
 
-            return sql + " where " + where.ToSql(command);
+            return sql + " where " + where.ToSql(new CommandBuilder(command));
         }
 
-        // TODO -- have this use a StringBuilder!
+        [Obsolete("Kill this and use CommandBuilder instead")]
         public static NpgsqlCommand AppendQuery(this NpgsqlCommand command, string sql)
         {
             if (command.CommandText.IsEmpty())
@@ -102,7 +101,7 @@ namespace Marten.Util
             return parameter;
         }
 
-        public static NpgsqlParameter AddParameter(this NpgsqlCommand command, string name, object value)
+        public static NpgsqlParameter AddNamedParameter(this NpgsqlCommand command, string name, object value)
         {
             var parameter = command.CreateParameter();
             parameter.ParameterName = name;

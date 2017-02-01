@@ -186,10 +186,8 @@ namespace Marten
             }
         }
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder sql)
         {
-            // TODO -- pull from the pool
-            var sql = new StringBuilder();
             sql.Append("select ");
 
             var fields = _fields.OrderBy(kv => kv.Value).Select(kv => kv.Key).ToArray();
@@ -205,9 +203,7 @@ namespace Marten
             sql.Append(_mapping.Table.QualifiedName);
             sql.Append(" where id = :id");
 
-            command.AppendQuery(sql.ToString());
-
-            command.AddParameter("id", _id);
+            sql.AddNamedParameter("id", _id);
         }
 
         public Type SourceType => _storage.DocumentType;

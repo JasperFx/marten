@@ -3,14 +3,13 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
-using Npgsql;
+using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers
 {
     public interface IQueryHandler
     {
-        // TODO -- might break this to introduce a StringBuilder
-        void ConfigureCommand(NpgsqlCommand command);
+        void ConfigureCommand(CommandBuilder builder);
     }
 
     public interface IReaderHandler<T>

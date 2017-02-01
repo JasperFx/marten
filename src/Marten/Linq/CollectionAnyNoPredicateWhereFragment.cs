@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Clauses.Expressions;
 
@@ -20,7 +21,7 @@ namespace Marten.Linq
             _expression = expression;
         }
 
-        public string ToSql(NpgsqlCommand command)
+        public string ToSql(CommandBuilder command)
         {            
             
 

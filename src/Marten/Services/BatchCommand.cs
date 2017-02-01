@@ -35,7 +35,7 @@ namespace Marten.Services
         public NpgsqlParameter AddParameter(object value, NpgsqlDbType dbType)
         {
             var name = "p" + _counter++;
-            var param = Command.AddParameter(name, value);
+            var param = Command.AddNamedParameter(name, value);
             param.NpgsqlDbType = dbType;
 
             return param;
@@ -43,23 +43,14 @@ namespace Marten.Services
 
         public IList<ICallback> Callbacks { get; } = new List<ICallback>();
 
-        public IList<ICall> Calls { get; } = new List<ICall>();
+        public IList<IStorageOperation> Calls { get; } = new List<IStorageOperation>();
 
         public NpgsqlCommand BuildCommand()
         {
-            var builder = new StringBuilder();
-            Calls.Each(x =>
-            {
-                x.WriteToSql(builder);
-                builder.Append(";");
-            });
-
-            Command.CommandText = builder.ToString();
-
-            return Command;
+            return CommandBuilder.ToBatchCommand(Calls);
         }
 
-        public void AddCall(ICall call, ICallback callback = null)
+        public void AddCall(IStorageOperation call, ICallback callback = null)
         {
             Calls.Add(call);
             Callbacks.Add(callback);

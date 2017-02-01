@@ -7,6 +7,7 @@ using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Util;
 
 namespace Marten.Events
 {
@@ -95,7 +96,7 @@ namespace Marten.Events
             return new[] {"id", "type", "version", "data", "seq_id", "stream_id", "timestamp"};
         }
 
-        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
+        public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
             sql.Append("select id, type, version, data, seq_id, stream_id, timestamp from ");
             sql.Append(Events.DatabaseSchemaName);

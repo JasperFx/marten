@@ -293,7 +293,7 @@ namespace Marten.Services
 
         public object Document { get; }
 
-        public void WriteToSql(StringBuilder builder)
+        public void ConfigureCommand(CommandBuilder builder)
         {
         }
 

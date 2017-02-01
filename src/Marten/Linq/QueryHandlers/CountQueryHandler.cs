@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq.Model;
 using Marten.Services;
+using Marten.Util;
 using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
@@ -19,9 +20,9 @@ namespace Marten.Linq.QueryHandlers
 
         public Type SourceType => _query.SourceType;
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder builder)
         {
-            _query.ConfigureCount(command);
+            _query.ConfigureCount(builder);
         }
 
         public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

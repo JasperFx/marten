@@ -274,7 +274,7 @@ namespace Marten
             assertNotDisposed();
 
             var @where = new WhereFragment("where d.id = ?", id);
-            return new PatchExpression<T>(@where, _schema, _unitOfWork);
+            return new PatchExpression<T>(@where, _schema, _unitOfWork, _serializer);
         }
 
         public IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> @where)
@@ -285,14 +285,14 @@ namespace Marten
 
             var fragment = _schema.BuildWhereFragment(model);
 
-            return new PatchExpression<T>(fragment, _schema, _unitOfWork);
+            return new PatchExpression<T>(fragment, _schema, _unitOfWork, _serializer);
         }
 
         public IPatchExpression<T> Patch<T>(IWhereFragment fragment)
         {
             assertNotDisposed();
 
-            return new PatchExpression<T>(fragment, _schema, _unitOfWork);
+            return new PatchExpression<T>(fragment, _schema, _unitOfWork, _serializer);
         }
 
         public void QueueOperation(IStorageOperation storageOperation)

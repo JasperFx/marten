@@ -25,10 +25,8 @@ namespace Marten.Linq.QueryHandlers
 
         public Type SourceType => typeof (T);
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder sql)
         {
-            // TODO -- use the Pool
-            var sql = new StringBuilder();
             sql.Append("select ");
 
             var fields = _mapping.SelectFields();
@@ -43,10 +41,8 @@ namespace Marten.Linq.QueryHandlers
             sql.Append(_mapping.Table.QualifiedName);
             sql.Append(" as d where id = :");
             
-            var parameter = command.AddParameter(_id);
+            var parameter = sql.AddParameter(_id);
             sql.Append(parameter.ParameterName);
-
-            command.AppendQuery(sql.ToString());
         }
 
         public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

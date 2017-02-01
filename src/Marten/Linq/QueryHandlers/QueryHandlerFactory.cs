@@ -9,6 +9,7 @@ using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers.CompiledInclude;
 using Marten.Schema;
 using Marten.Services.Includes;
+using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.ResultOperators;
@@ -206,8 +207,8 @@ namespace Marten.Linq.QueryHandlers
             var stats = model.HasOperator<StatsResultOperator>() ? new QueryStatistics() : null;
 
             var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins, stats);
-            var cmd = new NpgsqlCommand();
-            handler.ConfigureCommand(cmd);
+
+            var cmd = CommandBuilder.ToCommand(handler);
 
             var cachedQuery = new CachedQuery
             {

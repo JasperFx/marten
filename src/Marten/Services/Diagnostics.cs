@@ -1,6 +1,7 @@
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Util;
 using Npgsql;
 
 namespace Marten.Services
@@ -27,10 +28,8 @@ namespace Marten.Services
         {
             QueryStatistics stats;
             var handler = _schema.HandlerFactory.HandlerFor(query, out stats);
-            var cmd = new NpgsqlCommand();
-            handler.ConfigureCommand(cmd);
 
-            return cmd;
+            return CommandBuilder.ToCommand(handler);
         }
 
         /// <summary>

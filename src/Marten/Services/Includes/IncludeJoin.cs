@@ -2,6 +2,8 @@
 using System.Text;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Util;
+using Npgsql;
 
 namespace Marten.Services.Includes
 {
@@ -26,7 +28,7 @@ namespace Marten.Services.Includes
             IsSoftDeleted = mapping.DeleteStyle == DeleteStyle.SoftDelete;
         }
 
-        public void AppendJoin(StringBuilder sql, string rootTableAlias, IQueryableDocument document)
+        public void AppendJoin(CommandBuilder sql, string rootTableAlias, IQueryableDocument document)
         {
             var locator = document == null
                 ? _field.LocatorFor(rootTableAlias)
@@ -62,12 +64,12 @@ namespace Marten.Services.Includes
 
         public bool IsSoftDeleted { get;}
 
-        // TODO -- remove this when we tackle moving ISelector to using StringBUilder's
+        [Obsolete("remove this when we tackle moving ISelector to using StringBUilder's")]
         public string JoinText
         {
             get
             {
-                var sql = new StringBuilder();
+                var sql = new CommandBuilder(new NpgsqlCommand());
                 AppendJoin(sql, "d", null);
 
                 return sql.ToString();

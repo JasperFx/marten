@@ -22,7 +22,7 @@ namespace Marten.Linq.Compiled
 
         public StringComparisonParser Parser { get; set; }
 
-        public NpgsqlParameter AddParameter(object query, NpgsqlCommand command)
+        public NpgsqlParameter AddParameter(object query, CommandBuilder command)
         {
             var newValue = _getter((TObject)query);
 

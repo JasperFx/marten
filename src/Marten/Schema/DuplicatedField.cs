@@ -75,6 +75,7 @@ namespace Marten.Schema
             patch.Updates.Apply(mapping, $"update {mapping.Table.QualifiedName} set {UpdateSqlFragment()};");
         }
 
+        // TODO -- have this take in CommandBuilder
         public string UpdateSqlFragment()
         {
             var jsonField = new JsonLocatorField("d.data", _enumStorage, Members);

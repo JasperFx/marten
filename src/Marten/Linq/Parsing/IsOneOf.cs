@@ -71,7 +71,7 @@ namespace Marten.Linq.Parsing
             _locator = locator;
         }
 
-        public string ToSql(NpgsqlCommand command)
+        public string ToSql(CommandBuilder command)
         {
             var param = command.AddParameter(_values, _dbType);
 

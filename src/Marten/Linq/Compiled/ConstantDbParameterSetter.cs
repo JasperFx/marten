@@ -12,7 +12,7 @@ namespace Marten.Linq.Compiled
             _value = value;
         }
 
-        public NpgsqlParameter AddParameter(object query, NpgsqlCommand command)
+        public NpgsqlParameter AddParameter(object query, CommandBuilder command)
         {
             var param = command.AddParameter(_value);
 

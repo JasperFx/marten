@@ -58,7 +58,7 @@ namespace Marten.Linq.Compiled
             return dict;
         }
 
-        public NpgsqlParameter AddParameter(object query, NpgsqlCommand command)
+        public NpgsqlParameter AddParameter(object query, CommandBuilder command)
         {
             var dict = BuildDictionary((TQuery) query);
 

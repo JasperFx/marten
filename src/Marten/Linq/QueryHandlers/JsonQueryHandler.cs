@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq.Model;
 using Marten.Services;
+using Marten.Util;
 using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
@@ -22,9 +23,9 @@ namespace Marten.Linq.QueryHandlers
 
         public Type SourceType => _query.SourceType;
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder builder)
         {
-            _query.ConfigureCommand(command);
+            _query.ConfigureCommand(builder);
         }
 
         public string Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

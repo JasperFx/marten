@@ -14,13 +14,15 @@ namespace Marten.Patching
         private readonly IWhereFragment _fragment;
         private readonly IDocumentSchema _schema;
         private readonly UnitOfWork _unitOfWork;
+        private readonly ISerializer _serializer;
         public readonly IDictionary<string, object> Patch = new Dictionary<string, object>();
 
-        public PatchExpression(IWhereFragment fragment, IDocumentSchema schema, UnitOfWork unitOfWork)
+        public PatchExpression(IWhereFragment fragment, IDocumentSchema schema, UnitOfWork unitOfWork, ISerializer serializer)
         {
             _fragment = fragment;
             _schema = schema;
             _unitOfWork = unitOfWork;
+            _serializer = serializer;
         }
 
         public void Set<TValue>(string name, TValue value)
@@ -199,14 +201,9 @@ namespace Marten.Patching
         {
             var transform = _schema.TransformFor(StoreOptions.PatchDoc);
             var document = _schema.MappingFor(typeof(T)).ToQueryableDocument();
-            var operation = new PatchOperation(transform, document, _fragment, Patch);
+            var operation = new PatchOperation(transform, document, _fragment, Patch, _serializer);
 
             _unitOfWork.Patch(operation);
-
-            if (document.DuplicatedFields.Any())
-            {
-                _unitOfWork.Add(operation.UpdateDuplicateFieldOperation());
-            }
         }
     }
 }

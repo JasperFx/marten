@@ -1,3 +1,4 @@
+using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,10 +27,7 @@ namespace Marten.Services.BatchQuerying
         public TaskCompletionSource<T> Completion { get; }
         public Task<T> Result => Completion.Task;
 
-        public void Configure(IDocumentSchema schema, NpgsqlCommand command)
-        {
-            _handler.ConfigureCommand(command);
-        }
+        public IQueryHandler Handler => _handler;
 
         public async Task Read(DbDataReader reader, IIdentityMap map, CancellationToken token)
         {

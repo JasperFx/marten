@@ -9,6 +9,7 @@ using Marten.Linq;
 using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
+using Marten.Util;
 using Npgsql;
 
 namespace Marten.Services.BatchQuerying
@@ -16,7 +17,6 @@ namespace Marten.Services.BatchQuerying
     public class BatchedQuery : IBatchedQuery, IBatchEvents
     {
         private static readonly MartenQueryParser QueryParser = new MartenQueryParser();
-        private readonly NpgsqlCommand _command = new NpgsqlCommand();
         private readonly IIdentityMap _identityMap;
         private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
         private readonly QuerySession _parent;
@@ -62,15 +62,21 @@ namespace Marten.Services.BatchQuerying
             return new BatchedQueryable<T>(this, _parent.Query<T>());
         }
 
+        private NpgsqlCommand buildCommand()
+        {
+            return CommandBuilder.ToBatchCommand(_items.Select(x => x.Handler));
+        }
+
         public async Task Execute(CancellationToken token = default(CancellationToken))
         {
             var map = _identityMap.ForQuery();
 
             if (!_items.Any()) return;
 
-            await _runner.ExecuteAsync(_command, async (cmd, tk) =>
+            var command = buildCommand();
+            await _runner.ExecuteAsync(command, async (cmd, tk) =>
             {
-                using (var reader = await _command.ExecuteReaderAsync(tk).ConfigureAwait(false))
+                using (var reader = await command.ExecuteReaderAsync(tk).ConfigureAwait(false))
                 {
                     await _items[0].Read(reader, map, token).ConfigureAwait(false);
 
@@ -97,9 +103,10 @@ namespace Marten.Services.BatchQuerying
 
             if (!_items.Any()) return;
 
-            _runner.Execute(_command, cmd =>
+            var command = buildCommand();
+            _runner.Execute(command, cmd =>
             {
-                using (var reader = _command.ExecuteReader())
+                using (var reader = command.ExecuteReader())
                 {
                     _items[0].Read(reader, map);
 
@@ -161,8 +168,6 @@ namespace Marten.Services.BatchQuerying
 
             var item = new BatchQueryItem<T>(handler, stats);
             _items.Add(item);
-
-            item.Configure(_schema, _command);
 
             return item.Result;
         }

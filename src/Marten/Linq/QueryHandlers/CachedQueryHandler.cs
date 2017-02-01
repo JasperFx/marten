@@ -25,18 +25,18 @@ namespace Marten.Linq.QueryHandlers
         }
 
         public Type SourceType => _handler.SourceType;
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder builder)
         {
             var sql = _template.CommandText;
             for (var i = 0; i < _template.Parameters.Count; i++)
             {
-                var param = _setters[i].AddParameter(_model, command);
+                var param = _setters[i].AddParameter(_model, builder);
                 param.NpgsqlDbType = _template.Parameters[i].NpgsqlDbType;
 
                 sql = sql.Replace(":" + _template.Parameters[i].ParameterName, ":" + param.ParameterName);
             }
 
-            command.AppendQuery(sql);
+            builder.Append(sql);
         }
 
         public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

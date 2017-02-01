@@ -7,7 +7,6 @@ using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Events
 {
@@ -22,18 +21,13 @@ namespace Marten.Events
             _selector = new EventSelector(events, serializer);
         }
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder sql)
         {
-            // TODO -- use the pool. This isn't worth using StringBuilder *now*,
-            // but will be when we use StringBuilder's inside of ToSelectClause()
-            var sql = new StringBuilder();
             _selector.WriteSelectClause(sql, null);
             
-            var param = command.AddParameter(_id);
+            var param = sql.AddParameter(_id);
             sql.Append(" where id = :");
             sql.Append(param.ParameterName);
-
-            command.AppendQuery(sql.ToString());
         }
 
         public Type SourceType => typeof(IEvent);
