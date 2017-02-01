@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Marten.Patching;
 using Marten.Schema;
 using Marten.Services;
@@ -24,7 +24,7 @@ namespace Marten.Testing.Patching
 
             _schema.MappingFor(typeof(Target)).Returns(mapping);
 
-            _expression = new PatchExpression<Target>(null, _schema, new UnitOfWork(_schema));
+            _expression = new PatchExpression<Target>(null, _schema, new UnitOfWork(_schema), new JsonNetSerializer());
         }
 
         [Fact]

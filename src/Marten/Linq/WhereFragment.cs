@@ -20,7 +20,7 @@ namespace Marten.Linq
             _token = paramReplacementToken;
         }
 
-        public string ToSql(NpgsqlCommand command)
+        public string ToSql(CommandBuilder command)
         {
             var sql = _sql;
             _parameters.Each(x =>

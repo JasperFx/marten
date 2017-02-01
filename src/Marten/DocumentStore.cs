@@ -115,7 +115,6 @@ namespace Marten
         public virtual void Dispose()
         {
             _writerPool.Dispose();
-            _stringBuilderPool.Dispose();
         }
 
         

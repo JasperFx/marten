@@ -11,6 +11,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Includes;
 using Marten.Transforms;
+using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 
@@ -34,8 +35,7 @@ namespace Marten.Linq
         {
             var handler = toDiagnosticHandler(fetchType);
 
-            var cmd = new NpgsqlCommand();
-            handler.ConfigureCommand(cmd);
+            var cmd = CommandBuilder.ToCommand(handler);
 
             return Executor.As<MartenQueryExecutor>().Connection.ExplainQuery(cmd);
         }
@@ -215,10 +215,8 @@ namespace Marten.Linq
         public NpgsqlCommand BuildCommand(FetchType fetchType)
         {
             var handler = toDiagnosticHandler(fetchType);
-            var cmd = new NpgsqlCommand();
-            handler.ConfigureCommand(cmd);
 
-            return cmd;
+            return CommandBuilder.ToCommand(handler);
         }
 
 

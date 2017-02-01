@@ -1,19 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Baseline;
 using Marten.Schema;
+using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Services
 {
-    public class SprocCall : ICall
+    public class SprocCall : IStorageOperation
     {
-        private readonly BatchCommand _parent;
         private readonly FunctionName _function;
         private readonly IList<ParameterArg> _parameters = new List<ParameterArg>();
+        private readonly BatchCommand _parent;
 
 
         public SprocCall(BatchCommand parent, FunctionName function)
@@ -25,10 +24,27 @@ namespace Marten.Services
             _function = function;
         }
 
-        public void WriteToSql(StringBuilder builder)
+        // TODO -- merge this into the upsert's
+        public Type DocumentType { get; } = null;
+
+        public void ConfigureCommand(CommandBuilder builder)
         {
-            var parameters = _parameters.Select(x => x.Declaration()).Join(", ");
-            builder.AppendFormat("select {0}({1})", _function.QualifiedName, parameters);
+            builder.Append("select ");
+            builder.Append(_function.QualifiedName);
+            builder.Append("(");
+
+            if (_parameters.Any())
+            {
+                _parameters[0].AppendDeclaration(builder);
+
+                for (var i = 1; i < _parameters.Count; i++)
+                {
+                    builder.Append(", ");
+                    _parameters[i].AppendDeclaration(builder);
+                }
+            }
+
+            builder.Append(")");
         }
 
         public SprocCall Param(string argName, Guid value)
@@ -74,42 +90,45 @@ namespace Marten.Services
 
         public SprocCall Param(string argName, object value, NpgsqlDbType dbType)
         {
-            var param = _parent.AddParameter(value, dbType);
-
-            _parameters.Add(new ParameterArg(argName, param));
+            _parameters.Add(new ParameterArg(argName, value, dbType));
 
             return this;
         }
 
         public SprocCall Param(string argName, object value, NpgsqlDbType dbType, int size)
         {
-            var param = _parent.AddParameter(value, dbType);
-            param.Size = size;
-
-            _parameters.Add(new ParameterArg(argName, param));
+            _parameters.Add(new ParameterArg(argName, value, dbType, size));
 
             return this;
         }
 
         public struct ParameterArg
         {
-            public string ArgName;
-            public string ParameterName;
+            private readonly string _argName;
+            private readonly object _value;
+            private readonly NpgsqlDbType _dbType;
+            private readonly int _size;
 
-            public ParameterArg(string argName, NpgsqlParameter parameter)
+            public ParameterArg(string argName, object value, NpgsqlDbType dbType, int size = 0)
             {
-                ArgName = argName;
-                ParameterName = parameter.ParameterName;
+                _argName = argName;
+                _value = value;
+                _dbType = dbType;
+                _size = size;
             }
 
-            public string Declaration()
+            public void AppendDeclaration(CommandBuilder builder)
             {
-                return $"{ArgName} := :{ParameterName}";
+                var parameter = builder.AddParameter(_value, _dbType);
+                if (_size > 0)
+                {
+                    parameter.Size = _size;
+                }
+
+                builder.Append(_argName);
+                builder.Append(" := :");
+                builder.Append(parameter.ParameterName);
             }
         }
-
-
-
-
     }
 }

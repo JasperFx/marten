@@ -63,8 +63,6 @@ namespace Marten.Services
         {
             var batch = Current();
 
-            operation.AddParameters(batch);
-
             batch.AddCall(operation, operation as ICallback);
         }
 

@@ -188,10 +188,10 @@ AND    n.nspname = :schema;
                 return connection.Execute(cmd =>
                 {
                     cmd.CommandText = SchemaObjectsSQL;
-                    cmd.AddParameter("schema", mapping.Table.Schema);
-                    cmd.AddParameter("table_name", mapping.Table.Name);
-                    cmd.AddParameter("function", mapping.UpsertFunction.Name);
-                    cmd.AddParameter("qualified_name", mapping.Table.OwnerName);
+                    cmd.AddNamedParameter("schema", mapping.Table.Schema);
+                    cmd.AddNamedParameter("table_name", mapping.Table.Name);
+                    cmd.AddNamedParameter("function", mapping.UpsertFunction.Name);
+                    cmd.AddNamedParameter("qualified_name", mapping.Table.OwnerName);
 
                     var reader = cmd.ExecuteReader();
 

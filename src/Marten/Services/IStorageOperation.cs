@@ -1,12 +1,11 @@
 using System;
+using Marten.Linq.QueryHandlers;
+using Marten.Util;
 
 namespace Marten.Services
 {
-    // If it's an ICallback, register itself as the ICallback
-    public interface IStorageOperation : ICall
+    public interface IStorageOperation : IQueryHandler
     {
-        void AddParameters(IBatchCommand batch);
-
         Type DocumentType { get; }
     }
 }

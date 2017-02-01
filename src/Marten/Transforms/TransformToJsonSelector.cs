@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Util;
 
 namespace Marten.Transforms
 {
@@ -34,7 +35,7 @@ namespace Marten.Transforms
             return new[] {_fieldName};
         }
 
-        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
+        public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
             sql.Append("select ");
             sql.Append(_fieldName);

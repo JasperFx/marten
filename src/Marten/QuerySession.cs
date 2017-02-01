@@ -408,7 +408,6 @@ namespace Marten
             _disposed = true;
             _connection.Dispose();
             WriterPool?.Dispose();
-            StringBuilderPool?.Dispose();
         }
 
         public T Load<T>(int id)

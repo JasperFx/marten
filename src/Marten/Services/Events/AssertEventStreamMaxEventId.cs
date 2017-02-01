@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Text;
+using Marten.Events;
+using Marten.Util;
 
 namespace Marten.Services.Events
 {
@@ -20,27 +21,18 @@ namespace Marten.Services.Events
             TableName = tableName;
         }
 
-        public string _sql;
-        
-        void ICall.WriteToSql(StringBuilder builder)
-        {
-            builder.Append(_sql);
-        }
-
-        public void AddParameters(IBatchCommand batch)
+        public void ConfigureCommand(CommandBuilder builder)
         {
             // Parameterized queries won't work here: https://github.com/npgsql/npgsql/issues/331
             // In order to parameterize, sproc would need to be created            
-            _sql = $@"DO $$ BEGIN IF
+            var sql = $@"DO $$ BEGIN IF
   (SELECT max(events.version)
    FROM {TableName} AS events
    WHERE events.stream_id = '{Stream}') <> {ExpectedVersion} THEN 
 RAISE EXCEPTION '{EventContracts.UnexpectedMaxEventIdForStream.Value}'; END IF; END; $$;";
-        }
 
-        public override string ToString()
-        {
-            return _sql;
+            
+            builder.Append(sql);
         }
 
         public Type DocumentType => null;

@@ -1,0 +1,119 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Marten.Linq.QueryHandlers;
+using Npgsql;
+using NpgsqlTypes;
+
+namespace Marten.Util
+{
+    public class CommandBuilder  : IDisposable
+    {
+        public static NpgsqlCommand ToCommand(IQueryHandler handler)
+        {
+            var command = new NpgsqlCommand();
+
+            using (var builder = new CommandBuilder(command))
+            {
+                handler.ConfigureCommand(builder);
+                command.CommandText = builder._sql.ToString();
+
+                return command;
+            }
+        }
+
+        public static NpgsqlCommand ToBatchCommand(IEnumerable<IQueryHandler> handlers)
+        {
+            if (handlers.Count() == 1) return ToCommand(handlers.Single());
+
+            // TODO -- move this to a pool
+            var wholeStatement = new StringBuilder();
+            var command = new NpgsqlCommand();
+
+            foreach (var handler in handlers)
+            {
+                // Maybe have it use a shared pool here.
+                using (var builder = new CommandBuilder(command))
+                {
+                    handler.ConfigureCommand(builder);
+                    if (wholeStatement.Length > 0)
+                    {
+                        wholeStatement.Append(";");
+                    }
+
+                    wholeStatement.Append(builder);
+                }
+            }
+
+            command.CommandText = wholeStatement.ToString();
+
+            return command;
+        }
+
+        // TEMP -- will shift this to being pooled later
+        private readonly StringBuilder _sql = new StringBuilder();
+        private readonly NpgsqlCommand _command;
+
+        public CommandBuilder(NpgsqlCommand command)
+        {
+            _command = command;
+        }
+
+        public void Append(string text)
+        {
+            _sql.Append(text);
+        }
+
+        public void Append(object o)
+        {
+            _sql.Append(o);
+        }
+
+        public override string ToString()
+        {
+            return _sql.ToString();
+        }
+
+        public void Clear()
+        {
+            _sql.Clear();
+        }
+
+        
+
+        public void Dispose()
+        {
+            // TODO -- have this release the StringBuilder back to the pool
+
+        }
+
+
+        public void AddParameters(object parameters)
+        {
+            _command.AddParameters(parameters);
+        }
+
+        public NpgsqlParameter AddParameter(object value, NpgsqlDbType? dbType = null)
+        {
+            return _command.AddParameter(value, dbType);
+        }
+
+        public NpgsqlParameter AddJsonParameter(string json)
+        {
+            return _command.AddParameter(json, NpgsqlDbType.Jsonb);
+        }
+
+        public NpgsqlParameter AddNamedParameter(string name, object value)
+        {
+            return _command.AddNamedParameter(name, value);
+        }
+
+        public void UseParameter(NpgsqlParameter parameter)
+        {
+            var sql = _sql.ToString();
+            _sql.Clear();
+            _sql.Append(sql.UseParameter(parameter));
+        }
+    }
+}

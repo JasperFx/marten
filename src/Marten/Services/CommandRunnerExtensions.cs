@@ -33,8 +33,7 @@ namespace Marten.Services
 
         public static T Fetch<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats)
         {
-            var command = new NpgsqlCommand();
-            handler.ConfigureCommand(command);
+            var command = CommandBuilder.ToCommand(handler);
 
             return runner.Execute(command, c =>
             {
@@ -47,8 +46,7 @@ namespace Marten.Services
 
         public static async Task<T> FetchAsync<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            var command = new NpgsqlCommand();
-            handler.ConfigureCommand(command);
+            var command = CommandBuilder.ToCommand(handler);
 
             return await runner.ExecuteAsync(command, async (c, tkn) =>
             {

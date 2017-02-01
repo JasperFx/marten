@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using Marten.Schema;
+using Marten.Util;
 using Npgsql;
 
 namespace Marten.Services.Deletes
@@ -8,7 +9,6 @@ namespace Marten.Services.Deletes
     public class DeleteById : IDeletion
     {
         private readonly IDocumentStorage _storage;
-        private NpgsqlParameter _param;
         public object Id { get; }
         public object Document { get; }
 
@@ -27,14 +27,10 @@ namespace Marten.Services.Deletes
 
         public Type DocumentType => _storage.DocumentType;
 
-        void ICall.WriteToSql(StringBuilder builder)
+        public void ConfigureCommand(CommandBuilder builder)
         {
-            builder.Append(Sql.Replace("?", ":" + _param.ParameterName));
-        }
-
-        void IStorageOperation.AddParameters(IBatchCommand batch)
-        {
-            _param = batch.AddParameter(Id, _storage.IdType);
+            var param = builder.AddParameter(Id, _storage.IdType);
+            builder.Append(Sql.Replace("?", ":" + param.ParameterName));
         }
 
         public override string ToString()

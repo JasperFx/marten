@@ -7,30 +7,23 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services.Includes;
 using Marten.Util;
-using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.Model
 {
-    /*
-     * TODO's
-     * 1. OrderBy uses the string builder
-     * 2. Join uses the string builder
-     * 3. Use the pool for the StringBuilder's
-     */
 
     public interface ILinqQuery
     {
         QueryModel Model { get; }
         Type SourceType { get; }
-        void ConfigureCommand(NpgsqlCommand command);
-        void ConfigureCommand(NpgsqlCommand command, int limit);
-        void AppendWhere(NpgsqlCommand command, StringBuilder sql);
-        void ConfigureCount(NpgsqlCommand command);
-        void ConfigureAny(NpgsqlCommand command);
-        void ConfigureAggregate(NpgsqlCommand command, string @operator);
+        void ConfigureCommand(CommandBuilder command);
+        void ConfigureCommand(CommandBuilder command, int limit);
+        void AppendWhere(CommandBuilder sql1);
+        void ConfigureCount(CommandBuilder command);
+        void ConfigureAny(CommandBuilder command);
+        void ConfigureAggregate(CommandBuilder command, string @operator);
     }
 
     public class LinqQuery<T> : ILinqQuery
@@ -76,17 +69,15 @@ namespace Marten.Linq.Model
 
         public Type SourceType { get; }
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder command)
         {
             ConfigureCommand(command, 0);
         }
 
-        public void ConfigureCommand(NpgsqlCommand command, int limit)
+        public void ConfigureCommand(CommandBuilder sql, int limit)
         {
             var isComplexSubQuery = _subQuery != null && _subQuery.IsComplex(_joins);
 
-            // TODO -- move this to pool of StringBuilder's
-            var sql = new StringBuilder();
             if (isComplexSubQuery)
             {
                 if (_subQuery.HasSelectTransform())
@@ -108,30 +99,29 @@ namespace Marten.Linq.Model
                 Selector.WriteSelectClause(sql, _mapping);
             }
 
-            AppendWhere(command, sql);
+            AppendWhere(sql);
 
             writeOrderClause(sql);
 
             if (isComplexSubQuery)
             {
-                _subQuery.ConfigureCommand(_joins, Selector, command, sql, limit);
+                _subQuery.ConfigureCommand(_joins, Selector, sql, limit);
             }
             else
             {
-                Model.ApplySkip(command, sql);
-                Model.ApplyTake(command, limit, sql);
+                Model.ApplySkip(sql);
+                Model.ApplyTake(limit, sql);
             }
 
-            command.AppendQuery(sql.ToString());
         }
 
 
-        public void AppendWhere(NpgsqlCommand command, StringBuilder sql)
+        public void AppendWhere(CommandBuilder sql)
         {
             string filter = null;
             if (Where != null)
             {
-                filter = Where.ToSql(command);
+                filter = Where.ToSql(sql);
             }
 
             if (filter.IsNotEmpty())
@@ -141,12 +131,8 @@ namespace Marten.Linq.Model
             }
         }
 
-        public void ConfigureCount(NpgsqlCommand command)
+        public void ConfigureCount(CommandBuilder sql)
         {
-            // TODO -- take it from a pool
-            var sql = new StringBuilder();
-
-
             if (_subQuery != null)
             {
                 if (Model.HasOperator<DistinctResultOperator>())
@@ -167,16 +153,11 @@ namespace Marten.Linq.Model
             sql.Append(_mapping.Table.QualifiedName);
             sql.Append(" as d");
 
-            AppendWhere(command, sql);
-
-            command.AppendQuery(sql.ToString());
+            AppendWhere(sql);
         }
 
-        public void ConfigureAny(NpgsqlCommand command)
+        public void ConfigureAny(CommandBuilder sql)
         {
-            // TODO -- pull from an object pool
-            var sql = new StringBuilder();
-
             if (_subQuery != null)
             {
                 sql.Append("select (sum(jsonb_array_length(");
@@ -193,18 +174,13 @@ namespace Marten.Linq.Model
             sql.Append(" as d");
 
 
-            new LinqQuery<bool>(_schema, Model, new IIncludeJoin[0], null).AppendWhere(command, sql);
-
-            command.AppendQuery(sql.ToString());
+            new LinqQuery<bool>(_schema, Model, new IIncludeJoin[0], null).AppendWhere(sql);
         }
 
-        public void ConfigureAggregate(NpgsqlCommand command, string @operator)
+        public void ConfigureAggregate(CommandBuilder sql, string @operator)
         {
             var locator = _mapping.JsonLocator(Model.SelectClause.Selector);
             var field = @operator.ToFormat(locator);
-
-            // TODO -- pull from a pool
-            var sql = new StringBuilder();
 
             sql.Append("select ");
             sql.Append(field);
@@ -212,9 +188,7 @@ namespace Marten.Linq.Model
             sql.Append(_mapping.Table.QualifiedName);
             sql.Append(" as d");
 
-            AppendWhere(command, sql);
-
-            command.AppendQuery(sql.ToString());
+            AppendWhere(sql);
         }
 
 
@@ -223,7 +197,7 @@ namespace Marten.Linq.Model
             return new ListQueryHandler<T>(this);
         }
 
-        private void writeOrderClause(StringBuilder sql)
+        private void writeOrderClause(CommandBuilder sql)
         {
             var orders = bodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
             if (!orders.Any()) return;
@@ -239,7 +213,7 @@ namespace Marten.Linq.Model
 
 
 
-        private void writeOrderByFragment(StringBuilder sql, Ordering clause)
+        private void writeOrderByFragment(CommandBuilder sql, Ordering clause)
         {
             var locator = _mapping.JsonLocator(clause.Expression);
             sql.Append(locator);

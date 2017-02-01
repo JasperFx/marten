@@ -7,6 +7,7 @@ using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Includes;
+using Marten.Util;
 
 namespace Marten.Linq
 {
@@ -40,7 +41,7 @@ namespace Marten.Linq
             return _inner.SelectFields();
         }
 
-        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
+        public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
             _inner.WriteSelectClause(sql, mapping);
             foreach (var @join in _joins)

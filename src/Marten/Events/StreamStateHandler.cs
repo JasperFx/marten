@@ -25,18 +25,14 @@ namespace Marten.Events
             _events = events;
         }
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder sql)
         {
-            // TODO -- use the pool
-            var sql = new StringBuilder();
             WriteSelectClause(sql, null);
 
 
-            var param = command.AddParameter(_streamId);
+            var param = sql.AddParameter(_streamId);
             sql.Append(" where id = :");
             sql.Append(param.ParameterName);
-
-            command.AppendQuery(sql.ToString());
         }
 
         public Type SourceType => typeof (StreamState);
@@ -90,7 +86,7 @@ namespace Marten.Events
             return new string[] { "id", "version", "type", "timestamp" };
         }
 
-        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
+        public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
             sql.Append("select id, version, type, timestamp as timestamp from ");
             sql.Append(_events.DatabaseSchemaName);

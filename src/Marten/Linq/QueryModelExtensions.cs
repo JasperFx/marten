@@ -66,7 +66,7 @@ namespace Marten.Linq
             return mapping.FilterDocuments(query, @where);
         }
 
-        public static void ApplyTake(this QueryModel model, NpgsqlCommand command, int limit, StringBuilder sql)
+        public static void ApplyTake(this QueryModel model, int limit, CommandBuilder sql)
         {
             if (limit > 0)
             {
@@ -78,7 +78,7 @@ namespace Marten.Linq
                 var take = model.FindOperators<TakeResultOperator>().LastOrDefault();
                 if (take != null)
                 {
-                    var param = command.AddParameter(take.Count.Value());
+                    var param = sql.AddParameter(take.Count.Value());
                     sql.Append(" LIMIT :");
                     sql.Append(param.ParameterName);
                 }
@@ -86,12 +86,12 @@ namespace Marten.Linq
 
         }
 
-        public static void ApplySkip(this QueryModel model, NpgsqlCommand command, StringBuilder sql)
+        public static void ApplySkip(this QueryModel model, CommandBuilder sql)
         {
             var skip = model.FindOperators<SkipResultOperator>().LastOrDefault();
             if (skip != null)
             {
-                var param = command.AddParameter(skip.Count.Value());
+                var param = sql.AddParameter(skip.Count.Value());
                 sql.Append(" OFFSET :");
                 sql.Append(param.ParameterName);
             }

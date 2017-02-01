@@ -4,6 +4,7 @@ using Npgsql;
 using System.Collections.Generic;
 using Baseline;
 using Marten.Schema;
+using Marten.Util;
 using Remotion.Linq.Clauses;
 
 namespace Marten.Linq
@@ -30,7 +31,7 @@ namespace Marten.Linq
             _children.Add(child);
         }
 
-        public string ToSql(NpgsqlCommand command)
+        public string ToSql(CommandBuilder command)
         {
             return _children.Select(x => $"({x.ToSql(command)})").Join(" " + _separator + " ");
         }

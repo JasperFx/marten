@@ -30,32 +30,34 @@ namespace Marten.Linq.QueryHandlers
 
         public Type SourceType => typeof(T);
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder builder)
         {
-            var sql = _sql;
-            if (!sql.Contains("select", StringComparison.OrdinalIgnoreCase))
+            if (!_sql.Contains("select", StringComparison.OrdinalIgnoreCase))
             {
                 var mapping = _schema.MappingFor(typeof(T)).ToQueryableDocument();
                 var tableName = mapping.Table.QualifiedName;
-                sql = $"select data from {tableName} {sql}";
+
+                builder.Append("select data from ");
+                builder.Append(tableName);
+                builder.Append(" ");
             }
+
+            builder.Append(_sql);
 
             var firstParameter = _parameters.FirstOrDefault();
 
             if (_parameters.Length == 1 && firstParameter != null && firstParameter.IsAnonymousType())
             {
-                command.AddParameters(firstParameter);
+                builder.AddParameters(firstParameter);
             }
             else
             {
                 _parameters.Each(x =>
                 {
-                    var param = command.AddParameter(x);
-                    sql = sql.UseParameter(param);
+                    var param = builder.AddParameter(x);
+                    builder.UseParameter(param);
                 });
             }
-
-            command.AppendQuery(sql);
         }
 
         public IList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

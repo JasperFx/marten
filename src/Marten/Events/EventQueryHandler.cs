@@ -34,35 +34,30 @@ namespace Marten.Events
 
         public Type SourceType => typeof(IEvent);
 
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder sql)
         {
-            // TODO -- pull from StringBuilder pool
-
-            var sql = new StringBuilder();
             _selector.WriteSelectClause(sql, null);
 
  
-            var param = command.AddParameter(_streamId);
+            var param = sql.AddParameter(_streamId);
             sql.Append(" where stream_id = :");
             sql.Append(param.ParameterName);
 
             if (_version > 0)
             {
-                var versionParam = command.AddParameter(_version);
+                var versionParam = sql.AddParameter(_version);
                 sql.Append(" and version <= :");
                 sql.Append(versionParam.ParameterName);
             }
 
             if (_timestamp.HasValue)
             {
-                var timestampParam = command.AddParameter(_timestamp.Value);
+                var timestampParam = sql.AddParameter(_timestamp.Value);
                 sql.Append(" and timestamp <= :");
                 sql.Append(timestampParam.ParameterName);
             }
 
             sql.Append(" order by version");
-
-            command.AppendQuery(sql.ToString());
         }
 
         public IList<IEvent> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

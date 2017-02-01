@@ -7,6 +7,7 @@ using Marten.Linq.Model;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Includes;
+using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 
@@ -22,9 +23,9 @@ namespace Marten.Linq.QueryHandlers
         }
 
         public Type SourceType => typeof (T);
-        public void ConfigureCommand(NpgsqlCommand command)
+        public void ConfigureCommand(CommandBuilder builder)
         {
-            _inner.ConfigureCommand(command);
+            _inner.ConfigureCommand(builder);
         }
 
         public IEnumerable<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

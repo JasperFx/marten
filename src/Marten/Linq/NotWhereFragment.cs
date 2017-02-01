@@ -1,3 +1,4 @@
+using Marten.Util;
 using Npgsql;
 
 namespace Marten.Linq
@@ -12,7 +13,7 @@ namespace Marten.Linq
             
         }
 
-        public string ToSql(NpgsqlCommand command)
+        public string ToSql(CommandBuilder command)
         {
             return $"NOT({_inner.ToSql(command)})";
         }

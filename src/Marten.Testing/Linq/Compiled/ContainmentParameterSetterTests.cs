@@ -3,6 +3,7 @@ using System.Reflection;
 using Marten.Linq;
 using Marten.Linq.Compiled;
 using Marten.Services;
+using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Shouldly;
@@ -102,8 +103,9 @@ namespace Marten.Testing.Linq.Compiled
             };
 
             var command = new NpgsqlCommand();
+            var builder = new CommandBuilder(command);
 
-            var parameter = setter.AddParameter(target, command);
+            var parameter = setter.AddParameter(target, builder);
 
             parameter.NpgsqlDbType.ShouldBe(NpgsqlDbType.Jsonb);
             parameter.Value.ShouldBe("{\"Children\":[{\"color\":\"Blue\",\"name\":\"Ronald McDonald\",\"rank\":5}]}");

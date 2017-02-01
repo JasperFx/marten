@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 using Marten.Linq;
-using Marten.Schema;
+using Marten.Util;
 
 namespace Marten.Services.Deletes
 {
@@ -17,19 +17,14 @@ namespace Marten.Services.Deletes
             Sql = sql;
         }
 
-        void ICall.WriteToSql(StringBuilder builder)
+        public void ConfigureCommand(CommandBuilder builder)
         {
-            builder.Append(Sql);
+            var whereClause = _where.ToSql(builder);
+
+            builder.Append(Sql.Replace("?", whereClause));
         }
 
-        void IStorageOperation.AddParameters(IBatchCommand batch)
-        {
-            var whereClause = _where.ToSql(batch.Command);
-
-            Sql = Sql.Replace("?", whereClause);
-        }
-
-        public string Sql { get; private set; }
+        public string Sql { get; }
 
         public override string ToString()
         {

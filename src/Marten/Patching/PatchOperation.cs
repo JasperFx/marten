@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Transforms;
+using Marten.Util;
 using NpgsqlTypes;
-using Baseline;
 
 namespace Marten.Patching
 {
@@ -17,71 +16,69 @@ namespace Marten.Patching
         private readonly IQueryableDocument _document;
         private readonly IWhereFragment _fragment;
         private readonly IDictionary<string, object> _patch;
+        private readonly ISerializer _serializer;
         private readonly TransformFunction _transform;
-        private string _sql;
-        private string _where;
 
         public PatchOperation(TransformFunction transform, IQueryableDocument document, IWhereFragment fragment,
-            IDictionary<string, object> patch)
+            IDictionary<string, object> patch, ISerializer serializer)
         {
             _transform = transform;
             _document = document;
             _fragment = fragment;
             _patch = patch;
+            _serializer = serializer;
         }
 
-        void ICall.WriteToSql(StringBuilder builder)
+        // TODO -- come back and do this with a single command!
+        public void ConfigureCommand(CommandBuilder builder)
         {
-            builder.Append(_sql);
-        }
+            var patchJson = _serializer.ToCleanJson(_patch);
+            var patchParam = builder.AddJsonParameter(patchJson);
+            var versionParam = builder.AddParameter(CombGuidIdGeneration.NewGuid(), NpgsqlDbType.Uuid);
 
-        public void AddParameters(IBatchCommand batch)
-        {
-            var patchJson = batch.Serializer.ToCleanJson(_patch);
-            var patchParam = batch.AddParameter(patchJson, NpgsqlDbType.Jsonb);
-            var versionParam = batch.AddParameter(CombGuidIdGeneration.NewGuid(), NpgsqlDbType.Uuid);
+            builder.Append("update ");
+            builder.Append(_document.Table.QualifiedName);
+            builder.Append(" as d set data = ");
+            builder.Append(_transform.Function.QualifiedName);
+            builder.Append("(data, :");
+            builder.Append(patchParam.ParameterName);
+            builder.Append("), ");
+            builder.Append(DocumentMapping.LastModifiedColumn);
+            builder.Append(" = (now() at time zone 'utc'), ");
+            builder.Append(DocumentMapping.VersionColumn);
+            builder.Append(" = :");
+            builder.Append(versionParam.ParameterName);
 
-            _where = _fragment.ToSql(batch.Command);
-            if (!_where.StartsWith("where "))
-                _where = "where " + _where;
+            var where = _fragment.ToSql(builder);
+            if (!where.StartsWith("where "))
+                builder.Append(" where ");
 
-            _sql = $@"
-update {_document.Table.QualifiedName} as d 
-set data = {_transform.Function.QualifiedName}(data, :{patchParam.ParameterName}), {DocumentMapping.LastModifiedColumn} = (now() at time zone 'utc'), {DocumentMapping.VersionColumn} = :{versionParam.ParameterName}
-{_where}";
+            builder.Append(" ");
+            builder.Append(where);
 
-        }
-
-        public IStorageOperation UpdateDuplicateFieldOperation()
-        {
-            return new UpdateDuplicateFields(this);
+            applyUpdates(builder, where);
         }
 
         public Type DocumentType => _document.DocumentType;
 
-        public class UpdateDuplicateFields : IStorageOperation
+        private void applyUpdates(CommandBuilder builder, string where)
         {
-            private readonly PatchOperation _parent;
+            var fields = _document.DuplicatedFields;
+            if (!fields.Any()) return;
 
-            public UpdateDuplicateFields(PatchOperation parent)
+            builder.Append(";update ");
+            builder.Append(_document.Table.QualifiedName);
+            builder.Append(" as d set ");
+
+            builder.Append(fields[0].UpdateSqlFragment());
+            for (var i = 1; i < fields.Length; i++)
             {
-                _parent = parent;
+                builder.Append(", ");
+                builder.Append(fields[i].UpdateSqlFragment());
             }
 
-            public void WriteToSql(StringBuilder builder)
-            {
-                var setters = _parent._document.DuplicatedFields.Select(x => x.UpdateSqlFragment()).Join(", ");
-                builder.Append($"update {_parent._document.Table.QualifiedName} as d set {setters} {_parent._where}");
-            }
-
-            public void AddParameters(IBatchCommand batch)
-            {
-                // nothing here
-            }
-
-            public Type DocumentType => _parent.DocumentType;
+            builder.Append(" ");
+            builder.Append(where);
         }
     }
-
-
 }

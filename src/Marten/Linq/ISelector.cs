@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Util;
+using Npgsql;
 
 namespace Marten.Linq
 {
@@ -15,7 +17,7 @@ namespace Marten.Linq
         string[] SelectFields();
 
         // TODO -- have this take in StringBuilder too
-        void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping);
+        void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping);
     }
 
 
@@ -43,7 +45,7 @@ namespace Marten.Linq
             throw new NotSupportedException();
         }
 
-        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
+        public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
             throw new NotSupportedException();
         }
@@ -67,7 +69,7 @@ namespace Marten.Linq
 
         public string[] SelectFields() => _selectFields;
 
-        public void WriteSelectClause(StringBuilder sql, IQueryableDocument mapping)
+        public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
             sql.Append("select ");
             if (_distinct)
@@ -94,7 +96,7 @@ namespace Marten.Linq
         // Polyfill for the Async Daemon where it doesn't do any harm
         public static string ToSelectClause(this ISelector selector, IQueryableDocument mapping)
         {
-            var builder = new StringBuilder();
+            var builder = new CommandBuilder(new NpgsqlCommand());
             selector.WriteSelectClause(builder, mapping);
 
             return builder.ToString();

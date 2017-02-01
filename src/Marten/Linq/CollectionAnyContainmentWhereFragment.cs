@@ -29,7 +29,7 @@ namespace Marten.Linq
             _expression = expression;
         }
 
-        public string ToSql(NpgsqlCommand command)
+        public string ToSql(CommandBuilder command)
         {
             var wheres = _expression
                 .QueryModel
@@ -49,10 +49,11 @@ namespace Marten.Linq
             var conditions = new List<string>();
             conditions.AddRange(buildBinary(binaryExpressions, command));
             conditions.AddRange(subQueryExpressions.Select(s => buildSubQuery(s, command)));
+
             return conditions.Join(" AND ");
         }
 
-        private IEnumerable<string> buildBinary(BinaryExpression[] binaryExpressions, NpgsqlCommand command)
+        private IEnumerable<string> buildBinary(BinaryExpression[] binaryExpressions, CommandBuilder command)
         {
             if (!binaryExpressions.Any())
             {
@@ -138,7 +139,7 @@ namespace Marten.Linq
             }
         }
 
-        private string buildSubQuery(SubQueryExpression subQuery, NpgsqlCommand command)
+        private string buildSubQuery(SubQueryExpression subQuery, CommandBuilder command)
         {
             var contains = subQuery.QueryModel.ResultOperators.OfType<ContainsResultOperator>().FirstOrDefault();
             if (contains == null)
