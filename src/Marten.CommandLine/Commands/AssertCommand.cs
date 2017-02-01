@@ -2,7 +2,7 @@
 using Marten.Schema;
 using Oakton;
 
-namespace Marten.CommandLine
+namespace Marten.CommandLine.Commands
 {
     [Description("Assert that the existing database matches the current Marten configuration")]
     public class AssertCommand : MartenCommand<MartenInput>

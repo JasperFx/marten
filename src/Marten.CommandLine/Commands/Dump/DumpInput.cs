@@ -1,6 +1,6 @@
 ﻿using Oakton;
 
-namespace Marten.CommandLine
+namespace Marten.CommandLine.Commands.Dump
 {
     public class DumpInput : MartenInput
     {

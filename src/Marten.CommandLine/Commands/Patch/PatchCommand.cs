@@ -2,7 +2,7 @@
 using Marten.Schema;
 using Oakton;
 
-namespace Marten.CommandLine
+namespace Marten.CommandLine.Commands.Patch
 {
     [Description(
          "Evaluates the current configuration against the database and writes a patch and drop file if there are any differences"
