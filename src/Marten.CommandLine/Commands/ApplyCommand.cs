@@ -1,7 +1,7 @@
 ﻿using System;
 using Oakton;
 
-namespace Marten.CommandLine
+namespace Marten.CommandLine.Commands
 {
     [Description("Applies all outstanding changes to the database based on the current configuration")]
     public class ApplyCommand : MartenCommand<MartenInput>

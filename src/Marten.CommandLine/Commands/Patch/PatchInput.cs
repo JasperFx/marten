@@ -1,6 +1,6 @@
 ﻿using Oakton;
 
-namespace Marten.CommandLine
+namespace Marten.CommandLine.Commands.Patch
 {
     public class PatchInput : MartenInput
     {

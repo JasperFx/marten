@@ -2,7 +2,7 @@
 using Baseline;
 using Oakton;
 
-namespace Marten.CommandLine
+namespace Marten.CommandLine.Commands.Dump
 {
     [Description("Dumps the entire DDL for the configured Marten database")]
     public class DumpCommand : MartenCommand<DumpInput>
