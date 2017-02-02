@@ -71,11 +71,14 @@ namespace Marten.Linq.Parsing
             _locator = locator;
         }
 
-        public string ToSql(CommandBuilder command)
+        public void Apply(CommandBuilder builder)
         {
-            var param = command.AddParameter(_values, _dbType);
+            var param = builder.AddParameter(_values, _dbType);
 
-            return $"{_locator} = ANY(:{param.ParameterName})";
+            builder.Append(_locator);
+            builder.Append(" = ANY(:");
+            builder.Append(param.ParameterName);
+            builder.Append(")");
         }
 
         public bool Contains(string sqlText)

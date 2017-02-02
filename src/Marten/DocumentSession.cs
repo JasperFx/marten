@@ -273,7 +273,7 @@ namespace Marten
         {
             assertNotDisposed();
 
-            var @where = new WhereFragment("where d.id = ?", id);
+            var @where = new WhereFragment("d.id = ?", id);
             return new PatchExpression<T>(@where, _schema, _unitOfWork, _serializer);
         }
 

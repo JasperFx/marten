@@ -19,9 +19,11 @@ namespace Marten.Services.Deletes
 
         public void ConfigureCommand(CommandBuilder builder)
         {
-            var whereClause = _where.ToSql(builder);
+            var parts = Sql.Split('?');
 
-            builder.Append(Sql.Replace("?", whereClause));
+            builder.Append(parts[0]);
+            _where.Apply(builder);
+            builder.Append(parts[1]);
         }
 
         public string Sql { get; }

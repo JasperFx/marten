@@ -13,9 +13,11 @@ namespace Marten.Linq
             
         }
 
-        public string ToSql(CommandBuilder command)
+        public void Apply(CommandBuilder builder)
         {
-            return $"NOT({_inner.ToSql(command)})";
+            builder.Append("NOT(");
+            _inner.Apply(builder);
+            builder.Append(")");
         }
 
         public bool Contains(string sqlText)

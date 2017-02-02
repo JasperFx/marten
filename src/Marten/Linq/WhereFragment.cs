@@ -20,16 +20,16 @@ namespace Marten.Linq
             _token = paramReplacementToken;
         }
 
-        public string ToSql(CommandBuilder command)
+        public void Apply(CommandBuilder builder)
         {
             var sql = _sql;
             _parameters.Each(x =>
             {
-                var param = command.AddParameter(x.Item1, x.Item2);
+                var param = builder.AddParameter(x.Item1, x.Item2);
                 sql = sql.ReplaceFirst(_token, ":" + param.ParameterName);
             });
 
-            return sql;
+            builder.Append(sql);
         }
 
         public bool Contains(string sqlText)

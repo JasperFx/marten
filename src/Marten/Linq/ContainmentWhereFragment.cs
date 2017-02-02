@@ -28,13 +28,14 @@ namespace Marten.Linq
             CreateDictionaryForSearch(binary, _dictionary);
         }
 
-        public string ToSql(CommandBuilder command)
+        public void Apply(CommandBuilder builder)
         {
             var json = _serializer.ToCleanJson(_dictionary);
-            var param = command.AddParameter(json);
+            var param = builder.AddParameter(json);
             param.NpgsqlDbType = NpgsqlDbType.Jsonb;
 
-            return $"d.data @> :{param.ParameterName}";
+            builder.Append("d.data @> :");
+            builder.Append(param.ParameterName);
         }
 
         public bool Contains(string sqlText)
