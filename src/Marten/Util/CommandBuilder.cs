@@ -40,7 +40,6 @@ namespace Marten.Util
         {
             if (handlers.Count() == 1) return ToCommand(handlers.Single());
 
-            // TODO -- move this to a pool
             var wholeStatement = new StringBuilder();
             var command = new NpgsqlCommand();
 
@@ -97,7 +96,6 @@ namespace Marten.Util
 
         public void Dispose()
         {
-            // TODO -- have this release the StringBuilder back to the pool
 
         }
 
