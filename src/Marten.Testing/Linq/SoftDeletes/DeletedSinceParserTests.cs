@@ -32,7 +32,9 @@ namespace Marten.Testing.Linq.SoftDeletes
 
             var builder = new CommandBuilder(new NpgsqlCommand());
 
-            result.ToSql(builder).ShouldContain("d.mt_deleted and d.mt_deleted_at >");
+            result.Apply(builder);
+            
+            builder.ToString().ShouldContain("d.mt_deleted and d.mt_deleted_at >");
         }
 
         [Fact]

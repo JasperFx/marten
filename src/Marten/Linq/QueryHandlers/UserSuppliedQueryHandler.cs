@@ -39,8 +39,18 @@ namespace Marten.Linq.QueryHandlers
 
                 builder.Append("select data from ");
                 builder.Append(tableName);
-                builder.Append(" ");
+
+                if (_sql.StartsWith("where"))
+                {
+                    builder.Append(" ");
+                }
+                else if (!_sql.Contains(" where "))
+                {
+                    builder.Append(" where ");
+                }
             }
+
+            
 
             builder.Append(_sql);
 

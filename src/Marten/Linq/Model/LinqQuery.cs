@@ -118,16 +118,10 @@ namespace Marten.Linq.Model
 
         public void AppendWhere(CommandBuilder sql)
         {
-            string filter = null;
             if (Where != null)
             {
-                filter = Where.ToSql(sql);
-            }
-
-            if (filter.IsNotEmpty())
-            {
                 sql.Append(" where ");
-                sql.Append(filter);
+                Where.Apply(sql);
             }
         }
 

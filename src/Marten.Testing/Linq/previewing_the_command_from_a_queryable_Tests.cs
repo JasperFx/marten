@@ -23,7 +23,7 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().Where(x => x.Number == 3 && x.Double > 2).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :arg0) and (CAST(d.data ->> 'Double' as double precision) > :arg1)");
+            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :arg0 and CAST(d.data ->> 'Double' as double precision) > :arg1)");
 
             cmd.Parameters.Count.ShouldBe(2);
             cmd.Parameters["arg0"].Value.ShouldBe(3);
@@ -76,7 +76,7 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().Where(x => x.Number == 3 && x.Double > 2).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from other.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :arg0) and (CAST(d.data ->> 'Double' as double precision) > :arg1)");
+            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from other.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :arg0 and CAST(d.data ->> 'Double' as double precision) > :arg1)");
 
             cmd.Parameters.Count.ShouldBe(2);
             cmd.Parameters["arg0"].Value.ShouldBe(3);

@@ -29,7 +29,7 @@ namespace Marten.Linq
             _expression = expression;
         }
 
-        public string ToSql(CommandBuilder command)
+        public void Apply(CommandBuilder builder)
         {
             var wheres = _expression
                 .QueryModel
@@ -47,10 +47,18 @@ namespace Marten.Linq
             var subQueryExpressions = wheres.OfType<SubQueryExpression>().ToArray();
 
             var conditions = new List<string>();
-            conditions.AddRange(buildBinary(binaryExpressions, command));
-            conditions.AddRange(subQueryExpressions.Select(s => buildSubQuery(s, command)));
+            conditions.AddRange(buildBinary(binaryExpressions, builder));
+            conditions.AddRange(subQueryExpressions.Select(s => buildSubQuery(s, builder)));
 
-            return conditions.Join(" AND ");
+            if (conditions.Any())
+            {
+                builder.Append(conditions[0]);
+                for (int i = 1; i < conditions.Count; i++)
+                {
+                    builder.Append(" AND ");
+                    builder.Append(conditions[i]);
+                }
+            }
         }
 
         private IEnumerable<string> buildBinary(BinaryExpression[] binaryExpressions, CommandBuilder command)

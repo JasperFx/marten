@@ -49,19 +49,23 @@ namespace Marten.Patching
             builder.Append(" = :");
             builder.Append(versionParam.ParameterName);
 
-            var where = _fragment.ToSql(builder);
-            if (!where.StartsWith("where "))
+            if (!_fragment.Contains("where"))
+            {
                 builder.Append(" where ");
+            }
+            else
+            {
+                builder.Append(" ");
+            }
 
-            builder.Append(" ");
-            builder.Append(where);
+            _fragment.Apply(builder);
 
-            applyUpdates(builder, where);
+            applyUpdates(builder, _fragment);
         }
 
         public Type DocumentType => _document.DocumentType;
 
-        private void applyUpdates(CommandBuilder builder, string where)
+        private void applyUpdates(CommandBuilder builder, IWhereFragment where)
         {
             var fields = _document.DuplicatedFields;
             if (!fields.Any()) return;
@@ -77,8 +81,8 @@ namespace Marten.Patching
                 builder.Append(fields[i].UpdateSqlFragment());
             }
 
-            builder.Append(" ");
-            builder.Append(where);
+            builder.Append(" where ");
+            where.Apply(builder);
         }
     }
 }

@@ -1,7 +1,5 @@
-using System;
-using System.Linq;
-using Npgsql;
 using System.Collections.Generic;
+using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Util;
@@ -11,10 +9,11 @@ namespace Marten.Linq
 {
     public class CompoundWhereFragment : IWhereFragment
     {
-        private readonly string _separator;
         private readonly IList<IWhereFragment> _children = new List<IWhereFragment>();
+        private readonly string _separator;
 
-        public CompoundWhereFragment(MartenExpressionParser parser, IQueryableDocument mapping, string separator, IEnumerable<WhereClause> wheres)
+        public CompoundWhereFragment(MartenExpressionParser parser, IQueryableDocument mapping, string separator,
+            IEnumerable<WhereClause> wheres)
         {
             _separator = separator;
             _children = wheres.Select(x => parser.ParseWhereFragment(mapping, x.Predicate)).ToArray();
@@ -26,19 +25,31 @@ namespace Marten.Linq
             _children.AddRange(children);
         }
 
-        public void Add(IWhereFragment child)
+        public void Apply(CommandBuilder builder)
         {
-            _children.Add(child);
-        }
+            if (!_children.Any()) return;
 
-        public string ToSql(CommandBuilder command)
-        {
-            return _children.Select(x => $"({x.ToSql(command)})").Join(" " + _separator + " ");
+            var separator = $" {_separator} ";
+
+            builder.Append("(");
+            _children[0].Apply(builder);
+            for (var i = 1; i < _children.Count; i++)
+            {
+                builder.Append(separator);
+                _children[i].Apply(builder);
+            }
+
+            builder.Append(")");
         }
 
         public bool Contains(string sqlText)
         {
             return _children.Any(x => x.Contains(sqlText));
+        }
+
+        public void Add(IWhereFragment child)
+        {
+            _children.Add(child);
         }
     }
 }

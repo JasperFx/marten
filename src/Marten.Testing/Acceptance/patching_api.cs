@@ -76,15 +76,15 @@ namespace Marten.Testing.Acceptance
             theSession.SaveChanges();
 
             // SAMPLE: initialise_a_new_property_by_expression
-    const string where = "where (data ->> 'UpdatedAt') is null";
-    theSession.Query<Target>(where).Count.ShouldBe(3);
-    theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
-    theSession.SaveChanges();
+            const string where = "where (data ->> 'UpdatedAt') is null";
+            theSession.Query<Target>(where).Count.ShouldBe(3);
+            theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
+            theSession.SaveChanges();
 
-    using (var query = theStore.QuerySession())
-    {
-        query.Query<Target>(where).Count.ShouldBe(0);
-    }
+            using (var query = theStore.QuerySession())
+            {
+                query.Query<Target>(where).Count.ShouldBe(0);
+            }
             // ENDSAMPLE
         }
 
@@ -736,7 +736,7 @@ namespace Marten.Testing.Acceptance
             theSession.SaveChanges();
 
             // SAMPLE: delete_existing_property
-    theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
+            theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
             // ENDSAMPLE
             theSession.SaveChanges();
 
@@ -758,15 +758,15 @@ namespace Marten.Testing.Acceptance
             theSession.SaveChanges();
 
             // SAMPLE: delete_property_from_many_documents
-    const string where = "where (data ->> 'String') is not null";
-    theSession.Query<Target>(where).Count.ShouldBe(15);
-    theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
-    theSession.SaveChanges();
+            const string where = "(data ->> 'String') is not null";
+            theSession.Query<Target>(where).Count.ShouldBe(15);
+            theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
+            theSession.SaveChanges();
 
-    using (var query = theStore.QuerySession())
-    {
-        query.Query<Target>(where).Count(t => t.String != null).ShouldBe(0);
-    }
+            using (var query = theStore.QuerySession())
+            {
+                query.Query<Target>(where).Count(t => t.String != null).ShouldBe(0);
+            }
             // ENDSAMPLE
         }
 

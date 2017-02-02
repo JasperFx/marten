@@ -186,7 +186,7 @@ namespace Marten.Linq.Model
             if (@where != null)
             {
                 sql.Append(" where ");
-                sql.Append(@where.ToSql(sql));
+                @where.Apply(sql);
             }
 
             var orderBy = determineOrderClause(_document);

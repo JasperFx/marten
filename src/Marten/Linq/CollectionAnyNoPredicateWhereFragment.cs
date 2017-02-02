@@ -1,8 +1,8 @@
+using System;
 using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Util;
-using Npgsql;
 using Remotion.Linq.Clauses.Expressions;
 
 namespace Marten.Linq
@@ -21,20 +21,35 @@ namespace Marten.Linq
             _expression = expression;
         }
 
-        public string ToSql(CommandBuilder command)
-        {            
-            
+        public void Apply(CommandBuilder builder)
+        {
+            builder.Append("JSONB_ARRAY_LENGTH(COALESCE(case when data->>'");
 
-            var path = _members.Select(m => m.Name).Join("'->'");
+            builder.Append(_members[0].Name);
+            for (int i = 1; i < _members.Length; i++)
+            {
+                builder.Append("'->'");
+                builder.Append(_members[i].Name);
+            }
 
             if (_members.Length == 1)
             {
-                return $"JSONB_ARRAY_LENGTH(COALESCE(case when data->>'{path}' is not null then data->'{path}' else '[]' end)) > 0";
+                builder.Append("' is not null then data->>'");
             }
             else
             {
-                return $"JSONB_ARRAY_LENGTH(COALESCE(case when data->'{path}' is not null then data->'{path}' else '[]' end)) > 0";
+                builder.Append("' is not null then data->'");
             }
+
+            builder.Append(_members[0].Name);
+            for (int i = 1; i < _members.Length; i++)
+            {
+                builder.Append("'->'");
+                builder.Append(_members[i].Name);
+            }
+
+
+            builder.Append("' else '[]' end)) > 0");
         }
      
         public bool Contains(string sqlText)

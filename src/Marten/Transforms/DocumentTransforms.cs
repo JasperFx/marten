@@ -27,44 +27,89 @@ namespace Marten.Transforms
 
         public void All<T>(string transformName)
         {
+            
+
             var transform = _store.Schema.TransformFor(transformName);
             var mapping = _store.Schema.MappingFor(typeof(T));
 
+            var cmd = CommandBuilder.BuildCommand(sql =>
+            {
+                writeBasicSql(sql, mapping, transform);
 
-            var sql = toBasicSql(mapping, transform);
-            var where = mapping.ToQueryableDocument().DefaultWhereFragment();
+                var where = mapping.ToQueryableDocument().DefaultWhereFragment();
+                if (where != null)
+                {
+                    sql.Append(" where ");
+                    where.Apply(sql);
+                }
+            });
+
 
             using (var conn = _store.Advanced.OpenConnection())
             {
-                conn.Execute(c =>
+                conn.Execute(cmd, c =>
                 {
-                    if (where != null)
-                    {
-                        sql = sql.AppendWhere(where, c);
-                    }
-
-                    c.Sql(sql);
                     c.ExecuteNonQuery();
                 });
             }
         }
 
-        private static string toBasicSql(IDocumentMapping mapping, TransformFunction transform)
+        private static void writeBasicSql(CommandBuilder sql, IDocumentMapping mapping, TransformFunction transform)
         {
             var version = CombGuidIdGeneration.NewGuid();
-            return $"update {mapping.Table.QualifiedName} as d set data = {transform.Function.QualifiedName}(data), {DocumentMapping.LastModifiedColumn} = (now() at time zone 'utc'), {DocumentMapping.VersionColumn} = '{version}'";
+
+            sql.Append("update ");
+            sql.Append(mapping.Table.QualifiedName);
+            sql.Append(" as d set data = ");
+            sql.Append(transform.Function.QualifiedName);
+            sql.Append("(data), ");
+            sql.Append(DocumentMapping.LastModifiedColumn);
+            sql.Append(" = (now() at time zone 'utc'), ");
+            sql.Append(DocumentMapping.VersionColumn);
+            sql.Append(" = '");
+            sql.Append(version);
+            sql.Append("'");
         }
 
         public void Where<T>(string transformName, Expression<Func<T, bool>> @where)
         {
             var transform = _store.Schema.TransformFor(transformName);
             var mapping = _store.Schema.MappingFor(typeof(T));
-            var sql = toBasicSql(mapping, transform);
+            var whereFragment = findWhereFragment(@where, mapping);
 
+            var cmd = CommandBuilder.BuildCommand(sql =>
+            {
+                writeBasicSql(sql, mapping, transform);
+                if (whereFragment != null)
+                {
+                    sql.Append(" where ");
+                    whereFragment.Apply(sql);
+                }
+            });
+
+
+
+            using (var conn = _factory.Create())
+            {
+                conn.Open();
+
+                var tx = conn.BeginTransaction(IsolationLevel.ReadCommitted);
+
+                cmd.Connection = conn;
+                cmd.Transaction = tx;
+
+                cmd.ExecuteNonQuery();
+
+                tx.Commit();
+            }
+        }
+
+        private IWhereFragment findWhereFragment<T>(Expression<Func<T, bool>> @where, IDocumentMapping mapping)
+        {
             QueryModel queryModel;
             using (var session = _store.QuerySession())
             {
-                queryModel = session.Query<T>().Where(@where).As<MartenQueryable<T>>().ToQueryModel(); 
+                queryModel = session.Query<T>().Where(@where).As<MartenQueryable<T>>().ToQueryModel();
             }
 
             var wheres = queryModel.BodyClauses.OfType<WhereClause>().ToArray();
@@ -74,23 +119,9 @@ namespace Marten.Transforms
             }
 
             var whereFragment = _store.Schema.Parser.ParseWhereFragment(mapping.ToQueryableDocument(), wheres.First().Predicate);
-            whereFragment = mapping.ToQueryableDocument().FilterDocuments(queryModel, whereFragment);
+            mapping.ToQueryableDocument().FilterDocuments(queryModel, whereFragment);
 
-            using (var conn = _factory.Create())
-            {
-                conn.Open();
-                var tx = conn.BeginTransaction(IsolationLevel.ReadCommitted);
-                var cmd = conn.CreateCommand();
-                cmd.Transaction = tx;
-
-                sql = sql.AppendWhere(whereFragment, cmd);
-
-                cmd.CommandText = sql;
-
-                cmd.ExecuteNonQuery();
-
-                tx.Commit();
-            }
+            return whereFragment;
         }
 
 
@@ -104,12 +135,18 @@ namespace Marten.Transforms
             var transform = _store.Schema.TransformFor(transformName);
             var mapping = _store.Schema.MappingFor(typeof(T));
 
+            var cmd = CommandBuilder.BuildCommand(sql =>
+            {
+                writeBasicSql(sql, mapping, transform);
+                sql.Append(" where id = :id");
 
-            var sql = toBasicSql(mapping, transform) + " where id = :id";
+                sql.AddNamedParameter("id", id);
+            });
+
 
             using (var conn = _store.Advanced.OpenConnection())
             {
-                conn.Execute(c => c.Sql(sql).With("id", id).ExecuteNonQuery());
+                conn.Execute(cmd, c => c.ExecuteNonQuery());
             }
         }
 

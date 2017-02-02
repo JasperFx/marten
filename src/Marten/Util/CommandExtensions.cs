@@ -45,27 +45,6 @@ namespace Marten.Util
             return list;
         }
 
-        public static string AppendWhere(this string sql, IWhereFragment where, NpgsqlCommand command)
-        {
-            if (where == null) return sql;
-
-            return sql + " where " + where.ToSql(new CommandBuilder(command));
-        }
-
-        [Obsolete("Kill this and use CommandBuilder instead")]
-        public static NpgsqlCommand AppendQuery(this NpgsqlCommand command, string sql)
-        {
-            if (command.CommandText.IsEmpty())
-            {
-                command.CommandText = sql;
-            }
-            else
-            {
-                command.CommandText += ";" + sql;
-            }
-
-            return command;
-        }
 
         public static void AddParameters(this NpgsqlCommand command, object parameters)
         {

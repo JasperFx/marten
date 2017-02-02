@@ -10,6 +10,19 @@ namespace Marten.Util
 {
     public class CommandBuilder  : IDisposable
     {
+        public static NpgsqlCommand BuildCommand(Action<CommandBuilder> configure)
+        {
+            var cmd = new NpgsqlCommand();
+            using (var builder = new CommandBuilder(cmd))
+            {
+                configure(builder);
+
+                cmd.CommandText = builder.ToString();
+            }
+
+            return cmd;
+        }
+
         public static NpgsqlCommand ToCommand(IQueryHandler handler)
         {
             var command = new NpgsqlCommand();
