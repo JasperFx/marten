@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
@@ -16,7 +14,6 @@ namespace Marten.Linq
     {
         string[] SelectFields();
 
-        // TODO -- have this take in StringBuilder too
         void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping);
     }
 
