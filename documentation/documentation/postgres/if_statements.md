@@ -19,13 +19,13 @@ Everything inside the begin/end will use PL/pgSQL by default as an assumed langu
 
 You can be explicit about the language by defining the language at the end of the block like so:
 
-DO %%
-BEGIN
+    DO %%
+    BEGIN
 
-    // your sql here…
+        // your sql here…
 
-END
-%% LANGUAGE plpgsql;
+    END
+    %% LANGUAGE plpgsql;
 
 Note: `DO` is not part of the SQL Standard and is unique to PostgreSQL.
 
