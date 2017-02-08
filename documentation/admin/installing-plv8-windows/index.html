@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.3.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -44,7 +44,7 @@
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
 		      	<li><a href="/marten/documentation/admin" title="Managing PostgreSQL Instance">Previous</a></li>
-		      	
+		      	<li><a href="/marten/documentation/postgres" title="Postgres for SQL Server users">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -77,7 +77,7 @@
 
 		        </ul>
 
-		        	
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/postgres">Postgres for SQL Server users</a></p>
 		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/admin">Managing PostgreSQL Instance</a></p>
 
 		        </ul>
@@ -94,17 +94,17 @@
 <!--Url:installing-plv8-windows-->
 <p>In order to use the JavaScript functions, you need to install plv8. The Windows install of PostgreSQL 9.5 / 9.6, and possibly future versions, do not come with plv8 installed.</p>
 <p>If you attempt to install the extension for your database:</p>
-<pre><code>CREATE EXTENSION plv8;
+<pre><code class="language-sql">CREATE EXTENSION plv8;
 </code></pre>
 <p>You may be greeted with the following:</p>
 <pre><code>sql&gt; create extension plv8
 [2016-12-06 22:53:22] [58P01] ERROR: could not open extension control file &quot;C:/Program Files/PostgreSQL/9.5/share/extension/plv8.control&quot;: No such file or directory
 </code></pre>
-<p>This means that the plv8 extension doesn't exist for you to install.</p>
+<p>This means that the plv8 extension isn't installed so you're unable to create it in the database for usage.</p>
 <h2 id="download">Download</h2>
 <p>You can download the appropriate binaries for PostgreSQL 9.5/PostgreSQL 9.6 from:</p>
-<p>http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html</p>
-<p>http://www.postgresonline.com/journal/archives/367-PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit.html</p>
+<p><a href="http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html">PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit</a></p>
+<p><a href="http://www.postgresonline.com/journal/archives/367-PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit.html">PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit</a></p>
 <p>Download the version that corresponds to the version of PostgreSQL you installed (32 or 64 bit)</p>
 <h2 id="install">Install</h2>
 <p>The zip should contain 3 folders:</p>
@@ -131,7 +131,7 @@
 </blockquote>
 <h2 id="create-extension">Create Extension</h2>
 <p>Once you have moved all the files to the correct folder, you can now call the create extension again:</p>
-<pre><code>CREATE EXTENSION plv8;
+<pre><code class="language-sql">CREATE EXTENSION plv8;
 </code></pre>
 <p>This time you should get the message like:</p>
 <pre><code>sql&gt; create extension plv8
@@ -139,18 +139,18 @@
 </code></pre>
 <h2 id="testing-out-the-extension">Testing out the extension</h2>
 <p>To test out the extension you can create a super basic function which manipulates a string input and returns the value.</p>
-<pre><code>create or replace function test_js_func(value text) returns text as $$
+<pre><code class="language-sql">create or replace function test_js_func(value text) returns text as $$
 
-var thing = 'I\' a JavaScript string';
+    var thing = 'I\' a JavaScript string';
 
-var result = thing.replace(/JavaScript/g, value);
+    var result = thing.replace(/JavaScript/g, value);
 
-return result;
+    return result;
 
 $$ language plv8;
 </code></pre>
 <p>Then we can invoke it:</p>
-<pre><code>select test_js_func('Manipulated');
+<pre><code class="language-sql">select test_js_func('Manipulated');
 </code></pre>
 <p>And we should get a result that reads:</p>
 <blockquote>
@@ -168,7 +168,7 @@ $$ language plv8;
 				        </span>
 				        <span class="pull-right">
 
-				        	
+				        	<strong>Next: </strong><a href="/marten/documentation/postgres">Postgres for SQL Server users</a>
 
 				        </span>
 			      	</nav>

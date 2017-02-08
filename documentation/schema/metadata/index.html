@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.3.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -91,18 +91,21 @@
 
 			      	<div id="main-pane">
 			      		<!--Title:Working with Marten's Metadata Columns-->
-<p>When Marten generates a table for document storage it now adds three <em>metadata</em> columns
+<p>When Marten generates a table for document storage it now adds several <em>metadata</em> columns
 that further describe the document:</p>
 <ol>
 <li><code>mt_last_modified</code> - a timestamp of the last time the document was modified</li>
 <li><code>mt_dotnet_type</code> - The <code>FullName</code> property of the actual .Net type persisted. This is strictly for information and is not used by Marten itself.</li>
-<li><code>mt_version</code> - A sequential (as of 1.0-alpha) Guid designating the revision of the document. Marten uses
+<li><code>mt_version</code> - A sequential Guid designating the revision of the document. Marten uses
 this column in its optimistic concurrency checks</li>
+<li><code>mt_doc_type</code> - document name (<em>document <a href="/marten/documentation/documents/advanced/hierarchies">hierarchies</a> only</em>)</li>
+<li><code>mt_deleted</code> - a boolean flag representing deleted state (<em><a href="/marten/documentation/documents/advanced/soft_deletes">soft deletes</a> only</em>)</li>
+<li><code>mt_deleted_at</code> - a timestamp of the time the document was deleted (<em><a href="/marten/documentation/documents/advanced/soft_deletes">soft deletes</a> only</em>)</li>
 </ol>
 <h2 id="finding-the-metadata-for-a-document">Finding the Metadata for a Document</h2>
 <p>You can find the metadata values for a given document object with the following mechanism
 on <code>IDocumentStore.Advanced</code>:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void hit_returns_values()&#xD;&#xA;{&#xD;&#xA;    var shop = new CoffeeShop();&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(shop);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    var metadata = theStore.Advanced.MetadataFor(shop);&#xD;&#xA;&#xD;&#xA;    metadata.ShouldNotBeNull();&#xD;&#xA;    metadata.CurrentVersion.ShouldNotBe(Guid.Empty);&#xD;&#xA;    metadata.LastModified.ShouldNotBe(default(DateTime));&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void hit_returns_values()&#xD;&#xA;{&#xD;&#xA;    var shop = new CoffeeShop();&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(shop);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    var metadata = theStore.Advanced.MetadataFor(shop);&#xD;&#xA;&#xD;&#xA;    metadata.ShouldNotBeNull();&#xD;&#xA;    metadata.CurrentVersion.ShouldNotBe(Guid.Empty);&#xD;&#xA;    metadata.LastModified.ShouldNotBe(default(DateTime));&#xD;&#xA;    metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);&#xD;&#xA;    metadata.DocumentType.ShouldBeNull();&#xD;&#xA;    metadata.Deleted.ShouldBeFalse();&#xD;&#xA;    metadata.DeletedAt.ShouldBeNull();&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
 			      	</div>
 

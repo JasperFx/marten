@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+        <meta charset="utf-8">
+        <meta name="generator" content="Bootply" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<title>Marten - Types</title>
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+        
+
+        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+
+        <!-- CSS code from Bootply.com editor -->
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    </head>
+    
+    <!-- HTML code from Bootply.com editor -->
+    
+    <body  >
+
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+        
+        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <a href="/marten" class="navbar-brand">Marten 1.3.0</a>
+		    </div>
+		    <nav class="collapse navbar-collapse" role="navigation">
+		      <ul class="nav navbar-nav pull-right">
+            <li>
+              <a href="/marten/getting_started">Getting Started</a>
+            </li>
+		        <li>
+		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+		        </li>
+		      	<li><a href="/marten/documentation/postgres/escaping" title="Escaping">Previous</a></li>
+		      	<li><a href="/marten/documentation/postgres/casting" title="Casting (under construction)">Next</a></li>
+		      </ul>
+      <div class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input id="search" type="search" class="form-control" placeholder="Search">
+        </div>
+      </div>
+
+		    </nav>
+
+		  </div>
+		</nav>
+
+		  <div class="container">
+		  	<nav class="navbar-inverse">
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/postgres">Postgres for SQL Server users</a></li><li class="active">Types</li></ol>
+		  	</nav>
+		  </div>
+
+		<!--main-->
+		<div class="container">
+			<div class="row">
+		      <!--left-->
+		      
+		      <div class="col-md-3" id="leftCol">
+			  
+				<img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle"/>
+		      	<br />
+
+				<ul class="nav nav-stacked affix" id="sidebar">
+
+		        </ul>
+
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/postgres/casting">Casting (under construction)</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/postgres/escaping">Escaping</a></p>
+
+		        </ul>
+		      </div><!--/left-->
+		      
+		      <!--right-->
+		      <div class="col-md-9">
+			      	<h1>Types <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/postgres/types.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      
+			      	<hr />
+
+			      	<div id="main-pane">
+			      		<!--Title:Types-->
+<!--Url:types-->
+<p>PostgreSQL offers a lot more range when it comes to data types, and also allow you to easily create your own. However if you find yourself trying to translate your SQL Server knowledge to Postgres, you may run into some gotcha’s.</p>
+<p>The following table is a list of common data types from SQL Server and the Postgres equivalent.</p>
+<pre><code>| SQL Server   | PostgreSQL    | Notes                                                                                                                       |
+|--------------|---------------|-----------------------------------------------------------------------------------------------------------------------------|
+| int          | int / integer |                                                                                                                             |
+| int IDENTITY | serial        | serial is the equivalent of SQL Servers auto generated number and is stored as an integer. Your C# code will still use int. |
+| bit          | boolean       | Postgres has an actual boolean data type.                                                                                   |
+</code></pre>
+<h3 id="serial">serial</h3>
+<p>Serial is interesting, because it can actually be used on multiple tables at the same time.</p>
+<p>If you define a table like so:</p>
+<pre><code>create table if not exists serial_one (
+    id serial,
+    name text
+);
+
+insert into serial_one (name) values ('phill');
+insert into serial_one (name) values ('james');
+
+select * from serial_one;
+</code></pre>
+<p>You will get a result with two values. And the <code>id</code> column will be incremented as you would expect.</p>
+<p>You can then query for sequences in Postgres by selecting from the <code>information_schema.sequences</code> table.</p>
+<pre><code>select * from information_schema.sequences;
+</code></pre>
+<p>There will be an entry for the sequence created by the table definition above.</p>
+<p><img src="/content/images/postgres-sequence.png" alt="" /></p>
+<p>The naming is: table_column_seq</p>
+<p>In this instance, the table is <code>serial_one</code>, the column is <code>id</code>, and the suffix is <code>seq</code></p>
+<p>If you look at the table schema you can see the column is created with a default value of <code>nextval('serial_one_id_seq'::regclass)</code></p>
+<p>So you can create your own table using the same sequence name, by defining the column as <code>int</code> with a default value.</p>
+<pre><code>create table if not exists serial_two (
+    id int not null default(nextval('serial_one_id_seq')),
+    name text
+);
+
+insert into serial_two (name) values ('demi');
+insert into serial_two (name) values ('nigel');
+
+select * from serial_two;
+</code></pre>
+<p>If you want to name the sequence yourself you can create the sequence first like:</p>
+<pre><code>create sequence my_own_named_sequence
+</code></pre>
+<p>Look at the Postgres Sequence docs for more info.</p>
+<p>https://www.postgresql.org/docs/9.5/static/sql-createsequence.html</p>
+<h3 id="boolean">boolean</h3>
+<p>The boolean type is great to work with, you can use it in many ways. For example, assuming we had a user table with a boolean column <code>active</code></p>
+<p>We could use various different queries like so:</p>
+<pre><code>select * from users where active;
+select * from users where not active;
+</code></pre>
+<p>We can also use true/false instead of implicit checks.</p>
+<pre><code>select * from users where active is true;
+select * from users where active is false;
+
+-- or
+
+select * from users where active = true;
+select * from users where active = false;;
+
+-- or
+
+select * from users where active is not true;
+select * from users where active is not false;
+</code></pre>
+
+			      	</div>
+
+			      	<hr />
+
+			      	<nav>
+				        <span>
+				        	<strong>Previous: </strong><a href="/marten/documentation/postgres/escaping">Escaping</a>
+
+				        </span>
+				        <span class="pull-right">
+
+				        	<strong>Next: </strong><a href="/marten/documentation/postgres/casting">Casting (under construction)</a>
+
+				        </span>
+			      	</nav>
+
+		      </div><!--/right-->
+		  	</div><!--/row-->
+		</div><!--/container-->
+
+
+    </body>
+
+
+    <foot>
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript" src="/marten/content/embed.js"></script>
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+    </foot>
+</html>
+

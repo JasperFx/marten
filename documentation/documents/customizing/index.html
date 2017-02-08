@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.3.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -112,7 +112,7 @@ will prefer to use either attributes or the new embedded configuration option wi
 better to keep the persistence configuration on the document type itself for easier traceability. Either way,
 Marten has you covered with the various configuration options shown here.</p>
 <p>The configuration options you'll most likely use are:</p>
-<ul class="table-of-contents"><li><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></li><li><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></li><li><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a></li><li><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></li></ul>
+<ul class="table-of-contents"><li><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></li><li><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></li><li><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a></li><li><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></li><li><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a></li></ul>
 <h2 id="postgresql-limits-on-naming">Postgresql Limits on Naming</h2>
 <p>Postgresql out of the box has a limitation on the length of database object names to 64. This can be overridden in a
 Postgresql database by <a href="https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS">setting the <code>NAMEDATALEN</code> property</a>.</p>
@@ -148,13 +148,13 @@ would look like this:</p>
 <p>Lastly, Marten can examine the document types themselves for a <code>public static ConfigureMarten()</code> method
 and invoke that to let the document type make its own customizations for its storage. Here's an example from
 the unit tests:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItself&#xD;&#xA;{&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Alias = &quot;different&quot;;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public Guid Id;&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItself&#xD;&#xA;{&#xD;&#xA;    public Guid Id;&#xD;&#xA;&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Alias = &quot;different&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>The <code>DocumentMapping</code> type is the core configuration class representing how a document type is persisted or
 queried from within a Marten application. All the other configuration options end up writing to a
 <code>DocumentMapping</code> object.</p>
 <p>You can optionally take in the more specific <code>DocumentMapping&lt;T&gt;</code> for your document type to get at
 some convenience methods for indexing or duplicating fields that depend on .Net Expression's:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItselfSpecifically&#xD;&#xA;{&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping&lt;ConfiguresItselfSpecifically&gt; mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Duplicate(x =&gt; x.Name);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public Guid Id;&#xD;&#xA;    public string Name;&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItselfSpecifically&#xD;&#xA;{&#xD;&#xA;    public Guid Id;&#xD;&#xA;    public string Name;&#xD;&#xA;&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping&lt;ConfiguresItselfSpecifically&gt; mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Duplicate(x =&gt; x.Name);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
 			      	</div>
 

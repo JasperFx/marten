@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.3.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -94,7 +94,7 @@
 <p>A custom ID generator strategy should implement <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/IIdGeneration.cs">IIdGeneration</a>.</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class CustomdIdGeneration : IIdGeneration&#xD;&#xA;{&#xD;&#xA;    public IEnumerable&lt;Type&gt; KeyTypes { get; } = new Type[] {typeof(string)};&#xD;&#xA;&#xD;&#xA;    public IIdGenerator&lt;T&gt; Build&lt;T&gt;(IDocumentSchema schema)&#xD;&#xA;    {&#xD;&#xA;        return (IIdGenerator&lt;T&gt;) new CustomIdGenerator();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public class CustomIdGenerator : IIdGenerator&lt;string&gt;&#xD;&#xA;    {&#xD;&#xA;        public string Assign(string existing, out bool assigned)&#xD;&#xA;        {&#xD;&#xA;            assigned = true;&#xD;&#xA;            return &quot;newId&quot;;&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>The <code>Build()</code> method should return the actual <code>IdGenerator&lt;T&gt;</code> for the document type, where <code>T</code> is the type of the Id field.</p>
-<p>For more advances examples you can have a look at existing ID generator: <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Sequences/HiloIdGeneration.cs">HiloIdGeneration</a>, <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/CombGuidIdGeneration.cs">CombGuidGenerator</a> and the <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Sequences/IdentityKeyGeneration.cs">IdentityKeyGeneration</a>,</p>
+<p>For more advances examples you can have a look at existing ID generator: <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/Sequences/HiloIdGeneration.cs">HiloIdGeneration</a>, <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/CombGuidIdGeneration.cs">CombGuidGenerator</a> and the <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/Sequences/IdentityKeyGeneration.cs">IdentityKeyGeneration</a>,</p>
 <p>To use custom id generation you should enabled it when configuring the document store. This defines that the strategy will be used for all the documents types.</p>
 <pre><code class="language-csharp">&#xD;&#xA;options =&gt; options.DefaultIdStrategy = (mapping, storeOptions) =&gt; new CustomdIdGeneration()))&#xD;&#xA;</code></pre>
 <p>It is also possible define a custom id generation algorithm for a specific document type.</p>

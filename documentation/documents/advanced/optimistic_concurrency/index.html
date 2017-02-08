@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.2.4</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.3.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -95,7 +95,7 @@
 <p>I first learned about this concept from Martin Fowler's <a href="http://martinfowler.com/eaaCatalog/">PEAA book</a>. From <a href="http://martinfowler.com/eaaCatalog/optimisticOfflineLock.html">Fowler's definition</a>, offline optimistic concurrency:</p>
 <blockquote><i>Prevents conflicts between concurrent business transactions by detecting a conflict and rolling back the transaction.</i></blockquote>
 <p>In Marten's case, you have to explicitly opt into optimistic versioning for each document type. You can do that with either an attribute on your document type like so:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[UseOptimisticConcurrency]&#xD;&#xA;public class CoffeeShop : Shop&#xD;&#xA;{&#xD;&#xA;    // Guess where I&#x27;m at as I code this?&#xD;&#xA;    public string Name { get; set; } = &quot;Starbucks&quot;;&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[UseOptimisticConcurrency]&#xD;&#xA;public class CoffeeShop : Shop&#xD;&#xA;{&#xD;&#xA;    // Guess where I&#x27;m at as I code this?&#xD;&#xA;    public string Name { get; set; } = &quot;Starbucks&quot;;&#xD;&#xA;    public ICollection&lt;Guid&gt; Employees { get; set; } = new List&lt;Guid&gt;();&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Or by using Marten's configuration API to do it programmatically:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Adds optimistic concurrency checking to Issue&#xD;&#xA;    _.Schema.For&lt;Issue&gt;().UseOptimisticConcurrency(true);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>Once optimistic concurrency is turned on for the CoffeeShop document type, a session will now only be able to update a document if the document has been unchanged in the database since it was initially loaded.</p>
