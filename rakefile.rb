@@ -12,7 +12,7 @@ BUILD_NUMBER = build_number
 
 task :ci => [:connection, :version, :default, 'pack']
 
-task :default => [:mocha, :test, :storyteller]
+task :default => [:mocha, :test]
 
 desc "Prepares the working directory for a new build"
 task :clean do
