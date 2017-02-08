@@ -34,6 +34,7 @@ namespace Marten.Services
 
         public void ResetJson(string json)
         {
+            Origin = UnitOfWorkOrigin.Loaded;
             _json = json;
         }
 

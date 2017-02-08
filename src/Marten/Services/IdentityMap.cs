@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -26,6 +27,11 @@ namespace Marten.Services
         {
             Serializer = serializer;
             _listeners = listeners ?? new IDocumentSessionListener[] { };
+        }
+
+        protected IEnumerable<TCacheValue> allCachedValues()
+        {
+            return Cache.SelectMany(x => x.Values);
         }
 
         protected abstract TCacheValue ToCache(object id, Type concreteType, object document, string json, UnitOfWorkOrigin origin = UnitOfWorkOrigin.Loaded);
@@ -155,6 +161,10 @@ namespace Marten.Services
         }
 
         public VersionTracker Versions { get; set; } = new VersionTracker();
+
+        public virtual void ClearChanges()
+        {
+        }
     }
 
     public class IdentityMap : IdentityMap<object>

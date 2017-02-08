@@ -189,6 +189,7 @@ namespace Marten
             try
             {
                 _connection.Commit();
+                IdentityMap.ClearChanges();
             }           
             catch (Exception)
             {
@@ -226,6 +227,7 @@ namespace Marten
             try
             {
                 await _connection.CommitAsync(token).ConfigureAwait(false);
+                IdentityMap.ClearChanges();
             }
             catch (Exception)
             {

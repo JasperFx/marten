@@ -39,5 +39,13 @@ namespace Marten.Services
         {
             return Cache.SelectMany(x => x.Values.Where(_ => _.Origin == UnitOfWorkOrigin.Loaded).Select(_ => _.DetectChange())).Where(x => x != null).ToArray();
         }
+
+        public override void ClearChanges()
+        {
+            foreach (var trackedEntity in allCachedValues())
+            {
+                trackedEntity.Origin = UnitOfWorkOrigin.Loaded;
+            }
+        }
     }
 }

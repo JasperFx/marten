@@ -271,6 +271,7 @@ namespace Marten.Services
 
             return false;
         }
+
     }
 
     public abstract class Upsert : IStorageOperation

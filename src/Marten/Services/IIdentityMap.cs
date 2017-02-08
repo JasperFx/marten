@@ -29,5 +29,6 @@ namespace Marten.Services
         IIdentityMap ForQuery();
 
         VersionTracker Versions { get; }
+        void ClearChanges();
     }
 }
