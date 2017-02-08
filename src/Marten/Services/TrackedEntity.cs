@@ -29,6 +29,7 @@ namespace Marten.Services
         public Type DocumentType { get; }
 
         public object Document { get; }
+        public UnitOfWorkOrigin Origin { get; set; } = UnitOfWorkOrigin.Loaded;
 
 
         public void ResetJson(string json)

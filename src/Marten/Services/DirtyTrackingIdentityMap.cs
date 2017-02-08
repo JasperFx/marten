@@ -17,9 +17,12 @@ namespace Marten.Services
         public DirtyTrackingIdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners) : this(serializer, listeners, new CharArrayTextWriter.Pool())
         {}
 
-        protected override TrackedEntity ToCache(object id, Type concreteType, object document, string json)
+        protected override TrackedEntity ToCache(object id, Type concreteType, object document, string json, UnitOfWorkOrigin origin)
         {
-            return new TrackedEntity(id, Serializer, concreteType, document, json);
+            return new TrackedEntity(id, Serializer, concreteType, document, json)
+            {
+                Origin = origin
+            };
         }
 
         protected override T FromCache<T>(TrackedEntity cacheValue)
@@ -34,7 +37,7 @@ namespace Marten.Services
 
         public IEnumerable<DocumentChange> DetectChanges()
         {
-            return Cache.SelectMany(x => x.Values.Select(_ => _.DetectChange())).Where(x => x != null).ToArray();
+            return Cache.SelectMany(x => x.Values.Where(_ => _.Origin == UnitOfWorkOrigin.Loaded).Select(_ => _.DetectChange())).Where(x => x != null).ToArray();
         }
     }
 }
