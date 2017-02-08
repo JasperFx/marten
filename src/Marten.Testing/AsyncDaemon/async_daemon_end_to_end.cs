@@ -10,6 +10,7 @@ using Marten.Testing.CodeTracker;
 using Xunit;
 using Xunit.Abstractions;
 using System.Linq;
+using Baseline.Dates;
 using Shouldly;
 
 namespace Marten.Testing.AsyncDaemon

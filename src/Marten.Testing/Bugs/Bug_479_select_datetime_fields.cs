@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using Baseline;
+using Baseline.Dates;
 using Xunit;
 
 namespace Marten.Testing.Bugs
