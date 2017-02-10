@@ -12,7 +12,7 @@ using Xunit;
 namespace Marten.Testing
 {
     
-    public class Using_DocumentSessionListener_Tests
+    public class Using_Global_DocumentSessionListener_Tests
     {
         [Fact]
         public void call_listener_events_on_synchronous_session_saves()
