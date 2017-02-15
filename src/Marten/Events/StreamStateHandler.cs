@@ -51,7 +51,7 @@ namespace Marten.Events
         {
             var id = reader.GetFieldValue<Guid>(0);
             var version = reader.GetFieldValue<int>(1);
-            var typeName = reader.GetFieldValue<string>(2);
+            var typeName = reader.IsDBNull(2) ? null : reader.GetFieldValue<string>(2);
             var timestamp = reader.GetFieldValue<DateTime>(3);
 
             Type aggregateType = null;
@@ -67,7 +67,7 @@ namespace Marten.Events
         {
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(1, token).ConfigureAwait(false);
-            var typeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
+            var typeName = await reader.IsDBNullAsync(2, token) ? null : await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
             var timestamp = await reader.GetFieldValueAsync<DateTime>(3, token).ConfigureAwait(false);
 
             Type aggregateType = null;
