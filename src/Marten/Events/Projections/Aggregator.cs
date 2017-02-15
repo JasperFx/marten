@@ -14,14 +14,11 @@ namespace Marten.Events.Projections
         private readonly IDictionary<Type, object> _aggregations = new Dictionary<Type, object>();
 
 
-        public Aggregator() : this(typeof(T).GetMethods()
-                .Where(x => x.Name == ApplyMethod && x.GetParameters().Length == 1))
-        {           
-            Alias = typeof(T).Name.ToTableAlias();
-        }
+        public Aggregator() : this(typeof(T).GetMethods().Where(x => x.Name == ApplyMethod && x.GetParameters().Length == 1)) { }
 
         protected Aggregator(IEnumerable<MethodInfo> overrideMethodLookup)
         {
+            Alias = typeof(T).Name.ToTableAlias();
             overrideMethodLookup
                 .Each(method =>
                 {
