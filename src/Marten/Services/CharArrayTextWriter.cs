@@ -28,11 +28,17 @@ namespace Marten.Services
 
         void Ensure(int i)
         {
-            if (_next + i >= _length)
+            var required = _next + i;
+            if (required < _length)
+            {
+                return;
+            }
+
+            while (required >= _length)
             {
                 _length *= 2;
-                Array.Resize(ref _chars, _length);
             }
+            Array.Resize(ref _chars, _length);
         }
 
         public override void Write(char[] buffer, int index, int count)

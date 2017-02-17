@@ -62,6 +62,21 @@ namespace Marten.Testing.Services
             written.ShouldBe(s);
         }
 
+
+        [Fact]
+        public void writes_characters_much_beyond_limit()
+        {
+            var writer = new CharArrayTextWriter();
+
+            var s = new string('a', CharArrayTextWriter.InitialSize * 8);
+
+            writer.Write(s);
+
+            var written = writer.ToCharSegment();
+
+            written.ShouldBe(s);
+        }
+
         [Fact]
         public void has_offset_reset_when_returned_to_pool_via_single_release()
         {
@@ -89,11 +104,11 @@ namespace Marten.Testing.Services
         {
             var root = new CharArrayTextWriter.Pool();
             CharArrayTextWriter writer1, writer2;
-            
+
             using (var pool = new CharArrayTextWriter.Pool(root))
             {
                 writer1 = pool.Lease();
-                pool.Release(writer1 );
+                pool.Release(writer1);
             }
 
             using (var pool = new CharArrayTextWriter.Pool(root))
