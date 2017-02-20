@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.3.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -105,12 +105,14 @@ END
 </code></pre>
 <p>Everything inside the begin/end will use PL/pgSQL by default as an assumed language.</p>
 <p>You can be explicit about the language by defining the language at the end of the block like so:</p>
-<p>DO %%
-BEGIN</p>
-<pre><code>// your sql here…
+<pre><code>DO %%
+BEGIN
+
+    // your sql here…
+
+END
+%% LANGUAGE plpgsql;
 </code></pre>
-<p>END
-%% LANGUAGE plpgsql;</p>
 <p>Note: <code>DO</code> is not part of the SQL Standard and is unique to PostgreSQL.</p>
 <p>An actual example, lets say we wanted to create a new schema called <code>inventory</code> if it didn’t exist already.</p>
 <pre><code>DO $$
