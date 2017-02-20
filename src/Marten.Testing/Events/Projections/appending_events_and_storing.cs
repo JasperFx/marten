@@ -38,6 +38,8 @@ namespace Marten.Testing.Events
 
             theSession.Events.Append(aggregateId, quest, questStarted);
             theSession.SaveChanges();
+
+            theSession.Events.FetchStreamState(aggregateId).Version.ShouldBe(2);
         }
 
         public class QuestPatchTestProjection : IProjection

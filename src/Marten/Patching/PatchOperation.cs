@@ -12,7 +12,7 @@ using Baseline;
 
 namespace Marten.Patching
 {
-    public class PatchOperation : IStorageOperation
+    public class PatchOperation : IStorageOperation, NoDataReturnedCall
     {
         private readonly IQueryableDocument _document;
         private readonly IWhereFragment _fragment;
