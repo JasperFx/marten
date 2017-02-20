@@ -55,7 +55,21 @@ namespace Marten.Events
         public void Append(Guid stream, int expectedVersion, params object[] events)
         {
             Append(stream, events);
-            _unitOfWork.Add(new AssertEventStreamMaxEventId(stream, expectedVersion, _schema.Events.Table.QualifiedName));
+
+            var assertion =
+                _unitOfWork.NonDocumentOperationsOf<AssertEventStreamMaxEventId>()
+                    .FirstOrDefault(x => x.Stream == stream);
+
+            if (assertion == null)
+            {
+                _unitOfWork.Add(new AssertEventStreamMaxEventId(stream, expectedVersion, _schema.Events.Table.QualifiedName));
+            }
+            else
+            {
+                assertion.ExpectedVersion = expectedVersion;
+            }
+
+            
         }
 
         public Guid StartStream<T>(Guid id, params object[] events) where T : class, new()

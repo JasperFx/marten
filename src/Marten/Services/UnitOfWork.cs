@@ -272,6 +272,12 @@ namespace Marten.Services
             return false;
         }
 
+
+
+        public IEnumerable<T> NonDocumentOperationsOf<T>() where T : IStorageOperation
+        {
+            return _ancillaryOperations.OfType<T>();
+        }
     }
 
     public abstract class Upsert : IStorageOperation
