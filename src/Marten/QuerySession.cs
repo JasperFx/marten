@@ -41,10 +41,7 @@ namespace Marten
             _identityMap = identityMap;
 
             WriterPool = store.CreateWriterPool();
-            BuilderPool = StringBuilderPool.Default;
         }
-
-        public StringBuilderPool BuilderPool { get; }
 
         public IDocumentStore DocumentStore { get; }
 
