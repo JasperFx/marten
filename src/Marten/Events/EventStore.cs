@@ -186,6 +186,8 @@ namespace Marten.Events
 
         public StreamState FetchStreamState(Guid streamId)
         {
+            _schema.EnsureStorageExists(typeof(EventStream));
+
             var handler = new StreamStateHandler(_schema.Events, streamId);
             return _connection.Fetch(handler, null, null);
         }
