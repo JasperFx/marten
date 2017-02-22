@@ -1,4 +1,6 @@
-﻿using StoryTeller;
+﻿using Baseline.Dates;
+using StoryTeller;
+using StoryTeller.Engine;
 
 namespace Marten.Storyteller
 {
@@ -8,5 +10,19 @@ namespace Marten.Storyteller
         {
             StorytellerAgent.Run(args);
         }
+
+        public static void FindProblems()
+        {
+            using (var runner = StorytellerRunner.For<MartenSystem>())
+            {
+                runner.RunAll(10.Minutes());
+                //runner.OpenResultsInBrowser();
+            }
+        }
+    }
+
+    public class MartenSystem : NulloSystem
+    {
+        
     }
 }

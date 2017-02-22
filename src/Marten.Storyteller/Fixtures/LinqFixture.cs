@@ -10,16 +10,13 @@ using Marten.Schema;
 using Marten.Testing;
 using Marten.Util;
 using StoryTeller;
+using StoryTeller.Grammars.ObjectBuilding;
 using StoryTeller.Grammars.Tables;
-using StructureMap;
 
 namespace Marten.Storyteller.Fixtures
 {
-    public class LinqFixture : Fixture
+    public class LinqFixture : MartenFixture
     {
-        private IContainer _container;
-        private readonly LightweightCache<Guid, string> _idToName = new LightweightCache<Guid, string>();
-        private IDocumentSession _session;
         private readonly Dictionary<string, Expression<Func<Target, bool>>> _wheres = new Dictionary<string, Expression<Func<Target, bool>>>();
 
         public LinqFixture()
@@ -99,17 +96,7 @@ namespace Marten.Storyteller.Fixtures
             AddSelectionValues("Fields", typeof(Target).GetProperties().Where(x => TypeMappings.HasTypeMapping(x.PropertyType)).Select(x => x.Name).ToArray());
         }
 
-        public override void SetUp()
-        {
-            _idToName.ClearAll();
 
-            _container = Container.For<DevelopmentModeRegistry>();
-            _container.GetInstance<IDocumentStore>().Advanced.Clean.CompletelyRemoveAll();
-
-            _session = _container.GetInstance<IDocumentStore>().OpenSession();
-
-
-        }
 
         private void expression(Expression<Func<Target, bool>> where, string key = null)
         {
@@ -120,65 +107,52 @@ namespace Marten.Storyteller.Fixtures
             _wheres.Add(key, where);
         }
 
-        public override void TearDown()
-        {
-            _session.Dispose();
-            _container.Dispose();
-        }
+
 
         [FormatAs("The field {field} is configured to be duplicated")]
         public void FieldIsDuplicated([SelectionList("Fields")] string field)
         {
-            _container.GetInstance<IDocumentSchema>().MappingFor(typeof(Target)).As<DocumentMapping>().DuplicateField(field);
+            Schema.MappingFor(typeof(Target)).As<DocumentMapping>().DuplicateField(field);
         }
 
-        public IGrammar TheDocumentsAre()
+        protected override void configureDocumentsAre(ObjectConstructionExpression<Target> _)
         {
-            return CreateNewObject<Target>("Documents", _ =>
+            _.WithInput<string>("Name").Configure((target, name) =>
             {
-                _.WithInput<string>("Name").Configure((target, name) =>
+                IdToName[target.Id] = name;
+            }).Header("Document Name");
+
+            _.SetProperty(x => x.Number).DefaultValue("1");
+            _.SetProperty(x => x.Long).DefaultValue("1");
+            _.SetProperty(x => x.String).DefaultValue("Max");
+            _.SetProperty(x => x.Flag).DefaultValue("false");
+            _.SetProperty(x => x.Double).DefaultValue("1");
+            _.SetProperty(x => x.Decimal).DefaultValue("1");
+            _.SetProperty(x => x.Date).DefaultValue("TODAY");
+
+            _.WithInput<bool>("InnerFlag").Configure((target, flag) =>
+            {
+                if (target.Inner == null)
                 {
-                    _idToName[target.Id] = name;
-                }).Header("Document Name");
+                    target.Inner = new Target();
+                }
 
-                _.SetProperty(x => x.Number).DefaultValue("1");
-                _.SetProperty(x => x.Long).DefaultValue("1");
-                _.SetProperty(x => x.String).DefaultValue("Max");
-                _.SetProperty(x => x.Flag).DefaultValue("false");
-                _.SetProperty(x => x.Double).DefaultValue("1");
-                _.SetProperty(x => x.Decimal).DefaultValue("1");
-                _.SetProperty(x => x.Date).DefaultValue("TODAY");
-
-                _.WithInput<bool>("InnerFlag").Configure((target, flag) =>
-                {
-                    if (target.Inner == null)
-                    {
-                        target.Inner = new Target();
-                    }
-
-                    target.Inner.Flag = flag;
+                target.Inner.Flag = flag;
 
 
-                });
-
-                _.Do(t =>
-                {
-                    t.Date = t.Date.ToUniversalTime();
-                    _session.Store(t);
-                });
-            }).AsTable("If the documents are").After(() => _session.SaveChanges());
+            });
         }
 
         [ExposeAsTable("Executing queries")]
         public void ExecutingQuery([SelectionList("Expressions"), Header("Where Clause")]string WhereClause, out ResultSet Results)
         {
             var expression = _wheres[WhereClause];
-            var queryable = _session.Query<Target>().Where(expression);
+            var queryable = Session.Query<Target>().Where(expression);
             var command = queryable.ToCommand(FetchType.FetchMany);
             var sql = command.CommandText;
             Debug.WriteLine(sql + ", " + command.Parameters.Select(x => $"{x.ParameterName} = {x.Value}").Join(", "));
 
-            Results = new ResultSet(queryable.ToArray().Select(x => _idToName[x.Id]).ToArray());
+            Results = new ResultSet(queryable.ToArray().Select(x => IdToName[x.Id]).ToArray());
         }
     }
 }
