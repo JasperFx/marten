@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Testing;
 using StoryTeller;
 using StoryTeller.Grammars.ObjectBuilding;
 using StoryTeller.Grammars.Tables;
+using StoryTeller.Model;
 using StructureMap;
 
 namespace Marten.Storyteller.Fixtures
@@ -13,29 +16,42 @@ namespace Marten.Storyteller.Fixtures
     {
         protected readonly LightweightCache<Guid, string> IdToName = new LightweightCache<Guid, string>();
         private IContainer _container;
-        private IDocumentSession _session;
-        private IDocumentStore _store;
+
+        protected MartenFixture()
+        {
+            var path = AppContext.BaseDirectory;
+            while (!path.EndsWith("Marten.Storyteller"))
+            {
+                path = path.ParentDirectory();
+            }
+
+            var filename = GetType().Name + ".cs";
+            CodeFile = path.AppendPath("Fixtures", filename);
+        }
+
+        internal string CodeFile { get; }
 
         public override void SetUp()
         {
             IdToName.ClearAll();
 
             _container = Container.For<DevelopmentModeRegistry>();
-            _store = _container.GetInstance<IDocumentStore>();
-            _store.Advanced.Clean.CompletelyRemoveAll();
+            Store = _container.GetInstance<IDocumentStore>();
+            Store.Advanced.Clean.CompletelyRemoveAll();
 
-            _session = _store.OpenSession();
+            Session = Store.OpenSession();
 
 
         }
 
-        protected IDocumentSession Session => _session;
-        protected IDocumentSchema Schema => _store.Schema;
-        protected IDocumentStore Store => _store;
+        protected IDocumentSession Session { get; private set; }
+
+        protected IDocumentSchema Schema => Store.Schema;
+        protected IDocumentStore Store { get; private set; }
 
         public override void TearDown()
         {
-            _session.Dispose();
+            Session.Dispose();
             _container.Dispose();
         }
 
@@ -43,6 +59,8 @@ namespace Marten.Storyteller.Fixtures
         {
             return CreateNewObject<Target>("Documents", _ =>
             {
+                _.ObjectIs = c => Target.Random(true);
+
                 _.WithInput<string>("Name").Configure((target, name) =>
                 {
                     IdToName[target.Id] = name;
@@ -59,8 +77,28 @@ namespace Marten.Storyteller.Fixtures
             }).AsTable("If the documents are").After(() => Session.SaveChanges());
         }
 
-        protected abstract void configureDocumentsAre(ObjectConstructionExpression<Target> _);
+        protected virtual void configureDocumentsAre(ObjectConstructionExpression<Target> _)
+        {
+            // do nothing
+        }
+
+        [FormatAs("Seed with {count} documents")]
+        public void SeedDocuments(int count)
+        {
+            var targets = Target.GenerateRandomData(count);
+            Store.BulkInsert(targets.ToArray());
+        }
+
+        internal void AddQueryListValues(string listName, IList<string> names)
+        {
+            var i = 0;
+            var options = names.Select(x => new Option(x, (++i).ToString())).ToArray();
+
+            Lists[listName].AddOptions(options);
+        }
     }
+
+
 
 
 }

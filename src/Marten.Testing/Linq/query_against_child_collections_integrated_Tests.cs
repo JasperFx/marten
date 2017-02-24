@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
+    [ControlledQueryStoryteller]
     public class query_against_child_collections_integrated_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         public query_against_child_collections_integrated_Tests()

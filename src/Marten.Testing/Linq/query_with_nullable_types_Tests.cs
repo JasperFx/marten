@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
+    [ControlledQueryStoryteller]
     public class query_with_nullable_types_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]

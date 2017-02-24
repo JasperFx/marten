@@ -7,6 +7,7 @@ using Marten.Util;
 
 namespace Marten.Testing.Linq
 {
+    [SingleStoryteller]
     public class invoking_queryable_through_first_async_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
