@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
+    [ControlledQueryStoryteller]
     public class query_with_modulo_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         // SAMPLE: querying-with-modulo

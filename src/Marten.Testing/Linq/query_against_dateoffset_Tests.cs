@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
+    [ControlledQueryStoryteller]
     public class query_against_dateoffset_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]

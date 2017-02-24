@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
+    [SelectionStoryteller]
     public class Bug_260_Take_Skip_with_Select_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]

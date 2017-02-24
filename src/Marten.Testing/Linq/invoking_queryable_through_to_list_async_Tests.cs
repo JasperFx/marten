@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
+    [MatchingStoryteller]
     public class invoking_queryable_through_to_list_async_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         // SAMPLE: using-to-list-async

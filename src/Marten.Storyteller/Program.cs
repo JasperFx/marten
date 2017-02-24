@@ -15,7 +15,7 @@ namespace Marten.Storyteller
         {
             using (var runner = StorytellerRunner.For<MartenSystem>())
             {
-                runner.RunAll(10.Minutes());
+                runner.Run("Linq Queries / Take and Skip part 2");
                 //runner.OpenResultsInBrowser();
             }
         }

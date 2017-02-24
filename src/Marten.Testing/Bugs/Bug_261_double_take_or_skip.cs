@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
+    [ControlledQueryStoryteller]
     public class Bug_261_double_take_or_skip : DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]

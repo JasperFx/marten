@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
