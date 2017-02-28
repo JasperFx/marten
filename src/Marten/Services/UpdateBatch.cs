@@ -143,11 +143,11 @@ namespace Marten.Services
                     {
                         if (batch.HasCallbacks())
                         {
-                            await executeCallbacksAsync(c, tkn, batch, list);
+                            await executeCallbacksAsync(c, tkn, batch, list).ConfigureAwait(false);
                         }
                         else
                         {
-                            await c.ExecuteNonQueryAsync(tkn);
+                            await c.ExecuteNonQueryAsync(tkn).ConfigureAwait(false);
                         }
                     }, token).ConfigureAwait(false);
                 }
