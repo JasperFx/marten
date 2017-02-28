@@ -314,7 +314,7 @@ namespace Marten
             var streams = PendingChanges.Streams().ToArray();
             foreach (var projection in _schema.Events.InlineProjections)
             {
-                await projection.ApplyAsync(this, streams, token);
+                await projection.ApplyAsync(this, streams, token).ConfigureAwait(false);
             }
         }
 

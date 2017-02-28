@@ -83,7 +83,7 @@ namespace Marten.Events.Projections
             var projections = getEventProjections(session, streams);
 
             var viewIds = projections.Select(projection => projection.ViewId).Distinct().ToArray();
-            var views = await session.LoadManyAsync<TView>(token, viewIds);
+            var views = await session.LoadManyAsync<TView>(token, viewIds).ConfigureAwait(false);
 
             applyProjections(session, projections, views);
         }
