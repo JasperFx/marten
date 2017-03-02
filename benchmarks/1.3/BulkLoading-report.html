@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>BulkLoading</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.10.1, OS=Microsoft Windows NT 6.1.7601 Service Pack 1
+Processor=Intel(R) Core(TM) i7-4980HQ CPU 2.80GHz, ProcessorCount=4
+Frequency=10000000 Hz, Resolution=100.0000 ns, Timer=UNKNOWN
+  [Host]     : Clr 4.0.30319.42000, 64bit RyuJIT-v4.6.1076.0
+  Job-DNINOD : Clr 4.0.30319.42000, 64bit RyuJIT-v4.6.1076.0
+</code></pre>
+<pre><code>WarmupCount=2  Gen 0=834.5588  Allocated=7.74 MB  
+</code></pre>
+
+<table>
+<thead><tr><th>       Method</th><th> Mean</th><th>StdDev</th>
+</tr>
+</thead><tbody><tr><td>BulkInsertDocuments</td><td>197.7231 ms</td><td>5.4325 ms</td>
+</tr></tbody></table>
+</body>
+</html>

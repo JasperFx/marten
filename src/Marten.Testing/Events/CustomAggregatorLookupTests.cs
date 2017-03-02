@@ -96,6 +96,8 @@ namespace Marten.Testing.Events
             var projection = theSession.Load<AggregateWithPrivateEventApply>(questId);
             projection.Name.ShouldBe("Destroy the Ring");
             // ENDSAMPLE
+
+            theSession.Events.FetchStreamState(questId).ShouldNotBeNull();
         }
     }
 

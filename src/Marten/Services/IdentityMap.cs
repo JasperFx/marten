@@ -1,12 +1,19 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 
 namespace Marten.Services
 {
+    public enum UnitOfWorkOrigin
+    {
+        Stored,
+        Loaded
+    }
+
     public abstract class IdentityMap<TCacheValue> : IIdentityMap
     {
         private readonly IEnumerable<IDocumentSessionListener> _listeners;
@@ -22,7 +29,12 @@ namespace Marten.Services
             _listeners = listeners ?? new IDocumentSessionListener[] { };
         }
 
-        protected abstract TCacheValue ToCache(object id, Type concreteType, object document, string json);
+        protected IEnumerable<TCacheValue> allCachedValues()
+        {
+            return Cache.SelectMany(x => x.Values);
+        }
+
+        protected abstract TCacheValue ToCache(object id, Type concreteType, object document, string json, UnitOfWorkOrigin origin = UnitOfWorkOrigin.Loaded);
         protected abstract T FromCache<T>(TCacheValue cacheValue);
 
         private void storeFetched<T>(object id, FetchResult<T> fetched)
@@ -126,7 +138,8 @@ namespace Marten.Services
 
             _listeners.Each(listener => listener.DocumentAddedForStorage(id, entity));
 
-            var cacheValue = ToCache(id, typeof(T), entity, null);
+            var cacheValue = ToCache(id, typeof(T), entity, null, UnitOfWorkOrigin.Stored);
+
             dictionary.AddOrUpdate(id, cacheValue, (i, e) => cacheValue);
         }
 
@@ -148,6 +161,10 @@ namespace Marten.Services
         }
 
         public VersionTracker Versions { get; set; } = new VersionTracker();
+
+        public virtual void ClearChanges()
+        {
+        }
     }
 
     public class IdentityMap : IdentityMap<object>
@@ -157,7 +174,7 @@ namespace Marten.Services
         {
         }
 
-        protected override object ToCache(object id, Type concreteType, object document, string json)
+        protected override object ToCache(object id, Type concreteType, object document, string json, UnitOfWorkOrigin origin)
         {
             return document;
         }

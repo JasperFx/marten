@@ -26,6 +26,9 @@ query what was done after a commit is made:
 
 <[sample:writing_custom_session_listener]>
 
+As of Marten 1.4, you can also register `IDocumentSessionListener` objects scoped to a particular session with the 
+`DocumentStore.OpenSession(SessionOptions)` signature.
+
 
 ## Custom Logging
 

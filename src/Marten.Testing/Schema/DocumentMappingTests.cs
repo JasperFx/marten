@@ -124,6 +124,7 @@ namespace Marten.Testing.Schema
                 mapping.Alias = "different";
             }
         }
+        // ENDSAMPLE
 
         // SAMPLE: ConfigureMarten-specifically
         public class ConfiguresItselfSpecifically
@@ -136,6 +137,7 @@ namespace Marten.Testing.Schema
                 mapping.Duplicate(x => x.Name);
             }
         }
+        // ENDSAMPLE
 
         [Fact]
         public void can_replace_hilo_def_settings()

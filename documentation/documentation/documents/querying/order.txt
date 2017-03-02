@@ -6,4 +6,5 @@ query_json
 include
 compiled_queries
 batched_queries
+metadata_queries
 paging

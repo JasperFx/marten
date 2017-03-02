@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
 using Marten.Testing.Documents;
-using Marten.Util;
 using Shouldly;
 using Xunit;
 
@@ -269,6 +268,65 @@ namespace Marten.Testing.Linq
             public string Last;
         }
 
+        [Fact]
+        public void use_select_with_multiple_fields_to_other_type_using_constructor()
+        {
+            theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
+            theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer" });
+            theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell" });
+            theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
+
+            theSession.SaveChanges();
+
+            var users = theSession.Query<User>()
+                .Select(x => new UserDto(x.FirstName, x.LastName))
+                .ToList();
+
+            users.Count.ShouldBe(4);
+
+            users.Each(x =>
+            {
+                x.FirstName.ShouldNotBeNull();
+                x.LastName.ShouldNotBeNull();
+            });
+        }
+
+        [Fact]
+        public void use_select_with_multiple_fields_to_other_type_using_constructor_and_properties()
+        {
+            theSession.Store(new User { FirstName = "Hank", LastName = "Aaron", Age = 20 });
+            theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer", Age = 40 });
+            theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell", Age = 60 });
+            theSession.Store(new User { FirstName = "Tom", LastName = "Chambers", Age = 80 });
+
+            theSession.SaveChanges();
+
+            var users = theSession.Query<User>()
+                .Select(x => new UserDto(x.FirstName, x.LastName) {YearsOld = x.Age})
+                .ToList();
+
+            users.Count.ShouldBe(4);
+
+            users.Each(x =>
+            {
+                x.FirstName.ShouldNotBeNull();
+                x.LastName.ShouldNotBeNull();
+                x.YearsOld.ShouldBeGreaterThan(0);
+            });
+        }
+
+        public class UserDto
+        {
+            public UserDto(string firstName, string lastName)
+            {
+                FirstName = firstName;
+                LastName = lastName;
+            }
+
+            public string FirstName { get; }
+            public string LastName { get; }
+            public int YearsOld { get; set; }
+        }
 
         [Fact]
         public async Task use_select_to_transform_to_an_anonymous_type_async()
@@ -307,6 +365,55 @@ namespace Marten.Testing.Linq
         }
         // ENDSAMPLE
 
+        [Fact]
+        public void transform_with_deep_properties_to_anonymous_type()
+        {
+            var target = Target.Random(true);
+
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            var actual = theSession.Query<Target>()
+                .Where(x => x.Id == target.Id)
+                .Select(x => new {x.Id, x.Number, InnerNumber = x.Inner.Number})
+                .First();
+
+            actual.Id.ShouldBe(target.Id);
+            actual.Number.ShouldBe(target.Number);
+            actual.InnerNumber.ShouldBe(target.Inner.Number);
+        }
+
+        [Fact]
+        public void transform_with_deep_properties_to_type_using_constructor()
+        {
+            var target = Target.Random(true);
+
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            var actual = theSession.Query<Target>()
+                .Where(x => x.Id == target.Id)
+                .Select(x => new FlatTarget(x.Id, x.Number, x.Inner.Number))
+                .First();
+
+            actual.Id.ShouldBe(target.Id);
+            actual.Number.ShouldBe(target.Number);
+            actual.InnerNumber.ShouldBe(target.Inner.Number);
+        }
+
+        public class FlatTarget
+        {
+            public FlatTarget(Guid id, int number, int innerNumber)
+            {
+                Id = id;
+                Number = number;
+                InnerNumber = innerNumber;
+            }
+
+            public Guid Id { get; }
+            public int Number { get; }
+            public int InnerNumber { get; }
+        }
     }
 
     public class UserName

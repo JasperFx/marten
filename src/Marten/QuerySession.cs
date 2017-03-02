@@ -139,13 +139,34 @@ namespace Marten
 
         private T load<T>(object id)
         {
+            if (id == null) throw new ArgumentNullException(nameof(id));
+
             assertNotDisposed();
-            return storage<T>().As<IResolver<T>>().Resolve(_identityMap, this, id);
+
+            assertCorrectIdType<T>(id);
+
+            var resolver = storage<T>().As<IResolver<T>>();
+
+            
+            return resolver.Resolve(_identityMap, this, id);
+        }
+
+        private void assertCorrectIdType<T>(object id)
+        {
+            var mapping = _schema.MappingFor(typeof(T));
+            if (id.GetType() != mapping.IdType)
+            {
+                if (id.GetType() == typeof(int) && mapping.IdType == typeof(long)) return;
+
+                throw new InvalidOperationException(
+                    $"The id type for {typeof(T).FullName} is {mapping.IdType.Name}, but got {id.GetType().Name}");
+            }
         }
 
         private Task<T> loadAsync<T>(object id, CancellationToken token)
         {
             assertNotDisposed();
+            assertCorrectIdType<T>(id);
             return storage<T>().As<IResolver<T>>().ResolveAsync(_identityMap, this, token, id);
         }
 
@@ -234,12 +255,26 @@ namespace Marten
 
             public IList<TDoc> ById<TKey>(params TKey[] keys)
             {
+                assertCorrectIdType<TKey>();
+
                 var hitsAndMisses = this.hitsAndMisses(keys);
                 var hits = hitsAndMisses.Item1;
                 var misses = hitsAndMisses.Item2;
                 var documents = fetchDocuments(misses);
 
                 return concatDocuments(hits, documents);
+            }
+
+            private void assertCorrectIdType<TKey>()
+            {
+                var mapping = _parent._schema.MappingFor(typeof(TDoc));
+                if (typeof(TKey) != mapping.IdType)
+                {
+                    if (typeof(TKey) == typeof(int) && mapping.IdType == typeof(long)) return;
+
+                    throw new InvalidOperationException(
+                        $"The id type for {typeof(TDoc).FullName} is {mapping.IdType.Name}, but got {typeof(TKey).Name}");
+                }
             }
 
             public Task<IList<TDoc>> ByIdAsync<TKey>(params TKey[] keys)
@@ -255,6 +290,8 @@ namespace Marten
             public async Task<IList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys,
                 CancellationToken token = default(CancellationToken))
             {
+                assertCorrectIdType<TKey>();
+
                 var hitsAndMisses = this.hitsAndMisses(keys.ToArray());
                 var hits = hitsAndMisses.Item1;
                 var misses = hitsAndMisses.Item2;

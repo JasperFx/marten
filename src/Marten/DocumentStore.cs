@@ -216,39 +216,50 @@ namespace Marten
                 conn.RunSql(sql);
             }
 
-            if (documents.Length <= batchSize)
+            var writer = _options.UseCharBufferPooling ? _writerPool.Lease() : null;
+            try
             {
-                if (mode == BulkInsertMode.InsertsOnly)
+                if (documents.Length <= batchSize)
                 {
-                    loader.Load(_serializer, conn, documents);
-                }
-                else
-                {
-                    loader.LoadIntoTempTable(_serializer, conn, documents);
-                }
-                
-            }
-            else
-            {
-                var total = 0;
-                var page = 0;
-
-                while (total < documents.Length)
-                {
-                    var batch = documents.Skip(page*batchSize).Take(batchSize).ToArray();
-
                     if (mode == BulkInsertMode.InsertsOnly)
                     {
-                        loader.Load(_serializer, conn, batch);
+                        loader.Load(_serializer, conn, documents, writer);
                     }
                     else
                     {
-                        loader.LoadIntoTempTable(_serializer, conn, batch);
+                        loader.LoadIntoTempTable(_serializer, conn, documents, writer);
                     }
 
+                }
+                else
+                {
+                    var total = 0;
+                    var page = 0;
 
-                    page++;
-                    total += batch.Length;
+                    while (total < documents.Length)
+                    {
+                        var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
+
+                        if (mode == BulkInsertMode.InsertsOnly)
+                        {
+                            loader.Load(_serializer, conn, batch, writer);
+                        }
+                        else
+                        {
+                            loader.LoadIntoTempTable(_serializer, conn, batch, writer);
+                        }
+
+
+                        page++;
+                        total += batch.Length;
+                    }
+                }
+            }
+            finally
+            {
+                if (writer != null)
+                {
+                    _writerPool.Release(writer);
                 }
             }
 
@@ -272,23 +283,22 @@ namespace Marten
         public IDocumentSession OpenSession(SessionOptions options)
         {
             var connection = new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, options.IsolationLevel, options.Timeout);
-            return openSession(options.Tracking, connection);
+            return openSession(options.Tracking, connection, options.Listeners);
         }
 
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             var connection = new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel);
-            return openSession(tracking, connection);
+            return openSession(tracking, connection, new List<IDocumentSessionListener>());
         }
 
-        private IDocumentSession openSession(DocumentTracking tracking, ManagedConnection connection)
+        private IDocumentSession openSession(DocumentTracking tracking, ManagedConnection connection, IList<IDocumentSessionListener> localListeners)
         {
             var sessionPool = CreateWriterPool();
-            var map = createMap(tracking, sessionPool);
+            var map = createMap(tracking, sessionPool, localListeners);
 
-
-            var session = new DocumentSession(this, _options, Schema, _serializer, connection, _parser, map, sessionPool);
+            var session = new DocumentSession(this, _options, Schema, _serializer, connection, _parser, map, sessionPool, localListeners);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
@@ -301,7 +311,7 @@ namespace Marten
             return _options.UseCharBufferPooling ? new CharArrayTextWriter.Pool(_writerPool) : null;
         }
 
-        private IIdentityMap createMap(DocumentTracking tracking, CharArrayTextWriter.IPool sessionPool)
+        private IIdentityMap createMap(DocumentTracking tracking, CharArrayTextWriter.IPool sessionPool, IEnumerable<IDocumentSessionListener> localListeners)
         {
             switch (tracking)
             {
@@ -309,10 +319,10 @@ namespace Marten
                     return new NulloIdentityMap(_serializer);
 
                 case DocumentTracking.IdentityOnly:
-                    return new IdentityMap(_serializer, _options.Listeners);
+                    return new IdentityMap(_serializer, _options.Listeners.Concat(localListeners));
 
                 case DocumentTracking.DirtyTracking:
-                    return new DirtyTrackingIdentityMap(_serializer, _options.Listeners, sessionPool);
+                    return new DirtyTrackingIdentityMap(_serializer, _options.Listeners.Concat(localListeners), sessionPool);
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(tracking));

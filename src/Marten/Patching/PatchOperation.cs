@@ -12,7 +12,7 @@ using Baseline;
 
 namespace Marten.Patching
 {
-    public class PatchOperation : IStorageOperation
+    public class PatchOperation : IStorageOperation, NoDataReturnedCall
     {
         private readonly IQueryableDocument _document;
         private readonly IWhereFragment _fragment;
@@ -57,6 +57,8 @@ set data = {_transform.Function.QualifiedName}(data, :{patchParam.ParameterName}
             return new UpdateDuplicateFields(this);
         }
 
+        public Type DocumentType => _document.DocumentType;
+
         public class UpdateDuplicateFields : IStorageOperation
         {
             private readonly PatchOperation _parent;
@@ -76,6 +78,8 @@ set data = {_transform.Function.QualifiedName}(data, :{patchParam.ParameterName}
             {
                 // nothing here
             }
+
+            public Type DocumentType => _parent.DocumentType;
         }
     }
 

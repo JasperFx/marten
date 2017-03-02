@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
+using Baseline.Dates;
 using Marten.Events;
 using Marten.Events.Projections.Async;
 using NSubstitute;

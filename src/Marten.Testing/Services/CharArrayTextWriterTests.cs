@@ -15,7 +15,7 @@ namespace Marten.Testing.Services
 
             writer.Write('z');
 
-            var written = ToCharSegment(writer);
+            var written = writer.ToCharSegment();
 
             written.ShouldBe('z'.ToString());
         }
@@ -31,7 +31,7 @@ namespace Marten.Testing.Services
             const int take = 1;
             writer.Write(chars, offset, take);
 
-            var written = ToCharSegment(writer);
+            var written = writer.ToCharSegment();
 
             written.ShouldBe(chars.Skip(offset).Take(take));
         }
@@ -43,7 +43,7 @@ namespace Marten.Testing.Services
 
             writer.Write("test");
 
-            var written = ToCharSegment(writer);
+            var written = writer.ToCharSegment();
 
             written.ShouldBe("test");
         }
@@ -57,7 +57,22 @@ namespace Marten.Testing.Services
 
             writer.Write(s);
 
-            var written = ToCharSegment(writer);
+            var written = writer.ToCharSegment();
+
+            written.ShouldBe(s);
+        }
+
+
+        [Fact]
+        public void writes_characters_much_beyond_limit()
+        {
+            var writer = new CharArrayTextWriter();
+
+            var s = new string('a', CharArrayTextWriter.InitialSize * 8);
+
+            writer.Write(s);
+
+            var written = writer.ToCharSegment();
 
             written.ShouldBe(s);
         }
@@ -89,11 +104,11 @@ namespace Marten.Testing.Services
         {
             var root = new CharArrayTextWriter.Pool();
             CharArrayTextWriter writer1, writer2;
-            
+
             using (var pool = new CharArrayTextWriter.Pool(root))
             {
                 writer1 = pool.Lease();
-                pool.Release(writer1 );
+                pool.Release(writer1);
             }
 
             using (var pool = new CharArrayTextWriter.Pool(root))
@@ -103,12 +118,6 @@ namespace Marten.Testing.Services
             }
 
             writer2.ShouldBe(writer1);
-        }
-
-
-        static ArraySegment<char> ToCharSegment(CharArrayTextWriter writer)
-        {
-            return new ArraySegment<char>(writer.Buffer, 0, writer.Size);
         }
     }
 }

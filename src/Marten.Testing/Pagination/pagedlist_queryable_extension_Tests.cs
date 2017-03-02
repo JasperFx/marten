@@ -49,6 +49,7 @@ namespace Marten.Testing.Pagination
             var pagedList = theSession.Query<Target>().AsPagedList(pageNumber, pageSize);
 
             pagedList.Count.ShouldBe(pageSize);
+            
         }
 
         [Fact]

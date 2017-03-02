@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Baseline.Dates;
 
 namespace Marten.Events.Projections.Async.ErrorHandling
 {

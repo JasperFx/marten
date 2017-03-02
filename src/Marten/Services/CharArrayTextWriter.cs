@@ -28,11 +28,17 @@ namespace Marten.Services
 
         void Ensure(int i)
         {
-            if (_next + i >= _length)
+            var required = _next + i;
+            if (required < _length)
+            {
+                return;
+            }
+
+            while (required >= _length)
             {
                 _length *= 2;
-                Array.Resize(ref _chars, _length);
             }
+            Array.Resize(ref _chars, _length);
         }
 
         public override void Write(char[] buffer, int index, int count)
@@ -134,7 +140,7 @@ namespace Marten.Services
             public void Release(CharArrayTextWriter writer)
             {
                 // currently, all writers are cached. This might be changed to hold only N writers in the cache.
-                writer._next = 0;
+                writer.Clear();
                 _cache.Push(writer);
             }
 
@@ -163,6 +169,16 @@ namespace Marten.Services
                     _cache.Clear();
                 }
             }
+        }
+
+        public ArraySegment<char> ToCharSegment()
+        {
+            return new ArraySegment<char>(Buffer, 0, Size);
+        }
+
+        public void Clear()
+        {
+            _next = 0;
         }
     }
 }

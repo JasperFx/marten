@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Baseline;
+using Baseline.Dates;
 using Xunit;
 
 namespace Marten.Testing.Bugs

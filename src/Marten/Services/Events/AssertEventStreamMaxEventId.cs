@@ -9,15 +9,15 @@ namespace Marten.Services.Events
     /// </summary>
     public class AssertEventStreamMaxEventId : IStorageOperation
     {
-        private readonly Guid stream;
-        private readonly int expectedVersion;
-        private readonly string tableName;
+        public Guid Stream { get; }
+        public int ExpectedVersion { get; set; }
+        public string TableName { get; }
 
         public AssertEventStreamMaxEventId(Guid stream, int expectedVersion, string tableName)
         {
-            this.stream = stream;
-            this.expectedVersion = expectedVersion;
-            this.tableName = tableName;
+            Stream = stream;
+            ExpectedVersion = expectedVersion;
+            TableName = tableName;
         }
 
         public string _sql;
@@ -33,8 +33,8 @@ namespace Marten.Services.Events
             // In order to parameterize, sproc would need to be created            
             _sql = $@"DO $$ BEGIN IF
   (SELECT max(events.version)
-   FROM {tableName} AS events
-   WHERE events.stream_id = '{stream}') <> {expectedVersion} THEN 
+   FROM {TableName} AS events
+   WHERE events.stream_id = '{Stream}') <> {ExpectedVersion} THEN 
 RAISE EXCEPTION '{EventContracts.UnexpectedMaxEventIdForStream.Value}'; END IF; END; $$;";
         }
 
@@ -42,5 +42,7 @@ RAISE EXCEPTION '{EventContracts.UnexpectedMaxEventIdForStream.Value}'; END IF; 
         {
             return _sql;
         }
+
+        public Type DocumentType => null;
     }
 }

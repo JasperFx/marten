@@ -1,8 +1,9 @@
-﻿using System.Data;
+﻿using System.Collections.Generic;
+using System.Data;
 
 namespace Marten.Services
 {
-    public sealed  class SessionOptions
+    public sealed class SessionOptions
     {
         /// <summary>
         /// Default to DocumentTracking.IdentityOnly
@@ -18,5 +19,10 @@ namespace Marten.Services
         /// Default to IsolationLevel.ReadCommitted
         /// </summary>
         public IsolationLevel IsolationLevel { get; set; } = IsolationLevel.ReadCommitted;
+
+        /// <summary>
+        ///     Add, remove, or reorder local session listeners
+        /// </summary>
+        public readonly IList<IDocumentSessionListener> Listeners = new List<IDocumentSessionListener>();
     }
 }

@@ -1,0 +1,2 @@
+Method,Job,AnalyzeLaunchVariance,EvaluateOverhead,MaxStdErrRelative,MinInvokeCount,MinIterationTime,RemoveOutliers,Affinity,Jit,Platform,Runtime,AllowVeryLargeObjects,Concurrent,CpuGroups,Force,Server,Clock,EngineFactory,Toolchain,InvocationCount,IterationTime,LaunchCount,RunStrategy,TargetCount,UnrollFactor,WarmupCount,Mean,StdDev,Gen 0,Allocated
+InsertDocuments,Default,False,Default,Default,Default,Default,Default,15,RyuJit,X64,Clr,False,True,False,True,False,Default,Default,Default,1,Default,Default,Default,Default,16,2,43.7957 ms,2.6786 ms,287.5000,4.62 MB

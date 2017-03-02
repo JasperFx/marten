@@ -588,6 +588,18 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
         }
+
+        [Fact]
+        public void Bug_669_can_store_and_update_same_document_with_optimistic_concurrency_and_dirty_tracking()
+        {
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession(tracking: DocumentTracking.DirtyTracking))
+            {
+                session.Store(doc1);
+                doc1.Name = "New Name";
+                session.SaveChanges();
+            }
+        }
     }
 
     [UseOptimisticConcurrency]

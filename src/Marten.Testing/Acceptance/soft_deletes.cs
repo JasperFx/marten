@@ -205,6 +205,7 @@ namespace Marten.Testing.Acceptance
         }
         // ENDSAMPLE
 
+        // SAMPLE: query_soft_deleted_since
         [Fact]
         public void query_is_soft_deleted_since_docs()
         {
@@ -221,14 +222,15 @@ namespace Marten.Testing.Acceptance
                 session.Delete(user3);
                 session.SaveChanges();
 
-                var epoch = DateTimeOffset.UtcNow;
+                var epoch = session.DocumentStore.Advanced.MetadataFor(user3).DeletedAt;
                 session.Delete(user4);
                 session.SaveChanges();
 
-                session.Query<User>().Where(x => x.DeletedSince(epoch)).Select(x => x.UserName)
+                session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
                     .ToList().ShouldHaveTheSameElementsAs("jack");
             }
         }
+        // ENDSAMPLE
 
         [Fact]
         public void query_is_soft_deleted_before_docs()
@@ -246,11 +248,12 @@ namespace Marten.Testing.Acceptance
                 session.Delete(user3);
                 session.SaveChanges();
 
-                var epoch = DateTimeOffset.UtcNow;
                 session.Delete(user4);
                 session.SaveChanges();
 
-                session.Query<User>().Where(x => x.DeletedBefore(epoch)).Select(x => x.UserName)
+                var epoch = session.DocumentStore.Advanced.MetadataFor(user4).DeletedAt;
+
+                session.Query<User>().Where(x => x.DeletedBefore(epoch.Value)).Select(x => x.UserName)
                     .ToList().ShouldHaveTheSameElementsAs("baz");
             }
         }

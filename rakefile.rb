@@ -2,17 +2,16 @@ require 'json'
 
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '1.2.5';
+BUILD_VERSION = '1.4.1';
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
 build_revision = tc_build_number || Time.new.strftime('5%H%M')
-build_number = "1.2.5.#{build_revision}"
+build_number = "1.4.1.#{build_revision}"
 BUILD_NUMBER = build_number
 
 task :ci => [:connection, :version, :default, 'pack']
 
-# TODO: put :storyteller back -- task :default => [:mocha, :test, :storyteller]
 task :default => [:mocha, :test]
 
 desc "Prepares the working directory for a new build"
@@ -38,7 +37,7 @@ task :version do
   options = {
       :description => 'Postgresql as a Document Db and Event Store for .Net Development',
       :product_name => 'Marten',
-      :copyright => 'Copyright 2016 Jeremy D. Miller et al. All rights reserved.',
+      :copyright => 'Copyright 2016-17 Jeremy D. Miller et al. All rights reserved.',
       :trademark => commit,
       :version => asm_version,
       :file_version => build_number,
@@ -99,14 +98,16 @@ end
 
 desc "Run the storyteller specifications"
 task :storyteller => [:compile] do
-  storyteller_cmd = storyteller_path()
-  sh "#{storyteller_cmd} run src/Marten.Testing --results-path artifacts/stresults.htm --build #{COMPILE_TARGET}/net46/win7-x64"
+	Dir.chdir("src/Marten.Storyteller") do
+	  system "dotnet storyteller run -r artifacts"
+	end
 end
 
 desc "Run the storyteller specifications"
 task :open_st => [:compile] do
-  storyteller_cmd = storyteller_path()
-  sh "#{storyteller_cmd} open src/Marten.Testing"
+	Dir.chdir("src/Marten.Storyteller") do
+	  system "dotnet storyteller open"
+	end
 end
 
 "Launches the documentation project in editable mode"
@@ -146,26 +147,21 @@ end
 
 desc 'Restores nuget packages'
 task :restore do
-    sh 'dotnet restore src/Marten'
-    sh 'dotnet restore src/Marten.CommandLine'
-    sh 'dotnet restore src/Marten.Testing.OtherAssembly'
-    sh 'dotnet restore src/Marten.Testing'
+    sh 'dotnet restore src'
+end
+
+desc 'Run Benchmarks'
+task :benchmarks => [:restore] do
+	sh 'dotnet run --project src/MartenBenchmarks --configuration Release'
 end
 
 
 desc 'Build the Nupkg file'
 task :pack => [:compile] do
-	sh "dotnet pack ./src/Marten -o artifacts"
-	sh "dotnet pack ./src/Marten.CommandLine -o artifacts"
+	sh "dotnet pack ./src/Marten -o artifacts --configuration Release"
+	sh "dotnet pack ./src/Marten.CommandLine -o artifacts --configuration Release"
 end
 
-def storyteller_path()
-  global_cache = `./nuget.exe locals global-packages -list`
-  global_cache = global_cache.split(': ').last.strip
-  project_file = load_project_file("src/Marten.Testing/project.json")
-  storyteller_version = project_file["frameworks"]["net46"]["dependencies"]["Storyteller"]
-  "#{global_cache}Storyteller/#{storyteller_version}/tools/st.exe"
-end
 
 def load_project_file(project)
   File.open(project) do |file|

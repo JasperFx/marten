@@ -99,5 +99,9 @@ namespace Marten.Services
         }
 
         public VersionTracker Versions { get; } = new VersionTracker();
+        public void ClearChanges()
+        {
+            
+        }
     }
 }
