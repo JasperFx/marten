@@ -179,6 +179,69 @@ namespace Marten.Testing.Transforms
             patch.RollbackDDL.ShouldNotContain(func.Function.QualifiedName);
         }
 
+
+
+        [Fact]
+        public void generates_execute_transform_function_file()
+        {
+            var func = TransformFunction.ForFile(new StoreOptions(), _getFullnameJs);
+            var tableName = "mt_test_table";
+            var patch = new SchemaPatch(new DdlRules());
+
+            var directory = AppContext.BaseDirectory.AppendPath("bin", "transforms");
+
+            var fileSystem = new FileSystem();
+            fileSystem.DeleteDirectory(directory);
+            fileSystem.CreateDirectory(directory);
+
+            var fileName = Path.GetFileNameWithoutExtension(_getFullnameJs);
+
+            var filePath = directory.AppendPath($"execute_transform_{fileName}.sql");
+
+            func.WritePatchForAllDocuments(patch, tableName, filePath);
+
+            fileSystem.FileExists(directory.AppendPath($"execute_transform_{fileName}.sql"));
+        }
+
+        [Fact]
+        public void generated_script_includes_function_body()
+        {
+            var func = getTransformationFunction();
+            var script = func.GenerateTransformExecutionScript("test.test_table");
+
+            script.ShouldContain(func.GenerateFunction());
+        }
+
+        [Fact]
+        public void generated_script_includes_execution_function()
+        {
+            var func = getTransformationFunction();
+            var script = func.GenerateTransformExecutionScript("test.test_table");
+            var functionName = $"test.execute_transform_{func.Function.Name}";
+
+            script.ShouldContain($"CREATE OR REPLACE FUNCTION {functionName}");
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void generated_script_performs_invocation_when_prompted_to(bool shouldImmediatelyInvoke)
+        {
+            var func = getTransformationFunction();
+            var script = func.GenerateTransformExecutionScript("test.test_table", shouldImmediatelyInvoke);
+            var functionName = $"test.execute_transform_{func.Function.Name}";
+
+            script.Contains($"PERFORM {functionName}").ShouldBe(shouldImmediatelyInvoke);
+        }
+
+        private TransformFunction getTransformationFunction()
+        {
+            return TransformFunction.ForFile(new StoreOptions
+            {
+                DatabaseSchemaName = "test"
+            }, _getFullnameJs);
+        }
+
         [Fact]
         public void end_to_end_test_using_the_transform()
         {
