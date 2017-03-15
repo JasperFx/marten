@@ -87,6 +87,29 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
+        public void select_many_with_count_when_none_match_does_not_throw()
+        {
+            var product1 = new Product { Tags = new[] { "a", "b", "c" } };
+            var product2 = new Product { Tags = new[] { "b", "c", "d" } };
+            var product3 = new Product { Tags = new[] { "d", "e", "f" } };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(product1, product2, product3);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                var queryable = query.Query<Product>()
+                    .Where(p => p.Tags.Length == 1)
+                    .SelectMany(x => x.Tags);
+                var ex = Record.Exception(() => queryable.Count());
+                ex.ShouldBeNull();
+            }
+        }
+
+        [Fact]
         public async Task select_many_against_complex_type_with_count_async()
         {
             var product1 = new Product {Tags = new[] {"a", "b", "c"}};
@@ -103,6 +126,29 @@ namespace Marten.Testing.Linq
             {
                 (await query.Query<Product>().SelectMany(x => x.Tags)
                     .CountAsync()).ShouldBe(9);
+            }
+        }
+
+        [Fact]
+        public async Task select_many_with_count_when_none_match_does_not_throw_async()
+        {
+            var product1 = new Product { Tags = new[] { "a", "b", "c" } };
+            var product2 = new Product { Tags = new[] { "b", "c", "d" } };
+            var product3 = new Product { Tags = new[] { "d", "e", "f" } };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(product1, product2, product3);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                var queryable = query.Query<Product>()
+                    .Where(p => p.Tags.Length == 1)
+                    .SelectMany(x => x.Tags);
+                var ex = await Record.ExceptionAsync(() => queryable.CountAsync());
+                ex.ShouldBeNull();
             }
         }
 
