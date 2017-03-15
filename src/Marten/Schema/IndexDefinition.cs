@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using System.Text.RegularExpressions;
 
 namespace Marten.Schema
 {
@@ -9,7 +10,6 @@ namespace Marten.Schema
         private readonly DocumentMapping _parent;
         private readonly string[] _columns;
         private string _indexName;
-
 
         public IndexDefinition(DocumentMapping parent, params string[] columns)
         {
@@ -89,7 +89,7 @@ namespace Marten.Schema
 
             _columns.Each(col =>
             {
-                actual = actual.Replace($"({col})", $"(\"{col}\")");
+                actual = Regex.Replace(actual, "\\((?<column>[\\w_]+) (?<operatorclass>[\\w_]+)\\)", "(\"${column}\" ${operatorclass})");
             });
 
             if (!actual.Contains(_parent.Table.QualifiedName))
