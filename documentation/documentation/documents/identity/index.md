@@ -1,6 +1,12 @@
 <!--title:Document Identity-->
 
-Besides being serializable, Marten's only other requirement for a .Net type to be a document is the existence of an identifier field or property that Marten can use as the primary key for the document type. The `Id` can be either a public field or property, and the name must be either `id` or `Id` or `ID`. As of this time, Marten supports these `Id` types:
+Besides being serializable, Marten's only other requirement for a .Net type to be a document is the existence of an identifier field or property that Marten can use as the primary key for the document type. 
+
+The `Id` can be either a public field or property, and the name must be either `id` or `Id` or `ID`. 
+
+Marten by default uses the identity value set on documents and only assigns one in case it has no value (`Guid.Empty`, `0`, `string.Empty` etc).
+
+As of this time, Marten supports these `Id` types:
 
 1. `String`. It might be valuable to use a [natural key](https://en.wikipedia.org/wiki/Natural_key) as the identifier, especially if it is valuable within the 
    <[linkto:documentation/documents/advanced/identitymap;title=Identity Map]> feature of Marten Db. In this case, the user will 
