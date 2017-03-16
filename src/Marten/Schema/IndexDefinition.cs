@@ -2,6 +2,7 @@
 using System.Linq;
 using Baseline;
 using System.Text.RegularExpressions;
+using System.Text;
 
 namespace Marten.Schema
 {
@@ -87,10 +88,18 @@ namespace Marten.Schema
                 actual = actual.Replace("USING btree", "");
             }
 
-            _columns.Each(col =>
+            var match = Regex.Match(actual, "\\((?<columns>.*(?:(?:[\\w.]+)\\s(?:[\\w_]+).*))\\)");
+            var replace = string.Empty;
+            if (match.Success)
             {
-                actual = Regex.Replace(actual, "\\((?<column>[\\w_]+) (?<operatorclass>[\\w_]+)\\)", "(\"${column}\" ${operatorclass})");
-            });
+                var columns = match.Groups["columns"].Value;
+                _columns.Each(col =>
+                {
+                    columns = Regex.Replace(columns, $"({col})\\s?([\\w_]+)?", "\"$1\" $2");
+                });
+
+                actual = Regex.Replace(actual, "\\((?<columns>.*(?:(?:[\\w.]+)\\s(?:[\\w_]+).*))\\)", $"({columns})");
+            }
 
             if (!actual.Contains(_parent.Table.QualifiedName))
             {
