@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,6 +44,7 @@ namespace Marten.Testing.Events.Projections.Async
             public decimal TotalAmount { get; set; }
             public string CompanyName { get; set; }
             public Guid CompanyId { get; set; }
+            public DateTime DateProcessed { get; set; }
         }
     }
 
@@ -57,18 +59,20 @@ namespace Marten.Testing.Events.Projections.Async
             internal class CompanySideReadModel
             {
                 public Guid Id { get; set; }
-                public string Name { get; set; }
+                public string Name { get; set; }                
             }
 
             private void When(IDocumentSession session, Events.OrderPlaced created)
             {
+                Assert.Null(session.Load<ReadModels.Order>(created.Id));
                 var company = session.Load<CompanySideReadModel>(created.CompanyId);
                 session.Store(new ReadModels.Order()
                 {
                     Id = created.Id,
                     CompanyName = company?.Name,
                     TotalAmount = created.TotalAmount,
-                    CompanyId = created.CompanyId
+                    CompanyId = created.CompanyId,
+                    DateProcessed = DateTime.UtcNow
                 });             
             }
 
@@ -77,7 +81,7 @@ namespace Marten.Testing.Events.Projections.Async
                 session.Store(new CompanySideReadModel()
                 {
                     Id = created.Id,
-                    Name = created.Name
+                    Name = created.Name                   
                 });
             }
 
@@ -85,11 +89,14 @@ namespace Marten.Testing.Events.Projections.Async
             {
                 // replace with Patch once https://github.com/JasperFx/marten/pull/926 is in
                 var company = session.Load<CompanySideReadModel>(changed.Id);
-                company.Name = changed.NewName;
+                company.Name = changed.NewName;                
                 session.Store(company);
 
                 session.Patch<ReadModels.Order>(x => x.CompanyId == changed.Id)
-                    .Set(x => x.CompanyName, changed.NewName);                
+                    .Set(x => x.CompanyName, changed.NewName);
+
+                session.Patch<ReadModels.Order>(x => x.CompanyId == changed.Id)
+                    .Set(x => x.DateProcessed, DateTime.UtcNow);
             }
 
             #region Infrastructure and dispatching                       
@@ -160,6 +167,44 @@ namespace Marten.Testing.Events.Projections.Async
                 order2.CompanyName.ShouldBe("Mexico Railways");
                 
                 order3.CompanyName.ShouldBe("Microsoft");
+            }
+        }
+
+        [Fact]
+        public async Task Rebuild_LazyProjection_From_Stream()
+        {
+            StoreOptions(cfg =>
+            {
+                cfg.Events.AsyncProjections.Add(() => new Projections.OrderProjection());
+            });
+            // 1. publish events
+            await PublishEvents();
+
+            // 2. process them initially with daemon
+            using (var daemon = theStore.BuildProjectionDaemon(logger: new DebugDaemonLogger()))
+            {
+                daemon.StartAll();
+            
+                await daemon.WaitForNonStaleResults();
+                await daemon.StopAll();
+            }
+
+            // daemon stopped, now rebuild them with a new one
+            var dt = DateTime.UtcNow;
+
+            using (var daemon2 = theStore.BuildProjectionDaemon(logger: new DebugDaemonLogger(), projections: theStore.Events.AsyncProjections.ToArray()))
+            {
+                await daemon2.RebuildAll(new CancellationTokenSource(10*1000).Token);
+                await daemon2.WaitForNonStaleResults(new CancellationTokenSource(10 * 1000).Token);
+            }
+
+            using (var session = theStore.OpenSession())
+            {
+                var order1 = session.Load<ReadModels.Order>(Order1Id);
+                
+                order1.CompanyName.ShouldBe("Mexico Railways");                
+                
+                order1.DateProcessed.ShouldBeGreaterThanOrEqualTo(dt);
             }
         }
 
