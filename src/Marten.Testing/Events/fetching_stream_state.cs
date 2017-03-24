@@ -1,11 +1,44 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Events.Projections;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
+    public class fetching_stream_state_before_aggregator_is_registered : IntegratedFixture
+    {
+        [Fact]
+        public async Task bug_705_order_of_operation()
+        {
+            var streamId = Guid.NewGuid();
+
+            using (var session = theStore.OpenSession())
+            {
+                var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+                session.Events.StartStream<QuestParty>(streamId, joined, departed);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.OpenSession())
+            {
+                var state = await query.Events.FetchStreamStateAsync(streamId);
+                var aggregate = await query.Events.AggregateStreamAsync<QuestParty>(streamId);
+                
+                
+
+                state.ShouldNotBeNull();
+                aggregate.ShouldNotBeNull();
+            }
+
+
+        }
+    }
+
+
     // SAMPLE: fetching_stream_state
     public class fetching_stream_state : DocumentSessionFixture<NulloIdentityMap>
     {
@@ -19,6 +52,8 @@ namespace Marten.Testing.Events
             theStreamId = theSession.Events.StartStream<Quest>(joined, departed);
             theSession.SaveChanges();
         }
+
+
 
         [Fact]
         public void can_fetch_the_stream_version_and_aggregate_type()
