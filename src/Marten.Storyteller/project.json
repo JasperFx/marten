@@ -6,12 +6,12 @@
 
   "dependencies": {
     "Marten.Testing": { "target": "project" },
-    "Storyteller": "4.0.0-alpha-467"
+    "Storyteller": "4.1.1"
   },
 
   "tools": {
     "dotnet-storyteller": {
-      "version": "1.0.0-alpha-467"
+      "version": "1.1.1"
     }  
   },
 
