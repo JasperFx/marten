@@ -88,7 +88,7 @@ namespace Marten.Schema
                 actual = actual.Replace("USING btree", "");
             }
 
-            string columnsMatchPattern = "\\((?<columns>.*(?:(?:[\\w.]+)\\s(?:[\\w_]+).*))\\)";
+            string columnsMatchPattern = "\\((?<columns>.*(?:(?:[\\w.]+)\\s?(?:[\\w_]+).*))\\)";
             var match = Regex.Match(actual, columnsMatchPattern);
             var replace = string.Empty;
             if (match.Success)
@@ -99,7 +99,7 @@ namespace Marten.Schema
                     columns = Regex.Replace(columns, $"({col})\\s?([\\w_]+)?", "\"$1\" $2");
                 });
 
-                actual = Regex.Replace(actual, columnsMatchPattern, $"({columns})");
+                actual = Regex.Replace(actual, columnsMatchPattern, $"({columns.Trim()})");
             }
 
             if (!actual.Contains(_parent.Table.QualifiedName))
