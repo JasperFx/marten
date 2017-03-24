@@ -36,6 +36,7 @@ namespace Marten.Schema
         private string _alias;
         private string _databaseSchemaName;
         private readonly DocumentSchemaObjects _schemaObjects;
+        private MemberInfo _idMember;
 
 
         public DocumentMapping(Type documentType, StoreOptions storeOptions) : base("d.data", documentType, storeOptions)
@@ -51,14 +52,6 @@ namespace Marten.Schema
             Alias = defaultDocumentAliasName(documentType);
 
             IdMember = FindIdMember(documentType);
-
-            if (IdMember != null)
-            {
-                var idField = new IdField(IdMember);
-                setField(IdMember.Name, idField);
-
-                IdStrategy = defineIdStrategy(documentType, storeOptions);
-            }
 
             applyAnyMartenAttributes(documentType);
         }
@@ -174,7 +167,27 @@ namespace Marten.Schema
 
         public virtual TableName Table => new TableName(DatabaseSchemaName, $"{TablePrefix}{_alias}");
 
-        public MemberInfo IdMember { get; }
+        public MemberInfo IdMember
+        {
+            get { return _idMember; }
+            set
+            {
+                _idMember = value;
+
+                if (_idMember != null && !_idMember.GetMemberType().IsOneOf(typeof(int), typeof(Guid), typeof(long), typeof(string)))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(IdMember),"Id members must be an int, long, Guid, or string");
+                }
+
+                if (_idMember != null)
+                {
+                    var idField = new IdField(IdMember);
+                    setField(IdMember.Name, idField);
+
+                    IdStrategy = defineIdStrategy(DocumentType, _storeOptions);
+                }
+            }
+        }
 
         public virtual string[] SelectFields()
         {
