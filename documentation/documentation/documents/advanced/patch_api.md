@@ -60,7 +60,7 @@ To increment a persisted value in the persisted document, use this operation:
 
 <[sample:increment_for_int]>
 
-By default, the `Increment()` operation will add 1 to the existing value. You can optionally override the increment:
+By default, the `Patch.Increment()` operation will add 1 to the existing value. You can optionally override the increment:
 
 <[sample:increment_for_int_with_explicit_increment]>
 
@@ -70,15 +70,19 @@ The `Patch.Append()` operation adds a new item to the end of a child collection:
 
 <[sample:append_complex_element]>
 
+The `Patch.AppendIfNotExists()` operation will treat the child collection as a set rather than a list and only append the element if it does not already exist within the collection
+
 Marten can append either complex, value object values or primitives like numbers or strings.
 
 ## Insert an Element into a Child Collection
 
-Instead of adding an item to the end of a child collection, the `Insert()` operation allows you
-to put a new item into a persisted collection with a given index -- with the default index
+Instead of appending an item to the end of a child collection, the `Patch.Insert()` operation allows you
+to insert a new item into a persisted collection with a given index -- with the default index
 being 0 so that a new item would be inserted at the beginning of the child collection.
 
 <[sample:insert_first_complex_element]>
+
+The `Patch.InsertIfNotExists()` operation will only insert the element if the element at the designated index does not already exist.  
 
 ## Remove an Element from a Child Collection
 

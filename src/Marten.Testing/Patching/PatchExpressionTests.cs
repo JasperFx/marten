@@ -208,12 +208,32 @@ namespace Marten.Testing.Patching
         }
 
         [Fact]
+        public void append_if_not_exists_shallow()
+        {
+            _expression.AppendIfNotExists(x => x.NumberArray, 5);
+
+            _expression.Patch["path"].ShouldBe("NumberArray");
+            _expression.Patch["type"].ShouldBe("append_if_not_exists");
+            _expression.Patch["value"].ShouldBe(5);
+        }
+
+        [Fact]
         public void append_deep()
         {
             _expression.Append(x => x.Inner.Inner.NumberArray, 5);
 
             _expression.Patch["path"].ShouldBe("Inner.Inner.NumberArray");
             _expression.Patch["type"].ShouldBe("append");
+            _expression.Patch["value"].ShouldBe(5);
+        }
+
+        [Fact]
+        public void append_if_not_exists_deep()
+        {
+            _expression.AppendIfNotExists(x => x.Inner.Inner.NumberArray, 5);
+
+            _expression.Patch["path"].ShouldBe("Inner.Inner.NumberArray");
+            _expression.Patch["type"].ShouldBe("append_if_not_exists");
             _expression.Patch["value"].ShouldBe(5);
         }
 
@@ -229,12 +249,34 @@ namespace Marten.Testing.Patching
         }
 
         [Fact]
+        public void insert_if_not_exists_shallow()
+        {
+            _expression.InsertIfNotExists(x => x.NumberArray, 5);
+
+            _expression.Patch["path"].ShouldBe("NumberArray");
+            _expression.Patch["type"].ShouldBe("insert_if_not_exists");
+            _expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["index"].ShouldBe(0);
+        }
+
+        [Fact]
         public void insert_deep()
         {
             _expression.Insert(x => x.Inner.Inner.NumberArray, 5);
 
             _expression.Patch["path"].ShouldBe("Inner.Inner.NumberArray");
             _expression.Patch["type"].ShouldBe("insert");
+            _expression.Patch["value"].ShouldBe(5);
+            _expression.Patch["index"].ShouldBe(0);
+        }
+
+        [Fact]
+        public void insert_if_not_exists_deep()
+        {
+            _expression.InsertIfNotExists(x => x.Inner.Inner.NumberArray, 5);
+
+            _expression.Patch["path"].ShouldBe("Inner.Inner.NumberArray");
+            _expression.Patch["type"].ShouldBe("insert_if_not_exists");
             _expression.Patch["value"].ShouldBe(5);
             _expression.Patch["index"].ShouldBe(0);
         }
