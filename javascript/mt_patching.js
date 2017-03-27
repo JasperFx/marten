@@ -103,7 +103,7 @@ function appendElementIfNotExists(doc, patch, location){
 
     var array = location.element[location.prop];
     var patchValueAsJSONString = JSON.stringify(patch.value);
-    for(i = 0; i < array.length; i++)
+    for(var i = 0; i < array.length; i++)
     {
         var elementAsJSONString = JSON.stringify(array[i])
         if (patchValueAsJSONString === elementAsJSONString)
