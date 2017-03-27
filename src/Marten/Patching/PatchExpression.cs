@@ -104,10 +104,30 @@ namespace Marten.Patching
             apply();
         }
 
+        public void AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
+        {
+            Patch.Add("type", "append_if_not_exists");
+            Patch.Add("value", element);
+            Patch.Add("path", toPath(expression));
+
+            apply();
+        }
+
         public void Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element,
             int index = 0)
         {
             Patch.Add("type", "insert");
+            Patch.Add("value", element);
+            Patch.Add("path", toPath(expression));
+            Patch.Add("index", index);
+
+            apply();
+        }
+
+        public void InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element,
+            int index = 0)
+        {
+            Patch.Add("type", "insert_if_not_exists");
             Patch.Add("value", element);
             Patch.Add("path", toPath(expression));
             Patch.Add("index", index);

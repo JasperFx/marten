@@ -82,6 +82,15 @@ namespace Marten.Patching
         void Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element);
 
         /// <summary>
+        /// Append an element to the end of a child collection on the persisted
+        /// document if the element does not already exist
+        /// </summary>
+        /// <typeparam name="TElement"></typeparam>
+        /// <param name="expression"></param>
+        /// <param name="element"></param>
+        void AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element);
+
+        /// <summary>
         /// Insert an element at the designated index to a child collection on the persisted document
         /// </summary>
         /// <typeparam name="TElement"></typeparam>
@@ -89,6 +98,16 @@ namespace Marten.Patching
         /// <param name="element"></param>
         /// <param name="index"></param>
         void Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int index = 0);
+
+        /// <summary>
+        /// Insert an element at the designated index to a child collection on the persisted document 
+        /// if the value does not already exist at that index
+        /// </summary>
+        /// <typeparam name="TElement"></typeparam>
+        /// <param name="expression"></param>
+        /// <param name="element"></param>
+        /// <param name="index"></param>
+        void InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int index = 0);
 
         /// <summary>
         /// Remove element from a child collection on the persisted document
