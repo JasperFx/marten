@@ -2,12 +2,12 @@ require 'json'
 
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '1.4.0';
+BUILD_VERSION = '1.4.1';
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
 build_revision = tc_build_number || Time.new.strftime('5%H%M')
-build_number = "1.4.0.#{build_revision}"
+build_number = "1.4.1.#{build_revision}"
 BUILD_NUMBER = build_number
 
 task :ci => [:connection, :version, :default, 'pack']
@@ -158,8 +158,8 @@ end
 
 desc 'Build the Nupkg file'
 task :pack => [:compile] do
-	sh "dotnet pack ./src/Marten -o artifacts"
-	sh "dotnet pack ./src/Marten.CommandLine -o artifacts"
+	sh "dotnet pack ./src/Marten -o artifacts --configuration Release"
+	sh "dotnet pack ./src/Marten.CommandLine -o artifacts --configuration Release"
 end
 
 

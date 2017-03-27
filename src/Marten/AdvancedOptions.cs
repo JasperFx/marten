@@ -246,7 +246,7 @@ namespace Marten
         private async Task<T> GetOptionalFieldValueAsync<T>(DbDataReader reader, string fieldName, CancellationToken token)
         {
             int ordinal;
-            if (_fields.TryGetValue(fieldName, out ordinal) && !await reader.IsDBNullAsync(ordinal, token))
+            if (_fields.TryGetValue(fieldName, out ordinal) && !await reader.IsDBNullAsync(ordinal, token).ConfigureAwait(false))
                 return await reader.GetFieldValueAsync<T>(ordinal, token).ConfigureAwait(false);
             return default(T);
         }
@@ -254,7 +254,7 @@ namespace Marten
         private async Task<T?> GetOptionalFieldValueAsync<T>(DbDataReader reader, string fieldName, T? defaultValue, CancellationToken token) where T : struct
         {
             int ordinal;
-            if (_fields.TryGetValue(fieldName, out ordinal) && !await reader.IsDBNullAsync(ordinal, token))
+            if (_fields.TryGetValue(fieldName, out ordinal) && !await reader.IsDBNullAsync(ordinal, token).ConfigureAwait(false))
                 return await reader.GetFieldValueAsync<T>(ordinal, token).ConfigureAwait(false);
             return defaultValue;
         }

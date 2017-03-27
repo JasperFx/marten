@@ -227,7 +227,7 @@ namespace Marten.Events.Projections.Async
 
                         return await reader.GetFieldValueAsync<long>(0, tkn).ConfigureAwait(false);
                     }
-                }, token);
+                }, token).ConfigureAwait(false);
             }
         }
     }

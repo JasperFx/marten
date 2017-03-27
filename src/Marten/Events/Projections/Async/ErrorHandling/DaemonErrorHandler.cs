@@ -33,12 +33,12 @@ namespace Marten.Events.Projections.Async.ErrorHandling
                 _logger.Error(ex);
 
                 var handler = _handling.DetermineAction(ex, activity);
-                var continuation = await handler.Handle(ex, attempts + 1, activity);
+                var continuation = await handler.Handle(ex, attempts + 1, activity).ConfigureAwait(false);
 
                 switch (continuation)
                 {
                     case ExceptionAction.Retry:
-                        await TryAction(action, activity, attempts + 1);
+                        await TryAction(action, activity, attempts + 1).ConfigureAwait(false);
                         break;
 
                     case ExceptionAction.Pause:

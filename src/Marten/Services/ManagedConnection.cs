@@ -262,7 +262,7 @@ namespace Marten.Services
 
         public async Task ExecuteAsync(Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
         {
-            await buildConnectionAsync(token);
+            await buildConnectionAsync(token).ConfigureAwait(false);
 
             RequestCount++;
 
@@ -282,7 +282,7 @@ namespace Marten.Services
 
         public async Task ExecuteAsync(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
         {
-            await buildConnectionAsync(token);
+            await buildConnectionAsync(token).ConfigureAwait(false);
 
             RequestCount++;
 
@@ -302,7 +302,7 @@ namespace Marten.Services
 
         public async Task<T> ExecuteAsync<T>(Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
         {
-            await buildConnectionAsync(token);
+            await buildConnectionAsync(token).ConfigureAwait(false);
 
             RequestCount++;
 
@@ -323,7 +323,7 @@ namespace Marten.Services
 
         public async Task<T> ExecuteAsync<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
         {
-            await buildConnectionAsync(token);
+            await buildConnectionAsync(token).ConfigureAwait(false);
 
             RequestCount++;
 
