@@ -196,6 +196,7 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
                 }
                 else
                 {
+                    await reader.NextResultAsync(_token).ConfigureAwait(false);
                     events = new List<IEvent>();
                 }
 
