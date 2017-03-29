@@ -91,7 +91,17 @@ namespace Marten.Linq
                 }
                 else
                 {
-                    throw new NotImplementedException();
+                    var current = dictionary;
+
+                    for (int i = 0; i < _members.Length - 1; i++)
+                    {
+                        var dict = new Dictionary<string, object>();
+                        current.Add(_members[i].Name, dict);
+
+                        current = dict;
+                    }
+
+                    current.Add(_members.Last().Name, new [] {search});
                 }
             }
 
