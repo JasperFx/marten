@@ -36,6 +36,46 @@ namespace Marten.Testing.Events
 
 
         }
+
+        [Fact]
+        public void other_try()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventTypes(new[] { typeof(FooEvent), });
+            });
+
+            using (var session = store.OpenSession())
+            {
+                var aid = Guid.Parse("1442cbbb-a49a-497e-9ee8-715ed2833bf8");
+                session.Events.StartStream<FooAggregate>(aid, new FooEvent());
+                session.SaveChanges();
+            }
+
+            var store2 = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventTypes(new[] { typeof(FooEvent), });
+
+                _.Events.AggregateFor<FooAggregate>();
+            });
+
+            using (var session = store2.OpenSession())
+            {
+                var aid = Guid.Parse("1442cbbb-a49a-497e-9ee8-715ed2833bf8");
+                var state = session.Events.FetchStreamState(aid);
+                // We never get to the AggregateStream call because we get a nullreference exception on the FetchStreamState call
+                var aggregate = session.Events.AggregateStream<FooAggregate>(aid);
+            }
+        }
+    }
+
+    public class FooEvent { }
+
+    public class FooAggregate
+    {
+        public Guid Id;
     }
 
 

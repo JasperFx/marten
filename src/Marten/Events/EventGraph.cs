@@ -113,6 +113,17 @@ namespace Marten.Events
 
         public Type AggregateTypeFor(string aggregateTypeName)
         {
+            if (_aggregateByName.ContainsKey(aggregateTypeName))
+            {
+                return _aggregateByName[aggregateTypeName].AggregateType;
+            }
+
+            var aggregate = AllAggregates().FirstOrDefault(x => x.Alias == aggregateTypeName);
+            if (aggregate == null)
+            {
+                throw new ArgumentOutOfRangeException(nameof(aggregateTypeName), $"Unknown aggregate type '{aggregateTypeName}'. You may need to register this aggregate type with StoreOptions.Events.AggregateFor<T>()");
+            }
+
             return
                 _aggregateByName.GetOrAdd(aggregateTypeName,
                     name => { return AllAggregates().FirstOrDefault(x => x.Alias == name); }).AggregateType;
