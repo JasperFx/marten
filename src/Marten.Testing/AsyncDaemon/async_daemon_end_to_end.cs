@@ -31,120 +31,8 @@ namespace Marten.Testing.AsyncDaemon
         private readonly AsyncDaemonTestHelper _testHelper;
         private readonly IDaemonLogger _logger;
 
-        [Fact] 
-        public async Task build_continuously_as_events_flow_in()
-        {
-            _testHelper.LoadAllProjects();
-
-            StoreOptions(_ => { _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>(); });
-
-            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
-            {
-                LeadingEdgeBuffer = 1.Seconds()
-            }))
-            {
-                daemon.StartAll();
-
-                await _testHelper.PublishAllProjectEventsAsync(theStore, true);
-                //_fixture.PublishAllProjectEvents(theStore);
-
-                // Runs all projections until there are no more events coming in
-                await daemon.WaitForNonStaleResults().ConfigureAwait(false);
-
-                await daemon.StopAll().ConfigureAwait(false);
-            }
 
 
-            _testHelper.CompareActiveProjects(theStore);
-        }
-
-        [Fact]
-        public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch()
-        {
-            _testHelper.LoadAllProjects();
-
-            StoreOptions(_ => { _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>(); });
-
-            _testHelper.PublishAllProjectEvents(theStore, true);
-
-
-            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
-            {
-                LeadingEdgeBuffer = 0.Seconds()
-            }))
-            {
-                await daemon.Rebuild<ActiveProject>().ConfigureAwait(false);
-            }
-
-            _testHelper.CompareActiveProjects(theStore);
-        }
-
-        [Fact]
-        public async Task run_with_error_handling()
-        {
-            _testHelper.LoadAllProjects();
-
-            StoreOptions(_ =>
-            {
-                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
-                _.Events.AsyncProjections.Add(new OccasionalErroringProjection());
-            });
-
-            var settings = new DaemonSettings
-            {
-                LeadingEdgeBuffer = 0.Seconds()
-            };
-
-            settings.ExceptionHandling.OnException<DivideByZeroException>().Retry(3);
-
-
-            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: settings))
-            {
-                daemon.StartAll();
-
-                await _testHelper.PublishAllProjectEventsAsync(theStore, true);
-                //_fixture.PublishAllProjectEvents(theStore);
-
-                // Runs all projections until there are no more events coming in
-                await daemon.WaitForNonStaleResults().ConfigureAwait(false);
-
-                await daemon.StopAll().ConfigureAwait(false);
-            }
-
-            _testHelper.CompareActiveProjects(theStore);
-        }
-
-
-        [Fact]
-        public async Task build_continuously_as_events_flow_in_on_other_schema()
-        {
-            _testHelper.LoadAllProjects();
-
-            StoreOptions(_ =>
-            {
-                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
-                _.Events.DatabaseSchemaName = "events";
-            });
-
-            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
-            {
-                LeadingEdgeBuffer = 1.Seconds()
-            }))
-            {
-                daemon.StartAll();
-
-                await _testHelper.PublishAllProjectEventsAsync(theStore, true);
-                //_fixture.PublishAllProjectEvents(theStore);
-
-                // Runs all projections until there are no more events coming in
-                await daemon.WaitForNonStaleResults().ConfigureAwait(false);
-
-                await daemon.StopAll().ConfigureAwait(false);
-            }
-
-
-            _testHelper.CompareActiveProjects(theStore);
-        }
 
         [Fact]
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_on_other_schema_single_event()
@@ -174,30 +62,6 @@ namespace Marten.Testing.AsyncDaemon
             
         }
 
-        [Fact]
-        public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_on_other_schema()
-        {
-            _testHelper.LoadAllProjects();
-
-            StoreOptions(_ =>
-            {
-                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
-                _.Events.DatabaseSchemaName = "events";
-            });
-
-            _testHelper.PublishAllProjectEvents(theStore, true);
-
-
-            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
-            {
-                LeadingEdgeBuffer = 0.Seconds()
-            }))
-            {
-                await daemon.Rebuild<ActiveProject>().ConfigureAwait(false);
-            }
-
-            _testHelper.CompareActiveProjects(theStore);
-        }
 
         //[Fact] Not super duper reliable when running back to back
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_twice_on_other_schema()
@@ -224,76 +88,7 @@ namespace Marten.Testing.AsyncDaemon
             _testHelper.CompareActiveProjects(theStore);
         }
 
-        [Fact]
-        public async Task run_with_error_handling_on_other_schema()
-        {
-            _testHelper.LoadAllProjects();
 
-            StoreOptions(_ =>
-            {
-                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
-                _.Events.AsyncProjections.Add(new OccasionalErroringProjection());
-                _.Events.DatabaseSchemaName = "events";
-            });
-
-            var settings = new DaemonSettings
-            {
-                LeadingEdgeBuffer = 0.Seconds()
-            };
-
-            settings.ExceptionHandling.OnException<DivideByZeroException>().Retry(3);
-
-
-            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: settings))
-            {
-                daemon.StartAll();
-
-                await _testHelper.PublishAllProjectEventsAsync(theStore, true);
-                //_fixture.PublishAllProjectEvents(theStore);
-
-                // Runs all projections until there are no more events coming in
-                await daemon.WaitForNonStaleResults().ConfigureAwait(false);
-
-                await daemon.StopAll().ConfigureAwait(false);
-            }
-
-            _testHelper.CompareActiveProjects(theStore);
-        }
-
-        [Fact]
-        public async Task do_a_complete_rebuild_of_the_project_count_with_seq_id_gap_at_100()
-        {
-            _testHelper.LoadTwoProjectsWithOneEventEach();
-
-            StoreOptions(_ => { _.Events.AsyncProjections.Add(new ProjectCountProjection()); });
-
-            _testHelper.PublishAllProjectEvents(theStore, true);
-
-            // Increment seq_id so events have a respective 1 and 101 seq_id
-            using (var conn = theStore.Advanced.OpenConnection())
-            {
-                var command = conn.Connection.CreateCommand();
-                command.CommandText = "UPDATE mt_events SET seq_id = 20000 WHERE seq_id = 2";
-                command.CommandType = System.Data.CommandType.Text;
-                conn.Execute(command);
-            }
-
-            using (var daemon = theStore.BuildProjectionDaemon(
-                logger: _logger,
-                viewTypes: new Type[] { typeof(ProjectCountProjection) },
-                settings: new DaemonSettings
-                {
-                    LeadingEdgeBuffer = 0.Seconds()
-                }))
-            {
-                await daemon.Rebuild(typeof(ProjectCountProjection)).ConfigureAwait(false);
-            }
-
-            using (var session = theStore.LightweightSession())
-            {
-                session.Query<ProjectCountProjection>().Count().ShouldBe(2);
-            }
-        }
 
         [Fact]
         public async Task do_a_complete_rebuild_of_the_project_count_with_seq_id_gap_at_101()
