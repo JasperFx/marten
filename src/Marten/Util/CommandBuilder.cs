@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Marten.Linq.QueryHandlers;
 using Npgsql;
 using NpgsqlTypes;
+using Baseline;
 
 namespace Marten.Util
 {
@@ -80,6 +82,32 @@ namespace Marten.Util
         public void Append(object o)
         {
             _sql.Append(o);
+        }
+
+        public void AppendPathToObject(MemberInfo[] members, string column)
+        {
+            _sql.Append(column);
+            _sql.Append(" -> ");
+
+            _sql.Append($"{ members.Select(x => $"'{x.Name}'").Join(" -> ")}");
+        }
+
+        public void AppendPathToValue(MemberInfo[] members, string column)
+        {
+            _sql.Append(column);
+            if (members.Length == 1)
+            {
+                _sql.Append($" ->> '{members.Single().Name}'");
+            }
+            else
+            {
+                for (int i = 0; i < members.Length - 1; i++)
+                {
+                    _sql.Append($" -> '{members[i].Name}'");
+                }
+
+                _sql.Append($" ->> '{members.Last().Name}'");
+            }
         }
 
         public override string ToString()
