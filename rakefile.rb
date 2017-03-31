@@ -153,6 +153,25 @@ end
 desc 'Run Benchmarks'
 task :benchmarks => [:restore] do
 	sh 'dotnet run --project src/MartenBenchmarks --configuration Release'
+	
+
+end
+
+desc 'Record Benchmarks'
+task :recordbenchmarks do
+	if !ENV['profile'].nil?
+		dir = 'benchmarks/' + ENV['profile']
+		if Dir.exists? dir
+			Dir.rmdir dir
+		end
+		
+		puts 'Creating directory ' + dir
+		Dir.mkdir dir;
+		
+		cp_r 'BenchmarkDotNet.Artifacts/results', dir
+		
+		
+	end
 end
 
 
