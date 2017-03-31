@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using FastExpressionCompiler;
 using Marten.Schema.Arguments;
 using Marten.Schema.Identity;
 using Marten.Services;
@@ -52,7 +53,7 @@ namespace Marten.Schema.BulkLoading
             var lambda = Expression.Lambda<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter>>(block, document, alias,
                 serializerParam, writer, textWriter);
 
-            _transferData = lambda.Compile();
+            _transferData = ExpressionCompiler.Compile<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter>>(lambda);
         }
 
         public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)

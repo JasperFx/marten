@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Baseline;
+using FastExpressionCompiler;
 
 namespace Marten.Util
 {
@@ -21,7 +22,7 @@ namespace Marten.Util
                 : Expression.Lambda<Func<TTarget, TProperty>>(Expression.Convert(callGetMethod, typeof(TProperty)),
                     target);
 
-            return lambda.Compile();
+            return ExpressionCompiler.Compile<Func<TTarget, TProperty>>(lambda);
         }
 
         public static Action<TTarget, TProperty> SetProperty<TTarget, TProperty>(PropertyInfo property)
@@ -37,7 +38,7 @@ namespace Marten.Util
 
             var lambda = Expression.Lambda<Action<TTarget, TProperty>>(callSetMethod, target, value);
 
-            return lambda.Compile();
+            return ExpressionCompiler.Compile<Action<TTarget, TProperty>>(lambda);
         }
 
 
@@ -51,7 +52,7 @@ namespace Marten.Util
                 ? Expression.Lambda<Func<TTarget, TField>>(fieldAccess, target)
                 : Expression.Lambda<Func<TTarget, TField>>(Expression.Convert(fieldAccess, typeof(TField)), target);
 
-            return lambda.Compile();
+            return ExpressionCompiler.Compile<Func<TTarget, TField>>(lambda);
         }
 
         public static Func<TTarget, TMember> Getter<TTarget, TMember>(MemberInfo member)
@@ -72,7 +73,7 @@ namespace Marten.Util
 
             var lambda = Expression.Lambda<Action<TTarget, TField>>(fieldSetter, target, value);
 
-            return lambda.Compile();
+            return ExpressionCompiler.Compile<Action<TTarget, TField>>(lambda);
         }
 
 
@@ -96,7 +97,7 @@ namespace Marten.Util
 
             var lambda = Expression.Lambda<Func<TTarget, TValue>>(body, target);
 
-            return lambda.Compile();
+            return ExpressionCompiler.Compile<Func<TTarget, TValue>>(lambda);
         }
 
 

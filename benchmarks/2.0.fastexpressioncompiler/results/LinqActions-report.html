@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>LinqActions</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.10.1, OS=Microsoft Windows NT 6.1.7601 Service Pack 1
+Processor=Intel(R) Core(TM) i7-4980HQ CPU 2.80GHz, ProcessorCount=4
+Frequency=10000000 Hz, Resolution=100.0000 ns, Timer=UNKNOWN
+  [Host]     : Clr 4.0.30319.42000, 64bit RyuJIT-v4.6.1076.0
+  Job-DNINOD : Clr 4.0.30319.42000, 64bit RyuJIT-v4.6.1076.0
+</code></pre>
+<pre><code>WarmupCount=2  
+</code></pre>
+
+<table>
+<thead><tr><th>     Method</th><th>     Mean</th><th> StdErr</th><th> StdDev</th><th>Gen 0</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>CreateLinqCommand</td><td>197.4190 us</td><td>1.9695 us</td><td>13.9265 us</td><td>  -</td><td>42.45 kB</td>
+</tr><tr><td>RunLinqQuery</td><td>121,335.7528 us</td><td>1,200.0957 us</td><td>4,800.3829 us</td><td>4986.4130</td><td>33.68 MB</td>
+</tr><tr><td>CompiledQueries</td><td>30,801.5613 us</td><td>309.4860 us</td><td>3,079.3465 us</td><td>812.5000</td><td>8.59 MB</td>
+</tr></tbody></table>
+</body>
+</html>
