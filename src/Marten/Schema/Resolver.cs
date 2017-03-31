@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using FastExpressionCompiler;
 using Marten.Linq;
 using Marten.Schema.Identity;
 using Marten.Services;
@@ -88,8 +89,7 @@ namespace Marten.Schema
                     call, doc, batch, mappingParam, currentVersion, newVersion
                 });
 
-
-            return lambda.Compile();
+            return ExpressionCompiler.Compile<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid>>(lambda);
         }
 
         public Type DocumentType => _mapping.DocumentType;

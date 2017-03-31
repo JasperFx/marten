@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using FastExpressionCompiler;
 
 namespace Marten.Events.Projections
 {
@@ -25,7 +26,7 @@ namespace Marten.Events.Projections
 
             var lambda = Expression.Lambda<Action<T, Event<TEvent>>>(body, aggregateParameter, eventParameter);
 
-            _apply = lambda.Compile();
+            _apply = ExpressionCompiler.Compile<Action<T, Event<TEvent>>>(lambda);
         } 
 
         public EventAggregationStep(Action<T, Event<TEvent>> apply)

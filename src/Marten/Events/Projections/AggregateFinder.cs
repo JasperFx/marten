@@ -2,9 +2,9 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using FastExpressionCompiler;
 using Marten.Schema;
 
 namespace Marten.Events.Projections
@@ -29,7 +29,7 @@ namespace Marten.Events.Projections
 
             var lambda = Expression.Lambda<Action<T, Guid>>(assign, docParam, idParam);
 
-            _setId = lambda.Compile();
+            _setId = ExpressionCompiler.Compile<Action<T, Guid>>(lambda);
         }
 
         public T Find(EventStream stream, IDocumentSession session)

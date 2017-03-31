@@ -34,6 +34,7 @@
     "Npgsql": "3.2.2",
     "Baseline": "1.3.0",
     "System.Threading.Tasks.Dataflow": "4.6.0"
+    "FastExpressionCompiler": "1.0.0-preview-03" 
   },
   "frameworks": {
     "netstandard1.3": {

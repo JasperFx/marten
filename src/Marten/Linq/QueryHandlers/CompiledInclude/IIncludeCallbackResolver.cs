@@ -1,6 +1,7 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using FastExpressionCompiler;
 
 namespace Marten.Linq.QueryHandlers.CompiledInclude
 {
@@ -21,7 +22,7 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
 
             var lambda = Expression.Lambda<Func<IncludeResultOperator, LambdaExpression>>(callGetMethod, target);
 
-            var compiledLambda = lambda.Compile();
+            var compiledLambda = ExpressionCompiler.Compile<Func<IncludeResultOperator, LambdaExpression>>(lambda);
             var callback = compiledLambda.Invoke(@operator);
             var mi = (PropertyInfo)((MemberExpression)callback.Body).Member;
             return mi;
