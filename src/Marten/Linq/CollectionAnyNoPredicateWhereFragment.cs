@@ -23,33 +23,13 @@ namespace Marten.Linq
 
         public void Apply(CommandBuilder builder)
         {
-            builder.Append("JSONB_ARRAY_LENGTH(COALESCE(case when data->>'");
+            builder.Append("JSONB_ARRAY_LENGTH(COALESCE(case when ");
+            builder.AppendPathToValue(_members, "data");
 
-            builder.Append(_members[0].Name);
-            for (int i = 1; i < _members.Length; i++)
-            {
-                builder.Append("'->'");
-                builder.Append(_members[i].Name);
-            }
+            builder.Append(" is not null then ");
+            builder.AppendPathToObject(_members, "data");
 
-            if (_members.Length == 1)
-            {
-                builder.Append("' is not null then data->>'");
-            }
-            else
-            {
-                builder.Append("' is not null then data->'");
-            }
-
-            builder.Append(_members[0].Name);
-            for (int i = 1; i < _members.Length; i++)
-            {
-                builder.Append("'->'");
-                builder.Append(_members[i].Name);
-            }
-
-
-            builder.Append("' else '[]' end)) > 0");
+            builder.Append(" else '[]' end)) > 0");
         }
      
         public bool Contains(string sqlText)
