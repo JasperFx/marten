@@ -21,13 +21,10 @@
 ## UseTheErroringProjection
 ### Also execute a projection that randomly throws DivideByZeroException
 
-## CompareProjects
-### Compare Projects to the Expected Aggregate
-|table|Project|
-
 ## RebuildProjection
 ### Rebuild the ActiveProject aggregate
 
 ## CreateSequentialGap
 ### Create a sequential gap by reordering {original} to {seq}
+
 
