@@ -13,12 +13,12 @@ using Shouldly;
 
 namespace Marten.Testing.AsyncDaemon
 {
-    public class async_daemon_end_to_end : IntegratedFixture, IClassFixture<AsyncDaemonFixture>
+    public class async_daemon_end_to_end : IntegratedFixture, IClassFixture<AsyncDaemonTestHelper>
     {
         
-        public async_daemon_end_to_end(AsyncDaemonFixture fixture, ITestOutputHelper output)
+        public async_daemon_end_to_end(AsyncDaemonTestHelper testHelper, ITestOutputHelper output)
         {
-            _fixture = fixture;
+            _testHelper = testHelper;
             _logger = new TracingLogger(output.WriteLine);
         }
         
@@ -28,13 +28,13 @@ namespace Marten.Testing.AsyncDaemon
 //            _logger = new ConsoleDaemonLogger();
 //        }
 
-        private readonly AsyncDaemonFixture _fixture;
+        private readonly AsyncDaemonTestHelper _testHelper;
         private readonly IDaemonLogger _logger;
 
         [Fact] 
         public async Task build_continuously_as_events_flow_in()
         {
-            _fixture.LoadAllProjects();
+            _testHelper.LoadAllProjects();
 
             StoreOptions(_ => { _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>(); });
 
@@ -45,7 +45,7 @@ namespace Marten.Testing.AsyncDaemon
             {
                 daemon.StartAll();
 
-                await _fixture.PublishAllProjectEventsAsync(theStore, true);
+                await _testHelper.PublishAllProjectEventsAsync(theStore, true);
                 //_fixture.PublishAllProjectEvents(theStore);
 
                 // Runs all projections until there are no more events coming in
@@ -55,17 +55,17 @@ namespace Marten.Testing.AsyncDaemon
             }
 
 
-            _fixture.CompareActiveProjects(theStore);
+            _testHelper.CompareActiveProjects(theStore);
         }
 
         [Fact]
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch()
         {
-            _fixture.LoadAllProjects();
+            _testHelper.LoadAllProjects();
 
             StoreOptions(_ => { _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>(); });
 
-            _fixture.PublishAllProjectEvents(theStore, true);
+            _testHelper.PublishAllProjectEvents(theStore, true);
 
 
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
@@ -76,13 +76,13 @@ namespace Marten.Testing.AsyncDaemon
                 await daemon.Rebuild<ActiveProject>().ConfigureAwait(false);
             }
 
-            _fixture.CompareActiveProjects(theStore);
+            _testHelper.CompareActiveProjects(theStore);
         }
 
         [Fact]
         public async Task run_with_error_handling()
         {
-            _fixture.LoadAllProjects();
+            _testHelper.LoadAllProjects();
 
             StoreOptions(_ =>
             {
@@ -102,7 +102,7 @@ namespace Marten.Testing.AsyncDaemon
             {
                 daemon.StartAll();
 
-                await _fixture.PublishAllProjectEventsAsync(theStore, true);
+                await _testHelper.PublishAllProjectEventsAsync(theStore, true);
                 //_fixture.PublishAllProjectEvents(theStore);
 
                 // Runs all projections until there are no more events coming in
@@ -111,14 +111,14 @@ namespace Marten.Testing.AsyncDaemon
                 await daemon.StopAll().ConfigureAwait(false);
             }
 
-            _fixture.CompareActiveProjects(theStore);
+            _testHelper.CompareActiveProjects(theStore);
         }
 
 
         [Fact]
         public async Task build_continuously_as_events_flow_in_on_other_schema()
         {
-            _fixture.LoadAllProjects();
+            _testHelper.LoadAllProjects();
 
             StoreOptions(_ =>
             {
@@ -133,7 +133,7 @@ namespace Marten.Testing.AsyncDaemon
             {
                 daemon.StartAll();
 
-                await _fixture.PublishAllProjectEventsAsync(theStore, true);
+                await _testHelper.PublishAllProjectEventsAsync(theStore, true);
                 //_fixture.PublishAllProjectEvents(theStore);
 
                 // Runs all projections until there are no more events coming in
@@ -143,13 +143,13 @@ namespace Marten.Testing.AsyncDaemon
             }
 
 
-            _fixture.CompareActiveProjects(theStore);
+            _testHelper.CompareActiveProjects(theStore);
         }
 
         [Fact]
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_on_other_schema_single_event()
         {
-            _fixture.LoadSingleProjects();
+            _testHelper.LoadSingleProjects();
 
             StoreOptions(_ =>
             {
@@ -157,7 +157,7 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.DatabaseSchemaName = "events";
             });
 
-            _fixture.PublishAllProjectEvents(theStore, true);
+            _testHelper.PublishAllProjectEvents(theStore, true);
 
 
             
@@ -170,14 +170,14 @@ namespace Marten.Testing.AsyncDaemon
                 await daemon.Rebuild<ActiveProject>().ConfigureAwait(false);
             }
 
-            _fixture.CompareActiveProjects(theStore);
+            _testHelper.CompareActiveProjects(theStore);
             
         }
 
         [Fact]
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_on_other_schema()
         {
-            _fixture.LoadAllProjects();
+            _testHelper.LoadAllProjects();
 
             StoreOptions(_ =>
             {
@@ -185,7 +185,7 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.DatabaseSchemaName = "events";
             });
 
-            _fixture.PublishAllProjectEvents(theStore, true);
+            _testHelper.PublishAllProjectEvents(theStore, true);
 
 
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
@@ -196,13 +196,13 @@ namespace Marten.Testing.AsyncDaemon
                 await daemon.Rebuild<ActiveProject>().ConfigureAwait(false);
             }
 
-            _fixture.CompareActiveProjects(theStore);
+            _testHelper.CompareActiveProjects(theStore);
         }
 
         //[Fact] Not super duper reliable when running back to back
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_twice_on_other_schema()
         {
-            _fixture.LoadAllProjects();
+            _testHelper.LoadAllProjects();
 
             StoreOptions(_ =>
             {
@@ -210,7 +210,7 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.DatabaseSchemaName = "events";
             });
 
-            _fixture.PublishAllProjectEvents(theStore, true);
+            _testHelper.PublishAllProjectEvents(theStore, true);
 
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
             {
@@ -221,13 +221,13 @@ namespace Marten.Testing.AsyncDaemon
                 await daemon.RebuildAll().ConfigureAwait(false);
             }
 
-            _fixture.CompareActiveProjects(theStore);
+            _testHelper.CompareActiveProjects(theStore);
         }
 
         [Fact]
         public async Task run_with_error_handling_on_other_schema()
         {
-            _fixture.LoadAllProjects();
+            _testHelper.LoadAllProjects();
 
             StoreOptions(_ =>
             {
@@ -248,7 +248,7 @@ namespace Marten.Testing.AsyncDaemon
             {
                 daemon.StartAll();
 
-                await _fixture.PublishAllProjectEventsAsync(theStore, true);
+                await _testHelper.PublishAllProjectEventsAsync(theStore, true);
                 //_fixture.PublishAllProjectEvents(theStore);
 
                 // Runs all projections until there are no more events coming in
@@ -257,17 +257,17 @@ namespace Marten.Testing.AsyncDaemon
                 await daemon.StopAll().ConfigureAwait(false);
             }
 
-            _fixture.CompareActiveProjects(theStore);
+            _testHelper.CompareActiveProjects(theStore);
         }
 
         [Fact]
         public async Task do_a_complete_rebuild_of_the_project_count_with_seq_id_gap_at_100()
         {
-            _fixture.LoadTwoProjectsWithOneEventEach();
+            _testHelper.LoadTwoProjectsWithOneEventEach();
 
             StoreOptions(_ => { _.Events.AsyncProjections.Add(new ProjectCountProjection()); });
 
-            _fixture.PublishAllProjectEvents(theStore, true);
+            _testHelper.PublishAllProjectEvents(theStore, true);
 
             // Increment seq_id so events have a respective 1 and 101 seq_id
             using (var conn = theStore.Advanced.OpenConnection())
@@ -298,7 +298,7 @@ namespace Marten.Testing.AsyncDaemon
         [Fact]
         public async Task do_a_complete_rebuild_of_the_project_count_with_seq_id_gap_at_101()
         {
-            _fixture.LoadTwoProjectsWithOneEventEach();
+            _testHelper.LoadTwoProjectsWithOneEventEach();
 
             StoreOptions(_ =>
             {
@@ -308,7 +308,7 @@ namespace Marten.Testing.AsyncDaemon
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
-            _fixture.PublishAllProjectEvents(theStore, false);
+            _testHelper.PublishAllProjectEvents(theStore, false);
 
             // Increment seq_id so events have a respective 1 and 102 seq_id
             using (var conn = theStore.Advanced.OpenConnection())

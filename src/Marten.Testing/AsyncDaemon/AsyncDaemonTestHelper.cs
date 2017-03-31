@@ -47,11 +47,11 @@ namespace Marten.Testing.AsyncDaemon
         }
     }
 
-    public class AsyncDaemonFixture : IDisposable
+    public class AsyncDaemonTestHelper : IDisposable
     {
         private readonly IDocumentStore _store;
 
-        public AsyncDaemonFixture()
+        public AsyncDaemonTestHelper()
         {
             _store = TestingDocumentStore.For(_ =>
             {
@@ -68,12 +68,12 @@ namespace Marten.Testing.AsyncDaemon
             var fileSystem = new FileSystem();
 
             var folder = AppContext.BaseDirectory;
-            while (!folder.EndsWith("Marten.Testing"))
+            while (!folder.EndsWith("src"))
             {
                 folder = folder.ParentDirectory();
             }
 
-            folder = folder.AppendPath("CodeTracker");
+            folder = folder.AppendPath("GithubEventData");
 
             var files = fileSystem.FindFiles(folder, FileSet.Shallow("*.json"));
 
