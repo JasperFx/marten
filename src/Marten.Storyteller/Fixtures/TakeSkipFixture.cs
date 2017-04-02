@@ -19,6 +19,9 @@ namespace Marten.Storyteller.Fixtures
         {
             Sync += docs => docs.OrderBy(x => x.Long).Take(10).Skip(20);
             Sync += docs => docs.OrderBy(x => x.Long).Take(20).Skip(10);
+            Sync += docs => docs.OrderBy(x => x.Long).Take(20);
+            Sync += docs => docs.OrderBy(x => x.Long).Skip(15);
+
         }
     }
 }

@@ -67,7 +67,7 @@ namespace Marten.Testing.AsyncDaemon
             PublishAllProjectEvents(_store, false);
         }
 
-        public void LoadSingleProjects()
+        public void LoadSingleProject()
         {
             AllProjects = new Dictionary<Guid, GithubProject>
             {
