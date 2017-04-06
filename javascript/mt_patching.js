@@ -96,6 +96,25 @@ function appendElement(doc, patch, location){
     return doc;
 }
 
+function appendElementIfNotExists(doc, patch, location){
+     if (!location.element[location.prop]){
+        location.element[location.prop] = [];
+    }
+
+    var array = location.element[location.prop];
+    var patchValueAsJSONString = JSON.stringify(patch.value);
+    for(var i = 0; i < array.length; i++)
+    {
+        var elementAsJSONString = JSON.stringify(array[i])
+        if (patchValueAsJSONString === elementAsJSONString)
+            return doc;
+    }
+
+    location.element[location.prop].push(patch.value);
+
+    return doc;
+}
+
 function insertElement(doc, patch, location){
     if (!location.element[location.prop]){
         location.element[location.prop] = [];
@@ -109,6 +128,27 @@ function insertElement(doc, patch, location){
     }
 
     array.splice(index, 0, patch.value);
+
+    return doc;
+}
+
+function insertElementIfNotExists(doc, patch, location){
+    if (!location.element[location.prop]){
+        location.element[location.prop] = [];
+    }
+
+    var array = location.element[location.prop];
+
+    var index = 0;
+    if (patch.index){
+        index = parseInt(patch.index);
+    }
+
+    var patchValueAsJSONString = JSON.stringify(patch.value);
+    var elementAsJSONString = JSON.stringify(array[index]);
+    if (elementAsJSONString !== patchValueAsJSONString){
+        array.splice(index, 0, patch.value);
+    }
 
     return doc;
 }
@@ -160,8 +200,10 @@ var ops = {
     'increment': incrementValue,
     'increment_float': incrementFloat,
     'append': appendElement,
+    'append_if_not_exists': appendElementIfNotExists,
     'rename': rename,
     'insert': insertElement,
+    'insert_if_not_exists' : insertElementIfNotExists,
     'remove': removeElement
 }
 

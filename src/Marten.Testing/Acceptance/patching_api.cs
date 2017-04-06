@@ -306,8 +306,36 @@ namespace Marten.Testing.Acceptance
             }
         }
 
+        [Fact]
+        public void append_if_not_exists_to_a_primitive_array()
+        {
+            var target = Target.Random();
+            target.NumberArray = new[] { 1, 2, 3 };
+
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.NumberArray, 3);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<Target>(target.Id).NumberArray
+                    .ShouldHaveTheSameElementsAs(1, 2, 3);
+            }
+
+            theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.NumberArray, 4);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<Target>(target.Id).NumberArray
+                    .ShouldHaveTheSameElementsAs(1, 2, 3, 4);
+            }
+        }
+
         // SAMPLE: append_complex_element
-    [Fact]
+        [Fact]
     public void append_complex_element()
     {
         var target = Target.Random(true);
@@ -332,6 +360,42 @@ namespace Marten.Testing.Acceptance
         // ENDSAMPLE
 
         [Fact]
+        public void append_if_not_exists_complex_element()
+        {
+            var target = Target.Random(true);
+            var initialCount = target.Children.Length;
+
+            var child = Target.Random();
+            var child2 = Target.Random();
+
+            theSession.Store(target);
+            theSession.SaveChanges();
+            theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
+            theSession.SaveChanges();
+            theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.Children, child);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var target2 = query.Load<Target>(target.Id);
+                target2.Children.Length.ShouldBe(initialCount + 1);
+
+                target2.Children.Last().Id.ShouldBe(child.Id);
+            }
+
+            theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.Children, child2);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var target2 = query.Load<Target>(target.Id);
+                target2.Children.Length.ShouldBe(initialCount + 2);
+
+                target2.Children.Last().Id.ShouldBe(child2.Id);
+            }
+        }
+
+        [Fact]
         public void insert_first_to_a_primitive_array()
         {
             var target = Target.Random();
@@ -341,6 +405,34 @@ namespace Marten.Testing.Acceptance
             theSession.SaveChanges();
 
             theSession.Patch<Target>(target.Id).Insert(x => x.NumberArray, 4);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<Target>(target.Id).NumberArray
+                    .ShouldHaveTheSameElementsAs(4, 1, 2, 3);
+            }
+        }
+
+        [Fact]
+        public void insert_if_not_exists_first_to_a_primitive_array()
+        {
+            var target = Target.Random();
+            target.NumberArray = new[] { 1, 2, 3 };
+
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 1);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<Target>(target.Id).NumberArray
+                    .ShouldHaveTheSameElementsAs(1, 2, 3);
+            }
+
+            theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 4);
             theSession.SaveChanges();
 
             using (var query = theStore.QuerySession())
@@ -369,8 +461,36 @@ namespace Marten.Testing.Acceptance
             }
         }
 
+        [Fact]
+        public void insert_if_not_exists_first_to_a_primitive_array_at_a_certain_position()
+        {
+            var target = Target.Random();
+            target.NumberArray = new[] { 1, 2, 3 };
+
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 3, 2);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<Target>(target.Id).NumberArray
+                    .ShouldHaveTheSameElementsAs(1, 2, 3);
+            }
+
+            theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 4, 2);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<Target>(target.Id).NumberArray
+                    .ShouldHaveTheSameElementsAs(1, 2, 4, 3);
+            }
+        }
+
         // SAMPLE: insert_first_complex_element
-    [Fact]
+        [Fact]
     public void insert_first_complex_element()
     {
         var target = Target.Random(true);
@@ -393,6 +513,50 @@ namespace Marten.Testing.Acceptance
         }
     }
         // ENDSAMPLE
+
+        public void insert_if_not_exists_first_complex_element()
+        {
+            var target = Target.Random(true);
+            var initialCount = target.Children.Length;
+
+            var child = Target.Random();
+            var child2 = Target.Random();
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            theSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var target2 = query.Load<Target>(target.Id);
+                target2.Children.Length.ShouldBe(initialCount + 1);
+
+                target2.Children.First().Id.ShouldBe(child.Id);
+            }
+
+            theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.Children, child);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var target2 = query.Load<Target>(target.Id);
+                target2.Children.Length.ShouldBe(initialCount + 1);
+
+                target2.Children.First().Id.ShouldBe(child.Id);
+            }
+
+            theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.Children, child2);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var target2 = query.Load<Target>(target.Id);
+                target2.Children.Length.ShouldBe(initialCount + 2);
+
+                target2.Children.First().Id.ShouldBe(child2.Id);
+            }
+        }
 
         [Fact]
         public void rename_shallow_prop()

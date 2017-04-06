@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
@@ -207,6 +208,22 @@ namespace Marten
             public DocumentMappingExpression<T> IdStrategy(IIdGeneration idStrategy)
             {
                 alter = mapping => mapping.IdStrategy = idStrategy;
+                return this;
+            }
+
+            public DocumentMappingExpression<T> Identity(Expression<Func<T, object>> member)
+            {
+                alter = mapping =>
+                {
+                    var members = FindMembers.Determine(member);
+                    if (members.Length != 1)
+                    {
+                        throw new InvalidOperationException($"The expression {member} is not valid as an id column in Marten");
+                    }
+
+                    mapping.IdMember = members.Single();
+                };
+
                 return this;
             }
 
