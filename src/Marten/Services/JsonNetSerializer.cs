@@ -50,19 +50,9 @@ namespace Marten.Services
             return writer.ToString();
         }
 
-        public T FromJson<T>(string json)
-        {
-            return _serializer.Deserialize<T>(new JsonTextReader(new StringReader(json)));
-        }
-
         public T FromJson<T>(Stream stream)
         {
             return _serializer.Deserialize<T>(new JsonTextReader(new StreamReader(stream)));
-        }
-
-        public object FromJson(Type type, string json)
-        {
-            return _serializer.Deserialize(new JsonTextReader(new StringReader(json)), type);
         }
 
         public T FromJson<T>(TextReader reader)

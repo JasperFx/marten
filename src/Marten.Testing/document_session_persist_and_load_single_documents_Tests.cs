@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Services;
 using Shouldly;
 using Xunit;
 
@@ -33,7 +34,7 @@ namespace Marten.Testing
 
                 json.ShouldNotBeNull();
 
-                var loadedUser = new JsonNetSerializer().FromJson<User>(json);
+                var loadedUser = new JsonNetSerializer().FromJson<User>(json.ToReader());
 
                 user.ShouldNotBeSameAs(loadedUser);
                 loadedUser.FirstName.ShouldBe(user.FirstName);

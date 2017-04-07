@@ -34,7 +34,7 @@ namespace Marten.Events
             var id = reader.GetGuid(0);
             var eventTypeName = reader.GetString(1);
             var version = reader.GetInt32(2);
-            var dataJson = reader.GetString(3);
+            var dataJson = reader.GetTextReader(3);
 
 
             var mapping = Events.EventMappingFor(eventTypeName);
@@ -66,7 +66,8 @@ namespace Marten.Events
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var eventTypeName = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(2, token).ConfigureAwait(false);
-            var dataJson = await reader.GetFieldValueAsync<string>(3, token).ConfigureAwait(false);
+            var dataJson = reader.GetTextReader(3);
+            //var dataJson = await reader.GetFieldValueAsync<string>(3, token).ConfigureAwait(false);
 
             var mapping = Events.EventMappingFor(eventTypeName);
 

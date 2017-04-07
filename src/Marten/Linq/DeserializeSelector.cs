@@ -1,6 +1,7 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Services;
 
 namespace Marten.Linq
@@ -26,7 +27,15 @@ namespace Marten.Linq
 
         public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            return _serializer.FromJson<T>(await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false));
+            // TODO -- replace when Npgsql has a GetTextReaderAsync()
+
+            if (!typeof(T).IsSimple())
+            {
+                return _serializer.FromJson<T>(reader.GetTextReader(0));
+            }
+
+
+            return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
         }
     }
 }
