@@ -2,6 +2,7 @@
 
 namespace Marten.Services
 {
+    [Obsolete("try to eliminate this")]
     public class FetchResult<T>
     {
         public FetchResult(T document, string json, Guid? version)

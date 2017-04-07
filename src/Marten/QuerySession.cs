@@ -15,12 +15,6 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
-    public interface ILoader
-    {
-        FetchResult<T> LoadDocument<T>(object id) where T : class;
-        Task<FetchResult<T>> LoadDocumentAsync<T>(object id, CancellationToken token) where T : class;
-    }
-
     public class QuerySession : IQuerySession, ILoader
     {
         private readonly IDocumentSchema _schema;
