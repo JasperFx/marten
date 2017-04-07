@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
 using Npgsql;
@@ -34,6 +37,23 @@ namespace Marten.Schema
         IStorageOperation DeletionForEntity(object entity);
 
         IStorageOperation DeletionForWhere(IWhereFragment @where);
+    }
+
+    public interface IDocumentStorage<T> : IDocumentStorage
+    {
+        // Gets run through the identity map to do most of the actual work
+        T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map);
+        Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map, CancellationToken token);
+
+        // Goes through the IdentityMap to do its thing
+        T Resolve(IIdentityMap map, ILoader loader, object id);
+        Task<T> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id);
+
+        // Used to load by id
+        FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer);
+
+
+        Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token);
     }
 
 }

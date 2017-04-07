@@ -377,9 +377,9 @@ namespace Marten.Schema
         }
 
 
-        public IResolver<T> ResolverFor<T>()
+        public IDocumentStorage<T> StorageFor<T>()
         {
-            return StorageFor(typeof(T)).As<IResolver<T>>();
+            return StorageFor(typeof(T)).As<IDocumentStorage<T>>();
         }
 
         public IdAssignment<T> IdAssignmentFor<T>()

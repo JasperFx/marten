@@ -12,13 +12,13 @@ namespace Marten.Linq.QueryHandlers
 {
     public class LoadByIdHandler<T> : IQueryHandler<T>
     {
-        private readonly IResolver<T> _resolver;
+        private readonly IDocumentStorage<T> storage;
         private readonly IQueryableDocument _mapping;
         private readonly object _id;
 
-        public LoadByIdHandler(IResolver<T> resolver, IQueryableDocument mapping, object id)
+        public LoadByIdHandler(IDocumentStorage<T> documentStorage, IQueryableDocument mapping, object id)
         {
-            _resolver = resolver;
+            storage = documentStorage;
             _mapping = mapping;
             _id = id;
         }
@@ -47,13 +47,13 @@ namespace Marten.Linq.QueryHandlers
 
         public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return reader.Read() ? _resolver.Resolve(0, reader, map) : default(T);
+            return reader.Read() ? storage.Resolve(0, reader, map) : default(T);
         }
 
         public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             return await reader.ReadAsync(token).ConfigureAwait(false) 
-                ? await _resolver.ResolveAsync(0, reader, map, token).ConfigureAwait(false) : default(T);
+                ? await storage.ResolveAsync(0, reader, map, token).ConfigureAwait(false) : default(T);
         }
     }
 }

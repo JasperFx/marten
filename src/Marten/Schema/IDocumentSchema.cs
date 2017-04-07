@@ -80,7 +80,7 @@ namespace Marten.Schema
 
         string[] AllSchemaNames();
 
-        IResolver<T> ResolverFor<T>();
+        IDocumentStorage<T> StorageFor<T>();
 
 
         IdAssignment<T> IdAssignmentFor<T>();

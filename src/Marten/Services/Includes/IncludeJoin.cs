@@ -81,7 +81,7 @@ namespace Marten.Services.Includes
 
         public ISelector<TSearched> WrapSelector<TSearched>(IDocumentSchema schema, ISelector<TSearched> inner)
         {
-            return new IncludeSelector<TSearched, T>(TableAlias, _mapping, _callback, inner, schema.ResolverFor<T>());
+            return new IncludeSelector<TSearched, T>(TableAlias, _mapping, _callback, inner, schema.StorageFor<T>());
         }
     }
 }

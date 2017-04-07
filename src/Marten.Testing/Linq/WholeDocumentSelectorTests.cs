@@ -13,13 +13,13 @@ namespace Marten.Testing.Linq
 {
     public class WholeDocumentSelectorTests
     {
-        private readonly IResolver<User> theResolver = Substitute.For<IResolver<User>>();
+        private readonly IDocumentStorage<User> theDocumentStorage = Substitute.For<IDocumentStorage<User>>();
         private readonly IQueryableDocument theMapping = DocumentMapping.For<User>().ToQueryableDocument();
         private WholeDocumentSelector<User> theSelector;
 
         public WholeDocumentSelectorTests()
         {
-            theSelector = new WholeDocumentSelector<User>(theMapping, theResolver);
+            theSelector = new WholeDocumentSelector<User>(theMapping, theDocumentStorage);
         }
 
 
@@ -37,7 +37,7 @@ namespace Marten.Testing.Linq
 
             var user = new User();
 
-            theResolver.Resolve(0, reader, map).Returns(user);
+            theDocumentStorage.Resolve(0, reader, map).Returns(user);
 
             theSelector.Resolve(reader, map, null).ShouldBe(user);
         }

@@ -11,7 +11,7 @@ using NpgsqlTypes;
 namespace Marten.Schema.Hierarchies
 {
     public class SubClassDocumentStorage<T, TBase>
-        : IDocumentStorage, IDocumentUpsert, IResolver<T>
+        : IDocumentStorage, IDocumentUpsert, IDocumentStorage<T>
         where T : class, TBase
         where TBase : class
     {

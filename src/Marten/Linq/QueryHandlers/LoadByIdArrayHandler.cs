@@ -12,13 +12,13 @@ namespace Marten.Linq.QueryHandlers
 {
     public class LoadByIdArrayHandler<T, TKey> : IQueryHandler<IList<T>>
     {
-        private readonly IResolver<T> _resolver;
+        private readonly IDocumentStorage<T> storage;
         private readonly IQueryableDocument _mapping;
         private readonly TKey[] _ids;
 
-        public LoadByIdArrayHandler(IResolver<T> resolver, IQueryableDocument mapping, TKey[] ids)
+        public LoadByIdArrayHandler(IDocumentStorage<T> documentStorage, IQueryableDocument mapping, TKey[] ids)
         {
-            _resolver = resolver;
+            storage = documentStorage;
             _mapping = mapping;
             _ids = ids;
         }
@@ -55,7 +55,7 @@ namespace Marten.Linq.QueryHandlers
 
             while (reader.Read())
             {
-                list.Add(_resolver.Resolve(0, reader, map));
+                list.Add(storage.Resolve(0, reader, map));
             }
 
             return list;
@@ -67,7 +67,7 @@ namespace Marten.Linq.QueryHandlers
 
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                list.Add(await _resolver.ResolveAsync(0, reader, map, token).ConfigureAwait(false));
+                list.Add(await storage.ResolveAsync(0, reader, map, token).ConfigureAwait(false));
             }
 
             return list;
