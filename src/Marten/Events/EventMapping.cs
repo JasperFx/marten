@@ -211,7 +211,7 @@ namespace Marten.Events
         {
             if (!reader.Read()) return null;
 
-            var json = reader.GetString(0);
+            var json = reader.GetTextReader(0);
             var doc = serializer.FromJson<T>(json);
 
             return new FetchResult<T>(doc, json, null);
@@ -223,7 +223,8 @@ namespace Marten.Events
 
             if (!found) return null;
 
-            var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            var json = reader.GetTextReader(0);
+            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
             var doc = serializer.FromJson<T>(json);
 
 
