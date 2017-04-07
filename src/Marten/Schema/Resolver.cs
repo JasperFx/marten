@@ -100,7 +100,7 @@ namespace Marten.Schema
         {
             if (reader.IsDBNull(startingIndex)) return null;
 
-            var json = reader.GetString(startingIndex);
+            var json = reader.GetTextReader(startingIndex);
             var id = reader[startingIndex + 1];
 
             var version = reader.GetFieldValue<Guid>(startingIndex + 2);
@@ -113,7 +113,9 @@ namespace Marten.Schema
         {
             if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false)) return null;
 
-            var json = await reader.GetFieldValueAsync<string>(startingIndex, token).ConfigureAwait(false);
+
+            var json = reader.GetTextReader(startingIndex);
+            //var json = await reader.GetFieldValueAsync<string>(startingIndex, token).ConfigureAwait(false);
 
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 

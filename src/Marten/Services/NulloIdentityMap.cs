@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,10 +44,8 @@ namespace Marten.Services
             return fetchResult == null ? default(T) : fetchResult.Document;
         }
 
-        public T Get<T>(object id, string json, Guid? version)
+        public T Get<T>(object id, TextReader json, Guid? version)
         {
-            if (json.IsEmpty()) return default(T);
-
             if (version.HasValue)
             {
                 Versions.Store<T>(id, version.Value);
@@ -55,10 +54,8 @@ namespace Marten.Services
             return _serializer.FromJson<T>(json);
         }
 
-        public T Get<T>(object id, Type concreteType, string json, Guid? version)
+        public T Get<T>(object id, Type concreteType, TextReader json, Guid? version)
         {
-            if (json.IsEmpty()) return default(T);
-
             if (version.HasValue)
             {
                 Versions.Store<T>(id, version.Value);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Marten.Services
@@ -17,7 +18,7 @@ namespace Marten.Services
         public DirtyTrackingIdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners) : this(serializer, listeners, new CharArrayTextWriter.Pool())
         {}
 
-        protected override TrackedEntity ToCache(object id, Type concreteType, object document, string json, UnitOfWorkOrigin origin)
+        protected override TrackedEntity ToCache(object id, Type concreteType, object document, TextReader json, UnitOfWorkOrigin origin = UnitOfWorkOrigin.Loaded)
         {
             return new TrackedEntity(id, Serializer, concreteType, document, json)
             {

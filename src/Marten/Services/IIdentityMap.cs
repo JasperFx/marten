@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,8 +14,8 @@ namespace Marten.Services
         Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken));
 
 
-        T Get<T>(object id, string json, Guid? version);
-        T Get<T>(object id, Type concreteType, string json, Guid? version);
+        T Get<T>(object id, TextReader json, Guid? version);
+        T Get<T>(object id, Type concreteType, TextReader json, Guid? version);
 
         ISerializer Serializer { get; }
 

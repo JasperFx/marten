@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,7 +35,7 @@ namespace Marten.Services
             return Cache.SelectMany(x => x.Values);
         }
 
-        protected abstract TCacheValue ToCache(object id, Type concreteType, object document, string json, UnitOfWorkOrigin origin = UnitOfWorkOrigin.Loaded);
+        protected abstract TCacheValue ToCache(object id, Type concreteType, object document, TextReader json, UnitOfWorkOrigin origin = UnitOfWorkOrigin.Loaded);
         protected abstract T FromCache<T>(TCacheValue cacheValue);
 
         private void storeFetched<T>(object id, FetchResult<T> fetched)
@@ -56,12 +57,19 @@ namespace Marten.Services
                 var document = fetchResult == null ? default(T) : fetchResult.Document;
                 
                 _listeners.Each(listener => listener.DocumentLoaded(id, document));
+
                 return ToCache(id, typeof(T), document, fetchResult?.Json);
             });
 
 
             return FromCache<T>(cacheValue);
         }
+
+        private TCacheValue ToCache(object id, Type concreteType, object document, string json)
+        {
+            return ToCache(id, concreteType, document, json.IsNotEmpty() ? new StringReader(json) : null);
+        }
+
 
         public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken))
         {
@@ -86,17 +94,15 @@ namespace Marten.Services
             return document;
         }
 
-        public T Get<T>(object id, string json, Guid? version)
+        public T Get<T>(object id, TextReader json, Guid? version)
         {
             return Get<T>(id, typeof(T), json, version);
         }
 
-        public T Get<T>(object id, Type concreteType, string json, Guid? version)
+        public T Get<T>(object id, Type concreteType, TextReader json, Guid? version)
         {
             var cacheValue = Cache[typeof(T)].GetOrAdd(id, _ =>
             {
-                if (json.IsEmpty()) return ToCache(id, concreteType, null, json);
-
                 if (version.HasValue)
                 {
                     Versions.Store<T>(id, version.Value);
@@ -174,7 +180,7 @@ namespace Marten.Services
         {
         }
 
-        protected override object ToCache(object id, Type concreteType, object document, string json, UnitOfWorkOrigin origin)
+        protected override object ToCache(object id, Type concreteType, object document, TextReader json, UnitOfWorkOrigin origin = UnitOfWorkOrigin.Loaded)
         {
             return document;
         }
