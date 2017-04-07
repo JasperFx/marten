@@ -18,7 +18,7 @@ namespace Marten.Testing.Services.Includes
         private IQueryableDocument theMapping = DocumentMapping.For<User>();
         private Action<User> theCallback = Substitute.For<Action<User>>();
         private ISelector<Issue> inner = Substitute.For<ISelector<Issue>>();
-        private IResolver<User> theResolver = Substitute.For<IResolver<User>>();
+        private IDocumentStorage<User> theDocumentStorage = Substitute.For<IDocumentStorage<User>>();
         private IncludeSelector<Issue, User> theSelector;
         private IIncludeJoin theInclude = Substitute.For<IIncludeJoin>();
 
@@ -26,7 +26,7 @@ namespace Marten.Testing.Services.Includes
         {
             inner.SelectFields().Returns(new string[] {"a", "b", "c"});
 
-            theSelector = new IncludeSelector<Issue, User>("foo", theMapping, theCallback, inner, theResolver);
+            theSelector = new IncludeSelector<Issue, User>("foo", theMapping, theCallback, inner, theDocumentStorage);
         }
 
         [Fact]
@@ -50,7 +50,7 @@ namespace Marten.Testing.Services.Includes
 
             var map = new NulloIdentityMap(null);
 
-            theResolver.Resolve(3, reader, map).Returns(user);
+            theDocumentStorage.Resolve(3, reader, map).Returns(user);
             inner.Resolve(reader, map, null).Returns(issue);
 
             theSelector.Resolve(reader, map, null).ShouldBe(issue);

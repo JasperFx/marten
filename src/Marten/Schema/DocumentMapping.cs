@@ -113,7 +113,7 @@ namespace Marten.Schema
 
         IDocumentStorage IDocumentMapping.BuildStorage(IDocumentSchema schema)
         {
-            var resolverType = IsHierarchy() ? typeof(HierarchicalResolver<>) : typeof(Resolver<>);
+            var resolverType = IsHierarchy() ? typeof(HierarchicalDocumentStorage<>) : typeof(DocumentStorage<>);
 
             var closedType = resolverType.MakeGenericType(DocumentType);
 

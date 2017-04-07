@@ -179,7 +179,7 @@ namespace Marten.Services.BatchQuerying
 
             var mapping = _schema.MappingFor(typeof(T)).ToQueryableDocument();
 
-            return AddItem(new LoadByIdHandler<T>(_schema.ResolverFor<T>(), mapping, id), null);
+            return AddItem(new LoadByIdHandler<T>(_schema.StorageFor<T>(), mapping, id), null);
         }
 
         public Task<bool> Any<TDoc>(IMartenQueryable<TDoc> queryable)
@@ -278,7 +278,7 @@ namespace Marten.Services.BatchQuerying
 
             private Task<IList<TDoc>> load<TKey>(TKey[] keys)
             {
-                var resolver = _parent._schema.ResolverFor<TDoc>();
+                var resolver = _parent._schema.StorageFor<TDoc>();
                 var mapping = _parent._schema.MappingFor(typeof(TDoc)).ToQueryableDocument();
 
                 return _parent.AddItem(new LoadByIdArrayHandler<TDoc, TKey>(resolver, mapping, keys), null);

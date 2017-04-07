@@ -16,7 +16,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema
 {
-    public class Resolver<T> : IResolver<T>, IDocumentStorage, IDocumentUpsert where T : class
+    public class DocumentStorage<T> : IDocumentStorage<T>, IDocumentStorage, IDocumentUpsert where T : class
     {
         private readonly string _deleteSql;
         private readonly Func<T, object> _identity;
@@ -28,7 +28,7 @@ namespace Marten.Schema
         private readonly FunctionName _upsertName;
         private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid> _sprocWriter;
 
-        public Resolver(ISerializer serializer, DocumentMapping mapping, bool useCharBufferPooling)
+        public DocumentStorage(ISerializer serializer, DocumentMapping mapping, bool useCharBufferPooling)
         {
             _serializer = serializer;
             _mapping = mapping;

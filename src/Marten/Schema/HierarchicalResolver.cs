@@ -6,11 +6,11 @@ using Marten.Services;
 
 namespace Marten.Schema
 {
-    public class HierarchicalResolver<T> : Resolver<T> where T : class
+    public class HierarchicalDocumentStorage<T> : DocumentStorage<T> where T : class
     {
         private readonly DocumentMapping _hierarchy;
 
-        public HierarchicalResolver(ISerializer serializer, DocumentMapping hierarchy, bool useCharBufferPooling)
+        public HierarchicalDocumentStorage(ISerializer serializer, DocumentMapping hierarchy, bool useCharBufferPooling)
             : base(serializer, hierarchy, useCharBufferPooling)
         {
             _hierarchy = hierarchy;

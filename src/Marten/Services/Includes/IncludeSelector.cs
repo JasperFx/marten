@@ -12,7 +12,7 @@ namespace Marten.Services.Includes
     {
         private readonly Action<TIncluded> _callback;
         private readonly ISelector<TSearched> _inner;
-        private readonly IResolver<TIncluded> _resolver;
+        private readonly IDocumentStorage<TIncluded> storage;
 
         public static string[] ToSelectFields(string tableAlias, IQueryableDocument includedMapping, ISelector<TSearched> inner)
         {
@@ -22,12 +22,12 @@ namespace Marten.Services.Includes
             return innerFields.Concat(outerFields).ToArray();
         }
 
-        public IncludeSelector(string tableAlias, IQueryableDocument includedMapping, Action<TIncluded> callback, ISelector<TSearched> inner, IResolver<TIncluded> resolver)
+        public IncludeSelector(string tableAlias, IQueryableDocument includedMapping, Action<TIncluded> callback, ISelector<TSearched> inner, IDocumentStorage<TIncluded> documentStorage)
             : base(ToSelectFields(tableAlias, includedMapping, inner))
         {
             _callback = callback;
             _inner = inner;
-            _resolver = resolver;
+            storage = documentStorage;
 
             StartingIndex = _inner.SelectFields().Length;
         }
@@ -36,7 +36,7 @@ namespace Marten.Services.Includes
 
         public TSearched Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            var included = _resolver.Resolve(StartingIndex, reader, map);
+            var included = storage.Resolve(StartingIndex, reader, map);
             _callback(included);
 
             return _inner.Resolve(reader, map, stats);
@@ -45,7 +45,7 @@ namespace Marten.Services.Includes
 
         public async Task<TSearched> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            var included = await _resolver.ResolveAsync(StartingIndex, reader, map, token).ConfigureAwait(false);
+            var included = await storage.ResolveAsync(StartingIndex, reader, map, token).ConfigureAwait(false);
 
             _callback(included);
 

@@ -9,22 +9,22 @@ namespace Marten.Linq
 {
     public class WholeDocumentSelector<T> : BasicSelector, ISelector<T>
     {
-        private readonly IResolver<T> _resolver;
+        private readonly IDocumentStorage<T> storage;
 
-        public WholeDocumentSelector(IQueryableDocument mapping, IResolver<T> resolver)
+        public WholeDocumentSelector(IQueryableDocument mapping, IDocumentStorage<T> documentStorage)
             : base(mapping.SelectFields().Select(x => $"d.{x}").ToArray())
         {
-            _resolver = resolver;
+            storage = documentStorage;
         }
 
         public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return _resolver.Resolve(0, reader, map);
+            return storage.Resolve(0, reader, map);
         }
 
         public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            return _resolver.ResolveAsync(0, reader, map, token);
+            return storage.ResolveAsync(0, reader, map, token);
         }
     }
 }

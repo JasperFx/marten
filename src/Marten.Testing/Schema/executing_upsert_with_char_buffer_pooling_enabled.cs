@@ -20,7 +20,7 @@ namespace Marten.Testing.Schema
         {
             var releasedWriters = new List<CharArrayTextWriter>();
             var mapping = DocumentMapping.For<User>();
-            var resolver = new Resolver<User>(new Serializer(), mapping, true);
+            var resolver = new DocumentStorage<User>(new Serializer(), mapping, true);
 
             var connection = Substitute.For<IManagedConnection>();
 

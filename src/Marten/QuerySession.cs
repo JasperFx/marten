@@ -78,9 +78,9 @@ namespace Marten
             return new BatchedQuery(_connection, _schema, _identityMap.ForQuery(), this, _serializer);
         }
 
-        private IDocumentStorage storage<T>()
+        private IDocumentStorage<T> storage<T>()
         {
-            return _schema.StorageFor(typeof(T));
+            return _schema.StorageFor<T>();
         }
 
         public FetchResult<T> LoadDocument<T>(object id) where T : class
@@ -88,7 +88,7 @@ namespace Marten
             assertNotDisposed();
 
             var storage = storage<T>();
-            var resolver = storage.As<IResolver<T>>();
+            var resolver = storage.As<IDocumentStorage<T>>();
 
             var cmd = storage.LoaderCommand(id);
             return _connection.Execute(cmd, c =>
@@ -105,7 +105,7 @@ namespace Marten
             assertNotDisposed();
 
             var storage = storage<T>();
-            var resolver = storage.As<IResolver<T>>();
+            var resolver = storage.As<IDocumentStorage<T>>();
 
             var cmd = storage.LoaderCommand(id);
 
@@ -141,7 +141,7 @@ namespace Marten
 
             assertCorrectIdType<T>(id);
 
-            var resolver = storage<T>().As<IResolver<T>>();
+            var resolver = storage<T>().As<IDocumentStorage<T>>();
 
             
             return resolver.Resolve(_identityMap, this, id);
@@ -163,7 +163,7 @@ namespace Marten
         {
             assertNotDisposed();
             assertCorrectIdType<T>(id);
-            return storage<T>().As<IResolver<T>>().ResolveAsync(_identityMap, this, token, id);
+            return storage<T>().As<IDocumentStorage<T>>().ResolveAsync(_identityMap, this, token, id);
         }
 
         public ILoadByKeys<T> LoadMany<T>()
@@ -314,7 +314,7 @@ namespace Marten
             private IEnumerable<TDoc> fetchDocuments<TKey>(TKey[] keys)
             {
                 var storage = _parent._schema.StorageFor(typeof(TDoc));
-                var resolver = storage.As<IResolver<TDoc>>();
+                var resolver = storage.As<IDocumentStorage<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
                 var list = new List<TDoc>();
@@ -337,7 +337,7 @@ namespace Marten
             private async Task<IEnumerable<TDoc>> fetchDocumentsAsync<TKey>(TKey[] keys, CancellationToken token)
             {
                 var storage = _parent._schema.StorageFor(typeof(TDoc));
-                var resolver = storage.As<IResolver<TDoc>>();
+                var resolver = storage.As<IDocumentStorage<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
                 var list = new List<TDoc>();

@@ -61,7 +61,7 @@ namespace Marten.Linq
                     return null;
                 }
 
-                var resolver = schema.ResolverFor<T>();
+                var resolver = schema.StorageFor<T>();
 
                 return new WholeDocumentSelector<T>(mapping, resolver);
             }
