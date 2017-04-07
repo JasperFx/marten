@@ -16,7 +16,7 @@ namespace Marten.Testing.Services
 
             var map = new IdentityMap(serializer, null);
 
-            var target2 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
+            var target2 = map.Get<Target>(target.Id, serializer.ToJson(target).ToReader(), null);
 
             target2.Id.ShouldBe(target.Id);
             target2.ShouldNotBeTheSameAs(target);
@@ -32,7 +32,7 @@ namespace Marten.Testing.Services
 
             var map = new IdentityMap(serializer, null);
 
-            map.Get<NulloIdentityMapTests.Car>(camaro.Id, typeof(NulloIdentityMapTests.Camaro), json, null)
+            map.Get<NulloIdentityMapTests.Car>(camaro.Id, typeof(NulloIdentityMapTests.Camaro), json.ToReader(), null)
                 .ShouldBeOfType<NulloIdentityMapTests.Camaro>()
                 .Id.ShouldBe(camaro.Id);
 
@@ -48,10 +48,10 @@ namespace Marten.Testing.Services
 
             var map = new IdentityMap(serializer, null);
 
-            var target2 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
-            var target3 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
-            var target4 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
-            var target5 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
+            var target2 = map.Get<Target>(target.Id, serializer.ToJson(target).ToReader(), null);
+            var target3 = map.Get<Target>(target.Id, serializer.ToJson(target).ToReader(), null);
+            var target4 = map.Get<Target>(target.Id, serializer.ToJson(target).ToReader(), null);
+            var target5 = map.Get<Target>(target.Id, serializer.ToJson(target).ToReader(), null);
 
             target2.Id.ShouldBe(target.Id);
             target3.Id.ShouldBe(target.Id);
@@ -74,12 +74,12 @@ namespace Marten.Testing.Services
 
             var map = new IdentityMap(serializer, null);
 
-            var target3 = map.Get<Target>(target.Id, serializer.ToJson(target), null);
+            var target3 = map.Get<Target>(target.Id, serializer.ToJson(target).ToReader(), null);
 
             // now remove it
             map.Remove<Target>(target.Id);
 
-            var target4 = map.Get<Target>(target.Id, serializer.ToJson(target2), null);
+            var target4 = map.Get<Target>(target.Id, serializer.ToJson(target2).ToReader(), null);
             target4.ShouldNotBeNull();
             target4.ShouldNotBeTheSameAs(target3);
 
@@ -142,7 +142,7 @@ namespace Marten.Testing.Services
             map.Store(target.Id, target);
 
 
-            map.Get<Target>(target.Id, "", null).ShouldBeTheSameAs(target);
+            map.Get<Target>(target.Id, "".ToReader(), null).ShouldBeTheSameAs(target);
         }
 
         [Fact]

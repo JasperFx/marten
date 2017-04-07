@@ -42,7 +42,7 @@ namespace Marten.Testing.Services
 
             var version = Guid.NewGuid();
 
-            theIdentityMap.Get<Target>(target.Id, json, version);
+            theIdentityMap.Get<Target>(target.Id, json.ToReader(), version);
 
             theIdentityMap.Versions.Version<Target>(target.Id)
                 .ShouldBe(version);
@@ -56,7 +56,7 @@ namespace Marten.Testing.Services
 
             var version = Guid.NewGuid();
 
-            theIdentityMap.Get<Target>(target.Id, typeof(Target), json, version);
+            theIdentityMap.Get<Target>(target.Id, typeof(Target), json.ToReader(), version);
 
             theIdentityMap.Versions.Version<Target>(target.Id)
                 .ShouldBe(version);

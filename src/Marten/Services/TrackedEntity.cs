@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Newtonsoft.Json.Linq;
 
 namespace Marten.Services
@@ -8,7 +9,7 @@ namespace Marten.Services
         private readonly ISerializer _serializer;
         private string _json;
 
-        public TrackedEntity(object id, ISerializer serializer, Type documentType, object document, string json)
+        public TrackedEntity(object id, ISerializer serializer, Type documentType, object document, TextReader json)
         {
             _serializer = serializer;
             Id = id;

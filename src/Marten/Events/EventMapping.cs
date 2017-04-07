@@ -190,15 +190,19 @@ namespace Marten.Events
         public T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
             var id = reader.GetGuid(startingIndex);
-            var json = reader.GetString(startingIndex + 1);
+            var json = reader.GetTextReader(startingIndex + 1);
 
             return map.Get<T>(id, json, null);
         }
 
         public async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
-            var json = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
+            var id = await reader.GetFieldValueAsync<Guid>(startingIndex, token).ConfigureAwait(false);
+
+            // TODO -- DO NOT LIKE THIS. Ask the Npgsql guys if this is okay
+            var json = reader.GetTextReader(startingIndex + 1);
+            
+            //var json = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
 
             return map.Get<T>(id, json, null);
         }
