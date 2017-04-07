@@ -12,7 +12,7 @@ namespace Marten.Testing.Services
         {
             var serializer = new TestsSerializer();
             var target = new Target();
-            var json = serializer.ToJson(target);
+            var json = serializer.ToJson(target).ToReader();
 
             var map = new NulloIdentityMap(serializer);
 

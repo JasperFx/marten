@@ -48,7 +48,7 @@ namespace Marten.Schema
         {
             if (!reader.Read()) return null;
 
-            var json = reader.GetString(0);
+            var json = reader.GetTextReader(0);
             var typeAlias = reader.GetString(2);
 
             var actualType = _hierarchy.TypeFor(typeAlias);
@@ -66,7 +66,8 @@ namespace Marten.Schema
 
             if (!found) return null;
 
-            var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            var json = reader.GetTextReader(0);
+            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
             var typeAlias = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
 
             var actualType = _hierarchy.TypeFor(typeAlias);

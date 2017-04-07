@@ -85,7 +85,7 @@ namespace Marten.Testing.Services
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
-            var json = serializer.ToJson(target);
+            var json = serializer.ToJson(target).ToReader();
             var clonedTarget = serializer.FromJson<Target>(json);
 
             var target2 = map.Get<Target>(target.Id, () =>
@@ -107,10 +107,10 @@ namespace Marten.Testing.Services
 
             var map = new DirtyTrackingIdentityMap(serializer, null);
 
-            var target2 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target), null));
-            var target3 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target), null));
-            var target4 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target), null));
-            var target5 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target), null));
+            var target2 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target).ToReader(), null));
+            var target3 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target).ToReader(), null));
+            var target4 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target).ToReader(), null));
+            var target5 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target).ToReader(), null));
 
             target2.Id.ShouldBe(target.Id);
             target3.Id.ShouldBe(target.Id);

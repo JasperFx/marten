@@ -66,7 +66,7 @@ namespace Marten.Testing.Services
         public void get_with_sync_fetch()
         {
             var target = Target.Random();
-            var json = theStore.Advanced.Serializer.ToJson(target);
+            var json = theStore.Advanced.Serializer.ToJson(target).ToReader();
 
             var version = Guid.NewGuid();
 
@@ -81,7 +81,7 @@ namespace Marten.Testing.Services
         public async Task get_with_async_fetch()
         {
             var target = Target.Random();
-            var json = theStore.Advanced.Serializer.ToJson(target);
+            var json = theStore.Advanced.Serializer.ToJson(target).ToReader();
 
             var version = Guid.NewGuid();
 

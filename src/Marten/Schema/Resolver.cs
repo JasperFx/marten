@@ -139,7 +139,7 @@ namespace Marten.Schema
             var found = reader.Read();
             if (!found) return null;
 
-            var json = reader.GetString(0);
+            var json = reader.GetTextReader(0);
             var doc = serializer.FromJson<T>(json);
 
             var version = reader.GetFieldValue<Guid>(2);
@@ -152,7 +152,8 @@ namespace Marten.Schema
             var found = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!found) return null;
 
-            var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            var json = reader.GetTextReader(0);
+            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
             var doc = serializer.FromJson<T>(json);
 
             var version = await reader.GetFieldValueAsync<Guid>(2, token).ConfigureAwait(false);

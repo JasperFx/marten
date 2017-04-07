@@ -26,6 +26,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="json"></param>
         /// <returns></returns>
+        [Obsolete("Try to make this go away")]
         T FromJson<T>(string json);
 
         /// <summary>
@@ -34,6 +35,7 @@ namespace Marten
         /// <param name="type"></param>
         /// <param name="json"></param>
         /// <returns></returns>
+        [Obsolete("Try to make this go away")]
         object FromJson(Type type, string json);
 
 
