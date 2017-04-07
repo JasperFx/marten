@@ -25,7 +25,7 @@ namespace Marten.Services
             {
                 using (var reader = cmd.ExecuteReader())
                 {
-                    var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetString(0)) : null;
+                    var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetTextReader(0)) : null;
                     return queryPlans?[0].Plan;
                 }
             });

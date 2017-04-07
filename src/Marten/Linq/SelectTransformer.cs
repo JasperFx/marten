@@ -25,7 +25,8 @@ namespace Marten.Linq
 
         public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            var json = reader.GetTextReader(0);
+            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
             return map.Serializer.FromJson<T>(json);
         }
     }
