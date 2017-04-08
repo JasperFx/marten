@@ -20,18 +20,15 @@ namespace Marten.Services.BatchQuerying
         private readonly IIdentityMap _identityMap;
         private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
         private readonly QuerySession _parent;
+        private readonly DocumentStore _store;
         private readonly IManagedConnection _runner;
-        private readonly IDocumentSchema _schema;
-        private readonly ISerializer _serializer;
 
-        public BatchedQuery(IManagedConnection runner, IDocumentSchema schema, IIdentityMap identityMap,
-            QuerySession parent, ISerializer serializer)
+        public BatchedQuery(DocumentStore store, IManagedConnection runner, IIdentityMap identityMap, QuerySession parent)
         {
+            _store = store;
             _runner = runner;
-            _schema = schema;
             _identityMap = identityMap;
             _parent = parent;
-            _serializer = serializer;
         }
 
         public IBatchEvents Events => this;
@@ -54,7 +51,7 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IList<T>> Query<T>(string sql, params object[] parameters) where T : class
         {
-            return AddItem(new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters), null);
+            return AddItem(new UserSuppliedQueryHandler<T>(_store, sql, parameters), null);
         }
 
         public IBatchedQueryable<T> Query<T>() where T : class
@@ -126,16 +123,16 @@ namespace Marten.Services.BatchQuerying
         public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query)
         {
             QueryStatistics stats;
-            var handler = _schema.HandlerFactory.HandlerFor(query, out stats);
+            var handler = _store.Schema.HandlerFactory.HandlerFor(query, out stats);
             return AddItem(handler, stats);
         }
 
         public Task<T> AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null)
             where T : class, new()
         {
-            var inner = new EventQueryHandler(new EventSelector(_schema.Events, _serializer), streamId, version,
+            var inner = new EventQueryHandler(new EventSelector(_store.Schema.Events, _store.Serializer), streamId, version,
                 timestamp);
-            var aggregator = _schema.Events.AggregateFor<T>();
+            var aggregator = _store.Schema.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner);
 
             return AddItem(handler, null);
@@ -144,19 +141,19 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IEvent> Load(Guid id)
         {
-            var handler = new SingleEventQueryHandler(id, _schema.Events, _serializer);
+            var handler = new SingleEventQueryHandler(id, _store.Schema.Events, _store.Serializer);
             return AddItem(handler, null);
         }
 
         public Task<StreamState> FetchStreamState(Guid streamId)
         {
-            var handler = new StreamStateHandler(_schema.Events, streamId);
+            var handler = new StreamStateHandler(_store.Schema.Events, streamId);
             return AddItem(handler, null);
         }
 
         public Task<IList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
         {
-            var selector = new EventSelector(_schema.Events, _serializer);
+            var selector = new EventSelector(_store.Schema.Events, _store.Serializer);
             var handler = new EventQueryHandler(selector, streamId, version, timestamp);
 
             return AddItem(handler, null);
@@ -164,7 +161,7 @@ namespace Marten.Services.BatchQuerying
 
         public Task<T> AddItem<T>(IQueryHandler<T> handler, QueryStatistics stats)
         {
-            _schema.EnsureStorageExists(handler.SourceType);
+            _store.Schema.EnsureStorageExists(handler.SourceType);
 
             var item = new BatchQueryItem<T>(handler, stats);
             _items.Add(item);
@@ -177,9 +174,9 @@ namespace Marten.Services.BatchQuerying
             if (_identityMap.Has<T>(id))
                 return Task.FromResult(_identityMap.Retrieve<T>(id));
 
-            var mapping = _schema.MappingFor(typeof(T)).ToQueryableDocument();
+            var mapping = _store.Schema.MappingFor(typeof(T)).ToQueryableDocument();
 
-            return AddItem(new LoadByIdHandler<T>(_schema.StorageFor<T>(), mapping, id), null);
+            return AddItem(new LoadByIdHandler<T>(_store.Schema.StorageFor<T>(), mapping, id), null);
         }
 
         public Task<bool> Any<TDoc>(IMartenQueryable<TDoc> queryable)
@@ -199,7 +196,7 @@ namespace Marten.Services.BatchQuerying
             var query = QueryParser.GetParsedQuery(expression);
 
 
-            return AddItem(new LinqQuery<T>(_schema, query, queryable.Includes.ToArray(), queryable.Statistics).ToList(), queryable.Statistics);
+            return AddItem(new LinqQuery<T>(_store, query, queryable.Includes.ToArray(), queryable.Statistics).ToList(), queryable.Statistics);
         }
 
         public Task<T> First<T>(IMartenQueryable<T> queryable)
@@ -278,8 +275,8 @@ namespace Marten.Services.BatchQuerying
 
             private Task<IList<TDoc>> load<TKey>(TKey[] keys)
             {
-                var resolver = _parent._schema.StorageFor<TDoc>();
-                var mapping = _parent._schema.MappingFor(typeof(TDoc)).ToQueryableDocument();
+                var resolver = _parent._store.Schema.StorageFor<TDoc>();
+                var mapping = _parent._store.Schema.MappingFor(typeof(TDoc)).ToQueryableDocument();
 
                 return _parent.AddItem(new LoadByIdArrayHandler<TDoc, TKey>(resolver, mapping, keys), null);
             }

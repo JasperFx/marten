@@ -34,14 +34,12 @@ namespace Marten.Linq.QueryHandlers
 
     public class QueryHandlerFactory : IQueryHandlerFactory
     {
+        private readonly DocumentStore _store;
         private readonly ConcurrentCache<Type, CachedQuery> _cache = new ConcurrentCache<Type, CachedQuery>();
-        private readonly IDocumentSchema _schema;
-        private readonly ISerializer _serializer;
 
-        public QueryHandlerFactory(IDocumentSchema schema, ISerializer serializer)
+        public QueryHandlerFactory(DocumentStore store)
         {
-            _schema = schema;
-            _serializer = serializer;
+            _store = store;
         }
 
         public IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
@@ -58,7 +56,7 @@ namespace Marten.Linq.QueryHandlers
         public IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model, IIncludeJoin[] joins,
             QueryStatistics statistics)
         {
-            _schema.EnsureStorageExists(model.SourceType());
+            _store.Schema.EnsureStorageExists(model.SourceType());
 
             return tryFindScalarQuery<T>(model, joins, statistics);
         }
@@ -67,7 +65,7 @@ namespace Marten.Linq.QueryHandlers
             QueryStatistics statistics,
             bool returnDefaultWhenEmpty)
         {
-            _schema.EnsureStorageExists(model.SourceType());
+            _store.Schema.EnsureStorageExists(model.SourceType());
 
             return tryFindSingleQuery<T>(model, joins, statistics);
         }
@@ -100,7 +98,7 @@ namespace Marten.Linq.QueryHandlers
         {
             if (model.HasOperator<ToJsonArrayResultOperator>())
             {
-                var query = new LinqQuery<T>(_schema, model, joins, stats);
+                var query = new LinqQuery<T>(_store, model, joins, stats);
                 return new JsonQueryHandler(query.As<LinqQuery<string>>()).As<IQueryHandler<T>>();
             }
 
@@ -115,23 +113,23 @@ namespace Marten.Linq.QueryHandlers
 
             // TODO -- WTH?
             return
-                Activator.CreateInstance(handlerType.MakeGenericType(elementType), _schema, model, joins, stats)
+                Activator.CreateInstance(handlerType.MakeGenericType(elementType), _store, model, joins, stats)
                     .As<IQueryHandler<T>>();
         }
 
         private IQueryHandler<T> tryFindScalarQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
             if (model.HasOperator<CountResultOperator>() || model.HasOperator<LongCountResultOperator>())
-                return new LinqQuery<T>(_schema, model, joins, stats).ToCount<T>();
+                return new LinqQuery<T>(_store, model, joins, stats).ToCount<T>();
 
             if (model.HasOperator<SumResultOperator>())
-                return AggregateQueryHandler<T>.Sum(new LinqQuery<T>(_schema, model, joins, stats));
+                return AggregateQueryHandler<T>.Sum(new LinqQuery<T>(_store, model, joins, stats));
 
             if (model.HasOperator<AverageResultOperator>())
-                return AggregateQueryHandler<T>.Average(new LinqQuery<T>(_schema, model, joins, stats));
+                return AggregateQueryHandler<T>.Average(new LinqQuery<T>(_store, model, joins, stats));
 
             if (model.HasOperator<AnyResultOperator>())
-                return new LinqQuery<T>(_schema, model, joins, stats).ToAny().As<IQueryHandler<T>>();
+                return new LinqQuery<T>(_store, model, joins, stats).ToAny().As<IQueryHandler<T>>();
 
             return null;
         }
@@ -142,7 +140,7 @@ namespace Marten.Linq.QueryHandlers
 
             if (choice == null) return null;
 
-            var query = new LinqQuery<T>(_schema, model, joins, stats);
+            var query = new LinqQuery<T>(_store, model, joins, stats);
 
             if (choice is FirstResultOperator)
             {
@@ -183,22 +181,22 @@ namespace Marten.Linq.QueryHandlers
             Expression expression = query.QueryIs();
             var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
 
-            var queryableDocument = _schema.MappingFor(typeof(TDoc)).ToQueryableDocument();
+            var queryableDocument = _store.Schema.MappingFor(typeof(TDoc)).ToQueryableDocument();
 
-            var setters = findSetters(queryableDocument, queryType, expression, _serializer);
+            var setters = findSetters(queryableDocument, queryType, expression, _store.Serializer);
 
             var model = MartenQueryParser.TransformQueryFlyweight.GetParsedQuery(invocation);
 
             validateCompiledQuery(model);
 
 
-            _schema.EnsureStorageExists(typeof(TDoc));
+            _store.Schema.EnsureStorageExists(typeof(TDoc));
 
             var includeJoins = new IIncludeJoin[0];
 
             if (model.HasOperator<IncludeResultOperator>())
             {
-                var builder = new CompiledIncludeJoinBuilder<TDoc, TOut>(_schema);
+                var builder = new CompiledIncludeJoinBuilder<TDoc, TOut>(_store.Schema);
                 includeJoins = builder.BuildIncludeJoins(model, query);
             }
 
@@ -206,7 +204,7 @@ namespace Marten.Linq.QueryHandlers
             // to create a StatsSelector decorator
             var stats = model.HasOperator<StatsResultOperator>() ? new QueryStatistics() : null;
 
-            var handler = _schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins, stats);
+            var handler = _store.Schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins, stats);
 
             var cmd = CommandBuilder.ToCommand(handler);
 

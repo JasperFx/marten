@@ -2,6 +2,7 @@
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Testing.Bugs;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -17,7 +18,9 @@ namespace Marten.Testing
             var storeOptions = new StoreOptions();
             storeOptions.Schema.Include<TestRegistry>();
 
-            theSchema = new DocumentSchema(storeOptions, new ConnectionSource(), new NulloMartenLogger());
+            var store = TestingDocumentStore.For(_ => _.Schema.Include<TestRegistry>());
+
+            theSchema = store.Schema.As<DocumentSchema>();
         }
 
         [Fact]

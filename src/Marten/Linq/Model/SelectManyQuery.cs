@@ -1,41 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 using Baseline;
 using Baseline.Conversion;
 using Marten.Schema;
 using Marten.Services.Includes;
 using Marten.Util;
-using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
-using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.Model
 {
     public class SelectManyQuery
     {
-        public int Index { get; set; }
         private static readonly Conversions conversions = new Conversions();
+        private readonly ChildDocument _document;
+        private readonly Type _documentType;
 
         private readonly IField _field;
         private readonly AdditionalFromClause _from;
-        private readonly IDocumentSchema _schema;
         private readonly QueryModel _query;
-        private readonly int _take;
+        private readonly DocumentStore _store;
         private readonly string _tableAlias;
-        private readonly Type _documentType;
-        private readonly ChildDocument _document;
+        private readonly int _take;
 
 
-        public SelectManyQuery(IDocumentSchema schema, IQueryableDocument mapping, QueryModel query, int index)
+        public SelectManyQuery(DocumentStore store, IQueryableDocument mapping, QueryModel query, int index)
         {
             Index = index;
 
-            _schema = schema;
+            _store = store;
             _query = query;
 
             _from = query.BodyClauses[index - 1].As<AdditionalFromClause>();
@@ -47,19 +42,20 @@ namespace Marten.Linq.Model
 
             var next = query.BodyClauses.Skip(index + 1).FirstOrDefault(x => x is AdditionalFromClause);
             if (next != null)
-            {
                 throw new NotSupportedException("Not yet supporting SelectMany().SelectMany()");
-            }
-            else
-            {
-                _take = _query.BodyClauses.Count - index;
-            }
+            _take = _query.BodyClauses.Count - index;
 
 
             _tableAlias = "sub" + Index;
             _documentType = _field.MemberType.DeriveElementType();
-            _document = _schema.StoreOptions.GetChildDocument(_tableAlias + ".x", _documentType);
+            _document = _store.Options.GetChildDocument(_tableAlias + ".x", _documentType);
         }
+
+        public int Index { get; set; }
+
+        public string SqlLocator => _field.SqlLocator;
+
+        public bool IsDistinct { get; }
 
         public bool IsComplex(IIncludeJoin[] joins) => joins.Any() || bodyClauses().Any() || HasSelectTransform();
 
@@ -87,36 +83,24 @@ namespace Marten.Linq.Model
                     var visitor = new SelectorParser(_query);
                     visitor.Visit(_query.SelectClause.Selector);
 
-                    return visitor.ToSelector<T>("x", _schema, _document);
+                    return visitor.ToSelector<T>("x", _store.Schema, _document);
                 }
 
                 if (typeof(T) == typeof(string))
-                {
-                    return (ISelector<T>)new JsonSelector();
-                }
+                    return (ISelector<T>) new JsonSelector();
 
                 if (typeof(T) != _documentType)
-                {
-                    // TODO -- going to have to come back to this one.
-                    // think this is related to hierarchical documents
                     return null;
-                }
 
                 return new DeserializeSelector<T>(serializer, RawChildElementField());
-
             }
 
             if (typeof(T) == typeof(string))
-            {
                 return new SingleFieldSelector<T>(IsDistinct, $"jsonb_array_elements_text({_field.SqlLocator}) as x");
-            }
-            else if (TypeMappings.HasTypeMapping(typeof(T)))
-            {
+            if (TypeMappings.HasTypeMapping(typeof(T)))
                 return new ArrayElementFieldSelector<T>(IsDistinct, _field, conversions);
-            }
 
             return new DeserializeSelector<T>(serializer, $"jsonb_array_elements_text({_field.SqlLocator}) as x");
-
         }
 
         public string RawChildElementField()
@@ -128,10 +112,6 @@ namespace Marten.Linq.Model
         {
             return _query.SelectClause.Selector.Type != _documentType;
         }
-
-        public string SqlLocator => _field.SqlLocator;
-
-        public bool IsDistinct { get; }
 
         public void ConfigureCommand(IIncludeJoin[] joins, ISelector selector, CommandBuilder sql, int limit)
         {
@@ -149,7 +129,6 @@ namespace Marten.Linq.Model
                 sql.Append(innerSql);
                 sql.Append(") as ");
                 sql.Append(_tableAlias);
-
             }
             else
             {
@@ -158,7 +137,7 @@ namespace Marten.Linq.Model
                 sql.Append("select ");
                 sql.Append(fields[0]);
 
-                for (int i = 1; i < fields.Length; i++)
+                for (var i = 1; i < fields.Length; i++)
                 {
                     sql.Append(", ");
                     sql.Append(fields[i]);
@@ -168,33 +147,28 @@ namespace Marten.Linq.Model
                 sql.Append(innerSql);
                 sql.Append(") as ");
                 sql.Append(_tableAlias);
-
             }
 
 
             if (joins.Any())
-            {
-                foreach (var @join in joins)
+                foreach (var join in joins)
                 {
                     sql.Append(" ");
                     join.AppendJoin(sql, _tableAlias, _document);
                 }
-            }
 
 
-            var @where = buildWhereFragment(_document);
-            if (@where != null)
+            var where = buildWhereFragment(_document);
+            if (where != null)
             {
                 sql.Append(" where ");
-                @where.Apply(sql);
+                where.Apply(sql);
             }
 
             var orderBy = determineOrderClause(_document);
 
             if (orderBy.IsNotEmpty())
-            {
                 sql.Append(orderBy);
-            }
 
             _query.ApplySkip(sql);
             _query.ApplyTake(limit, sql);
@@ -220,13 +194,11 @@ namespace Marten.Linq.Model
         {
             var wheres = findOperators<WhereClause>().ToArray();
             if (!wheres.Any())
-            {
                 return null;
-            }
 
             return wheres.Length == 1
-                ? _schema.Parser.ParseWhereFragment(document, wheres.Single().Predicate)
-                : new CompoundWhereFragment(_schema.Parser, document, "and", wheres);
+                ? _store.Schema.Parser.ParseWhereFragment(document, wheres.Single().Predicate)
+                : new CompoundWhereFragment(_store.Schema.Parser, document, "and", wheres);
         }
     }
 }

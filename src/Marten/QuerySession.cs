@@ -9,7 +9,6 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
-using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Parsing.Structure;
 
@@ -17,19 +16,16 @@ namespace Marten
 {
     public class QuerySession : IQuerySession, ILoader
     {
-        private readonly IDocumentSchema _schema;
-        private readonly ISerializer _serializer;
         private readonly IManagedConnection _connection;
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
         protected readonly CharArrayTextWriter.Pool WriterPool;
         private bool _disposed;
+        private readonly DocumentStore _store;
 
         public QuerySession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
         {
-            DocumentStore = store;
-            _schema = store.Schema;
-            _serializer = store.Advanced.Serializer;
+            _store = store;
             _connection = connection;
             _parser = parser;
             _identityMap = identityMap;
@@ -37,9 +33,9 @@ namespace Marten
             WriterPool = store.CreateWriterPool();
         }
 
-        public IDocumentStore DocumentStore { get; }
+        public IDocumentStore DocumentStore => _store;
 
-        public IJsonLoader Json => new JsonLoader(_connection, _schema);
+        public IJsonLoader Json => new JsonLoader(_connection, _store.Schema);
 
         protected void assertNotDisposed()
         {
@@ -50,7 +46,7 @@ namespace Marten
         {
             assertNotDisposed();
 
-            var executor = new MartenQueryExecutor(_connection, _schema, _identityMap);
+            var executor = new MartenQueryExecutor(_connection, _store, _identityMap);
 
             var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, executor);
             return new MartenQueryable<T>(queryProvider);
@@ -60,7 +56,7 @@ namespace Marten
         {
             assertNotDisposed();
 
-            var handler = new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters);
+            var handler = new UserSuppliedQueryHandler<T>(_store, sql, parameters);
             return _connection.Fetch(handler, _identityMap.ForQuery(), null);
         }
 
@@ -68,19 +64,19 @@ namespace Marten
         {
             assertNotDisposed();
 
-            var handler = new UserSuppliedQueryHandler<T>(_schema, _serializer, sql, parameters);
+            var handler = new UserSuppliedQueryHandler<T>(_store, sql, parameters);
             return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, token);
         }
 
         public IBatchedQuery CreateBatchQuery()
         {
             assertNotDisposed();
-            return new BatchedQuery(_connection, _schema, _identityMap.ForQuery(), this, _serializer);
+            return new BatchedQuery(_store, _connection, _identityMap.ForQuery(), this);
         }
 
         private IDocumentStorage<T> storage<T>()
         {
-            return _schema.StorageFor<T>();
+            return _store.Schema.StorageFor<T>();
         }
 
         public FetchResult<T> LoadDocument<T>(object id) where T : class
@@ -95,7 +91,7 @@ namespace Marten
             {
                 using (var reader = cmd.ExecuteReader())
                 {
-                    return resolver.Fetch(reader, _serializer);
+                    return resolver.Fetch(reader, _store.Serializer);
                 }
             });
         }
@@ -113,7 +109,7 @@ namespace Marten
             {
                 using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                 {
-                    return await resolver.FetchAsync(reader, _serializer, token).ConfigureAwait(false);
+                    return await resolver.FetchAsync(reader, _store.Serializer, token).ConfigureAwait(false);
                 }
             }, token);
         }
@@ -149,7 +145,7 @@ namespace Marten
 
         private void assertCorrectIdType<T>(object id)
         {
-            var mapping = _schema.MappingFor(typeof(T));
+            var mapping = _store.Schema.MappingFor(typeof(T));
             if (id.GetType() != mapping.IdType)
             {
                 if (id.GetType() == typeof(int) && mapping.IdType == typeof(long)) return;
@@ -263,7 +259,7 @@ namespace Marten
 
             private void assertCorrectIdType<TKey>()
             {
-                var mapping = _parent._schema.MappingFor(typeof(TDoc));
+                var mapping = _parent._store.Schema.MappingFor(typeof(TDoc));
                 if (typeof(TKey) != mapping.IdType)
                 {
                     if (typeof(TKey) == typeof(int) && mapping.IdType == typeof(long)) return;
@@ -313,7 +309,7 @@ namespace Marten
 
             private IEnumerable<TDoc> fetchDocuments<TKey>(TKey[] keys)
             {
-                var storage = _parent._schema.StorageFor(typeof(TDoc));
+                var storage = _parent._store.Schema.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IDocumentStorage<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
@@ -336,7 +332,7 @@ namespace Marten
 
             private async Task<IEnumerable<TDoc>> fetchDocumentsAsync<TKey>(TKey[] keys, CancellationToken token)
             {
-                var storage = _parent._schema.StorageFor(typeof(TDoc));
+                var storage = _parent._store.Schema.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IDocumentStorage<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
@@ -363,7 +359,7 @@ namespace Marten
             assertNotDisposed();
 
             QueryStatistics stats;
-            var handler = _schema.HandlerFactory.HandlerFor(query, out stats);
+            var handler = _store.Schema.HandlerFactory.HandlerFor(query, out stats);
             return _connection.Fetch(handler, _identityMap.ForQuery(), stats);
         }
 
@@ -373,7 +369,7 @@ namespace Marten
             assertNotDisposed();
 
             QueryStatistics stats;
-            var handler = _schema.HandlerFactory.HandlerFor(query, out stats);
+            var handler = _store.Schema.HandlerFactory.HandlerFor(query, out stats);
             return _connection.FetchAsync(handler, _identityMap.ForQuery(), stats, token);
         }
 
