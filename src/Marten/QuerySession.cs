@@ -21,7 +21,7 @@ namespace Marten
         private readonly IIdentityMap _identityMap;
         protected readonly CharArrayTextWriter.Pool WriterPool;
         private bool _disposed;
-        private readonly DocumentStore _store;
+        protected readonly DocumentStore _store;
 
         public QuerySession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
         {
@@ -359,7 +359,7 @@ namespace Marten
             assertNotDisposed();
 
             QueryStatistics stats;
-            var handler = _store.Schema.HandlerFactory.HandlerFor(query, out stats);
+            var handler = _store.HandlerFactory.HandlerFor(query, out stats);
             return _connection.Fetch(handler, _identityMap.ForQuery(), stats);
         }
 
@@ -369,7 +369,7 @@ namespace Marten
             assertNotDisposed();
 
             QueryStatistics stats;
-            var handler = _store.Schema.HandlerFactory.HandlerFor(query, out stats);
+            var handler = _store.HandlerFactory.HandlerFor(query, out stats);
             return _connection.FetchAsync(handler, _identityMap.ForQuery(), stats, token);
         }
 

@@ -17,34 +17,26 @@ namespace Marten
     public class DocumentSession : QuerySession, IDocumentSession
     {
         private readonly IManagedConnection _connection;
-        private readonly StoreOptions _options;
-        private readonly IDocumentSchema _schema;
-        private readonly ISerializer _serializer;
         private readonly UnitOfWork _unitOfWork;
         private readonly IList<IDocumentSessionListener> _sessionListeners;
 
-        public DocumentSession(DocumentStore store, StoreOptions options, IDocumentSchema schema,
-            ISerializer serializer, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, 
-            CharArrayTextWriter.Pool writerPool, IList<IDocumentSessionListener> localListeners)
+        public DocumentSession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, CharArrayTextWriter.Pool writerPool, IList<IDocumentSessionListener> localListeners)
             : base(store, connection, parser, identityMap)
 
         {
-            _options = options;
-            _schema = schema;
-            _serializer = serializer;
             _connection = connection;
-            _sessionListeners = _options.Listeners.Concat(localListeners).ToList();
+            _sessionListeners = _store.Options.Listeners.Concat(localListeners).ToList();
 
             IdentityMap = identityMap;
 
-            _unitOfWork = new UnitOfWork(_schema);
+            _unitOfWork = new UnitOfWork(_store);
 
             if (IdentityMap is IDocumentTracker)
             {
                 _unitOfWork.AddTracker(IdentityMap.As<IDocumentTracker>());
             }
 
-            Events = new EventStore(this, schema, _serializer, _connection, _unitOfWork);
+            Events = new EventStore(this, _store, _connection, _unitOfWork);
         }
 
         // This is here for testing purposes, not part of IDocumentSession
@@ -56,7 +48,7 @@ namespace Marten
 
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var storage = _schema.StorageFor(typeof(T));
+            var storage = _store.Schema.StorageFor(typeof(T));
             var deletion = storage.DeletionForEntity(entity);
 
             _unitOfWork.Add(deletion);
@@ -72,7 +64,7 @@ namespace Marten
         private void delete<T>(object id)
         {
             assertNotDisposed();
-            var storage = _schema.StorageFor(typeof(T));
+            var storage = _store.Schema.StorageFor(typeof(T));
             var deletion = storage.DeletionForId(id);
             _unitOfWork.Add(deletion);
 
@@ -100,9 +92,9 @@ namespace Marten
 
             var model = Query<T>().Where(expression).As<MartenQueryable<T>>().ToQueryModel();
 
-            var where = _schema.BuildWhereFragment(model);
+            var where = QueryModelExtensions.BuildWhereFragment(_store, model);
 
-            var deletion = _schema.StorageFor(typeof(T)).DeletionForWhere(where);
+            var deletion = _store.Schema.StorageFor(typeof(T)).DeletionForWhere(where);
 
             _unitOfWork.Add(deletion);
         }
@@ -124,8 +116,8 @@ namespace Marten
             }
             else
             {
-                var storage = _schema.StorageFor(typeof(T));
-                var idAssignment = _schema.IdAssignmentFor<T>();
+                var storage = _store.Schema.StorageFor(typeof(T));
+                var idAssignment = _store.Schema.IdAssignmentFor<T>();
 
                 foreach (var entity in entities)
                 {
@@ -151,7 +143,7 @@ namespace Marten
         {
             assertNotDisposed();
 
-            var storage = _schema.StorageFor(typeof(T));
+            var storage = _store.Schema.StorageFor(typeof(T));
             var id = storage.Identity(entity);
 
             IdentityMap.Versions.Store<T>(id, version);
@@ -186,7 +178,7 @@ namespace Marten
 
             _sessionListeners.Each(x => x.BeforeSaveChanges(this));
 
-            var batch = new UpdateBatch(_options, _serializer, _connection, IdentityMap.Versions, WriterPool);
+            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool);
             var changes = _unitOfWork.ApplyChanges(batch);
 
             try
@@ -223,7 +215,7 @@ namespace Marten
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
             }
 
-            var batch = new UpdateBatch(_options, _serializer, _connection, IdentityMap.Versions, WriterPool);
+            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool);
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
 
 
@@ -274,7 +266,7 @@ namespace Marten
             assertNotDisposed();
 
             var @where = new WhereFragment("d.id = ?", id);
-            return new PatchExpression<T>(@where, _schema, _unitOfWork, _serializer);
+            return new PatchExpression<T>(@where, _store.Schema, _unitOfWork, _store.Serializer);
         }
 
         public IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> @where)
@@ -283,16 +275,16 @@ namespace Marten
 
             var model = Query<T>().Where(@where).As<MartenQueryable<T>>().ToQueryModel();
 
-            var fragment = _schema.BuildWhereFragment(model);
+            var fragment = QueryModelExtensions.BuildWhereFragment(_store, model);
 
-            return new PatchExpression<T>(fragment, _schema, _unitOfWork, _serializer);
+            return new PatchExpression<T>(fragment, _store.Schema, _unitOfWork, _store.Serializer);
         }
 
         public IPatchExpression<T> Patch<T>(IWhereFragment fragment)
         {
             assertNotDisposed();
 
-            return new PatchExpression<T>(fragment, _schema, _unitOfWork, _serializer);
+            return new PatchExpression<T>(fragment, _store.Schema, _unitOfWork, _store.Serializer);
         }
 
         public void QueueOperation(IStorageOperation storageOperation)
@@ -304,7 +296,7 @@ namespace Marten
         private void applyProjections()
         {
             var streams = PendingChanges.Streams().ToArray();
-            foreach (var projection in _schema.Events.InlineProjections)
+            foreach (var projection in _store.Schema.Events.InlineProjections)
             {
                 projection.Apply(this, streams);
             }
@@ -313,7 +305,7 @@ namespace Marten
         private async Task applyProjectionsAsync(CancellationToken token)
         {
             var streams = PendingChanges.Streams().ToArray();
-            foreach (var projection in _schema.Events.InlineProjections)
+            foreach (var projection in _store.Schema.Events.InlineProjections)
             {
                 await projection.ApplyAsync(this, streams, token).ConfigureAwait(false);
             }

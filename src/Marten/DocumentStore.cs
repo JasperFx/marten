@@ -7,6 +7,7 @@ using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Transforms;
@@ -86,9 +87,9 @@ namespace Marten
                 _writerPool = new CharArrayTextWriter.Pool();
             }
 
-            Advanced = new AdvancedOptions(cleaner, options, Serializer, Schema, _writerPool);
+            Advanced = new AdvancedOptions(this, cleaner, _writerPool);
 
-            Diagnostics = new Diagnostics(Schema);
+            Diagnostics = new Diagnostics(this);
 
 
             CreateDatabaseObjects();
@@ -104,9 +105,13 @@ namespace Marten
             }
 
             Parser = new MartenExpressionParser(Serializer, options);
+
+            HandlerFactory = new QueryHandlerFactory(this);
         }
 
-        public MartenExpressionParser Parser { get; }
+        internal IQueryHandlerFactory HandlerFactory { get; }
+
+        internal MartenExpressionParser Parser { get; }
 
         private readonly IConnectionFactory _connectionFactory;
         private readonly IMartenLogger _logger;
@@ -302,7 +307,7 @@ namespace Marten
             var sessionPool = CreateWriterPool();
             var map = createMap(tracking, sessionPool, localListeners);
 
-            var session = new DocumentSession(this, Options, Schema, Serializer, connection, _parser, map, sessionPool, localListeners);
+            var session = new DocumentSession(this, connection, _parser, map, sessionPool, localListeners);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);

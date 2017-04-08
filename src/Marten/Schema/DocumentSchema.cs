@@ -56,10 +56,6 @@ namespace Marten.Schema
                 return sequences;
             });
 
-            Parser = new MartenExpressionParser(StoreOptions.Serializer(), StoreOptions);
-
-            HandlerFactory = new QueryHandlerFactory(store);
-
             DbObjects = new DbObjects(_factory, this);
 
 
@@ -161,7 +157,6 @@ namespace Marten.Schema
             });
         }
 
-        public MartenExpressionParser Parser { get; }
 
         public StoreOptions StoreOptions { get; }
 
@@ -410,7 +405,6 @@ namespace Marten.Schema
         }
 
 
-        public IQueryHandlerFactory HandlerFactory { get; }
         public IEnumerable<SystemFunction> SystemFunctions => _systemFunctions.Values;
 
         public void ResetSchemaExistenceChecks()

@@ -123,7 +123,7 @@ namespace Marten.Services.BatchQuerying
         public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query)
         {
             QueryStatistics stats;
-            var handler = _store.Schema.HandlerFactory.HandlerFor(query, out stats);
+            var handler = _store.HandlerFactory.HandlerFor(query, out stats);
             return AddItem(handler, stats);
         }
 

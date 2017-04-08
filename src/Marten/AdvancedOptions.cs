@@ -17,22 +17,20 @@ namespace Marten
 {
     public class AdvancedOptions
     {
-        private readonly IDocumentSchema _schema;
         private readonly CharArrayTextWriter.IPool _writerPool;
+        private readonly DocumentStore _store;
 
-        public AdvancedOptions(IDocumentCleaner cleaner, StoreOptions options, ISerializer serializer, IDocumentSchema schema, CharArrayTextWriter.IPool writerPool)
+        public AdvancedOptions(DocumentStore store, IDocumentCleaner cleaner, CharArrayTextWriter.IPool writerPool)
         {
-            Serializer = serializer;
-            _schema = schema;
+            _store = store;
             _writerPool = writerPool;
-            Options = options;
             Clean = cleaner;
         }
 
         /// <summary>
         ///     The original StoreOptions used to configure the current DocumentStore
         /// </summary>
-        public StoreOptions Options { get; }
+        public StoreOptions Options => _store.Options;
 
         /// <summary>
         ///     Used to remove document data and tables from the current Postgresql database
@@ -40,7 +38,7 @@ namespace Marten
         public IDocumentCleaner Clean { get; }
 
 
-        public ISerializer Serializer { get; }
+        public ISerializer Serializer => _store.Serializer;
 
         /// <summary>
         ///     Directly open a managed connection to the underlying Postgresql database
@@ -60,7 +58,7 @@ namespace Marten
         /// <returns></returns>
         public UpdateBatch CreateUpdateBatch()
         {
-            return new UpdateBatch(Options, Serializer, OpenConnection(), new VersionTracker(), _writerPool);
+            return new UpdateBatch(_store, OpenConnection(), new VersionTracker(), _writerPool);
         }
 
         /// <summary>
@@ -70,7 +68,7 @@ namespace Marten
         /// <returns></returns>
         public UnitOfWork CreateUnitOfWork()
         {
-            return new UnitOfWork(_schema);
+            return new UnitOfWork(_store);
         }
 
         /// <summary>
@@ -79,7 +77,7 @@ namespace Marten
         /// <returns></returns>
         public IList<IDocumentStorage> PrecompileAllStorage()
         {
-            return Options.AllDocumentMappings.Select(x => _schema.StorageFor(x.DocumentType)).ToList();
+            return Options.AllDocumentMappings.Select(x => _store.Schema.StorageFor(x.DocumentType)).ToList();
         }
 
         /// <summary>
@@ -91,8 +89,8 @@ namespace Marten
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var handler = new EntityMetadataQueryHandler(entity, _schema.StorageFor(typeof(T)),
-                _schema.MappingFor(typeof(T)));
+            var handler = new EntityMetadataQueryHandler(entity, _store.Schema.StorageFor(typeof(T)),
+                _store.Schema.MappingFor(typeof(T)));
 
             using (var connection = OpenConnection())
             {
@@ -110,8 +108,8 @@ namespace Marten
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var handler = new EntityMetadataQueryHandler(entity, _schema.StorageFor(typeof(T)),
-                _schema.MappingFor(typeof(T)));
+            var handler = new EntityMetadataQueryHandler(entity, _store.Schema.StorageFor(typeof(T)),
+                _store.Schema.MappingFor(typeof(T)));
 
             using (var connection = OpenConnection())
             {
@@ -128,8 +126,8 @@ namespace Marten
         public void ResetHiloSequenceFloor<T>(long floor)
         {
             // Make sure that the sequence is built for this one
-            _schema.IdAssignmentFor<T>();
-            var sequence = _schema.Sequences.SequenceFor(typeof(T));
+            _store.Schema.IdAssignmentFor<T>();
+            var sequence = _store.Schema.Sequences.SequenceFor(typeof(T));
             sequence.SetFloor(floor);
         }
     }

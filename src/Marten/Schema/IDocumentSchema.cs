@@ -50,10 +50,6 @@ namespace Marten.Schema
         /// </summary>
         EventGraph Events { get; }
 
-        /// <summary>
-        /// Access to Linq parsing for adhoc querying techniques
-        /// </summary>
-        MartenExpressionParser Parser { get; }
 
         /// <summary>
         /// Write the SQL script to build the database schema
@@ -88,11 +84,6 @@ namespace Marten.Schema
 
         TransformFunction TransformFor(string name);
 
-
-            /// <summary>
-        /// Used to create IQueryHandler's for Linq queries
-        /// </summary>
-        IQueryHandlerFactory HandlerFactory { get; }
 
         /// <summary>
         /// Directs Marten to disregard any previous schema checks. Useful
