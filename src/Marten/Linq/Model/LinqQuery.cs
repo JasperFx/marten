@@ -28,19 +28,19 @@ namespace Marten.Linq.Model
 
     public class LinqQuery<T> : ILinqQuery
     {
+        private readonly DocumentStore _store;
         private readonly IIncludeJoin[] _joins;
         private readonly IQueryableDocument _mapping;
-        private readonly IDocumentSchema _schema;
 
         private readonly SelectManyQuery _subQuery;
         private ISelector<T> _innerSelector;
 
-        public LinqQuery(IDocumentSchema schema, QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
+        public LinqQuery(DocumentStore store, QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
             Model = model;
-            _schema = schema;
+            _store = store;
             _joins = joins;
-            _mapping = schema.MappingFor(model.SourceType()).ToQueryableDocument();
+            _mapping = store.Schema.MappingFor(model.SourceType()).ToQueryableDocument();
 
             for (var i = 0; i < model.BodyClauses.Count; i++)
             {
@@ -48,7 +48,7 @@ namespace Marten.Linq.Model
                 if (clause is AdditionalFromClause)
                 {
                     // TODO -- to be able to go recursive, have _subQuery start to read the BodyClauses
-                    _subQuery = new SelectManyQuery(schema, _mapping, model, i + 1);
+                    _subQuery = new SelectManyQuery(store, _mapping, model, i + 1);
 
 
                     break;
@@ -168,7 +168,7 @@ namespace Marten.Linq.Model
             sql.Append(" as d");
 
 
-            new LinqQuery<bool>(_schema, Model, new IIncludeJoin[0], null).AppendWhere(sql);
+            new LinqQuery<bool>(_store, Model, new IIncludeJoin[0], null).AppendWhere(sql);
         }
 
         public void ConfigureAggregate(CommandBuilder sql, string @operator)
@@ -226,8 +226,8 @@ namespace Marten.Linq.Model
             if (wheres.Length == 0) return _mapping.DefaultWhereFragment();
 
             var where = wheres.Length == 1
-                ? _schema.Parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
-                : new CompoundWhereFragment(_schema.Parser, _mapping, "and", wheres);
+                ? _store.Parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
+                : new CompoundWhereFragment(_store.Parser, _mapping, "and", wheres);
 
             return _mapping.FilterDocuments(Model, where);
         }
@@ -256,7 +256,7 @@ namespace Marten.Linq.Model
             IIncludeJoin[] includeJoins)
         {
             var selector =
-                _innerSelector = SelectorParser.ChooseSelector<T>("d.data", _schema, _mapping, Model, subQuery, joins);
+                _innerSelector = SelectorParser.ChooseSelector<T>("d.data", _store.Schema, _mapping, Model, subQuery, joins);
 
             if (stats != null)
             {
@@ -265,7 +265,7 @@ namespace Marten.Linq.Model
 
             if (joins.Any())
             {
-                selector = new IncludeSelector<T>(_schema, selector, joins);
+                selector = new IncludeSelector<T>(_store.Schema, selector, joins);
             }
 
             return selector;

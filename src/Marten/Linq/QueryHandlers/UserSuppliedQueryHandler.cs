@@ -15,15 +15,13 @@ namespace Marten.Linq.QueryHandlers
 {
     public class UserSuppliedQueryHandler<T> : IQueryHandler<IList<T>>
     {
-        private readonly IDocumentSchema _schema;
-        private readonly ISerializer _serializer;
+        private readonly DocumentStore _store;
         private readonly string _sql;
         private readonly object[] _parameters;
 
-        public UserSuppliedQueryHandler(IDocumentSchema schema, ISerializer serializer, string sql, object[] parameters)
+        public UserSuppliedQueryHandler(DocumentStore store, string sql, object[] parameters)
         {
-            _schema = schema;
-            _serializer = serializer;
+            _store = store;
             _sql = sql;
             _parameters = parameters;
         }
@@ -34,7 +32,7 @@ namespace Marten.Linq.QueryHandlers
         {
             if (!_sql.Contains("select", StringComparison.OrdinalIgnoreCase))
             {
-                var mapping = _schema.MappingFor(typeof(T)).ToQueryableDocument();
+                var mapping = _store.Schema.MappingFor(typeof(T)).ToQueryableDocument();
                 var tableName = mapping.Table.QualifiedName;
 
                 builder.Append("select data from ");
@@ -72,13 +70,13 @@ namespace Marten.Linq.QueryHandlers
 
         public IList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            var selector = new DeserializeSelector<T>(_serializer);
+            var selector = new DeserializeSelector<T>(_store.Serializer);
             return selector.Read(reader, map, stats);
         }
 
         public Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            var selector = new DeserializeSelector<T>(_serializer);
+            var selector = new DeserializeSelector<T>(_store.Serializer);
 
             return selector.ReadAsync(reader, map, stats, token);
         }

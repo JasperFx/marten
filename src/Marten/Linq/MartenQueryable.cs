@@ -27,7 +27,7 @@ namespace Marten.Linq
         {
         }
 
-        public IDocumentSchema Schema => Executor.Schema;
+        public DocumentStore Store => Executor.Store;
 
         public MartenQueryExecutor Executor => Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
 
@@ -68,7 +68,7 @@ namespace Marten.Linq
             JoinType joinType = JoinType.Inner)
         {
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-            var schema = executor.Schema;
+            var schema = executor.Store.Schema;
 
             schema.EnsureStorageExists(typeof(TInclude));
 
@@ -97,7 +97,7 @@ namespace Marten.Linq
             IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner)
         {
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-            var schema = executor.Schema;
+            var schema = executor.Store.Schema;
 
             var storage = schema.StorageFor(typeof(TInclude));
 
@@ -188,7 +188,7 @@ namespace Marten.Linq
         public LinqQuery<T> ToLinqQuery()
         {
             var query = MartenQueryParser.Flyweight.GetParsedQuery(Expression);
-            return new LinqQuery<T>(Schema, query, Includes.ToArray(), Statistics);
+            return new LinqQuery<T>(Store, query, Includes.ToArray(), Statistics);
         }
 
 
@@ -224,9 +224,9 @@ namespace Marten.Linq
             CancellationToken token)
         {
             var query = ToQueryModel();
-            Schema.EnsureStorageExists(query.SourceType());
+            Store.Schema.EnsureStorageExists(query.SourceType());
 
-            var linq = new LinqQuery<T>(Schema, query, Includes.ToArray(), Statistics);
+            var linq = new LinqQuery<T>(Store, query, Includes.ToArray(), Statistics);
 
             var handler = source(linq);
 

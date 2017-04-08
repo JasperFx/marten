@@ -36,16 +36,16 @@ namespace Marten.Schema
 
         private readonly IDictionary<string, SystemFunction> _systemFunctions = new Dictionary<string, SystemFunction>();
 
-        public DocumentSchema(StoreOptions options, IConnectionFactory factory, IMartenLogger logger)
+        public DocumentSchema(DocumentStore store, IConnectionFactory factory, IMartenLogger logger)
         {
             _factory = factory;
             _logger = logger;
 
-            StoreOptions = options;
+            StoreOptions = store.Options;
 
             _sequences = new Lazy<SequenceFactory>(() =>
             {
-                var sequences = new SequenceFactory(this, _factory, options, _logger);
+                var sequences = new SequenceFactory(this, _factory, StoreOptions, _logger);
                 
                 var patch = new SchemaPatch(StoreOptions.DdlRules);
 
@@ -58,12 +58,12 @@ namespace Marten.Schema
 
             Parser = new MartenExpressionParser(StoreOptions.Serializer(), StoreOptions);
 
-            HandlerFactory = new QueryHandlerFactory(this, options.Serializer());
+            HandlerFactory = new QueryHandlerFactory(store);
 
             DbObjects = new DbObjects(_factory, this);
 
 
-            addSystemFunction(options, "mt_immutable_timestamp", "text");
+            addSystemFunction(StoreOptions, "mt_immutable_timestamp", "text");
 
             _eventQuery = new Lazy<EventQueryMapping>(() => new EventQueryMapping(StoreOptions));
         }

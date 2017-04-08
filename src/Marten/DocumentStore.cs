@@ -22,7 +22,6 @@ namespace Marten
     /// </summary>
     public class DocumentStore : IDocumentStore
     {
-        private readonly ISerializer _serializer;
         private readonly IQueryParser _parser = new MartenQueryParser();
 
         /// <summary>
@@ -72,14 +71,14 @@ namespace Marten
         {
             options.CreatePatching();
 
-            _options = options;
+            Options = options;
             _connectionFactory = options.ConnectionFactory();
 
             _logger = options.Logger();
 
-            Schema = new DocumentSchema(_options, _connectionFactory, _logger);
+            Schema = new DocumentSchema(this, _connectionFactory, _logger);
             
-            _serializer = options.Serializer();
+            Serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_connectionFactory, Schema.As<DocumentSchema>());
             if (options.UseCharBufferPooling)
@@ -87,7 +86,7 @@ namespace Marten
                 _writerPool = new CharArrayTextWriter.Pool();
             }
 
-            Advanced = new AdvancedOptions(cleaner, options, _serializer, Schema, _writerPool);
+            Advanced = new AdvancedOptions(cleaner, options, Serializer, Schema, _writerPool);
 
             Diagnostics = new Diagnostics(Schema);
 
@@ -104,31 +103,35 @@ namespace Marten
                 Schema.As<DocumentSchema>().RebuildSystemFunctions();
             }
 
-          
+            Parser = new MartenExpressionParser(Serializer, options);
         }
 
-        private readonly StoreOptions _options;
+        public MartenExpressionParser Parser { get; }
+
         private readonly IConnectionFactory _connectionFactory;
         private readonly IMartenLogger _logger;
         private readonly CharArrayTextWriter.IPool _writerPool;
+
+        public ISerializer Serializer { get; }
 
         public virtual void Dispose()
         {
             _writerPool.Dispose();
         }
 
-        
+
+        public StoreOptions Options { get; }
 
         public IDocumentSchema Schema { get; }
         public AdvancedOptions Advanced { get; }
 
         private void CreateDatabaseObjects()
         {
-            if (_options.AutoCreateSchemaObjects == AutoCreate.None) return;
+            if (Options.AutoCreateSchemaObjects == AutoCreate.None) return;
 
             var allSchemaNames = Schema.AllSchemaNames();
             var generator = new DatabaseSchemaGenerator(Advanced);
-            generator.Generate(_options, allSchemaNames);
+            generator.Generate(Options, allSchemaNames);
         }
 
         public void BulkInsert<T>(T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
@@ -217,18 +220,18 @@ namespace Marten
                 conn.RunSql(sql);
             }
 
-            var writer = _options.UseCharBufferPooling ? _writerPool.Lease() : null;
+            var writer = Options.UseCharBufferPooling ? _writerPool.Lease() : null;
             try
             {
                 if (documents.Length <= batchSize)
                 {
                     if (mode == BulkInsertMode.InsertsOnly)
                     {
-                        loader.Load(_serializer, conn, documents, writer);
+                        loader.Load(Serializer, conn, documents, writer);
                     }
                     else
                     {
-                        loader.LoadIntoTempTable(_serializer, conn, documents, writer);
+                        loader.LoadIntoTempTable(Serializer, conn, documents, writer);
                     }
 
                 }
@@ -243,11 +246,11 @@ namespace Marten
 
                         if (mode == BulkInsertMode.InsertsOnly)
                         {
-                            loader.Load(_serializer, conn, batch, writer);
+                            loader.Load(Serializer, conn, batch, writer);
                         }
                         else
                         {
-                            loader.LoadIntoTempTable(_serializer, conn, batch, writer);
+                            loader.LoadIntoTempTable(Serializer, conn, batch, writer);
                         }
 
 
@@ -299,7 +302,7 @@ namespace Marten
             var sessionPool = CreateWriterPool();
             var map = createMap(tracking, sessionPool, localListeners);
 
-            var session = new DocumentSession(this, _options, Schema, _serializer, connection, _parser, map, sessionPool, localListeners);
+            var session = new DocumentSession(this, Options, Schema, Serializer, connection, _parser, map, sessionPool, localListeners);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
@@ -309,7 +312,7 @@ namespace Marten
 
         internal CharArrayTextWriter.Pool CreateWriterPool()
         {
-            return _options.UseCharBufferPooling ? new CharArrayTextWriter.Pool(_writerPool) : null;
+            return Options.UseCharBufferPooling ? new CharArrayTextWriter.Pool(_writerPool) : null;
         }
 
         private IIdentityMap createMap(DocumentTracking tracking, CharArrayTextWriter.IPool sessionPool, IEnumerable<IDocumentSessionListener> localListeners)
@@ -317,13 +320,13 @@ namespace Marten
             switch (tracking)
             {
                 case DocumentTracking.None:
-                    return new NulloIdentityMap(_serializer);
+                    return new NulloIdentityMap(Serializer);
 
                 case DocumentTracking.IdentityOnly:
-                    return new IdentityMap(_serializer, _options.Listeners.Concat(localListeners));
+                    return new IdentityMap(Serializer, Options.Listeners.Concat(localListeners));
 
                 case DocumentTracking.DirtyTracking:
-                    return new DirtyTrackingIdentityMap(_serializer, _options.Listeners.Concat(localListeners), sessionPool);
+                    return new DirtyTrackingIdentityMap(Serializer, Options.Listeners.Concat(localListeners), sessionPool);
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(tracking));
@@ -346,7 +349,7 @@ namespace Marten
 
             var session = new QuerySession(this,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout), parser,
-                new NulloIdentityMap(_serializer));
+                new NulloIdentityMap(Serializer));
 
             session.Logger = _logger.StartSession(session);
 
@@ -359,7 +362,7 @@ namespace Marten
 
             var session = new QuerySession(this,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser,
-                new NulloIdentityMap(_serializer));
+                new NulloIdentityMap(Serializer));
 
             session.Logger = _logger.StartSession(session);
 

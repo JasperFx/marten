@@ -459,7 +459,7 @@ namespace Marten.Testing.Schema
 
     public class building_id_assignment_for_document_types
     {
-        private readonly IDocumentSchema theSchema = new DocumentSchema(new StoreOptions(), new ConnectionSource(), new NulloMartenLogger());
+        private readonly IDocumentSchema theSchema = new DocumentSchema(TestingDocumentStore.Basic(), new ConnectionSource(), new NulloMartenLogger());
 
         [Fact]
         public void can_build_with_guid_property()

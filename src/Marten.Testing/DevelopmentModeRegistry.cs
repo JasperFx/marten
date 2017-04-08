@@ -26,6 +26,7 @@ namespace Marten.Testing
             For<IMartenLogger>().Use<NulloMartenLogger>();
 
             For<IDocumentStore>().Use(store);
+            For<DocumentStore>().Use(store);
             For<IIdentityMap>().Use<NulloIdentityMap>();
 
             For<IDocumentSchema>().Use(store.Schema);

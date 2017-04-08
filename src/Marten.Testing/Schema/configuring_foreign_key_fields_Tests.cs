@@ -10,7 +10,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void should_get_foreign_key_from_attribute()
         {
-            var schema = new DocumentSchema(new StoreOptions(), null, null);
+            var schema = TestingDocumentStore.Basic().Schema;
             schema.MappingFor(typeof (Issue))
                 .As<DocumentMapping>()
                 .ForeignKeys
@@ -23,9 +23,13 @@ namespace Marten.Testing.Schema
             var storeOptions = new StoreOptions();
             storeOptions.Schema.For<Issue>().ForeignKey<User>(i => i.OtherUserId);
 
-            var schema = new DocumentSchema(storeOptions, null, null);
+            var store = TestingDocumentStore.For(_ =>
+            {
+                _.Schema.For<Issue>().ForeignKey<User>(i => i.OtherUserId);
+            });
 
-            schema.MappingFor(typeof(Issue))
+
+            store.Schema.MappingFor(typeof(Issue))
                 .As<DocumentMapping>()
                 .ForeignKeys
                 .ShouldContain(x => x.ColumnName == "other_user_id");

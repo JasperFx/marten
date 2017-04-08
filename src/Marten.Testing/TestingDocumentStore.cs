@@ -69,11 +69,11 @@ namespace Marten.Testing
         }
 
 
-        public static IDocumentStore Basic()
+        public static DocumentStore Basic()
         {
             return For(_ =>
             {
-            });
+            }).As<DocumentStore>();
         }
 
         public static IDocumentStore DefaultSchema()
