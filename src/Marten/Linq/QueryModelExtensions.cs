@@ -53,15 +53,15 @@ namespace Marten.Linq
             return query.AllResultOperators().Any(x => x is T);
         }
 
-        public static IWhereFragment BuildWhereFragment(this IDocumentSchema schema, QueryModel query)
+        internal static IWhereFragment BuildWhereFragment(DocumentStore store, QueryModel query)
         {
-            var mapping = schema.MappingFor(query.SourceType()).ToQueryableDocument();
+            var mapping = store.Schema.MappingFor(query.SourceType()).ToQueryableDocument();
             var wheres = query.AllBodyClauses().OfType<WhereClause>().ToArray();
             if (wheres.Length == 0) return mapping.DefaultWhereFragment();
 
             var @where = wheres.Length == 1
-                ? schema.Parser.ParseWhereFragment(mapping, wheres.Single().Predicate)
-                : new CompoundWhereFragment(schema.Parser, mapping, "and", wheres);
+                ? store.Parser.ParseWhereFragment(mapping, wheres.Single().Predicate)
+                : new CompoundWhereFragment(store.Parser, mapping, "and", wheres);
 
             return mapping.FilterDocuments(query, @where);
         }

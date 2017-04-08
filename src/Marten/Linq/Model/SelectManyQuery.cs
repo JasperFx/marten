@@ -197,8 +197,8 @@ namespace Marten.Linq.Model
                 return null;
 
             return wheres.Length == 1
-                ? _store.Schema.Parser.ParseWhereFragment(document, wheres.Single().Predicate)
-                : new CompoundWhereFragment(_store.Schema.Parser, document, "and", wheres);
+                ? _store.Parser.ParseWhereFragment(document, wheres.Single().Predicate)
+                : new CompoundWhereFragment(_store.Parser, document, "and", wheres);
         }
     }
 }

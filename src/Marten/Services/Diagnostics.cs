@@ -8,11 +8,11 @@ namespace Marten.Services
 {
     public class Diagnostics : IDiagnostics
     {
-        private readonly IDocumentSchema _schema;
+        private readonly DocumentStore _store;
 
-        public Diagnostics(IDocumentSchema schema)
+        public Diagnostics(DocumentStore store)
         {
-            _schema = schema;
+            _store = store;
         }
 
 
@@ -27,7 +27,7 @@ namespace Marten.Services
         public NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query)
         {
             QueryStatistics stats;
-            var handler = _schema.HandlerFactory.HandlerFor(query, out stats);
+            var handler = _store.HandlerFactory.HandlerFor(query, out stats);
 
             return CommandBuilder.ToCommand(handler);
         }
@@ -43,7 +43,7 @@ namespace Marten.Services
         {
             var cmd = PreviewCommand(query);
 
-            using (var conn = new ManagedConnection(_schema.StoreOptions.ConnectionFactory()))
+            using (var conn = new ManagedConnection(_store.Options.ConnectionFactory()))
             {
                 return conn.ExplainQuery(cmd);
             }

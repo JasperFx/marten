@@ -204,7 +204,7 @@ namespace Marten.Linq.QueryHandlers
             // to create a StatsSelector decorator
             var stats = model.HasOperator<StatsResultOperator>() ? new QueryStatistics() : null;
 
-            var handler = _store.Schema.HandlerFactory.BuildHandler<TOut>(model, includeJoins, stats);
+            var handler = _store.HandlerFactory.BuildHandler<TOut>(model, includeJoins, stats);
 
             var cmd = CommandBuilder.ToCommand(handler);
 

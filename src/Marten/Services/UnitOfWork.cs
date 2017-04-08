@@ -18,7 +18,7 @@ namespace Marten.Services
     {
         private readonly ConcurrentDictionary<Guid, EventStream> _events = new ConcurrentDictionary<Guid, EventStream>();
 
-        private readonly IDocumentSchema _schema;
+        private readonly DocumentStore _store;
 
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>();
 
@@ -27,9 +27,9 @@ namespace Marten.Services
 
         private readonly IList<IStorageOperation> _ancillaryOperations = new List<IStorageOperation>();
 
-        public UnitOfWork(IDocumentSchema schema)
+        public UnitOfWork(DocumentStore store)
         {
-            _schema = schema;
+            _store = store;
         }
 
         public IEnumerable<IDeletion> Deletions()
@@ -191,7 +191,7 @@ namespace Marten.Services
                     // out as is trying to make this work
                     if (operation is Upsert)
                     {
-                        operation.As<Upsert>().Persist(batch, _schema);
+                        operation.As<Upsert>().Persist(batch, _store);
                     }
                     else
                     {
@@ -207,7 +207,7 @@ namespace Marten.Services
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
             {
-                var upsert = _schema.UpsertFor(group.Key);
+                var upsert = _store.Schema.UpsertFor(group.Key);
 
                 group.Each(c => { upsert.RegisterUpdate(batch, c.Document, c.Json); });
             });
@@ -217,13 +217,13 @@ namespace Marten.Services
 
         private void writeEvents(UpdateBatch batch)
         {
-            var upsert = new EventStreamAppender(_schema.Events);
+            var upsert = new EventStreamAppender(_store.Schema.Events);
             _events.Values.Each(stream => { upsert.RegisterUpdate(batch, stream); });
         }
 
         private IEnumerable<Type> GetTypeDependencies(Type type)
         {
-            var documentMapping = _schema.MappingFor(type) as DocumentMapping;
+            var documentMapping = _store.Schema.MappingFor(type) as DocumentMapping;
             if (documentMapping == null)
                 return Enumerable.Empty<Type>();
 
@@ -301,9 +301,9 @@ namespace Marten.Services
         {
         }
 
-        public bool Persist(UpdateBatch batch, IDocumentSchema schema)
+        public bool Persist(UpdateBatch batch, DocumentStore store)
         {
-            var upsert = schema.UpsertFor(Document.GetType());
+            var upsert = store.Schema.UpsertFor(Document.GetType());
             upsert.RegisterUpdate(batch, Document);
 
             return true;

@@ -11,27 +11,25 @@ namespace Marten.Services
 {
     public class UpdateBatch : IDisposable
     {
-        private readonly StoreOptions _options;
-        private readonly ISerializer _serializer;
         private readonly CharArrayTextWriter.IPool _writerPool;
         private readonly Stack<BatchCommand> _commands = new Stack<BatchCommand>(); 
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private readonly List<CharArrayTextWriter> _writers = new List<CharArrayTextWriter>();
-        
-        public UpdateBatch(StoreOptions options, ISerializer serializer, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool)
+        private readonly DocumentStore _store;
+
+        public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool)
         {
             if (versions == null) throw new ArgumentNullException(nameof(versions));
 
-            _options = options;
+            _store = store;
             _writerPool = writerPool;
-            Serializer = serializer;
             Versions = versions;
 
-            _commands.Push(new BatchCommand(serializer));
+            _commands.Push(new BatchCommand(_store.Serializer));
             Connection = connection;
         }
 
-        public ISerializer Serializer { get; }
+        public ISerializer Serializer => _store.Serializer;
 
         public VersionTracker Versions { get; }
 
@@ -53,7 +51,7 @@ namespace Marten.Services
         {
             return _lock.MaybeWrite(
                 () => _commands.Peek(),
-                () => _commands.Peek().Count >= _options.UpdateBatchSize,
+                () => _commands.Peek().Count >= _store.Options.UpdateBatchSize,
                 () => _commands.Push(new BatchCommand(Serializer))
             );
         }
@@ -197,6 +195,6 @@ namespace Marten.Services
                 Add(op);
         }
 
-        public bool UseCharBufferPooling => _options.UseCharBufferPooling;
+        public bool UseCharBufferPooling => _store.Options.UseCharBufferPooling;
     }
 }

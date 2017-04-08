@@ -2,12 +2,10 @@ using System;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
-using Marten.Services;
 using Marten.Util;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -16,10 +14,10 @@ namespace Marten.Transforms
 {
     public class DocumentTransforms : IDocumentTransforms
     {
-        private readonly IDocumentStore _store;
+        private readonly DocumentStore _store;
         private readonly IConnectionFactory _factory;
 
-        public DocumentTransforms(IDocumentStore store, IConnectionFactory factory)
+        public DocumentTransforms(DocumentStore store, IConnectionFactory factory)
         {
             _store = store;
             _factory = factory;
@@ -27,8 +25,6 @@ namespace Marten.Transforms
 
         public void All<T>(string transformName)
         {
-            
-
             var transform = _store.Schema.TransformFor(transformName);
             var mapping = _store.Schema.MappingFor(typeof(T));
 
@@ -118,7 +114,7 @@ namespace Marten.Transforms
                 throw new InvalidOperationException();
             }
 
-            var whereFragment = _store.Schema.Parser.ParseWhereFragment(mapping.ToQueryableDocument(), wheres.First().Predicate);
+            var whereFragment = _store.Parser.ParseWhereFragment(mapping.ToQueryableDocument(), wheres.First().Predicate);
             mapping.ToQueryableDocument().FilterDocuments(queryModel, whereFragment);
 
             return whereFragment;
