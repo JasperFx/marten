@@ -126,6 +126,8 @@ and i.indisprimary;
 
             ConfigureQueryCommand(builder);
 
+            cmd.CommandText = builder.ToString();
+
             using (var reader = cmd.ExecuteReader())
             {
                 return readExistingTable(reader);
