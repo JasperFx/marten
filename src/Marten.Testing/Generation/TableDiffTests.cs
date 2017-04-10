@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Marten.Generation;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;

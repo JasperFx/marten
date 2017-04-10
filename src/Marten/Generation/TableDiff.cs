@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Storage;
 
 namespace Marten.Generation
 {

@@ -6,10 +6,12 @@ using System.Reflection;
 using Baseline;
 using Marten.Generation;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Schema
 {
+    [Obsolete("Subsuming this functionality into the new Storage model")]
     public class DbObjects : IDbObjects
     {
         private static readonly string SchemaObjectsSQL;
