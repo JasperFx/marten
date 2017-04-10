@@ -22,7 +22,7 @@ namespace Marten.Testing
             options.RegisterDocumentType(typeof(Company));
             options.RegisterDocumentTypes(new Type[] {typeof(Target), typeof(Issue)});
 
-            options.AllDocumentMappings.OrderBy(x => x.DocumentType.Name).Select(x => x.DocumentType.Name)
+            options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name).Select(x => x.DocumentType.Name)
                 .ShouldHaveTheSameElementsAs("Company", "Issue", "Target", "User");
         }
 

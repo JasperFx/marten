@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using Baseline;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Transforms;
 using Npgsql;
 
@@ -20,6 +20,7 @@ namespace Marten
     /// </summary>
     public class StoreOptions
     {
+
         /// <summary>
         ///     The default database schema used 'public'.
         /// </summary>
@@ -27,11 +28,12 @@ namespace Marten
 
         public const string PatchDoc = "patch_doc";
 
-        private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
-            new ConcurrentDictionary<Type, DocumentMapping>();
+        private readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>> _childDocs
+            = new ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>>();
 
-        private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
-            new ConcurrentDictionary<Type, IDocumentMapping>();
+
+        public StorageProviders Storage { get; } 
+        public readonly IList<IInitialData> InitialData = new List<IInitialData>();
 
 
         /// <summary>
@@ -61,17 +63,8 @@ namespace Marten
             Events = new EventGraph(this);
             Schema = new MartenRegistry(this);
             Transforms = new Transforms.Transforms(this);
+            Storage = new StorageProviders(this);
         }
-
-        internal void CreatePatching()
-        {
-            var patching = new TransformFunction(this, PatchDoc, SchemaBuilder.GetJavascript(this, "mt_patching"));
-            patching.OtherArgs.Add("patch");
-
-            Transforms.Load(patching);
-        }
-
-        public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Values;
 
         /// <summary>
         ///     Sets the database default schema name used to store the documents.
@@ -95,8 +88,8 @@ namespace Marten
         public int UpdateBatchSize { get; set; } = 500;
 
         /// <summary>
-        /// Configures the store to use char buffer pooling, greatly reducing allocations for serializing documents and events.
-        /// The default is true.
+        ///     Configures the store to use char buffer pooling, greatly reducing allocations for serializing documents and events.
+        ///     The default is true.
         /// </summary>
         public bool UseCharBufferPooling { get; set; } = true;
 
@@ -115,24 +108,30 @@ namespace Marten
         /// </summary>
         public LinqCustomizations Linq { get; } = new LinqCustomizations();
 
-        public DocumentMapping MappingFor(Type documentType)
+        public ITransforms Transforms { get; }
+
+
+        /// <summary>
+        ///     Allows you to modify how the DDL for document tables and upsert functions is
+        ///     written
+        /// </summary>
+        public DdlRules DdlRules { get; } = new DdlRules();
+
+        /// <summary>
+        ///     Used to validate database object name lengths against Postgresql's NAMEDATALEN property to avoid
+        ///     Marten getting confused when comparing database schemas against the configuration. See
+        ///     https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html
+        ///     for more information. This does NOT adjust NAMEDATALEN for you.
+        /// </summary>
+        public int NameDataLength { get; set; } = 64;
+
+        internal void CreatePatching()
         {
-            return _documentMappings.GetOrAdd(documentType, type =>
-            {
-                var mapping = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(this, documentType);
+            var patching = new TransformFunction(this, PatchDoc, SchemaBuilder.GetJavascript(this, "mt_patching"));
+            patching.OtherArgs.Add("patch");
 
-                if (mapping.IdMember == null)
-                {
-                    throw new InvalidDocumentException(
-                        $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
-                }
-
-                return mapping;
-            });
+            Transforms.Load(patching);
         }
-
-        private readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>> _childDocs 
-            = new ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>>();
 
         internal ChildDocument GetChildDocument(string locator, Type documentType)
         {
@@ -197,36 +196,6 @@ namespace Marten
             _serializer = new T();
         }
 
-        public ITransforms Transforms { get; } 
-
-        /// <summary>
-        ///     Force Marten to create document mappings for type T
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        public void RegisterDocumentType<T>()
-        {
-            RegisterDocumentType(typeof(T));
-        }
-
-        /// <summary>
-        ///     Force Marten to create a document mapping for the document type
-        /// </summary>
-        /// <param name="documentType"></param>
-        public void RegisterDocumentType(Type documentType)
-        {
-            if (MappingFor(documentType) == null)
-                throw new Exception("Unable to create document mapping for " + documentType);
-        }
-
-        /// <summary>
-        ///     Force Marten to create document mappings for all the given document types
-        /// </summary>
-        /// <param name="documentTypes"></param>
-        public void RegisterDocumentTypes(IEnumerable<Type> documentTypes)
-        {
-            documentTypes.Each(RegisterDocumentType);
-        }
-
         public ISerializer Serializer()
         {
             return _serializer ?? new JsonNetSerializer();
@@ -249,22 +218,33 @@ namespace Marten
             _logger = logger;
         }
 
-
-        public readonly IList<IInitialData> InitialData = new List<IInitialData>();
-
+        /// <summary>
+        ///     Force Marten to create document mappings for type T
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public void RegisterDocumentType<T>()
+        {
+            RegisterDocumentType(typeof(T));
+        }
 
         /// <summary>
-        /// Allows you to modify how the DDL for document tables and upsert functions is
-        /// written
+        ///     Force Marten to create a document mapping for the document type
         /// </summary>
-        public DdlRules DdlRules { get; } = new DdlRules();
+        /// <param name="documentType"></param>
+        public void RegisterDocumentType(Type documentType)
+        {
+            if (Storage.MappingFor(documentType) == null)
+                throw new Exception("Unable to create document mapping for " + documentType);
+        }
 
         /// <summary>
-        /// Used to validate database object name lengths against Postgresql's NAMEDATALEN property to avoid
-        /// Marten getting confused when comparing database schemas against the configuration. See https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html
-        /// for more information. This does NOT adjust NAMEDATALEN for you.
+        ///     Force Marten to create document mappings for all the given document types
         /// </summary>
-        public int NameDataLength { get; set; } = 64;
+        /// <param name="documentTypes"></param>
+        public void RegisterDocumentTypes(IEnumerable<Type> documentTypes)
+        {
+            documentTypes.Each(RegisterDocumentType);
+        }
 
         public void AssertValidIdentifier(string name)
         {
@@ -274,22 +254,6 @@ namespace Marten
                 throw new PostgresqlIdentifierInvalidException(name);
             if (name.Length < NameDataLength) return;
             throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
-        }
-
-        internal IDocumentMapping FindMapping(Type documentType)
-        {
-            return _mappings.GetOrAdd(documentType, type =>
-            {
-                var subclass =  AllDocumentMappings.SelectMany(x => x.SubClasses)
-                        .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping;
-
-                return subclass ?? MappingFor(documentType);
-            });
-        }
-
-        internal void AddMapping(IDocumentMapping mapping)
-        {
-            _mappings[mapping.DocumentType] = mapping;
         }
     }
 }

@@ -77,7 +77,7 @@ namespace Marten
         /// <returns></returns>
         public IList<IDocumentStorage> PrecompileAllStorage()
         {
-            return Options.AllDocumentMappings.Select(x => _store.Schema.StorageFor(x.DocumentType)).ToList();
+            return Options.Storage.AllDocumentMappings.Select(x => _store.Schema.StorageFor(x.DocumentType)).ToList();
         }
 
         /// <summary>

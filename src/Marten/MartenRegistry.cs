@@ -90,7 +90,7 @@ namespace Marten
             {
                 _parent = parent;
 
-                _parent.alter = options => options.MappingFor(typeof (T));
+                _parent.alter = options => options.Storage.MappingFor(typeof (T));
             }
 
             /// <summary>
@@ -233,7 +233,7 @@ namespace Marten
                 {
                     Action<StoreOptions> alteration = o =>
                     {
-                        value((DocumentMapping<T>) o.MappingFor(typeof (T)));
+                        value((DocumentMapping<T>) o.Storage.MappingFor(typeof (T)));
                     };
 
 
