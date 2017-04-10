@@ -46,10 +46,11 @@ namespace Marten.Util
                     return "varchar";
 
                 case "boolean":
-                case "Boolean":
                 case "bool":
-                case "Bool":
                     return "boolean";
+
+                case "integer":
+                    return "int";
 
                 case "decimal":
                 case "numeric":

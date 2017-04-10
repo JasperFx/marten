@@ -99,5 +99,66 @@ namespace Marten.Testing.Storage
             existing.PrimaryKey.Name.ShouldBe("id");
             existing.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "name", "number");
         }
+
+
+
+        [Fact]
+        public void perfect_match()
+        {
+            writeTable();
+
+            var diff = theTable.FetchDelta(_conn);
+            diff.ShouldNotBeNull();
+            diff.Matched.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "name", "number");
+            diff.Missing.Length.ShouldBe(0);
+            diff.Extras.Length.ShouldBe(0);
+            diff.Different.Length.ShouldBe(0);
+
+            diff.Matches.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void not_matching_with_missing_columns()
+        {
+            writeTable();
+
+            theTable.AddColumn("newcol", "text");
+
+            var diff = theTable.FetchDelta(_conn);
+            diff.Matches.ShouldBeFalse();
+
+            diff.Missing.Single().Name.ShouldBe("newcol");
+            diff.Extras.Any().ShouldBeFalse();
+            diff.Different.Any().ShouldBeFalse();
+        }
+
+        [Fact]
+        public void not_matching_with_extra_columns()
+        {
+            var tableColumn = new TableColumn("new", "varchar");
+            theTable.AddColumn(tableColumn);
+
+            writeTable();
+
+            theTable.RemoveColumn("new");
+
+
+            var diff = theTable.FetchDelta(_conn);
+
+            diff.Matches.ShouldBeFalse();
+            diff.Extras.Single().ShouldBe(tableColumn);
+        }
+
+        [Fact]
+        public void not_matching_with_columns_of_same_name_that_are_different()
+        {
+            writeTable();
+            theTable.ColumnFor("id").Type = "int";
+
+            var diff = theTable.FetchDelta(_conn);
+            diff.Matches.ShouldBeFalse();
+
+            diff.Different.Single().Name.ShouldBe("id");
+        }
     }
 }

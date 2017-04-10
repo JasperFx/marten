@@ -1,13 +1,16 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Marten.Generation;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
+using TableDiff = Marten.Generation.TableDiff;
 
 namespace Marten.Testing.Generation
 {
+    [Obsolete("Later, move these tests to the new Storage model")]
     public class TableDiffTests
     {
         [Fact]
