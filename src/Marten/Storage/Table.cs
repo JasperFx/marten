@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
+using Baseline;
 using Marten.Generation;
 using Marten.Schema;
 using Marten.Services;
@@ -134,6 +135,14 @@ and i.indisprimary;
             }
         }
 
+        public TableDelta FetchDelta(NpgsqlConnection conn)
+        {
+            var actual = FetchExisting(conn);
+            if (actual == null) return null;
+
+            return new TableDelta(this, actual);
+        }
+
         public SchemaPatchDifference CreatePatch(DbDataReader reader, SchemaPatch patch)
         {
             var existing = readExistingTable(reader);
@@ -186,7 +195,56 @@ and i.indisprimary;
             var column = _columns.FirstOrDefault(x => x.Name == columnName);
             PrimaryKey = column;
         }
+
+        public bool HasColumn(string columnName)
+        {
+            return _columns.Any(x => x.Name == columnName);
+        }
+
+        public TableColumn ColumnFor(string columnName)
+        {
+            return _columns.FirstOrDefault(x => x.Name == columnName);
+        }
+
+        public void RemoveColumn(string columnName)
+        {
+            _columns.RemoveAll(x => x.Name == columnName);
+        }
     }
 
+    public class TableDelta
+    {
+        private readonly DbObjectName _tableName;
 
+        public TableDelta(Table expected, Table actual)
+        {
+            Missing = expected.Where(x => actual.All(_ => _.Name != x.Name)).ToArray();
+            Extras = actual.Where(x => expected.All(_ => _.Name != x.Name)).ToArray();
+            Matched = expected.Where(x => actual.Any(a => Equals(a, x))).ToArray();
+            Different =
+                expected.Where(x => actual.HasColumn(x.Name) && !x.Equals(actual.ColumnFor(x.Name))).ToArray();
+
+            _tableName = expected.Identifier;
+        }
+
+        public TableColumn[] Different { get; set; }
+
+        public TableColumn[] Matched { get; set; }
+
+        public TableColumn[] Extras { get; set; }
+
+        public TableColumn[] Missing { get; set; }
+
+        public bool Matches => Missing.Count() + Extras.Count() + Different.Count() == 0;
+
+        public bool CanPatch()
+        {
+            return !Different.Any();
+        }
+
+        public override string ToString()
+        {
+            return $"TableDiff for {_tableName}";
+        }
+    }
 }
