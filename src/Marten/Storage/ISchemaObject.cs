@@ -13,6 +13,6 @@ namespace Marten.Storage
         DbObjectName Identifier { get; }
         void ConfigureQueryCommand(CommandBuilder builder);
 
-        SchemaPatchDifference CreatePatch(DbDataReader reader, SchemaPatch patch);
+        SchemaPatchDifference CreatePatch(DbDataReader reader, SchemaPatch patch, AutoCreate autoCreate);
     }
 }

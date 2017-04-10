@@ -146,7 +146,7 @@ and i.indisprimary;
             return new TableDelta(this, actual);
         }
 
-        public SchemaPatchDifference CreatePatch(DbDataReader reader, SchemaPatch patch)
+        public SchemaPatchDifference CreatePatch(DbDataReader reader, SchemaPatch patch, AutoCreate autoCreate)
         {
             var existing = readExistingTable(reader);
             if (existing == null)
@@ -165,6 +165,14 @@ and i.indisprimary;
 
             if (delta.Extras.Any() || delta.Different.Any())
             {
+                if (autoCreate == AutoCreate.All)
+                {
+                    WriteDropStatement(patch.Rules, patch.UpWriter);
+                    Write(patch.Rules, patch.UpWriter);
+
+                    return SchemaPatchDifference.Create;
+                }
+
                 return SchemaPatchDifference.Invalid;
             }
 
@@ -180,8 +188,6 @@ and i.indisprimary;
             }
 
             return SchemaPatchDifference.Update;
-
-            throw new NotImplementedException();
         }
 
         private Table readExistingTable(DbDataReader reader)

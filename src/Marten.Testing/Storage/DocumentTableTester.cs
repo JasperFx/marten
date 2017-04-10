@@ -113,6 +113,77 @@ namespace Marten.Testing.Storage
             theTable.HasColumn(DocumentMapping.DocumentTypeColumn);
         }
 
+        private void removeColumn(string name)
+        {
+            var sql = $"alter table {theMapping.Table} alter {name} DROP DEFAULT;";
+            _conn.CreateCommand(sql).ExecuteNonQuery();
+        }
 
+        private void writeAndApplyPatch(AutoCreate autoCreate, DocumentTable table)
+        {
+            var patch = new SchemaPatch(new DdlRules());
+            patch.Apply(new ConnectionSource(), autoCreate, new ISchemaObject[] {table});
+
+            _conn.CreateCommand(patch.UpdateDDL).ExecuteNonQuery();
+        }
+
+        [Fact]
+        public void can_migrate_missing_duplicated_fields()
+        {
+            writeTable();
+            theMapping.Duplicate(x => x.FirstName);
+            var newTable = new DocumentTable(theMapping);
+
+            writeAndApplyPatch(AutoCreate.CreateOrUpdate, newTable);
+
+            var theActual = theTable.FetchExisting(_conn);
+
+            theActual.HasColumn("first_name");
+        }
+
+        [Fact]
+        public void can_migrate_missing_soft_deleted_columns()
+        {
+            writeTable();
+            theMapping.DeleteStyle = DeleteStyle.SoftDelete;
+            var newTable = new DocumentTable(theMapping);
+
+            writeAndApplyPatch(AutoCreate.CreateOrUpdate, newTable);
+
+            var theActual = theTable.FetchExisting(_conn);
+
+            theActual.HasColumn(DocumentMapping.DeletedColumn);
+            theActual.HasColumn(DocumentMapping.DeletedAtColumn);
+        }
+
+        [Fact]
+        public void can_migrate_missing_hierarchical_columns()
+        {
+            writeTable();
+            theMapping.AddSubClass(typeof(SuperUser));
+            var newTable = new DocumentTable(theMapping);
+
+            writeAndApplyPatch(AutoCreate.CreateOrUpdate, newTable);
+
+            var theActual = theTable.FetchExisting(_conn);
+
+            theActual.HasColumn(DocumentMapping.DocumentTypeColumn);
+        }
+
+        [Theory]
+        [InlineData(DocumentMapping.DotNetTypeColumn)]
+        [InlineData(DocumentMapping.LastModifiedColumn)]
+        [InlineData(DocumentMapping.VersionColumn)]
+        public void can_migrate_missing_metadata_column(string columnName)
+        {
+            writeTable();
+            removeColumn(columnName);
+
+            writeAndApplyPatch(AutoCreate.CreateOrUpdate, theTable);
+
+            var theActual = theTable.FetchExisting(_conn);
+
+            theActual.HasColumn(columnName);
+        }
     }
 }

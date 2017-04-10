@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Storage;
+using Marten.Util;
+using Npgsql;
 
 namespace Marten.Schema
 {
@@ -164,6 +167,50 @@ namespace Marten.Schema
                 }
             }
             
+        }
+
+        public void Apply(IConnectionFactory factory, AutoCreate autoCreate, ISchemaObject[] schemaObjects)
+        {
+            if (!schemaObjects.Any()) return;
+
+            // Let folks just fail if anything is wrong.
+            // Per https://github.com/JasperFx/marten/issues/711
+            if (autoCreate == AutoCreate.None) return;
+
+            using (var conn = factory.Create())
+            {
+                conn.Open();
+
+                var cmd = conn.CreateCommand();
+                var builder = new CommandBuilder(cmd);
+
+                foreach (var schemaObject in schemaObjects)
+                {
+                    schemaObject.ConfigureQueryCommand(builder);
+                }
+
+                cmd.CommandText = builder.ToString();
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    apply(schemaObjects[0], autoCreate, reader);
+                    for (int i = 1; i < schemaObjects.Length; i++)
+                    {
+                        reader.NextResult();
+                        apply(schemaObjects[i], autoCreate, reader);
+                    }
+                }
+
+                AssertPatchingIsValid(autoCreate);
+            }
+
+
+        }
+
+        private void apply(ISchemaObject schemaObject, AutoCreate autoCreate, DbDataReader reader)
+        {
+            var difference = schemaObject.CreatePatch(reader, this, autoCreate);
+            Migrations.Add(new ObjectMigration(schemaObject, difference));
         }
     }
 
