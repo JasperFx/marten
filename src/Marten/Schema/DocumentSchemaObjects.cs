@@ -225,7 +225,7 @@ namespace Marten.Schema
             runner.Updates.Apply(this, sql);
         }
 
-
+        [Obsolete("Getting moved to the new DocumentTable<T> model")]
         public TableDefinition StorageTable() 
         {
             var pgIdType = TypeMappings.GetPgType(_mapping.IdMember.GetMemberType());

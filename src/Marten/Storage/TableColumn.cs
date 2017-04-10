@@ -1,4 +1,5 @@
 using System;
+using Baseline;
 using Marten.Util;
 
 namespace Marten.Storage
@@ -11,6 +12,11 @@ namespace Marten.Storage
             if (string.IsNullOrEmpty(type)) throw new ArgumentOutOfRangeException(nameof(type));
             Name = name.ToLower();
             Type = type.ToLower();
+        }
+
+        public TableColumn(string name, string type, string directive) : this(name, type)
+        {
+            Directive = directive;
         }
 
         public string Name { get; }
@@ -36,7 +42,7 @@ namespace Marten.Storage
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != GetType()) return false;
+            if (!obj.GetType().CanBeCastTo<TableColumn>()) return false;
             return Equals((TableColumn) obj);
         }
 
@@ -56,6 +62,13 @@ namespace Marten.Storage
         public override string ToString()
         {
             return $"{Name} {Type} {Directive}";
+        }
+
+        public bool CanAdd { get; set; } = false;
+
+        public virtual string AddColumnSql(Table table)
+        {
+            return $"alter table {table.Identifier} add column {ToDeclaration(Name.Length + 1)};";
         }
     }
 }
