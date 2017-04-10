@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Generation;
+using Marten.Storage;
 
 namespace Marten.Schema
 {

@@ -3,48 +3,10 @@ using System;
 
 namespace Marten.Schema
 {
-    [Obsolete("Just unnecessary")]
-    public class TableName : DbObjectName
-    {
-        public TableName(string schema, string name) : base(schema, name)
-        {
-        }
-
-        public static TableName Parse(string qualifiedName)
-        {
-            var parts = ParseQualifiedName(qualifiedName);
-            return new TableName(parts[0], parts[1]);
-        }
-
-        /// <summary>
-        /// Name that would match the relowner column in idx.indrelid::regclass
-        /// </summary>
-        public string OwnerName => Schema == StoreOptions.DefaultDatabaseSchemaName ? Name : QualifiedName;
-
-        public TableName ToTempCopyTable()
-        {
-            return new TableName(Schema, Name + "_temp");
-        }
-    }
-
-    [Obsolete("Just unnecessary")]
-    public class FunctionName : DbObjectName
-    {
-        public FunctionName(string schema, string name) : base(schema, name)
-        {
-        }
-
-        public static FunctionName Parse(string qualifiedName)
-        {
-            var parts = ParseQualifiedName(qualifiedName);
-            return new FunctionName(parts[0], parts[1]);
-        }
-
-
-    }
-
     public class DbObjectName
     {
+        public string OwnerName => Schema == StoreOptions.DefaultDatabaseSchemaName ? Name : QualifiedName;
+
         public string Schema { get; }
         public string Name { get; }
         public string QualifiedName { get; }
@@ -54,6 +16,17 @@ namespace Marten.Schema
             Schema = schema;
             Name = name;
             QualifiedName = $"{Schema}.{Name}";
+        }
+
+        public DbObjectName ToTempCopyTable()
+        {
+            return new DbObjectName(Schema, Name + "_temp");
+        }
+
+        public static DbObjectName Parse(string qualifiedName)
+        {
+            var parts = ParseQualifiedName(qualifiedName);
+            return new DbObjectName(parts[0], parts[1]);
         }
 
         public override string ToString()

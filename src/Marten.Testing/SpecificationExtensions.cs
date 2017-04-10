@@ -201,20 +201,13 @@ namespace Marten.Testing
             return exception;
         }
 
-        public static void ShouldContain(this TableName[] tables, string qualifiedName)
+
+        public static void ShouldContain(this DbObjectName[] names, string qualifiedName)
         {
-            if (tables == null) throw new ArgumentNullException(nameof(tables));
+            if (names == null) throw new ArgumentNullException(nameof(names));
 
-            var table = TableName.Parse(qualifiedName);
-            tables.ShouldContain(table);
-        }
-
-        public static void ShouldContain(this FunctionName[] functions, string qualifiedName)
-        {
-            if (functions == null) throw new ArgumentNullException(nameof(functions));
-
-            var function = FunctionName.Parse(qualifiedName);
-            functions.ShouldContain(function);
+            var function = DbObjectName.Parse(qualifiedName);
+            names.ShouldContain(function);
         }
     }
 }

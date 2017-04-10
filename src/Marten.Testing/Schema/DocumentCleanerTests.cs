@@ -99,11 +99,11 @@ namespace Marten.Testing.Schema
 
             var upsertName = schema.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
 
-            schema.DbObjects.SchemaFunctionNames().ShouldContain(upsertName);
+            schema.DbObjects.SchemaDbObjectNames().ShouldContain(upsertName);
 
             theCleaner.CompletelyRemove(typeof(Target));
 
-            schema.DbObjects.SchemaFunctionNames().Contains(upsertName)
+            schema.DbObjects.SchemaDbObjectNames().Contains(upsertName)
                 .ShouldBeFalse();
         }
 
@@ -124,7 +124,7 @@ namespace Marten.Testing.Schema
             var schema = theStore.Schema;
 
             ShouldBeEmpty(schema.DbObjects.DocumentTables());
-            ShouldBeEmpty(schema.DbObjects.SchemaFunctionNames().Where(x => x.Name != "mt_immutable_timestamp").ToArray());
+            ShouldBeEmpty(schema.DbObjects.SchemaDbObjectNames().Where(x => x.Name != "mt_immutable_timestamp").ToArray());
         }
 
         [Fact]

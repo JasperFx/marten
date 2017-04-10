@@ -17,14 +17,14 @@ namespace Marten.Testing.Schema
                     cmd => cmd.Sql("drop function if exists public.mt_immutable_timestamp(text)").ExecuteNonQuery());
             }
 
-            theStore.Schema.DbObjects.DefinitionForFunction(new FunctionName("public", "mt_immutable_timestamp"))
+            theStore.Schema.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamp"))
                 .ShouldBeNull();
 
             theStore.Schema.ResetSchemaExistenceChecks();
 
             theStore.Schema.EnsureFunctionExists("mt_immutable_timestamp");
 
-            theStore.Schema.DbObjects.DefinitionForFunction(new FunctionName("public", "mt_immutable_timestamp"))
+            theStore.Schema.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamp"))
                 .ShouldNotBeNull();
         }
 

@@ -16,7 +16,7 @@ namespace Marten.Events
             Selector = new EventSelector(storeOptions.Events, storeOptions.Serializer());
             DatabaseSchemaName = storeOptions.Events.DatabaseSchemaName;
 
-            Table = new TableName(DatabaseSchemaName, "mt_events");
+            Table = new DbObjectName(DatabaseSchemaName, "mt_events");
 
             duplicateField(x => x.Sequence, "seq_id");
             duplicateField(x => x.StreamId, "stream_id");
@@ -34,7 +34,7 @@ namespace Marten.Events
 
         public ISelector<IEvent> Selector { get; }
 
-        public override TableName Table { get; }
+        public override DbObjectName Table { get; }
 
         public override string[] SelectFields()
         {

@@ -12,7 +12,7 @@ namespace Marten.Generation
     {
         private string primaryKeyDirective => $"CONSTRAINT pk_{Name.Name} PRIMARY KEY";
 
-        public TableName Name { get; }
+        public DbObjectName Name { get; }
 
         public IList<TableColumn> Columns { get; } = new List<TableColumn>();
 
@@ -28,7 +28,7 @@ namespace Marten.Generation
         }
 
 
-        public TableDefinition(TableName name, TableColumn primaryKey)
+        public TableDefinition(DbObjectName name, TableColumn primaryKey)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (primaryKey == null) throw new ArgumentNullException(nameof(primaryKey));
@@ -37,7 +37,7 @@ namespace Marten.Generation
             PrimaryKey = primaryKey;
         }
 
-        public TableDefinition(TableName name, string pkName, IEnumerable<TableColumn> columns)
+        public TableDefinition(DbObjectName name, string pkName, IEnumerable<TableColumn> columns)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (string.IsNullOrEmpty(pkName)) throw new ArgumentOutOfRangeException(nameof(pkName));

@@ -3,16 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Util;
 
-namespace Marten.Schema
+namespace Marten.Storage
 {
     public class UpsertFunction
     {
         private readonly string _primaryKeyConstraintName;
-        private readonly FunctionName _functionName;
-        private readonly TableName _tableName;
+        private readonly DbObjectName _functionName;
+        private readonly DbObjectName _tableName;
 
         public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
 

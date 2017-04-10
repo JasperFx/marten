@@ -21,7 +21,7 @@ namespace Marten.Schema
 
         PropertySearching PropertySearching { get; }
 
-        TableName Table { get; }
+        DbObjectName Table { get; }
 
         DuplicatedField[] DuplicatedFields { get; }
 

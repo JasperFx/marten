@@ -16,7 +16,7 @@ namespace Marten.Schema.Identity.Sequences
         private bool _checked = false;
         private readonly ConcurrentDictionary<Type, ISequence> _sequences = new ConcurrentDictionary<Type, ISequence>();
 
-        private TableName Table => new TableName(_options.DatabaseSchemaName, "mt_hilo");
+        private DbObjectName Table => new DbObjectName(_options.DatabaseSchemaName, "mt_hilo");
 
         public SequenceFactory(IDocumentSchema schema, IConnectionFactory factory, StoreOptions options, IMartenLogger logger)
         {

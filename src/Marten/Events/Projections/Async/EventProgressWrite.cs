@@ -11,11 +11,11 @@ namespace Marten.Events.Projections.Async
     {
         private readonly string _key;
         private readonly long _number;
-        private readonly FunctionName _sproc;
+        private readonly DbObjectName _sproc;
 
         public EventProgressWrite(EventGraph events, string key, long number)
         {
-            _sproc = new FunctionName(events.DatabaseSchemaName, "mt_mark_event_progression");
+            _sproc = new DbObjectName(events.DatabaseSchemaName, "mt_mark_event_progression");
             _key = key;
             _number = number;
         }

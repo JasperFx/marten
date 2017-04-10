@@ -32,14 +32,14 @@ namespace Marten.Schema
             _schema = schema;
         }
 
-        public TableName[] DocumentTables()
+        public DbObjectName[] DocumentTables()
         {
             return SchemaTables().Where(x => x.Name.StartsWith(DocumentMapping.TablePrefix)).ToArray();
         }
 
-        public FunctionName[] SchemaFunctionNames()
+        public DbObjectName[] SchemaDbObjectNames()
         {
-            Func<DbDataReader, FunctionName> transform = r => new FunctionName(r.GetString(0), r.GetString(1));
+            Func<DbDataReader, DbObjectName> transform = r => new DbObjectName(r.GetString(0), r.GetString(1));
 
             var sql =
                 "SELECT specific_schema, routine_name FROM information_schema.routines WHERE type_udt_name != 'trigger' and routine_name like ? and specific_schema = ANY(?);";
@@ -48,9 +48,9 @@ namespace Marten.Schema
                 _factory.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%", _schema.AllSchemaNames()).ToArray();
         }
 
-        public TableName[] SchemaTables()
+        public DbObjectName[] SchemaTables()
         {
-            Func<DbDataReader, TableName> transform = r => new TableName(r.GetString(0), r.GetString(1));
+            Func<DbDataReader, DbObjectName> transform = r => new DbObjectName(r.GetString(0), r.GetString(1));
 
             var sql =
                 "SELECT schemaname, relname FROM pg_stat_user_tables WHERE relname LIKE ? AND schemaname = ANY(?);";
@@ -64,7 +64,7 @@ namespace Marten.Schema
             return tables;
         }
 
-        public bool TableExists(TableName table)
+        public bool TableExists(DbObjectName table)
         {
             var schemaTables = SchemaTables();
             return schemaTables.Contains(table);
@@ -103,17 +103,17 @@ WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system tabl
 ";
 
             Func<DbDataReader, ActualIndex> transform =
-                r => new ActualIndex(TableName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
+                r => new ActualIndex(DbObjectName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
 
             return _factory.Fetch(sql, transform);
         }
 
-        public IEnumerable<ActualIndex> IndexesFor(TableName table)
+        public IEnumerable<ActualIndex> IndexesFor(DbObjectName table)
         {
             return AllIndexes().Where(x => x.Table.Equals(table)).ToArray();
         }
 
-        public FunctionBody DefinitionForFunction(FunctionName function)
+        public FunctionBody DefinitionForFunction(DbObjectName function)
         {
             var sql = @"
 SELECT pg_get_functiondef(pg_proc.oid) 

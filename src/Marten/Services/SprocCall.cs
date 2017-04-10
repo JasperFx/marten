@@ -10,12 +10,12 @@ namespace Marten.Services
 {
     public class SprocCall : IStorageOperation
     {
-        private readonly FunctionName _function;
+        private readonly DbObjectName _function;
         private readonly IList<ParameterArg> _parameters = new List<ParameterArg>();
         private readonly BatchCommand _parent;
 
 
-        public SprocCall(BatchCommand parent, FunctionName function)
+        public SprocCall(BatchCommand parent, DbObjectName function)
         {
             if (parent == null) throw new ArgumentNullException(nameof(parent));
             if (function == null) throw new ArgumentNullException(nameof(function));

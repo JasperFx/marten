@@ -8,7 +8,7 @@ namespace Marten.Schema
     {
         private readonly MemberInfo[] _members;
         private readonly string _locator;
-        private readonly TableName _table;
+        private readonly DbObjectName _table;
         private string _indexName;
 
         public ComputedIndex(DocumentMapping mapping, MemberInfo[] members)
