@@ -72,6 +72,7 @@ namespace Marten.Schema
             table.WriteTemplate(template, writer);
             var body = function.ToBody(rules);
 
+            // This could be done at the same time as the function.WriteFunctionSql
             body.WriteTemplate(template, writer);
 
             writer.WriteLine();

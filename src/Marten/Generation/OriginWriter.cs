@@ -11,7 +11,7 @@ namespace Marten.Generation
 
         public static string OriginStatement(this TableDefinition definition)
         {
-            return OriginStatement("TABLE", definition.Table.QualifiedName);
+            return OriginStatement("TABLE", definition.Name.QualifiedName);
         }
     }
 }

@@ -137,8 +137,8 @@ namespace Marten.Testing.Generation
             
             var table = users.StorageTable();
 
-            table.BuildTemplate($"*{DdlRules.SCHEMA}*").ShouldBe($"*{table.Table.Schema}*");
-            table.BuildTemplate($"*{DdlRules.TABLENAME}*").ShouldBe($"*{table.Table.Name}*");
+            table.BuildTemplate($"*{DdlRules.SCHEMA}*").ShouldBe($"*{table.Name.Schema}*");
+            table.BuildTemplate($"*{DdlRules.TABLENAME}*").ShouldBe($"*{table.Name.Name}*");
             table.BuildTemplate($"*{DdlRules.COLUMNS}*").ShouldBe($"*id, data, mt_last_modified, mt_version, mt_dotnet_type, first_name*");
             table.BuildTemplate($"*{DdlRules.NON_ID_COLUMNS}*").ShouldBe($"*data, mt_last_modified, mt_version, mt_dotnet_type, first_name*");
 

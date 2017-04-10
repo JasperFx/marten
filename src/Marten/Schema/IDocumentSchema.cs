@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Marten.Events;
-using Marten.Linq;
-using Marten.Linq.QueryHandlers;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;

@@ -3,7 +3,8 @@ using System;
 
 namespace Marten.Schema
 {
-    public class TableName : QualifiedDatabaseName
+    [Obsolete("Just unnecessary")]
+    public class TableName : DbObjectName
     {
         public TableName(string schema, string name) : base(schema, name)
         {
@@ -26,7 +27,8 @@ namespace Marten.Schema
         }
     }
 
-    public class FunctionName : QualifiedDatabaseName
+    [Obsolete("Just unnecessary")]
+    public class FunctionName : DbObjectName
     {
         public FunctionName(string schema, string name) : base(schema, name)
         {
@@ -41,16 +43,17 @@ namespace Marten.Schema
 
     }
 
-    public abstract class QualifiedDatabaseName
+    public class DbObjectName
     {
         public string Schema { get; }
         public string Name { get; }
-        public string QualifiedName => $"{Schema}.{Name}";
+        public string QualifiedName { get; }
 
-        public QualifiedDatabaseName(string schema, string name)
+        public DbObjectName(string schema, string name)
         {
             Schema = schema;
             Name = name;
+            QualifiedName = $"{Schema}.{Name}";
         }
 
         public override string ToString()
@@ -58,7 +61,7 @@ namespace Marten.Schema
             return QualifiedName;
         }
 
-        protected bool Equals(QualifiedDatabaseName other)
+        protected bool Equals(DbObjectName other)
         {
             return GetType() == other.GetType() && string.Equals(QualifiedName, other.QualifiedName, StringComparison.OrdinalIgnoreCase);
         }
@@ -68,7 +71,7 @@ namespace Marten.Schema
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((QualifiedDatabaseName)obj);
+            return Equals((DbObjectName)obj);
         }
 
         public override int GetHashCode()
