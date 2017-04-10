@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Baseline;
+using Marten.Storage;
 
 namespace Marten.Schema
 {
@@ -54,6 +57,31 @@ namespace Marten.Schema
         public string UpdateDDL => _up.Writer.ToString();
         public string RollbackDDL => _down.Writer.ToString();
 
+        public SchemaPatchDifference Difference
+        {
+            get
+            {
+                if (!Migrations.Any()) return SchemaPatchDifference.None;
+
+                if (Migrations.Any(x => x.Difference == SchemaPatchDifference.Invalid))
+                {
+                    return SchemaPatchDifference.Invalid;
+                }
+
+                if (Migrations.Any(x => x.Difference == SchemaPatchDifference.Update))
+                {
+                    return SchemaPatchDifference.Update;
+                }
+
+                if (Migrations.Any(x => x.Difference == SchemaPatchDifference.Create))
+                {
+                    return SchemaPatchDifference.Create;
+                }
+
+                return SchemaPatchDifference.None;
+            }
+        }
+
         public void WriteTransactionalScript(TextWriter writer, Action<TextWriter> writeStep)
         {
             writer.WriteLine("DO LANGUAGE plpgsql $tran$");
@@ -102,6 +130,26 @@ namespace Marten.Schema
         public void WriteRollbackFile(string file)
         {
             WriteTransactionalFile(file, RollbackDDL);
+        }
+
+        public readonly IList<ObjectMigration> Migrations = new List<ObjectMigration>();
+
+        public void Log(ISchemaObject schemaObject, SchemaPatchDifference difference)
+        {
+            var migration = new ObjectMigration(schemaObject, difference);
+            Migrations.Add(migration);
+        }
+    }
+
+    public class ObjectMigration
+    {
+        public ISchemaObject SchemaObject { get; }
+        public SchemaPatchDifference Difference { get; }
+
+        public ObjectMigration(ISchemaObject schemaObject, SchemaPatchDifference difference)
+        {
+            SchemaObject = schemaObject;
+            Difference = difference;
         }
     }
 }

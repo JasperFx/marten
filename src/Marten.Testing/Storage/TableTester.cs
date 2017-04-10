@@ -160,5 +160,19 @@ namespace Marten.Testing.Storage
 
             diff.Different.Single().Name.ShouldBe("id");
         }
+
+//        private SchemaPatch writePatch(out SchemaPatchDifference difference)
+//        {
+//            var patch = new SchemaPatch(new DdlRules());
+//
+//        }
+
+        [Fact]
+        public void write_patch_when_it_exists_and_matches()
+        {
+            writeTable();
+
+            
+        }
     }
 }
