@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Marten.Schema;
 using Marten.Storage;
 using Shouldly;
@@ -77,6 +78,12 @@ namespace Marten.Testing.Schema
             patch.Difference.ShouldBe(SchemaPatchDifference.Invalid);
         }
 
+
+
+
+
+
+
         [Fact]
         public void update_is_second_in_priority()
         {
@@ -126,6 +133,37 @@ namespace Marten.Testing.Schema
             patch.Log(table4, SchemaPatchDifference.None);
 
             patch.Difference.ShouldBe(SchemaPatchDifference.None);
+        }
+
+        [Theory]
+        [InlineData(SchemaPatchDifference.Invalid, AutoCreate.CreateOnly)]
+        [InlineData(SchemaPatchDifference.Update, AutoCreate.CreateOnly)]
+        [InlineData(SchemaPatchDifference.Invalid, AutoCreate.CreateOrUpdate)]
+        public void should_throw_exception_on_assertion(SchemaPatchDifference difference, AutoCreate autoCreate)
+        {
+            var patch = new SchemaPatch(new DdlRules());
+            var table1 = new Table(new DbObjectName("public", "sometable1"));
+            patch.Log(table1, difference);
+
+            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+            {
+                patch.AssertPatchingIsValid(autoCreate);
+            });
+        }
+
+        [Theory]
+        [InlineData(SchemaPatchDifference.Create, AutoCreate.CreateOnly)]
+        [InlineData(SchemaPatchDifference.Create, AutoCreate.CreateOrUpdate)]
+        [InlineData(SchemaPatchDifference.Create, AutoCreate.All)]
+        [InlineData(SchemaPatchDifference.Invalid, AutoCreate.All)] // drop and replace
+        [InlineData(SchemaPatchDifference.Update, AutoCreate.CreateOrUpdate)]
+        public void should_not_throw_exception_on_assertion(SchemaPatchDifference difference, AutoCreate autoCreate)
+        {
+            var patch = new SchemaPatch(new DdlRules());
+            var table1 = new Table(new DbObjectName("public", "sometable1"));
+            patch.Log(table1, difference);
+
+            patch.AssertPatchingIsValid(autoCreate);
         }
     }
 }

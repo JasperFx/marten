@@ -139,6 +139,32 @@ namespace Marten.Schema
             var migration = new ObjectMigration(schemaObject, difference);
             Migrations.Add(migration);
         }
+
+        public void AssertPatchingIsValid(AutoCreate autoCreate)
+        {
+            if (autoCreate == AutoCreate.All) return;
+
+            var difference = Difference;
+
+            if (difference == SchemaPatchDifference.None) return;
+            
+
+            if (difference == SchemaPatchDifference.Invalid)
+            {
+                var invalidObjects = Migrations.Where(x => x.Difference == SchemaPatchDifference.Invalid).Select(x => x.SchemaObject.Identifier.ToString()).Join(", ");
+                throw new InvalidOperationException($"Marten cannot derive updates for objects {invalidObjects}");
+            }
+
+            if (difference == SchemaPatchDifference.Update && autoCreate == AutoCreate.CreateOnly)
+            {
+                var updates = Migrations.Where(x => x.Difference == SchemaPatchDifference.Update).ToArray();
+                if (updates.Any())
+                {
+                    throw new InvalidOperationException($"Marten cannot apply updates in CreateOnly mode to existing items {updates.Select(x => x.SchemaObject.Identifier.QualifiedName).Join(", ")}");
+                }
+            }
+            
+        }
     }
 
     public class ObjectMigration
