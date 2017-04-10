@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten;
@@ -63,6 +64,33 @@ namespace Marten.Testing.Schema.Identity
 				StoreUser(store, "User1");
 				StoreUser(store, "User2");
 				StoreUser(store, "User3");
+
+				var users = GetUsers(store);
+				foreach (UserWithString userWithString in users) {
+					userWithString.Id.ShouldNotBeNullOrEmpty();
+				}
+
+			}
+		}
+
+		[Fact]
+		public void store_documents_in_one_batch() {
+			using (
+					var container =
+							ContainerFactory.Configure(options => options.DefaultIdStrategy = (mapping, storeOptions) => new StringUniqueIdGeneration())) {
+				container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
+
+				var store = container.GetInstance<IDocumentStore>();
+
+				IList<UserWithString> items = new List<UserWithString>();
+				for (int i = 0; i < 500; i++) {
+					items.Add(new UserWithString { LastName = "User" + i });
+				}
+
+				using (var session = store.OpenSession()) {
+					session.StoreObjects(items);
+					session.SaveChanges();
+				}
 
 				var users = GetUsers(store);
 				foreach (UserWithString userWithString in users) {
