@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Storage;
@@ -75,6 +76,28 @@ namespace Marten.Testing.Storage
 
             _conn.CreateCommand("select count(*) from testbed.table1")
                 .ExecuteScalar().As<long>().ShouldBe(1);
+        }
+
+        [Fact]
+        public void can_recognize_when_the_existing_table_does_not_exist()
+        {
+            tableExists().ShouldBeFalse();
+
+            theTable.FetchExisting(_conn).ShouldBeNull();
+        }
+
+        [Fact]
+        public void can_fetch_the_existing_table()
+        {
+            writeTable();
+            tableExists().ShouldBeTrue();
+
+            var existing = theTable.FetchExisting(_conn);
+
+            existing.ShouldNotBeNull();
+
+            existing.PrimaryKey.Name.ShouldBe("id");
+            existing.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "name", "number");
         }
     }
 }
