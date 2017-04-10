@@ -776,7 +776,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void bug_611_duplicate_field_is_updated_by_set_operation()
         {
-            var mapping = theStore.Schema.StoreOptions.MappingFor(typeof(Target));
+            var mapping = theStore.Schema.StoreOptions.Storage.MappingFor(typeof(Target));
             var field = mapping.DuplicateField("String");
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
@@ -800,7 +800,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void bug_611_duplicate_field_is_updated_by_set_operation_with_multiple_duplicates_smoke_test()
         {
-            var mapping = theStore.Schema.StoreOptions.MappingFor(typeof(Target));
+            var mapping = theStore.Schema.StoreOptions.Storage.MappingFor(typeof(Target));
             var field = mapping.DuplicateField("String");
             var field2 = mapping.DuplicateField(nameof(Target.Number));
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();

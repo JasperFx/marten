@@ -501,9 +501,9 @@ namespace Marten.Testing.Schema
             // SAMPLE: override_schema_per_table
             StoreOptions(_ =>
             {
-                _.MappingFor(typeof(User)).DatabaseSchemaName = "other";
-                _.MappingFor(typeof(Issue)).DatabaseSchemaName = "overriden";
-                _.MappingFor(typeof(Company));
+                _.Storage.MappingFor(typeof(User)).DatabaseSchemaName = "other";
+                _.Storage.MappingFor(typeof(Issue)).DatabaseSchemaName = "overriden";
+                _.Storage.MappingFor(typeof(Company));
 
                 // this will tell marten to use the default 'public' schema name.
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
@@ -662,9 +662,9 @@ namespace Marten.Testing.Schema
                 // SAMPLE: override_schema_name
                 _.DatabaseSchemaName = "other";
                 // ENDSAMPLE
-                _.MappingFor(typeof(User)).DatabaseSchemaName = "yet_another";
-                _.MappingFor(typeof(Issue)).DatabaseSchemaName = "overriden";
-                _.MappingFor(typeof(Company));
+                _.Storage.MappingFor(typeof(User)).DatabaseSchemaName = "yet_another";
+                _.Storage.MappingFor(typeof(Issue)).DatabaseSchemaName = "overriden";
+                _.Storage.MappingFor(typeof(Company));
                 _.Events.AddEventType(typeof(MembersJoined));
             });
 

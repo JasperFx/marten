@@ -29,7 +29,7 @@ namespace Marten.Events
             _events.OnMissing = eventType =>
             {
                 var mapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
-                Options.AddMapping(mapping);
+                Options.Storage.AddMapping(mapping);
 
                 return mapping;
             };
@@ -95,7 +95,7 @@ namespace Marten.Events
 
         public void AddAggregator<T>(IAggregator<T> aggregator) where T : class, new()
         {
-            Options.MappingFor(typeof(T));
+            Options.Storage.MappingFor(typeof(T));
             _aggregates.AddOrUpdate(typeof(T), aggregator, (type, previous) => aggregator);
         }
 
@@ -104,7 +104,7 @@ namespace Marten.Events
             return _aggregates
                 .GetOrAdd(typeof(T), type =>
                 {
-                    Options.MappingFor(typeof(T));
+                    Options.Storage.MappingFor(typeof(T));
                     return _aggregatorLookup.Lookup<T>();
                 })
                 .As<IAggregator<T>>();

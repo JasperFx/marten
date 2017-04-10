@@ -10,12 +10,6 @@ using Npgsql;
 
 namespace Marten.Storage
 {
-
-    public class StorageProviders
-    {
-        
-    }
-
     // TODO -- might decide to get rid of this one
     public interface ISchemaObjects
     {

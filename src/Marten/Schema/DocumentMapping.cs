@@ -348,7 +348,7 @@ namespace Marten.Schema
 
         public ForeignKeyDefinition AddForeignKey(MemberInfo[] members, Type referenceType)
         {
-            var referenceMapping = _storeOptions.MappingFor(referenceType);
+            var referenceMapping = _storeOptions.Storage.MappingFor(referenceType);
 
             var duplicateField = DuplicateField(members);
 

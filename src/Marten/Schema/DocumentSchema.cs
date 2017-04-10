@@ -101,7 +101,7 @@ namespace Marten.Schema
         }
 
         public IDbObjects DbObjects { get; }
-        public IEnumerable<IDocumentMapping> AllMappings => StoreOptions.AllDocumentMappings;
+        public IEnumerable<IDocumentMapping> AllMappings => StoreOptions.Storage.AllDocumentMappings;
 
         public IBulkLoader<T> BulkLoaderFor<T>()
         {
@@ -137,7 +137,7 @@ namespace Marten.Schema
             if (documentType == typeof(IEvent))
                 return _eventQuery.Value;
 
-            return StoreOptions.FindMapping(documentType);
+            return StoreOptions.Storage.FindMapping(documentType);
         }
 
         public void EnsureStorageExists(Type documentType)
@@ -464,7 +464,7 @@ namespace Marten.Schema
         private void assertNoDuplicateDocumentAliases()
         {
             var duplicates =
-                StoreOptions.AllDocumentMappings.Where(x => !x.StructuralTyped)
+                StoreOptions.Storage.AllDocumentMappings.Where(x => !x.StructuralTyped)
                     .GroupBy(x => x.Alias)
                     .Where(x => x.Count() > 1)
                     .ToArray();
