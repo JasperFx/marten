@@ -45,14 +45,16 @@ public class FirebasePushIDGenerator
     // Modeled after base64 web-safe chars, but ordered by ASCII.
     const string PUSH_CHARS = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
-    // Timestamp of last push, used to prevent local collisions if you push twice in one ms.
-    private static long lastPushTime = 0;
+		// Timestamp of last push, used to prevent local collisions if you push twice in one ms.
+		[ThreadStatic]
+		private static long lastPushTime = 0;
 
-    // We generate 72-bits of randomness which get turned into 12 characters and appended to the
-    // timestamp to prevent collisions with other clients.  We store the last characters we
-    // generated because in the event of a collision, we'll use those same characters except
-    // "incremented" by one.
-    private static char[] lastRandChars = new char[12];
+		// We generate 72-bits of randomness which get turned into 12 characters and appended to the
+		// timestamp to prevent collisions with other clients.  We store the last characters we
+		// generated because in the event of a collision, we'll use those same characters except
+		// "incremented" by one.
+		[ThreadStatic]
+		private static char[] lastRandChars = new char[12];
 
     // Random number generator
     private static Random rng = new Random();
@@ -84,12 +86,10 @@ public class FirebasePushIDGenerator
         else
         {
 					// If the timestamp hasn't changed since last push, use the same random number, except incremented by 1.
-					lock (lastRandChars) {
-						for (var i = 11; i >= 0 && lastRandChars[i] == 63; i--) {
-							lastRandChars[i] = (char)0;
-						}
-						lastRandChars[11]++;
+					for (var i = 11; i >= 0 && lastRandChars[i] == 63; i--) {
+						lastRandChars[i] = (char)0;
 					}
+					lastRandChars[11]++;
         }
 			var sb = new System.Text.StringBuilder();
         for (var i = 0; i < 12; i++)
