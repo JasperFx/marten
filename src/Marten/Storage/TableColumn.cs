@@ -1,7 +1,7 @@
 using System;
 using Marten.Util;
 
-namespace Marten.Generation
+namespace Marten.Storage
 {
     public class TableColumn
     {

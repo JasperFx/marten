@@ -6,7 +6,7 @@ namespace Marten.Schema
 {
     public class SchemaPatch
     {
-        public DdlRules Rules { get; set; }
+        public DdlRules Rules { get; }
 
         public static string ToDropFileName(string updateFile)
         {

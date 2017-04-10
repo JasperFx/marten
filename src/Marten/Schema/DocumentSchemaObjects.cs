@@ -5,10 +5,12 @@ using System.Linq;
 using Baseline;
 using Marten.Generation;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Schema
 {
+    [Obsolete("REmove in favor of the new Storage model")]
     public class DocumentSchemaObjects : IDocumentSchemaObjects
     {
         public static DocumentSchemaObjects For<T>()

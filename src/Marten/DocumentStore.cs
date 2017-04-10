@@ -10,6 +10,7 @@ using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Transforms;
 using Marten.Util;
 using Npgsql;
@@ -78,7 +79,8 @@ namespace Marten
             _logger = options.Logger();
 
             Schema = new DocumentSchema(this, _connectionFactory, _logger);
-            
+            Storage = options.Storage;
+
             Serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_connectionFactory, Schema.As<DocumentSchema>());
@@ -117,6 +119,7 @@ namespace Marten
         private readonly IMartenLogger _logger;
         private readonly CharArrayTextWriter.IPool _writerPool;
 
+        internal StorageProviders Storage { get; }
         public ISerializer Serializer { get; }
 
         public virtual void Dispose()
