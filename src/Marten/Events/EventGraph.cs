@@ -44,7 +44,7 @@ namespace Marten.Events
 
         internal StoreOptions Options { get; }
 
-        internal TableName Table => new TableName(DatabaseSchemaName, "mt_events");
+        internal DbObjectName Table => new DbObjectName(DatabaseSchemaName, "mt_events");
 
         internal IDocumentSchemaObjects SchemaObjects { get; }
 
@@ -131,7 +131,7 @@ namespace Marten.Events
 
         public ProjectionCollection InlineProjections { get; }
         public ProjectionCollection AsyncProjections { get; }
-        internal TableName ProgressionTable => new TableName(DatabaseSchemaName, "mt_event_progression");
+        internal DbObjectName ProgressionTable => new DbObjectName(DatabaseSchemaName, "mt_event_progression");
 
         public string AggregateAliasFor(Type aggregateType)
         {

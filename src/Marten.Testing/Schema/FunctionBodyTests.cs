@@ -33,7 +33,7 @@ $BODY$
         {
 
 
-            var func = new FunctionBody(new FunctionName("public", "mt_upsert_target"), new string[0], theFunctionBody);
+            var func = new FunctionBody(new DbObjectName("public", "mt_upsert_target"), new string[0], theFunctionBody);
 
             func.Signature().ShouldBe("public.mt_upsert_target(jsonb, character varying, uuid, uuid)");
         }
@@ -41,7 +41,7 @@ $BODY$
         [Fact]
         public void do_substitutions()
         {
-            var func = new FunctionBody(new FunctionName("public", "mt_upsert_target"), new string[0], theFunctionBody);
+            var func = new FunctionBody(new DbObjectName("public", "mt_upsert_target"), new string[0], theFunctionBody);
 
             func.BuildTemplate($"*{DdlRules.SCHEMA}*").ShouldBe("*public*");
             func.BuildTemplate($"*{DdlRules.FUNCTION}*").ShouldBe("*mt_upsert_target*");

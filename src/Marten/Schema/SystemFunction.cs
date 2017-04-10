@@ -9,13 +9,13 @@ namespace Marten.Schema
     public class SystemFunction : ISchemaObjects
     {
         private readonly string _args;
-        private readonly FunctionName _function;
+        private readonly DbObjectName _function;
         private readonly string _dropSql;
 
         public SystemFunction(StoreOptions options, string functionName, string args)
         {
             _args = args;
-            _function = new FunctionName(options.DatabaseSchemaName, functionName);
+            _function = new DbObjectName(options.DatabaseSchemaName, functionName);
             _dropSql = $"drop function if exists {options.DatabaseSchemaName}.{functionName}({args}) cascade";
 
             Name = functionName;

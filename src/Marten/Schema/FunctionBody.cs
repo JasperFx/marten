@@ -7,7 +7,7 @@ namespace Marten.Schema
 {
     public class FunctionBody
     {
-        public FunctionName Function { get; set; }
+        public DbObjectName Function { get; set; }
         public string[] DropStatements { get; set; }
         public string Body { get; set; }
 
@@ -36,7 +36,7 @@ namespace Marten.Schema
             return $"ALTER FUNCTION {Signature()} OWNER TO \"{owner}\";";
         }
 
-        public FunctionBody(FunctionName function, string[] dropStatements, string body)
+        public FunctionBody(DbObjectName function, string[] dropStatements, string body)
         {
             Function = function;
             DropStatements = dropStatements;

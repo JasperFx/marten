@@ -22,13 +22,13 @@ namespace Marten.Transforms
             Name = name;
             Body = body;
 
-            Function = new FunctionName(_options.DatabaseSchemaName, $"{Prefix}{Name.ToLower().Replace(".", "_")}");
+            Function = new DbObjectName(_options.DatabaseSchemaName, $"{Prefix}{Name.ToLower().Replace(".", "_")}");
         }
 
         public string Name { get; set; }
         public string Body { get; set; }
 
-        public FunctionName Function { get; }
+        public DbObjectName Function { get; }
 
         public readonly IList<string> OtherArgs = new List<string>();
 

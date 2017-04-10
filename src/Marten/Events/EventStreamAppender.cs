@@ -15,10 +15,10 @@ namespace Marten.Events
         {
             _graph = graph;
 
-            AppendEventFunction = new FunctionName(_graph.DatabaseSchemaName, "mt_append_event");
+            AppendEventFunction = new DbObjectName(_graph.DatabaseSchemaName, "mt_append_event");
         }
 
-        public FunctionName AppendEventFunction { get; }
+        public DbObjectName AppendEventFunction { get; }
 
         public void RegisterUpdate(UpdateBatch batch, object entity)
         {

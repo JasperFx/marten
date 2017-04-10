@@ -8,7 +8,7 @@ namespace Marten.Generation
 {
     public class TableDiff
     {
-        private readonly TableName _tableName;
+        private readonly DbObjectName _tableName;
 
         public TableDiff(TableDefinition expected, TableDefinition actual)
         {

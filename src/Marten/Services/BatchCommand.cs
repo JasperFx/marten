@@ -56,7 +56,7 @@ namespace Marten.Services
             Callbacks.Add(callback);
         }
 
-        public SprocCall Sproc(FunctionName function, ICallback callback = null)
+        public SprocCall Sproc(DbObjectName function, ICallback callback = null)
         {
             if (function == null) throw new ArgumentNullException(nameof(function));
 

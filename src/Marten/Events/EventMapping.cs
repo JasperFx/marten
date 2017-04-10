@@ -44,7 +44,7 @@ namespace Marten.Events
 
         Type IDocumentMapping.IdType => typeof(Guid);
 
-        public TableName Table =>  new TableName(_options.Events.DatabaseSchemaName, "mt_events");
+        public DbObjectName Table =>  new DbObjectName(_options.Events.DatabaseSchemaName, "mt_events");
         public DuplicatedField[] DuplicatedFields { get; }
         public DeleteStyle DeleteStyle { get; }
 

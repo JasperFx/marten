@@ -131,7 +131,7 @@ namespace Marten.Util
             return cmd;
         }
 
-        public static NpgsqlCommand CallsSproc(this NpgsqlCommand cmd, FunctionName function)
+        public static NpgsqlCommand CallsSproc(this NpgsqlCommand cmd, DbObjectName function)
         {
             if (cmd == null) throw new ArgumentNullException(nameof(cmd));
             if (function == null) throw new ArgumentNullException(nameof(function));

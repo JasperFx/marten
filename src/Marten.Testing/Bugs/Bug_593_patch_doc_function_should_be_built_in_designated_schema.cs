@@ -13,8 +13,8 @@ namespace Marten.Testing.Bugs
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
-            var expected = new FunctionName("other", "mt_transform_patch_doc");
-            theStore.Schema.DbObjects.SchemaFunctionNames().Contains(expected).ShouldBeTrue();
+            var expected = new DbObjectName("other", "mt_transform_patch_doc");
+            theStore.Schema.DbObjects.SchemaDbObjectNames().Contains(expected).ShouldBeTrue();
         }
     }
 }

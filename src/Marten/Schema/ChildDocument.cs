@@ -38,7 +38,7 @@ namespace Marten.Schema
 
         public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
 
-        public TableName Table
+        public DbObjectName Table
         {
             get { throw new NotSupportedException(); }
         }

@@ -64,7 +64,7 @@ namespace Marten.Services
             batch.AddCall(operation, operation as ICallback);
         }
 
-        public SprocCall Sproc(FunctionName function, ICallback callback = null)
+        public SprocCall Sproc(DbObjectName function, ICallback callback = null)
         {
             if (function == null) throw new ArgumentNullException(nameof(function));
 

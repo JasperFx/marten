@@ -10,6 +10,7 @@ using Marten.Linq;
 using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Services.Deletes;
+using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -25,7 +26,7 @@ namespace Marten.Schema
         private readonly ISerializer _serializer;
         private readonly DocumentMapping _mapping;
         private readonly bool _useCharBufferPooling;
-        private readonly FunctionName _upsertName;
+        private readonly DbObjectName _upsertName;
         private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid> _sprocWriter;
 
         public DocumentStorage(ISerializer serializer, DocumentMapping mapping, bool useCharBufferPooling)

@@ -10,7 +10,7 @@ namespace Marten.Testing.Patching
         {
             var transform = theStore.Schema.TransformFor("patch_doc");
 
-            theStore.Schema.DbObjects.SchemaFunctionNames()
+            theStore.Schema.DbObjects.SchemaDbObjectNames()
                 .ShouldContain(transform.Function);
         }
     }

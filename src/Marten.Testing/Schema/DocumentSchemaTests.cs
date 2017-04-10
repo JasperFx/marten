@@ -210,7 +210,7 @@ namespace Marten.Testing.Schema
             tables.ShouldContain("public.mt_doc_issue");
             tables.ShouldContain("public.mt_doc_company");
 
-            var functions = theSchema.DbObjects.SchemaFunctionNames();
+            var functions = theSchema.DbObjects.SchemaDbObjectNames();
             functions.ShouldContain("public.mt_upsert_user");
             functions.ShouldContain("public.mt_upsert_issue");
             functions.ShouldContain("public.mt_upsert_company");
@@ -492,8 +492,8 @@ namespace Marten.Testing.Schema
     public class DocumentSchemaWithOverridenSchemaTests : IntegratedFixture
     {
         private readonly string _sql;
-        private readonly TableName[] _tables;
-        private readonly FunctionName[] _functions;
+        private readonly DbObjectName[] _tables;
+        private readonly DbObjectName[] _functions;
         private readonly IDocumentSchema _schema;
 
         public DocumentSchemaWithOverridenSchemaTests()
@@ -522,7 +522,7 @@ namespace Marten.Testing.Schema
             }
 
             _tables = _schema.DbObjects.SchemaTables();
-            _functions = _schema.DbObjects.SchemaFunctionNames();
+            _functions = _schema.DbObjects.SchemaDbObjectNames();
         }
 
 
@@ -651,8 +651,8 @@ namespace Marten.Testing.Schema
     public class DocumentSchemaWithOverridenDefaultSchemaAndEventsTests : IntegratedFixture
     {
         private readonly string _sql;
-        private readonly TableName[] _tables;
-        private readonly FunctionName[] _functions;
+        private readonly DbObjectName[] _tables;
+        private readonly DbObjectName[] _functions;
         private readonly IDocumentSchema _schema;
 
         public DocumentSchemaWithOverridenDefaultSchemaAndEventsTests()
@@ -681,7 +681,7 @@ namespace Marten.Testing.Schema
             }
 
             _tables = _schema.DbObjects.SchemaTables();
-            _functions = _schema.DbObjects.SchemaFunctionNames();
+            _functions = _schema.DbObjects.SchemaDbObjectNames();
         }
 
 

@@ -93,7 +93,7 @@ namespace Marten.Events
 
             patch.Updates.Apply(this, SchemaBuilder.GetSqlScript(_parent.DatabaseSchemaName, "mt_stream"));
 
-            patch.Rollbacks.Drop(this, new TableName(schema.Events.DatabaseSchemaName, "mt_streams"));
+            patch.Rollbacks.Drop(this, new DbObjectName(schema.Events.DatabaseSchemaName, "mt_streams"));
         }
 
 

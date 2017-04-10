@@ -75,7 +75,7 @@ namespace Marten.Testing.Transforms
 
             var func = TransformFunction.ForFile(new StoreOptions {AutoCreateSchemaObjects = AutoCreate.All}, _getFullnameJs);
 
-            dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
+            dbobjects.SchemaDbObjectNames().Returns(Enumerable.Empty<DbObjectName>());
 
 
             var patch = new SchemaPatch(new DdlRules());
@@ -96,7 +96,7 @@ namespace Marten.Testing.Transforms
 
             var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.CreateOnly }, _getFullnameJs);
 
-            dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
+            dbobjects.SchemaDbObjectNames().Returns(Enumerable.Empty<DbObjectName>());
 
             var patch = new SchemaPatch(new DdlRules());
 
@@ -118,7 +118,7 @@ namespace Marten.Testing.Transforms
 
             var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.None }, _getFullnameJs);
 
-            dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
+            dbobjects.SchemaDbObjectNames().Returns(Enumerable.Empty<DbObjectName>());
 
             var patch = new SchemaPatch(new DdlRules());
 
@@ -140,7 +140,7 @@ namespace Marten.Testing.Transforms
 
             var func = TransformFunction.ForFile(new StoreOptions { AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate }, _getFullnameJs);
 
-            dbobjects.SchemaFunctionNames().Returns(Enumerable.Empty<FunctionName>());
+            dbobjects.SchemaDbObjectNames().Returns(Enumerable.Empty<DbObjectName>());
 
             var patch = new SchemaPatch(new DdlRules());
 

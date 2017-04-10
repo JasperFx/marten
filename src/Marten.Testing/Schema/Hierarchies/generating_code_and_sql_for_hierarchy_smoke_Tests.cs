@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Marten.Schema;
+using Marten.Storage;
 using Xunit;
 
 namespace Marten.Testing.Schema.Hierarchies

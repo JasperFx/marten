@@ -13,7 +13,7 @@ namespace Marten.Schema.Identity.Sequences
         private readonly string _entityName;
         private readonly object _lock = new object();
 
-        private FunctionName GetNextFunction => new FunctionName(_options.DatabaseSchemaName, "mt_get_next_hi");
+        private DbObjectName GetNextFunction => new DbObjectName(_options.DatabaseSchemaName, "mt_get_next_hi");
 
         public HiloSequence(IConnectionFactory factory, StoreOptions options, string entityName, HiloSettings settings)
         {

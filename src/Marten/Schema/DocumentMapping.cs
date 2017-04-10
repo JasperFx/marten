@@ -77,7 +77,7 @@ namespace Marten.Schema
 
         public IEnumerable<SubClassMapping> SubClasses => _subClasses;
 
-        public FunctionName UpsertFunction => new FunctionName(DatabaseSchemaName, $"{UpsertPrefix}{_alias}");
+        public DbObjectName UpsertFunction => new DbObjectName(DatabaseSchemaName, $"{UpsertPrefix}{_alias}");
 
         public string DatabaseSchemaName
         {
@@ -164,7 +164,7 @@ namespace Marten.Schema
 
         public Type DocumentType { get; }
 
-        public virtual TableName Table => new TableName(DatabaseSchemaName, $"{TablePrefix}{_alias}");
+        public virtual DbObjectName Table => new DbObjectName(DatabaseSchemaName, $"{TablePrefix}{_alias}");
 
         public MemberInfo IdMember
         {

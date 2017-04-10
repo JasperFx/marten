@@ -8,6 +8,7 @@ using FastExpressionCompiler;
 using Marten.Schema.Arguments;
 using Marten.Schema.Identity;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 
@@ -61,7 +62,7 @@ namespace Marten.Schema.BulkLoading
             load(serializer, conn, documents, _sql, textWriter);
         }
 
-        public void Load(TableName table, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
+        public void Load(DbObjectName table, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
         {
             var sql = _baseSql.Replace("%TABLE%", table.QualifiedName);
             load(serializer, conn, documents, sql, textWriter);
@@ -103,7 +104,7 @@ namespace Marten.Schema.BulkLoading
             return $"create temporary table {tempTable} as select * from {StorageTable.QualifiedName};truncate table {_tempTableName}";
         }
 
-        public TableName StorageTable => _mapping.Table;
+        public DbObjectName StorageTable => _mapping.Table;
 
         private void load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, string sql, CharArrayTextWriter textWriter)
         {

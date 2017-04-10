@@ -96,7 +96,7 @@ namespace Marten.Schema
             }
         }
 
-        public string ToComputedIndex(TableName tableName)
+        public string ToComputedIndex(DbObjectName tableName)
         {
             return $"CREATE INDEX {tableName.Name}_{MemberName.ToTableAlias()} ON {tableName.QualifiedName} (({SqlLocator}));";
         }

@@ -2,12 +2,12 @@
 {
     public class ActualIndex
     {
-        public TableName Table { get; }
+        public DbObjectName Table { get; }
 
         public string Name { get; }
         public string DDL { get; }
 
-        public ActualIndex(TableName table, string name, string ddl)
+        public ActualIndex(DbObjectName table, string name, string ddl)
         {
             Table = table;
             Name = name;

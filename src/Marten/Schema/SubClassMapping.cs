@@ -45,7 +45,7 @@ namespace Marten.Schema
         public string[] Aliases { get; }
         public string Alias { get; set; }
 
-        public FunctionName UpsertName => Parent.UpsertFunction;
+        public DbObjectName UpsertName => Parent.UpsertFunction;
 
         public string DatabaseSchemaName
         {
@@ -62,7 +62,7 @@ namespace Marten.Schema
 
         public Type DocumentType { get; }
 
-        public TableName Table => Parent.Table;
+        public DbObjectName Table => Parent.Table;
 
         DuplicatedField[] IQueryableDocument.DuplicatedFields
         {
