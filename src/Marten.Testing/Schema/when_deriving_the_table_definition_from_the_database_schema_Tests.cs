@@ -32,7 +32,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void it_maps_the_table_name()
         {
-            theDerivedTable.Table.ShouldBe(theMapping.Table);
+            theDerivedTable.Name.ShouldBe(theMapping.Table);
         }
 
         [Fact]

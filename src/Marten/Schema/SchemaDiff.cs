@@ -31,14 +31,14 @@ namespace Marten.Schema
                         var actualIndex = existing.ActualIndices[index.IndexName];
                         if (!index.Matches(actualIndex))
                         {
-                            IndexChanges.Add($"drop index {expectedTable.Table.Schema}.{index.IndexName};{Environment.NewLine}{index.ToDDL()};");
-                            IndexRollbacks.Add($"drop index {expectedTable.Table.Schema}.{index.IndexName};{Environment.NewLine}{actualIndex.DDL};");
+                            IndexChanges.Add($"drop index {expectedTable.Name.Schema}.{index.IndexName};{Environment.NewLine}{index.ToDDL()};");
+                            IndexRollbacks.Add($"drop index {expectedTable.Name.Schema}.{index.IndexName};{Environment.NewLine}{actualIndex.DDL};");
                         }
                     }
                     else
                     {
                         IndexChanges.Add(index.ToDDL());
-                        IndexRollbacks.Add($"drop index concurrently if exists {expectedTable.Table.Schema}.{index.IndexName};");
+                        IndexRollbacks.Add($"drop index concurrently if exists {expectedTable.Name.Schema}.{index.IndexName};");
                     }
                 });
 

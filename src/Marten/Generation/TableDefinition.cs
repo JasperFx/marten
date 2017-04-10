@@ -9,9 +9,9 @@ namespace Marten.Generation
 {
     public class TableDefinition
     {
-        private string primaryKeyDirective => $"CONSTRAINT pk_{Table.Name} PRIMARY KEY";
+        private string primaryKeyDirective => $"CONSTRAINT pk_{Name.Name} PRIMARY KEY";
 
-        public TableName Table { get; }
+        public TableName Name { get; }
 
         public IList<TableColumn> Columns { get; } = new List<TableColumn>();
 
@@ -27,21 +27,21 @@ namespace Marten.Generation
         }
 
 
-        public TableDefinition(TableName table, TableColumn primaryKey)
+        public TableDefinition(TableName name, TableColumn primaryKey)
         {
-            if (table == null) throw new ArgumentNullException(nameof(table));
+            if (name == null) throw new ArgumentNullException(nameof(name));
             if (primaryKey == null) throw new ArgumentNullException(nameof(primaryKey));
 
-            Table = table;
+            Name = name;
             PrimaryKey = primaryKey;
         }
 
-        public TableDefinition(TableName table, string pkName, IEnumerable<TableColumn> columns)
+        public TableDefinition(TableName name, string pkName, IEnumerable<TableColumn> columns)
         {
-            if (table == null) throw new ArgumentNullException(nameof(table));
+            if (name == null) throw new ArgumentNullException(nameof(name));
             if (string.IsNullOrEmpty(pkName)) throw new ArgumentOutOfRangeException(nameof(pkName));
 
-            Table = table;
+            Name = name;
             Columns.AddRange(columns);
 
             var primaryKey = Column(pkName);
@@ -63,12 +63,12 @@ namespace Marten.Generation
 
             if (rules.TableCreation == CreationStyle.DropThenCreate)
             {
-                writer.WriteLine("DROP TABLE IF EXISTS {0} CASCADE;", Table.QualifiedName);
-                writer.WriteLine("CREATE TABLE {0} (", Table.QualifiedName);
+                writer.WriteLine("DROP TABLE IF EXISTS {0} CASCADE;", Name.QualifiedName);
+                writer.WriteLine("CREATE TABLE {0} (", Name.QualifiedName);
             }
             else
             {
-                writer.WriteLine("CREATE TABLE IF NOT EXISTS {0} (", Table.QualifiedName);
+                writer.WriteLine("CREATE TABLE IF NOT EXISTS {0} (", Name.QualifiedName);
             }
 
             var length = Columns.Select(x => x.Name.Length).Max() + 4;
@@ -109,7 +109,7 @@ namespace Marten.Generation
 
         protected bool Equals(TableDefinition other)
         {
-            return Columns.OrderBy(x => x.Name).SequenceEqual(other.Columns.OrderBy(x => x.Name)) && Equals(PrimaryKey, other.PrimaryKey) && Table.Equals(other.Table);
+            return Columns.OrderBy(x => x.Name).SequenceEqual(other.Columns.OrderBy(x => x.Name)) && Equals(PrimaryKey, other.PrimaryKey) && Name.Equals(other.Name);
         }
 
         public override bool Equals(object obj)
@@ -126,7 +126,7 @@ namespace Marten.Generation
             {
                 var hashCode = (Columns != null ? Columns.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (PrimaryKey != null ? PrimaryKey.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Table != null ? Table.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (Name != null ? Name.GetHashCode() : 0);
                 return hashCode;
             }
         }
@@ -144,8 +144,8 @@ namespace Marten.Generation
         public string BuildTemplate(string template)
         {
             return template
-                .Replace(DdlRules.SCHEMA, Table.Schema)
-                .Replace(DdlRules.TABLENAME, Table.Name)
+                .Replace(DdlRules.SCHEMA, Name.Schema)
+                .Replace(DdlRules.TABLENAME, Name.Name)
                 .Replace(DdlRules.COLUMNS, Columns.Select(x => x.Name).Join(", "))
                 .Replace(DdlRules.NON_ID_COLUMNS, Columns.Where(x => !x.Name.EqualsIgnoreCase("id")).Select(x => x.Name).Join(", "))
                 .Replace(DdlRules.METADATA_COLUMNS, "mt_last_modified, mt_version, mt_dotnet_type");

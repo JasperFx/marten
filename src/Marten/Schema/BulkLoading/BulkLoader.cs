@@ -77,7 +77,7 @@ namespace Marten.Schema.BulkLoading
         {
             var table = _mapping.SchemaObjects.StorageTable();
 
-            var storageTable = table.Table.QualifiedName;
+            var storageTable = table.Name.QualifiedName;
             var columns = table.Columns.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"\"{x.Name}\"").Join(", ");
             var selectColumns = table.Columns.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"{_tempTableName}.\"{x.Name}\"").Join(", ");
 
@@ -88,7 +88,7 @@ namespace Marten.Schema.BulkLoading
         public string OverwriteDuplicatesFromTempTable()
         {
             var table = _mapping.SchemaObjects.StorageTable();
-            var storageTable = table.Table.QualifiedName;
+            var storageTable = table.Name.QualifiedName;
 
             var updates = table.Columns.Where(x => x.Name != "id" && x.Name != DocumentMapping.LastModifiedColumn)
                 .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");

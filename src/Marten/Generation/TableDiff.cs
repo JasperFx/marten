@@ -17,7 +17,7 @@ namespace Marten.Generation
             Different =
                 expected.Columns.Where(x => actual.HasColumn(x.Name) && !x.Equals(actual.Column(x.Name))).ToArray();
 
-            _tableName = expected.Table;
+            _tableName = expected.Name;
         }
 
         public TableColumn[] Different { get; set; }
