@@ -38,9 +38,13 @@ namespace Marten.Storage
             _columns.Add(new T());
         }
 
-        public TableColumn AddColumn(string name, string type)
+        public TableColumn AddColumn(string name, string type, string directive = null)
         {
-            var column = new TableColumn(name, type);
+            var column = new TableColumn(name, type)
+            {
+                Directive = directive
+            };
+
             AddColumn(column);
 
             return column;
