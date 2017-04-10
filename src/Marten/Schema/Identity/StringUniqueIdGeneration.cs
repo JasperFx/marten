@@ -60,7 +60,6 @@ public class FirebasePushIDGenerator
     public static string GeneratePushID()
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        Console.WriteLine("now=" + now);
 
         var duplicateTime = (now == lastPushTime);
         lastPushTime = now;
@@ -84,17 +83,20 @@ public class FirebasePushIDGenerator
         }
         else
         {
-            // If the timestamp hasn't changed since last push, use the same random number, except incremented by 1.
-            for (var i = 11; i >= 0 && lastRandChars[i] == 63; i--)
-            {
-                lastRandChars[i] = (char)0;
-            }
-            lastRandChars[11]++;
+					// If the timestamp hasn't changed since last push, use the same random number, except incremented by 1.
+					lock (lastRandChars) {
+						for (var i = 11; i >= 0 && lastRandChars[i] == 63; i--) {
+							lastRandChars[i] = (char)0;
+						}
+						lastRandChars[11]++;
+					}
         }
+			var sb = new System.Text.StringBuilder();
         for (var i = 0; i < 12; i++)
         {
-            id += PUSH_CHARS[lastRandChars[i]];
+            sb.Append(PUSH_CHARS[lastRandChars[i]]);
         }
+			id += sb.ToString();
         if (id.Length != 20) throw new Exception("Length should be 20.");
 
         return id;
