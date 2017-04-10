@@ -7,7 +7,6 @@ using System.Linq;
 using Baseline;
 using Marten.Generation;
 using Marten.Schema;
-using Marten.Services;
 using Marten.Util;
 using Npgsql;
 
@@ -150,6 +149,37 @@ and i.indisprimary;
         public SchemaPatchDifference CreatePatch(DbDataReader reader, SchemaPatch patch)
         {
             var existing = readExistingTable(reader);
+            if (existing == null)
+            {
+                Write(patch.Rules, patch.UpWriter);
+                patch.Rollbacks.Drop(this, Identifier);
+
+                return SchemaPatchDifference.Create;
+            }
+
+            var delta = new TableDelta(this, existing);
+            if (delta.Matches)
+            {
+                return SchemaPatchDifference.None;
+            }
+
+            if (delta.Extras.Any() || delta.Different.Any())
+            {
+                return SchemaPatchDifference.Invalid;
+            }
+
+            if (!delta.Missing.All(x => x.CanAdd))
+            {
+                return SchemaPatchDifference.Invalid;
+            }
+
+            foreach (var missing in delta.Missing)
+            {
+                patch.Updates.Apply(this, missing.AddColumnSql(this));
+                patch.Rollbacks.RemoveColumn(this, Identifier, missing.Name);
+            }
+
+            return SchemaPatchDifference.Update;
 
             throw new NotImplementedException();
         }
@@ -213,42 +243,6 @@ and i.indisprimary;
         public void RemoveColumn(string columnName)
         {
             _columns.RemoveAll(x => x.Name == columnName);
-        }
-    }
-
-    public class TableDelta
-    {
-        private readonly DbObjectName _tableName;
-
-        public TableDelta(Table expected, Table actual)
-        {
-            Missing = expected.Where(x => actual.All(_ => _.Name != x.Name)).ToArray();
-            Extras = actual.Where(x => expected.All(_ => _.Name != x.Name)).ToArray();
-            Matched = expected.Where(x => actual.Any(a => Equals(a, x))).ToArray();
-            Different =
-                expected.Where(x => actual.HasColumn(x.Name) && !x.Equals(actual.ColumnFor(x.Name))).ToArray();
-
-            _tableName = expected.Identifier;
-        }
-
-        public TableColumn[] Different { get; set; }
-
-        public TableColumn[] Matched { get; set; }
-
-        public TableColumn[] Extras { get; set; }
-
-        public TableColumn[] Missing { get; set; }
-
-        public bool Matches => Missing.Count() + Extras.Count() + Different.Count() == 0;
-
-        public bool CanPatch()
-        {
-            return !Different.Any();
-        }
-
-        public override string ToString()
-        {
-            return $"TableDiff for {_tableName}";
         }
     }
 }

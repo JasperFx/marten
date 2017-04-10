@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Marten.Schema;
+using Marten.Storage;
 using Shouldly;
 using Xunit;
 
@@ -51,6 +52,80 @@ namespace Marten.Testing.Schema
 
             writer.ToString().ShouldContain("SET ROLE OCD_DBA;");
             writer.ToString().ShouldContain("RESET ROLE;");
+        }
+
+        [Fact]
+        public void difference_is_none_by_default()
+        {
+            new SchemaPatch(new DdlRules()).Difference.ShouldBe(SchemaPatchDifference.None);
+        }
+
+        [Fact]
+        public void invalid_wins_over_all_else()
+        {
+            var patch = new SchemaPatch(new DdlRules());
+            var table1 = new Table(new DbObjectName("public", "sometable1"));
+            var table2 = new Table(new DbObjectName("public", "sometable2"));
+            var table3 = new Table(new DbObjectName("public", "sometable3"));
+            var table4 = new Table(new DbObjectName("public", "sometable4"));
+
+            patch.Log(table1, SchemaPatchDifference.Invalid);
+            patch.Log(table2, SchemaPatchDifference.Create);
+            patch.Log(table3, SchemaPatchDifference.None);
+            patch.Log(table4, SchemaPatchDifference.Update);
+
+            patch.Difference.ShouldBe(SchemaPatchDifference.Invalid);
+        }
+
+        [Fact]
+        public void update_is_second_in_priority()
+        {
+            var patch = new SchemaPatch(new DdlRules());
+            var table1 = new Table(new DbObjectName("public", "sometable1"));
+            var table2 = new Table(new DbObjectName("public", "sometable2"));
+            var table3 = new Table(new DbObjectName("public", "sometable3"));
+            var table4 = new Table(new DbObjectName("public", "sometable4"));
+
+            //patch.Log(table1, SchemaPatchDifference.Invalid);
+            patch.Log(table2, SchemaPatchDifference.Create);
+            patch.Log(table3, SchemaPatchDifference.None);
+            patch.Log(table4, SchemaPatchDifference.Update);
+
+            patch.Difference.ShouldBe(SchemaPatchDifference.Update);
+        }
+
+        [Fact]
+        public void create_takes_precedence_over_none()
+        {
+            var patch = new SchemaPatch(new DdlRules());
+            var table1 = new Table(new DbObjectName("public", "sometable1"));
+            var table2 = new Table(new DbObjectName("public", "sometable2"));
+            var table3 = new Table(new DbObjectName("public", "sometable3"));
+            var table4 = new Table(new DbObjectName("public", "sometable4"));
+
+            //patch.Log(table1, SchemaPatchDifference.Invalid);
+            patch.Log(table2, SchemaPatchDifference.Create);
+            patch.Log(table3, SchemaPatchDifference.None);
+            //patch.Log(table4, SchemaPatchDifference.Update);
+
+            patch.Difference.ShouldBe(SchemaPatchDifference.Create);
+        }
+
+        [Fact]
+        public void return_none_if_no_changes_detected()
+        {
+            var patch = new SchemaPatch(new DdlRules());
+            var table1 = new Table(new DbObjectName("public", "sometable1"));
+            var table2 = new Table(new DbObjectName("public", "sometable2"));
+            var table3 = new Table(new DbObjectName("public", "sometable3"));
+            var table4 = new Table(new DbObjectName("public", "sometable4"));
+
+            patch.Log(table1, SchemaPatchDifference.None);
+            patch.Log(table2, SchemaPatchDifference.None);
+            patch.Log(table3, SchemaPatchDifference.None);
+            patch.Log(table4, SchemaPatchDifference.None);
+
+            patch.Difference.ShouldBe(SchemaPatchDifference.None);
         }
     }
 }
