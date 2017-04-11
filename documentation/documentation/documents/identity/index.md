@@ -12,8 +12,9 @@ Besides being serializable, Marten's only other requirement for a .Net type to b
    Marten may support Postgresql sequences or star-based algorithms as later alternatives.
 1. When the ID member of a document is not settable or not-public a `NoOpIdGeneration` strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.
 1. A `Custom` ID generator strategy is used to implement the ID generation strategy yourself.
+1. A `StringUniqueId` generator strategy is used to assign an unique string based on the current timestamp, random and incremental value. You can still assign your own string value. If the identifier is empty an unique identifier is automatically assigned.
 
-<div class="alert alert-info">When using a `Guid`/`CombGuid`, `Int`, or `Long` identifier, Marten will ensure the identity is set immediately after calling `IDocumentSession.Store` on the entity.</div>
+<div class="alert alert-info">When using a `Guid`/`CombGuid`, `Int`, `StringUniqueId` or `Long` identifier, Marten will ensure the identity is set immediately after calling `IDocumentSession.Store` on the entity.</div>
 
 See these topics for more information about specific Id types:
 
