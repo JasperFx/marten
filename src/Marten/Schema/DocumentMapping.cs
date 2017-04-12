@@ -10,6 +10,7 @@ using Marten.Linq;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services.Includes;
+using Marten.Storage;
 using Marten.Util;
 using Remotion.Linq;
 

@@ -1,4 +1,6 @@
-﻿namespace Marten.Schema
+﻿using Marten.Schema;
+
+namespace Marten.Storage
 {
     public interface IIndexDefinition
     {
