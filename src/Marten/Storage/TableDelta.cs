@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using Baseline;
 using Marten.Schema;
 
 namespace Marten.Storage
@@ -16,7 +19,49 @@ namespace Marten.Storage
                 expected.Where(x => actual.HasColumn(x.Name) && !x.Equals(actual.ColumnFor(x.Name))).ToArray();
 
             _tableName = expected.Identifier;
+
+            compareIndices(expected, actual);
+
+            var missingFKs = expected.ForeignKeys.Where(x => !actual.ActualForeignKeys.Contains(x.KeyName));
+            MissingForeignKeys.AddRange(missingFKs);
         }
+
+        private void compareIndices(Table expected, Table actual)
+        {
+            // TODO -- drop obsolete indices?
+
+            var schemaName = expected.Identifier.Schema;
+
+            foreach (var index in expected.Indexes)
+            {
+                if (actual.ActualIndices.ContainsKey(index.IndexName))
+                {
+                    var actualIndex = actual.ActualIndices[index.IndexName];
+                    if (!index.Matches(actualIndex))
+                    {
+                        IndexChanges.Add($"drop index {schemaName}.{index.IndexName};{Environment.NewLine}{index.ToDDL()};");
+                        IndexRollbacks.Add($"drop index {schemaName}.{index.IndexName};{Environment.NewLine}{actualIndex.DDL};");
+                    }
+                }
+                else
+                {
+                    IndexChanges.Add(index.ToDDL());
+                    IndexRollbacks.Add($"drop index concurrently if exists {schemaName}.{index.IndexName};");
+                }
+            }
+
+
+            var obsoleteIndexes = actual.ActualIndices.Values.Where(x => expected.Indexes.All(_ => _.IndexName != x.Name));
+            foreach (var index in obsoleteIndexes)
+            {
+                IndexRollbacks.Add(index.DDL);
+                IndexChanges.Add($"drop index concurrently if exists {schemaName}.{index.Name};");
+            }
+        }
+
+        public readonly IList<string> IndexChanges = new List<string>();
+        public readonly IList<string> IndexRollbacks = new List<string>();
+
 
         public TableColumn[] Different { get; set; }
 
@@ -26,11 +71,20 @@ namespace Marten.Storage
 
         public TableColumn[] Missing { get; set; }
 
-        public bool Matches => Missing.Count() + Extras.Count() + Different.Count() == 0;
+        public IList<ForeignKeyDefinition> MissingForeignKeys { get; } = new List<ForeignKeyDefinition>();
 
-        public bool CanPatch()
+
+        public bool Matches
         {
-            return !Different.Any();
+            get
+            {
+                if (Missing.Any()) return false;
+                if (Extras.Any()) return false;
+                if (Different.Any()) return false;
+                if (IndexChanges.Any()) return false;
+
+                return true;
+            }
         }
 
         public override string ToString()

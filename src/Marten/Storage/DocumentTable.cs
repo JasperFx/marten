@@ -1,3 +1,4 @@
+using Baseline;
 using Marten.Schema;
 using Marten.Util;
 
@@ -30,6 +31,9 @@ namespace Marten.Storage
             {
                 AddColumn<DeletedColumn>();
             }
+
+            Indexes.AddRange(mapping.Indexes);
+            ForeignKeys.AddRange(mapping.ForeignKeys);
         }
     }
 
