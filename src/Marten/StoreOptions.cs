@@ -32,7 +32,7 @@ namespace Marten
             = new ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>>();
 
 
-        public StorageProviders Storage { get; } 
+        public StorageFeatures Storage { get; } 
         public readonly IList<IInitialData> InitialData = new List<IInitialData>();
 
 
@@ -63,7 +63,7 @@ namespace Marten
             Events = new EventGraph(this);
             Schema = new MartenRegistry(this);
             Transforms = new Transforms.Transforms(this);
-            Storage = new StorageProviders(this);
+            Storage = new StorageFeatures(this);
         }
 
         /// <summary>

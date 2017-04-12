@@ -6,6 +6,7 @@ using System.Linq;
 using Baseline;
 using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Schema
 {
@@ -170,7 +171,8 @@ namespace Marten.Schema
             
         }
 
-        public void Apply(IConnectionFactory factory, AutoCreate autoCreate, ISchemaObject[] schemaObjects)
+        
+        public void Apply(NpgsqlConnection conn, AutoCreate autoCreate, ISchemaObject[] schemaObjects)
         {
             if (!schemaObjects.Any()) return;
 
@@ -178,32 +180,27 @@ namespace Marten.Schema
             // Per https://github.com/JasperFx/marten/issues/711
             if (autoCreate == AutoCreate.None) return;
 
-            using (var conn = factory.Create())
+            var cmd = conn.CreateCommand();
+            var builder = new CommandBuilder(cmd);
+
+            foreach (var schemaObject in schemaObjects)
             {
-                conn.Open();
-
-                var cmd = conn.CreateCommand();
-                var builder = new CommandBuilder(cmd);
-
-                foreach (var schemaObject in schemaObjects)
-                {
-                    schemaObject.ConfigureQueryCommand(builder);
-                }
-
-                cmd.CommandText = builder.ToString();
-
-                using (var reader = cmd.ExecuteReader())
-                {
-                    apply(schemaObjects[0], autoCreate, reader);
-                    for (int i = 1; i < schemaObjects.Length; i++)
-                    {
-                        reader.NextResult();
-                        apply(schemaObjects[i], autoCreate, reader);
-                    }
-                }
-
-                AssertPatchingIsValid(autoCreate);
+                schemaObject.ConfigureQueryCommand(builder);
             }
+
+            cmd.CommandText = builder.ToString();
+
+            using (var reader = cmd.ExecuteReader())
+            {
+                apply(schemaObjects[0], autoCreate, reader);
+                for (int i = 1; i < schemaObjects.Length; i++)
+                {
+                    reader.NextResult();
+                    apply(schemaObjects[i], autoCreate, reader);
+                }
+            }
+
+            AssertPatchingIsValid(autoCreate);
 
 
         }
@@ -214,9 +211,9 @@ namespace Marten.Schema
             Migrations.Add(new ObjectMigration(schemaObject, difference));
         }
 
-        public void Apply(IConnectionFactory factory, AutoCreate autoCreate, ISchemaObject schemaObject)
+        public void Apply(NpgsqlConnection connection, AutoCreate autoCreate, ISchemaObject schemaObject)
         {
-            Apply(factory, autoCreate, new ISchemaObject[] {schemaObject});
+            Apply(connection, autoCreate, new ISchemaObject[] {schemaObject});
         }
     }
 

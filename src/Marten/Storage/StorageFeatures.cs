@@ -7,7 +7,7 @@ using Marten.Schema;
 
 namespace Marten.Storage
 {
-    public class StorageProviders
+    public class StorageFeatures
     {
         private readonly StoreOptions _parent;
 
@@ -17,7 +17,7 @@ namespace Marten.Storage
         private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
             new ConcurrentDictionary<Type, IDocumentMapping>();
 
-        public StorageProviders(StoreOptions parent)
+        public StorageFeatures(StoreOptions parent)
         {
             _parent = parent;
         }
@@ -56,6 +56,11 @@ namespace Marten.Storage
         internal void AddMapping(IDocumentMapping mapping)
         {
             _mappings[mapping.DocumentType] = mapping;
+        }
+
+        public IFeatureSchema FindFeature(Type featureType)
+        {
+            throw new NotImplementedException();
         }
     }
 }

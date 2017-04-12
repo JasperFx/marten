@@ -43,7 +43,7 @@ namespace Marten.Testing.Storage
         public void determine_that_it_is_missing()
         {
             var patch = new SchemaPatch(new DdlRules());
-            patch.Apply(new ConnectionSource(), AutoCreate.All, theSequence);
+            patch.Apply(_conn, AutoCreate.All, theSequence);
 
             patch.Difference.ShouldBe(SchemaPatchDifference.Create);
         }
@@ -54,7 +54,7 @@ namespace Marten.Testing.Storage
             can_create_sequence_without_blowing_up();
 
             var patch = new SchemaPatch(new DdlRules());
-            patch.Apply(new ConnectionSource(), AutoCreate.All, theSequence);
+            patch.Apply(_conn, AutoCreate.All, theSequence);
 
             patch.Difference.ShouldBe(SchemaPatchDifference.None);
         }

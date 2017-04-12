@@ -9,7 +9,7 @@ namespace Marten.Storage
 
         bool IsActive { get; }
         string Identifier { get; }
-        IEnumerable<ISchemaObject> Objects { get; }
+        ISchemaObject[] Objects { get; }
 
         Type StorageType { get; }
     }
