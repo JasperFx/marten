@@ -3,6 +3,7 @@ using System.Linq;
 using Baseline;
 using System.Text.RegularExpressions;
 using System.Text;
+using Marten.Storage;
 
 namespace Marten.Schema
 {

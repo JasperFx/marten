@@ -18,6 +18,8 @@ namespace Marten.Storage
 
         public DbObjectName Identifier { get; }
 
+        public IList<IIndexDefinition> Indexes { get; } = new List<IIndexDefinition>();
+
         public Table(DbObjectName name)
         {
             Identifier = name;
@@ -106,6 +108,7 @@ namespace Marten.Storage
         {
             var schemaParam = builder.AddParameter(Identifier.Schema).ParameterName;
             var nameParam = builder.AddParameter(Identifier.Name).ParameterName;
+            var qualifiedNameParam = builder.AddParameter(Identifier.ToString()).ParameterName;
 
             builder.Append($@"
 select column_name, data_type, character_maximum_length 
@@ -120,6 +123,43 @@ where attrelid = (select pg_class.oid
                   join pg_catalog.pg_namespace n ON n.oid = pg_class.relnamespace
                   where n.nspname = :{schemaParam} and relname = :{nameParam})
 and i.indisprimary; 
+
+-- Indexes
+SELECT
+  U.usename                AS user_name,
+  ns.nspname               AS schema_name,
+  pg_catalog.textin(pg_catalog.regclassout(idx.indrelid :: REGCLASS)) AS table_name,
+  i.relname                AS index_name,
+  pg_get_indexdef(i.oid) as ddl,
+  idx.indisunique          AS is_unique,
+  idx.indisprimary         AS is_primary,
+  am.amname                AS index_type,
+  idx.indkey,
+       ARRAY(
+           SELECT pg_get_indexdef(idx.indexrelid, k + 1, TRUE)
+           FROM
+             generate_subscripts(idx.indkey, 1) AS k
+           ORDER BY k
+       ) AS index_keys,
+  (idx.indexprs IS NOT NULL) OR (idx.indkey::int[] @> array[0]) AS is_functional,
+  idx.indpred IS NOT NULL AS is_partial
+FROM pg_index AS idx
+  JOIN pg_class AS i
+    ON i.oid = idx.indexrelid
+  JOIN pg_am AS am
+    ON i.relam = am.oid
+  JOIN pg_namespace AS NS ON i.relnamespace = NS.OID
+  JOIN pg_user AS U ON i.relowner = U.usesysid
+WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%' AND pg_catalog.textin(pg_catalog.regclassout(idx.indrelid :: REGCLASS)) = :{qualifiedNameParam}; -- Excluding system table
+
+select constraint_name 
+from information_schema.table_constraints as c
+where 
+  c.constraint_name LIKE 'mt_%' and 
+  c.constraint_type = 'FOREIGN KEY' and 
+  c.table_schema = :{schemaParam} and
+  c.table_name = :{nameParam};
+
 ");
         }
 
@@ -192,26 +232,11 @@ and i.indisprimary;
 
         private Table readExistingTable(DbDataReader reader)
         {
-            var columns = new List<TableColumn>();
-            while (reader.Read())
-            {
-                var column = new TableColumn(reader.GetString(0), reader.GetString(1));
+            var columns = readColumns(reader);
+            var pks = readPrimaryKeys(reader);
+            readIndexes(reader);
+            readConstraints(reader);
 
-                if (!reader.IsDBNull(2))
-                {
-                    var length = reader.GetInt32(2);
-                    column.Type = $"{column.Type}({length})";
-                }
-
-                columns.Add(column);
-            }
-
-            var pks = new List<string>();
-            reader.NextResult();
-            while (reader.Read())
-            {
-                pks.Add(reader.GetString(0));
-            }
 
             if (!columns.Any()) return null;
 
@@ -228,6 +253,59 @@ and i.indisprimary;
 
 
             return existing;
+        }
+
+        private static void readConstraints(DbDataReader reader)
+        {
+            reader.NextResult();
+            var constraints = new List<string>();
+            while (reader.Read())
+            {
+                constraints.Add(reader.GetString(0));
+            }
+        }
+
+        private void readIndexes(DbDataReader reader)
+        {
+            reader.NextResult();
+            var indices = new List<ActualIndex>();
+            reader.NextResult();
+            while (reader.Read())
+            {
+                var index = new ActualIndex(Identifier, reader.GetString(3),
+                    reader.GetString(4));
+
+                indices.Add(index);
+            }
+        }
+
+        private static List<string> readPrimaryKeys(DbDataReader reader)
+        {
+            var pks = new List<string>();
+            reader.NextResult();
+            while (reader.Read())
+            {
+                pks.Add(reader.GetString(0));
+            }
+            return pks;
+        }
+
+        private static List<TableColumn> readColumns(DbDataReader reader)
+        {
+            var columns = new List<TableColumn>();
+            while (reader.Read())
+            {
+                var column = new TableColumn(reader.GetString(0), reader.GetString(1));
+
+                if (!reader.IsDBNull(2))
+                {
+                    var length = reader.GetInt32(2);
+                    column.Type = $"{column.Type}({length})";
+                }
+
+                columns.Add(column);
+            }
+            return columns;
         }
 
         public void SetPrimaryKey(string columnName)
