@@ -41,7 +41,7 @@
         "NETStandard.Library": "1.6.0",
         "System.Reflection.TypeExtensions": "4.1.0",
         "System.Linq.Expressions": "4.1.0",
-        "System.Data.Common": "4.1.0"
+        "System.Data.Common": "4.3.0"
       }
     },
     "net46": {
