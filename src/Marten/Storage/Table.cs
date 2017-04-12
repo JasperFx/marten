@@ -18,6 +18,7 @@ namespace Marten.Storage
 
         public DbObjectName Identifier { get; }
 
+        public IList<ForeignKeyDefinition> ForeignKeys { get; } = new List<ForeignKeyDefinition>();
         public IList<IIndexDefinition> Indexes { get; } = new List<IIndexDefinition>();
 
         public Table(DbObjectName name)
@@ -96,6 +97,18 @@ namespace Marten.Storage
             writer.WriteLine(");");
 
             writer.WriteLine(OriginWriter.OriginStatement("TABLE", Identifier.QualifiedName));
+
+            foreach (var foreignKey in ForeignKeys)
+            {
+                writer.WriteLine();
+                writer.WriteLine(foreignKey.ToDDL());
+            }
+
+            foreach (var index in Indexes)
+            {
+                writer.WriteLine();
+                writer.WriteLine(index.ToDDL());
+            }
         }
 
 
@@ -227,6 +240,11 @@ where
                 patch.Rollbacks.RemoveColumn(this, Identifier, missing.Name);
             }
 
+            delta.IndexChanges.Each(x => patch.Updates.Apply(this, x));
+            delta.IndexRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
+
+            delta.MissingForeignKeys.Each(x => patch.Updates.Apply(this, x.ToDDL()));
+
             return SchemaPatchDifference.Update;
         }
 
@@ -234,8 +252,8 @@ where
         {
             var columns = readColumns(reader);
             var pks = readPrimaryKeys(reader);
-            readIndexes(reader);
-            readConstraints(reader);
+            var indexes = readIndexes(reader);
+            var constraints = readConstraints(reader);
 
 
             if (!columns.Any()) return null;
@@ -251,11 +269,19 @@ where
                 existing.SetPrimaryKey(pks.First());
             }
 
+            existing.ActualIndices = indexes;
+            existing.ActualForeignKeys = constraints;
+
 
             return existing;
         }
 
-        private static void readConstraints(DbDataReader reader)
+        public List<string> ActualForeignKeys { get; set; }
+
+        public Dictionary<string, ActualIndex> ActualIndices { get; set; }
+
+
+        private static List<string> readConstraints(DbDataReader reader)
         {
             reader.NextResult();
             var constraints = new List<string>();
@@ -263,20 +289,24 @@ where
             {
                 constraints.Add(reader.GetString(0));
             }
+
+            return constraints;
         }
 
-        private void readIndexes(DbDataReader reader)
+        private Dictionary<string, ActualIndex> readIndexes(DbDataReader reader)
         {
-            reader.NextResult();
-            var indices = new List<ActualIndex>();
+            var dict = new Dictionary<string, ActualIndex>();
+
             reader.NextResult();
             while (reader.Read())
             {
                 var index = new ActualIndex(Identifier, reader.GetString(3),
                     reader.GetString(4));
 
-                indices.Add(index);
+                dict.Add(index.Name, index);
             }
+
+            return dict;
         }
 
         private static List<string> readPrimaryKeys(DbDataReader reader)

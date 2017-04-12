@@ -7,6 +7,7 @@ using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Util;
 using Npgsql;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Storage
@@ -33,10 +34,12 @@ namespace Marten.Testing.Storage
 
         protected DocumentTable theTable => _table.Value;
 
-        private void writeTable()
+        private void writeTable(Table table = null)
         {
+            table = table ?? theTable;
+
             var writer = new StringWriter();
-            theTable.Write(new DdlRules(), writer);
+            table.Write(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -125,6 +128,48 @@ namespace Marten.Testing.Storage
             patch.Apply(new ConnectionSource(), autoCreate, new ISchemaObject[] {table});
 
             _conn.CreateCommand(patch.UpdateDDL).ExecuteNonQuery();
+        }
+
+        [Fact]
+        public void can_create_with_indexes()
+        {
+            theMapping.Index(x => x.UserName);
+            theMapping.Index(x => x.FirstName);
+
+            writeTable();
+
+            var existing = theTable.FetchExisting(_conn);
+            existing.ActualIndices.Count.ShouldBe(2);
+        }
+
+        [Fact]
+        public void matches_on_indexes()
+        {
+            theMapping.Index(x => x.UserName);
+            theMapping.Index(x => x.FirstName);
+
+            writeTable();
+
+            var delta = theTable.FetchDelta(_conn);
+
+            delta.IndexChanges.Any().ShouldBeFalse();
+            delta.IndexRollbacks.Any().ShouldBeFalse();
+        }
+
+        [Fact]
+        public void can_spot_an_extra_index()
+        {
+            theMapping.Index(x => x.UserName);
+
+            writeTable();
+
+            theMapping.Index(x => x.FirstName);
+            var table = new DocumentTable(theMapping);
+
+            var delta = table.FetchDelta(_conn);
+
+            delta.IndexChanges.Count.ShouldBe(1);
+            delta.IndexRollbacks.Count.ShouldBe(1);
         }
 
         [Fact]
