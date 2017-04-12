@@ -15,7 +15,7 @@ namespace Marten.Testing.Storage
     {
         private readonly NpgsqlConnection _conn;
         private readonly Lazy<DocumentTable> _table;
-        private DocumentMapping<User> theMapping;
+        private readonly DocumentMapping<User> theMapping;
 
         public DocumentTableTester()
         {

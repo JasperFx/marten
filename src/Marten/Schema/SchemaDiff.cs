@@ -93,7 +93,7 @@ namespace Marten.Schema
         {
             TableDiff.CreatePatch(_mapping, patch);
 
-            FunctionDiff.WritePatch(options, patch);
+            FunctionDiff.WritePatch(patch);
 
             IndexChanges.Each(x => patch.Updates.Apply(this, x));
             IndexRollbacks.Each(x => patch.Rollbacks.Apply(this, x));

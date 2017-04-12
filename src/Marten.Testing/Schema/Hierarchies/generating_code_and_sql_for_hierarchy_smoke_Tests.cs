@@ -22,7 +22,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteFunctionSql(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -35,7 +35,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteFunctionSql(new DdlRules
+            new UpsertFunction(theHierarchy).Write(new DdlRules
             {
                 UpsertRights = SecurityRights.Definer
             }, writer);
@@ -50,7 +50,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteFunctionSql(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -63,7 +63,7 @@ namespace Marten.Testing.Schema.Hierarchies
             var writer = new StringWriter();
 
             theHierarchy.UseOptimisticConcurrency = true;
-            new UpsertFunction(theHierarchy).WriteFunctionSql(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -76,7 +76,7 @@ namespace Marten.Testing.Schema.Hierarchies
             var writer = new StringWriter();
 
             theHierarchy.UseOptimisticConcurrency = true;
-            new UpsertFunction(theHierarchy).WriteFunctionSql(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -102,7 +102,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteFunctionSql(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -114,7 +114,7 @@ namespace Marten.Testing.Schema.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteFunctionSql(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
