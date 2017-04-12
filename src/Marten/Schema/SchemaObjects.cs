@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Baseline;
 using Marten.Generation;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Schema

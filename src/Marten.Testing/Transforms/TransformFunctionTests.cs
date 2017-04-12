@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Transforms;
 using Marten.Util;
