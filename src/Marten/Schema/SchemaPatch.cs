@@ -6,7 +6,6 @@ using System.Linq;
 using Baseline;
 using Marten.Storage;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Schema
 {
@@ -213,6 +212,11 @@ namespace Marten.Schema
         {
             var difference = schemaObject.CreatePatch(reader, this, autoCreate);
             Migrations.Add(new ObjectMigration(schemaObject, difference));
+        }
+
+        public void Apply(IConnectionFactory factory, AutoCreate autoCreate, ISchemaObject schemaObject)
+        {
+            Apply(factory, autoCreate, new ISchemaObject[] {schemaObject});
         }
     }
 
