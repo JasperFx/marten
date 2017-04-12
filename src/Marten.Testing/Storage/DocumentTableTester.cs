@@ -125,7 +125,8 @@ namespace Marten.Testing.Storage
         private void writeAndApplyPatch(AutoCreate autoCreate, DocumentTable table)
         {
             var patch = new SchemaPatch(new DdlRules());
-            patch.Apply(new ConnectionSource(), autoCreate, new ISchemaObject[] {table});
+
+            patch.Apply(_conn, autoCreate, new ISchemaObject[] {table});
 
             _conn.CreateCommand(patch.UpdateDDL).ExecuteNonQuery();
         }

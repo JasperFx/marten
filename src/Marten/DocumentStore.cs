@@ -119,7 +119,7 @@ namespace Marten
         private readonly IMartenLogger _logger;
         private readonly CharArrayTextWriter.IPool _writerPool;
 
-        internal StorageProviders Storage { get; }
+        internal StorageFeatures Storage { get; }
         public ISerializer Serializer { get; }
 
         public virtual void Dispose()
