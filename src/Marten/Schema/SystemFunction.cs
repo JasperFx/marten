@@ -2,6 +2,7 @@
 using System.IO;
 using Baseline;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Schema
@@ -41,7 +42,7 @@ namespace Marten.Schema
             diff.WritePatch(patch);
         }
 
-        private FunctionDiff createFunctionDiff(IDocumentSchema schema)
+        private FunctionDelta createFunctionDiff(IDocumentSchema schema)
         {
             var actual = schema.DbObjects.DefinitionForFunction(_function);
 
@@ -49,7 +50,7 @@ namespace Marten.Schema
 
             var expected = new FunctionBody(_function, new string[] { _dropSql }, expectedBody);
 
-            return new FunctionDiff(expected, actual);
+            return new FunctionDelta(expected, actual);
         }
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Marten.Generation;
+using Marten.Storage;
 
 namespace Marten.Schema
 {

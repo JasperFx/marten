@@ -52,7 +52,7 @@ namespace Marten.Schema
 
                 var expectedFunction = new UpsertFunction(mapping);
 
-                FunctionDiff = new FunctionDiff(expectedFunction.ToBody(rules), existing.Function);
+                FunctionDiff = new FunctionDelta(expectedFunction.ToBody(rules), existing.Function);
 
                 var missingFKs = mapping.ForeignKeys.Where(x => !existing.ForeignKeys.Contains(x.KeyName));
                 MissingForeignKeys.AddRange(missingFKs);
@@ -65,7 +65,7 @@ namespace Marten.Schema
 
         public IList<ForeignKeyDefinition> MissingForeignKeys { get; } = new List<ForeignKeyDefinition>();
 
-        public FunctionDiff FunctionDiff { get; set; }
+        public FunctionDelta FunctionDiff { get; set; }
 
         public bool HasDifferences()
         {

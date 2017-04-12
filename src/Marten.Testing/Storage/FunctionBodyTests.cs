@@ -1,8 +1,9 @@
 ﻿using Marten.Schema;
+using Marten.Storage;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Schema
+namespace Marten.Testing.Storage
 {
     public class FunctionBodyTests
     {

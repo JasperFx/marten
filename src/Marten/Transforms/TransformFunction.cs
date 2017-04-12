@@ -5,6 +5,7 @@ using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Transforms
@@ -125,12 +126,12 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
             return new TransformFunction(options, name, body);
         }
 
-        private FunctionDiff functionDiff(IDocumentSchema schema)
+        private FunctionDelta functionDiff(IDocumentSchema schema)
         {
             var body = schema.DbObjects.DefinitionForFunction(Function);
             var expected = new FunctionBody(Function, new string[] {ToDropSignature()}, GenerateFunction());
 
-            return new FunctionDiff(expected, body);
+            return new FunctionDelta(expected, body);
         }
 
         public override string ToString()

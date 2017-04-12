@@ -2,8 +2,9 @@
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Schema;
 
-namespace Marten.Schema
+namespace Marten.Storage
 {
     public class FunctionBody
     {
