@@ -52,6 +52,8 @@ namespace Marten.Schema
             _liveRunner = liveRunner;
         }
 
+        public StringWriter DownWriter => _down.Writer;
+
         public StringWriter UpWriter => _up.Writer;
 
         public IDDLRunner Updates => _liveRunner ?? _up;

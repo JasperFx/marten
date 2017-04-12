@@ -41,7 +41,7 @@ namespace Marten.Schema
             writer.WriteLine();
 
             var function = new UpsertFunction(_mapping);
-            function.WriteFunctionSql(rules, writer);
+            function.Write(rules, writer);
             
 
             _mapping.ForeignKeys.Each(x =>

@@ -1,15 +1,16 @@
 ﻿using System;
 using Baseline;
+using Marten.Schema;
 using Marten.Util;
 
-namespace Marten.Schema
+namespace Marten.Storage
 {
-    public class FunctionDiff
+    public class FunctionDelta
     {
         public FunctionBody Expected { get; set; }
         public FunctionBody Actual { get; set; }
 
-        public FunctionDiff(FunctionBody expected, FunctionBody actual)
+        public FunctionDelta(FunctionBody expected, FunctionBody actual)
         {
             Expected = expected;
             Actual = actual;

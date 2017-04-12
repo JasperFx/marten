@@ -1,18 +1,19 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Storage
 {
-    public class UpsertFunction
+    public class UpsertFunction : ISchemaObject
     {
         private readonly string _primaryKeyConstraintName;
-        private readonly DbObjectName _functionName;
         private readonly DbObjectName _tableName;
 
         public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
@@ -21,7 +22,7 @@ namespace Marten.Storage
         {
             if (mapping == null) throw new ArgumentNullException(nameof(mapping));
 
-            _functionName = mapping.UpsertFunction;
+            Identifier = mapping.UpsertFunction;
             _tableName = mapping.Table;
             _primaryKeyConstraintName = "pk_" + mapping.Table.Name;
                 
@@ -56,7 +57,7 @@ namespace Marten.Storage
 
         }
 
-        public void WriteFunctionSql(DdlRules rules, StringWriter writer)
+        public void Write(DdlRules rules, StringWriter writer)
         {
             var ordered = OrderedArguments();
 
@@ -81,7 +82,7 @@ namespace Marten.Storage
             
 
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {_functionName.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {securityDeclaration} AS $function$
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {securityDeclaration} AS $function$
 DECLARE
   final_version uuid;
 BEGIN
@@ -106,13 +107,113 @@ $function$;
 
         public FunctionBody ToBody(DdlRules rules)
         {
-            var argList = OrderedArguments().Select(x => x.PostgresType).Join(", ");
-            var dropSql = $"drop function if exists {_functionName.QualifiedName}({argList});";
+            var dropSql = toDropSql();
 
             var writer = new StringWriter();
-            WriteFunctionSql(rules, writer);
+            Write(rules, writer);
 
-            return new FunctionBody(_functionName, new string[] {dropSql}, writer.ToString());
+            return new FunctionBody(Identifier, new string[] {dropSql}, writer.ToString());
+        }
+
+        private string toDropSql()
+        {
+            var argList = OrderedArguments().Select(x => x.PostgresType).Join(", ");
+            var dropSql = $"drop function if exists {Identifier.QualifiedName}({argList});";
+            return dropSql;
+        }
+
+        public void WriteDropStatement(DdlRules rules, StringWriter writer)
+        {
+            var dropSql = toDropSql();
+            writer.WriteLine(dropSql);
+        }
+
+        public DbObjectName Identifier { get; }
+
+        public void ConfigureQueryCommand(CommandBuilder builder)
+        {
+            var schemaParam = builder.AddParameter(Identifier.Schema).ParameterName;
+            var nameParam = builder.AddParameter(Identifier.Name).ParameterName;
+
+            builder.Append($@"
+SELECT pg_get_functiondef(pg_proc.oid) 
+FROM pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid WHERE ns.nspname = :{schemaParam} and proname = :{nameParam};
+
+SELECT format('DROP FUNCTION %s.%s(%s);'
+             ,n.nspname
+             ,p.proname
+             ,pg_get_function_identity_arguments(p.oid))
+FROM   pg_proc p
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
+WHERE  p.proname = :{nameParam}
+AND    n.nspname = :{schemaParam};
+");
+        }
+
+        private FunctionDelta fetchDelta(DbDataReader reader, DdlRules rules)
+        {
+            if (!reader.Read()) return null;
+
+            var upsertDefinition = reader.GetString(0);
+
+            reader.NextResult();
+            var drops = new List<string>();
+            while (reader.Read())
+            {
+                drops.Add(reader.GetString(0));
+            }
+
+            if (upsertDefinition == null) return null;
+
+            var actualBody = new FunctionBody(Identifier, drops.ToArray(), upsertDefinition);
+
+            var expectedBody = ToBody(rules);
+
+            return new FunctionDelta(expectedBody, actualBody);
+        }
+
+        public FunctionDelta FetchDelta(NpgsqlConnection conn, DdlRules rules)
+        {
+            var cmd = conn.CreateCommand();
+            var builder = new CommandBuilder(cmd);
+
+            ConfigureQueryCommand(builder);
+
+            cmd.CommandText = builder.ToString();
+
+            using (var reader = cmd.ExecuteReader())
+            {
+                return fetchDelta(reader, rules);
+            }
+        }
+
+        public SchemaPatchDifference CreatePatch(DbDataReader reader, SchemaPatch patch, AutoCreate autoCreate)
+        {
+            var diff = fetchDelta(reader, patch.Rules);
+            if (diff == null)
+            {
+                Write(patch.Rules, patch.UpWriter);
+                WriteDropStatement(patch.Rules, patch.DownWriter);
+
+                return SchemaPatchDifference.Create;
+            }
+
+            if (diff.AllNew)
+            {
+                Write(patch.Rules, patch.UpWriter);
+                WriteDropStatement(patch.Rules, patch.DownWriter);
+
+                return SchemaPatchDifference.Create;
+            }
+
+            if (diff.HasChanged)
+            {
+                diff.WritePatch(patch);
+
+                return SchemaPatchDifference.Update;
+            }
+
+            return SchemaPatchDifference.None;
         }
     }
 }
