@@ -48,7 +48,7 @@ namespace Marten.Schema
 
             _sequences = new Lazy<SequenceFactory>(() =>
             {
-                var sequences = new SequenceFactory(this, _factory, StoreOptions, _logger);
+                var sequences = new SequenceFactory(StoreOptions);
 
                 var patch = new SchemaPatch(StoreOptions.DdlRules);
 
@@ -171,7 +171,7 @@ namespace Marten.Schema
 
                 assertNoDuplicateDocumentAliases();
 
-                var storage = mapping.BuildStorage(this);
+                var storage = mapping.BuildStorage(StoreOptions);
 
                 buildSchemaObjectsIfNecessary(mapping);
 
@@ -393,7 +393,7 @@ namespace Marten.Schema
             foreach (var mapping in mappings)
                 yield return mapping.SchemaObjects;
 
-            yield return new SequenceFactory(this, _factory, StoreOptions, _logger);
+            yield return new SequenceFactory(StoreOptions);
 
             foreach (var transform in StoreOptions.Transforms.AllFunctions().OrderBy(x => x.Name))
                 yield return transform;

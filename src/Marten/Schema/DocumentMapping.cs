@@ -112,13 +112,13 @@ namespace Marten.Schema
             return new WhereFragment($"d.{DeletedColumn} = False");
         }
 
-        IDocumentStorage IDocumentMapping.BuildStorage(IDocumentSchema schema)
+        IDocumentStorage IDocumentMapping.BuildStorage(StoreOptions options)
         {
             var resolverType = IsHierarchy() ? typeof(HierarchicalDocumentStorage<>) : typeof(DocumentStorage<>);
 
             var closedType = resolverType.MakeGenericType(DocumentType);
 
-            return Activator.CreateInstance(closedType, schema.StoreOptions.Serializer(), this, schema.StoreOptions.UseCharBufferPooling)
+            return Activator.CreateInstance(closedType, options.Serializer(), this, options.UseCharBufferPooling)
                 .As<IDocumentStorage>();
         }
 
@@ -149,7 +149,7 @@ namespace Marten.Schema
 
         public IDocumentUpsert BuildUpsert(IDocumentSchema schema)
         {
-            return this.As<IDocumentMapping>().BuildStorage(schema).As<IDocumentUpsert>();
+            return this.As<IDocumentMapping>().BuildStorage(schema.StoreOptions).As<IDocumentUpsert>();
         }
 
         public Type IdType => IdMember?.GetMemberType();

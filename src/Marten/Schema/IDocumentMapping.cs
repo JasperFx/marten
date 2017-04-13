@@ -9,7 +9,7 @@ namespace Marten.Schema
     {
         Type DocumentType { get; }
 
-        IDocumentStorage BuildStorage(IDocumentSchema schema);
+        IDocumentStorage BuildStorage(StoreOptions options);
 
         IDocumentSchemaObjects SchemaObjects { get; }
         DbObjectName Table { get; }
