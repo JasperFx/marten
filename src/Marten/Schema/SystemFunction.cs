@@ -13,11 +13,17 @@ namespace Marten.Schema
         private readonly string _dropSql;
 
         public SystemFunction(StoreOptions options, string functionName, string args)
-            : base(new DbObjectName(options.DatabaseSchemaName, functionName))
+            : this(options.DatabaseSchemaName, functionName, args)
+        {
+
+        }
+
+        public SystemFunction(string schema, string functionName, string args)
+            : base(new DbObjectName(schema, functionName))
         {
             _args = args;
-            _function = new DbObjectName(options.DatabaseSchemaName, functionName);
-            _dropSql = $"drop function if exists {options.DatabaseSchemaName}.{functionName}({args}) cascade";
+            _function = new DbObjectName(schema, functionName);
+            _dropSql = $"drop function if exists {schema}.{functionName}({args}) cascade";
 
             Name = functionName;
         }

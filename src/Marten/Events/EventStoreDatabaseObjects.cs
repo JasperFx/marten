@@ -8,6 +8,7 @@ using Marten.Util;
 
 namespace Marten.Events
 {
+    [Obsolete]
     public class EventStoreDatabaseObjects : IDocumentSchemaObjects
     {
         private readonly EventGraph _parent;
