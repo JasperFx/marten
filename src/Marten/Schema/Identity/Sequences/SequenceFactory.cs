@@ -11,7 +11,6 @@ namespace Marten.Schema.Identity.Sequences
 {
     public class SequenceFactory : ISequences, ISchemaObjects, IFeatureSchema
     {
-        private readonly IConnectionFactory _factory;
         private readonly StoreOptions _options;
         private bool _checked = false;
         private readonly ConcurrentDictionary<Type, ISequence> _sequences = new ConcurrentDictionary<Type, ISequence>();
@@ -20,7 +19,6 @@ namespace Marten.Schema.Identity.Sequences
 
         public SequenceFactory(StoreOptions options)
         {
-            _factory = options.ConnectionFactory();
             _options = options;
         }
 
@@ -32,7 +30,7 @@ namespace Marten.Schema.Identity.Sequences
 
         public ISequence Hilo(Type documentType, HiloSettings settings)
         {
-            return _sequences.GetOrAdd(documentType, type => new HiloSequence(_factory, _options, documentType.Name, settings));
+            return _sequences.GetOrAdd(documentType, type => new HiloSequence(_options.ConnectionFactory(), _options, documentType.Name, settings));
         }
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
