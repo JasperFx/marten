@@ -1,19 +1,19 @@
 ﻿using System;
 using System.IO;
-using Baseline;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class SystemFunction : ISchemaObjects
+    public class SystemFunction : Function, ISchemaObjects
     {
         private readonly string _args;
         private readonly DbObjectName _function;
         private readonly string _dropSql;
 
         public SystemFunction(StoreOptions options, string functionName, string args)
+            : base(new DbObjectName(options.DatabaseSchemaName, functionName))
         {
             _args = args;
             _function = new DbObjectName(options.DatabaseSchemaName, functionName);
@@ -78,5 +78,19 @@ namespace Marten.Schema
         }
 
         public string Name { get; }
+
+        public override void Write(DdlRules rules, StringWriter writer)
+        {
+            var body = SchemaBuilder.GetSqlScript(Identifier.Schema, Identifier.Name);
+
+
+            writer.WriteLine(body);
+            writer.WriteLine("");
+        }
+
+        protected override string toDropSql()
+        {
+            return _dropSql;
+        }
     }
 }
