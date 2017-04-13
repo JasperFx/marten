@@ -13,7 +13,7 @@ namespace Marten.Schema
         /// <summary>
         /// The original StoreOptions used to configure this DocumentStore
         /// </summary>
-        
+        [Obsolete("Move off of DocumentStore")]
         StoreOptions StoreOptions { get; }
 
         /// <summary>
@@ -22,6 +22,7 @@ namespace Marten.Schema
         /// </summary>
         /// <param name="documentType"></param>
         /// <returns></returns>
+        [Obsolete("Move to StorageFeatures")]
         IDocumentStorage StorageFor(Type documentType);
 
         /// <summary>
@@ -30,6 +31,7 @@ namespace Marten.Schema
         /// </summary>
         /// <param name="documentType"></param>
         /// <returns></returns>
+        [Obsolete("Move to StorageFeatures")]
         IDocumentMapping MappingFor(Type documentType);
 
         /// <summary>
@@ -37,16 +39,19 @@ namespace Marten.Schema
         /// and also attempts to update the database schema for any detected changes
         /// </summary>
         /// <param name="documentType"></param>
+        [Obsolete("Move to StorageFeatures & Tenant")]
         void EnsureStorageExists(Type documentType);
 
         /// <summary>
         /// Used to create new Hilo sequences 
         /// </summary>
+        [Obsolete("Move to StorageFeatures")]
         ISequences Sequences { get; }
 
         /// <summary>
         /// The event store configuration
         /// </summary>
+        [Obsolete("Hang off of DocumentStore directly")]
         EventGraph Events { get; }
 
 
@@ -75,9 +80,10 @@ namespace Marten.Schema
 
         string[] AllSchemaNames();
 
+        [Obsolete("Move to StorageFeatures")]
         IDocumentStorage<T> StorageFor<T>();
 
-
+        [Obsolete("Move to StorageFeatures")]
         IdAssignment<T> IdAssignmentFor<T>();
 
 
@@ -88,6 +94,7 @@ namespace Marten.Schema
         /// Directs Marten to disregard any previous schema checks. Useful
         /// if you change the underlying schema without shutting down the document store
         /// </summary>
+        [Obsolete("Move to StorageFeatures and Tenant")]
         void ResetSchemaExistenceChecks();
 
 
@@ -96,6 +103,7 @@ namespace Marten.Schema
         /// </summary>
         IDbObjects DbObjects { get; }
 
+        [Obsolete("Move to StorageFeatures")]
         IEnumerable<IDocumentMapping> AllMappings { get; }
 
         /// <summary>
@@ -103,6 +111,7 @@ namespace Marten.Schema
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
+        [Obsolete("Move to StorageFeatures")]
         IBulkLoader<T> BulkLoaderFor<T>();
 
         /// <summary>
@@ -110,6 +119,7 @@ namespace Marten.Schema
         /// </summary>
         /// <param name="documentType"></param>
         /// <returns></returns>
+        [Obsolete("Move to StorageFeatures")]
         IDocumentUpsert UpsertFor(Type documentType);
 
         /// <summary>
@@ -141,6 +151,7 @@ namespace Marten.Schema
         /// </summary>
         void ApplyAllConfiguredChangesToDatabase();
 
+        [Obsolete("Move to StorageFeatures")]
         void EnsureFunctionExists(string functionName);
 
 
