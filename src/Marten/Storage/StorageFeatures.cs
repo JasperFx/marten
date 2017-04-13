@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Schema.Identity.Sequences;
 
 namespace Marten.Storage
 {
@@ -17,11 +18,28 @@ namespace Marten.Storage
         private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
             new ConcurrentDictionary<Type, IDocumentMapping>();
 
+        private readonly Dictionary<Type, IFeatureSchema> _features = new Dictionary<Type, IFeatureSchema>();
+
         public StorageFeatures(StoreOptions parent)
         {
             _parent = parent;
+
             SystemFunctions = new SystemFunctions(parent);
+            Sequences = new SequenceFactory(parent);
+
+            store(SystemFunctions);
+            store(parent.Transforms.As<IFeatureSchema>());
+            store(Sequences);
         }
+
+        public SequenceFactory Sequences { get;}
+
+        private void store(IFeatureSchema feature)
+        {
+            _features.Add(feature.StorageType, feature);
+        }
+
+        
 
         public SystemFunctions SystemFunctions { get; }
 
@@ -63,11 +81,6 @@ namespace Marten.Storage
 
         public IFeatureSchema FindFeature(Type featureType)
         {
-            if (featureType == typeof(SystemFunctions))
-            {
-                return SystemFunctions;
-            }
-
             throw new NotImplementedException();
         }
 
