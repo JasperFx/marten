@@ -24,7 +24,7 @@ namespace Marten.Testing.Transforms
                 "module.exports = function(doc){return doc;};");
 
 
-            func.Function.Name.ShouldBe("mt_transform_something");
+            func.Identifier.Name.ShouldBe("mt_transform_something");
         }
 
         [Fact]
@@ -33,7 +33,7 @@ namespace Marten.Testing.Transforms
             var func = new TransformFunction(new StoreOptions(), "nfl.team.chiefs",
                 "module.exports = function(doc){return doc;};");
 
-            func.Function.Name.ShouldBe("mt_transform_nfl_team_chiefs");
+            func.Identifier.Name.ShouldBe("mt_transform_nfl_team_chiefs");
         }
 
         [Fact]
@@ -48,7 +48,7 @@ namespace Marten.Testing.Transforms
                 "module.exports = function(doc){return doc;};");
 
 
-            func.Function.Schema.ShouldBe("other");
+            func.Identifier.Schema.ShouldBe("other");
 
         }
 
@@ -62,7 +62,7 @@ namespace Marten.Testing.Transforms
 
             func.Body.ShouldContain("module.exports");
 
-            func.Function.Name.ShouldBe("mt_transform_get_fullname");
+            func.Identifier.Name.ShouldBe("mt_transform_get_fullname");
         }
 
         [Fact]
@@ -166,9 +166,9 @@ namespace Marten.Testing.Transforms
 
             var func = TransformFunction.ForFile(new StoreOptions(), _getFullnameJs);
 
-            var body = new FunctionBody(func.Function, new string[0], func.GenerateFunction());
+            var body = new FunctionBody(func.Identifier, new string[0], func.GenerateFunction());
 
-            dbobjects.DefinitionForFunction(func.Function).Returns(body);
+            dbobjects.DefinitionForFunction(func.Identifier).Returns(body);
 
             var patch = new SchemaPatch(new DdlRules());
 
@@ -177,7 +177,7 @@ namespace Marten.Testing.Transforms
             var generated = func.GenerateFunction();
 
             patch.UpdateDDL.ShouldNotContain(generated);
-            patch.RollbackDDL.ShouldNotContain(func.Function.QualifiedName);
+            patch.RollbackDDL.ShouldNotContain(func.Identifier.QualifiedName);
         }
 
         [Fact]

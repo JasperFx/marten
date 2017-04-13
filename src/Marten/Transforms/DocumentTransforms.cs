@@ -57,7 +57,7 @@ namespace Marten.Transforms
             sql.Append("update ");
             sql.Append(mapping.Table.QualifiedName);
             sql.Append(" as d set data = ");
-            sql.Append(transform.Function.QualifiedName);
+            sql.Append(transform.Identifier.QualifiedName);
             sql.Append("(data), ");
             sql.Append(DocumentMapping.LastModifiedColumn);
             sql.Append(" = (now() at time zone 'utc'), ");
