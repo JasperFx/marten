@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using Baseline;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Schema.Identity.Sequences
 {
-    public class SequenceFactory : ISequences, ISchemaObjects
+    public class SequenceFactory : ISequences, ISchemaObjects, IFeatureSchema
     {
         private readonly IConnectionFactory _factory;
         private readonly StoreOptions _options;
@@ -90,5 +92,31 @@ namespace Marten.Schema.Identity.Sequences
 
 
         public string Name { get; } = "mt_hilo";
+        public IEnumerable<Type> DependentTypes()
+        {
+            yield break;
+        }
+
+        public bool IsActive { get; set; }
+
+        public ISchemaObject[] Objects
+        {
+            get
+            {
+                var table = new Table(new DbObjectName(_options.DatabaseSchemaName, "mt_hilo"));
+                table.AddPrimaryKey(new TableColumn("entity_name", "varchar"));
+                table.AddColumn("hi_value", "bigint", "default 0");
+
+                var function = new SystemFunction(_options, "mt_get_next_hi", "varchar");
+
+                return new ISchemaObject[]
+                {
+                    table,
+                    function
+                };
+            }
+        }
+
+        public Type StorageType { get; } = typeof(SequenceFactory);
     }
 }
