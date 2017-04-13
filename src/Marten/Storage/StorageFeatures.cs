@@ -10,7 +10,7 @@ namespace Marten.Storage
 {
     public class StorageFeatures
     {
-        private readonly StoreOptions _parent;
+        private readonly StoreOptions _options;
 
         private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
             new ConcurrentDictionary<Type, DocumentMapping>();
@@ -20,16 +20,18 @@ namespace Marten.Storage
 
         private readonly Dictionary<Type, IFeatureSchema> _features = new Dictionary<Type, IFeatureSchema>();
 
-        public StorageFeatures(StoreOptions parent)
+        public StorageFeatures(StoreOptions options)
         {
-            _parent = parent;
+            _options = options;
 
-            SystemFunctions = new SystemFunctions(parent);
-            Sequences = new SequenceFactory(parent);
+            SystemFunctions = new SystemFunctions(options);
+            Sequences = new SequenceFactory(options);
 
             store(SystemFunctions);
-            store(parent.Transforms.As<IFeatureSchema>());
+            store(options.Transforms.As<IFeatureSchema>());
             store(Sequences);
+
+            store(options.Events);
         }
 
         public SequenceFactory Sequences { get;}
@@ -49,7 +51,7 @@ namespace Marten.Storage
         {
             return _documentMappings.GetOrAdd(documentType, type =>
             {
-                var mapping = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_parent, documentType);
+                var mapping = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType);
 
                 if (mapping.IdMember == null)
                 {

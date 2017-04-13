@@ -107,7 +107,7 @@ namespace Marten.Events
 
     }
 
-    public class EventMapping<T> : EventMapping, IDocumentStorage, IDocumentStorage<T> where T : class
+    public class EventMapping<T> : EventMapping, IDocumentStorage<T> where T : class
     {
         private readonly string _tableName;
 

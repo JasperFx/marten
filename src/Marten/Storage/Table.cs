@@ -67,6 +67,8 @@ namespace Marten.Storage
             return _columns.GetEnumerator();
         }
 
+        public readonly IList<string> Constraints = new List<string>();
+
         public virtual void Write(DdlRules rules, StringWriter writer)
         {
             if (rules.TableCreation == CreationStyle.DropThenCreate)
@@ -81,10 +83,12 @@ namespace Marten.Storage
 
             var length = _columns.Select(x => x.Name.Length).Max() + 4;
 
-            foreach (var column in _columns)
+            var lines = _columns.Select(x => x.ToDeclaration(length)).Concat(Constraints);
+
+            foreach (var line in lines)
             {
-                writer.Write($"    {column.ToDeclaration(length)}");
-                if (ReferenceEquals(column, _columns.Last()))
+                writer.Write($"    {line}");
+                if (ReferenceEquals(line, lines.Last()))
                 {
                     writer.WriteLine();
                 }
