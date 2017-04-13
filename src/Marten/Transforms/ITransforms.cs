@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Baseline;
+using Marten.Storage;
 
 namespace Marten.Transforms
 {
@@ -19,7 +21,7 @@ namespace Marten.Transforms
         IEnumerable<TransformFunction> AllFunctions();
     }
 
-    public class Transforms : ITransforms
+    public class Transforms : ITransforms, IFeatureSchema
     {
         private readonly StoreOptions _options;
 
@@ -80,5 +82,16 @@ namespace Marten.Transforms
         {
             return _functions.Values;
         }
+
+        public IEnumerable<Type> DependentTypes()
+        {
+            yield break;
+        }
+
+        // TODO -- turn this off if PLV8 is disabled
+        public bool IsActive { get; } = true;
+
+        public ISchemaObject[] Objects => _functions.Values.OfType<ISchemaObject>().ToArray();
+        public Type StorageType { get; } = typeof(Transforms);
     }
 }
