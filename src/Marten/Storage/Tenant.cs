@@ -12,14 +12,11 @@ namespace Marten.Storage
         private readonly ConcurrentDictionary<Type, bool> _checks = new ConcurrentDictionary<Type, bool>();
         private readonly IConnectionFactory _factory;
         private readonly StorageFeatures _features;
-        private readonly IMartenLogger _logger;
         private readonly StoreOptions _options;
 
-        public Tenant(IMartenLogger logger, StorageFeatures features, StoreOptions options, IConnectionFactory factory,
-            string tenantId)
+        public Tenant(StorageFeatures features, StoreOptions options, IConnectionFactory factory, string tenantId)
         {
             TenantId = tenantId;
-            _logger = logger;
             _features = features;
             _options = options;
             _factory = factory;
