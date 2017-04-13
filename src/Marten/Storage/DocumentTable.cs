@@ -1,3 +1,5 @@
+using System.IO;
+using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Util;
@@ -35,6 +37,8 @@ namespace Marten.Storage
             Indexes.AddRange(mapping.Indexes);
             ForeignKeys.AddRange(mapping.ForeignKeys);
         }
+
+
     }
 
     public abstract class SystemColumn : TableColumn

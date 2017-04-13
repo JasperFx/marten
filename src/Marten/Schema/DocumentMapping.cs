@@ -16,7 +16,7 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public class DocumentMapping : FieldCollection, IDocumentMapping, IQueryableDocument
+    public class DocumentMapping : FieldCollection, IDocumentMapping, IQueryableDocument, IFeatureSchema
     {
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
@@ -483,6 +483,20 @@ namespace Marten.Schema
             return $"Storage for {DocumentType}, Table: {Table}";
         }
 
+        IEnumerable<Type> IFeatureSchema.DependentTypes()
+        {
+            return ForeignKeys.Select(x => x.ReferenceDocumentType);
+        }
+
+        bool IFeatureSchema.IsActive => true;
+
+        ISchemaObject[] IFeatureSchema.Objects => new ISchemaObject[]
+        {
+            new DocumentTable(this),
+            new UpsertFunction(this),  
+        };
+
+        Type IFeatureSchema.StorageType => DocumentType;
     }
 
     public class DocumentMapping<T> : DocumentMapping

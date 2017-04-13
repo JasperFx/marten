@@ -13,6 +13,7 @@ namespace Marten.Schema
         /// <summary>
         /// The original StoreOptions used to configure this DocumentStore
         /// </summary>
+        
         StoreOptions StoreOptions { get; }
 
         /// <summary>
