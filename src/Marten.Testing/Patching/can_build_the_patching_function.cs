@@ -11,7 +11,7 @@ namespace Marten.Testing.Patching
             var transform = theStore.Schema.TransformFor("patch_doc");
 
             theStore.Schema.DbObjects.SchemaDbObjectNames()
-                .ShouldContain(transform.Function);
+                .ShouldContain(transform.Identifier);
         }
     }
 }

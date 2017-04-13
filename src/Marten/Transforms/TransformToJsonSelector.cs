@@ -17,7 +17,7 @@ namespace Marten.Transforms
         public TransformToJsonSelector(string dataLocator, TransformFunction transform, IQueryableDocument document)
         {
             _document = document;
-            _fieldName = $"{transform.Function.QualifiedName}({dataLocator}) as json";
+            _fieldName = $"{transform.Identifier}({dataLocator}) as json";
         }
 
         public string Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

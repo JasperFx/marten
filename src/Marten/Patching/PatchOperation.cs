@@ -39,7 +39,7 @@ namespace Marten.Patching
             builder.Append("update ");
             builder.Append(_document.Table.QualifiedName);
             builder.Append(" as d set data = ");
-            builder.Append(_transform.Function.QualifiedName);
+            builder.Append(_transform.Identifier.QualifiedName);
             builder.Append("(data, :");
             builder.Append(patchParam.ParameterName);
             builder.Append("), ");

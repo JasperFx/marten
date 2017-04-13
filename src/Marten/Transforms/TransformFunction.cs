@@ -10,32 +10,41 @@ using Marten.Util;
 
 namespace Marten.Transforms
 {
-    public class TransformFunction : ISchemaObjects
+    public class TransformFunction : Function, ISchemaObjects
     {
         public static readonly string Prefix = "mt_transform_";
 
         private readonly StoreOptions _options;
         private bool _checked;
 
-        public TransformFunction(StoreOptions options, string name, string body)
+        public TransformFunction(StoreOptions options, string name, string body) : base(new DbObjectName(options.DatabaseSchemaName, "mt_transform_" + name.Replace(".", "_")))
         {
             _options = options;
             Name = name;
             Body = body;
 
-            Function = new DbObjectName(_options.DatabaseSchemaName, $"{Prefix}{Name.ToLower().Replace(".", "_")}");
         }
 
         public string Name { get; set; }
         public string Body { get; set; }
 
-        public DbObjectName Function { get; }
 
         public readonly IList<string> OtherArgs = new List<string>();
 
         private IEnumerable<string> allArgs()
         {
             return new string[] {"doc"}.Concat(OtherArgs);
+        }
+
+        public override void Write(DdlRules rules, StringWriter writer)
+        {
+            writer.WriteLine(GenerateFunction());
+            writer.WriteLine();
+        }
+
+        protected override string toDropSql()
+        {
+            return ToDropSignature();
         }
 
         public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema, SchemaPatch patch)
@@ -54,7 +63,7 @@ namespace Marten.Transforms
             if (autoCreateSchemaObjectsMode == AutoCreate.None)
             {
                 string message =
-                    $"The transform function {Function.QualifiedName} and cannot be created dynamically unless the {nameof(StoreOptions)}.{nameof(StoreOptions.AutoCreateSchemaObjects)} is higher than \"None\". See http://jasperfx.github.io/marten/documentation/documents/ for more information";
+                    $"The transform function {Identifier} and cannot be created dynamically unless the {nameof(StoreOptions)}.{nameof(StoreOptions.AutoCreateSchemaObjects)} is higher than \"None\". See http://jasperfx.github.io/marten/documentation/documents/ for more information";
                 throw new InvalidOperationException(message);
             }
 
@@ -69,7 +78,7 @@ namespace Marten.Transforms
         public void RemoveSchemaObjects(IManagedConnection connection)
         {
             var signature = allArgs().Select(x => "JSONB").Join(", ");
-            var dropSql = $"DROP FUNCTION IF EXISTS {Function.QualifiedName}({signature})";
+            var dropSql = $"DROP FUNCTION IF EXISTS {Identifier}({signature})";
             connection.Execute(cmd => cmd.Sql(dropSql).ExecuteNonQuery());
         }
 
@@ -91,7 +100,7 @@ namespace Marten.Transforms
         public string ToDropSignature()
         {
             var signature = allArgs().Select(x => $"JSONB").Join(", ");
-            return $"DROP FUNCTION IF EXISTS {Function.QualifiedName}({signature});";
+            return $"DROP FUNCTION IF EXISTS {Identifier}({signature});";
         }
 
         public string GenerateFunction()
@@ -103,7 +112,7 @@ namespace Marten.Transforms
 
             return
                 $@"
-CREATE OR REPLACE FUNCTION {Function.QualifiedName}({signature}) RETURNS JSONB AS $$
+CREATE OR REPLACE FUNCTION {Identifier}({signature}) RETURNS JSONB AS $$
 
   var module = {defaultExport};
 
@@ -128,8 +137,8 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
 
         private FunctionDelta functionDiff(IDocumentSchema schema)
         {
-            var body = schema.DbObjects.DefinitionForFunction(Function);
-            var expected = new FunctionBody(Function, new string[] {ToDropSignature()}, GenerateFunction());
+            var body = schema.DbObjects.DefinitionForFunction(Identifier);
+            var expected = new FunctionBody(Identifier, new string[] {ToDropSignature()}, GenerateFunction());
 
             return new FunctionDelta(expected, body);
         }
