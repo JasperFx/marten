@@ -9,21 +9,17 @@ namespace Marten.Schema.Identity.Sequences
 {
     public class SequenceFactory : ISequences, ISchemaObjects
     {
-        private readonly IDocumentSchema _schema;
         private readonly IConnectionFactory _factory;
         private readonly StoreOptions _options;
-        private readonly IMartenLogger _logger;
         private bool _checked = false;
         private readonly ConcurrentDictionary<Type, ISequence> _sequences = new ConcurrentDictionary<Type, ISequence>();
 
         private DbObjectName Table => new DbObjectName(_options.DatabaseSchemaName, "mt_hilo");
 
-        public SequenceFactory(IDocumentSchema schema, IConnectionFactory factory, StoreOptions options, IMartenLogger logger)
+        public SequenceFactory(StoreOptions options)
         {
-            _schema = schema;
-            _factory = factory;
+            _factory = options.ConnectionFactory();
             _options = options;
-            _logger = logger;
         }
 
         public ISequence SequenceFor(Type documentType)

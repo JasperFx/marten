@@ -117,9 +117,9 @@ namespace Marten.Schema
             return basicWhere;
         }
 
-        public IDocumentStorage BuildStorage(IDocumentSchema schema)
+        public IDocumentStorage BuildStorage(StoreOptions options)
         {
-            var parentStorage = Parent.As<IDocumentMapping>().BuildStorage(schema);
+            var parentStorage = Parent.As<IDocumentMapping>().BuildStorage(options);
             return typeof(SubClassDocumentStorage<,>).CloseAndBuildAs<IDocumentStorage>(parentStorage, this, DocumentType,
                 Parent.DocumentType);
         }

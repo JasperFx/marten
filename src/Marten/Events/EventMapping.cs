@@ -76,7 +76,7 @@ namespace Marten.Events
             return new WhereFragment($"d.type = '{EventTypeName}'");
         }
 
-        public abstract IDocumentStorage BuildStorage(IDocumentSchema schema);
+        public abstract IDocumentStorage BuildStorage(StoreOptions options);
 
         public IDocumentSchemaObjects SchemaObjects => _parent.SchemaObjects;
 
@@ -117,7 +117,7 @@ namespace Marten.Events
             _tableName = schemaName == StoreOptions.DefaultDatabaseSchemaName ? "mt_events" : $"{schemaName}.mt_events";
         }
 
-        public override IDocumentStorage BuildStorage(IDocumentSchema schema)
+        public override IDocumentStorage BuildStorage(StoreOptions options)
         {
             return this;
         }
