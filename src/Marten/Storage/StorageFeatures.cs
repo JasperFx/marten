@@ -20,7 +20,10 @@ namespace Marten.Storage
         public StorageFeatures(StoreOptions parent)
         {
             _parent = parent;
+            SystemFunctions = new SystemFunctions(parent);
         }
+
+        public SystemFunctions SystemFunctions { get; }
 
         public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Values;
 
@@ -60,6 +63,11 @@ namespace Marten.Storage
 
         public IFeatureSchema FindFeature(Type featureType)
         {
+            if (featureType == typeof(SystemFunctions))
+            {
+                return SystemFunctions;
+            }
+
             throw new NotImplementedException();
         }
 
