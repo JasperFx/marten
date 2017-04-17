@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Includes;
 using Marten.Transforms;
