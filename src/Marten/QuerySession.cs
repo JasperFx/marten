@@ -9,6 +9,7 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
+using Marten.Storage;
 using Npgsql;
 using Remotion.Linq.Parsing.Structure;
 
@@ -16,6 +17,7 @@ namespace Marten
 {
     public class QuerySession : IQuerySession, ILoader
     {
+        internal ITenant Tenant { get; }
         private readonly IManagedConnection _connection;
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
@@ -23,8 +25,9 @@ namespace Marten
         private bool _disposed;
         protected readonly DocumentStore _store;
 
-        public QuerySession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap)
+        public QuerySession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, ITenant tenant)
         {
+            Tenant = tenant;
             _store = store;
             _connection = connection;
             _parser = parser;
