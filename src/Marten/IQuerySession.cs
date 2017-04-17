@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services.BatchQuerying;
+using Marten.Storage;
 using Npgsql;
 
 namespace Marten
@@ -247,5 +248,6 @@ namespace Marten
         /// </summary>
         IJsonLoader Json { get; }
 
+        ITenant Tenant { get; }
     }
 }

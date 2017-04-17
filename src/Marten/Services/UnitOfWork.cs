@@ -226,7 +226,7 @@ namespace Marten.Services
 
         private IEnumerable<Type> GetTypeDependencies(Type type)
         {
-            var documentMapping = _store.Schema.MappingFor(type) as DocumentMapping;
+            var documentMapping = _tenant.MappingFor(type) as DocumentMapping;
             if (documentMapping == null)
                 return Enumerable.Empty<Type>();
 

@@ -17,7 +17,7 @@ namespace Marten
 {
     public class QuerySession : IQuerySession, ILoader
     {
-        internal ITenant Tenant { get; }
+        public ITenant Tenant { get; }
         private readonly IManagedConnection _connection;
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;

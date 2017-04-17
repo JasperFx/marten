@@ -102,8 +102,8 @@ namespace Marten.Events.Projections
 
         private IDictionary<Guid, TView> createViewMap(IDocumentSession session, IList<EventProjection> projections, IList<TView> views)
         {
-            var idAssigner = session.DocumentStore.Schema.IdAssignmentFor<TView>();
-            var resolver = session.DocumentStore.Schema.StorageFor<TView>();
+            var idAssigner = session.Tenant.IdAssignmentFor<TView>();
+            var resolver = session.Tenant.StorageFor<TView>();
 
             var viewMap =  views.ToDictionary(view => (Guid) resolver.Identity(view), view => view);
 
