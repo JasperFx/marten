@@ -24,7 +24,8 @@ namespace Marten.Testing.Patching
 
             _schema.MappingFor(typeof(Target)).Returns(mapping);
 
-            _expression = new PatchExpression<Target>(null, _schema, new UnitOfWork(TestingDocumentStore.Basic()), new JsonNetSerializer());
+            var store = TestingDocumentStore.Basic();
+            _expression = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.Schema), new JsonNetSerializer());
         }
 
         [Fact]

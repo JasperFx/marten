@@ -10,6 +10,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Patching;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Services
@@ -19,6 +20,7 @@ namespace Marten.Services
         private readonly ConcurrentDictionary<Guid, EventStream> _events = new ConcurrentDictionary<Guid, EventStream>();
 
         private readonly DocumentStore _store;
+        private readonly ITenant _tenant;
 
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>();
 
@@ -27,9 +29,10 @@ namespace Marten.Services
 
         private readonly IList<IStorageOperation> _ancillaryOperations = new List<IStorageOperation>();
 
-        public UnitOfWork(DocumentStore store)
+        public UnitOfWork(DocumentStore store, ITenant tenant)
         {
             _store = store;
+            _tenant = tenant;
         }
 
         public IEnumerable<IDeletion> Deletions()
@@ -207,7 +210,7 @@ namespace Marten.Services
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
             {
-                var upsert = _store.Schema.StorageFor(group.Key);
+                var upsert = _tenant.StorageFor(group.Key);
 
                 group.Each(c => { upsert.RegisterUpdate(batch, c.Document, c.Json); });
             });
@@ -217,13 +220,13 @@ namespace Marten.Services
 
         private void writeEvents(UpdateBatch batch)
         {
-            var upsert = new EventStreamAppender(_store.Schema.Events);
+            var upsert = new EventStreamAppender(_tenant.Events);
             _events.Values.Each(stream => { upsert.RegisterUpdate(batch, stream); });
         }
 
         private IEnumerable<Type> GetTypeDependencies(Type type)
         {
-            var documentMapping = _store.Schema.MappingFor(type) as DocumentMapping;
+            var documentMapping = _tenant.MappingFor(type) as DocumentMapping;
             if (documentMapping == null)
                 return Enumerable.Empty<Type>();
 

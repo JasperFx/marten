@@ -30,7 +30,7 @@ namespace Marten
 
             IdentityMap = identityMap;
 
-            _unitOfWork = new UnitOfWork(_store);
+            _unitOfWork = new UnitOfWork(_store, tenant);
 
             if (IdentityMap is IDocumentTracker)
             {
@@ -49,7 +49,7 @@ namespace Marten
 
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var storage = _store.Schema.StorageFor(typeof(T));
+            var storage = Tenant.StorageFor(typeof(T));
             var deletion = storage.DeletionForEntity(entity);
 
             _unitOfWork.Add(deletion);
@@ -65,7 +65,7 @@ namespace Marten
         private void delete<T>(object id)
         {
             assertNotDisposed();
-            var storage = _store.Schema.StorageFor(typeof(T));
+            var storage = Tenant.StorageFor(typeof(T));
             var deletion = storage.DeletionForId(id);
             _unitOfWork.Add(deletion);
 
@@ -95,7 +95,7 @@ namespace Marten
 
             var where = QueryModelExtensions.BuildWhereFragment(_store, model);
 
-            var deletion = _store.Schema.StorageFor(typeof(T)).DeletionForWhere(where);
+            var deletion = Tenant.StorageFor(typeof(T)).DeletionForWhere(where);
 
             _unitOfWork.Add(deletion);
         }
@@ -117,8 +117,8 @@ namespace Marten
             }
             else
             {
-                var storage = _store.Schema.StorageFor(typeof(T));
-                var idAssignment = _store.Schema.IdAssignmentFor<T>();
+                var storage = Tenant.StorageFor(typeof(T));
+                var idAssignment = Tenant.IdAssignmentFor<T>();
 
                 foreach (var entity in entities)
                 {
@@ -144,7 +144,7 @@ namespace Marten
         {
             assertNotDisposed();
 
-            var storage = _store.Schema.StorageFor(typeof(T));
+            var storage = Tenant.StorageFor(typeof(T));
             var id = storage.Identity(entity);
 
             IdentityMap.Versions.Store<T>(id, version);
@@ -267,7 +267,7 @@ namespace Marten
             assertNotDisposed();
 
             var @where = new WhereFragment("d.id = ?", id);
-            return new PatchExpression<T>(@where, _store.Schema, _unitOfWork, _store.Serializer);
+            return new PatchExpression<T>(@where, Tenant, _unitOfWork, _store.Serializer);
         }
 
         public IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> @where)
@@ -278,14 +278,14 @@ namespace Marten
 
             var fragment = QueryModelExtensions.BuildWhereFragment(_store, model);
 
-            return new PatchExpression<T>(fragment, _store.Schema, _unitOfWork, _store.Serializer);
+            return new PatchExpression<T>(fragment, Tenant, _unitOfWork, _store.Serializer);
         }
 
         public IPatchExpression<T> Patch<T>(IWhereFragment fragment)
         {
             assertNotDisposed();
 
-            return new PatchExpression<T>(fragment, _store.Schema, _unitOfWork, _store.Serializer);
+            return new PatchExpression<T>(fragment, Tenant, _unitOfWork, _store.Serializer);
         }
 
         public void QueueOperation(IStorageOperation storageOperation)
@@ -297,7 +297,7 @@ namespace Marten
         private void applyProjections()
         {
             var streams = PendingChanges.Streams().ToArray();
-            foreach (var projection in _store.Schema.Events.InlineProjections)
+            foreach (var projection in Tenant.Events.InlineProjections)
             {
                 projection.Apply(this, streams);
             }
@@ -306,7 +306,7 @@ namespace Marten
         private async Task applyProjectionsAsync(CancellationToken token)
         {
             var streams = PendingChanges.Streams().ToArray();
-            foreach (var projection in _store.Schema.Events.InlineProjections)
+            foreach (var projection in Tenant.Events.InlineProjections)
             {
                 await projection.ApplyAsync(this, streams, token).ConfigureAwait(false);
             }

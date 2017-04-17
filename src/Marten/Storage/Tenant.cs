@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using Baseline;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
@@ -150,5 +151,7 @@ namespace Marten.Storage
             EnsureStorageExists(typeof(T));
             return _features.BulkLoaderFor<T>();
         }
+
+        public EventGraph Events { get; }
     }
 }

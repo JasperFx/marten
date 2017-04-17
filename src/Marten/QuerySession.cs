@@ -38,7 +38,7 @@ namespace Marten
 
         public IDocumentStore DocumentStore => _store;
 
-        public IJsonLoader Json => new JsonLoader(_connection, _store.Schema);
+        public IJsonLoader Json => new JsonLoader(_connection, Tenant);
 
         protected void assertNotDisposed()
         {
@@ -79,7 +79,7 @@ namespace Marten
 
         private IDocumentStorage<T> storage<T>()
         {
-            return _store.Schema.StorageFor<T>();
+            return Tenant.StorageFor<T>();
         }
 
         public FetchResult<T> LoadDocument<T>(object id) where T : class
@@ -148,7 +148,7 @@ namespace Marten
 
         private void assertCorrectIdType<T>(object id)
         {
-            var mapping = _store.Schema.MappingFor(typeof(T));
+            var mapping = Tenant.MappingFor(typeof(T));
             if (id.GetType() != mapping.IdType)
             {
                 if (id.GetType() == typeof(int) && mapping.IdType == typeof(long)) return;
@@ -262,7 +262,7 @@ namespace Marten
 
             private void assertCorrectIdType<TKey>()
             {
-                var mapping = _parent._store.Schema.MappingFor(typeof(TDoc));
+                var mapping = _parent.Tenant.MappingFor(typeof(TDoc));
                 if (typeof(TKey) != mapping.IdType)
                 {
                     if (typeof(TKey) == typeof(int) && mapping.IdType == typeof(long)) return;
@@ -312,7 +312,7 @@ namespace Marten
 
             private IEnumerable<TDoc> fetchDocuments<TKey>(TKey[] keys)
             {
-                var storage = _parent._store.Schema.StorageFor(typeof(TDoc));
+                var storage = _parent.Tenant.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IDocumentStorage<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
@@ -335,7 +335,7 @@ namespace Marten
 
             private async Task<IEnumerable<TDoc>> fetchDocumentsAsync<TKey>(TKey[] keys, CancellationToken token)
             {
-                var storage = _parent._store.Schema.StorageFor(typeof(TDoc));
+                var storage = _parent.Tenant.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IDocumentStorage<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
 
