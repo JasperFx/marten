@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using Baseline;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
