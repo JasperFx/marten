@@ -102,7 +102,7 @@ namespace Marten
 
             CreateDatabaseObjects();
 
-            Transform = new DocumentTransforms(this, _connectionFactory);
+            Transform = new DocumentTransforms(this, _connectionFactory, DefaultTenant);
 
             options.InitialData.Each(x => x.Populate(this));
 

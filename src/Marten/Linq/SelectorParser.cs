@@ -151,7 +151,7 @@ namespace Marten.Linq
             return base.VisitMemberBinding(node);
         }
 
-        public ISelector<T> ToSelector<T>(string dataLocator, ITenant schema, IQueryableDocument mapping)
+        public ISelector<T> ToSelector<T>(string dataLocator, ITenant tenant, IQueryableDocument mapping)
         {
             if (_selectionType == SelectionType.AsJson && _target == null) return new JsonSelector().As<ISelector<T>>();
 
@@ -159,13 +159,13 @@ namespace Marten.Linq
 
             if (_selectionType == SelectionType.TransformToJson)
             {
-                var transform = schema.TransformFor(_transformName);
+                var transform = tenant.TransformFor(_transformName);
                 return new TransformToJsonSelector(dataLocator, transform, mapping).As<ISelector<T>>();
             }
 
             if (_selectionType == SelectionType.TransformTo)
             {
-                var transform = schema.TransformFor(_transformName);
+                var transform = tenant.TransformFor(_transformName);
 
                 return new TransformToTypeSelector<T>(dataLocator, transform, mapping );
             }
