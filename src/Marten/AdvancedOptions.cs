@@ -68,7 +68,8 @@ namespace Marten
         /// <returns></returns>
         public UnitOfWork CreateUnitOfWork()
         {
-            return new UnitOfWork(_store);
+            // TODO -- this is going to have to move out when we go multi-tenanted
+            return new UnitOfWork(_store, _store.Schema);
         }
 
         /// <summary>

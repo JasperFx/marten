@@ -1,4 +1,5 @@
 ﻿using System;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
@@ -53,5 +54,8 @@ namespace Marten.Storage
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         IBulkLoader<T> BulkLoaderFor<T>();
+
+
+        EventGraph Events { get; }
     }
 }

@@ -6,21 +6,22 @@ using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 
 namespace Marten.Patching
 {
     public class PatchExpression<T> : IPatchExpression<T>
     {
         private readonly IWhereFragment _fragment;
-        private readonly IDocumentSchema _schema;
+        private readonly ITenant _tenant;
         private readonly UnitOfWork _unitOfWork;
         private readonly ISerializer _serializer;
         public readonly IDictionary<string, object> Patch = new Dictionary<string, object>();
 
-        public PatchExpression(IWhereFragment fragment, IDocumentSchema schema, UnitOfWork unitOfWork, ISerializer serializer)
+        public PatchExpression(IWhereFragment fragment, ITenant tenant, UnitOfWork unitOfWork, ISerializer serializer)
         {
             _fragment = fragment;
-            _schema = schema;
+            _tenant = tenant;
             _unitOfWork = unitOfWork;
             _serializer = serializer;
         }
@@ -199,8 +200,8 @@ namespace Marten.Patching
 
         private void apply()
         {
-            var transform = _schema.TransformFor(StoreOptions.PatchDoc);
-            var document = _schema.MappingFor(typeof(T)).ToQueryableDocument();
+            var transform = _tenant.TransformFor(StoreOptions.PatchDoc);
+            var document = _tenant.MappingFor(typeof(T)).ToQueryableDocument();
             var operation = new PatchOperation(transform, document, _fragment, Patch, _serializer);
 
             _unitOfWork.Patch(operation);

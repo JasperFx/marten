@@ -1,20 +1,20 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 
 namespace Marten
 {
     public class JsonLoader : IJsonLoader
     {
         private readonly IManagedConnection _connection;
-        private readonly IDocumentSchema _schema;
+        private readonly ITenant _tenant;
 
-        public JsonLoader(IManagedConnection connection, IDocumentSchema schema)
+        public JsonLoader(IManagedConnection connection, ITenant tenant)
         {
             _connection = connection;
-            _schema = schema;
+            _tenant = tenant;
         }
 
         public string FindById<T>(string id) where T : class
@@ -35,7 +35,7 @@ namespace Marten
 
         private string findJsonById<T>(object id)
         {
-            var storage = _schema.StorageFor(typeof(T));
+            var storage = _tenant.StorageFor(typeof(T));
 
             var loader = storage.LoaderCommand(id);
             return _connection.Execute(loader, c => loader.ExecuteScalar() as string);
@@ -43,7 +43,7 @@ namespace Marten
 
         private Task<string> findJsonByIdAsync<T>(object id, CancellationToken token)
         {
-            var storage = _schema.StorageFor(typeof(T));
+            var storage = _tenant.StorageFor(typeof(T));
 
             var loader = storage.LoaderCommand(id);
             return _connection.ExecuteAsync(loader, async (conn, executeAsyncToken) =>
