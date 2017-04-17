@@ -115,7 +115,11 @@ namespace Marten
             Parser = new MartenExpressionParser(Serializer, options);
 
             HandlerFactory = new QueryHandlerFactory(this);
+
+            Events = options.Events;
         }
+
+        internal EventGraph Events { get; }
 
         internal ITenant DefaultTenant { get; }
 
