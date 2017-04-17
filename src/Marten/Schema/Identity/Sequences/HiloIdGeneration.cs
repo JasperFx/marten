@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Marten.Storage;
 
 namespace Marten.Schema.Identity.Sequences
 {
@@ -20,9 +21,9 @@ namespace Marten.Schema.Identity.Sequences
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(int), typeof(long)};
 
 
-        public IIdGenerator<T> Build<T>(IDocumentSchema schema)
+        public IIdGenerator<T> Build<T>(ITenant tenant)
         {
-            var sequence = schema.Sequences.Hilo(DocumentType, _hiloSettings);
+            var sequence = tenant.Sequences.Hilo(DocumentType, _hiloSettings);
 
             if (typeof(T) == typeof(int))
             {

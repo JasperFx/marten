@@ -5,6 +5,7 @@ using System.Reflection;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity;
+using Marten.Storage;
 using Shouldly;
 using Xunit;
 
@@ -15,7 +16,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
     {
         public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
 
-        public IIdGenerator<T> Build<T>(IDocumentSchema schema)
+        public IIdGenerator<T> Build<T>(ITenant tenant)
         {
             return (IIdGenerator<T>) new CustomIdGenerator();
         }

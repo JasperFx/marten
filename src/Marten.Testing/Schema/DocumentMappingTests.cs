@@ -109,7 +109,7 @@ namespace Marten.Testing.Schema
         {
             public IEnumerable<Type> KeyTypes { get; }
 
-            public IIdGenerator<T> Build<T>(IDocumentSchema schema)
+            public IIdGenerator<T> Build<T>(ITenant tenant)
             {
                 throw new NotImplementedException();
             }

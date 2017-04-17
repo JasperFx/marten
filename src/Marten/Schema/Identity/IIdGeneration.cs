@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Marten.Storage;
 
 namespace Marten.Schema.Identity
 {
@@ -7,7 +8,7 @@ namespace Marten.Schema.Identity
     {
         IEnumerable<Type> KeyTypes { get; }
 
-        IIdGenerator<T> Build<T>(IDocumentSchema schema);
+        IIdGenerator<T> Build<T>(ITenant tenant);
     }
 
 

@@ -137,6 +137,7 @@ namespace Marten.Storage
 
         public IdAssignment<T> IdAssignmentFor<T>()
         {
+            // TODO -- this will have to be tracked per tenant because of the sequences
             EnsureStorageExists(typeof(T));
             return _features.IdAssignmentFor<T>();
         }

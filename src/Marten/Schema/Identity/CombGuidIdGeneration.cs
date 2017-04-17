@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Marten.Storage;
 
 namespace Marten.Schema.Identity
 {
@@ -12,7 +13,7 @@ namespace Marten.Schema.Identity
 
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(Guid)};
 
-        public IIdGenerator<T> Build<T>(IDocumentSchema schema)
+        public IIdGenerator<T> Build<T>(ITenant tenant)
         {
             return (IIdGenerator<T>) new GuidIdGenerator(() => Create(Guid.NewGuid(), DateTime.UtcNow));
         }
