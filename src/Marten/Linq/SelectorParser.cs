@@ -6,6 +6,7 @@ using Marten.Events;
 using Marten.Linq.Model;
 using Marten.Schema;
 using Marten.Services.Includes;
+using Marten.Storage;
 using Marten.Transforms;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.ResultOperators;
@@ -25,7 +26,7 @@ namespace Marten.Linq
 
     public class SelectorParser : RelinqExpressionVisitor
     {
-        public static ISelector<T> ChooseSelector<T>(string dataLocator, IDocumentSchema schema, IQueryableDocument mapping, QueryModel query, SelectManyQuery subQuery, IIncludeJoin[] joins)
+        public static ISelector<T> ChooseSelector<T>(string dataLocator, ITenant tenant, IQueryableDocument mapping, QueryModel query, SelectManyQuery subQuery, ISerializer serializer, IIncludeJoin[] joins)
         {
             // I'm so ashamed of this hack, but "simplest thing that works"
             if (typeof(T) == typeof(IEvent))
@@ -36,13 +37,13 @@ namespace Marten.Linq
             var selectable = query.AllResultOperators().OfType<ISelectableOperator>().FirstOrDefault();
             if (selectable != null)
             {
-                return selectable.BuildSelector<T>(dataLocator, schema, mapping);
+                return selectable.BuildSelector<T>(dataLocator, tenant, mapping);
             }
 
 
             if (subQuery != null)
             {
-                return subQuery.ToSelector<T>(schema.StoreOptions.Serializer(), joins);
+                return subQuery.ToSelector<T>(serializer, joins);
             }
 
             if (query.SelectClause.Selector.Type == query.SourceType())
@@ -59,7 +60,7 @@ namespace Marten.Linq
                     return null;
                 }
 
-                var resolver = schema.StorageFor<T>();
+                var resolver = tenant.StorageFor<T>();
 
                 return new WholeDocumentSelector<T>(mapping, resolver);
             }
@@ -68,7 +69,7 @@ namespace Marten.Linq
             var visitor = new SelectorParser(query);
             visitor.Visit(query.SelectClause.Selector);
 
-            return visitor.ToSelector<T>(dataLocator, schema, mapping);
+            return visitor.ToSelector<T>(dataLocator, tenant, mapping);
         }
 
         private SelectedField _currentField = new SelectedField();
@@ -150,7 +151,7 @@ namespace Marten.Linq
             return base.VisitMemberBinding(node);
         }
 
-        public ISelector<T> ToSelector<T>(string dataLocator, IDocumentSchema schema, IQueryableDocument mapping)
+        public ISelector<T> ToSelector<T>(string dataLocator, ITenant schema, IQueryableDocument mapping)
         {
             if (_selectionType == SelectionType.AsJson && _target == null) return new JsonSelector().As<ISelector<T>>();
 
