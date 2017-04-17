@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
@@ -57,5 +58,8 @@ namespace Marten.Storage
 
 
         EventGraph Events { get; }
+
+        IEnumerable<IDocumentMapping> AllMappings { get; }
+
     }
 }
