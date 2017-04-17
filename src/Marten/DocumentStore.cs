@@ -81,6 +81,8 @@ namespace Marten
             Schema = new DocumentSchema(this, _connectionFactory, _logger);
             Storage = options.Storage;
 
+            Storage.CompileSubClasses();
+
             Serializer = options.Serializer();
 
             var cleaner = new DocumentCleaner(_connectionFactory, Schema.As<DocumentSchema>());

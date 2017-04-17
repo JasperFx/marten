@@ -19,6 +19,10 @@ namespace Marten.Storage
         private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
             new ConcurrentDictionary<Type, IDocumentMapping>();
 
+        private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
+            new ConcurrentDictionary<Type, IDocumentStorage>();
+
+
         private readonly Dictionary<Type, IFeatureSchema> _features = new Dictionary<Type, IFeatureSchema>();
 
         public StorageFeatures(StoreOptions options)
@@ -84,11 +88,52 @@ namespace Marten.Storage
             _mappings[mapping.DocumentType] = mapping;
         }
 
+        public IDocumentStorage StorageFor(Type documentType)
+        {
+            return _documentTypes.GetOrAdd(documentType, type =>
+            {
+                var mapping = FindMapping(documentType);
+
+                assertNoDuplicateDocumentAliases();
+
+                return mapping.BuildStorage(_options);
+            });
+        }
+
+        private void assertNoDuplicateDocumentAliases()
+        {
+            var duplicates =
+                AllDocumentMappings.Where(x => !x.StructuralTyped)
+                    .GroupBy(x => x.Alias)
+                    .Where(x => x.Count() > 1)
+                    .ToArray();
+            if (duplicates.Any())
+            {
+                var message = duplicates.Select(group =>
+                {
+                    return
+                        $"Document types {group.Select(x => x.DocumentType.Name).Join(", ")} all have the same document alias '{group.Key}'. You must explicitly make document type aliases to disambiguate the database schema objects";
+                }).Join("\n");
+
+                throw new AmbiguousDocumentTypeAliasesException(message);
+            }
+        }
+
         public IFeatureSchema FindFeature(Type featureType)
         {
             throw new NotImplementedException();
         }
 
 
+        internal void CompileSubClasses()
+        {
+            foreach (var mapping in _documentMappings.Values)
+            {
+                foreach (var subClass in mapping.SubClasses)
+                {
+                    _mappings[subClass.DocumentType] = subClass;
+                }
+            }
+        }
     }
 }
