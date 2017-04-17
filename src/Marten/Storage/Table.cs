@@ -83,20 +83,14 @@ namespace Marten.Storage
 
             var length = _columns.Select(x => x.Name.Length).Max() + 4;
 
-            var lines = _columns.Select(x => x.ToDeclaration(length)).Concat(Constraints);
+            var lines = _columns.Select(x => x.ToDeclaration(length)).Concat(Constraints).ToArray();
 
-            foreach (var line in lines)
+            for (int i = 0; i < lines.Length - 1; i++)
             {
-                writer.Write($"    {line}");
-                if (ReferenceEquals(line, lines.Last()))
-                {
-                    writer.WriteLine();
-                }
-                else
-                {
-                    writer.WriteLine(",");
-                }
+                writer.WriteLine($"    {lines[i]},");
             }
+
+            writer.WriteLine($"    {lines.Last()}");
 
             writer.WriteLine(");");
 
