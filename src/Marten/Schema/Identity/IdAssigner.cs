@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Schema.Identity
@@ -10,9 +11,9 @@ namespace Marten.Schema.Identity
         private readonly Func<TDoc, TId> _getter;
         private readonly Action<TDoc, TId> _setter;
 
-        public IdAssigner(MemberInfo member, IIdGeneration generation, IDocumentSchema schema)
+        public IdAssigner(MemberInfo member, IIdGeneration generation, ITenant tenant)
         {
-            _generator = generation.Build<TId>(schema);
+            _generator = generation.Build<TId>(tenant);
             _getter = LambdaBuilder.Getter<TDoc, TId>(member);
             _setter = LambdaBuilder.Setter<TDoc, TId>(member);
         }
