@@ -210,7 +210,7 @@ namespace Marten.Services
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
             {
-                var upsert = _store.Schema.StorageFor(group.Key);
+                var upsert = _tenant.StorageFor(group.Key);
 
                 group.Each(c => { upsert.RegisterUpdate(batch, c.Document, c.Json); });
             });
