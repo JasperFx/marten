@@ -5,6 +5,8 @@ using System.Linq;
 using Baseline;
 using Marten.Events;
 using Marten.Schema;
+using Marten.Schema.BulkLoading;
+using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 
 namespace Marten.Storage
@@ -33,14 +35,20 @@ namespace Marten.Storage
             Sequences = new SequenceFactory(options);
 
             store(SystemFunctions);
-            store(options.Transforms.As<IFeatureSchema>());
+            Transforms = options.Transforms.As<Transforms.Transforms>();
+            store(Transforms.As<IFeatureSchema>());
             store(Sequences);
 
             store(options.Events);
+            _features[typeof(StreamState)] = options.Events;
+            _features[typeof(EventStream)] = options.Events;
+            _features[typeof(IEvent)] = options.Events;
 
             _mappings[typeof(IEvent)] = new EventQueryMapping(_options);
+           
         }
 
+        public Transforms.Transforms Transforms { get; }
         public SequenceFactory Sequences { get;}
 
         private void store(IFeatureSchema feature)
@@ -121,7 +129,7 @@ namespace Marten.Storage
 
         public IFeatureSchema FindFeature(Type featureType)
         {
-            throw new NotImplementedException();
+            return _features.ContainsKey(featureType) ? _features[featureType] : MappingFor(featureType);
         }
 
 
@@ -132,8 +140,19 @@ namespace Marten.Storage
                 foreach (var subClass in mapping.SubClasses)
                 {
                     _mappings[subClass.DocumentType] = subClass;
+                    _features[subClass.DocumentType] = subClass.Parent;
                 }
             }
+        }
+
+        public IdAssignment<T> IdAssignmentFor<T>()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IBulkLoader<T> BulkLoaderFor<T>()
+        {
+            throw new NotImplementedException();
         }
     }
 }

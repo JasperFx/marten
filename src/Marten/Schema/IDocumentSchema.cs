@@ -8,21 +8,14 @@ using Marten.Transforms;
 
 namespace Marten.Schema
 {
-    public interface IDocumentSchema 
+    public interface ITenant
     {
-        /// <summary>
-        /// The original StoreOptions used to configure this DocumentStore
-        /// </summary>
-        [Obsolete("Move off of DocumentStore")]
-        StoreOptions StoreOptions { get; }
-
         /// <summary>
         /// Retrieves or generates the active IDocumentStorage object
         /// for the given document type
         /// </summary>
         /// <param name="documentType"></param>
         /// <returns></returns>
-        [Obsolete("Move to StorageFeatures")]
         IDocumentStorage StorageFor(Type documentType);
 
         /// <summary>
@@ -31,7 +24,6 @@ namespace Marten.Schema
         /// </summary>
         /// <param name="documentType"></param>
         /// <returns></returns>
-        [Obsolete("Move to StorageFeatures")]
         IDocumentMapping MappingFor(Type documentType);
 
         /// <summary>
@@ -39,14 +31,38 @@ namespace Marten.Schema
         /// and also attempts to update the database schema for any detected changes
         /// </summary>
         /// <param name="documentType"></param>
-        [Obsolete("Move to StorageFeatures & Tenant")]
         void EnsureStorageExists(Type documentType);
 
         /// <summary>
         /// Used to create new Hilo sequences 
         /// </summary>
-        [Obsolete("Move to StorageFeatures")]
         ISequences Sequences { get; }
+
+        IDocumentStorage<T> StorageFor<T>();
+        IdAssignment<T> IdAssignmentFor<T>();
+        TransformFunction TransformFor(string name);
+
+        /// <summary>
+        /// Directs Marten to disregard any previous schema checks. Useful
+        /// if you change the underlying schema without shutting down the document store
+        /// </summary>
+        void ResetSchemaExistenceChecks();
+
+        /// <summary>
+        /// Retrieve a configured IBulkLoader for a document type
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        IBulkLoader<T> BulkLoaderFor<T>();
+    }
+
+    public interface IDocumentSchema : ITenant
+    {
+        /// <summary>
+        /// The original StoreOptions used to configure this DocumentStore
+        /// </summary>
+        [Obsolete("Move off of DocumentStore")]
+        StoreOptions StoreOptions { get; }
 
         /// <summary>
         /// The event store configuration
@@ -80,23 +96,6 @@ namespace Marten.Schema
 
         string[] AllSchemaNames();
 
-        [Obsolete("Move to StorageFeatures")]
-        IDocumentStorage<T> StorageFor<T>();
-
-        [Obsolete("Move to StorageFeatures")]
-        IdAssignment<T> IdAssignmentFor<T>();
-
-
-        TransformFunction TransformFor(string name);
-
-
-        /// <summary>
-        /// Directs Marten to disregard any previous schema checks. Useful
-        /// if you change the underlying schema without shutting down the document store
-        /// </summary>
-        [Obsolete("Move to StorageFeatures and Tenant")]
-        void ResetSchemaExistenceChecks();
-
 
         /// <summary>
         /// Query against the actual Postgresql database schema objects
@@ -105,14 +104,6 @@ namespace Marten.Schema
 
         [Obsolete("Move to StorageFeatures")]
         IEnumerable<IDocumentMapping> AllMappings { get; }
-
-        /// <summary>
-        /// Retrieve a configured IBulkLoader for a document type
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        [Obsolete("Move to StorageFeatures")]
-        IBulkLoader<T> BulkLoaderFor<T>();
 
 
         /// <summary>
