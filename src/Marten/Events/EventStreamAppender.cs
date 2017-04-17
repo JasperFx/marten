@@ -7,7 +7,7 @@ using Marten.Services;
 
 namespace Marten.Events
 {
-    public class EventStreamAppender : IDocumentUpsert
+    public class EventStreamAppender
     {
         private readonly EventGraph _graph;
 

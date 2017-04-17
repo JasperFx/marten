@@ -114,13 +114,6 @@ namespace Marten.Schema
         [Obsolete("Move to StorageFeatures")]
         IBulkLoader<T> BulkLoaderFor<T>();
 
-        /// <summary>
-        /// Retrieve the IDocumentUpsert object for the given document type
-        /// </summary>
-        /// <param name="documentType"></param>
-        /// <returns></returns>
-        [Obsolete("Move to StorageFeatures")]
-        IDocumentUpsert UpsertFor(Type documentType);
 
         /// <summary>
         /// Tries to write a "patch" SQL file to upgrade the database

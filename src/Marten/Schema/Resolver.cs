@@ -17,7 +17,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema
 {
-    public class DocumentStorage<T> : IDocumentStorage<T>, IDocumentStorage, IDocumentUpsert where T : class
+    public class DocumentStorage<T> : IDocumentStorage<T> where T : class
     {
         private readonly string _deleteSql;
         private readonly Func<T, object> _identity;

@@ -147,11 +147,6 @@ namespace Marten.Schema
             return this;
         }
 
-        public IDocumentUpsert BuildUpsert(IDocumentSchema schema)
-        {
-            return this.As<IDocumentMapping>().BuildStorage(schema.StoreOptions).As<IDocumentUpsert>();
-        }
-
         public Type IdType => IdMember?.GetMemberType();
 
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback)
