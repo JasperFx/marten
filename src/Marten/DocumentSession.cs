@@ -37,7 +37,7 @@ namespace Marten
                 _unitOfWork.AddTracker(IdentityMap.As<IDocumentTracker>());
             }
 
-            Events = new EventStore(this, _store, _connection, _unitOfWork);
+            Events = new EventStore(this, _store, _connection, _unitOfWork, tenant);
         }
 
         // This is here for testing purposes, not part of IDocumentSession
