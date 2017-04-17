@@ -5,6 +5,7 @@ using Baseline;
 using Marten.Linq.Model;
 using Marten.Services;
 using Marten.Services.Includes;
+using Marten.Storage;
 using Remotion.Linq;
 
 namespace Marten.Linq
@@ -13,9 +14,10 @@ namespace Marten.Linq
     {
         private readonly IList<IIncludeJoin> _includes = new List<IIncludeJoin>();
 
-        public MartenQueryExecutor(IManagedConnection runner, DocumentStore store, IIdentityMap identityMap)
+        public MartenQueryExecutor(IManagedConnection runner, DocumentStore store, IIdentityMap identityMap, ITenant tenant)
         {
             IdentityMap = identityMap;
+            Tenant = tenant;
             Connection = runner;
             Store = store;
         }
@@ -26,6 +28,7 @@ namespace Marten.Linq
         public DocumentStore Store { get; }
 
         public IIdentityMap IdentityMap { get; }
+        public ITenant Tenant { get; }
         public QueryStatistics Statistics { get; set; }
 
 
@@ -56,7 +59,7 @@ namespace Marten.Linq
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
         {
-            Store.Schema.EnsureStorageExists(queryModel.SourceType());
+            Tenant.EnsureStorageExists(queryModel.SourceType());
 
             var handler = new LinqQuery<T>(Store, queryModel, _includes.ToArray(), Statistics).ToList();
 

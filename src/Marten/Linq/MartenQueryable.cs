@@ -9,6 +9,7 @@ using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Marten.Services.Includes;
+using Marten.Storage;
 using Marten.Transforms;
 using Marten.Util;
 using Npgsql;
@@ -27,6 +28,8 @@ namespace Marten.Linq
         }
 
         public DocumentStore Store => Executor.Store;
+
+        public ITenant Tenant => Executor.Tenant;
 
         public MartenQueryExecutor Executor => Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
 
@@ -67,12 +70,12 @@ namespace Marten.Linq
             JoinType joinType = JoinType.Inner)
         {
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-            var schema = executor.Store.Schema;
+            var tenant = executor.Tenant;
 
-            schema.EnsureStorageExists(typeof(TInclude));
+            tenant.EnsureStorageExists(typeof(TInclude));
 
-            var mapping = schema.MappingFor(typeof(T)).ToQueryableDocument();
-            var included = schema.MappingFor(typeof(TInclude)).ToQueryableDocument();
+            var mapping = tenant.MappingFor(typeof(T)).ToQueryableDocument();
+            var included = tenant.MappingFor(typeof(TInclude)).ToQueryableDocument();
 
             var visitor = new FindMembers();
             visitor.Visit(idSource);
@@ -95,10 +98,7 @@ namespace Marten.Linq
         public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
             IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner)
         {
-            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
-            var schema = executor.Store.Schema;
-
-            var storage = schema.StorageFor(typeof(TInclude));
+            var storage = Tenant.StorageFor(typeof(TInclude));
 
             return Include<TInclude>(idSource, x =>
             {
@@ -223,7 +223,7 @@ namespace Marten.Linq
             CancellationToken token)
         {
             var query = ToQueryModel();
-            Store.Schema.EnsureStorageExists(query.SourceType());
+            Tenant.EnsureStorageExists(query.SourceType());
 
             var linq = new LinqQuery<T>(Store, query, Includes.ToArray(), Statistics);
 

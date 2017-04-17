@@ -297,7 +297,7 @@ namespace Marten
         private void applyProjections()
         {
             var streams = PendingChanges.Streams().ToArray();
-            foreach (var projection in Tenant.Events.InlineProjections)
+            foreach (var projection in _store.Events.InlineProjections)
             {
                 projection.Apply(this, streams);
             }
@@ -306,7 +306,7 @@ namespace Marten
         private async Task applyProjectionsAsync(CancellationToken token)
         {
             var streams = PendingChanges.Streams().ToArray();
-            foreach (var projection in Tenant.Events.InlineProjections)
+            foreach (var projection in _store.Events.InlineProjections)
             {
                 await projection.ApplyAsync(this, streams, token).ConfigureAwait(false);
             }

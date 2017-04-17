@@ -28,11 +28,13 @@ AND    n.nspname = '{1}';";
 
         private readonly IConnectionFactory _factory;
         private readonly DocumentSchema _schema;
+        private readonly DocumentStore _store;
 
-        public DocumentCleaner(IConnectionFactory factory, DocumentSchema schema)
+        public DocumentCleaner(IConnectionFactory factory, DocumentSchema schema, DocumentStore store)
         {
             _factory = factory;
             _schema = schema;
+            _store = store;
         }
 
         public void DeleteAllDocuments()
@@ -94,8 +96,8 @@ AND    n.nspname = '{1}';";
         {
             using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
             {
-                connection.Execute($"truncate table {_schema.Events.DatabaseSchemaName}.mt_events cascade;" +
-                                   $"truncate table {_schema.Events.DatabaseSchemaName}.mt_streams cascade");
+                connection.Execute($"truncate table {_store.Events.DatabaseSchemaName}.mt_events cascade;" +
+                                   $"truncate table {_store.Events.DatabaseSchemaName}.mt_streams cascade");
                 connection.Commit();
             }
         }

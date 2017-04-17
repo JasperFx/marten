@@ -61,7 +61,7 @@ namespace Marten.Events
 
             if (assertion == null)
             {
-                _unitOfWork.Add(new AssertEventStreamMaxEventId(stream, expectedVersion, _tenant.Events.Table.QualifiedName));
+                _unitOfWork.Add(new AssertEventStreamMaxEventId(stream, expectedVersion, _store.Events.Table.QualifiedName));
             }
             else
             {
@@ -112,7 +112,7 @@ namespace Marten.Events
             _tenant.EnsureStorageExists(typeof(EventStream));
 
             var inner = new EventQueryHandler(_selector, streamId, version, timestamp);
-            var aggregator = _tenant.Events.AggregateFor<T>();
+            var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
 
             var aggregate = _connection.Fetch(handler, null, null);
@@ -130,7 +130,7 @@ namespace Marten.Events
             _tenant.EnsureStorageExists(typeof(EventStream));
 
             var inner = new EventQueryHandler(_selector, streamId, version, timestamp);
-            var aggregator = _tenant.Events.AggregateFor<T>();
+            var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
 
             var aggregate = await _connection.FetchAsync(handler, null, null, token).ConfigureAwait(false);
@@ -147,14 +147,14 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            if (_tenant.Events.AllAggregates().Any(x => x.AggregateType == typeof(T)))
+            if (_store.Events.AllAggregates().Any(x => x.AggregateType == typeof(T)))
             {
                 return _session.Query<T>();
             }
 
             if (_tenant.AllMappings.All(x => x.DocumentType != typeof(T)))
             {
-                _tenant.Events.AddEventType(typeof(T));
+                _store.Events.AddEventType(typeof(T));
             }
             
 
@@ -172,7 +172,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            _tenant.Events.AddEventType(typeof (T));
+            _store.Events.AddEventType(typeof (T));
 
 
             return Load(id).As<Event<T>>();
@@ -182,7 +182,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            _tenant.Events.AddEventType(typeof (T));
+            _store.Events.AddEventType(typeof (T));
 
             return (await LoadAsync(id, token).ConfigureAwait(false)).As<Event<T>>();
         }
@@ -191,7 +191,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            var handler = new SingleEventQueryHandler(id, _tenant.Events, _store.Serializer);
+            var handler = new SingleEventQueryHandler(id, _store.Events, _store.Serializer);
             return _connection.Fetch(handler, new NulloIdentityMap(_store.Serializer), null);
         }
 
@@ -199,7 +199,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            var handler = new SingleEventQueryHandler(id, _tenant.Events, _store.Serializer);
+            var handler = new SingleEventQueryHandler(id, _store.Events, _store.Serializer);
             return _connection.FetchAsync(handler, new NulloIdentityMap(_store.Serializer), null, token);
         }
 
@@ -207,7 +207,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            var handler = new StreamStateHandler(_tenant.Events, streamId);
+            var handler = new StreamStateHandler(_store.Events, streamId);
             return _connection.Fetch(handler, null, null);
         }
 
@@ -215,7 +215,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            var handler = new StreamStateHandler(_tenant.Events, streamId);
+            var handler = new StreamStateHandler(_store.Events, streamId);
             return _connection.FetchAsync(handler, null, null, token);
         }
     }
