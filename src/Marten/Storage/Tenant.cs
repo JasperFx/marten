@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using Baseline;
 using Marten.Events;
@@ -153,5 +154,7 @@ namespace Marten.Storage
         }
 
         public EventGraph Events { get; }
+
+        public IEnumerable<IDocumentMapping> AllMappings => _features.AllDocumentMappings;
     }
 }
