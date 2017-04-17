@@ -256,7 +256,7 @@ namespace Marten.Linq.Model
             IIncludeJoin[] includeJoins)
         {
             var selector =
-                _innerSelector = SelectorParser.ChooseSelector<T>("d.data", _store.Schema, _mapping, Model, subQuery, joins);
+                _innerSelector = SelectorParser.ChooseSelector<T>("d.data", _store.DefaultTenant, _mapping, Model, subQuery, _store.Serializer, joins);
 
             if (stats != null)
             {
