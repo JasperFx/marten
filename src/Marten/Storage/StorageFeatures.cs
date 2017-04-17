@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 
@@ -32,6 +33,8 @@ namespace Marten.Storage
             store(Sequences);
 
             store(options.Events);
+
+            _mappings[typeof(IEvent)] = new EventQueryMapping(_options);
         }
 
         public SequenceFactory Sequences { get;}
