@@ -21,7 +21,7 @@ namespace Marten.Testing.Events.Projections.Async
         {
             using (var session = theStore.OpenSession())
             {
-                var events = theStore.Schema.Events;
+                var events = theStore.Events;
                 session.QueueOperation(new EventProgressWrite(events, "summary", 111));
                 session.SaveChanges();
 
@@ -40,7 +40,7 @@ namespace Marten.Testing.Events.Projections.Async
         {
             using (var session = theStore.OpenSession())
             {
-                var events = theStore.Schema.Events;
+                var events = theStore.Events;
 
                 session.QueueOperation(new EventProgressWrite(events, "summary", 111));
                 session.SaveChanges();

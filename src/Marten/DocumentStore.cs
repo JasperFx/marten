@@ -119,7 +119,7 @@ namespace Marten
             Events = options.Events;
         }
 
-        internal EventGraph Events { get; }
+        public EventGraph Events { get; }
 
         internal ITenant DefaultTenant { get; }
 
@@ -397,7 +397,7 @@ namespace Marten
 
             if (projections == null)
             {
-                projections = viewTypes?.Select(x => Schema.Events.ProjectionFor(x)).Where(x => x != null).ToArray() ?? Schema.Events.AsyncProjections.ToArray();
+                projections = viewTypes?.Select(x => Events.ProjectionFor(x)).Where(x => x != null).ToArray() ?? Events.AsyncProjections.ToArray();
             }
 
             return new Daemon(this, DefaultTenant, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), projections);

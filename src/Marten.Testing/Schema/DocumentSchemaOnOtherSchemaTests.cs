@@ -58,7 +58,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_not_write_event_sql_if_the_event_graph_is_not_active()
         {
-            theSchema.Events.IsActive.ShouldBeFalse();
+            theStore.Events.IsActive.ShouldBeFalse();
 
             theSchema.ToDDL().ShouldNotContain("other.mt_streams");
         }
@@ -66,8 +66,8 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_write_the_event_sql_if_the_event_graph_is_active()
         {
-            theSchema.Events.AddEventType(typeof(MembersJoined));
-            theSchema.Events.IsActive.ShouldBeTrue();
+            theStore.Events.AddEventType(typeof(MembersJoined));
+            theStore.Events.IsActive.ShouldBeTrue();
 
             theSchema.ToDDL().ShouldContain("other.mt_streams");
         }
@@ -240,7 +240,7 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Schema.Events.IsActive.ShouldBeFalse();
+                store.Events.IsActive.ShouldBeFalse();
                 store.Schema.WriteDDLByType(_binAllsql);
             }
 
@@ -263,7 +263,7 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Schema.Events.IsActive.ShouldBeTrue();
+                store.Events.IsActive.ShouldBeTrue();
                 store.Schema.WriteDDLByType(_binAllsql);
             }
 
@@ -289,7 +289,7 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Schema.Events.IsActive.ShouldBeTrue();
+                store.Events.IsActive.ShouldBeTrue();
                 store.Schema.WriteDDLByType(_binAllsql);
             }
 
@@ -313,7 +313,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void resolve_storage_for_event_type()
         {
-            theSchema.Events.AddEventType(typeof(RaceStarted));
+            theStore.Events.AddEventType(typeof(RaceStarted));
 
             theSchema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));

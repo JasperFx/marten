@@ -128,7 +128,7 @@ namespace Marten.Schema
             if (documentType == typeof(EventStream))
             {
                 var patch = new SchemaPatch(this);
-                Events.SchemaObjects
+                StoreOptions.Events.SchemaObjects
                     .GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch);
 
                 return;
@@ -143,7 +143,6 @@ namespace Marten.Schema
             return StoreOptions.Storage.StorageFor(documentType);
         }
 
-        public EventGraph Events => StoreOptions.Events;
 
 
         public string[] AllSchemaNames()
@@ -361,8 +360,8 @@ namespace Marten.Schema
             foreach (var transform in StoreOptions.Transforms.AllFunctions().OrderBy(x => x.Name))
                 yield return transform;
 
-            if (Events.IsActive)
-                yield return Events.SchemaObjects;
+            if (StoreOptions.Events.IsActive)
+                yield return StoreOptions.Events.SchemaObjects;
         }
 
 

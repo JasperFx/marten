@@ -29,7 +29,7 @@ namespace Marten.CommandLine.Commands.Projection
                 case ProjectionInput.ProjectionKind.async:
                     return store.BuildProjectionDaemon(logger: logger);
                 case ProjectionInput.ProjectionKind.inline:
-                    return store.BuildProjectionDaemon(projections: store.Schema.Events.InlineProjections.ToArray(),
+                    return store.BuildProjectionDaemon(projections: store.Events.InlineProjections.ToArray(),
                         logger: GetDaemonLogger());
                 default:
                     throw new ArgumentOutOfRangeException(nameof(inputKind), inputKind, null);
