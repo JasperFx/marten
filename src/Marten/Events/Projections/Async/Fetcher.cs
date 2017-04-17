@@ -38,10 +38,10 @@ namespace Marten.Events.Projections.Async
 
             _connectionFactory = store.Advanced.Options.ConnectionFactory();
 
-            _selector = new EventSelector(store.Schema.Events, store.Advanced.Serializer);
+            _selector = new EventSelector(store.Events, store.Advanced.Serializer);
             _map = new NulloIdentityMap(store.Advanced.Serializer);
 
-            EventTypeNames = eventTypes.Select(x => store.Schema.Events.EventMappingFor(x).Alias).ToArray();
+            EventTypeNames = eventTypes.Select(x => store.Events.EventMappingFor(x).Alias).ToArray();
 
             _sql =
     $@"
@@ -52,7 +52,7 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
 ".Replace(" as d", "");
         }
 
-        public Fetcher(IDocumentStore store, DaemonSettings settings, IProjection projection, IDaemonLogger logger, IDaemonErrorHandler errorHandler)
+        public Fetcher(DocumentStore store, DaemonSettings settings, IProjection projection, IDaemonLogger logger, IDaemonErrorHandler errorHandler)
             : this(store, settings, projection.AsyncOptions, logger, errorHandler, projection.Consumes)
         {
         }

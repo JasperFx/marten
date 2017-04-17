@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using Marten.Schema;
@@ -96,6 +97,7 @@ namespace Marten
         /// </summary>
         IDocumentTransforms Transform { get; }
 
+        EventGraph Events { get; }
 
 
         IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null);

@@ -220,7 +220,7 @@ namespace Marten.Services
 
         private void writeEvents(UpdateBatch batch)
         {
-            var upsert = new EventStreamAppender(_store.Schema.Events);
+            var upsert = new EventStreamAppender(_store.Events);
             _events.Values.Each(stream => { upsert.RegisterUpdate(batch, stream); });
         }
 

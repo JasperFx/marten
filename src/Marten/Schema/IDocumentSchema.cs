@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Marten.Events;
 using Marten.Storage;
 
 namespace Marten.Schema
@@ -12,12 +11,6 @@ namespace Marten.Schema
         /// </summary>
         [Obsolete("Move off of DocumentStore")]
         StoreOptions StoreOptions { get; }
-
-        /// <summary>
-        /// The event store configuration
-        /// </summary>
-        [Obsolete("Hang off of DocumentStore directly")]
-        EventGraph Events { get; }
 
 
         /// <summary>
