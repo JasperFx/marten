@@ -124,7 +124,8 @@ namespace Marten.Schema
 
             assertIdentifierLengths(schema.StoreOptions);
 
-            DependentTypes.Each(schema.EnsureStorageExists);
+            // TODO -- expecting this to be obsolete anyway
+            DependentTypes.Each(schema.As<ITenant>().EnsureStorageExists);
 
 
             var diff = CreateSchemaDiff(schema);

@@ -174,9 +174,9 @@ namespace Marten.Services.BatchQuerying
             if (_identityMap.Has<T>(id))
                 return Task.FromResult(_identityMap.Retrieve<T>(id));
 
-            var mapping = _store.Schema.MappingFor(typeof(T)).ToQueryableDocument();
+            var mapping = _parent.Tenant.MappingFor(typeof(T)).ToQueryableDocument();
 
-            return AddItem(new LoadByIdHandler<T>(_store.Schema.StorageFor<T>(), mapping, id), null);
+            return AddItem(new LoadByIdHandler<T>(_parent.Tenant.StorageFor<T>(), mapping, id), null);
         }
 
         public Task<bool> Any<TDoc>(IMartenQueryable<TDoc> queryable)
@@ -275,8 +275,9 @@ namespace Marten.Services.BatchQuerying
 
             private Task<IList<TDoc>> load<TKey>(TKey[] keys)
             {
-                var resolver = _parent._store.Schema.StorageFor<TDoc>();
-                var mapping = _parent._store.Schema.MappingFor(typeof(TDoc)).ToQueryableDocument();
+                var tenant = _parent._parent.Tenant;
+                var resolver = tenant.StorageFor<TDoc>();
+                var mapping = tenant.MappingFor(typeof(TDoc)).ToQueryableDocument();
 
                 return _parent.AddItem(new LoadByIdArrayHandler<TDoc, TKey>(resolver, mapping, keys), null);
             }

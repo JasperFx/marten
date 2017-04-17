@@ -40,7 +40,7 @@ namespace Marten.Schema.Identity
 
         public void Assign(TDoc document, object id)
         {
-            if (_setter != null) _setter(document, (TId) id);
+            _setter?.Invoke(document, (TId) id);
         }
     }
 }

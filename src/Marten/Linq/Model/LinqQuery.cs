@@ -40,7 +40,9 @@ namespace Marten.Linq.Model
             Model = model;
             _store = store;
             _joins = joins;
-            _mapping = store.Schema.MappingFor(model.SourceType()).ToQueryableDocument();
+
+            // TODO -- going to have to push in the ITenant eventually
+            _mapping = store.DefaultTenant.MappingFor(model.SourceType()).ToQueryableDocument();
 
             for (var i = 0; i < model.BodyClauses.Count; i++)
             {
