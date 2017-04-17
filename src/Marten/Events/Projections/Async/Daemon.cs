@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async.ErrorHandling;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Events.Projections.Async
@@ -11,12 +12,14 @@ namespace Marten.Events.Projections.Async
     public class Daemon : IDaemon
     {
         private readonly IDocumentStore _store;
+        private readonly ITenant _tenant;
         private readonly IDictionary<Type, IProjectionTrack> _tracks = new Dictionary<Type, IProjectionTrack>();
         private readonly DaemonErrorHandler _errorHandler;
 
-        public Daemon(IDocumentStore store, DaemonSettings settings, IDaemonLogger logger, IEnumerable<IProjection> projections)
+        public Daemon(IDocumentStore store, ITenant tenant, DaemonSettings settings, IDaemonLogger logger, IEnumerable<IProjection> projections)
         {
             _store = store;
+            _tenant = tenant;
             Logger = logger;
 
             _errorHandler = new DaemonErrorHandler(this, logger, settings.ExceptionHandling);
@@ -28,7 +31,7 @@ namespace Marten.Events.Projections.Async
                         $"No projection is configured for view type {projection.Produces.FullName}");
 
                 var fetcher = new Fetcher(store, settings, projection, logger, _errorHandler);
-                var track = new ProjectionTrack(fetcher, store, projection, logger, _errorHandler);
+                var track = new ProjectionTrack(fetcher, store, projection, logger, _errorHandler, tenant);
 
                 _tracks.Add(projection.Produces, track);
             }
@@ -93,10 +96,10 @@ namespace Marten.Events.Projections.Async
 
             foreach (var track in _tracks.Values)
             {
-                _store.Schema.EnsureStorageExists(track.ViewType);
+                _tenant.EnsureStorageExists(track.ViewType);
             }
 
-            _store.Schema.EnsureStorageExists(typeof(EventStream));
+            _tenant.EnsureStorageExists(typeof(EventStream));
 
             findCurrentEventLogPositions();
 
@@ -114,7 +117,7 @@ namespace Marten.Events.Projections.Async
             {
                 conn.Execute(cmd =>
                 {
-                    cmd.Sql($"select name, last_seq_id from {_store.Schema.Events.ProgressionTable}");
+                    cmd.Sql($"select name, last_seq_id from {_tenant.Events.ProgressionTable}");
 
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -214,7 +217,7 @@ namespace Marten.Events.Projections.Async
             {
                 return await conn.ExecuteAsync(async (cmd, tkn) =>
                 {
-                    cmd.Sql($"select max(seq_id) from {_store.Schema.Events.Table}");
+                    cmd.Sql($"select max(seq_id) from {_tenant.Events.Table}");
                     using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                     {
                         var any = await reader.ReadAsync(tkn).ConfigureAwait(false);

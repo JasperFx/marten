@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
+using Marten.Storage;
 using Marten.Testing.CodeTracker;
 using NSubstitute;
 using Shouldly;
@@ -117,7 +118,7 @@ namespace Marten.Testing.Events.Projections.Async
 
             projection.AsyncOptions.Returns(new AsyncOptions());
 
-            theProjectionTrack = new ProjectionTrack(theFetcher, Substitute.For<IDocumentStore>(), projection, Substitute.For<IDaemonLogger>(), new StubErrorHandler());
+            theProjectionTrack = new ProjectionTrack(theFetcher, Substitute.For<IDocumentStore>(), projection, Substitute.For<IDaemonLogger>(), new StubErrorHandler(), Substitute.For<ITenant>());
 
 
 

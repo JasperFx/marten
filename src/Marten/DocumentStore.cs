@@ -79,6 +79,10 @@ namespace Marten
             _logger = options.Logger();
 
             Schema = new DocumentSchema(this, _connectionFactory, _logger);
+
+            // TODO -- think this is temporary
+            DefaultTenant = Schema.As<ITenant>();
+
             Storage = options.Storage;
 
             Storage.CompileSubClasses();
@@ -112,6 +116,8 @@ namespace Marten
 
             HandlerFactory = new QueryHandlerFactory(this);
         }
+
+        internal ITenant DefaultTenant { get; }
 
         internal IQueryHandlerFactory HandlerFactory { get; }
 
@@ -222,7 +228,7 @@ namespace Marten
 
         private void bulkInsertDocuments<T>(T[] documents, int batchSize, NpgsqlConnection conn, BulkInsertMode mode)
         {
-            var loader = Schema.BulkLoaderFor<T>();
+            var loader = DefaultTenant.BulkLoaderFor<T>();
 
             if (mode != BulkInsertMode.InsertsOnly)
             {
@@ -313,7 +319,7 @@ namespace Marten
             var map = createMap(tracking, sessionPool, localListeners);
 
             // TODO -- need to pass in the default tenant instead when that exists
-            var session = new DocumentSession(this, connection, _parser, map, Schema, localListeners);
+            var session = new DocumentSession(this, connection, _parser, map, DefaultTenant, localListeners);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
@@ -360,7 +366,7 @@ namespace Marten
 
             var session = new QuerySession(this,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout), parser,
-                new NulloIdentityMap(Serializer), Schema);
+                new NulloIdentityMap(Serializer), DefaultTenant);
 
             session.Logger = _logger.StartSession(session);
 
@@ -373,7 +379,7 @@ namespace Marten
 
             var session = new QuerySession(this,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser,
-                new NulloIdentityMap(Serializer), Schema);
+                new NulloIdentityMap(Serializer), DefaultTenant);
 
             session.Logger = _logger.StartSession(session);
 
@@ -383,14 +389,14 @@ namespace Marten
         public IDocumentTransforms Transform { get; }
         public IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null)
         {
-            Schema.EnsureStorageExists(typeof(EventStream));
+            DefaultTenant.EnsureStorageExists(typeof(EventStream));
 
             if (projections == null)
             {
                 projections = viewTypes?.Select(x => Schema.Events.ProjectionFor(x)).Where(x => x != null).ToArray() ?? Schema.Events.AsyncProjections.ToArray();
             }
 
-            return new Daemon(this, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), projections);
+            return new Daemon(this, DefaultTenant, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), projections);
         }
     }
 }
