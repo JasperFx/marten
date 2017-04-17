@@ -194,7 +194,7 @@ namespace Marten.Services
                     // out as is trying to make this work
                     if (operation is Upsert)
                     {
-                        operation.As<Upsert>().Persist(batch, _store);
+                        operation.As<Upsert>().Persist(batch, _tenant);
                     }
                     else
                     {
@@ -210,7 +210,7 @@ namespace Marten.Services
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
             {
-                var upsert = _tenant.StorageFor(group.Key);
+                var upsert = _store.Schema.StorageFor(group.Key);
 
                 group.Each(c => { upsert.RegisterUpdate(batch, c.Document, c.Json); });
             });
@@ -220,13 +220,13 @@ namespace Marten.Services
 
         private void writeEvents(UpdateBatch batch)
         {
-            var upsert = new EventStreamAppender(_tenant.Events);
+            var upsert = new EventStreamAppender(_store.Schema.Events);
             _events.Values.Each(stream => { upsert.RegisterUpdate(batch, stream); });
         }
 
         private IEnumerable<Type> GetTypeDependencies(Type type)
         {
-            var documentMapping = _tenant.MappingFor(type) as DocumentMapping;
+            var documentMapping = _store.Schema.MappingFor(type) as DocumentMapping;
             if (documentMapping == null)
                 return Enumerable.Empty<Type>();
 
@@ -304,9 +304,9 @@ namespace Marten.Services
         {
         }
 
-        public bool Persist(UpdateBatch batch, DocumentStore store)
+        public bool Persist(UpdateBatch batch, ITenant tenant)
         {
-            var upsert = store.Schema.StorageFor(Document.GetType());
+            var upsert = tenant.StorageFor(Document.GetType());
             upsert.RegisterUpdate(batch, Document);
 
             return true;
