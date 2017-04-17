@@ -69,7 +69,7 @@ namespace Marten
         public UnitOfWork CreateUnitOfWork()
         {
             // TODO -- this is going to have to move out when we go multi-tenanted
-            return new UnitOfWork(_store, _store.Schema);
+            return new UnitOfWork(_store, _store.DefaultTenant);
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace Marten
         /// <returns></returns>
         public IList<IDocumentStorage> PrecompileAllStorage()
         {
-            return Options.Storage.AllDocumentMappings.Select(x => _store.Schema.StorageFor(x.DocumentType)).ToList();
+            return Options.Storage.AllDocumentMappings.Select(x => _store.DefaultTenant.StorageFor(x.DocumentType)).ToList();
         }
 
         /// <summary>
@@ -90,8 +90,8 @@ namespace Marten
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var handler = new EntityMetadataQueryHandler(entity, _store.Schema.StorageFor(typeof(T)),
-                _store.Schema.MappingFor(typeof(T)));
+            var handler = new EntityMetadataQueryHandler(entity, _store.DefaultTenant.StorageFor(typeof(T)),
+                _store.DefaultTenant.MappingFor(typeof(T)));
 
             using (var connection = OpenConnection())
             {
@@ -109,8 +109,8 @@ namespace Marten
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var handler = new EntityMetadataQueryHandler(entity, _store.Schema.StorageFor(typeof(T)),
-                _store.Schema.MappingFor(typeof(T)));
+            var handler = new EntityMetadataQueryHandler(entity, _store.DefaultTenant.StorageFor(typeof(T)),
+                _store.DefaultTenant.MappingFor(typeof(T)));
 
             using (var connection = OpenConnection())
             {
@@ -127,8 +127,8 @@ namespace Marten
         public void ResetHiloSequenceFloor<T>(long floor)
         {
             // Make sure that the sequence is built for this one
-            _store.Schema.IdAssignmentFor<T>();
-            var sequence = _store.Schema.Sequences.SequenceFor(typeof(T));
+            _store.DefaultTenant.IdAssignmentFor<T>();
+            var sequence = _store.DefaultTenant.Sequences.SequenceFor(typeof(T));
             sequence.SetFloor(floor);
         }
     }

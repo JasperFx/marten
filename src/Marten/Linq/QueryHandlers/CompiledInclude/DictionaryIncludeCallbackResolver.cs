@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Baseline;
 using Marten.Schema;
+using Marten.Storage;
 
 namespace Marten.Linq.QueryHandlers.CompiledInclude
 {
@@ -10,13 +11,13 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
     {
         private readonly ICompiledQuery<TDoc, TOut> _query;
         private readonly IncludeResultOperator _includeOperator;
-        private readonly IDocumentSchema _schema;
+        private readonly ITenant _tenant;
 
-        public DictionaryIncludeCallbackResolver(ICompiledQuery<TDoc, TOut> query, IncludeResultOperator includeOperator, IDocumentSchema schema)
+        public DictionaryIncludeCallbackResolver(ICompiledQuery<TDoc, TOut> query, IncludeResultOperator includeOperator, ITenant tenant)
         {
             _query = query;
             _includeOperator = includeOperator;
-            _schema = schema;
+            _tenant = tenant;
         }
 
         public Action<TInclude> Resolve(PropertyInfo property, IncludeTypeContainer typeContainer)
@@ -29,7 +30,7 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
         {
             var queryProperty = GetPropertyInfo(property, @operator);
 
-            var storage = _schema.StorageFor(typeof(TInclude));
+            var storage = _tenant.StorageFor(typeof(TInclude));
 
             var dictionary = (IDictionary<TKey, TInclude>)(queryProperty).GetValue(query);
             if (dictionary == null)
@@ -39,11 +40,11 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
             }
 
             return x => {
-                            var id = storage.Identity(x).As<TKey>();
-                            if (!dictionary.ContainsKey(id))
-                            {
-                                dictionary.Add(id, x);
-                            }
+                var id = storage.Identity(x).As<TKey>();
+                if (!dictionary.ContainsKey(id))
+                {
+                    dictionary.Add(id, x);
+                }
             };
         }
     }
