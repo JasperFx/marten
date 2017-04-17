@@ -312,7 +312,8 @@ namespace Marten
             var sessionPool = CreateWriterPool();
             var map = createMap(tracking, sessionPool, localListeners);
 
-            var session = new DocumentSession(this, connection, _parser, map, sessionPool, localListeners);
+            // TODO -- need to pass in the default tenant instead when that exists
+            var session = new DocumentSession(this, connection, _parser, map, Schema, localListeners);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
@@ -359,7 +360,7 @@ namespace Marten
 
             var session = new QuerySession(this,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout), parser,
-                new NulloIdentityMap(Serializer));
+                new NulloIdentityMap(Serializer), Schema);
 
             session.Logger = _logger.StartSession(session);
 
@@ -372,7 +373,7 @@ namespace Marten
 
             var session = new QuerySession(this,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser,
-                new NulloIdentityMap(Serializer));
+                new NulloIdentityMap(Serializer), Schema);
 
             session.Logger = _logger.StartSession(session);
 

@@ -10,6 +10,7 @@ using Marten.Linq;
 using Marten.Patching;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
@@ -20,8 +21,8 @@ namespace Marten
         private readonly UnitOfWork _unitOfWork;
         private readonly IList<IDocumentSessionListener> _sessionListeners;
 
-        public DocumentSession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, CharArrayTextWriter.Pool writerPool, IList<IDocumentSessionListener> localListeners)
-            : base(store, connection, parser, identityMap)
+        public DocumentSession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, ITenant tenant, IList<IDocumentSessionListener> localListeners)
+            : base(store, connection, parser, identityMap, tenant)
 
         {
             _connection = connection;
