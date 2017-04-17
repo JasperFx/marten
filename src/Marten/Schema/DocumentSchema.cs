@@ -32,9 +32,6 @@ namespace Marten.Schema
         private readonly ConcurrentDictionary<string, TransformFunction> _transforms =
             new ConcurrentDictionary<string, TransformFunction>();
 
-        private readonly ConcurrentDictionary<Type, IDocumentUpsert> _upserts =
-            new ConcurrentDictionary<Type, IDocumentUpsert>();
-
         public DocumentSchema(DocumentStore store, IConnectionFactory factory, IMartenLogger logger)
         {
             _factory = factory;
@@ -115,14 +112,6 @@ namespace Marten.Schema
                 throw new ArgumentOutOfRangeException("T", "Marten cannot do bulk inserts of " + typeof(T).FullName);
             }).As<IBulkLoader<T>>();
         }
-
-        public IDocumentUpsert UpsertFor(Type documentType)
-        {
-            EnsureStorageExists(documentType);
-
-            return _upserts.GetOrAdd(documentType, type => { return MappingFor(documentType).BuildUpsert(this); });
-        }
-
 
         public StoreOptions StoreOptions { get; }
 

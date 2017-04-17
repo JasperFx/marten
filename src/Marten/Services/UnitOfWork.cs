@@ -207,7 +207,7 @@ namespace Marten.Services
             var changes = detectTrackerChanges();
             changes.GroupBy(x => x.DocumentType).Each(group =>
             {
-                var upsert = _store.Schema.UpsertFor(group.Key);
+                var upsert = _store.Schema.StorageFor(group.Key);
 
                 group.Each(c => { upsert.RegisterUpdate(batch, c.Document, c.Json); });
             });
@@ -303,7 +303,7 @@ namespace Marten.Services
 
         public bool Persist(UpdateBatch batch, DocumentStore store)
         {
-            var upsert = store.Schema.UpsertFor(Document.GetType());
+            var upsert = store.Schema.StorageFor(Document.GetType());
             upsert.RegisterUpdate(batch, Document);
 
             return true;

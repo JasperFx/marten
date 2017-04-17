@@ -20,11 +20,6 @@ namespace Marten.Schema
 
         IQueryableDocument ToQueryableDocument();
 
-        IDocumentUpsert BuildUpsert(IDocumentSchema schema);
-
-        // More methods for creating a deleter? Queryable document?
-
-
         Type IdType { get; }
 
     }

@@ -9,12 +9,6 @@ using NpgsqlTypes;
 
 namespace Marten.Schema
 {
-    public interface IDocumentUpsert
-    {
-        void RegisterUpdate(UpdateBatch batch, object entity);
-        void RegisterUpdate(UpdateBatch batch, object entity, string json);
-    }
-
     public interface IDocumentStorage
     {
         Type DocumentType { get; }
@@ -37,6 +31,9 @@ namespace Marten.Schema
         IStorageOperation DeletionForEntity(object entity);
 
         IStorageOperation DeletionForWhere(IWhereFragment @where);
+
+        void RegisterUpdate(UpdateBatch batch, object entity);
+        void RegisterUpdate(UpdateBatch batch, object entity, string json);
     }
 
     public interface IDocumentStorage<T> : IDocumentStorage

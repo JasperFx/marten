@@ -95,11 +95,6 @@ namespace Marten.Events
             return this;
         }
 
-        public IDocumentUpsert BuildUpsert(IDocumentSchema schema)
-        {
-            throw new NotSupportedException("Please use Events.Append() or Events.StartStream() to add events to the event log");
-        }
-
         public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback)
         {
             return _inner.JoinToInclude<TOther>(joinType, other, members, callback);

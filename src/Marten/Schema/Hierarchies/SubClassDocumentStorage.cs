@@ -11,7 +11,7 @@ using NpgsqlTypes;
 namespace Marten.Schema.Hierarchies
 {
     public class SubClassDocumentStorage<T, TBase>
-        : IDocumentStorage, IDocumentUpsert, IDocumentStorage<T>
+        : IDocumentStorage<T>
         where T : class, TBase
         where TBase : class
     {
@@ -54,14 +54,12 @@ namespace Marten.Schema.Hierarchies
 
         public void RegisterUpdate(UpdateBatch batch, object entity)
         {
-            // TODO -- smelly
-            _parent.As<IDocumentUpsert>().RegisterUpdate(batch, entity);
+            _parent.RegisterUpdate(batch, entity);
         }
 
         public void RegisterUpdate(UpdateBatch batch, object entity, string json)
         {
-            // TODO -- smelly
-            _parent.As<IDocumentUpsert>().RegisterUpdate(batch, entity, json);
+            _parent.RegisterUpdate(batch, entity, json);
         }
 
         public void Remove(IIdentityMap map, object entity)
