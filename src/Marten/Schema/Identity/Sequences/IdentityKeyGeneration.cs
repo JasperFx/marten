@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Baseline;
+using Marten.Storage;
 
 namespace Marten.Schema.Identity.Sequences
 {
@@ -20,9 +21,9 @@ namespace Marten.Schema.Identity.Sequences
 
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(string)};
 
-        public IIdGenerator<T> Build<T>(IDocumentSchema schema)
+        public IIdGenerator<T> Build<T>(ITenant tenant)
         {
-            var sequence = schema.Sequences.Hilo(_mapping.DocumentType, _hiloSettings);
+            var sequence = tenant.Sequences.Hilo(_mapping.DocumentType, _hiloSettings);
             return (IIdGenerator<T>) new IdentityKeyGenerator(_mapping.Alias, sequence);
         }
     }

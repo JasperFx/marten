@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Baseline;
+using Marten.Storage;
 
 namespace Marten.Schema.Identity
 {
@@ -9,7 +10,7 @@ namespace Marten.Schema.Identity
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(string)};
 
 
-        public IIdGenerator<T> Build<T>(IDocumentSchema schema)
+        public IIdGenerator<T> Build<T>(ITenant tenant)
         {
             return this.As<IIdGenerator<T>>();
         }
