@@ -161,7 +161,7 @@ namespace Marten.Services.BatchQuerying
 
         public Task<T> AddItem<T>(IQueryHandler<T> handler, QueryStatistics stats)
         {
-            _store.Schema.EnsureStorageExists(handler.SourceType);
+            _parent.Tenant.EnsureStorageExists(handler.SourceType);
 
             var item = new BatchQueryItem<T>(handler, stats);
             _items.Add(item);
