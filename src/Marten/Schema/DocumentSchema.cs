@@ -20,7 +20,6 @@ namespace Marten.Schema
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
             new ConcurrentDictionary<Type, IDocumentStorage>();
 
-        private readonly Lazy<EventQueryMapping> _eventQuery;
 
         private readonly IConnectionFactory _factory;
 
@@ -63,8 +62,6 @@ namespace Marten.Schema
 
 
             addSystemFunction(StoreOptions, "mt_immutable_timestamp", "text");
-
-            _eventQuery = new Lazy<EventQueryMapping>(() => new EventQueryMapping(StoreOptions));
         }
 
 
@@ -134,9 +131,6 @@ namespace Marten.Schema
 
         public IDocumentMapping MappingFor(Type documentType)
         {
-            if (documentType == typeof(IEvent))
-                return _eventQuery.Value;
-
             return StoreOptions.Storage.FindMapping(documentType);
         }
 
