@@ -6,6 +6,7 @@ using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
+using Marten.Storage;
 using Marten.Util;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -16,17 +17,19 @@ namespace Marten.Transforms
     {
         private readonly DocumentStore _store;
         private readonly IConnectionFactory _factory;
+        private readonly ITenant _tenant;
 
-        public DocumentTransforms(DocumentStore store, IConnectionFactory factory)
+        public DocumentTransforms(DocumentStore store, IConnectionFactory factory, ITenant tenant)
         {
             _store = store;
             _factory = factory;
+            _tenant = tenant;
         }
 
         public void All<T>(string transformName)
         {
-            var transform = _store.Schema.TransformFor(transformName);
-            var mapping = _store.Schema.MappingFor(typeof(T));
+            var transform = _tenant.TransformFor(transformName);
+            var mapping = _tenant.MappingFor(typeof(T));
 
             var cmd = CommandBuilder.BuildCommand(sql =>
             {
@@ -69,8 +72,8 @@ namespace Marten.Transforms
 
         public void Where<T>(string transformName, Expression<Func<T, bool>> @where)
         {
-            var transform = _store.Schema.TransformFor(transformName);
-            var mapping = _store.Schema.MappingFor(typeof(T));
+            var transform = _tenant.TransformFor(transformName);
+            var mapping = _tenant.MappingFor(typeof(T));
             var whereFragment = findWhereFragment(@where, mapping);
 
             var cmd = CommandBuilder.BuildCommand(sql =>
@@ -128,8 +131,8 @@ namespace Marten.Transforms
 
         private void transformOne<T>(string transformName, object id)
         {
-            var transform = _store.Schema.TransformFor(transformName);
-            var mapping = _store.Schema.MappingFor(typeof(T));
+            var transform = _tenant.TransformFor(transformName);
+            var mapping = _tenant.MappingFor(typeof(T));
 
             var cmd = CommandBuilder.BuildCommand(sql =>
             {
