@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Marten.Events.Projections.Async.ErrorHandling;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Events.Projections.Async
@@ -17,6 +18,7 @@ namespace Marten.Events.Projections.Async
         private readonly IFetcher _fetcher;
         private readonly IDaemonLogger _logger;
         private readonly IDaemonErrorHandler _errorHandler;
+        private readonly ITenant _tenant;
         private readonly IProjection _projection;
         private readonly TaskCompletionSource<long> _rebuildCompletion = new TaskCompletionSource<long>();
         private readonly IDocumentStore _store;
@@ -24,15 +26,16 @@ namespace Marten.Events.Projections.Async
         private bool _isDisposed;
         private bool _atEndOfEventLog;
 
-        public ProjectionTrack(IFetcher fetcher, IDocumentStore store, IProjection projection, IDaemonLogger logger, IDaemonErrorHandler errorHandler)
+        public ProjectionTrack(IFetcher fetcher, IDocumentStore store, IProjection projection, IDaemonLogger logger, IDaemonErrorHandler errorHandler, ITenant tenant)
         {
             _fetcher = fetcher;
             _projection = projection;
             _logger = logger;
             _errorHandler = errorHandler;
+            _tenant = tenant;
             _store = store;
 
-            _events = store.Schema.Events;
+            _events = _tenant.Events;
 
             ViewType = _projection.Produces;
         }
@@ -115,7 +118,7 @@ namespace Marten.Events.Projections.Async
         {
             _logger.StartingProjection(this, lifecycle);
 
-            _store.Schema.EnsureStorageExists(_projection.Produces);
+            _tenant.EnsureStorageExists(_projection.Produces);
 
             startConsumers();
 
@@ -153,7 +156,7 @@ namespace Marten.Events.Projections.Async
 
         public Task<long> RunUntilEndOfEvents(CancellationToken token = default(CancellationToken))
         {
-            _store.Schema.EnsureStorageExists(_projection.Produces);
+            _tenant.EnsureStorageExists(_projection.Produces);
 
             Start(DaemonLifecycle.StopAtEndOfEventData);
 
@@ -164,7 +167,7 @@ namespace Marten.Events.Projections.Async
         {
             Lifecycle = DaemonLifecycle.StopAtEndOfEventData;
 
-            _store.Schema.EnsureStorageExists(_projection.Produces);
+            _tenant.EnsureStorageExists(_projection.Produces);
 
             await _fetcher.Stop().ConfigureAwait(false);
 
@@ -195,6 +198,7 @@ namespace Marten.Events.Projections.Async
 
         private async Task executePage(EventPage page, CancellationToken cancellation)
         {
+            // TODO -- have to pass in the tenant here
             using (var session = _store.OpenSession())
             {
                 await _projection.ApplyAsync(session, page.Streams, cancellation).ConfigureAwait(false);
@@ -271,9 +275,9 @@ namespace Marten.Events.Projections.Async
         {
             _logger.ClearingExistingState(this);
 
-            var tableName = _store.Schema.MappingFor(_projection.Produces).Table;
+            var tableName = _tenant.MappingFor(_projection.Produces).Table;
             var sql =
-                $"delete from {_store.Schema.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
+                $"delete from {_tenant.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
 
             using (var conn = _store.Advanced.OpenConnection())
             {
