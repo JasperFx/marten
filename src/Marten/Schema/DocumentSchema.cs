@@ -17,9 +17,6 @@ namespace Marten.Schema
     {
         private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new ConcurrentDictionary<Type, object>();
 
-        private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
-            new ConcurrentDictionary<Type, IDocumentStorage>();
-
 
         private readonly IConnectionFactory _factory;
 
@@ -153,24 +150,8 @@ namespace Marten.Schema
 
         public IDocumentStorage StorageFor(Type documentType)
         {
-            return _documentTypes.GetOrAdd(documentType, type =>
-            {
-                var mapping = MappingFor(documentType);
-                if (mapping is IDocumentStorage)
-                {
-                    buildSchemaObjectsIfNecessary(mapping);
-                    return mapping.As<IDocumentStorage>();
-                }
-
-
-                assertNoDuplicateDocumentAliases();
-
-                var storage = mapping.BuildStorage(StoreOptions);
-
-                buildSchemaObjectsIfNecessary(mapping);
-
-                return storage;
-            });
+            EnsureStorageExists(documentType);
+            return StoreOptions.Storage.StorageFor(documentType);
         }
 
         public EventGraph Events => StoreOptions.Events;
@@ -358,7 +339,6 @@ namespace Marten.Schema
             foreach (var schemaObject in AllSchemaObjects())
                 schemaObject.ResetSchemaExistenceChecks();
 
-            _documentTypes.Clear();
             _transforms.Clear();
         }
 
@@ -455,24 +435,6 @@ namespace Marten.Schema
                 x => x.SchemaObjects.GenerateSchemaObjectsIfNecessary(StoreOptions.AutoCreateSchemaObjects, this, patch));
         }
 
-        private void assertNoDuplicateDocumentAliases()
-        {
-            var duplicates =
-                StoreOptions.Storage.AllDocumentMappings.Where(x => !x.StructuralTyped)
-                    .GroupBy(x => x.Alias)
-                    .Where(x => x.Count() > 1)
-                    .ToArray();
-            if (duplicates.Any())
-            {
-                var message = duplicates.Select(group =>
-                {
-                    return
-                        $"Document types {group.Select(x => x.DocumentType.Name).Join(", ")} all have the same document alias '{group.Key}'. You must explicitly make document type aliases to disambiguate the database schema objects";
-                }).Join("\n");
-
-                throw new AmbiguousDocumentTypeAliasesException(message);
-            }
-        }
 
         public void RebuildSystemFunctions()
         {
