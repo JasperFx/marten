@@ -49,7 +49,6 @@ namespace Marten
         {
             assertNotDisposed();
 
-            var executor = new MartenQueryExecutor(_connection, _store, _identityMap);
 
             var queryProvider = new MartenQueryProvider(typeof(MartenQueryable<>), _parser, executor);
             return new MartenQueryable<T>(queryProvider);

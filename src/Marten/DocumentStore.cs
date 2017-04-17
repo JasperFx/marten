@@ -89,7 +89,6 @@ namespace Marten
 
             Serializer = options.Serializer();
 
-            var cleaner = new DocumentCleaner(_connectionFactory, Schema.As<DocumentSchema>());
             if (options.UseCharBufferPooling)
             {
                 _writerPool = new CharArrayTextWriter.Pool();

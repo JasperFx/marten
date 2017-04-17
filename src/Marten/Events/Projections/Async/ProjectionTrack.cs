@@ -21,12 +21,12 @@ namespace Marten.Events.Projections.Async
         private readonly ITenant _tenant;
         private readonly IProjection _projection;
         private readonly TaskCompletionSource<long> _rebuildCompletion = new TaskCompletionSource<long>();
-        private readonly IDocumentStore _store;
+        private readonly DocumentStore _store;
         private readonly IList<EventWaiter> _waiters = new List<EventWaiter>();
         private bool _isDisposed;
         private bool _atEndOfEventLog;
 
-        public ProjectionTrack(IFetcher fetcher, IDocumentStore store, IProjection projection, IDaemonLogger logger, IDaemonErrorHandler errorHandler, ITenant tenant)
+        public ProjectionTrack(IFetcher fetcher, DocumentStore store, IProjection projection, IDaemonLogger logger, IDaemonErrorHandler errorHandler, ITenant tenant)
         {
             _fetcher = fetcher;
             _projection = projection;
@@ -35,7 +35,7 @@ namespace Marten.Events.Projections.Async
             _tenant = tenant;
             _store = store;
 
-            _events = _tenant.Events;
+            _events = store.Events;
 
             ViewType = _projection.Produces;
         }
@@ -277,7 +277,7 @@ namespace Marten.Events.Projections.Async
 
             var tableName = _tenant.MappingFor(_projection.Produces).Table;
             var sql =
-                $"delete from {_tenant.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
+                $"delete from {_store.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
 
             using (var conn = _store.Advanced.OpenConnection())
             {

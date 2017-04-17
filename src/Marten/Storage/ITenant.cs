@@ -56,9 +56,6 @@ namespace Marten.Storage
         /// <returns></returns>
         IBulkLoader<T> BulkLoaderFor<T>();
 
-
-        EventGraph Events { get; }
-
         IEnumerable<IDocumentMapping> AllMappings { get; }
 
     }

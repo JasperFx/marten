@@ -118,7 +118,7 @@ namespace Marten.Testing.Events.Projections.Async
 
             projection.AsyncOptions.Returns(new AsyncOptions());
 
-            theProjectionTrack = new ProjectionTrack(theFetcher, Substitute.For<IDocumentStore>(), projection, Substitute.For<IDaemonLogger>(), new StubErrorHandler(), Substitute.For<ITenant>());
+            theProjectionTrack = new ProjectionTrack(theFetcher, TestingDocumentStore.Basic(), projection, Substitute.For<IDaemonLogger>(), new StubErrorHandler(), Substitute.For<ITenant>());
 
 
 
