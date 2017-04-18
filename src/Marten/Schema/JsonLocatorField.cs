@@ -75,6 +75,7 @@ namespace Marten.Schema
                     locator += $" -> '{members[i].Name}'";
                 }
 
+                
                 locator += $" ->> '{members.Last().Name}'";
 
             }

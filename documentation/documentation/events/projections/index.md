@@ -39,9 +39,10 @@ Now, we can plug our new transform type above as a projection when we configure 
 
 ## Aggregated Views Across a Single Stream
 
-As of now (v1.0), Marten is only supporting aggregation via .Net classes. The out of the box convention is to expose `Apply([Event Type])` methods
-on your aggregate class to do all incremental updates to an aggregate object. Sticking with the fantasy theme, the `QuestParty` class shown below
-could be used to aggregate streams of quest data:
+As of now (v1.0), Marten is only supporting aggregation via .Net classes. The out of the box convention is to expose `public Apply([Event Type])` methods
+on your aggregate class to do all incremental updates to an aggregate object.  This can be customised using [AggregatorLookup](#aggregator-lookup).
+
+Sticking with the fantasy theme, the `QuestParty` class shown below could be used to aggregate streams of quest data:
 
 <[sample:QuestParty]>
 

@@ -2,7 +2,7 @@ require 'json'
 
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '1.4.1';
+BUILD_VERSION = '1.5.0';
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
@@ -99,14 +99,14 @@ end
 desc "Run the storyteller specifications"
 task :storyteller => [:compile] do
 	Dir.chdir("src/Marten.Storyteller") do
-	  system "dotnet storyteller run -r artifacts"
+	  system "dotnet storyteller run -r artifacts --culture en-US"
 	end
 end
 
 desc "Run the storyteller specifications"
 task :open_st => [:compile] do
 	Dir.chdir("src/Marten.Storyteller") do
-	  system "dotnet storyteller open"
+	  system "dotnet storyteller open --culture en-US"
 	end
 end
 

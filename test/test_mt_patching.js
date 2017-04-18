@@ -116,6 +116,14 @@ describe('Patching API', function() {
     expect(Patch(doc, patch)).to.deep.equal({numbers: [5]});
   });
 
+  it('can append if not exists to a first level array', function() {
+    var doc = {numbers: []};
+
+    var patch = {type: 'append_if_not_exists', path: 'numbers', value: 5};
+
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [5]});
+  });
+
   it('can append to a first level array with existing elements', function() {
     var doc = {numbers: [3, 4]};
 
@@ -124,10 +132,34 @@ describe('Patching API', function() {
     expect(Patch(doc, patch)).to.deep.equal({numbers: [3, 4, 5]});
   });
 
+  it('can append if not exists to a first level array with existing elements', function() {
+    var doc = {numbers: [3, 4]};
+
+    var patch = {type: 'append_if_not_exists', path: 'numbers', value: 5};
+
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [3, 4, 5]});
+  });  
+
+  it('can append if not exists to a first level array with existing element and element count stays the same', function() {
+    var doc = {numbers: [3, 4]};
+
+    var patch = {type: 'append_if_not_exists', path: 'numbers', value: 4};
+
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [3, 4]});
+  });  
+
   it('can append to a first level array when the array does not already exist', function() {
     var doc = {};
 
     var patch = {type: 'append', path: 'numbers', value: 5};
+
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [5]});
+  });
+
+  it('can append if not exists to a first level array when the array does not already exist', function() {
+    var doc = {};
+
+    var patch = {type: 'append_if_not_exists', path: 'numbers', value: 5};
 
     expect(Patch(doc, patch)).to.deep.equal({numbers: [5]});
   });
@@ -140,13 +172,58 @@ describe('Patching API', function() {
     expect(Patch(doc, patch)).to.deep.equal({region: {numbers: [5]}});
   });
 
-  it('can append to a 3rd level array when the array does not already exist', function() {
+  it('can append if not exists to a 2nd level array when the array does not already exist', function() {
+    var doc = {};
+
+    var patch = {type: 'append_if_not_exists', path: 'region.numbers', value: 5};
+
+    expect(Patch(doc, patch)).to.deep.equal({region: {numbers: [5]}});
+  });
+
+  it('can append to a 3rd level array with existing elements', function() {
     var doc = {division: {region: {numbers: [3, 4]}}};
 
     var patch = {type: 'append', path: 'division.region.numbers', value: 5};
 
     expect(Patch(doc, patch)).to.deep.equal({division: {region: {numbers: [3, 4, 5]}}});
   });
+
+  it('can append if not exists to a 3rd level array with existing elements', function() {
+    var doc = {division: {region: {numbers: [3, 4]}}};
+
+    var patch = {type: 'append_if_not_exists', path: 'division.region.numbers', value: 5};
+
+    expect(Patch(doc, patch)).to.deep.equal({division: {region: {numbers: [3, 4, 5]}}});
+  });  
+
+  it('can append if not exists to a 3rd level array with existing elements and the element count stays the same', function() {
+    var doc = {division: {region: {numbers: [3, 4]}}};
+
+    var patch = {type: 'append_if_not_exists', path: 'division.region.numbers', value: 4};
+
+    expect(Patch(doc, patch)).to.deep.equal({division: {region: {numbers: [3, 4]}}});
+  });   
+
+  it('can append if not exists to an array with complex element', function() {
+    var doc = {divisions: [{region: {numbers: [3, 4]}},{region: {numbers: [5, 6]}}]};
+
+    var element = {region: {numbers: [7,8]}}
+
+    var patch = {type: 'append_if_not_exists', path: 'divisions', value: element};
+
+    expect(Patch(doc, patch)).to.deep.equal({divisions: [{region: {numbers: [3, 4]}},{region: {numbers: [5, 6]}},{region: {numbers: [7, 8]}}]});
+  });     
+
+  it('can append if not exists to an array with complex existing element and element count stays the same', function() {
+    var doc = {divisions: [{region: {numbers: [3, 4]}},{region: {numbers: [5, 6]}}]};
+
+    var element = {region: {numbers: [5,6]}}
+
+    var patch = {type: 'append_if_not_exists', path: 'divisions', value: element};
+
+    expect(Patch(doc, patch)).to.deep.equal({divisions: [{region: {numbers: [3, 4]}},{region: {numbers: [5, 6]}}]});
+  });     
+  
 
   it('can rename a prop shallow', function() {
     var doc = {number: 1};
@@ -180,6 +257,22 @@ describe('Patching API', function() {
     expect(Patch(doc, patch)).to.deep.equal({numbers: [5, 3, 4]});
   });
 
+  it('can insert not exists into a child collection with default', function() {
+    var doc = {numbers: [3, 4]};
+
+    var patch = {type: 'insert_if_not_exists', path: 'numbers', value: 5};
+
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [5, 3, 4]});
+  });
+
+  it('can insert not exists into a child collection with existing element', function() {
+    var doc = {numbers: [3, 4]};
+
+    var patch = {type: 'insert_if_not_exists', path: 'numbers', value: 3};
+
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [3, 4]});
+  });  
+
   it('can insert into a child collection with designated index', function() {
     var doc = {numbers: [3, 4]};
 
@@ -188,6 +281,22 @@ describe('Patching API', function() {
     expect(Patch(doc, patch)).to.deep.equal({numbers: [3, 5, 4]});
   });
 
+  it('can insert not exists into a child collection with designated index', function() {
+    var doc = {numbers: [3, 4]};
+
+    var patch = {type: 'insert_if_not_exists', path: 'numbers', value: 5, index: 1};
+
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [3, 5, 4]});
+  });  
+
+  it('can insert not exists into a child collection with designated index with existing element', function() {
+    var doc = {numbers: [3, 4]};
+
+    var patch = {type: 'insert_if_not_exists', path: 'numbers', value: 4, index: 1};
+
+    expect(Patch(doc, patch)).to.deep.equal({numbers: [3, 4]});
+  });    
+
   it('can insert into a 2 deep child collection with designated index', function() {
     var doc = {region: {numbers: [3, 4]}};
 
@@ -195,6 +304,42 @@ describe('Patching API', function() {
 
     expect(Patch(doc, patch)).to.deep.equal({region: {numbers: [3, 5, 4]}});
   });
+
+  it('can insert not exists into a 2 deep child collection with designated index', function() {
+    var doc = {region: {numbers: [3, 4]}};
+
+    var patch = {type: 'insert_if_not_exists', path: 'region.numbers', value: 5, index: 1};
+
+    expect(Patch(doc, patch)).to.deep.equal({region: {numbers: [3, 5, 4]}});
+  });  
+
+  it('can insert not exists into a 2 deep child collection with designated index with existing element', function() {
+    var doc = {region: {numbers: [3, 4]}};
+
+    var patch = {type: 'insert_if_not_exists', path: 'region.numbers', value: 4, index: 1};
+
+    expect(Patch(doc, patch)).to.deep.equal({region: {numbers: [3, 4]}});
+  });
+
+  it('can insert if not exists to an array with complex element', function() {
+    var doc = {divisions: [{region: {numbers: [3, 4]}},{region: {numbers: [5, 6]}}]};
+
+    var element = {region: {numbers: [7,8]}}
+
+    var patch = {type: 'insert_if_not_exists', path: 'divisions', value: element};
+
+    expect(Patch(doc, patch)).to.deep.equal({divisions: [{region: {numbers: [7, 8]}},{region: {numbers: [3, 4]}},{region: {numbers: [5, 6]}}]});
+  });     
+
+  it('can insert if not exists to an array with complex existing element and element count stays the same', function() {
+    var doc = {divisions: [{region: {numbers: [3, 4]}},{region: {numbers: [5, 6]}}]};
+
+    var element = {region: {numbers: [3, 4]}}
+
+    var patch = {type: 'insert_if_not_exists', path: 'divisions', value: element};
+
+    expect(Patch(doc, patch)).to.deep.equal({divisions: [{region: {numbers: [3, 4]}},{region: {numbers: [5, 6]}}]});
+  });           
 
   it('can remove from array', function() {
     var doc = {items: ['foo', 'bar']};

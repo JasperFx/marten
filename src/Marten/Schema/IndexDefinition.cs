@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using System.Text.RegularExpressions;
+using System.Text;
 
 namespace Marten.Schema
 {
@@ -9,7 +11,6 @@ namespace Marten.Schema
         private readonly DocumentMapping _parent;
         private readonly string[] _columns;
         private string _indexName;
-
 
         public IndexDefinition(DocumentMapping parent, params string[] columns)
         {
@@ -87,10 +88,19 @@ namespace Marten.Schema
                 actual = actual.Replace("USING btree", "");
             }
 
-            _columns.Each(col =>
+            string columnsMatchPattern = "\\((?<columns>.*(?:(?:[\\w.]+)\\s?(?:[\\w_]+).*))\\)";
+            var match = Regex.Match(actual, columnsMatchPattern);
+            var replace = string.Empty;
+            if (match.Success)
             {
-                actual = actual.Replace($"({col})", $"(\"{col}\")");
-            });
+                var columns = match.Groups["columns"].Value;
+                _columns.Each(col =>
+                {
+                    columns = Regex.Replace(columns, $"({col})\\s?([\\w_]+)?", "\"$1\" $2");
+                });
+
+                actual = Regex.Replace(actual, columnsMatchPattern, $"({columns.Trim()})");
+            }
 
             if (!actual.Contains(_parent.Table.QualifiedName))
             {

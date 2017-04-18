@@ -1,4 +1,7 @@
-﻿using Marten.Schema;
+﻿using System;
+using Baseline;
+using Marten.Schema;
+using Marten.Schema.Identity;
 using Shouldly;
 using Xunit;
 
@@ -36,6 +39,17 @@ namespace Marten.Testing.Acceptance
                 query.Load<NonStandardDoc>("somebody").ShouldNotBeNull();
             }
         }
+
+        [Fact]
+        public void can_override_the_identity_member_with_the_fluent_interface()
+        {
+            StoreOptions(_ => _.Schema.For<OverriddenIdDoc>().Identity(x => x.Name));
+
+            var mapping = theStore.Schema.MappingFor(typeof(OverriddenIdDoc)).As<DocumentMapping>();
+            mapping.IdType.ShouldBe(typeof(string));
+            mapping.IdMember.Name.ShouldBe(nameof(OverriddenIdDoc.Name));
+            mapping.IdStrategy.ShouldBeOfType<StringIdGeneration>();
+        }
     }
 
     // SAMPLE: IdentityAttribute
@@ -50,5 +64,14 @@ namespace Marten.Testing.Acceptance
     {
         [Identity]
         public string Name { get; set; }
+    }
+
+    public class OverriddenIdDoc
+    {
+        public Guid Id { get; set; }
+
+        public string Name { get; set; }
+
+        public DateTime Date { get; set; }
     }
 }

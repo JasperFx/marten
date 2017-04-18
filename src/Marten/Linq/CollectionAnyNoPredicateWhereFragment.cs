@@ -22,10 +22,18 @@ namespace Marten.Linq
 
         public string ToSql(NpgsqlCommand command)
         {            
+            
+
             var path = _members.Select(m => m.Name).Join("'->'");
 
-            var query = $"JSONB_ARRAY_LENGTH(COALESCE(case when data->>'{path}' is not null then data->'{path}' else '[]' end)) > 0";
-            return query;
+            if (_members.Length == 1)
+            {
+                return $"JSONB_ARRAY_LENGTH(COALESCE(case when data->>'{path}' is not null then data->'{path}' else '[]' end)) > 0";
+            }
+            else
+            {
+                return $"JSONB_ARRAY_LENGTH(COALESCE(case when data->'{path}' is not null then data->'{path}' else '[]' end)) > 0";
+            }
         }
      
         public bool Contains(string sqlText)
