@@ -11,13 +11,13 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
     {
         private readonly ICompiledQuery<TDoc, TOut> _query;
         private readonly IncludeResultOperator _includeOperator;
-        private readonly ITenant _tenant;
+        private readonly StorageFeatures _storage;
 
-        public DictionaryIncludeCallbackResolver(ICompiledQuery<TDoc, TOut> query, IncludeResultOperator includeOperator, ITenant tenant)
+        public DictionaryIncludeCallbackResolver(ICompiledQuery<TDoc, TOut> query, IncludeResultOperator includeOperator, StorageFeatures storage)
         {
             _query = query;
             _includeOperator = includeOperator;
-            _tenant = tenant;
+            _storage = storage;
         }
 
         public Action<TInclude> Resolve(PropertyInfo property, IncludeTypeContainer typeContainer)
@@ -30,7 +30,7 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
         {
             var queryProperty = GetPropertyInfo(property, @operator);
 
-            var storage = _tenant.StorageFor(typeof(TInclude));
+            var storage = _storage.StorageFor(typeof(TInclude));
 
             var dictionary = (IDictionary<TKey, TInclude>)(queryProperty).GetValue(query);
             if (dictionary == null)

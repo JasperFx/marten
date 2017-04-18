@@ -112,7 +112,7 @@ namespace Marten.Storyteller.Fixtures
         [FormatAs("The field {field} is configured to be duplicated")]
         public void FieldIsDuplicated([SelectionList("Fields")] string field)
         {
-            Schema.MappingFor(typeof(Target)).As<DocumentMapping>().DuplicateField(field);
+            Store.Storage.MappingFor(typeof(Target)).As<DocumentMapping>().DuplicateField(field);
         }
 
         protected override void configureDocumentsAre(ObjectConstructionExpression<Target> _)

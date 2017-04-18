@@ -267,7 +267,7 @@ namespace Marten.Linq.Model
 
             if (joins.Any())
             {
-                selector = new IncludeSelector<T>(_store.Schema, selector, joins);
+                selector = new IncludeSelector<T>(_store.Storage, selector, joins);
             }
 
             return selector;

@@ -23,7 +23,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
-            store1.Schema.EnsureStorageExists(typeof(User));
+            store1.DefaultTenant.EnsureStorageExists(typeof(User));
 
 
             // Don't use TestingDocumentStore because it cleans everything upfront.
@@ -34,7 +34,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
-            mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
+            mapping = store2.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
             diff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
         }
 
@@ -84,7 +84,7 @@ namespace Marten.Testing.Schema
 
             store1.Advanced.Clean.CompletelyRemoveAll();
 
-            store1.Schema.EnsureStorageExists(typeof(User));
+            store1.DefaultTenant.EnsureStorageExists(typeof(User));
 
 
             // Don't use TestingDocumentStore because it cleans everything upfront.
@@ -95,7 +95,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
-            var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
+            var mapping = store2.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
             var diff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
 
             diff.AllMissing.ShouldBeFalse();
@@ -117,7 +117,8 @@ namespace Marten.Testing.Schema
                 //_.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
-            store1.Schema.EnsureStorageExists(typeof(User));
+
+            store1.DefaultTenant.EnsureStorageExists(typeof(User));
 
 
             // Don't use TestingDocumentStore because it cleans everything upfront.
@@ -128,7 +129,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
-            var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
+            var mapping = store2.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
             var diff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
 
             diff.AllMissing.ShouldBeFalse();
@@ -148,7 +149,7 @@ namespace Marten.Testing.Schema
             });
 
 
-            var documentMapping = store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
+            var documentMapping = store1.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
             using (var conn = store1.Advanced.OpenConnection())
             {
                 documentMapping.SchemaObjects.As<DocumentSchemaObjects>().RemoveUpsertFunction(conn);
@@ -167,9 +168,9 @@ namespace Marten.Testing.Schema
 
 
 
-            store2.Schema.EnsureStorageExists(typeof(User));
+            store2.DefaultTenant.EnsureStorageExists(typeof(User));
 
-            var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
+            var mapping = store2.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
             var objects = store2.Schema.DbObjects.FindSchemaObjects(mapping);
 
             objects.Function.ShouldNotBeNull();
@@ -189,7 +190,8 @@ namespace Marten.Testing.Schema
             });
 
             store1.Advanced.Clean.CompletelyRemoveAll();
-            store1.Schema.EnsureStorageExists(typeof(User));
+            
+            store1.DefaultTenant.EnsureStorageExists(typeof(User));
 
 
 
@@ -204,9 +206,9 @@ namespace Marten.Testing.Schema
 
 
 
-            store2.Schema.EnsureStorageExists(typeof(User));
+            store2.DefaultTenant.EnsureStorageExists(typeof(User));
 
-            var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
+            var mapping = store2.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
             var schemaDiff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
             schemaDiff.FunctionDiff.HasChanged.ShouldBeFalse();
 
@@ -225,7 +227,7 @@ namespace Marten.Testing.Schema
             });
 
             store1.Advanced.Clean.CompletelyRemoveAll();
-            store1.Schema.EnsureStorageExists(typeof(User));
+            store1.DefaultTenant.EnsureStorageExists(typeof(User));
 
 
 
@@ -238,11 +240,11 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
-            var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
+            var mapping = store2.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
             var schemaDiff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
             schemaDiff.IndexChanges.Count.ShouldBe(2);
 
-            store2.Schema.EnsureStorageExists(typeof(User));
+            store2.DefaultTenant.EnsureStorageExists(typeof(User));
 
             var schemaDiff2 = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
             schemaDiff2.HasDifferences().ShouldBeFalse();
@@ -268,7 +270,7 @@ namespace Marten.Testing.Schema
             });
 
             store1.Advanced.Clean.CompletelyRemoveAll();
-            store1.Schema.EnsureStorageExists(typeof(User));
+            store1.DefaultTenant.EnsureStorageExists(typeof(User));
 
 
 
@@ -282,11 +284,11 @@ namespace Marten.Testing.Schema
                     .Duplicate(x => x.Internal, configure: i => i.Method = IndexMethod.hash);
             });
 
-            var mapping = store2.Schema.MappingFor(typeof(User)).As<DocumentMapping>();
+            var mapping = store2.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
             var schemaDiff = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
             schemaDiff.IndexChanges.Count.ShouldBe(1);
 
-            store2.Schema.EnsureStorageExists(typeof(User));
+            store2.DefaultTenant.EnsureStorageExists(typeof(User));
 
             var schemaDiff2 = mapping.SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store2.Schema);
             schemaDiff2.HasDifferences().ShouldBeFalse();

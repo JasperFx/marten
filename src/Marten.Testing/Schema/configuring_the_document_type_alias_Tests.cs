@@ -29,7 +29,7 @@ namespace Marten.Testing.Schema
             });
             // ENDSAMPLE
 
-            store.Schema.MappingFor(typeof(User)).As<DocumentMapping>().Alias.ShouldBe("folks");
+            store.Storage.MappingFor(typeof(User)).As<DocumentMapping>().Alias.ShouldBe("folks");
         }
 
         // SAMPLE: using-document-alias-attribute

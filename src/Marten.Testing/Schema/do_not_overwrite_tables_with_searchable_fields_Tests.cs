@@ -17,11 +17,11 @@ namespace Marten.Testing.Schema
                 _.Schema.For<Target>().Duplicate(expression);
             });
 
-            theStore.Schema.StorageFor(typeof(Target)).ShouldNotBeNull();
+            theStore.DefaultTenant.StorageFor(typeof(Target)).ShouldNotBeNull();
 
-            var existing = theStore.Schema.TableSchema(typeof (Target));
+            var existing = theStore.TableSchema(typeof (Target));
 
-            var configured = theStore.Schema.MappingFor(typeof (Target)).SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
+            var configured = theStore.DefaultTenant.MappingFor(typeof (Target)).SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
 
             if (!existing.Equals(configured))
             {

@@ -2,6 +2,7 @@
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Bugs;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -12,7 +13,8 @@ namespace Marten.Testing
     public class MartenRegistryTests
     {
         private readonly DocumentSchema theSchema;
-        
+        private readonly StorageFeatures theStorage;
+
         public MartenRegistryTests()
         {
             var storeOptions = new StoreOptions();
@@ -21,33 +23,34 @@ namespace Marten.Testing
             var store = TestingDocumentStore.For(_ => _.Schema.Include<TestRegistry>());
 
             theSchema = store.Schema.As<DocumentSchema>();
+            theStorage = store.Storage;
         }
 
         [Fact]
         public void property_searching_override()
         {
-            theSchema.MappingFor(typeof(User)).As<DocumentMapping>()
+            theStorage.MappingFor(typeof(User)).As<DocumentMapping>()
                 .PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
         [Fact]
         public void picks_up_searchable_on_property()
         {
-            theSchema.MappingFor(typeof (Organization)).As<DocumentMapping>()
+            theStorage.MappingFor(typeof (Organization)).As<DocumentMapping>()
                 .FieldFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
         }
 
         [Fact]
         public void picks_up_searchable_on_field()
         {
-            theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>()
+            theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>()
                 .FieldFor(nameof(Organization.OtherName)).ShouldBeOfType<DuplicatedField>();
         }
 
         [Fact]
         public void searchable_field_is_also_indexed()
         {
-            var mapping = theSchema.MappingFor(typeof (Organization)).As<DocumentMapping>();
+            var mapping = theStorage.MappingFor(typeof (Organization)).As<DocumentMapping>();
 
             var index = mapping.IndexesFor("name").Single();
             index.IndexName.ShouldBe("mt_doc_martenregistrytests_organization_idx_name");
@@ -58,7 +61,7 @@ namespace Marten.Testing
         [Fact]
         public void can_customize_the_index_on_a_searchable_field()
         {
-            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
+            var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
             var index = mapping.IndexesFor("other_name").Single();
             index.IndexName.ShouldBe("mt_special");
@@ -68,7 +71,7 @@ namespace Marten.Testing
         [Fact]
         public void can_set_up_gin_index_on_json_data()
         {
-            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
+            var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
             var index = mapping.IndexesFor("data").Single();
 
@@ -80,14 +83,14 @@ namespace Marten.Testing
         [Fact]
         public void mapping_is_set_to_containment_if_gin_index_is_added()
         {
-            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
+            var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
             mapping.PropertySearching.ShouldBe(PropertySearching.ContainmentOperator);
         }
 
         [Fact]
         public void mt_last_modified_index_is_added()
         {
-            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
+            var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
             var index = mapping.IndexesFor(DocumentMapping.LastModifiedColumn).Single();
 
@@ -97,7 +100,7 @@ namespace Marten.Testing
         [Fact]
         public void mt_deleted_at_index_is_added()
         {
-            var mapping = theSchema.MappingFor(typeof(Organization)).As<DocumentMapping>();
+            var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
             var index = mapping.IndexesFor(DocumentMapping.DeletedAtColumn).Single();
 

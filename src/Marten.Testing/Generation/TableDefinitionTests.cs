@@ -158,7 +158,7 @@ namespace Marten.Testing.Generation
             });
 
             // Would blow up if it doesn't work;)
-            theStore.Schema.EnsureStorageExists(typeof(User));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
         }
 
         

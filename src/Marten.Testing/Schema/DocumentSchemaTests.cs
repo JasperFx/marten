@@ -81,7 +81,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_create_a_new_storage_for_a_document_type_without_subclasses()
         {
-            var storage = theSchema.StorageFor(typeof(User));
+            var storage = theStore.DefaultTenant.StorageFor(typeof(User));
             storage.ShouldNotBeNull();
         }
 
@@ -93,7 +93,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
-            theSchema.StorageFor(typeof(Squad)).ShouldNotBeNull();
+            theStore.DefaultTenant.StorageFor(typeof(Squad)).ShouldNotBeNull();
         }
 
         [Fact]
@@ -104,7 +104,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
-            var mapping = theSchema.MappingFor(typeof(BaseballTeam)).ShouldBeOfType<SubClassMapping>();
+            var mapping = theStore.DefaultTenant.MappingFor(typeof(BaseballTeam)).ShouldBeOfType<SubClassMapping>();
 
             mapping.DocumentType.ShouldBe(typeof(BaseballTeam));
 
@@ -119,29 +119,29 @@ namespace Marten.Testing.Schema
                 _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
-            theSchema.StorageFor(typeof(BaseballTeam))
+            theStore.DefaultTenant.StorageFor(typeof(BaseballTeam))
                 .ShouldBeOfType<SubClassDocumentStorage<BaseballTeam, Squad>>();
         }
 
         [Fact]
         public void caches_storage_for_a_document_type()
         {
-            theSchema.StorageFor(typeof(User))
-                .ShouldBeSameAs(theSchema.StorageFor(typeof(User)));
+            theStore.DefaultTenant.StorageFor(typeof(User))
+                .ShouldBeSameAs(theStore.DefaultTenant.StorageFor(typeof(User)));
 
-            theSchema.StorageFor(typeof(Issue))
-                .ShouldBeSameAs(theSchema.StorageFor(typeof(Issue)));
+            theStore.DefaultTenant.StorageFor(typeof(Issue))
+                .ShouldBeSameAs(theStore.DefaultTenant.StorageFor(typeof(Issue)));
 
-            theSchema.StorageFor(typeof(Company))
-                .ShouldBeSameAs(theSchema.StorageFor(typeof(Company)));
+            theStore.DefaultTenant.StorageFor(typeof(Company))
+                .ShouldBeSameAs(theStore.DefaultTenant.StorageFor(typeof(Company)));
         }
 
         [Fact]
         public void generate_ddl()
         {
-            theSchema.StorageFor(typeof(User));
-            theSchema.StorageFor(typeof(Issue));
-            theSchema.StorageFor(typeof(Company));
+            theStore.DefaultTenant.StorageFor(typeof(User));
+            theStore.DefaultTenant.StorageFor(typeof(Issue));
+            theStore.DefaultTenant.StorageFor(typeof(Company));
 
             var sql = theSchema.ToDDL();
 
@@ -173,9 +173,9 @@ namespace Marten.Testing.Schema
         [Fact]
         public void include_the_hilo_table_by_default()
         {
-            theSchema.StorageFor(typeof(User));
-            theSchema.StorageFor(typeof(Issue));
-            theSchema.StorageFor(typeof(Company));
+            theStore.DefaultTenant.StorageFor(typeof(User));
+            theStore.DefaultTenant.StorageFor(typeof(Issue));
+            theStore.DefaultTenant.StorageFor(typeof(Company));
 
             var sql = theSchema.ToDDL();
             sql.ShouldContain(SchemaBuilder.GetSqlScript(theSchema.StoreOptions.DatabaseSchemaName, "mt_hilo"));
@@ -201,9 +201,9 @@ namespace Marten.Testing.Schema
         [Fact]
         public void builds_schema_objects_on_the_fly_as_needed()
         {
-            theSchema.StorageFor(typeof(User)).ShouldNotBeNull();
-            theSchema.StorageFor(typeof(Issue)).ShouldNotBeNull();
-            theSchema.StorageFor(typeof(Company)).ShouldNotBeNull();
+            theStore.DefaultTenant.StorageFor(typeof(User)).ShouldNotBeNull();
+            theStore.DefaultTenant.StorageFor(typeof(Issue)).ShouldNotBeNull();
+            theStore.DefaultTenant.StorageFor(typeof(Company)).ShouldNotBeNull();
 
             var tables = theSchema.DbObjects.SchemaTables();
             tables.ShouldContain("public.mt_doc_user");
@@ -247,11 +247,11 @@ namespace Marten.Testing.Schema
             {
                 var schema = container.GetInstance<IDocumentSchema>();
 
-                schema.StorageFor(typeof(Examples.User)).ShouldNotBeNull();
+                schema.StoreOptions.Storage.StorageFor(typeof(Examples.User)).ShouldNotBeNull();
 
                 Exception<AmbiguousDocumentTypeAliasesException>.ShouldBeThrownBy(() =>
                 {
-                    schema.StorageFor(typeof(User));
+                    schema.StoreOptions.Storage.StorageFor(typeof(User));
                 });
             }
         }
@@ -442,7 +442,7 @@ namespace Marten.Testing.Schema
         {
             theStore.Events.AddEventType(typeof(RaceStarted));
 
-            theSchema.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.DefaultTenant.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 
@@ -451,7 +451,7 @@ namespace Marten.Testing.Schema
         {
             theStore.Events.AddEventType(typeof(RaceStarted));
 
-            theSchema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.DefaultTenant.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 
@@ -459,26 +459,26 @@ namespace Marten.Testing.Schema
 
     public class building_id_assignment_for_document_types
     {
-        private readonly IDocumentSchema theSchema = new DocumentSchema(TestingDocumentStore.Basic(), new ConnectionSource(), new NulloMartenLogger());
+        private readonly DocumentStore theStore = TestingDocumentStore.Basic();
 
         [Fact]
         public void can_build_with_guid_property()
         {
-            theSchema.IdAssignmentFor<User>()
+            theStore.DefaultTenant.IdAssignmentFor<User>()
                 .ShouldNotBeNull();
         }
 
         [Fact]
         public void can_build_for_int_and_long_id()
         {
-            theSchema.IdAssignmentFor<IntDoc>().ShouldNotBeNull();
-            theSchema.IdAssignmentFor<LongDoc>().ShouldNotBeNull();
+            theStore.DefaultTenant.IdAssignmentFor<IntDoc>().ShouldNotBeNull();
+            theStore.DefaultTenant.IdAssignmentFor<LongDoc>().ShouldNotBeNull();
         }
 
         [Fact]
         public void can_build_for_a_field()
         {
-            theSchema.IdAssignmentFor<StringFieldGuy>()
+            theStore.DefaultTenant.IdAssignmentFor<StringFieldGuy>()
                 .ShouldNotBeNull();
         }
 

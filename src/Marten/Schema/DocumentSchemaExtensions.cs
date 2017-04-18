@@ -5,10 +5,10 @@ namespace Marten.Schema
 {
     public static class DocumentSchemaExtensions
     {
-        public static TableDefinition TableSchema(this IDocumentSchema schema, Type documentType)
+        public static TableDefinition TableSchema(this DocumentStore store, Type documentType)
         {
-            var mapping = schema.MappingFor(documentType);
-            return schema.DbObjects.TableSchema(mapping);
+            var mapping = store.DefaultTenant.MappingFor(documentType);
+            return store.Schema.DbObjects.TableSchema(mapping);
         }
     }
 }

@@ -73,9 +73,9 @@ namespace Marten.Testing.Schema.Identity.Sequences
 				// ENDSAMPLE 
                         ))
             {
-                var store = container.GetInstance<IDocumentStore>();
-                store.Schema.MappingFor(typeof (UserWithGuid)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
-                store.Schema.MappingFor(typeof (UserWithGuid2)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
+                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
+                store.Storage.MappingFor(typeof (UserWithGuid)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
+                store.Storage.MappingFor(typeof (UserWithGuid2)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
             }
         }
 

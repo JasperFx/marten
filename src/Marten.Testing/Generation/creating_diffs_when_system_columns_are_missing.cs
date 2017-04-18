@@ -11,7 +11,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void can_fill_in_the_version_column()
         {
-            var mapping = theStore.Schema.MappingFor(typeof(User));
+            var mapping = theStore.DefaultTenant.MappingFor(typeof(User));
             var table = mapping.SchemaObjects.StorageTable();
             table.RemoveColumn(DocumentMapping.VersionColumn);
 
@@ -26,7 +26,7 @@ namespace Marten.Testing.Generation
                 });
             }
 
-            theStore.Schema.EnsureStorageExists(typeof(User));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
 
             var actual = theStore.Schema.DbObjects.TableSchema(mapping);
 
@@ -36,7 +36,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void can_fill_in_the_dotnettype_column()
         {
-            var mapping = theStore.Schema.MappingFor(typeof(User));
+            var mapping = theStore.DefaultTenant.MappingFor(typeof(User));
             var table = mapping.SchemaObjects.StorageTable();
             table.RemoveColumn(DocumentMapping.DotNetTypeColumn);
 
@@ -51,7 +51,7 @@ namespace Marten.Testing.Generation
                 });
             }
 
-            theStore.Schema.EnsureStorageExists(typeof(User));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
 
             var actual = theStore.Schema.DbObjects.TableSchema(mapping);
 
@@ -61,7 +61,7 @@ namespace Marten.Testing.Generation
         [Fact]
         public void can_fill_in_the_lastmodified_column()
         {
-            var mapping = theStore.Schema.MappingFor(typeof(User));
+            var mapping = theStore.DefaultTenant.MappingFor(typeof(User));
             var table = mapping.SchemaObjects.StorageTable();
             table.RemoveColumn(DocumentMapping.LastModifiedColumn);
 
@@ -76,7 +76,7 @@ namespace Marten.Testing.Generation
                 });
             }
 
-            theStore.Schema.EnsureStorageExists(typeof(User));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
 
             var actual = theStore.Schema.DbObjects.TableSchema(mapping);
 

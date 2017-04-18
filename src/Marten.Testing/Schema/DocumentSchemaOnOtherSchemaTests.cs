@@ -29,9 +29,9 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_ddl()
         {
-            theSchema.StorageFor(typeof(User));
-            theSchema.StorageFor(typeof(Issue));
-            theSchema.StorageFor(typeof(Company));
+            theStore.DefaultTenant.StorageFor(typeof(User));
+            theStore.DefaultTenant.StorageFor(typeof(Issue));
+            theStore.DefaultTenant.StorageFor(typeof(Company));
 
             var sql = theSchema.ToDDL();
 
@@ -47,9 +47,9 @@ namespace Marten.Testing.Schema
         [Fact]
         public void include_the_hilo_table_by_default()
         {
-            theSchema.StorageFor(typeof(User));
-            theSchema.StorageFor(typeof(Issue));
-            theSchema.StorageFor(typeof(Company));
+            theStore.DefaultTenant.StorageFor(typeof(User));
+            theStore.DefaultTenant.StorageFor(typeof(Issue));
+            theStore.DefaultTenant.StorageFor(typeof(Company));
 
             var sql = theSchema.ToDDL();
             sql.ShouldContain(SchemaBuilder.GetSqlScript("other", "mt_hilo"));
@@ -75,9 +75,9 @@ namespace Marten.Testing.Schema
         [Fact]
         public void builds_schema_objects_on_the_fly_as_needed()
         {
-            theSchema.StorageFor(typeof(User)).ShouldNotBeNull();
-            theSchema.StorageFor(typeof(Issue)).ShouldNotBeNull();
-            theSchema.StorageFor(typeof(Company)).ShouldNotBeNull();
+            theStore.DefaultTenant.StorageFor(typeof(User)).ShouldNotBeNull();
+            theStore.DefaultTenant.StorageFor(typeof(Issue)).ShouldNotBeNull();
+            theStore.DefaultTenant.StorageFor(typeof(Company)).ShouldNotBeNull();
 
             var tables = theSchema.DbObjects.SchemaTables();
             tables.ShouldContain("other.mt_doc_user");
@@ -121,11 +121,13 @@ namespace Marten.Testing.Schema
             {
                 var schema = container.GetInstance<IDocumentSchema>();
 
-                schema.StorageFor(typeof(Examples.User)).ShouldNotBeNull();
+                var storage = container.GetInstance<IDocumentStore>().As<DocumentStore>().Storage;
+
+                storage.StorageFor(typeof(Examples.User)).ShouldNotBeNull();
 
                 Exception<AmbiguousDocumentTypeAliasesException>.ShouldBeThrownBy(() =>
                 {
-                    schema.StorageFor(typeof(User));
+                    storage.StorageFor(typeof(User));
                 });
             }
         }
@@ -306,7 +308,7 @@ namespace Marten.Testing.Schema
                 _.Events.AddEventType(typeof(RaceStarted));
             });
 
-            theSchema.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.DefaultTenant.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 
@@ -315,7 +317,7 @@ namespace Marten.Testing.Schema
         {
             theStore.Events.AddEventType(typeof(RaceStarted));
 
-            theSchema.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.DefaultTenant.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 

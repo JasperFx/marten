@@ -36,18 +36,17 @@ namespace Marten.Storyteller.Fixtures
             IdToName.ClearAll();
 
             _container = Container.For<DevelopmentModeRegistry>();
-            Store = _container.GetInstance<IDocumentStore>();
+            Store = _container.GetInstance<IDocumentStore>().As<DocumentStore>();
             Store.Advanced.Clean.CompletelyRemoveAll();
 
             Session = Store.OpenSession();
-
 
         }
 
         protected IDocumentSession Session { get; private set; }
 
         protected IDocumentSchema Schema => Store.Schema;
-        protected IDocumentStore Store { get; private set; }
+        protected DocumentStore Store { get; private set; }
 
         public override void TearDown()
         {

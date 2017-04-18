@@ -7,6 +7,7 @@ using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Includes;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Linq
@@ -16,12 +17,12 @@ namespace Marten.Linq
         private readonly IIncludeJoin[] _joins;
         private readonly ISelector<T> _inner;
 
-        public IncludeSelector(IDocumentSchema schema, ISelector<T> inner, IIncludeJoin[] joins)
+        public IncludeSelector(StorageFeatures storage, ISelector<T> inner, IIncludeJoin[] joins)
         {
             _joins = joins;
             var selector = inner;
 
-            joins.Each(x => selector = x.WrapSelector(schema, selector));
+            joins.Each(x => selector = x.WrapSelector(storage, selector));
 
             _inner = selector;
         }

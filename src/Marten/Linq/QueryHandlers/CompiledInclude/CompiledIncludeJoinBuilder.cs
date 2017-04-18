@@ -4,8 +4,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
-using Marten.Schema;
 using Marten.Services.Includes;
+using Marten.Storage;
 using Marten.Util;
 using Remotion.Linq;
 
@@ -13,11 +13,11 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
 {
     public class CompiledIncludeJoinBuilder<TDoc, TOut>
     {
-        private readonly IDocumentSchema _schema;
+        private readonly StorageFeatures _storage;
 
-        public CompiledIncludeJoinBuilder(IDocumentSchema schema)
+        public CompiledIncludeJoinBuilder(StorageFeatures storage)
         {
-            _schema = schema;
+            _storage = storage;
         }
 
         public IIncludeJoin[] BuildIncludeJoins(QueryModel model, ICompiledQuery<TDoc, TOut> query)
@@ -47,7 +47,7 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
 
         private IIncludeJoin GetDictionaryJoin<TKey,TInclude>(ICompiledQuery<TDoc, TOut> query, IncludeResultOperator includeOperator) where TInclude : class
         {
-            var resolver = new DictionaryIncludeCallbackResolver<TKey, TInclude, TDoc, TOut>(query, includeOperator, _schema);
+            var resolver = new DictionaryIncludeCallbackResolver<TKey, TInclude, TDoc, TOut>(query, includeOperator, _storage);
             return doGetJoin<TInclude>(query, includeOperator, resolver);
         }
 
@@ -66,14 +66,14 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
             visitor.Visit(idSource);
             var members = visitor.Members.ToArray();
 
-            var mapping = _schema.MappingFor(typeof(TDoc)).ToQueryableDocument();
+            var mapping = _storage.MappingFor(typeof(TDoc)).ToQueryableDocument();
             var typeContainer = new IncludeTypeContainer {IncludeType = includeOperator.Callback.Body.Type};
 
             var property = typeof (IncludeResultOperator).GetProperty("Callback");
 
             var callback = callbackResolver.Resolve(property, typeContainer);
 
-            var included = _schema.MappingFor(typeContainer.IncludeType).ToQueryableDocument();
+            var included = _storage.MappingFor(typeContainer.IncludeType).ToQueryableDocument();
 
             return mapping.JoinToInclude(joinType, included, members, callback);
         }

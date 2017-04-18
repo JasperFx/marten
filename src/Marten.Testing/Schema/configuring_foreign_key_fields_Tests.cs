@@ -1,6 +1,7 @@
 using System;
 using Baseline;
 using Marten.Schema;
+using Marten.Storage;
 using Xunit;
 
 namespace Marten.Testing.Schema
@@ -10,8 +11,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void should_get_foreign_key_from_attribute()
         {
-            var schema = TestingDocumentStore.Basic().Schema;
-            schema.MappingFor(typeof (Issue))
+            TestingDocumentStore.Basic().Storage.MappingFor(typeof (Issue))
                 .As<DocumentMapping>()
                 .ForeignKeys
                 .ShouldContain(x => x.ColumnName == "user_id");
@@ -29,7 +29,7 @@ namespace Marten.Testing.Schema
             });
 
 
-            store.Schema.MappingFor(typeof(Issue))
+            store.Storage.MappingFor(typeof(Issue))
                 .As<DocumentMapping>()
                 .ForeignKeys
                 .ShouldContain(x => x.ColumnName == "other_user_id");

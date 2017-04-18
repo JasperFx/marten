@@ -40,7 +40,7 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersJoined));
             });
 
-            theStore.Schema.EnsureStorageExists(typeof(EventStream));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(EventStream));
 
             var patch = theStore.Schema.ToPatch();
 

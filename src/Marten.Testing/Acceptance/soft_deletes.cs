@@ -25,7 +25,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void soft_deleted_documents_have_the_extra_deleted_columns()
         {
-            theStore.Schema.EnsureStorageExists(typeof(User));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
 
             var table = theStore.Schema.DbObjects.TableSchema(typeof(User));
             table.HasColumn(DocumentMapping.DeletedColumn);
@@ -406,8 +406,8 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void soft_deleted_documents_work_with_linq_include()
         {
-            theStore.Schema.EnsureStorageExists(typeof(User));
-            theStore.Schema.EnsureStorageExists(typeof(File));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(File));
 
             using (var session = theStore.OpenSession())
             {

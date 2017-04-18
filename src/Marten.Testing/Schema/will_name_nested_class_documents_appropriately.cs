@@ -5,6 +5,7 @@ using Shouldly;
 using StructureMap;
 using Xunit;
 using System;
+using Baseline;
 using Marten.Schema;
 
 namespace Marten.Testing.Schema
@@ -19,21 +20,21 @@ namespace Marten.Testing.Schema
 
             using (var container = ContainerFactory.Default())
             {
-                var store = container.GetInstance<IDocumentStore>();
+                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
 
                 store.Advanced.Clean.CompletelyRemoveAll();
 
-                store.Schema.StorageFor(typeof (Foo.Document));
-                store.Schema.StorageFor(typeof (Bar.Document));
+                store.DefaultTenant.StorageFor(typeof (Foo.Document));
+                store.DefaultTenant.StorageFor(typeof (Bar.Document));
 
                 var documentTables = store.Schema.DbObjects.DocumentTables();
                 documentTables.ShouldContain("public.mt_doc_foo_document");
                 documentTables.ShouldContain("public.mt_doc_bar_document");
 
-                table1 = store.Schema.TableSchema(typeof (Foo.Document));
+                table1 = store.TableSchema(typeof (Foo.Document));
                 table1.Name.Name.ShouldBe("mt_doc_foo_document");
 
-                table2 = store.Schema.TableSchema(typeof (Bar.Document));
+                table2 = store.TableSchema(typeof (Bar.Document));
                 table2.Name.Name.ShouldBe("mt_doc_bar_document");
             }
 
@@ -48,21 +49,21 @@ namespace Marten.Testing.Schema
 
             using (var container = ContainerFactory.OnOtherDatabaseSchema())
             {
-                var store = container.GetInstance<IDocumentStore>();
+                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
 
                 store.Advanced.Clean.CompletelyRemoveAll();
 
-                store.Schema.StorageFor(typeof(Foo.Document));
-                store.Schema.StorageFor(typeof(Bar.Document));
+                store.DefaultTenant.StorageFor(typeof(Foo.Document));
+                store.DefaultTenant.StorageFor(typeof(Bar.Document));
 
                 var documentTables = store.Schema.DbObjects.DocumentTables();
                 documentTables.ShouldContain("other.mt_doc_foo_document");
                 documentTables.ShouldContain("other.mt_doc_bar_document");
 
-                table1 = store.Schema.TableSchema(typeof(Foo.Document));
+                table1 = store.TableSchema(typeof(Foo.Document));
                 table1.Name.Name.ShouldBe("mt_doc_foo_document");
 
-                table2 = store.Schema.TableSchema(typeof(Bar.Document));
+                table2 = store.TableSchema(typeof(Bar.Document));
                 table2.Name.Name.ShouldBe("mt_doc_bar_document");
             }
 

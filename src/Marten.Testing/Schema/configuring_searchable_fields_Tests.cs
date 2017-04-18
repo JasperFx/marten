@@ -55,7 +55,7 @@ namespace Marten.Testing.Schema
             });
 
 
-            store.Schema.MappingFor(typeof(Organization)).As<DocumentMapping>().DuplicatedFields.Single(x => x.MemberName == "Time2")
+            store.Storage.MappingFor(typeof(Organization)).As<DocumentMapping>().DuplicatedFields.Single(x => x.MemberName == "Time2")
                 .PgType.ShouldBe("timestamp");
         }
 

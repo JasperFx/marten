@@ -68,8 +68,8 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_do_schema_validation_negative_case_with_detected_changes()
         {
-            theStore.Schema.EnsureStorageExists(typeof(User));
-            theStore.Schema.EnsureStorageExists(typeof(Target));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(Target));
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
@@ -88,8 +88,8 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_do_schema_validation_with_no_detected_changes()
         {
-            theStore.Schema.EnsureStorageExists(typeof(User));
-            theStore.Schema.EnsureStorageExists(typeof(Target));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(Target));
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 

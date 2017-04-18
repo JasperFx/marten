@@ -50,7 +50,7 @@ namespace Marten.Testing
         public static int SchemaCount = 0;
         private static readonly object _locker = new object();
 
-        public new static IDocumentStore For(Action<StoreOptions> configure)
+        public new static DocumentStore For(Action<StoreOptions> configure)
         {
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
@@ -76,7 +76,7 @@ namespace Marten.Testing
             }).As<DocumentStore>();
         }
 
-        public static IDocumentStore DefaultSchema()
+        public static DocumentStore DefaultSchema()
         {
             var store = For(_ =>
             {

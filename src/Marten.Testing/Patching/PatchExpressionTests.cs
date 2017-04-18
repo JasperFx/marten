@@ -2,6 +2,7 @@ using System;
 using Marten.Patching;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -11,7 +12,7 @@ namespace Marten.Testing.Patching
     public class PatchExpressionTests
     {
         private readonly PatchExpression<Target> _expression;
-        private readonly IDocumentSchema _schema = Substitute.For<IDocumentSchema>();
+        private readonly ITenant _schema = Substitute.For<ITenant>();
         
 
         public PatchExpressionTests()
@@ -25,7 +26,7 @@ namespace Marten.Testing.Patching
             _schema.MappingFor(typeof(Target)).Returns(mapping);
 
             var store = TestingDocumentStore.Basic();
-            _expression = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.Schema), new JsonNetSerializer());
+            _expression = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.DefaultTenant), new JsonNetSerializer());
         }
 
         [Fact]

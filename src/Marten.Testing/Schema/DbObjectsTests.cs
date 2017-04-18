@@ -15,25 +15,25 @@ namespace Marten.Testing.Schema
             {
                 _.DatabaseSchemaName = "other";
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
-            });
+            }).As<DocumentStore>();
 
-            store1.Schema.EnsureStorageExists(typeof(User));
+            store1.DefaultTenant.EnsureStorageExists(typeof(User));
 
 
             var store2 = TestingDocumentStore.For(_ =>
             {
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.FirstName);
-            });
+            }).As<DocumentStore>();
 
-            store2.Schema.EnsureStorageExists(typeof(User));
+            store2.DefaultTenant.EnsureStorageExists(typeof(User));
 
             var indices = store2.Schema.DbObjects.AllIndexes();
 
-            indices.Any(x => Equals(x.Table, store1.Schema.MappingFor(typeof(User)).ToQueryableDocument().Table))
+            indices.Any(x => Equals(x.Table, store1.Storage.MappingFor(typeof(User)).ToQueryableDocument().Table))
                 .ShouldBeTrue();
 
-            indices.Any(x => Equals(x.Table, store2.Schema.MappingFor(typeof(User)).ToQueryableDocument().Table))
+            indices.Any(x => Equals(x.Table, store2.Storage.MappingFor(typeof(User)).ToQueryableDocument().Table))
                 .ShouldBeTrue();
         }
 
@@ -47,11 +47,11 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
-            store1.Schema.EnsureStorageExists(typeof(User));
+            store1.DefaultTenant.EnsureStorageExists(typeof(User));
 
 
             var objects =
-                store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
+                store1.Schema.DbObjects.FindSchemaObjects(store1.Storage.MappingFor(typeof(User)).As<DocumentMapping>());
 
 
             objects.Table.Columns.OrderBy(x => x.Name).Select(x => x.Name)
@@ -74,11 +74,11 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
-            store1.Schema.EnsureStorageExists(typeof(User));
+            store1.DefaultTenant.EnsureStorageExists(typeof(User));
 
 
             var objects =
-                store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
+                store1.Schema.DbObjects.FindSchemaObjects(store1.Storage.MappingFor(typeof(User)).As<DocumentMapping>());
 
 
             objects.Table.Columns.OrderBy(x => x.Name).Select(x => x.Name)
@@ -101,9 +101,9 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
-            store1.Schema.EnsureStorageExists(typeof(User));
+            store1.DefaultTenant.EnsureStorageExists(typeof(User));
 
-            var upsert = store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>().UpsertFunction;
+            var upsert = store1.Storage.MappingFor(typeof(User)).As<DocumentMapping>().UpsertFunction;
 
             var functionBody = store1.Schema.DbObjects.DefinitionForFunction(upsert);
 
@@ -121,7 +121,7 @@ namespace Marten.Testing.Schema
 
 
             var objects =
-                store1.Schema.DbObjects.FindSchemaObjects(store1.Schema.MappingFor(typeof(User)).As<DocumentMapping>());
+                store1.Schema.DbObjects.FindSchemaObjects(store1.Storage.MappingFor(typeof(User)).As<DocumentMapping>());
 
             objects.HasNone().ShouldBeTrue();
             objects.Table.ShouldBeNull();

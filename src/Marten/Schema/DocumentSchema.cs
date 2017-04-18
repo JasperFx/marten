@@ -8,12 +8,13 @@ using Marten.Events;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Storage;
 using Marten.Transforms;
 using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class DocumentSchema : IDocumentSchema, IDDLRunner, IDisposable
+    public class DocumentSchema : IDocumentSchema, IDDLRunner, IDisposable, ITenant
     {
         private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new ConcurrentDictionary<Type, object>();
 

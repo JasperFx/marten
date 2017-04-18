@@ -41,7 +41,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             var defaults = new HiloSettings();
 
             var store = DocumentStore.For(ConnectionSource.ConnectionString);
-            var mapping = store.Schema.MappingFor(typeof (IntDoc));
+            var mapping = store.Storage.MappingFor(typeof (IntDoc));
 
             var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Schema)
                 .As<IdAssigner<IntDoc, int>>().Generator
@@ -63,7 +63,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             });
             // ENDSAMPLE
 
-            var mapping = store.Schema.MappingFor(typeof(IntDoc));
+            var mapping = store.Storage.MappingFor(typeof(IntDoc));
 
             var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Schema)
                 .As<IdAssigner<IntDoc, int>>().Generator
@@ -88,7 +88,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             });
             // ENDSAMPLE
 
-            var mapping = store.Schema.MappingFor(typeof(IntDoc));
+            var mapping = store.Storage.MappingFor(typeof(IntDoc));
 
             var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Schema)
                 .As<IdAssigner<IntDoc, int>>().Generator
@@ -108,7 +108,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 _.Connection(ConnectionSource.ConnectionString);
             });
 
-            var mapping = store.Schema.MappingFor(typeof(OverriddenHiloDoc));
+            var mapping = store.Storage.MappingFor(typeof(OverriddenHiloDoc));
 
 
             var idStrategy = mapping.ToIdAssignment<OverriddenHiloDoc>(store.Schema)

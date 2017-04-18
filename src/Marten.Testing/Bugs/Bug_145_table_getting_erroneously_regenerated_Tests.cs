@@ -20,15 +20,15 @@ namespace Marten.Testing.Bugs
             });
 
 
-            theStore.Schema.StorageFor(typeof(Login)).ShouldNotBeNull();
+            theStore.DefaultTenant.StorageFor(typeof(Login)).ShouldNotBeNull();
         }
 
         [Fact]
         public void does_not_regenerate_the_login_table()
         {
-            var existing = theStore.Schema.TableSchema(typeof(Login));
+            var existing = theStore.TableSchema(typeof(Login));
 
-            var configured = theStore.Schema.MappingFor(typeof(Login))
+            var configured = theStore.DefaultTenant.MappingFor(typeof(Login))
                 .SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
 
             if (!existing.Equals(configured))

@@ -17,7 +17,7 @@ namespace Marten.Testing.Transforms
         [Fact]
         public void can_generate_when_the_transform_is_requested()
         {
-            var transform = theStore.Schema.TransformFor("get_fullname");
+            var transform = theStore.DefaultTenant.TransformFor("get_fullname");
 
             theStore.Schema.DbObjects.SchemaDbObjectNames()
                 .ShouldContain(transform.Identifier);
@@ -26,11 +26,11 @@ namespace Marten.Testing.Transforms
         [Fact]
         public void reset_still_makes_it_check_again()
         {
-            var transform = theStore.Schema.TransformFor("get_fullname");
+            var transform = theStore.DefaultTenant.TransformFor("get_fullname");
 
             theStore.Advanced.Clean.CompletelyRemoveAll();
 
-            var transform2 = theStore.Schema.TransformFor("get_fullname");
+            var transform2 = theStore.DefaultTenant.TransformFor("get_fullname");
 
             theStore.Schema.DbObjects.SchemaDbObjectNames()
                 .ShouldContain(transform2.Identifier);
@@ -50,7 +50,7 @@ namespace Marten.Testing.Transforms
         [Fact]
         public void no_patch_if_it_does_exist()
         {
-            var transform = theStore.Schema.TransformFor("get_fullname");
+            var transform = theStore.DefaultTenant.TransformFor("get_fullname");
 
             var patch = new SchemaPatch(new DdlRules());
 
@@ -63,7 +63,7 @@ namespace Marten.Testing.Transforms
         [Fact]
         public void regenerates_if_changed()
         {
-            var transform = theStore.Schema.TransformFor("get_fullname");
+            var transform = theStore.DefaultTenant.TransformFor("get_fullname");
 
             theStore.Schema.DbObjects.SchemaDbObjectNames()
                 .ShouldContain(transform.Identifier);
@@ -75,7 +75,7 @@ namespace Marten.Testing.Transforms
                 _.Transforms.LoadJavascript("get_fullname", "module.exports = function(){return {};}");
             }))
             {
-                var transform2 = store2.Schema.TransformFor("get_fullname");
+                var transform2 = store2.DefaultTenant.TransformFor("get_fullname");
 
 
                 store2.Schema.DbObjects.DefinitionForFunction(transform2.Identifier)
