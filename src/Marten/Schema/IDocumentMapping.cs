@@ -2,6 +2,7 @@ using System;
 using System.Linq.Expressions;
 using Marten.Linq;
 using Marten.Schema.Identity;
+using Marten.Storage;
 
 namespace Marten.Schema
 {
@@ -16,7 +17,7 @@ namespace Marten.Schema
 
         void DeleteAllDocuments(IConnectionFactory factory);
 
-        IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema);
+        IdAssignment<T> ToIdAssignment<T>(ITenant tenant);
 
         IQueryableDocument ToQueryableDocument();
 

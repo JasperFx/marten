@@ -135,11 +135,17 @@ namespace Marten.Storage
             return _features.StorageFor(typeof(T)).As<IDocumentStorage<T>>();
         }
 
+        private readonly ConcurrentDictionary<Type, object> _identityAssignments =
+             new ConcurrentDictionary<Type, object>();
+
         public IdAssignment<T> IdAssignmentFor<T>()
         {
-            // TODO -- this will have to be tracked per tenant because of the sequences
             EnsureStorageExists(typeof(T));
-            return _features.IdAssignmentFor<T>();
+            return _identityAssignments.GetOrAdd(typeof(T), t =>
+            {
+                var mapping = MappingFor(typeof(T));
+                return mapping.ToIdAssignment<T>(this);
+            }).As<IdAssignment<T>>();
         }
 
         public TransformFunction TransformFor(string name)
@@ -154,7 +160,6 @@ namespace Marten.Storage
             return _features.BulkLoaderFor<T>();
         }
 
-        public EventGraph Events { get; }
 
         public IEnumerable<IDocumentMapping> AllMappings => _features.AllDocumentMappings;
     }

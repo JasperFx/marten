@@ -133,13 +133,13 @@ namespace Marten.Schema
             factory.RunSql(sql);
         }
 
-        public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
+        public IdAssignment<T> ToIdAssignment<T>(ITenant tenant)
         {
             var idType = IdMember.GetMemberType();
 
             var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
 
-            return (IdAssignment<T>) Activator.CreateInstance(assignerType, IdMember, IdStrategy, schema);
+            return (IdAssignment<T>) Activator.CreateInstance(assignerType, IdMember, IdStrategy, tenant);
         }
 
         public IQueryableDocument ToQueryableDocument()
