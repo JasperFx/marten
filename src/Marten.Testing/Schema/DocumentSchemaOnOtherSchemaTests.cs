@@ -84,7 +84,7 @@ namespace Marten.Testing.Schema
             tables.ShouldContain("other.mt_doc_issue");
             tables.ShouldContain("other.mt_doc_company");
 
-            var functions = theSchema.DbObjects.SchemaDbObjectNames();
+            var functions = theSchema.DbObjects.Functions();
             functions.ShouldContain("other.mt_upsert_user");
             functions.ShouldContain("other.mt_upsert_issue");
             functions.ShouldContain("other.mt_upsert_company");
