@@ -19,7 +19,7 @@ namespace Marten.Testing.Transforms
         {
             var transform = theStore.DefaultTenant.TransformFor("get_fullname");
 
-            theStore.Schema.DbObjects.SchemaDbObjectNames()
+            theStore.Schema.DbObjects.Functions()
                 .ShouldContain(transform.Identifier);
         }
 
@@ -32,7 +32,7 @@ namespace Marten.Testing.Transforms
 
             var transform2 = theStore.DefaultTenant.TransformFor("get_fullname");
 
-            theStore.Schema.DbObjects.SchemaDbObjectNames()
+            theStore.Schema.DbObjects.Functions()
                 .ShouldContain(transform2.Identifier);
         }
 
@@ -65,7 +65,7 @@ namespace Marten.Testing.Transforms
         {
             var transform = theStore.DefaultTenant.TransformFor("get_fullname");
 
-            theStore.Schema.DbObjects.SchemaDbObjectNames()
+            theStore.Schema.DbObjects.Functions()
                 .ShouldContain(transform.Identifier);
 
             using (var store2 = DocumentStore.For(_ =>

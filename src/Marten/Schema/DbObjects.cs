@@ -37,7 +37,7 @@ namespace Marten.Schema
             return SchemaTables().Where(x => x.Name.StartsWith(DocumentMapping.TablePrefix)).ToArray();
         }
 
-        public DbObjectName[] SchemaDbObjectNames()
+        public DbObjectName[] Functions()
         {
             Func<DbDataReader, DbObjectName> transform = r => new DbObjectName(r.GetString(0), r.GetString(1));
 

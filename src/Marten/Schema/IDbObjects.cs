@@ -26,7 +26,7 @@ namespace Marten.Schema
         /// in the database
         /// </summary>
         /// <returns></returns>
-        DbObjectName[] SchemaDbObjectNames();
+        DbObjectName[] Functions();
 
         bool TableExists(DbObjectName table);
 

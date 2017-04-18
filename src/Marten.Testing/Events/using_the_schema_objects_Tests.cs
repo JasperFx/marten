@@ -58,7 +58,7 @@ namespace Marten.Testing.Events
             var schema = container.GetInstance<IDocumentSchema>();
             container.GetInstance<IDocumentStore>().As<DocumentStore>().DefaultTenant.EnsureStorageExists(typeof(EventStream));
 
-            var schemaDbObjectNames = schema.DbObjects.SchemaDbObjectNames();
+            var schemaDbObjectNames = schema.DbObjects.Functions();
             schemaDbObjectNames.ShouldContain("event_store.mt_append_event");
 
             var schemaTableNames = schema.DbObjects.SchemaTables();
@@ -75,7 +75,7 @@ namespace Marten.Testing.Events
             var schema = container.GetInstance<IDocumentSchema>();
             container.GetInstance<IDocumentStore>().As<DocumentStore>().DefaultTenant.EnsureStorageExists(typeof(EventStream));
 
-            var schemaDbObjectNames = schema.DbObjects.SchemaDbObjectNames();
+            var schemaDbObjectNames = schema.DbObjects.Functions();
             schemaDbObjectNames.ShouldContain("public.mt_append_event");
 
             var schemaTableNames = schema.DbObjects.SchemaTables();
@@ -94,7 +94,7 @@ namespace Marten.Testing.Events
 
             var schema = container.GetInstance<IDocumentSchema>();
 
-            var schemaDbObjectNames = schema.DbObjects.SchemaDbObjectNames();
+            var schemaDbObjectNames = schema.DbObjects.Functions();
             schemaDbObjectNames.ShouldContain("other.mt_append_event");
 
             var schemaTableNames = schema.DbObjects.SchemaTables();

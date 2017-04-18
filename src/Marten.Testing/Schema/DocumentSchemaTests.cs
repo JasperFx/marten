@@ -210,7 +210,7 @@ namespace Marten.Testing.Schema
             tables.ShouldContain("public.mt_doc_issue");
             tables.ShouldContain("public.mt_doc_company");
 
-            var functions = theSchema.DbObjects.SchemaDbObjectNames();
+            var functions = theSchema.DbObjects.Functions();
             functions.ShouldContain("public.mt_upsert_user");
             functions.ShouldContain("public.mt_upsert_issue");
             functions.ShouldContain("public.mt_upsert_company");
@@ -522,7 +522,7 @@ namespace Marten.Testing.Schema
             }
 
             _tables = _schema.DbObjects.SchemaTables();
-            _functions = _schema.DbObjects.SchemaDbObjectNames();
+            _functions = _schema.DbObjects.Functions();
         }
 
 
@@ -681,7 +681,7 @@ namespace Marten.Testing.Schema
             }
 
             _tables = _schema.DbObjects.SchemaTables();
-            _functions = _schema.DbObjects.SchemaDbObjectNames();
+            _functions = _schema.DbObjects.Functions();
         }
 
 
