@@ -58,7 +58,7 @@ namespace Marten.Testing.Schema
                         .ToList().ShouldHaveTheSameElementsAs("bar", "foo");
                 }
 
-                var table = store2.Schema.DbObjects.TableSchema(store2.Schema.MappingFor(typeof(User)));
+                var table = store2.Schema.DbObjects.TableSchema(store2.Storage.MappingFor(typeof(User)));
 
                 table.HasColumn(DocumentMapping.DeletedColumn).ShouldBeTrue();
                 table.HasColumn(DocumentMapping.DeletedAtColumn).ShouldBeTrue();

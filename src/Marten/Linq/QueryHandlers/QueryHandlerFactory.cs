@@ -198,7 +198,7 @@ namespace Marten.Linq.QueryHandlers
 
             if (model.HasOperator<IncludeResultOperator>())
             {
-                var builder = new CompiledIncludeJoinBuilder<TDoc, TOut>(_store.Schema);
+                var builder = new CompiledIncludeJoinBuilder<TDoc, TOut>(_store.Storage);
                 includeJoins = builder.BuildIncludeJoins(model, query);
             }
 

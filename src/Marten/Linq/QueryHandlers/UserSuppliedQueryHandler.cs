@@ -32,7 +32,7 @@ namespace Marten.Linq.QueryHandlers
         {
             if (!_sql.Contains("select", StringComparison.OrdinalIgnoreCase))
             {
-                var mapping = _store.Schema.MappingFor(typeof(T)).ToQueryableDocument();
+                var mapping = _store.Storage.MappingFor(typeof(T)).ToQueryableDocument();
                 var tableName = mapping.Table.QualifiedName;
 
                 builder.Append("select data from ");

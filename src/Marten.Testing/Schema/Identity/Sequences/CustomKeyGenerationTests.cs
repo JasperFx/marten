@@ -71,8 +71,8 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 // ENDSAMPLE 
                         ))
             {
-                var store = container.GetInstance<IDocumentStore>();
-                store.Schema.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomdIdGeneration>();
+                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
+                store.Storage.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomdIdGeneration>();
             }
         }
     }

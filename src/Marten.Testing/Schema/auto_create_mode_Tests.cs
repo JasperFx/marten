@@ -60,7 +60,7 @@ var store = DocumentStore.For(_ =>
             {
                 var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
                 {
-                    store2.Schema.EnsureStorageExists(typeof(User));
+                    store2.DefaultTenant.EnsureStorageExists(typeof(User));
                 });
 
                 ex.Message.ShouldBe($"The table for document type {typeof(User).FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{nameof(AutoCreate.CreateOnly)}'");

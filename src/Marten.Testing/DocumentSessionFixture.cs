@@ -15,7 +15,7 @@ namespace Marten.Testing
             {
                 if (typeof(T) == typeof(NulloIdentityMap))
                 {
-                    return theStore.OpenSession(DocumentTracking.None);
+                    return theStore.OpenSession(tracking:DocumentTracking.None);
                 }
 
                 if (typeof(T) == typeof(IdentityMap))

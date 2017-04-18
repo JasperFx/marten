@@ -11,7 +11,7 @@ namespace Marten.Testing.Bugs
         {
             using (var store1 = TestingDocumentStore.Basic())
             {
-                store1.Schema.EnsureStorageExists(typeof(DocWithBool));
+                store1.DefaultTenant.EnsureStorageExists(typeof(DocWithBool));
 
                 store1.Schema.ApplyAllConfiguredChangesToDatabase();
             }

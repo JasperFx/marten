@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Baseline;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
@@ -53,9 +54,9 @@ namespace Marten.Linq
             return query.AllResultOperators().Any(x => x is T);
         }
 
-        internal static IWhereFragment BuildWhereFragment(DocumentStore store, QueryModel query)
+        internal static IWhereFragment BuildWhereFragment(DocumentStore store, QueryModel query, ITenant tenant)
         {
-            var mapping = store.Schema.MappingFor(query.SourceType()).ToQueryableDocument();
+            var mapping = tenant.MappingFor(query.SourceType()).ToQueryableDocument();
             var wheres = query.AllBodyClauses().OfType<WhereClause>().ToArray();
             if (wheres.Length == 0) return mapping.DefaultWhereFragment();
 

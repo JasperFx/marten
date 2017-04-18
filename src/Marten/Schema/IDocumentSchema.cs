@@ -4,7 +4,7 @@ using Marten.Storage;
 
 namespace Marten.Schema
 {
-    public interface IDocumentSchema : ITenant
+    public interface IDocumentSchema
     {
         /// <summary>
         /// The original StoreOptions used to configure this DocumentStore

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Text;
+using Baseline;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 
@@ -79,9 +81,9 @@ namespace Marten.Services.Includes
         public string TableAlias { get; }
         public JoinType JoinType { get; set; }
 
-        public ISelector<TSearched> WrapSelector<TSearched>(IDocumentSchema schema, ISelector<TSearched> inner)
+        public ISelector<TSearched> WrapSelector<TSearched>(StorageFeatures storage, ISelector<TSearched> inner)
         {
-            return new IncludeSelector<TSearched, T>(TableAlias, _mapping, _callback, inner, schema.StorageFor<T>());
+            return new IncludeSelector<TSearched, T>(TableAlias, _mapping, _callback, inner, storage.StorageFor(typeof(T)).As<IDocumentStorage<T>>());
         }
     }
 }

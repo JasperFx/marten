@@ -13,7 +13,7 @@ namespace Marten.Testing.Bugs
             using (var store = DocumentStore.For(_ => _.Connection(ConnectionSource.ConnectionString)))
             {
                 store.Advanced.Clean.CompletelyRemoveAll();
-                store.Schema.EnsureStorageExists(typeof(UserHolder));
+                store.DefaultTenant.EnsureStorageExists(typeof(UserHolder));
             }
 
             using (var store = DocumentStore.For(_ =>
@@ -22,7 +22,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<UserHolder>().ForeignKey<User>(x => x.UserId);
             }))
             {
-                store.Schema.EnsureStorageExists(typeof(UserHolder));
+                store.DefaultTenant.EnsureStorageExists(typeof(UserHolder));
 
                 store.Schema.DbObjects
                     .AllForeignKeys()

@@ -55,7 +55,7 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersDeparted));
             });
 
-            theStore.Schema.MappingFor(typeof(MembersDeparted)).ToQueryableDocument()
+            theStore.DefaultTenant.MappingFor(typeof(MembersDeparted)).ToQueryableDocument()
                 .Table.Schema.ShouldBe("events");
 
             theSession.Events.StartStream<Quest>(joined1, departed1);

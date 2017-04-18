@@ -57,9 +57,9 @@ namespace Marten.Testing
         {
             using (var store = TestingDocumentStore.Basic())
             {
-                store.Schema.EnsureStorageExists(typeof(User));
+                store.DefaultTenant.EnsureStorageExists(typeof(User));
 
-                var mapping = store.Schema.MappingFor(typeof(User));
+                var mapping = store.Storage.MappingFor(typeof(User));
                 var sql = mapping.As<DocumentMapping>().FieldFor(nameof(User.UserName)).As<JsonLocatorField>().ToComputedIndex(mapping.Table)
                     .Replace("d.data", "data");
 

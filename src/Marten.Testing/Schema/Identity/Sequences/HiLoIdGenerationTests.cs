@@ -1,5 +1,6 @@
 ﻿using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
+using Marten.Storage;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -15,15 +16,15 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
             var sequence = Substitute.For<ISequence>();
             var sequences = Substitute.For<ISequences>();
-            var schema = Substitute.For<IDocumentSchema>();
+            var tenant = Substitute.For<ITenant>();
 
-            schema.Sequences.Returns(sequences);
+            tenant.Sequences.Returns(sequences);
             sequences.Hilo(typeof(Target), settings).Returns(sequence);
 
             var generation = new HiloIdGeneration(typeof(Target), settings);
 
 
-            generation.Build<int>(schema).ShouldBeOfType<IntHiloGenerator>()
+            generation.Build<int>(tenant).ShouldBeOfType<IntHiloGenerator>()
                 .Sequence.ShouldBeSameAs(sequence);
         }
 
@@ -34,15 +35,15 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
             var sequence = Substitute.For<ISequence>();
             var sequences = Substitute.For<ISequences>();
-            var schema = Substitute.For<IDocumentSchema>();
+            var tenant = Substitute.For<ITenant>();
 
-            schema.Sequences.Returns(sequences);
+            tenant.Sequences.Returns(sequences);
             sequences.Hilo(typeof(Target), settings).Returns(sequence);
 
             var generation = new HiloIdGeneration(typeof(Target), settings);
 
 
-            generation.Build<long>(schema).ShouldBeOfType<LongHiloGenerator>()
+            generation.Build<long>(tenant).ShouldBeOfType<LongHiloGenerator>()
                 .Sequence.ShouldBeSameAs(sequence);
         }
 

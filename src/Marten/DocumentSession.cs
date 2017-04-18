@@ -93,7 +93,7 @@ namespace Marten
 
             var model = Query<T>().Where(expression).As<MartenQueryable<T>>().ToQueryModel();
 
-            var where = QueryModelExtensions.BuildWhereFragment(_store, model);
+            var where = QueryModelExtensions.BuildWhereFragment(_store, model, Tenant);
 
             var deletion = Tenant.StorageFor(typeof(T)).DeletionForWhere(where);
 
@@ -276,7 +276,7 @@ namespace Marten
 
             var model = Query<T>().Where(@where).As<MartenQueryable<T>>().ToQueryModel();
 
-            var fragment = QueryModelExtensions.BuildWhereFragment(_store, model);
+            var fragment = QueryModelExtensions.BuildWhereFragment(_store, model, Tenant);
 
             return new PatchExpression<T>(fragment, Tenant, _unitOfWork, _store.Serializer);
         }

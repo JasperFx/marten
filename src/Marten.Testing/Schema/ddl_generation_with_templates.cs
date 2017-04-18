@@ -62,7 +62,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<BlueDoc>().DdlTemplate("blue");
             });
 
-            theStore.Schema.MappingFor(typeof(BlueDoc))
+            theStore.DefaultTenant.MappingFor(typeof(BlueDoc))
                 .As<DocumentMapping>().DdlTemplate.ShouldBe("blue");
         }
     }

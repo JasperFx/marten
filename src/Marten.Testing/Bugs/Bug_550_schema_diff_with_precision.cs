@@ -27,7 +27,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
             });
 
-            var diff = store.Schema.MappingFor(typeof(DocWithPrecision))
+            var diff = store.Storage.MappingFor(typeof(DocWithPrecision))
                 .SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store.Schema);
 
             diff.FunctionDiff.HasChanged.ShouldBeFalse();

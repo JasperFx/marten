@@ -366,9 +366,11 @@ public class ContainmentOperator : MartenRegistry
             // Get Roslyn spun up before measuring anything
             var schema = theContainer.GetInstance<IDocumentSchema>();
 
-            schema.MappingFor(typeof (Target)).As<DocumentMapping>().DuplicateField("Date");
+            var storage = theContainer.GetInstance<IDocumentStore>().As<DocumentStore>().Storage;
 
-            schema.StorageFor(typeof (Target)).ShouldNotBeNull();
+            storage.MappingFor(typeof (Target)).As<DocumentMapping>().DuplicateField("Date");
+
+            storage.StorageFor(typeof (Target)).ShouldNotBeNull();
 
             theContainer.GetInstance<DocumentCleaner>().DeleteDocumentsFor(typeof (Target));
 

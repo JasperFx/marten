@@ -20,11 +20,11 @@ namespace Marten.Testing.Schema
         {
             _schema = theStore.Schema;
 
-            theMapping = _schema.MappingFor(typeof(User)).As<DocumentMapping>();
+            theMapping = theStore.DefaultTenant.MappingFor(typeof(User)).As<DocumentMapping>();
             theMapping.DuplicateField("UserName");
 
 
-            _storage = _schema.StorageFor(typeof(User));
+            _storage = theStore.DefaultTenant.StorageFor(typeof(User));
 
             theDerivedTable = _schema.DbObjects.TableSchema(theMapping);
         }

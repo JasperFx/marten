@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Reflection;
 using System.Threading;
+using Baseline;
 using Xunit;
 
 namespace Marten.Testing
@@ -32,7 +33,7 @@ namespace Marten.Testing
             return theStore.Advanced.Options.Serializer().ToJson(doc);
         }
 
-        protected IDocumentStore theStore => _store.Value;
+        protected DocumentStore theStore => _store.Value.As<DocumentStore>();
 
         protected void UseDefaultSchema()
         {

@@ -14,9 +14,9 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void should_create_an_index_for_the_fk()
         {
-            theStore.Schema.EnsureStorageExists(typeof(DocWithFK));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(DocWithFK));
 
-            var mapping = theStore.Schema.MappingFor(typeof(DocWithFK));
+            var mapping = theStore.DefaultTenant.MappingFor(typeof(DocWithFK));
             var objects = theStore.Schema.DbObjects.FindSchemaObjects((DocumentMapping) mapping);
 
             objects.ActualIndices.Keys.Single()

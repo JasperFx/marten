@@ -1,5 +1,6 @@
 ﻿using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
+using Marten.Storage;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -15,16 +16,16 @@ namespace Marten.Testing.Schema.Identity
 
             var sequence = Substitute.For<ISequence>();
             var sequences = Substitute.For<ISequences>();
-            var schema = Substitute.For<IDocumentSchema>();
+            var tenant = Substitute.For<ITenant>();
 
-            schema.Sequences.Returns(sequences);
+            tenant.Sequences.Returns(sequences);
             sequences.Hilo(typeof(Target), settings).Returns(sequence);
 
             var mapping = DocumentMapping.For<Target>();
             var generation = new IdentityKeyGeneration(mapping, settings);
 
 
-            var generator = generation.Build<string>(schema).ShouldBeOfType<IdentityKeyGenerator>();
+            var generator = generation.Build<string>(tenant).ShouldBeOfType<IdentityKeyGenerator>();
             generator
                 .Sequence.ShouldBeSameAs(sequence);
 

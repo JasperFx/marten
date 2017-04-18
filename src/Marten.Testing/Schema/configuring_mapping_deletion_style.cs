@@ -73,7 +73,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().SoftDeleted();
             }))
             {
-                store.Schema.MappingFor(typeof(User)).As<DocumentMapping>()
+                store.Storage.MappingFor(typeof(User)).As<DocumentMapping>()
                     .DeleteStyle.ShouldBe(DeleteStyle.SoftDelete);
             }
         }

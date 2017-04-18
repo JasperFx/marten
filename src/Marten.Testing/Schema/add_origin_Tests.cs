@@ -24,7 +24,7 @@ namespace Marten.Testing.Schema
             using (var session = store.QuerySession())
             using (var cmd = session.Connection.CreateCommand())
             {
-                var mapping = store.Schema.MappingFor(typeof(User));
+                var mapping = store.Storage.MappingFor(typeof(User));
 
                 cmd.CommandText = "SELECT description from pg_description " +
                                   "join pg_class on pg_description.objoid = pg_class.oid where relname = :name";

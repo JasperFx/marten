@@ -121,7 +121,7 @@ namespace Marten
 
         public EventGraph Events { get; }
 
-        internal ITenant DefaultTenant { get; }
+        public ITenant DefaultTenant { get; }
 
         internal IQueryHandlerFactory HandlerFactory { get; }
 
@@ -131,7 +131,7 @@ namespace Marten
         private readonly IMartenLogger _logger;
         private readonly CharArrayTextWriter.IPool _writerPool;
 
-        internal StorageFeatures Storage { get; }
+        public StorageFeatures Storage { get; }
         public ISerializer Serializer { get; }
 
         public virtual void Dispose()

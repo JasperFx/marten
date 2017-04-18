@@ -20,29 +20,29 @@ namespace Marten.Testing.Schema
 
             using (var container = ContainerFactory.Default())
             {
-                var store = container.GetInstance<IDocumentStore>();
+                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
 
                 store.Advanced.Clean.CompletelyRemoveAll();
 
-                store.Schema.StorageFor(typeof (User));
+                store.DefaultTenant.StorageFor(typeof (User));
 
                 store.Schema.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
 
-                table1 = store.Schema.TableSchema(typeof(User));
+                table1 = store.TableSchema(typeof(User));
                 table1.Columns.ShouldNotContain(x => x.Name == "user_name");
             }
 
             using (var container = ContainerFactory.Default())
             {
-                var store = container.GetInstance<IDocumentStore>();
+                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
 
-                store.Schema.MappingFor(typeof (User)).As<DocumentMapping>().DuplicateField("UserName");
+                store.Storage.MappingFor(typeof (User)).As<DocumentMapping>().DuplicateField("UserName");
 
-                store.Schema.StorageFor(typeof(User));
+                store.DefaultTenant.StorageFor(typeof(User));
 
                 store.Schema.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
 
-                table2 = store.Schema.TableSchema(typeof (User));
+                table2 = store.TableSchema(typeof (User));
             }
 
             table2.ShouldNotBe(table1);
@@ -58,29 +58,29 @@ namespace Marten.Testing.Schema
 
             using (var container = ContainerFactory.OnOtherDatabaseSchema())
             {
-                var store = container.GetInstance<IDocumentStore>();
+                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
 
                 store.Advanced.Clean.CompletelyRemoveAll();
 
-                store.Schema.StorageFor(typeof(User));
+                store.DefaultTenant.EnsureStorageExists(typeof(User));
 
                 store.Schema.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
 
-                table1 = store.Schema.TableSchema(typeof(User));
+                table1 = store.TableSchema(typeof(User));
                 table1.Columns.ShouldNotContain(x => x.Name == "user_name");
             }
 
             using (var container = ContainerFactory.OnOtherDatabaseSchema())
             {
-                var store = container.GetInstance<IDocumentStore>();
+                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
 
-                store.Schema.MappingFor(typeof(User)).As<DocumentMapping>().DuplicateField("UserName");
+                store.Storage.MappingFor(typeof(User)).As<DocumentMapping>().DuplicateField("UserName");
 
-                store.Schema.StorageFor(typeof(User));
+                store.DefaultTenant.EnsureStorageExists(typeof(User));
 
                 store.Schema.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
 
-                table2 = store.Schema.TableSchema(typeof(User));
+                table2 = store.TableSchema(typeof(User));
             }
 
             table2.ShouldNotBe(table1);

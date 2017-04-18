@@ -20,7 +20,7 @@ namespace Marten.Testing.Schema
             theStore.Schema.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamp"))
                 .ShouldBeNull();
 
-            theStore.Schema.ResetSchemaExistenceChecks();
+            theStore.DefaultTenant.ResetSchemaExistenceChecks();
 
             theStore.Schema.EnsureFunctionExists("mt_immutable_timestamp");
 
