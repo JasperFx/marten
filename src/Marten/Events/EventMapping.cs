@@ -11,6 +11,7 @@ using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Services.Includes;
+using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -85,7 +86,7 @@ namespace Marten.Events
             factory.RunSql($"delete from mt_events where type = '{Alias}'");
         }
 
-        public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
+        public IdAssignment<T> ToIdAssignment<T>(ITenant tenant)
         {
             throw new NotSupportedException();
         }

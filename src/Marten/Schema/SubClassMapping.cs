@@ -7,6 +7,7 @@ using Marten.Linq;
 using Marten.Schema.Hierarchies;
 using Marten.Schema.Identity;
 using Marten.Services.Includes;
+using Marten.Storage;
 using Marten.Util;
 using Remotion.Linq;
 
@@ -133,9 +134,9 @@ namespace Marten.Schema
                 $"delete from {Parent.Table.QualifiedName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
         }
 
-        public IdAssignment<T> ToIdAssignment<T>(IDocumentSchema schema)
+        public IdAssignment<T> ToIdAssignment<T>(ITenant tenant)
         {
-            return Parent.ToIdAssignment<T>(schema);
+            return Parent.ToIdAssignment<T>(tenant);
         }
 
         public IQueryableDocument ToQueryableDocument()

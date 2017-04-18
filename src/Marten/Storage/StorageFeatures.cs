@@ -145,11 +145,6 @@ namespace Marten.Storage
             }
         }
 
-        public IdAssignment<T> IdAssignmentFor<T>()
-        {
-            throw new NotImplementedException();
-        }
-
         public IBulkLoader<T> BulkLoaderFor<T>()
         {
             throw new NotImplementedException();
