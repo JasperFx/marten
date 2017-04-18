@@ -52,26 +52,15 @@ namespace Marten.Schema.Arguments
             }
         }
 
-        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, bool useCharBufferPooling)
+        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter)
         {
-            if (useCharBufferPooling)
-            {
-                var method = writeMethod.MakeGenericMethod(typeof(ArraySegment<char>));
-                var dbType = Expression.Constant(DbType);
+            var method = writeMethod.MakeGenericMethod(typeof(ArraySegment<char>));
+            var dbType = Expression.Constant(DbType);
 
-                return Expression.Block(
-                    Expression.Call(serializer, _tojsonWithWriter, document, textWriter),
-                    Expression.Call(writer, method, Expression.Call(textWriter, _toSegment), dbType)
-                    );
-            }
-            else
-            {
-                var json = Expression.Call(serializer, _tojson, document);
-                var method = writeMethod.MakeGenericMethod(typeof(string));
-                var dbType = Expression.Constant(DbType);
-
-                return Expression.Call(writer, method, json, dbType);
-            }
+            return Expression.Block(
+                Expression.Call(serializer, _tojsonWithWriter, document, textWriter),
+                Expression.Call(writer, method, Expression.Call(textWriter, _toSegment), dbType)
+                );
         }
     }
 }
