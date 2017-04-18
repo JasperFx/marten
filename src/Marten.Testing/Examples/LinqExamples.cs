@@ -71,6 +71,8 @@ namespace Marten.Testing.Examples
 
             // using Marten.Util
             session.Query<Target>().Where(x => x.String.Contains("soMeThiNg", StringComparison.OrdinalIgnoreCase));
+
+            session.Query<Target>().Where(x => x.String.Equals("ThE SaMe ThInG", StringComparison.OrdinalIgnoreCase));
         }
         // ENDSAMPLE
 
