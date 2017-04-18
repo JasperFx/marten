@@ -25,7 +25,7 @@ namespace Marten.Schema.BulkLoading
         private readonly string _tempTableName;
 
 
-        public BulkLoader(ISerializer serializer, DocumentMapping mapping, IdAssignment<T> assignment, bool useCharBufferPooling)
+        public BulkLoader(ISerializer serializer, DocumentMapping mapping, IdAssignment<T> assignment)
         {
             _mapping = mapping;
             _assignment = assignment;
@@ -43,7 +43,7 @@ namespace Marten.Schema.BulkLoading
             var arguments = upsertFunction.OrderedArguments().Where(x => !(x is CurrentVersionArgument)).ToArray();
             var expressions =
                 arguments.Select(
-                    x => x.CompileBulkImporter(serializer.EnumStorage, writer, document, alias, serializerParam, textWriter, useCharBufferPooling));
+                    x => x.CompileBulkImporter(serializer.EnumStorage, writer, document, alias, serializerParam, textWriter));
 
             var columns = arguments.Select(x => $"\"{x.Column}\"").Join(", ");
             _baseSql = $"COPY %TABLE%({columns}) FROM STDIN BINARY";

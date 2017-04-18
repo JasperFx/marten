@@ -144,10 +144,5 @@ namespace Marten.Storage
                 }
             }
         }
-
-        public IBulkLoader<T> BulkLoaderFor<T>()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

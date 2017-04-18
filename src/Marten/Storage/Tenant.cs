@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using Baseline;
-using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
@@ -154,10 +153,25 @@ namespace Marten.Storage
             return _features.Transforms.For(name);
         }
 
+        private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new ConcurrentDictionary<Type, object>();
+
+
         public IBulkLoader<T> BulkLoaderFor<T>()
         {
             EnsureStorageExists(typeof(T));
-            return _features.BulkLoaderFor<T>();
+            return _bulkLoaders.GetOrAdd(typeof(T), t =>
+            {
+                var assignment = IdAssignmentFor<T>();
+
+                var mapping = MappingFor(typeof(T));
+
+                if (mapping is DocumentMapping)
+                {
+                    return new BulkLoader<T>(_options.Serializer(), mapping.As<DocumentMapping>(), assignment);
+                }
+
+                throw new ArgumentOutOfRangeException("T", "Marten cannot do bulk inserts of " + typeof(T).FullName);
+            }).As<IBulkLoader<T>>();
         }
 
 

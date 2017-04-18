@@ -18,7 +18,7 @@ namespace Marten.Schema.Arguments
             PostgresType = "varchar";
         }
 
-        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, bool useCharBufferPooling)
+        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter)
         {
             var method = writeMethod.MakeGenericMethod(typeof(string));
             var dbType = Expression.Constant(DbType);

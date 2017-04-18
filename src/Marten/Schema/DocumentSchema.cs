@@ -106,8 +106,7 @@ namespace Marten.Schema
                 var mapping = MappingFor(typeof(T));
 
                 if (mapping is DocumentMapping)
-                    return new BulkLoader<T>(StoreOptions.Serializer(), mapping.As<DocumentMapping>(), assignment,
-                        StoreOptions.UseCharBufferPooling);
+                    return new BulkLoader<T>(StoreOptions.Serializer(), mapping.As<DocumentMapping>(), assignment);
 
 
                 throw new ArgumentOutOfRangeException("T", "Marten cannot do bulk inserts of " + typeof(T).FullName);
