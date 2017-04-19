@@ -78,10 +78,11 @@ namespace Marten
 
             _logger = options.Logger();
 
-            Schema = new DocumentSchema(this, _connectionFactory, _logger);
-
             // TODO -- think this is temporary
-            DefaultTenant = Schema.As<ITenant>();
+            DefaultTenant = new Tenant(options.Storage, options, options.ConnectionFactory(), "default");
+            Schema = new TenantSchema(options, _connectionFactory, DefaultTenant);
+
+
 
             Storage = options.Storage;
 
@@ -89,7 +90,7 @@ namespace Marten
 
             Serializer = options.Serializer();
 
-            var cleaner = new DocumentCleaner(_connectionFactory, Schema.As<DocumentSchema>(), this);
+            var cleaner = new DocumentCleaner(_connectionFactory, this, DefaultTenant);
             if (options.UseCharBufferPooling)
             {
                 _writerPool = new CharArrayTextWriter.Pool();
@@ -105,12 +106,6 @@ namespace Marten
             Transform = new DocumentTransforms(this, _connectionFactory, DefaultTenant);
 
             options.InitialData.Each(x => x.Populate(this));
-
-
-            if (options.AutoCreateSchemaObjects != AutoCreate.None)
-            {
-                Schema.As<DocumentSchema>().RebuildSystemFunctions();
-            }
 
             Parser = new MartenExpressionParser(Serializer, options);
 

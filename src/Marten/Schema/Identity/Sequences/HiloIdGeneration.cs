@@ -4,7 +4,7 @@ using Marten.Storage;
 
 namespace Marten.Schema.Identity.Sequences
 {
-    public class HiloIdGeneration : IIdGeneration
+    public class HiloIdGeneration : IIdGenerationWithDependencies
     {
         private readonly HiloSettings _hiloSettings;
 
@@ -31,6 +31,11 @@ namespace Marten.Schema.Identity.Sequences
             }
 
             return (IIdGenerator<T>) new LongHiloGenerator(sequence);
+        }
+
+        public Type[] DependentFeatures()
+        {
+            return new Type[] {typeof(SequenceFactory)};
         }
     }
 }

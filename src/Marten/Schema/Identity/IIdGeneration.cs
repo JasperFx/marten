@@ -11,5 +11,10 @@ namespace Marten.Schema.Identity
         IIdGenerator<T> Build<T>(ITenant tenant);
     }
 
+    public interface IIdGenerationWithDependencies : IIdGeneration
+    {
+        Type[] DependentFeatures();
+    }
+
 
 }

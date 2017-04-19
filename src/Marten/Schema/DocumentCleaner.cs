@@ -2,6 +2,7 @@
 using System.Linq;
 using Baseline;
 using Marten.Services;
+using Marten.Storage;
 
 namespace Marten.Schema
 {
@@ -27,21 +28,23 @@ WHERE  p.proname = '{0}'
 AND    n.nspname = '{1}';";
 
         private readonly IConnectionFactory _factory;
-        private readonly DocumentSchema _schema;
         private readonly DocumentStore _store;
+        private readonly ITenant _tenant;
 
-        public DocumentCleaner(IConnectionFactory factory, DocumentSchema schema, DocumentStore store)
+        public DocumentCleaner(IConnectionFactory factory, DocumentStore store, ITenant tenant)
         {
             _factory = factory;
-            _schema = schema;
             _store = store;
+            _tenant = tenant;
         }
 
         public void DeleteAllDocuments()
         {
+            var dbObjects = new DbObjects(_factory, _store.Storage);
+
             using (var conn = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
             {
-                _schema.DbObjects.DocumentTables().Each(tableName =>
+                dbObjects.DocumentTables().Each(tableName =>
                 {
                     var sql = "truncate {0} cascade".ToFormat(tableName);
                     conn.Execute(sql);
@@ -52,13 +55,13 @@ AND    n.nspname = '{1}';";
 
         public void DeleteDocumentsFor(Type documentType)
         {
-            var mapping = _schema.MappingFor(documentType);
+            var mapping = _store.Storage.MappingFor(documentType).As<IDocumentMapping>();
             mapping.DeleteAllDocuments(_factory);
         }
 
         public void DeleteDocumentsExcept(params Type[] documentTypes)
         {
-            var documentMappings = _schema.StoreOptions.Storage.AllDocumentMappings.Where(x => !documentTypes.Contains(x.DocumentType));
+            var documentMappings = _store.Storage.AllDocumentMappings.Where(x => !documentTypes.Contains(x.DocumentType));
             foreach (var mapping in documentMappings)
             {
                 mapping.As<IDocumentMapping>().DeleteAllDocuments(_factory);
@@ -67,7 +70,7 @@ AND    n.nspname = '{1}';";
 
         public void CompletelyRemove(Type documentType)
         {
-            var mapping = _schema.MappingFor(documentType);
+            var mapping = _store.Storage.MappingFor(documentType);
 
             using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
             {
@@ -78,18 +81,19 @@ AND    n.nspname = '{1}';";
 
         public void CompletelyRemoveAll()
         {
+            var dbObjects = new DbObjects(_factory, _store.Storage);
+
             using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
             {
-                var schemaTables = _schema.DbObjects.SchemaTables();
+                var schemaTables = dbObjects.SchemaTables();
                 schemaTables
                     .Each(tableName => { connection.Execute($"DROP TABLE IF EXISTS {tableName} CASCADE;"); });
 
-                var drops = connection.GetStringList(DropAllFunctionSql, new object[] { _schema.StoreOptions.Storage.AllSchemaNames() });
+                var drops = connection.GetStringList(DropAllFunctionSql, new object[] { _store.Storage.AllSchemaNames() });
                 drops.Each(drop => connection.Execute(drop));
                 connection.Commit();
 
-                _schema.ResetSchemaExistenceChecks();
-                _schema.RebuildSystemFunctions();
+                _tenant.ResetSchemaExistenceChecks();
             }
         }
 

@@ -2,6 +2,7 @@ using System;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Remotion.Linq.Parsing.Structure;
 using StructureMap;
 using StructureMap.Pipeline;
@@ -36,6 +37,7 @@ namespace Marten.Testing
             For<IManagedConnection>().Use<ManagedConnection>().SelectConstructor(() => new ManagedConnection(null));
             For<IDocumentCleaner>().Use<DocumentCleaner>();
             For<ISerializer>().Use<JsonNetSerializer>();
+            For<ITenant>().Use(store.DefaultTenant);
 
 
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();

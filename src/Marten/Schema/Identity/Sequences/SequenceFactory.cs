@@ -56,8 +56,6 @@ namespace Marten.Schema.Identity.Sequences
 
         public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
         {
-            var patch = new SchemaPatch(schema.StoreOptions.DdlRules, writer);
-
             var sqlScript = SchemaBuilder.GetSqlScript(Table.Schema, "mt_hilo");
 
             writer.WriteLine(sqlScript);

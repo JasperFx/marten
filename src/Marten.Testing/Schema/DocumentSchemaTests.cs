@@ -6,11 +6,9 @@ using Baseline;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.Hierarchies;
-using Marten.Schema.Identity.Sequences;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
 using Marten.Testing.Schema.Hierarchies;
-using Marten.Transforms;
 using Shouldly;
 using StructureMap;
 using Xunit;
@@ -24,59 +22,6 @@ namespace Marten.Testing.Schema
         private readonly string _binAllsql = AppContext.BaseDirectory.AppendPath("bin", "allsql");
         private readonly string _binAllsql2 = AppContext.BaseDirectory.AppendPath("bin", "allsql2");
 
-        private DocumentSchema theSchema => theStore.Schema.As<DocumentSchema>();
-
-        [Fact]
-        public void sorts_the_mappings_in_all_schema_objects()
-        {
-            StoreOptions(_ =>
-            {
-                _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId);
-            });
-
-            var objects = theSchema.AllSchemaObjects().OfType<DocumentSchemaObjects>().ToArray();
-
-            objects[0].DocumentType.ShouldBe(typeof(User));
-            objects[1].DocumentType.ShouldBe(typeof(Issue));
-        }
-
-        [Fact]
-        public void does_have_the_sequence_factory_when_it_is_used()
-        {
-            StoreOptions(_ =>
-            {
-                _.Schema.For<IntDoc>();
-            });
-
-            var objects = theSchema.AllSchemaObjects().ToArray();
-
-            objects.OfType<SequenceFactory>().Any().ShouldBeTrue();
-        }
-
-        [Fact]
-        public void transforms_are_part_of_all_schema_object()
-        {
-            StoreOptions(_ =>
-            {
-                _.Transforms.LoadFile("get_fullname.js");
-            });
-
-            var objects = theSchema.AllSchemaObjects().ToArray();
-
-            objects.OfType<TransformFunction>().Any(x => x.Name == "get_fullname").ShouldBeTrue();
-        }
-
-        [Fact]
-        public void events_are_part_of_the_all_schema_objects_if_they_are_active()
-        {
-            StoreOptions(_ =>
-            {
-                _.Events.AddEventType(typeof(MembersJoined));
-            });
-
-            var objects = theSchema.AllSchemaObjects().ToArray();
-            objects.OfType<EventStoreDatabaseObjects>().Any().ShouldBeTrue();
-        }
 
         [Fact]
         public void can_create_a_new_storage_for_a_document_type_without_subclasses()
@@ -143,7 +88,7 @@ namespace Marten.Testing.Schema
             theStore.DefaultTenant.StorageFor(typeof(Issue));
             theStore.DefaultTenant.StorageFor(typeof(Company));
 
-            var sql = theSchema.ToDDL();
+            var sql = theStore.Schema.ToDDL();
 
             sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_get_next_hi");
             sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
@@ -162,7 +107,7 @@ namespace Marten.Testing.Schema
                 _.Events.AddEventType(typeof(MembersDeparted));
             });
 
-            var sql = theSchema.ToDDL();
+            var sql = theStore.Schema.ToDDL();
 
             sql.ShouldContain("CREATE TABLE public.mt_streams");
 
@@ -177,8 +122,8 @@ namespace Marten.Testing.Schema
             theStore.DefaultTenant.StorageFor(typeof(Issue));
             theStore.DefaultTenant.StorageFor(typeof(Company));
 
-            var sql = theSchema.ToDDL();
-            sql.ShouldContain(SchemaBuilder.GetSqlScript(theSchema.StoreOptions.DatabaseSchemaName, "mt_hilo"));
+            var sql = theStore.Schema.ToDDL();
+            sql.ShouldContain(SchemaBuilder.GetSqlScript(theStore.Schema.StoreOptions.DatabaseSchemaName, "mt_hilo"));
         }
 
         [Fact]
@@ -186,7 +131,7 @@ namespace Marten.Testing.Schema
         {
             theStore.Events.IsActive.ShouldBeFalse();
 
-            theSchema.ToDDL().ShouldNotContain("public.mt_streams");
+            theStore.Schema.ToDDL().ShouldNotContain("public.mt_streams");
         }
 
         [Fact]
@@ -195,7 +140,7 @@ namespace Marten.Testing.Schema
             theStore.Events.AddEventType(typeof(MembersJoined));
             theStore.Events.IsActive.ShouldBeTrue();
 
-            theSchema.ToDDL().ShouldContain("public.mt_streams");
+            theStore.Schema.ToDDL().ShouldContain("public.mt_streams");
         }
 
         [Fact]
@@ -205,12 +150,12 @@ namespace Marten.Testing.Schema
             theStore.DefaultTenant.StorageFor(typeof(Issue)).ShouldNotBeNull();
             theStore.DefaultTenant.StorageFor(typeof(Company)).ShouldNotBeNull();
 
-            var tables = theSchema.DbObjects.SchemaTables();
+            var tables = theStore.Schema.DbObjects.SchemaTables();
             tables.ShouldContain("public.mt_doc_user");
             tables.ShouldContain("public.mt_doc_issue");
             tables.ShouldContain("public.mt_doc_company");
 
-            var functions = theSchema.DbObjects.Functions();
+            var functions = theStore.Schema.DbObjects.Functions();
             functions.ShouldContain("public.mt_upsert_user");
             functions.ShouldContain("public.mt_upsert_issue");
             functions.ShouldContain("public.mt_upsert_company");
