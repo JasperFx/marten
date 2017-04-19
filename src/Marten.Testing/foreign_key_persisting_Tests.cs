@@ -123,7 +123,7 @@ namespace Marten.Testing
                 _.Schema.For<Node3>().ForeignKey<Node2>(x => x.Link);
             });
 
-            Exception<Exception>.ShouldBeThrownBy(() =>
+            Exception<MartenCommandException>.ShouldBeThrownBy(() =>
             {
                 using (var session = theStore.OpenSession())
                 {

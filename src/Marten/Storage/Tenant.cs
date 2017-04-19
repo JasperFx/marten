@@ -51,6 +51,16 @@ namespace Marten.Storage
         {
             if (_options.AutoCreateSchemaObjects == AutoCreate.None) return;
 
+
+
+
+            ensureStorageExists(new List<Type>(), featureType);
+
+
+        }
+
+        private void ensureStorageExists(IList<Type> types, Type featureType)
+        {
             if (_checks.ContainsKey(featureType)) return;
 
             // TODO -- ensure the system type here too?
@@ -59,16 +69,14 @@ namespace Marten.Storage
                 throw new ArgumentOutOfRangeException(nameof(featureType),
                     $"Unknown feature type {featureType.FullName}");
 
+            // Preventing cyclic dependency problems
+            if (types.Contains(featureType)) return;
 
-            if (_checks.ContainsKey(feature.StorageType))
-            {
-                _checks[featureType] = true;
-                return;
-            }
+            types.Fill(featureType);
 
             foreach (var dependentType in feature.DependentTypes())
             {
-                EnsureStorageExists(dependentType);
+                ensureStorageExists(types, dependentType);
             }
 
             // TODO -- might need to do a lock here.

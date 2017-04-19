@@ -480,7 +480,20 @@ namespace Marten.Schema
 
         IEnumerable<Type> IFeatureSchema.DependentTypes()
         {
-            return ForeignKeys.Select(x => x.ReferenceDocumentType);
+            yield return typeof(SystemFunctions);
+
+            if (IdStrategy is IIdGenerationWithDependencies)
+            {
+                foreach (var dependency in IdStrategy.As<IIdGenerationWithDependencies>().DependentFeatures())
+                {
+                    yield return dependency;
+                }
+            }
+
+            foreach (var foreignKey in ForeignKeys)
+            {
+                yield return foreignKey.ReferenceDocumentType;
+            }
         }
 
         bool IFeatureSchema.IsActive => true;

@@ -91,7 +91,7 @@ namespace Marten.Storage
             return writer.ToString();
         }
 
-        public IDbObjects DbObjects => new DbObjects(_factory, null);
+        public IDbObjects DbObjects => new DbObjects(_factory, _features);
 
         public void WritePatch(string filename, bool withSchemas = true)
         {
