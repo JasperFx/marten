@@ -175,6 +175,5 @@ namespace Marten.Storage
         }
 
 
-        public IEnumerable<IDocumentMapping> AllMappings => _features.AllDocumentMappings;
     }
 }

@@ -149,7 +149,7 @@ namespace Marten
         {
             if (Options.AutoCreateSchemaObjects == AutoCreate.None) return;
 
-            var allSchemaNames = Schema.AllSchemaNames();
+            var allSchemaNames = Storage.AllSchemaNames();
             var generator = new DatabaseSchemaGenerator(Advanced);
             generator.Generate(Options, allSchemaNames);
         }

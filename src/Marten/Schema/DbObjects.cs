@@ -45,7 +45,7 @@ namespace Marten.Schema
                 "SELECT specific_schema, routine_name FROM information_schema.routines WHERE type_udt_name != 'trigger' and routine_name like ? and specific_schema = ANY(?);";
 
             return
-                _factory.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%", _schema.AllSchemaNames()).ToArray();
+                _factory.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%", _schema.StoreOptions.Storage.AllSchemaNames()).ToArray();
         }
 
         public DbObjectName[] SchemaTables()
@@ -55,7 +55,7 @@ namespace Marten.Schema
             var sql =
                 "SELECT schemaname, relname FROM pg_stat_user_tables WHERE relname LIKE ? AND schemaname = ANY(?);";
 
-            var schemaNames = _schema.AllSchemaNames();
+            var schemaNames = _schema.StoreOptions.Storage.AllSchemaNames();
 
             var tablePattern = DocumentMapping.MartenPrefix + "%";
             var tables = _factory.Fetch(sql, transform, tablePattern, schemaNames).ToArray();

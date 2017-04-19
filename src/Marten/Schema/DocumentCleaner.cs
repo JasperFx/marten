@@ -58,10 +58,11 @@ AND    n.nspname = '{1}';";
 
         public void DeleteDocumentsExcept(params Type[] documentTypes)
         {
-            _schema.AllMappings.Where(x => !documentTypes.Contains(x.DocumentType)).Each(x =>
+            var documentMappings = _schema.StoreOptions.Storage.AllDocumentMappings.Where(x => !documentTypes.Contains(x.DocumentType));
+            foreach (var mapping in documentMappings)
             {
-                x.DeleteAllDocuments(_factory);
-            });
+                mapping.As<IDocumentMapping>().DeleteAllDocuments(_factory);
+            }
         }
 
         public void CompletelyRemove(Type documentType)
@@ -83,7 +84,7 @@ AND    n.nspname = '{1}';";
                 schemaTables
                     .Each(tableName => { connection.Execute($"DROP TABLE IF EXISTS {tableName} CASCADE;"); });
 
-                var drops = connection.GetStringList(DropAllFunctionSql, new object[] { _schema.AllSchemaNames() });
+                var drops = connection.GetStringList(DropAllFunctionSql, new object[] { _schema.StoreOptions.Storage.AllSchemaNames() });
                 drops.Each(drop => connection.Execute(drop));
                 connection.Commit();
 

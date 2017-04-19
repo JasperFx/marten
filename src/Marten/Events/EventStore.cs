@@ -152,11 +152,8 @@ namespace Marten.Events
                 return _session.Query<T>();
             }
 
-            if (_tenant.AllMappings.All(x => x.DocumentType != typeof(T)))
-            {
-                _store.Events.AddEventType(typeof(T));
-            }
-            
+            _store.Events.AddEventType(typeof(T));
+
 
             return _session.Query<T>();
         }

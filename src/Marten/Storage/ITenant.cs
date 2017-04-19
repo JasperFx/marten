@@ -55,7 +55,6 @@ namespace Marten.Storage
         /// <returns></returns>
         IBulkLoader<T> BulkLoaderFor<T>();
 
-        IEnumerable<IDocumentMapping> AllMappings { get; }
 
     }
 }
