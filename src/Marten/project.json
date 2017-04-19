@@ -23,6 +23,8 @@
         "Marten.Schema.SQL.mt_get_next_hi.sql": "Schema/SQL/mt_get_next_hi.sql",
         "Marten.Schema.SQL.mt_stream.sql": "Schema/SQL/mt_stream.sql",
         "Marten.Schema.SQL.mt_immutable_timestamp.sql": "Schema/SQL/mt_immutable_timestamp.sql",
+        "Marten.Schema.SQL.mt_mark_event_progression.sql": "Schema/SQL/mt_mark_event_progression.sql",
+        "Marten.Schema.SQL.mt_append_event.sql": "Schema/SQL/mt_append_event.sql",
         "Marten.Schema.SQL.mt_patching.js": "../../javascript/mt_patching.js",
         "Marten.Schema.SQL.mt_transforms.js": "../../javascript/mt_transforms.js"
       }
