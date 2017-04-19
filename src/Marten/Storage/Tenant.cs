@@ -69,6 +69,12 @@ namespace Marten.Storage
                 throw new ArgumentOutOfRangeException(nameof(featureType),
                     $"Unknown feature type {featureType.FullName}");
 
+            if (_checks.ContainsKey(feature.StorageType))
+            {
+                _checks[featureType] = true;
+                return;
+            }
+
             // Preventing cyclic dependency problems
             if (types.Contains(featureType)) return;
 
