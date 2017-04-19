@@ -130,7 +130,7 @@ namespace Marten.Storage
         public IDocumentMapping MappingFor(Type documentType)
         {
             EnsureStorageExists(documentType);
-            return _features.MappingFor(documentType);
+            return _features.FindMapping(documentType);
         }
 
         public ISequences Sequences
