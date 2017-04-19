@@ -492,6 +492,7 @@ namespace Marten.Schema
         };
 
         Type IFeatureSchema.StorageType => DocumentType;
+        public string Identifier => Alias.ToLowerInvariant();
     }
 
     public class DocumentMapping<T> : DocumentMapping

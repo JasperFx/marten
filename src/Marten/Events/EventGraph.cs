@@ -192,6 +192,7 @@ namespace Marten.Events
         }
 
         Type IFeatureSchema.StorageType => typeof(EventGraph);
+        public string Identifier { get; } = "eventstore";
     }
 
     public class StreamsTable : Table

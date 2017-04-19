@@ -115,5 +115,6 @@ namespace Marten.Schema.Identity.Sequences
         }
 
         public Type StorageType { get; } = typeof(SequenceFactory);
+        public string Identifier { get; } = "hilo";
     }
 }

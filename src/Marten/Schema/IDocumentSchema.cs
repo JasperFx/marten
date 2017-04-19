@@ -71,7 +71,7 @@ namespace Marten.Schema
         /// </summary>
         void ApplyAllConfiguredChangesToDatabase();
 
-        [Obsolete("Move to StorageFeatures")]
+        [Obsolete("Move to StorageFeatures, or have it built by document mapping's expressing a dependency")]
         void EnsureFunctionExists(string functionName);
 
 
