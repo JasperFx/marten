@@ -36,16 +36,10 @@ namespace Marten.Schema
         string ToDDL();
 
 
-        string[] AllSchemaNames();
-
-
         /// <summary>
         /// Query against the actual Postgresql database schema objects
         /// </summary>
         IDbObjects DbObjects { get; }
-
-        [Obsolete("Move to StorageFeatures")]
-        IEnumerable<IDocumentMapping> AllMappings { get; }
 
 
         /// <summary>

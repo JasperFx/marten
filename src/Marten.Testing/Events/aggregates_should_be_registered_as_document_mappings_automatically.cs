@@ -16,7 +16,7 @@ namespace Marten.Testing.Events
                 _.Events.AggregateFor<QuestParty>();
             });
 
-            theStore.Schema.AllMappings.Select(x => x.DocumentType)
+            theStore.Storage.AllMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(QuestParty));
         }
 
@@ -28,7 +28,7 @@ namespace Marten.Testing.Events
                 _.Events.AddAggregator(new Aggregator<QuestParty>());
             });
 
-            theStore.Schema.AllMappings.Select(x => x.DocumentType)
+            theStore.Storage.AllMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(QuestParty));
         }
 
@@ -40,7 +40,7 @@ namespace Marten.Testing.Events
                 _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
             });
 
-            theStore.Schema.AllMappings.Select(x => x.DocumentType)
+            theStore.Storage.AllMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(QuestParty));
         }
 
@@ -52,7 +52,7 @@ namespace Marten.Testing.Events
                 _.Events.AsyncProjections.AggregateStreamsWith<QuestParty>();
             });
 
-            theStore.Schema.AllMappings.Select(x => x.DocumentType)
+            theStore.Storage.AllMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(QuestParty));
         }
 
@@ -64,7 +64,7 @@ namespace Marten.Testing.Events
                 _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());
             });
 
-            theStore.Schema.AllMappings.Select(x => x.DocumentType)
+            theStore.Storage.AllMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(MonsterDefeated));
 
         }
@@ -77,7 +77,7 @@ namespace Marten.Testing.Events
                 _.Events.AsyncProjections.TransformEvents(new MonsterDefeatedTransform());
             });
 
-            theStore.Schema.AllMappings.Select(x => x.DocumentType)
+            theStore.Storage.AllMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(MonsterDefeated));
 
         }

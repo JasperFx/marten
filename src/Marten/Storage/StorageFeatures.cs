@@ -62,6 +62,8 @@ namespace Marten.Storage
 
         public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Values;
 
+        public IEnumerable<IDocumentMapping> AllMappings => _documentMappings.Values.Union(_mappings.Values);
+
         public DocumentMapping MappingFor(Type documentType)
         {
             return _documentMappings.GetOrAdd(documentType, type =>
@@ -143,6 +145,19 @@ namespace Marten.Storage
                     _features[subClass.DocumentType] = subClass.Parent;
                 }
             }
+        }
+
+        public string[] AllSchemaNames()
+        {
+            var schemas = AllDocumentMappings
+                .Select(x => x.DatabaseSchemaName)
+                .Distinct()
+                .ToList();
+
+            schemas.Fill(_options.DatabaseSchemaName);
+            schemas.Fill(_options.Events.DatabaseSchemaName);
+
+            return schemas.Select(x => x.ToLowerInvariant()).ToArray();
         }
     }
 }

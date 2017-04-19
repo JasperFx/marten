@@ -276,7 +276,10 @@ namespace Marten.Testing.Schema
 
             files.ShouldNotContain("database_schemas.sql");
 
-            files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x)
+            var actuals = files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x);
+            actuals.Each(x => Console.WriteLine(x));
+
+            actuals
                 .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "mt_immutable_timestamp.sql", "patch_doc.sql", "user.sql");
 
 

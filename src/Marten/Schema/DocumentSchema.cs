@@ -93,7 +93,6 @@ namespace Marten.Schema
         }
 
         public IDbObjects DbObjects { get; }
-        public IEnumerable<IDocumentMapping> AllMappings => StoreOptions.Storage.AllDocumentMappings;
 
         public IBulkLoader<T> BulkLoaderFor<T>()
         {
@@ -144,19 +143,6 @@ namespace Marten.Schema
         }
 
 
-
-        public string[] AllSchemaNames()
-        {
-            var schemas =
-                AllMappings.OfType<DocumentMapping>().Select(x => x.DatabaseSchemaName).Distinct().ToList();
-
-            schemas.Fill(StoreOptions.DatabaseSchemaName);
-            schemas.Fill(StoreOptions.Events.DatabaseSchemaName);
-
-            var schemaNames = schemas.Select(x => x.ToLowerInvariant()).ToArray();
-            return schemaNames;
-        }
-
         public ISequences Sequences => _sequences.Value;
 
         public void WriteDDL(string filename)
@@ -184,7 +170,7 @@ namespace Marten.Schema
 
             if (withSchemas)
             {
-                var allSchemaNames = AllSchemaNames();
+                var allSchemaNames = StoreOptions.Storage.AllSchemaNames();
                 DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, patch.UpWriter);
             }
 
@@ -215,7 +201,7 @@ namespace Marten.Schema
         {
             var patch = new SchemaPatch(this);
 
-            var allSchemaNames = AllSchemaNames();
+            var allSchemaNames = StoreOptions.Storage.AllSchemaNames();
             DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, patch.UpWriter);
 
             patch.Updates.Apply(this, patch.UpdateDDL);
@@ -277,7 +263,7 @@ namespace Marten.Schema
 
             new SchemaPatch(StoreOptions.DdlRules).WriteTransactionalScript(writer, w =>
             {
-                var allSchemaNames = AllSchemaNames();
+                var allSchemaNames = StoreOptions.Storage.AllSchemaNames();
                 DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, w);
 
                 foreach (var schemaObject in AllSchemaObjects())
@@ -337,16 +323,16 @@ namespace Marten.Schema
 
         public IEnumerable<ISchemaObjects> AllSchemaObjects()
         {
-            var mappings = AllMappings.OrderBy(x => x.DocumentType.Name).TopologicalSort(m =>
+            var mappings = StoreOptions.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name).TopologicalSort(m =>
             {
                 var documentMapping = m as DocumentMapping;
                 if (documentMapping == null)
-                    return Enumerable.Empty<IDocumentMapping>();
+                    return Enumerable.Empty<DocumentMapping>();
 
                 return documentMapping.ForeignKeys
                     .Where(x => x.ReferenceDocumentType != documentMapping.DocumentType)
                     .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
-                    .Select(MappingFor);
+                    .Select(MappingFor).OfType<DocumentMapping>();
             });
 
             foreach (var function in _systemFunctions.Values.OrderBy(x => x.Name))
@@ -368,7 +354,7 @@ namespace Marten.Schema
         private void writeDatabaseSchemaGenerationScript(string directory, FileSystem system,
             ISchemaObjects[] schemaObjects)
         {
-            var allSchemaNames = AllSchemaNames();
+            var allSchemaNames = StoreOptions.Storage.AllSchemaNames();
             var script = DatabaseSchemaGenerator.GenerateScript(StoreOptions, allSchemaNames);
 
             var writer = new StringWriter();
