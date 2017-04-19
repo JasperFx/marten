@@ -53,7 +53,7 @@ namespace Marten.Schema
                 return sequences;
             });
 
-            DbObjects = new DbObjects(_factory, this);
+            DbObjects = new DbObjects(_factory, StoreOptions.Storage);
 
 
             addSystemFunction(StoreOptions, "mt_immutable_timestamp", "text");
