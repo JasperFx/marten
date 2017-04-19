@@ -26,6 +26,7 @@ namespace Marten.Testing.Generation
                 });
             }
 
+            theStore.DefaultTenant.ResetSchemaExistenceChecks();
             theStore.DefaultTenant.EnsureStorageExists(typeof(User));
 
             var actual = theStore.Schema.DbObjects.TableSchema(mapping);
@@ -51,6 +52,7 @@ namespace Marten.Testing.Generation
                 });
             }
 
+            theStore.DefaultTenant.ResetSchemaExistenceChecks();
             theStore.DefaultTenant.EnsureStorageExists(typeof(User));
 
             var actual = theStore.Schema.DbObjects.TableSchema(mapping);
@@ -76,6 +78,7 @@ namespace Marten.Testing.Generation
                 });
             }
 
+            theStore.DefaultTenant.ResetSchemaExistenceChecks();
             theStore.DefaultTenant.EnsureStorageExists(typeof(User));
 
             var actual = theStore.Schema.DbObjects.TableSchema(mapping);
