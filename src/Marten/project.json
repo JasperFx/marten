@@ -20,7 +20,7 @@
     "embed": {
       "mappings": {
         "Marten.Schema.SchemaObjects.sql": "Schema/SchemaObjects.sql",
-        "Marten.Schema.SQL.mt_hilo.sql": "Schema/SQL/mt_hilo.sql",
+        "Marten.Schema.SQL.mt_get_next_hi.sql": "Schema/SQL/mt_get_next_hi.sql",
         "Marten.Schema.SQL.mt_stream.sql": "Schema/SQL/mt_stream.sql",
         "Marten.Schema.SQL.mt_immutable_timestamp.sql": "Schema/SQL/mt_immutable_timestamp.sql",
         "Marten.Schema.SQL.mt_patching.js": "../../javascript/mt_patching.js",
