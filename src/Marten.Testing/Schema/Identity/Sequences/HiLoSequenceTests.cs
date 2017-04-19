@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
+using Marten.Storage;
 using Shouldly;
 using StructureMap;
 using Xunit;
@@ -20,12 +21,10 @@ namespace Marten.Testing.Schema.Identity.Sequences
             _container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
             var storeOptions = new StoreOptions();
-            var sql = SchemaBuilder.GetSqlScript(storeOptions.DatabaseSchemaName, "mt_hilo");
 
-            var connectionFactory = _container.GetInstance<IConnectionFactory>();
-            connectionFactory.RunSql(sql);
+            _container.GetInstance<ITenant>().EnsureStorageExists(typeof(SequenceFactory));
             
-            _theSequence = new HiloSequence(connectionFactory, storeOptions, "foo", new HiloSettings());
+            _theSequence = new HiloSequence(new ConnectionSource(), storeOptions, "foo", new HiloSettings());
         }
 
         [Fact]

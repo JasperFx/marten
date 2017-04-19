@@ -452,6 +452,7 @@ namespace Marten.Testing.Schema
                 _.Storage.MappingFor(typeof(User)).DatabaseSchemaName = "other";
                 _.Storage.MappingFor(typeof(Issue)).DatabaseSchemaName = "overriden";
                 _.Storage.MappingFor(typeof(Company));
+                _.Storage.MappingFor(typeof(IntDoc));
 
                 // this will tell marten to use the default 'public' schema name.
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
@@ -480,7 +481,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void include_the_hilo_table_by_default()
         {
-            _sql.ShouldContain(SchemaBuilder.GetSqlScript("public", "mt_hilo"));
+            _sql.ShouldContain("public.mt_hilo");
         }
 
         [Fact]
