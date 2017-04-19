@@ -3,7 +3,6 @@ using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Storage;
-using Marten.Testing.Bugs;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -12,7 +11,6 @@ namespace Marten.Testing
 {
     public class MartenRegistryTests
     {
-        private readonly DocumentSchema theSchema;
         private readonly StorageFeatures theStorage;
 
         public MartenRegistryTests()
@@ -22,7 +20,6 @@ namespace Marten.Testing
 
             var store = TestingDocumentStore.For(_ => _.Schema.Include<TestRegistry>());
 
-            theSchema = store.Schema.As<DocumentSchema>();
             theStorage = store.Storage;
         }
 
