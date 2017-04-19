@@ -135,7 +135,7 @@ where attrelid = (select pg_class.oid
                   where n.nspname = :{schemaParam} and relname = :{nameParam})
 and i.indisprimary; 
 
--- Indexes
+
 SELECT
   U.usename                AS user_name,
   ns.nspname               AS schema_name,
@@ -161,7 +161,7 @@ FROM pg_index AS idx
     ON i.relam = am.oid
   JOIN pg_namespace AS NS ON i.relnamespace = NS.OID
   JOIN pg_user AS U ON i.relowner = U.usesysid
-WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%' AND pg_catalog.textin(pg_catalog.regclassout(idx.indrelid :: REGCLASS)) = :{qualifiedNameParam}; -- Excluding system table
+WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%' AND pg_catalog.textin(pg_catalog.regclassout(idx.indrelid :: REGCLASS)) = :{qualifiedNameParam};
 
 select constraint_name 
 from information_schema.table_constraints as c

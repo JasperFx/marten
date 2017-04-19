@@ -190,14 +190,21 @@ namespace Marten.Schema
 
             cmd.CommandText = builder.ToString();
 
-            using (var reader = cmd.ExecuteReader())
+            try
             {
-                apply(schemaObjects[0], autoCreate, reader);
-                for (int i = 1; i < schemaObjects.Length; i++)
+                using (var reader = cmd.ExecuteReader())
                 {
-                    reader.NextResult();
-                    apply(schemaObjects[i], autoCreate, reader);
+                    apply(schemaObjects[0], autoCreate, reader);
+                    for (int i = 1; i < schemaObjects.Length; i++)
+                    {
+                        reader.NextResult();
+                        apply(schemaObjects[i], autoCreate, reader);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                throw new MartenCommandException(cmd, e);
             }
 
             AssertPatchingIsValid(autoCreate);
