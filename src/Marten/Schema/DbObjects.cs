@@ -16,7 +16,7 @@ namespace Marten.Schema
     {
         private static readonly string SchemaObjectsSQL;
         private readonly IConnectionFactory _factory;
-        private readonly DocumentSchema _schema;
+        private readonly StorageFeatures _features;
 
         static DbObjects()
         {
@@ -26,10 +26,10 @@ namespace Marten.Schema
                     .ReadAllText();
         }
 
-        public DbObjects(IConnectionFactory factory, DocumentSchema schema)
+        public DbObjects(IConnectionFactory factory, StorageFeatures features)
         {
             _factory = factory;
-            _schema = schema;
+            _features = features;
         }
 
         public DbObjectName[] DocumentTables()
@@ -45,7 +45,7 @@ namespace Marten.Schema
                 "SELECT specific_schema, routine_name FROM information_schema.routines WHERE type_udt_name != 'trigger' and routine_name like ? and specific_schema = ANY(?);";
 
             return
-                _factory.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%", _schema.StoreOptions.Storage.AllSchemaNames()).ToArray();
+                _factory.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%", _features.AllSchemaNames()).ToArray();
         }
 
         public DbObjectName[] SchemaTables()
@@ -55,7 +55,7 @@ namespace Marten.Schema
             var sql =
                 "SELECT schemaname, relname FROM pg_stat_user_tables WHERE relname LIKE ? AND schemaname = ANY(?);";
 
-            var schemaNames = _schema.StoreOptions.Storage.AllSchemaNames();
+            var schemaNames = _features.AllSchemaNames();
 
             var tablePattern = DocumentMapping.MartenPrefix + "%";
             var tables = _factory.Fetch(sql, transform, tablePattern, schemaNames).ToArray();
@@ -177,7 +177,7 @@ AND    n.nspname = :schema;
 
         public TableDefinition TableSchema(Type documentType)
         {
-            var mapping = _schema.MappingFor(documentType);
+            var mapping = _features.MappingFor(documentType);
             return TableSchema(mapping);
         }
 
