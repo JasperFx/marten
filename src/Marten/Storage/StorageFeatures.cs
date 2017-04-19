@@ -134,7 +134,17 @@ namespace Marten.Storage
 
         public IFeatureSchema FindFeature(Type featureType)
         {
-            return _features.ContainsKey(featureType) ? _features[featureType] : MappingFor(featureType);
+            if (_features.ContainsKey(featureType))
+            {
+                return _features[featureType];
+            }
+
+            if (_options.Events.AllEvents().Any(x => x.DocumentType == featureType))
+            {
+                return _options.Events;
+            }
+
+            return MappingFor(featureType);
         }
 
 

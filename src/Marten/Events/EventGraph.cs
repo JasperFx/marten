@@ -183,6 +183,7 @@ namespace Marten.Events
                 {
                     new StreamsTable(DatabaseSchemaName),
                     eventsTable,
+                    new EventProgressionTable(DatabaseSchemaName), 
                     sequence,  
                     new SystemFunction(DatabaseSchemaName, "mt_append_event", "uuid, varchar, uuid[], varchar[], jsonb[]"), 
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"), 
