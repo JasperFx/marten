@@ -52,7 +52,7 @@ namespace Marten.Testing.Schema
             theStore.DefaultTenant.StorageFor(typeof(Company));
 
             var sql = theSchema.ToDDL();
-            sql.ShouldContain(SchemaBuilder.GetSqlScript("other", "mt_hilo"));
+            sql.ShouldContain("other.mt_hilo");
         }
 
         [Fact]
