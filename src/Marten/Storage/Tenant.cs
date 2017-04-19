@@ -163,7 +163,7 @@ namespace Marten.Storage
 
         public TransformFunction TransformFor(string name)
         {
-            EnsureStorageExists(typeof(DocumentTransforms));
+            EnsureStorageExists(typeof(Transforms.Transforms));
             return _features.Transforms.For(name);
         }
 
