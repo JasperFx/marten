@@ -31,5 +31,6 @@ namespace Marten.Storage
         public bool IsActive { get; } = true;
         public ISchemaObject[] Objects => _systemFunctions.Values.OfType<ISchemaObject>().ToArray();
         public Type StorageType { get; } = typeof(SystemFunctions);
+        public string Identifier { get; } = "system_functions";
     }
 }

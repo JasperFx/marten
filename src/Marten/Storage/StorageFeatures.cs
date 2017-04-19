@@ -8,6 +8,7 @@ using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Util;
 
 namespace Marten.Storage
 {
@@ -49,6 +50,8 @@ namespace Marten.Storage
         }
 
         public Transforms.Transforms Transforms { get; }
+
+        [Obsolete("This will have to be moved to Tenant")]
         public SequenceFactory Sequences { get;}
 
         private void store(IFeatureSchema feature)
@@ -158,6 +161,38 @@ namespace Marten.Storage
             schemas.Fill(_options.Events.DatabaseSchemaName);
 
             return schemas.Select(x => x.ToLowerInvariant()).ToArray();
+        }
+
+        public IEnumerable<IFeatureSchema> AllActiveFeatures()
+        {
+            yield return SystemFunctions;
+
+            var mappings = _documentMappings
+                .Values
+                .OrderBy(x => x.DocumentType.Name)
+                .TopologicalSort(m =>
+                {
+                    return m.ForeignKeys
+                        .Where(x => x.ReferenceDocumentType != m.DocumentType)
+                        .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
+                        .Select(MappingFor);
+                });
+
+            foreach (var mapping in mappings)
+            {
+                yield return mapping;
+            }
+
+            // Sequences needs to be on Tenant in the longer run
+            // TODO -- maybe split SequenceFactory from its IFeatureSchema?
+            yield return new SequenceFactory(_options);
+
+            yield return Transforms;
+
+            if (_options.Events.IsActive)
+            {
+                yield return _options.Events;
+            }
         }
     }
 }
