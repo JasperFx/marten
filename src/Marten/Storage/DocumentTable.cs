@@ -32,6 +32,7 @@ namespace Marten.Storage
             if (mapping.DeleteStyle == DeleteStyle.SoftDelete)
             {
                 AddColumn<DeletedColumn>();
+                AddColumn<DeletedAtColumn>();
             }
 
             Indexes.AddRange(mapping.Indexes);
