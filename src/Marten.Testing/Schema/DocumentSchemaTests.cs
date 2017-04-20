@@ -272,9 +272,8 @@ namespace Marten.Testing.Schema
             lines.ShouldContain("\\i user.sql");
             lines.ShouldContain("\\i company.sql");
             lines.ShouldContain("\\i issue.sql");
-            lines.ShouldContain("\\i mt_hilo.sql");
             lines.ShouldContain("\\i eventstore.sql");
-            lines.ShouldContain("\\i get_fullname.sql");
+            lines.ShouldContain("\\i transforms.sql");
 
 
         }
@@ -298,7 +297,7 @@ namespace Marten.Testing.Schema
                 store.Schema.WriteDDLByType(_binAllsql);
             }
 
-            var file = _binAllsql.AppendPath("get_fullname.sql");
+            var file = _binAllsql.AppendPath("transforms.sql");
             var lines = new FileSystem().ReadStringFromFile(file).ReadLines().ToArray();
 
 
@@ -628,11 +627,6 @@ namespace Marten.Testing.Schema
             _schema.ToDDL().ShouldContain("other.mt_streams");
         }
 
-        [Fact]
-        public void then_the_hilo_function_should_be_generated_in_the_default_schema()
-        {
-            _sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_get_next_hi");
-        }
 
         [Fact]
         public void then_the_user_function_should_be_generated_in_the_default_schema()

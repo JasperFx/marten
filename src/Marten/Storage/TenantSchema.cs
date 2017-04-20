@@ -160,11 +160,6 @@ namespace Marten.Storage
             }
         }
 
-        public void EnsureFunctionExists(string functionName)
-        {
-            _tenant.EnsureStorageExists(typeof(SystemFunctions));
-        }
-
         public SchemaPatch ToPatch(Type documentType)
         {
             var mapping = _features.MappingFor(documentType);

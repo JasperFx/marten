@@ -1,5 +1,6 @@
 ﻿using System;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Util;
 using Xunit;
 
@@ -21,22 +22,12 @@ namespace Marten.Testing.Schema
 
             theStore.DefaultTenant.ResetSchemaExistenceChecks();
 
-            theStore.Schema.EnsureFunctionExists("mt_immutable_timestamp");
+            theStore.DefaultTenant.EnsureStorageExists(typeof(SystemFunctions));
 
             theStore.Schema.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamp"))
                 .ShouldNotBeNull();
         }
 
-        [Fact]
-        public void patch_with_auto_create_to_none_throws_exception()
-        {
-            StoreOptions(_ => _.AutoCreateSchemaObjects = AutoCreate.None);
-
-            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
-            {
-                theStore.Schema.EnsureFunctionExists("mt_immutable_timestamp");
-            });
-        }
 
     }
 }

@@ -69,7 +69,11 @@ AND    n.nspname = :{schemaParam};
 
         protected FunctionDelta fetchDelta(DbDataReader reader, DdlRules rules)
         {
-            if (!reader.Read()) return null;
+            if (!reader.Read())
+            {
+                reader.NextResult();
+                return null;
+            }
 
             var upsertDefinition = reader.GetString(0);
 

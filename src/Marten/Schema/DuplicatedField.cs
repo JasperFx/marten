@@ -70,9 +70,9 @@ namespace Marten.Schema
 
         public void WritePatch(DocumentMapping mapping, SchemaPatch patch)
         {
-            patch.Updates.Apply(mapping, $"ALTER TABLE {mapping.Table.QualifiedName} ADD COLUMN {ColumnName} {PgType};");
+            patch.Updates.Apply(mapping, $"ALTER TABLE {mapping.Table.QualifiedName} ADD COLUMN {ColumnName} {PgType.Trim()};");
 
-            patch.Updates.Apply(mapping, $"update {mapping.Table.QualifiedName} set {UpdateSqlFragment()};");
+            patch.UpWriter.WriteLine($"update {mapping.Table.QualifiedName} set {UpdateSqlFragment()};");
         }
 
         // TODO -- have this take in CommandBuilder
