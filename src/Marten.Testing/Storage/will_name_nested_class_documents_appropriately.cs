@@ -35,7 +35,7 @@ namespace Marten.Testing.Storage
                 table2.Identifier.Name.ShouldBe("mt_doc_bar_document");
             }
 
-            table2.ShouldNotBe(table1);
+            table2.Equals(table1).ShouldBeFalse();
         }
 
         [Fact]
@@ -64,7 +64,7 @@ namespace Marten.Testing.Storage
                 table2.Identifier.Name.ShouldBe("mt_doc_bar_document");
             }
 
-            table2.ShouldNotBe(table1);
+            table2.Equals(table1).ShouldBeFalse();
         }
     }
 
