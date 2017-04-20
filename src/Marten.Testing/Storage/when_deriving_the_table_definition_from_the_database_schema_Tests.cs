@@ -1,12 +1,12 @@
 using System.Linq;
 using Baseline;
-using Marten.Generation;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Schema
+namespace Marten.Testing.Storage
 {
     
     public class when_deriving_the_table_definition_from_the_database_schema_Tests : IntegratedFixture
@@ -14,7 +14,7 @@ namespace Marten.Testing.Schema
         private readonly IDocumentSchema _schema;
         private DocumentMapping theMapping;
         private IDocumentStorage _storage;
-        private TableDefinition theDerivedTable;
+        private DocumentTable theDerivedTable;
 
         public when_deriving_the_table_definition_from_the_database_schema_Tests()
         {
@@ -26,13 +26,13 @@ namespace Marten.Testing.Schema
 
             _storage = theStore.DefaultTenant.StorageFor(typeof(User));
 
-            theDerivedTable = _schema.DbObjects.TableSchema(theMapping);
+            theDerivedTable = new DocumentTable(theMapping);
         }
 
         [Fact]
         public void it_maps_the_table_name()
         {
-            theDerivedTable.Name.ShouldBe(theMapping.Table);
+            theDerivedTable.Identifier.ShouldBe(theMapping.Table);
         }
 
         [Fact]
@@ -45,7 +45,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void it_has_all_the_columns()
         {
-            theDerivedTable.Columns.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, "user_name");
+            theDerivedTable.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, "user_name");
         }
 
         [Fact]

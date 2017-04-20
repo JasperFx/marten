@@ -40,6 +40,7 @@ namespace Marten.Storage
         }
 
 
+
     }
 
     public abstract class SystemColumn : TableColumn

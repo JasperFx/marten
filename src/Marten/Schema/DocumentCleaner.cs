@@ -72,10 +72,11 @@ AND    n.nspname = '{1}';";
         {
             var mapping = _store.Storage.MappingFor(documentType);
 
-            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
+            using (var conn = _factory.Create())
             {
-                mapping.SchemaObjects.RemoveSchemaObjects(connection);
-                connection.Commit();
+                conn.Open();
+
+                mapping.RemoveAllObjects(_store.Options.DdlRules, conn);
             }
         }
 

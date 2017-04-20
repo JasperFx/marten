@@ -281,17 +281,6 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
-        public void generate_a_document_table_with_duplicated_tables()
-        {
-            var mapping = DocumentMapping.For<User>();
-            mapping.DuplicateField("FirstName");
-
-            var table = mapping.SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
-
-            table.Columns.Any(x => x.Name == "first_name").ShouldBeTrue();
-        }
-
-        [Fact]
         public void generate_a_table_to_the_database_with_duplicated_field()
         {
             using (var container = Container.For<DevelopmentModeRegistry>())
@@ -310,82 +299,6 @@ namespace Marten.Testing.Schema
 
                 schema.DbObjects.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
             }
-        }
-
-        [Fact]
-        public void generate_simple_document_table()
-        {
-            var mapping = DocumentMapping.For<MySpecialDocument>();
-            var builder = new StringWriter();
-
-            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
-
-            var sql = builder.ToString();
-
-            sql.ShouldContain("CREATE TABLE public.mt_doc_documentmappingtests_myspecialdocument");
-            sql.ShouldContain("jsonb NOT NULL");
-        }
-
-        [Fact]
-        public void generate_simple_document_table_on_other_schema()
-        {
-            var mapping = DocumentMapping.For<MySpecialDocument>("other");
-            var builder = new StringWriter();
-
-            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
-
-            var sql = builder.ToString();
-
-            sql.ShouldContain("CREATE TABLE other.mt_doc_documentmappingtests_myspecialdocument");
-            sql.ShouldContain("jsonb NOT NULL");
-        }
-
-        [Fact]
-        public void generate_simple_document_table_on_overriden_schema()
-        {
-            var mapping = DocumentMapping.For<MySpecialDocument>("other");
-            mapping.DatabaseSchemaName = "overriden";
-
-            var builder = new StringWriter();
-
-            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
-
-            var sql = builder.ToString();
-
-            sql.ShouldContain("CREATE TABLE overriden.mt_doc_documentmappingtests_myspecialdocument");
-            sql.ShouldContain("jsonb NOT NULL");
-        }
-
-        [Fact]
-        public void generate_table_with_foreign_key()
-        {
-            var mapping = DocumentMapping.For<Issue>();
-            var foreignKey = mapping.AddForeignKey("AssigneeId", typeof(User));
-
-            var builder = new StringWriter();
-
-            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
-
-            var sql = builder.ToString();
-
-            sql.ShouldContain(foreignKey.ToDDL());
-        }
-
-        [Fact]
-        public void generate_table_with_indexes()
-        {
-            var mapping = DocumentMapping.For<User>();
-            var i1 = mapping.AddIndex("first_name");
-            var i2 = mapping.AddIndex("last_name");
-
-            var builder = new StringWriter();
-
-            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
-
-            var sql = builder.ToString();
-
-            sql.ShouldContain(i1.ToDDL());
-            sql.ShouldContain(i2.ToDDL());
         }
 
         [Fact]
@@ -633,7 +546,10 @@ namespace Marten.Testing.Schema
         {
             var mapping = DocumentMapping.For<User>();
             mapping.DuplicateField("FirstName");
-            mapping.SchemaObjects.As<DocumentSchemaObjects>().StorageTable().Columns.Select(x => x.Name)
+
+            var table = new DocumentTable(mapping);
+
+            table.Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn,
                     DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, "first_name");
         }
@@ -645,9 +561,9 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<Squad>();
             mapping.AddSubClass(typeof(BaseballTeam));
 
-            var table = mapping.SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
+            var table = new DocumentTable(mapping);
 
-            var typeColumn = table.Columns.Last();
+            var typeColumn = table.Last();
             typeColumn.Name.ShouldBe(DocumentMapping.DocumentTypeColumn);
             typeColumn.Type.ShouldBe("varchar");
         }
@@ -656,7 +572,8 @@ namespace Marten.Testing.Schema
         public void to_table_without_subclasses_and_no_duplicated_fields()
         {
             var mapping = DocumentMapping.For<IntDoc>();
-            mapping.SchemaObjects.As<DocumentSchemaObjects>().StorageTable().Columns.Select(x => x.Name)
+            var table = new DocumentTable(mapping);
+            table.Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn,
                     DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn);
         }
@@ -797,50 +714,6 @@ namespace Marten.Testing.Schema
         {
             var mapping = DocumentMapping.For<ConfiguresItselfSpecifically>();
             mapping.DuplicatedFields.Single().MemberName.ShouldBe(nameof(ConfiguresItselfSpecifically.Name));
-        }
-
-        [Fact]
-        public void write_upsert_sql()
-        {
-            var mapping = DocumentMapping.For<MySpecialDocument>();
-            var builder = new StringWriter();
-
-            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
-
-            var sql = builder.ToString();
-
-            sql.ShouldContain("INSERT INTO public.mt_doc_documentmappingtests_myspecialdocument");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_documentmappingtests_myspecialdocument");
-        }
-
-        [Fact]
-        public void write_upsert_sql_on_other_schema()
-        {
-            var mapping = DocumentMapping.For<MySpecialDocument>("other");
-            var builder = new StringWriter();
-
-            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
-
-            var sql = builder.ToString();
-
-            sql.ShouldContain("INSERT INTO other.mt_doc_documentmappingtests_myspecialdocument");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_documentmappingtests_myspecialdocument");
-        }
-
-        [Fact]
-        public void write_upsert_sql_on_overriden_schema()
-        {
-            var mapping = DocumentMapping.For<MySpecialDocument>("other");
-            mapping.DatabaseSchemaName = "overriden";
-
-            var builder = new StringWriter();
-
-            mapping.SchemaObjects.WriteSchemaObjects(theStore.Schema, builder);
-
-            var sql = builder.ToString();
-
-            sql.ShouldContain("INSERT INTO overriden.mt_doc_documentmappingtests_myspecialdocument");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION overriden.mt_upsert_documentmappingtests_myspecialdocument");
         }
 
         [Fact]

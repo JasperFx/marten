@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Xunit;
 
 namespace Marten.Testing.Schema
@@ -21,7 +22,7 @@ namespace Marten.Testing.Schema
 
             var existing = theStore.TableSchema(typeof (Target));
 
-            var configured = theStore.DefaultTenant.MappingFor(typeof (Target)).SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
+            var configured = new DocumentTable(theStore.DefaultTenant.MappingFor(typeof(Target)).As<DocumentMapping>());
 
             if (!existing.Equals(configured))
             {
