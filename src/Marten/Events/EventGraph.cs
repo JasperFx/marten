@@ -37,8 +37,6 @@ namespace Marten.Events
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 
-            SchemaObjects = new EventStoreDatabaseObjects(this);
-
             InlineProjections = new ProjectionCollection(options);
             AsyncProjections = new ProjectionCollection(options);            
         }
@@ -47,7 +45,6 @@ namespace Marten.Events
 
         internal DbObjectName Table => new DbObjectName(DatabaseSchemaName, "mt_events");
 
-        internal IDocumentSchemaObjects SchemaObjects { get; }
 
         public EventMapping EventMappingFor(Type eventType)
         {

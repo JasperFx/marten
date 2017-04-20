@@ -42,34 +42,4 @@ namespace Marten.Events
         }
     }
 
-    public class NulloSchemaObject : IDocumentSchemaObjects
-    {
-        public void GenerateSchemaObjectsIfNecessary(AutoCreate autoCreateSchemaObjectsMode, IDocumentSchema schema,
-            SchemaPatch patch)
-        {
-        }
-
-        public void WriteSchemaObjects(IDocumentSchema schema, StringWriter writer)
-        {
-        }
-
-        public void RemoveSchemaObjects(IManagedConnection connection)
-        {
-        }
-
-        public void ResetSchemaExistenceChecks()
-        {
-        }
-
-        public void WritePatch(IDocumentSchema schema, SchemaPatch patch)
-        {
-        }
-
-        public string Name => "IEvent Query";
-
-        public TableDefinition StorageTable()
-        {
-            throw new NotSupportedException();
-        }
-    }
 }

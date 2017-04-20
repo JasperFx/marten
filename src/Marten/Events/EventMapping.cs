@@ -79,8 +79,6 @@ namespace Marten.Events
 
         public abstract IDocumentStorage BuildStorage(StoreOptions options);
 
-        public IDocumentSchemaObjects SchemaObjects => _parent.SchemaObjects;
-
         public void DeleteAllDocuments(IConnectionFactory factory)
         {
             factory.RunSql($"delete from mt_events where type = '{Alias}'");
