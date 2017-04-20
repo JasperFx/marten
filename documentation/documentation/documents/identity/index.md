@@ -13,6 +13,8 @@ Besides being serializable, Marten's only other requirement for a .Net type to b
 1. When the ID member of a document is not settable or not-public a `NoOpIdGeneration` strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.
 1. A `Custom` ID generator strategy is used to implement the ID generation strategy yourself.
 
+Marten by default uses the identity value set on documents and only assigns one in case it has no value (`Guid.Empty`, `0`, `string.Empty` etc).
+
 <div class="alert alert-info">When using a `Guid`/`CombGuid`, `Int`, or `Long` identifier, Marten will ensure the identity is set immediately after calling `IDocumentSession.Store` on the entity.</div>
 
 See these topics for more information about specific Id types:
