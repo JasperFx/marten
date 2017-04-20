@@ -63,7 +63,7 @@ var store = DocumentStore.For(_ =>
                     store2.DefaultTenant.EnsureStorageExists(typeof(User));
                 });
 
-                ex.Message.ShouldBe($"The table for document type {typeof(User).FullName} is different than the current schema table, but AutoCreateSchemaObjects = '{nameof(AutoCreate.CreateOnly)}'");
+                ex.Message.ShouldBe($"Marten cannot apply updates in CreateOnly mode to existing items public.mt_doc_user, public.mt_upsert_user");
             }
         }
     }
