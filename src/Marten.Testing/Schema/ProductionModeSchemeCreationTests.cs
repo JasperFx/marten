@@ -58,7 +58,7 @@ namespace Marten.Testing.Schema
             {
                 using (var session = store.OpenSession())
                 {
-                    Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+                    Exception<MartenCommandException>.ShouldBeThrownBy(() =>
                     {
                         session.Store(new User());
                         session.SaveChanges();

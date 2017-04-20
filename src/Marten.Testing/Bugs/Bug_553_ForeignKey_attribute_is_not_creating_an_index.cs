@@ -14,7 +14,7 @@ namespace Marten.Testing.Bugs
 
 
             var table = theStore.Schema.DbObjects.ExistingTableFor(typeof(DocWithFK));
-            table.ActualIndices.ContainsKey("mt_doc_docwithfk_idx_user_id");
+            table.ActualIndices.ContainsKey("mt_doc_docwithfk_idx_user_id").ShouldBeTrue();
         }
     }
 

@@ -189,5 +189,12 @@ namespace Marten.Storage
         }
 
 
+        public void MarkAllFeaturesAsChecked()
+        {
+            foreach (var feature in _features.AllActiveFeatures())
+            {
+                _checks[feature.StorageType] = true;
+            }
+        }
     }
 }

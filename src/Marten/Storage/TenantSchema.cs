@@ -10,9 +10,9 @@ namespace Marten.Storage
     {
         private readonly StorageFeatures _features;
         private readonly IConnectionFactory _factory;
-        private readonly ITenant _tenant;
+        private readonly Tenant _tenant;
 
-        public TenantSchema(StoreOptions options, IConnectionFactory factory, ITenant tenant)
+        public TenantSchema(StoreOptions options, IConnectionFactory factory, Tenant tenant)
         {
             _features = options.Storage;
             _factory = factory;
@@ -150,6 +150,8 @@ namespace Marten.Storage
                 {
                     _factory.RunSql(ddl);
                     StoreOptions.Logger().SchemaChange(ddl);
+
+                    _tenant.MarkAllFeaturesAsChecked();
                 }
                 catch (Exception e)
                 {
