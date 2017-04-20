@@ -32,10 +32,9 @@ namespace Marten.Testing.Storage
             theStore.DefaultTenant.ResetSchemaExistenceChecks();
             theStore.DefaultTenant.EnsureStorageExists(typeof(User));
 
-            throw new NotImplementedException("Do it a different way");
-            //var actual = theStore.Schema.DbObjects.TableSchema(mapping);
+            var actual = theStore.Schema.DbObjects.ExistingTableFor(typeof(User));
 
-            //actual.HasColumn(DocumentMapping.VersionColumn).ShouldBeTrue();
+            actual.HasColumn(DocumentMapping.VersionColumn).ShouldBeTrue();
         }
 
         [Fact]
@@ -59,10 +58,11 @@ namespace Marten.Testing.Storage
             theStore.DefaultTenant.ResetSchemaExistenceChecks();
             theStore.DefaultTenant.EnsureStorageExists(typeof(User));
 
-            throw new NotImplementedException("Do it a different way");
-            //var actual = theStore.Schema.DbObjects.TableSchema(mapping);
 
-            //actual.HasColumn(DocumentMapping.DotNetTypeColumn).ShouldBeTrue();
+
+            var actual = theStore.Schema.DbObjects.ExistingTableFor(typeof(User));
+
+            actual.HasColumn(DocumentMapping.DotNetTypeColumn).ShouldBeTrue();
         }
 
         [Fact]
@@ -86,12 +86,11 @@ namespace Marten.Testing.Storage
             theStore.DefaultTenant.ResetSchemaExistenceChecks();
             theStore.DefaultTenant.EnsureStorageExists(typeof(User));
 
-            throw new NotImplementedException("Do it a different way");
-            //var actual = theStore.Schema.DbObjects.TableSchema(mapping);
+            var actual = theStore.Schema.DbObjects.ExistingTableFor(typeof(User));
 
-            //actual.HasColumn(DocumentMapping.LastModifiedColumn).ShouldBeTrue();
+            actual.HasColumn(DocumentMapping.LastModifiedColumn).ShouldBeTrue();
 
-           
+
         }
     }
 }

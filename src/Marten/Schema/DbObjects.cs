@@ -174,6 +174,19 @@ AND    n.nspname = :schema;
             return _factory.Fetch(sql, reader).ToArray();
         }
 
+        public Table ExistingTableFor(Type type)
+        {
+            var mapping = _features.MappingFor(type).As<DocumentMapping>();
+            var expected = new DocumentTable(mapping);
+
+            using (var conn = _factory.Create())
+            {
+                conn.Open();
+
+                return expected.FetchExisting(conn);
+            }
+        }
+
         private IEnumerable<TableColumn> findTableColumns(IDocumentMapping documentMapping)
         {
             Func<DbDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));

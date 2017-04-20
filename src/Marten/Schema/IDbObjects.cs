@@ -38,5 +38,6 @@ namespace Marten.Schema
         FunctionBody DefinitionForFunction(DbObjectName function);
 
         ForeignKeyConstraint[] AllForeignKeys();
+        Table ExistingTableFor(Type type);
     }
 }
