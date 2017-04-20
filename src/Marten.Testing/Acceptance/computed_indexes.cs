@@ -306,7 +306,7 @@ namespace Marten.Testing.Acceptance
                 _.Schema.For<Target>().Index(x => x.Number);
             }))
             {
-                var patch = store2.Schema.ToPatch();
+                var patch = store2.Schema.ToPatch(typeof(Target));
 
                 patch.UpdateDDL.ShouldNotContain("mt_doc_target_idx_number");
             }
