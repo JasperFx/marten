@@ -59,6 +59,24 @@ namespace Marten.Storage
                 writer.WriteLine(BuildTemplate(text));
             }
         }
+
+        protected bool Equals(DocumentTable other)
+        {
+            return base.Equals((Table)other);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((DocumentTable) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
     public abstract class SystemColumn : TableColumn

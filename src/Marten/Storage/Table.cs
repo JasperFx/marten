@@ -385,7 +385,7 @@ where
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+            if (!obj.GetType().CanBeCastTo<Table>()) return false;
             return Equals((Table) obj);
         }
 
