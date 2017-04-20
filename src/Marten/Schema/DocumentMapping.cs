@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -498,6 +499,15 @@ namespace Marten.Schema
 
         Type IFeatureSchema.StorageType => DocumentType;
         public string Identifier => Alias.ToLowerInvariant();
+        public void WritePermissions(DdlRules rules, StringWriter writer)
+        {
+            var template = DdlTemplate.IsNotEmpty()
+                ? rules.Templates[DdlTemplate.ToLower()]
+                : rules.Templates["default"];
+
+            new DocumentTable(this).WriteTemplate(template, writer);
+            new UpsertFunction(this).WriteTemplate(rules, template, writer);
+        }
     }
 
     public class DocumentMapping<T> : DocumentMapping

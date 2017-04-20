@@ -1,4 +1,5 @@
-namespace Marten.Generation
+
+namespace Marten.Storage
 {
     internal static class OriginWriter
     {        
@@ -9,9 +10,9 @@ namespace Marten.Generation
             return $"COMMENT ON {objectType} {objectName} IS 'origin:{MartenFqn}';";
         }
 
-        public static string OriginStatement(this TableDefinition definition)
+        public static string OriginStatement(this Table definition)
         {
-            return OriginStatement("TABLE", definition.Name.QualifiedName);
+            return OriginStatement("TABLE", definition.Identifier.QualifiedName);
         }
     }
 }

@@ -94,5 +94,9 @@ namespace Marten.Transforms
         public ISchemaObject[] Objects => _functions.Values.OfType<ISchemaObject>().ToArray();
         public Type StorageType { get; } = typeof(Transforms);
         public string Identifier { get; } = "transforms";
+        public void WritePermissions(DdlRules rules, StringWriter writer)
+        {
+            // Nothing
+        }
     }
 }

@@ -1,14 +1,14 @@
 ﻿using System;
-using Marten.Generation;
+using Marten.Storage;
 
 namespace Marten.Schema
 {
     public static class DocumentSchemaExtensions
     {
-        public static TableDefinition TableSchema(this DocumentStore store, Type documentType)
+        public static DocumentTable TableSchema(this DocumentStore store, Type documentType)
         {
             var mapping = store.DefaultTenant.MappingFor(documentType);
-            return store.Schema.DbObjects.TableSchema(mapping);
+            return new DocumentTable((DocumentMapping) mapping);
         }
     }
 }

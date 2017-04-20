@@ -18,8 +18,7 @@ namespace Marten.Storage
         /// </summary>
         string Identifier { get; }
 
-        // TODO -- write permissions. Stupid DDL template stuff
-        // for our idiot database team's endless bikeshedding
+        void WritePermissions(DdlRules rules, StringWriter writer);
     }
 
     public static class FeatureSchemaExtensions
@@ -39,7 +38,7 @@ namespace Marten.Storage
                 schemaObject.Write(rules, writer);
             }
 
-            // TODO -- deal with the stupid DDL template stuff here
+            schema.WritePermissions(rules, writer);
         }
 
         public static void WriteDropStatements(this IFeatureSchema schema, DdlRules rules, StringWriter writer)

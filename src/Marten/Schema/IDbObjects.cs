@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Marten.Generation;
 using Marten.Storage;
 
 namespace Marten.Schema
@@ -38,17 +37,6 @@ namespace Marten.Schema
 
         FunctionBody DefinitionForFunction(DbObjectName function);
 
-
-        /// <summary>
-        /// Fetch the actual table model for a document type
-        /// </summary>
-        /// <param name="documentMapping"></param>
-        /// <returns></returns>
-        TableDefinition TableSchema(IDocumentMapping documentMapping);
-
-        TableDefinition TableSchema(Type documentType);
-
-        SchemaObjects FindSchemaObjects(DocumentMapping mapping);
         ForeignKeyConstraint[] AllForeignKeys();
     }
 }

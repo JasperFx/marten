@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using Marten.Storage;
 
 namespace Marten.Schema.Identity.Sequences
@@ -47,6 +48,10 @@ namespace Marten.Schema.Identity.Sequences
 
         public Type StorageType { get; } = typeof(SequenceFactory);
         public string Identifier { get; } = "hilo";
+        public void WritePermissions(DdlRules rules, StringWriter writer)
+        {
+            // Nothing
+        }
 
         public ISequence SequenceFor(Type documentType)
         {

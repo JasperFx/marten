@@ -1,11 +1,8 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema;
-using Marten.Services;
 
 namespace Marten.Events
 {
@@ -24,6 +21,10 @@ namespace Marten.Events
             duplicateField(x => x.Timestamp, "timestamp");
         }
 
+        public ISelector<IEvent> Selector { get; }
+
+        public override DbObjectName Table { get; }
+
         private DuplicatedField duplicateField(Expression<Func<IEvent, object>> property, string columnName)
         {
             var finder = new FindMembers();
@@ -32,14 +33,9 @@ namespace Marten.Events
             return DuplicateField(finder.Members.ToArray(), columnName: columnName);
         }
 
-        public ISelector<IEvent> Selector { get; }
-
-        public override DbObjectName Table { get; }
-
         public override string[] SelectFields()
         {
             return Selector.SelectFields();
         }
     }
-
 }
