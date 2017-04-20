@@ -138,7 +138,6 @@ namespace Marten.Storage
         {
             var schemaParam = builder.AddParameter(Identifier.Schema).ParameterName;
             var nameParam = builder.AddParameter(Identifier.Name).ParameterName;
-            var qualifiedNameParam = builder.AddParameter(Identifier.ToString()).ParameterName;
 
             builder.Append($@"
 select column_name, data_type, character_maximum_length 
@@ -241,7 +240,6 @@ where
             {
                 if (autoCreate == AutoCreate.All)
                 {
-                    WriteDropStatement(patch.Rules, patch.UpWriter);
                     Write(patch.Rules, patch.UpWriter);
 
                     return SchemaPatchDifference.Create;

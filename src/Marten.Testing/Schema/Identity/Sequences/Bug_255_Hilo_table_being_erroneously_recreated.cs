@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Baseline;
 using Shouldly;
 using Xunit;
 
@@ -42,7 +44,9 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 }
             }
 
-            logger.Sql.Where(x => x.Contains("mt_hilo")).Count()
+            logger.Sql.Each(x => Console.WriteLine(x));
+
+            logger.Sql.Where(x => x.Contains("mt_hilo") && x.Contains("CREATE TABLE")).Count()
                 .ShouldBe(1);
         }
     }

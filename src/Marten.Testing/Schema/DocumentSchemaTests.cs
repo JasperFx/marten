@@ -87,6 +87,7 @@ namespace Marten.Testing.Schema
             theStore.DefaultTenant.StorageFor(typeof(User));
             theStore.DefaultTenant.StorageFor(typeof(Issue));
             theStore.DefaultTenant.StorageFor(typeof(Company));
+            theStore.DefaultTenant.EnsureStorageExists(typeof(IntDoc));
 
             var sql = theStore.Schema.ToDDL();
 
