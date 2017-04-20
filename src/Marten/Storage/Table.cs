@@ -293,9 +293,9 @@ where
             return existing;
         }
 
-        public List<string> ActualForeignKeys { get; set; }
+        public List<string> ActualForeignKeys { get; set; } = new List<string>();
 
-        public Dictionary<string, ActualIndex> ActualIndices { get; set; }
+        public Dictionary<string, ActualIndex> ActualIndices { get; set; } = new Dictionary<string, ActualIndex>();
 
 
         private static List<string> readConstraints(DbDataReader reader)
