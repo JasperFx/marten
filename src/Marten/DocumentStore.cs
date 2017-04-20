@@ -79,8 +79,9 @@ namespace Marten
             _logger = options.Logger();
 
             // TODO -- think this is temporary
-            DefaultTenant = new Tenant(options.Storage, options, options.ConnectionFactory(), "default");
-            Schema = new TenantSchema(options, _connectionFactory, DefaultTenant);
+            var tenant = new Tenant(options.Storage, options, options.ConnectionFactory(), "default");
+            DefaultTenant = tenant;
+            Schema = new TenantSchema(options, _connectionFactory, tenant);
 
 
 
