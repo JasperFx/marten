@@ -195,7 +195,13 @@ namespace Marten.Storage
 
             // Sequences needs to be on Tenant in the longer run
             // TODO -- maybe split SequenceFactory from its IFeatureSchema?
-            yield return new SequenceFactory(_options);
+            // The sequence is required is to maintain the behavior from 1.*
+            if (sequenceIsRequired())
+            {
+                yield return new SequenceFactory(_options);
+            }
+
+            
 
             yield return Transforms;
 
@@ -203,6 +209,14 @@ namespace Marten.Storage
             {
                 yield return _options.Events;
             }
+        }
+
+        private bool sequenceIsRequired()
+        {
+            return _documentMappings.Values.Select(x => x.IdStrategy)
+                .OfType<IIdGenerationWithDependencies>()
+                .SelectMany(x => x.DependentFeatures())
+                .Contains(typeof(SequenceFactory));
         }
     }
 }
