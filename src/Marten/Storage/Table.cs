@@ -375,5 +375,29 @@ where
         {
             _columns.RemoveAll(x => x.Name == columnName);
         }
+
+        protected bool Equals(Table other)
+        {
+            return _columns.OrderBy(x => x.Name).SequenceEqual(other.OrderBy(x => x.Name)) && Equals(PrimaryKey, other.PrimaryKey) && Identifier.Equals(other.Identifier);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((Table) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = (_columns != null ? _columns.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (PrimaryKey != null ? PrimaryKey.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (Identifier != null ? Identifier.GetHashCode() : 0);
+                return hashCode;
+            }
+        }
     }
 }
