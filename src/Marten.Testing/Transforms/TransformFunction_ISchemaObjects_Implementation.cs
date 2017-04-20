@@ -37,30 +37,6 @@ namespace Marten.Testing.Transforms
         }
 
         [Fact]
-        public void patch_if_it_does_not_exist()
-        {
-            var patch = new SchemaPatch(new DdlRules());
-
-            theStore.Advanced.Options.Transforms.For("get_fullname")
-                .WritePatch(theStore.Schema, patch);
-
-            patch.UpdateDDL.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
-        }
-
-        [Fact]
-        public void no_patch_if_it_does_exist()
-        {
-            var transform = theStore.DefaultTenant.TransformFor("get_fullname");
-
-            var patch = new SchemaPatch(new DdlRules());
-
-            theStore.Advanced.Options.Transforms.For("get_fullname")
-                .WritePatch(theStore.Schema, patch);
-
-            patch.UpdateDDL.ShouldNotContain("CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
-        }
-
-        [Fact]
         public void regenerates_if_changed()
         {
             var transform = theStore.DefaultTenant.TransformFor("get_fullname");

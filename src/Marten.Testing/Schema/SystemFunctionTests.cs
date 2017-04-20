@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using Marten.Schema;
 using Marten.Util;
 using Xunit;
@@ -39,45 +38,5 @@ namespace Marten.Testing.Schema
             });
         }
 
-        [Fact]
-        public void can_write_schema_objects()
-        {
-            StoreOptions(_ => _.DatabaseSchemaName = "other");
-
-            using (var conn = theStore.Advanced.OpenConnection())
-            {
-                conn.Execute(
-                    cmd => cmd.Sql("drop function if exists other.mt_immutable_timestamp(text)").ExecuteNonQuery());
-            }
-
-            var function = new SystemFunction(theStore.Advanced.Options, "mt_immutable_timestamp", "text");
-
-            var writer = new StringWriter();
-
-            function.WriteSchemaObjects(theStore.Schema, writer);
-
-            writer.ToString().ShouldContain("CREATE OR REPLACE FUNCTION other.mt_immutable_timestamp(value text)");
-        }
-
-        [Fact]
-        public void can_patch_if_missing()
-        {
-            StoreOptions(_ => _.DatabaseSchemaName = "other");
-
-            using (var conn = theStore.Advanced.OpenConnection())
-            {
-                conn.Execute(
-                    cmd => cmd.Sql("drop function if exists other.mt_immutable_timestamp(text)").ExecuteNonQuery());
-            }
-
-                var function = new SystemFunction(theStore.Advanced.Options, "mt_immutable_timestamp", "text");
-
-            var patch = new SchemaPatch(new DdlRules());
-
-            function.WritePatch(theStore.Schema, patch);
-
-            patch.UpdateDDL.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_immutable_timestamp(value text)");
-            patch.RollbackDDL.ShouldContain("drop function if exists other.mt_immutable_timestamp");
-        }
     }
 }
