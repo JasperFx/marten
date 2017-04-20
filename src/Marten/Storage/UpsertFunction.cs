@@ -108,5 +108,11 @@ $function$;
             var dropSql = $"drop function if exists {Identifier.QualifiedName}({argList});";
             return dropSql;
         }
+
+        public void WriteTemplate(DdlRules rules, DdlTemplate template, StringWriter writer)
+        {
+            var body = ToBody(rules);
+            body.WriteTemplate(template, writer);
+        }
     }
 }

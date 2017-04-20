@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Marten.Schema;
 
@@ -32,5 +33,9 @@ namespace Marten.Storage
         public ISchemaObject[] Objects => _systemFunctions.Values.OfType<ISchemaObject>().ToArray();
         public Type StorageType { get; } = typeof(SystemFunctions);
         public string Identifier { get; } = "system_functions";
+        public void WritePermissions(DdlRules rules, StringWriter writer)
+        {
+            // Nothing
+        }
     }
 }

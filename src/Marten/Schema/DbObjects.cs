@@ -4,7 +4,6 @@ using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using Baseline;
-using Marten.Generation;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
@@ -163,99 +162,6 @@ AND    n.nspname = :schema;
             }
 
 
-        }
-
-        public TableDefinition TableSchema(IDocumentMapping documentMapping)
-        {
-            var columns = findTableColumns(documentMapping);
-            if (!columns.Any()) return null;
-
-            var pkName = primaryKeysFor(documentMapping).SingleOrDefault();
-
-            return new TableDefinition(documentMapping.Table, pkName, columns);
-        }
-
-        public TableDefinition TableSchema(Type documentType)
-        {
-            var mapping = _features.MappingFor(documentType);
-            return TableSchema(mapping);
-        }
-
-
-        // TODO -- Really need to add some QueryHandlers for all this stuff to eliminate the duplication
-        public SchemaObjects FindSchemaObjects(DocumentMapping mapping)
-        {
-            using (var connection = new ManagedConnection(_factory))
-            {
-                return connection.Execute(cmd =>
-                {
-                    cmd.CommandText = SchemaObjectsSQL;
-                    cmd.AddNamedParameter("schema", mapping.Table.Schema);
-                    cmd.AddNamedParameter("table_name", mapping.Table.Name);
-                    cmd.AddNamedParameter("function", mapping.UpsertFunction.Name);
-                    cmd.AddNamedParameter("qualified_name", mapping.Table.OwnerName);
-
-                    var reader = cmd.ExecuteReader();
-
-                    var columns = new List<TableColumn>();
-                    while (reader.Read())
-                    {
-                        var column = new TableColumn(reader.GetString(0), reader.GetString(1));
-
-                        if (!reader.IsDBNull(2))
-                        {
-                            var length = reader.GetInt32(2);
-                            column.Type = $"{column.Type}({length})";
-                        }
-
-                        columns.Add(column);
-                    }
-
-                    var pks = new List<string>();
-                    reader.NextResult();
-                    while (reader.Read())
-                    {
-                        pks.Add(reader.GetString(0));
-                    }
-
-                    reader.NextResult();
-                    var upsertDefinition = reader.Read() ? reader.GetString(0) : null;
-
-                    var indices = new List<ActualIndex>();
-                    reader.NextResult();
-                    while (reader.Read())
-                    {
-                        var index = new ActualIndex(mapping.Table, reader.GetString(3),
-                            reader.GetString(4));
-
-                        indices.Add(index);
-                    }
-
-                    var table = columns.Any() ? new TableDefinition(mapping.Table, pks.FirstOrDefault(), columns) : null;
-
-                    reader.NextResult();
-                    var drops = new List<string>();
-                    while (reader.Read())
-                    {
-                        drops.Add(reader.GetString(0));
-                    }
-
-                    FunctionBody functionBody = upsertDefinition.IsEmpty() ? null : new FunctionBody(mapping.UpsertFunction, drops.ToArray(), upsertDefinition);
-
-
-                    reader.NextResult();
-                    var constraints = new List<string>();
-                    while (reader.Read())
-                    {
-                        constraints.Add(reader.GetString(0));
-                    }
-
-                    return new SchemaObjects(mapping.DocumentType, table, indices.ToArray(), functionBody)
-                    {
-                        ForeignKeys = constraints
-                    };
-                });
-            }
         }
 
         public ForeignKeyConstraint[] AllForeignKeys()

@@ -3,7 +3,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
 using Baseline.Reflection;
-using Marten.Generation;
 using Marten.Linq;
 using Marten.Schema.Arguments;
 using Marten.Storage;

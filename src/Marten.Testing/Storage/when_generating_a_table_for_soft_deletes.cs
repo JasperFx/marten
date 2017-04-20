@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
@@ -57,10 +58,12 @@ namespace Marten.Testing.Storage
                         .ToList().ShouldHaveTheSameElementsAs("bar", "foo");
                 }
 
-                var table = store2.Schema.DbObjects.TableSchema(store2.Storage.MappingFor(typeof(User)));
+                throw new NotImplementedException("Find a different way to find the actual");
 
-                table.HasColumn(DocumentMapping.DeletedColumn).ShouldBeTrue();
-                table.HasColumn(DocumentMapping.DeletedAtColumn).ShouldBeTrue();
+                //var table = store2.Schema.DbObjects.TableSchema(store2.Storage.MappingFor(typeof(User)));
+
+                //table.HasColumn(DocumentMapping.DeletedColumn).ShouldBeTrue();
+                //table.HasColumn(DocumentMapping.DeletedAtColumn).ShouldBeTrue();
             }
         }
     }

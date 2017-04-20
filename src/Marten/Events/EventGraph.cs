@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Events.Projections;
@@ -190,6 +191,10 @@ namespace Marten.Events
 
         Type IFeatureSchema.StorageType => typeof(EventGraph);
         public string Identifier { get; } = "eventstore";
+        public void WritePermissions(DdlRules rules, StringWriter writer)
+        {
+            // Nothing
+        }
     }
 
     public class StreamsTable : Table

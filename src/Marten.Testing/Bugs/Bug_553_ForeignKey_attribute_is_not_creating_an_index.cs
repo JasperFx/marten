@@ -17,10 +17,11 @@ namespace Marten.Testing.Bugs
             theStore.DefaultTenant.EnsureStorageExists(typeof(DocWithFK));
 
             var mapping = theStore.DefaultTenant.MappingFor(typeof(DocWithFK));
-            var objects = theStore.Schema.DbObjects.FindSchemaObjects((DocumentMapping) mapping);
-
-            objects.ActualIndices.Keys.Single()
-                .ShouldBe("mt_doc_docwithfk_idx_user_id");
+            throw new NotImplementedException("Need another way to do this");
+//            var objects = theStore.Schema.DbObjects.FindSchemaObjects((DocumentMapping) mapping);
+//
+//            objects.ActualIndices.Keys.Single()
+//                .ShouldBe("mt_doc_docwithfk_idx_user_id");
 
 
         }
