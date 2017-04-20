@@ -34,26 +34,6 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
     }
 
-    public class SequenceFactory_patch_generation : IntegratedFixture
-    {
-        [Fact]
-        public void generate_drop_part_of_patch()
-        {
-            var patch = theStore.Schema.ToPatch();
-
-            patch.RollbackDDL.ShouldContain("drop table if exists public.mt_hilo cascade;");
-        }
-
-        [Fact]
-        public void generate_drop_part_of_patch_different_schema()
-        {
-            StoreOptions(_ => _.DatabaseSchemaName = "other");
-            var patch = theStore.Schema.ToPatch();
-
-            patch.RollbackDDL.ShouldContain("drop table if exists other.mt_hilo cascade;");
-        }
-
-    }
 
     public class SequenceFactoryOnOtherDatabaseSchemaTests : IntegratedFixture
     {
