@@ -2,6 +2,8 @@
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Storage;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -27,13 +29,8 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
             });
 
-            var diff = store.Storage.MappingFor(typeof(DocWithPrecision))
-                .SchemaObjects.As<DocumentSchemaObjects>().CreateSchemaDiff(store.Schema);
-
-            diff.FunctionDiff.HasChanged.ShouldBeFalse();
-            diff.TableDiff.Different.Any().ShouldBeFalse();
-
-            diff.HasDifferences().ShouldBeFalse();
+            var patch = store.Schema.ToPatch(typeof(DocWithPrecision));
+            patch.Difference.ShouldBe(SchemaPatchDifference.None);
         }
 
 

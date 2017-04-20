@@ -36,7 +36,6 @@ namespace Marten.Schema
         private readonly IList<SubClassMapping> _subClasses = new List<SubClassMapping>();
         private string _alias;
         private string _databaseSchemaName;
-        private readonly DocumentSchemaObjects _schemaObjects;
         private MemberInfo _idMember;
 
 
@@ -44,8 +43,6 @@ namespace Marten.Schema
         {
             if (documentType == null) throw new ArgumentNullException(nameof(documentType));
             if (storeOptions == null) throw new ArgumentNullException(nameof(storeOptions));
-
-            _schemaObjects = new DocumentSchemaObjects(this);
 
             _storeOptions = storeOptions;
 
@@ -121,11 +118,6 @@ namespace Marten.Schema
             return Activator.CreateInstance(closedType, options.Serializer(), this, options.UseCharBufferPooling)
                 .As<IDocumentStorage>();
         }
-
-        public virtual IDocumentSchemaObjects SchemaObjects => _schemaObjects;
-
-        public IList<string> DependentScripts => _schemaObjects.DependentScripts;
-        public IList<Type> DependentTypes => _schemaObjects.DependentTypes;
 
         void IDocumentMapping.DeleteAllDocuments(IConnectionFactory factory)
         {

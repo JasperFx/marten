@@ -14,7 +14,7 @@ namespace Marten.Storage
 {
     public class Table : ISchemaObject, IEnumerable<TableColumn>
     {
-        public readonly IList<TableColumn> _columns = new List<TableColumn>();
+        public readonly List<TableColumn> _columns = new List<TableColumn>();
 
         public DbObjectName Identifier { get; }
 
@@ -55,6 +55,26 @@ namespace Marten.Storage
         public void AddColumn(TableColumn column)
         {
             _columns.Add(column);
+        }
+
+        public TableColumn Column(string name)
+        {
+            return _columns.FirstOrDefault(x => x.Name.EqualsIgnoreCase(name));
+        }
+
+        public void ReplaceOrAddColumn(string name, string type, string directive = null)
+        {
+            var column = new TableColumn(name, type) { Directive = directive };
+            var columnIndex = _columns.FindIndex(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+            if (columnIndex >= 0)
+            {
+                _columns[columnIndex] = column;
+            }
+            else
+            {
+                _columns.Add(column);
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()

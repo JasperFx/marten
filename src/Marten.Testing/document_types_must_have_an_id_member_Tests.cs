@@ -10,8 +10,11 @@ namespace Marten.Testing
         {
             Exception<InvalidDocumentException>.ShouldBeThrownBy(() =>
             {
-                var schema = new DocumentSchema(TestingDocumentStore.Basic(), null, null);
-                schema.MappingFor(typeof(BadDoc)).ShouldBeNull();
+                var store = DocumentStore.For(_ =>
+                {
+                    _.Connection(ConnectionSource.ConnectionString);
+                    _.Schema.For<BadDoc>();
+                });
             });
             
         }

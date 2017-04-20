@@ -3,6 +3,7 @@ using System.IO;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -28,8 +29,8 @@ namespace Marten.Testing.Bugs
         {
             var existing = theStore.TableSchema(typeof(Login));
 
-            var configured = theStore.DefaultTenant.MappingFor(typeof(Login))
-                .SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
+            var mapping = theStore.DefaultTenant.MappingFor(typeof(Login));
+            var configured = new DocumentTable(mapping.As<DocumentMapping>());
 
             if (!existing.Equals(configured))
             {

@@ -116,17 +116,6 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
-        public void include_the_hilo_table_by_default()
-        {
-            theStore.DefaultTenant.StorageFor(typeof(User));
-            theStore.DefaultTenant.StorageFor(typeof(Issue));
-            theStore.DefaultTenant.StorageFor(typeof(Company));
-
-            var sql = theStore.Schema.ToDDL();
-            sql.ShouldContain(SchemaBuilder.GetSqlScript(theStore.Schema.StoreOptions.DatabaseSchemaName, "mt_hilo"));
-        }
-
-        [Fact]
         public void do_not_write_event_sql_if_the_event_graph_is_not_active()
         {
             theStore.Events.IsActive.ShouldBeFalse();
@@ -222,10 +211,9 @@ namespace Marten.Testing.Schema
             files.ShouldNotContain("database_schemas.sql");
 
             var actuals = files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x);
-            actuals.Each(x => Console.WriteLine(x));
 
             actuals
-                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "mt_immutable_timestamp.sql", "patch_doc.sql", "user.sql");
+                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "system_functions.sql", "transforms.sql", "user.sql");
 
 
         }

@@ -40,8 +40,6 @@ namespace Marten.Events
         {
             return Selector.SelectFields();
         }
-
-        public override IDocumentSchemaObjects SchemaObjects => new NulloSchemaObject();
     }
 
     public class NulloSchemaObject : IDocumentSchemaObjects

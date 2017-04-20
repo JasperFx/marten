@@ -76,11 +76,11 @@ namespace Marten.Schema.BulkLoading
 
         public string CopyNewDocumentsFromTempTable()
         {
-            var table = _mapping.SchemaObjects.StorageTable();
+            var table = new DocumentTable(_mapping);
 
-            var storageTable = table.Name.QualifiedName;
-            var columns = table.Columns.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"\"{x.Name}\"").Join(", ");
-            var selectColumns = table.Columns.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"{_tempTableName}.\"{x.Name}\"").Join(", ");
+            var storageTable = table.Identifier.QualifiedName;
+            var columns = table.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"\"{x.Name}\"").Join(", ");
+            var selectColumns = table.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"{_tempTableName}.\"{x.Name}\"").Join(", ");
 
             return $@"insert into {storageTable} ({columns}, {DocumentMapping.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTableName} 
                          left join {storageTable} on {_tempTableName}.id = {storageTable}.id where {storageTable}.id is null)";
@@ -88,10 +88,10 @@ namespace Marten.Schema.BulkLoading
 
         public string OverwriteDuplicatesFromTempTable()
         {
-            var table = _mapping.SchemaObjects.StorageTable();
-            var storageTable = table.Name.QualifiedName;
+            var table = new DocumentTable(_mapping);
+            var storageTable = table.Identifier.QualifiedName;
 
-            var updates = table.Columns.Where(x => x.Name != "id" && x.Name != DocumentMapping.LastModifiedColumn)
+            var updates = table.Where(x => x.Name != "id" && x.Name != DocumentMapping.LastModifiedColumn)
                 .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
 
             return $@"update {storageTable} target SET {updates}, {DocumentMapping.LastModifiedColumn} = transaction_timestamp() FROM {_tempTableName} source WHERE source.id = target.id";

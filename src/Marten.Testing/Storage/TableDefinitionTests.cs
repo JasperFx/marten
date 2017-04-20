@@ -1,4 +1,5 @@
-﻿using Baseline;
+﻿using System;
+using Baseline;
 using Marten.Generation;
 using Marten.Schema;
 using Marten.Storage;
@@ -13,9 +14,9 @@ namespace Marten.Testing.Generation
         [Fact]
         public void equivalency_positive()
         {
-            var users = DocumentSchemaObjects.For<User>();
-            var table1 = users.StorageTable();
-            var table2 = users.StorageTable();
+            var users = DocumentMapping.For<User>();
+            var table1 = new DocumentTable(users);
+            var table2 = new DocumentTable(users);
 
             table2.ShouldBe(table1);
             table1.ShouldBe(table2);
@@ -25,11 +26,11 @@ namespace Marten.Testing.Generation
         [Fact]
         public void equivalency_negative_different_numbers_of_columns()
         {
-            var users = DocumentSchemaObjects.For<User>();
-            var table1 = users.StorageTable();
-            var table2 = users.StorageTable();
+            var users = DocumentMapping.For<User>();
+            var table1 = new DocumentTable(users);
+            var table2 = new DocumentTable(users);
 
-            table2.Columns.Add(new TableColumn("user_name", "character varying"));
+            table2.AddColumn(new TableColumn("user_name", "character varying"));
 
             table2.ShouldNotBe(table1);
         }
@@ -37,26 +38,15 @@ namespace Marten.Testing.Generation
         [Fact]
         public void equivalency_negative_column_type_changed()
         {
-            var users = DocumentSchemaObjects.For<User>();
-            var table1 = users.StorageTable();
-            var table2 = users.StorageTable();
+            var users = DocumentMapping.For<User>();
+            var table1 = new DocumentTable(users);
+            var table2 = new DocumentTable(users);
 
             table2.ReplaceOrAddColumn(table2.PrimaryKey.Name, "int", table2.PrimaryKey.Directive);
 
             table2.ShouldNotBe(table1);
         }
 
-        [Fact]
-        public void equivalency_positive_column_name_case_insensitive()
-        {
-            var users = DocumentSchemaObjects.For<User>();
-            var table1 = users.StorageTable();
-            var table2 = users.StorageTable();
-
-            table2.Column("username").ShouldBeSameAs(table1.Column("UserName"));
-
-            table2.ShouldBe(table1);
-        }
 
         [Fact]
         public void equivalency_with_the_postgres_synonym_issue()
@@ -66,8 +56,8 @@ namespace Marten.Testing.Generation
             var users = DocumentMapping.For<User>();
             users.DuplicateField("FirstName");
 
-            var table1 = users.SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
-            var table2 = users.SchemaObjects.As<DocumentSchemaObjects>().StorageTable();
+            var table1 = new DocumentTable(users);
+            var table2 = new DocumentTable(users);
 
             table1.ReplaceOrAddColumn("first_name", "varchar");
             table2.ReplaceOrAddColumn("first_name", "character varying");
@@ -98,7 +88,7 @@ namespace Marten.Testing.Generation
         public void write_ddl_in_default_drop_then_create_mode()
         {
             var users = DocumentMapping.For<User>();
-            var table = users.SchemaObjects.StorageTable();
+            var table = new DocumentTable(users);
             var rules = new DdlRules
             {
                 TableCreation = CreationStyle.DropThenCreate
@@ -115,7 +105,7 @@ namespace Marten.Testing.Generation
         public void write_ddl_in_create_if_not_exists_mode()
         {
             var users = DocumentMapping.For<User>();
-            var table = users.SchemaObjects.StorageTable();
+            var table = new DocumentTable(users);
             var rules = new DdlRules
             {
                 TableCreation = CreationStyle.CreateIfNotExists
@@ -132,18 +122,15 @@ namespace Marten.Testing.Generation
         {
             var mapping = DocumentMapping.For<User>();
             mapping.Duplicate(x => x.FirstName);
-
-
-            var users = new DocumentSchemaObjects(mapping);
             
-            var table = users.StorageTable();
-
-            table.BuildTemplate($"*{DdlRules.SCHEMA}*").ShouldBe($"*{table.Name.Schema}*");
-            table.BuildTemplate($"*{DdlRules.TABLENAME}*").ShouldBe($"*{table.Name.Name}*");
-            table.BuildTemplate($"*{DdlRules.COLUMNS}*").ShouldBe($"*id, data, mt_last_modified, mt_version, mt_dotnet_type, first_name*");
-            table.BuildTemplate($"*{DdlRules.NON_ID_COLUMNS}*").ShouldBe($"*data, mt_last_modified, mt_version, mt_dotnet_type, first_name*");
-
-            table.BuildTemplate($"*{DdlRules.METADATA_COLUMNS}*").ShouldBe("*mt_last_modified, mt_version, mt_dotnet_type*");
+            var table = new DocumentTable(mapping);
+            throw new NotImplementedException("Need to redo the silly BuildTemplate");
+//            table.BuildTemplate($"*{DdlRules.SCHEMA}*").ShouldBe($"*{table.Identifier.Schema}*");
+//            table.BuildTemplate($"*{DdlRules.TABLENAME}*").ShouldBe($"*{table.Identifier.Name}*");
+//            table.BuildTemplate($"*{DdlRules.COLUMNS}*").ShouldBe($"*id, data, mt_last_modified, mt_version, mt_dotnet_type, first_name*");
+//            table.BuildTemplate($"*{DdlRules.NON_ID_COLUMNS}*").ShouldBe($"*data, mt_last_modified, mt_version, mt_dotnet_type, first_name*");
+//
+//            table.BuildTemplate($"*{DdlRules.METADATA_COLUMNS}*").ShouldBe("*mt_last_modified, mt_version, mt_dotnet_type*");
         }
     }
 

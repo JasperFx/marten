@@ -8,6 +8,7 @@ using Marten.Storage;
 
 namespace Marten.Generation
 {
+    [Obsolete("Superceded by the new Table")]
     public class TableDefinition
     {
         private string primaryKeyDirective => $"CONSTRAINT pk_{Name.Name} PRIMARY KEY";

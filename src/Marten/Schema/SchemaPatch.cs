@@ -42,11 +42,6 @@ namespace Marten.Schema
             
         }
 
-        public SchemaPatch(DocumentSchema schema) : this(schema.StoreOptions.DdlRules, schema)
-        {
-            
-        }
-
         public SchemaPatch(DdlRules rules, IDDLRunner liveRunner) : this(rules)
         {
             _liveRunner = liveRunner;

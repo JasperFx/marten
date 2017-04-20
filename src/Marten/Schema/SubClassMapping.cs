@@ -125,8 +125,6 @@ namespace Marten.Schema
                 Parent.DocumentType);
         }
 
-        public IDocumentSchemaObjects SchemaObjects => Parent.SchemaObjects;
-
 
         public void DeleteAllDocuments(IConnectionFactory factory)
         {

@@ -12,7 +12,6 @@ namespace Marten.Schema
 
         IDocumentStorage BuildStorage(StoreOptions options);
 
-        IDocumentSchemaObjects SchemaObjects { get; }
         DbObjectName Table { get; }
 
         void DeleteAllDocuments(IConnectionFactory factory);

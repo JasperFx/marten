@@ -1,24 +1,23 @@
 ﻿using System.Linq;
-using Marten.Generation;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Schema
+namespace Marten.Testing.Storage
 {
     public class when_generating_a_table_for_soft_deletes
     {
-        private TableDefinition theTable;
+        private DocumentTable theTable;
 
         public when_generating_a_table_for_soft_deletes()
         {
             var mapping = DocumentMapping.For<Target>();
             mapping.DeleteStyle = DeleteStyle.SoftDelete;
 
-            var schemaObjects = new DocumentSchemaObjects(mapping);
 
-            theTable = schemaObjects.StorageTable();
+            theTable = new DocumentTable(mapping);
         }
 
         [Fact]

@@ -132,36 +132,6 @@ namespace Marten.Testing.Schema
             }
         }
 
-        [Fact]
-        public void can_write_ddl_by_type_smoke_test_for_document_creation()
-        {
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.RegisterDocumentType<User>();
-                _.RegisterDocumentType<Company>();
-                _.RegisterDocumentType<Issue>();
-
-                _.Connection(ConnectionSource.ConnectionString);
-            }))
-            {
-                store.Schema.WriteDDLByType(_binAllsql);
-            }
-
-            var fileSystem = new FileSystem();
-            var files = fileSystem.FindFiles(_binAllsql, FileSet.Shallow("*.sql")).ToArray();
-
-            files.Select(Path.GetFileName)
-                .Where(x => x != "all.sql" && x != "database_schemas.sql").OrderBy(x => x)
-                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "mt_immutable_timestamp.sql", "patch_doc.sql", "user.sql");
-
-            files.Where(x => !x.Contains("all.sql") && !x.Contains("patch_doc.sql") && !x.Contains("mt_immutable_timestamp.sql")).Each(file =>
-            {
-                var contents = fileSystem.ReadStringFromFile(file);
-
-                contents.ShouldContain("CREATE TABLE");
-                contents.ShouldContain("CREATE OR REPLACE FUNCTION");
-            });
-        }
 
         [Fact]
         public void can_write_ddl_by_type_with_schema_creation()
