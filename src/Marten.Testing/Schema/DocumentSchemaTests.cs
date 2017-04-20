@@ -239,10 +239,8 @@ namespace Marten.Testing.Schema
             var fileSystem = new FileSystem();
             var files = fileSystem.FindFiles(_binAllsql2, FileSet.Shallow("*.sql")).ToArray();
 
-            files.ShouldNotContain("database_schemas.sql");
-
             files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x)
-                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "mt_hilo.sql", "patch_doc.sql", "user.sql");
+                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "system_functions.sql", "transforms.sql", "user.sql");
 
 
         }

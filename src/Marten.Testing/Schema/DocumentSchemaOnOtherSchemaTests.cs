@@ -4,6 +4,7 @@ using System.Linq;
 using Baseline;
 using Marten.Events;
 using Marten.Schema;
+using Marten.Schema.Identity.Sequences;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
 using Shouldly;
@@ -23,8 +24,9 @@ namespace Marten.Testing.Schema
         public DocumentSchemaOnOtherSchemaTests()
         {
             StoreOptions(_ => _.DatabaseSchemaName = "other");
-        }
 
+            theStore.DefaultTenant.EnsureStorageExists(typeof(SequenceFactory));
+        }
 
         [Fact]
         public void generate_ddl()
@@ -32,6 +34,8 @@ namespace Marten.Testing.Schema
             theStore.DefaultTenant.StorageFor(typeof(User));
             theStore.DefaultTenant.StorageFor(typeof(Issue));
             theStore.DefaultTenant.StorageFor(typeof(Company));
+
+
 
             var sql = theSchema.ToDDL();
 
