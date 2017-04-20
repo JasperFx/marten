@@ -39,7 +39,6 @@ namespace Marten.Testing.Schema
 
             var sql = theSchema.ToDDL();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_get_next_hi");
             sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
             sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_issue");
             sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_company");
@@ -48,16 +47,6 @@ namespace Marten.Testing.Schema
             sql.ShouldContain("CREATE TABLE other.mt_doc_company");
         }
 
-        [Fact]
-        public void include_the_hilo_table_by_default()
-        {
-            theStore.DefaultTenant.StorageFor(typeof(User));
-            theStore.DefaultTenant.StorageFor(typeof(Issue));
-            theStore.DefaultTenant.StorageFor(typeof(Company));
-
-            var sql = theSchema.ToDDL();
-            sql.ShouldContain("other.mt_hilo");
-        }
 
         [Fact]
         public void do_not_write_event_sql_if_the_event_graph_is_not_active()
@@ -199,7 +188,6 @@ namespace Marten.Testing.Schema
             lines.ShouldContain("\\i user.sql");
             lines.ShouldContain("\\i company.sql");
             lines.ShouldContain("\\i issue.sql");
-            lines.ShouldContain("\\i mt_hilo.sql");
             lines.ShouldContain("\\i eventstore.sql");
         }
 

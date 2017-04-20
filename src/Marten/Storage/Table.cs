@@ -181,9 +181,7 @@ FROM pg_index AS idx
   JOIN pg_user AS U ON i.relowner = U.usesysid
 WHERE 
   NOT nspname LIKE 'pg%' AND 
-  i.relname like 'mt_%' AND 
-  pg_catalog.textin(pg_catalog.regclassout(idx.indrelid :: REGCLASS)) = :{nameParam} AND 
-  ns.nspname = :{schemaParam};
+  i.relname like 'mt_%';
 
 select constraint_name 
 from information_schema.table_constraints as c
@@ -319,10 +317,20 @@ where
             reader.NextResult();
             while (reader.Read())
             {
-                var index = new ActualIndex(Identifier, reader.GetString(3),
-                    reader.GetString(4));
+                if (reader.IsDBNull(2)) continue;
 
-                dict.Add(index.Name, index);
+                var schemaName = reader.GetString(1);
+                var tableName = reader.GetString(2);
+
+                if ((Identifier.Schema == schemaName && Identifier.Name == tableName) || Identifier.QualifiedName == tableName)
+                {
+                    var index = new ActualIndex(Identifier, reader.GetString(3),
+                        reader.GetString(4));
+
+                    dict.Add(index.Name, index);
+                }
+
+
             }
 
             return dict;

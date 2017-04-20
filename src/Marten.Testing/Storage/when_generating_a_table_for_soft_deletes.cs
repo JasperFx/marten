@@ -58,12 +58,11 @@ namespace Marten.Testing.Storage
                         .ToList().ShouldHaveTheSameElementsAs("bar", "foo");
                 }
 
-                throw new NotImplementedException("Find a different way to find the actual");
 
-                //var table = store2.Schema.DbObjects.TableSchema(store2.Storage.MappingFor(typeof(User)));
+                var table = store2.Schema.DbObjects.ExistingTableFor(typeof(User));
 
-                //table.HasColumn(DocumentMapping.DeletedColumn).ShouldBeTrue();
-                //table.HasColumn(DocumentMapping.DeletedAtColumn).ShouldBeTrue();
+                table.HasColumn(DocumentMapping.DeletedColumn).ShouldBeTrue();
+                table.HasColumn(DocumentMapping.DeletedAtColumn).ShouldBeTrue();
             }
         }
     }

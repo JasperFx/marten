@@ -53,7 +53,7 @@ namespace Marten.Testing.Storage
         {
             theDerivedTable.PrimaryKey.Type.ShouldBe("uuid");
             theDerivedTable.Column("data").Type.ShouldBe("jsonb");
-            theDerivedTable.Column("user_name").Type.ShouldBe("character varying");
+            theDerivedTable.Column("user_name").Type.ShouldBe("varchar");
         }
 
     }

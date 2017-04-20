@@ -270,8 +270,6 @@ tamba.Result.Id.ShouldBe(user2.Id);
         [Fact]
         public void can_query_documents_synchronously()
         {
-            throw new NotImplementedException("come back to this");
-
             var batch = theSession.CreateBatchQuery();
 
             var anyUsers = batch.Query<User>().ToList();
