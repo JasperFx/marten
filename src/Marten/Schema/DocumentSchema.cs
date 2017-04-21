@@ -11,6 +11,7 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Services.FullTextSearch;
 using Marten.Transforms;
 using Marten.Util;
 
@@ -66,6 +67,8 @@ namespace Marten.Schema
             addSystemFunction(options, "mt_immutable_timestamp", "text");
 
             _eventQuery = new Lazy<EventQueryMapping>(() => new EventQueryMapping(StoreOptions));
+
+            FullTextSearch = new FullTextSearchConfiguration(this);
         }
 
         private void addSystemFunction(StoreOptions options, string functionName, string args)
@@ -355,6 +358,8 @@ namespace Marten.Schema
 
             }
         }
+
+        public FullTextSearchConfiguration FullTextSearch { get; private set; }
 
         public string ToDDL()
         {

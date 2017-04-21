@@ -6,6 +6,7 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Services.FullTextSearch;
 using Marten.Transforms;
 
 namespace Marten.Schema
@@ -162,5 +163,7 @@ namespace Marten.Schema
         SchemaPatch ToPatch(Type documentType);
 
         void WritePatchByType(string directory);
+
+        FullTextSearchConfiguration FullTextSearch { get; }
     }
 }
