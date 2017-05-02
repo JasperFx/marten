@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Baseline;
 using Marten.Linq;
@@ -55,13 +56,30 @@ namespace Marten.Services.Includes
                 sql.Append(_mapping.Table.QualifiedName);
             }
 
-            sql.Append(" as ");
-            sql.Append(TableAlias);
-            sql.Append(" ON ");
-            sql.Append(locator);
-            sql.Append(" = ");
-            sql.Append(TableAlias);
-            sql.Append(".id");
+            if (_field.MemberType.ImplementsInterfaceTemplate(typeof(IEnumerable<>)))
+            {                
+                sql.Append(" as ");
+                sql.Append(TableAlias);
+                sql.Append(" ON ");
+                // JSON object field by key
+                sql.Append("d.data -> '");
+                sql.Append(_field.MemberName);
+                // @> operator for top level lookup of path/value
+                sql.Append("' @> ");
+                sql.Append("to_jsonb(");
+                sql.Append(TableAlias);
+                sql.Append(".id)");
+            }
+            else
+            {
+                sql.Append(" as ");
+                sql.Append(TableAlias);
+                sql.Append(" ON ");
+                sql.Append(locator);
+                sql.Append(" = ");
+                sql.Append(TableAlias);
+                sql.Append(".id");
+            }
         }
 
         public bool IsSoftDeleted { get;}
