@@ -1,5 +1,5 @@
 {
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Postgresql as a Document Db and Event Store for .Net Development",
   "authors": [
     "Jeremy D. Miller",
