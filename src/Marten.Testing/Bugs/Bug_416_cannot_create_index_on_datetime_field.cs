@@ -10,7 +10,7 @@ namespace Marten.Testing.Bugs
         {
             StoreOptions(_ => _.Schema.For<Target>().Index(x => x.Date));
 
-            theStore.DefaultTenant.EnsureStorageExists(typeof(Target));
+            theStore.Tenants.Default.EnsureStorageExists(typeof(Target));
         }
     }
 }

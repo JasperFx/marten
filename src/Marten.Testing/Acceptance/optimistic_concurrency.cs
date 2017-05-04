@@ -33,7 +33,7 @@ namespace Marten.Testing.Acceptance
                 _.Schema.For<Issue>().UseOptimisticConcurrency(true);
             });
 
-            theStore.DefaultTenant.EnsureStorageExists(typeof(Issue));
+            theStore.Tenants.Default.EnsureStorageExists(typeof(Issue));
         }
 
 

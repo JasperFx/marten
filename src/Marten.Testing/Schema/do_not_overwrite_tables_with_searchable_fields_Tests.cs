@@ -18,11 +18,11 @@ namespace Marten.Testing.Schema
                 _.Schema.For<Target>().Duplicate(expression);
             });
 
-            theStore.DefaultTenant.StorageFor(typeof(Target)).ShouldNotBeNull();
+            theStore.Tenants.Default.StorageFor(typeof(Target)).ShouldNotBeNull();
 
             var existing = theStore.TableSchema(typeof (Target));
 
-            var configured = new DocumentTable(theStore.DefaultTenant.MappingFor(typeof(Target)).As<DocumentMapping>());
+            var configured = new DocumentTable(theStore.Tenants.Default.MappingFor(typeof(Target)).As<DocumentMapping>());
 
             if (!existing.Equals(configured))
             {

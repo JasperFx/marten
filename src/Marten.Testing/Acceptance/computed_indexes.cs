@@ -272,7 +272,7 @@ namespace Marten.Testing.Acceptance
             {
                 store1.Advanced.Clean.CompletelyRemoveAll();
 
-                store1.DefaultTenant.EnsureStorageExists(typeof(Target));
+                store1.Tenants.Default.EnsureStorageExists(typeof(Target));
             }
 
             using (var store2 = DocumentStore.For(_ =>
@@ -297,7 +297,7 @@ namespace Marten.Testing.Acceptance
             {
                 store1.Advanced.Clean.CompletelyRemoveAll();
 
-                store1.DefaultTenant.EnsureStorageExists(typeof(Target));
+                store1.Tenants.Default.EnsureStorageExists(typeof(Target));
             }
 
             using (var store2 = DocumentStore.For(_ =>

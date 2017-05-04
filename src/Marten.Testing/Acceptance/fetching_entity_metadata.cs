@@ -12,7 +12,7 @@ namespace Marten.Testing.Acceptance
         {
             var shop = new CoffeeShop();
 
-            theStore.DefaultTenant.MetadataFor(shop)
+            theStore.Tenants.Default.MetadataFor(shop)
                 .ShouldBeNull();
         }
 
@@ -28,7 +28,7 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
 
-            var metadata = theStore.DefaultTenant.MetadataFor(shop);
+            var metadata = theStore.Tenants.Default.MetadataFor(shop);
 
             metadata.ShouldNotBeNull();
             metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
@@ -59,7 +59,7 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
 
-            var metadata = await theStore.DefaultTenant.MetadataForAsync(shop);
+            var metadata = await theStore.Tenants.Default.MetadataForAsync(shop);
 
             metadata.ShouldNotBeNull();
             metadata.CurrentVersion.ShouldNotBe(Guid.Empty);

@@ -18,7 +18,7 @@ namespace Marten.Testing.Util
 
         public update_batch_Tests()
         {
-            theMapping = theStore.DefaultTenant.MappingFor(typeof (Target)).As<DocumentMapping>();
+            theMapping = theStore.Tenants.Default.MappingFor(typeof (Target)).As<DocumentMapping>();
         }
 
         [Fact]

@@ -17,7 +17,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             }).As<DocumentStore>();
 
-            store1.DefaultTenant.EnsureStorageExists(typeof(User));
+            store1.Tenants.Default.EnsureStorageExists(typeof(User));
 
 
             var store2 = TestingDocumentStore.For(_ =>
@@ -26,7 +26,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.FirstName);
             }).As<DocumentStore>();
 
-            store2.DefaultTenant.EnsureStorageExists(typeof(User));
+            store2.Tenants.Default.EnsureStorageExists(typeof(User));
 
             var indices = store2.Schema.DbObjects.AllIndexes();
 
@@ -46,7 +46,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
             });
 
-            store1.DefaultTenant.EnsureStorageExists(typeof(User));
+            store1.Tenants.Default.EnsureStorageExists(typeof(User));
 
             var upsert = store1.Storage.MappingFor(typeof(User)).As<DocumentMapping>().UpsertFunction;
 

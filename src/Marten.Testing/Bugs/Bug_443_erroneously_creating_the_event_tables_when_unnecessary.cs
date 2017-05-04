@@ -11,7 +11,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void event_table_should_not_be_there_if_unused()
         {
-            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
+            theStore.Tenants.Default.EnsureStorageExists(typeof(User));
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 

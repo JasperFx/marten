@@ -44,7 +44,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<Route>();
             });
 
-            theStore.DefaultTenant.StorageFor(typeof(Route)).ShouldNotBeNull();
+            theStore.Tenants.Default.StorageFor(typeof(Route)).ShouldNotBeNull();
         }
 
 

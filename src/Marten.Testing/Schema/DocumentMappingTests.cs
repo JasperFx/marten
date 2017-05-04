@@ -292,10 +292,10 @@ namespace Marten.Testing.Schema
                 var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
 
 
-                var mapping = store.DefaultTenant.MappingFor(typeof(User)).As<DocumentMapping>();
+                var mapping = store.Tenants.Default.MappingFor(typeof(User)).As<DocumentMapping>();
                 mapping.DuplicateField("FirstName");
 
-                store.DefaultTenant.EnsureStorageExists(typeof(User));
+                store.Tenants.Default.EnsureStorageExists(typeof(User));
 
                 schema.DbObjects.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
             }

@@ -43,7 +43,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             var store = DocumentStore.For(ConnectionSource.ConnectionString);
             var mapping = store.Storage.MappingFor(typeof (IntDoc));
 
-            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.DefaultTenant)
+            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenants.Default)
                 .As<IdAssigner<IntDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 
@@ -65,7 +65,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
             var mapping = store.Storage.MappingFor(typeof(IntDoc));
 
-            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.DefaultTenant)
+            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenants.Default)
                 .As<IdAssigner<IntDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 
@@ -90,7 +90,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
             var mapping = store.Storage.MappingFor(typeof(IntDoc));
 
-            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.DefaultTenant)
+            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenants.Default)
                 .As<IdAssigner<IntDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 
@@ -111,7 +111,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             var mapping = store.Storage.MappingFor(typeof(OverriddenHiloDoc));
 
 
-            var idStrategy = mapping.ToIdAssignment<OverriddenHiloDoc>(store.DefaultTenant)
+            var idStrategy = mapping.ToIdAssignment<OverriddenHiloDoc>(store.Tenants.Default)
                 .As<IdAssigner<OverriddenHiloDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 

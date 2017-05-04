@@ -7,7 +7,7 @@ namespace Marten.Schema
     {
         public static DocumentTable TableSchema(this DocumentStore store, Type documentType)
         {
-            var mapping = store.DefaultTenant.MappingFor(documentType);
+            var mapping = store.Tenants.Default.MappingFor(documentType);
             return new DocumentTable((DocumentMapping) mapping);
         }
     }

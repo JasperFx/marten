@@ -17,7 +17,7 @@ namespace Marten.Testing.Transforms
         [Fact]
         public void can_generate_when_the_transform_is_requested()
         {
-            var transform = theStore.DefaultTenant.TransformFor("get_fullname");
+            var transform = theStore.Tenants.Default.TransformFor("get_fullname");
 
             theStore.Schema.DbObjects.Functions()
                 .ShouldContain(transform.Identifier);
@@ -26,11 +26,11 @@ namespace Marten.Testing.Transforms
         [Fact]
         public void reset_still_makes_it_check_again()
         {
-            var transform = theStore.DefaultTenant.TransformFor("get_fullname");
+            var transform = theStore.Tenants.Default.TransformFor("get_fullname");
 
             theStore.Advanced.Clean.CompletelyRemoveAll();
 
-            var transform2 = theStore.DefaultTenant.TransformFor("get_fullname");
+            var transform2 = theStore.Tenants.Default.TransformFor("get_fullname");
 
             theStore.Schema.DbObjects.Functions()
                 .ShouldContain(transform2.Identifier);
@@ -39,7 +39,7 @@ namespace Marten.Testing.Transforms
         [Fact]
         public void regenerates_if_changed()
         {
-            var transform = theStore.DefaultTenant.TransformFor("get_fullname");
+            var transform = theStore.Tenants.Default.TransformFor("get_fullname");
 
             theStore.Schema.DbObjects.Functions()
                 .ShouldContain(transform.Identifier);
@@ -51,7 +51,7 @@ namespace Marten.Testing.Transforms
                 _.Transforms.LoadJavascript("get_fullname", "module.exports = function(){return {};}");
             }))
             {
-                var transform2 = store2.DefaultTenant.TransformFor("get_fullname");
+                var transform2 = store2.Tenants.Default.TransformFor("get_fullname");
 
 
                 store2.Schema.DbObjects.DefinitionForFunction(transform2.Identifier)

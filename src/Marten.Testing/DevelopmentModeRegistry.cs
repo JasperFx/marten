@@ -37,7 +37,7 @@ namespace Marten.Testing
             For<IManagedConnection>().Use<ManagedConnection>().SelectConstructor(() => new ManagedConnection(null));
             For<IDocumentCleaner>().Use<DocumentCleaner>();
             For<ISerializer>().Use<JsonNetSerializer>();
-            For<ITenant>().Use(store.DefaultTenant);
+            For<ITenant>().Use(store.Tenants.Default);
 
 
             ForSingletonOf<IQueryParser>().Use<MartenQueryParser>();

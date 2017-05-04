@@ -79,9 +79,8 @@ namespace Marten
             _logger = options.Logger();
 
             Tenants = new Tenants(options);
-            DefaultTenant = Tenants[Tenants.DefaultTenantId];
 
-            Schema = new TenantSchema(options, _connectionFactory, DefaultTenant.As<Tenant>());
+            Schema = new TenantSchema(options, _connectionFactory, Tenants.Default.As<Tenant>());
 
 
 
@@ -91,7 +90,7 @@ namespace Marten
 
             Serializer = options.Serializer();
 
-            var cleaner = new DocumentCleaner(_connectionFactory, this, DefaultTenant);
+            var cleaner = new DocumentCleaner(_connectionFactory, this, Tenants.Default);
             if (options.UseCharBufferPooling)
             {
                 _writerPool = new CharArrayTextWriter.Pool();
@@ -104,7 +103,7 @@ namespace Marten
 
             seedSchemas();
 
-            Transform = new DocumentTransforms(this, _connectionFactory, DefaultTenant);
+            Transform = new DocumentTransforms(this, _connectionFactory, Tenants.Default);
 
             options.InitialData.Each(x => x.Populate(this));
 
@@ -118,8 +117,6 @@ namespace Marten
         public Tenants Tenants { get; }
 
         public EventGraph Events { get; }
-
-        public ITenant DefaultTenant { get; }
 
         internal IQueryHandlerFactory HandlerFactory { get; }
 
@@ -148,7 +145,7 @@ namespace Marten
             if (Options.AutoCreateSchemaObjects == AutoCreate.None) return;
 
             var allSchemaNames = Storage.AllSchemaNames();
-            var generator = new DatabaseSchemaGenerator(DefaultTenant);
+            var generator = new DatabaseSchemaGenerator(Tenants.Default);
             generator.Generate(Options, allSchemaNames);
         }
 
@@ -230,7 +227,7 @@ namespace Marten
 
         private void bulkInsertDocuments<T>(T[] documents, int batchSize, NpgsqlConnection conn, BulkInsertMode mode)
         {
-            var loader = DefaultTenant.BulkLoaderFor<T>();
+            var loader = Tenants.Default.BulkLoaderFor<T>();
 
             if (mode != BulkInsertMode.InsertsOnly)
             {
@@ -321,7 +318,7 @@ namespace Marten
             var map = createMap(tracking, sessionPool, localListeners);
 
             // TODO -- need to pass in the default tenant instead when that exists
-            var session = new DocumentSession(this, connection, _parser, map, DefaultTenant, localListeners);
+            var session = new DocumentSession(this, connection, _parser, map, Tenants.Default, localListeners);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
@@ -368,7 +365,7 @@ namespace Marten
 
             var session = new QuerySession(this,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout), parser,
-                new NulloIdentityMap(Serializer), DefaultTenant);
+                new NulloIdentityMap(Serializer), Tenants.Default);
 
             session.Logger = _logger.StartSession(session);
 
@@ -381,7 +378,7 @@ namespace Marten
 
             var session = new QuerySession(this,
                 new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser,
-                new NulloIdentityMap(Serializer), DefaultTenant);
+                new NulloIdentityMap(Serializer), Tenants.Default);
 
             session.Logger = _logger.StartSession(session);
 
@@ -391,14 +388,14 @@ namespace Marten
         public IDocumentTransforms Transform { get; }
         public IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null)
         {
-            DefaultTenant.EnsureStorageExists(typeof(EventStream));
+            Tenants.Default.EnsureStorageExists(typeof(EventStream));
 
             if (projections == null)
             {
                 projections = viewTypes?.Select(x => Events.ProjectionFor(x)).Where(x => x != null).ToArray() ?? Events.AsyncProjections.ToArray();
             }
 
-            return new Daemon(this, DefaultTenant, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), projections);
+            return new Daemon(this, Tenants.Default, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), projections);
         }
     }
 }

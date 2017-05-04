@@ -56,7 +56,7 @@ namespace Marten.Testing.Events
             container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
             var schema = container.GetInstance<IDocumentSchema>();
-            container.GetInstance<IDocumentStore>().As<DocumentStore>().DefaultTenant.EnsureStorageExists(typeof(EventStream));
+            container.GetInstance<IDocumentStore>().As<DocumentStore>().Tenants.Default.EnsureStorageExists(typeof(EventStream));
 
             var schemaDbObjectNames = schema.DbObjects.Functions();
             schemaDbObjectNames.ShouldContain("event_store.mt_append_event");
@@ -73,7 +73,7 @@ namespace Marten.Testing.Events
             container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
             var schema = container.GetInstance<IDocumentSchema>();
-            container.GetInstance<IDocumentStore>().As<DocumentStore>().DefaultTenant.EnsureStorageExists(typeof(EventStream));
+            container.GetInstance<IDocumentStore>().As<DocumentStore>().Tenants.Default.EnsureStorageExists(typeof(EventStream));
 
             var schemaDbObjectNames = schema.DbObjects.Functions();
             schemaDbObjectNames.ShouldContain("public.mt_append_event");
@@ -90,7 +90,7 @@ namespace Marten.Testing.Events
             var container = ContainerFactory.Configure(options => options.DatabaseSchemaName = "other");
             container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
-            container.GetInstance<IDocumentStore>().As<DocumentStore>().DefaultTenant.EnsureStorageExists(typeof(EventStream));
+            container.GetInstance<IDocumentStore>().As<DocumentStore>().Tenants.Default.EnsureStorageExists(typeof(EventStream));
 
             var schema = container.GetInstance<IDocumentSchema>();
 

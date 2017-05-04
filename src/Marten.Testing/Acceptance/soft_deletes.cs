@@ -396,8 +396,8 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void soft_deleted_documents_work_with_linq_include()
         {
-            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
-            theStore.DefaultTenant.EnsureStorageExists(typeof(File));
+            theStore.Tenants.Default.EnsureStorageExists(typeof(User));
+            theStore.Tenants.Default.EnsureStorageExists(typeof(File));
 
             using (var session = theStore.OpenSession())
             {
