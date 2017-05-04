@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
@@ -210,6 +212,58 @@ namespace Marten.Storage
         {
             // TODO -- this is going to have to change.
             return new ManagedConnection(_options.ConnectionFactory, mode, isolationLevel);
+        }
+
+        /// <summary>
+        ///     Set the minimum sequence number for a Hilo sequence for a specific document type
+        ///     to the specified floor. Useful for migrating data between databases
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="floor"></param>
+        public void ResetHiloSequenceFloor<T>(long floor)
+        {
+            // Make sure that the sequence is built for this one
+            IdAssignmentFor<T>();
+            var sequence = Sequences.SequenceFor(typeof(T));
+            sequence.SetFloor(floor);
+        }
+
+        /// <summary>
+        ///     Fetch the entity version and last modified time from the database
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public DocumentMetadata MetadataFor<T>(T entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
+                MappingFor(typeof(T)));
+
+            using (var connection = OpenConnection())
+            {
+                return connection.Fetch(handler, null, null);
+            }
+        }
+
+        /// <summary>
+        ///     Fetch the entity version and last modified time from the database
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<DocumentMetadata> MetadataForAsync<T>(T entity,
+            CancellationToken token = default(CancellationToken))
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
+                MappingFor(typeof(T)));
+
+            using (var connection = OpenConnection())
+            {
+                return await connection.FetchAsync(handler, null, null, token).ConfigureAwait(false);
+            }
         }
     }
 }

@@ -212,7 +212,7 @@ namespace Marten.Testing.Acceptance
                 session.Delete(user3);
                 session.SaveChanges();
 
-                var epoch = session.DocumentStore.Advanced.MetadataFor(user3).DeletedAt;
+                var epoch = session.DocumentStore.Tenants.Default.MetadataFor(user3).DeletedAt;
                 session.Delete(user4);
                 session.SaveChanges();
 
@@ -241,7 +241,7 @@ namespace Marten.Testing.Acceptance
                 session.Delete(user4);
                 session.SaveChanges();
 
-                var epoch = session.DocumentStore.Advanced.MetadataFor(user4).DeletedAt;
+                var epoch = session.DocumentStore.Tenants.Default.MetadataFor(user4).DeletedAt;
 
                 session.Query<User>().Where(x => x.DeletedBefore(epoch.Value)).Select(x => x.UserName)
                     .ToList().ShouldHaveTheSameElementsAs("baz");

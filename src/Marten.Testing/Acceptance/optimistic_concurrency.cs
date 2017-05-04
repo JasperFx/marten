@@ -435,7 +435,7 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
 
-            var metadata = theStore.Advanced.MetadataFor(doc1);
+            var metadata = theStore.Tenants.Default.MetadataFor(doc1);
 
             using (var session = theStore.OpenSession())
             {
@@ -463,7 +463,7 @@ namespace Marten.Testing.Acceptance
                 await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            var metadata = theStore.Advanced.MetadataFor(doc1);
+            var metadata = theStore.Tenants.Default.MetadataFor(doc1);
 
             using (var session = theStore.OpenSession())
             {

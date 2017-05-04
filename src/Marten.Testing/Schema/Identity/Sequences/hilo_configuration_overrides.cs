@@ -17,7 +17,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
             // Resets the minimum Id number for the IntDoc document
             // type to 2500
-            store.Advanced.ResetHiloSequenceFloor<IntDoc>(2500);
+            store.Tenants.Default.ResetHiloSequenceFloor<IntDoc>(2500);
             // ENDSAMPLE
 
             using (var session = store.OpenSession())

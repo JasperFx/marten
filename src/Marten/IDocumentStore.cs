@@ -6,6 +6,7 @@ using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Transforms;
 
 namespace Marten
@@ -98,6 +99,7 @@ namespace Marten
         IDocumentTransforms Transform { get; }
 
         EventGraph Events { get; }
+        Tenants Tenants { get; }
 
 
         IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null);

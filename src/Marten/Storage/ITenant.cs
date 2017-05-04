@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Data;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
@@ -65,5 +67,29 @@ namespace Marten.Storage
         /// <returns></returns>
         IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+
+        /// <summary>
+        ///     Set the minimum sequence number for a Hilo sequence for a specific document type
+        ///     to the specified floor. Useful for migrating data between databases
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="floor"></param>
+        void ResetHiloSequenceFloor<T>(long floor);
+
+        /// <summary>
+        ///     Fetch the entity version and last modified time from the database
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        DocumentMetadata MetadataFor<T>(T entity);
+
+        /// <summary>
+        ///     Fetch the entity version and last modified time from the database
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<DocumentMetadata> MetadataForAsync<T>(T entity,
+            CancellationToken token = default(CancellationToken));
     }
 }

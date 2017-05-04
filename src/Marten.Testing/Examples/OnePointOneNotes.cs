@@ -33,7 +33,7 @@ namespace Marten.Testing.Examples
             // This resets the Hilo state in the database so that
             // all id's assigned will be greater than the floor
             // value.
-            store.Advanced.ResetHiloSequenceFloor<IntDoc>(3000);
+            store.Tenants.Default.ResetHiloSequenceFloor<IntDoc>(3000);
         }
 
         public void bulk_inserts(IDocumentStore store, Target[] documents)
