@@ -2,28 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Reflection;
 using Baseline;
-using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Schema
 {
-    [Obsolete("Subsuming this functionality into the new Storage model")]
     public class DbObjects : IDbObjects
     {
-        private static readonly string SchemaObjectsSQL;
         private readonly IConnectionFactory _factory;
         private readonly StorageFeatures _features;
-
-        static DbObjects()
-        {
-            var typeInfo = typeof(DbObjects).GetTypeInfo();
-            SchemaObjectsSQL =
-                typeInfo.Assembly.GetManifestResourceStream($"{typeInfo.Namespace}.SchemaObjects.sql")
-                    .ReadAllText();
-        }
 
         public DbObjects(IConnectionFactory factory, StorageFeatures features)
         {

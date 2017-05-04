@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;

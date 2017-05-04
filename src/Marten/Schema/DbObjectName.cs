@@ -11,6 +11,14 @@ namespace Marten.Schema
         public string Name { get; }
         public string QualifiedName { get; }
 
+        /// <summary>
+        /// Create a DbObjectName with Schema = "public"
+        /// </summary>
+        /// <param name="name"></param>
+        public DbObjectName(string name) : this("public", name)
+        {
+        }
+
         public DbObjectName(string schema, string name)
         {
             Schema = schema;
