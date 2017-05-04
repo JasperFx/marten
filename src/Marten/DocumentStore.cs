@@ -74,12 +74,12 @@ namespace Marten
             options.CreatePatching();
 
             Options = options;
-            _connectionFactory = options.ConnectionFactory();
+            _connectionFactory = options.ConnectionFactory;
 
             _logger = options.Logger();
 
             // TODO -- think this is temporary
-            var tenant = new Tenant(options.Storage, options, options.ConnectionFactory(), "default");
+            var tenant = new Tenant(options.Storage, options, options.ConnectionFactory, "default");
             DefaultTenant = tenant;
             Schema = new TenantSchema(options, _connectionFactory, tenant);
 
@@ -102,7 +102,7 @@ namespace Marten
             Diagnostics = new Diagnostics(this);
 
 
-            CreateDatabaseObjects();
+            seedSchemas();
 
             Transform = new DocumentTransforms(this, _connectionFactory, DefaultTenant);
 
@@ -141,7 +141,7 @@ namespace Marten
         public IDocumentSchema Schema { get; }
         public AdvancedOptions Advanced { get; }
 
-        private void CreateDatabaseObjects()
+        private void seedSchemas()
         {
             if (Options.AutoCreateSchemaObjects == AutoCreate.None) return;
 

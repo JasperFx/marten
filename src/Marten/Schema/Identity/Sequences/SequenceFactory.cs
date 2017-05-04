@@ -62,7 +62,7 @@ namespace Marten.Schema.Identity.Sequences
         public ISequence Hilo(Type documentType, HiloSettings settings)
         {
             return _sequences.GetOrAdd(documentType,
-                type => new HiloSequence(_options.ConnectionFactory(), _options, documentType.Name, settings));
+                type => new HiloSequence(_options.ConnectionFactory, _options, documentType.Name, settings));
         }
 
 

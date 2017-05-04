@@ -146,7 +146,7 @@ namespace Marten
         /// <param name="connectionString"></param>
         public void Connection(string connectionString)
         {
-            _factory = new ConnectionFactory(connectionString);
+            ConnectionFactory = new ConnectionFactory(connectionString);
         }
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace Marten
         /// <param name="connectionSource"></param>
         public void Connection(Func<string> connectionSource)
         {
-            _factory = new ConnectionFactory(connectionSource);
+            ConnectionFactory = new ConnectionFactory(connectionSource);
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace Marten
         /// <param name="source"></param>
         public void Connection(Func<NpgsqlConnection> source)
         {
-            _factory = new LambdaConnectionFactory(source);
+            ConnectionFactory = new LambdaConnectionFactory(source);
         }
 
         /// <summary>
@@ -201,12 +201,22 @@ namespace Marten
             return _serializer ?? new JsonNetSerializer();
         }
 
-        internal IConnectionFactory ConnectionFactory()
-        {
-            if (_factory == null) throw new InvalidOperationException("No database connection source is configured");
 
-            return _factory;
+        internal IConnectionFactory ConnectionFactory
+        {
+            get
+            {
+                if (_factory == null) throw new InvalidOperationException("No database connection source is configured");
+
+                return _factory;
+            }
+            set
+            {
+                _factory = value;
+                Tenancy = new SingleTenant(_factory);
+            }
         }
+
 
         public IMartenLogger Logger()
         {
@@ -255,5 +265,7 @@ namespace Marten
             if (name.Length < NameDataLength) return;
             throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
         }
+
+        internal ITenantStrategy Tenancy { get; private set; }
     }
 }

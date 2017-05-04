@@ -209,7 +209,7 @@ namespace Marten.Storage
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             // TODO -- this is going to have to change.
-            return new ManagedConnection(_options.ConnectionFactory(), mode, isolationLevel);
+            return new ManagedConnection(_options.ConnectionFactory, mode, isolationLevel);
         }
     }
 }

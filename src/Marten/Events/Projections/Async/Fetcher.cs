@@ -36,7 +36,7 @@ namespace Marten.Events.Projections.Async
             _errorHandler = errorHandler;
             State = FetcherState.Waiting;
 
-            _connectionFactory = store.Advanced.Options.ConnectionFactory();
+            _connectionFactory = store.Advanced.Options.ConnectionFactory;
 
             _selector = new EventSelector(store.Events, store.Advanced.Serializer);
             _map = new NulloIdentityMap(store.Advanced.Serializer);
