@@ -301,24 +301,29 @@ namespace Marten
 
         public IDocumentSession OpenSession(SessionOptions options)
         {
-            var connection = new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, options.IsolationLevel, options.Timeout);
-            return openSession(options.Tracking, connection, options.Listeners);
+            return openSession(options);
         }
 
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
-            var connection = new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel);
-            return openSession(tracking, connection, new List<IDocumentSessionListener>());
+            return openSession(new SessionOptions
+            {
+                Tracking = tracking,
+                IsolationLevel = isolationLevel
+            });
         }
 
-        private IDocumentSession openSession(DocumentTracking tracking, ManagedConnection connection, IList<IDocumentSessionListener> localListeners)
+        private IDocumentSession openSession(SessionOptions options)
         {
             var sessionPool = CreateWriterPool();
-            var map = createMap(tracking, sessionPool, localListeners);
+            var map = createMap(options.Tracking, sessionPool, options.Listeners);
 
-            // TODO -- need to pass in the default tenant instead when that exists
-            var session = new DocumentSession(this, connection, _parser, map, Tenants.Default, localListeners);
+            var tenant = Tenants[options.TenantId];
+            var connection = tenant.OpenConnection(CommandRunnerMode.Transactional, options.IsolationLevel, options.Timeout);
+            
+
+            var session = new DocumentSession(this, connection, _parser, map, tenant, options.Listeners);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);

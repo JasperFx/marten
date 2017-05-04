@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data;
+using Marten.Storage;
 
 namespace Marten.Services
 {
@@ -24,5 +25,10 @@ namespace Marten.Services
         ///     Add, remove, or reorder local session listeners
         /// </summary>
         public readonly IList<IDocumentSessionListener> Listeners = new List<IDocumentSessionListener>();
+
+        /// <summary>
+        /// Override the tenant id for the requested session
+        /// </summary>
+        public string TenantId { get; set; } = Tenants.DefaultTenantId;
     }
 }
