@@ -11,7 +11,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_schema_objects_if_necessary()
         {
-            using (var conn = theStore.Advanced.OpenConnection())
+            using (var conn = theStore.DefaultTenant.OpenConnection())
             {
                 conn.Execute(
                     cmd => cmd.Sql("drop function if exists public.mt_immutable_timestamp(text)").ExecuteNonQuery());

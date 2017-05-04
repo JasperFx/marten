@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Services;
 using Marten.Transforms;
 using Marten.Util;
 
@@ -195,6 +197,19 @@ namespace Marten.Storage
             {
                 _checks[feature.StorageType] = true;
             }
+        }
+
+        /// <summary>
+        ///     Directly open a managed connection to the underlying Postgresql database
+        /// </summary>
+        /// <param name="mode"></param>
+        /// <param name="isolationLevel"></param>
+        /// <returns></returns>
+        public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        {
+            // TODO -- this is going to have to change.
+            return new ManagedConnection(_options.ConnectionFactory(), mode, isolationLevel);
         }
     }
 }

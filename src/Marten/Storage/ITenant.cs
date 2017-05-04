@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Data;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Services;
 using Marten.Transforms;
 
 namespace Marten.Storage
@@ -55,5 +57,13 @@ namespace Marten.Storage
         IBulkLoader<T> BulkLoaderFor<T>();
 
 
+        /// <summary>
+        ///     Directly open a managed connection to the underlying Postgresql database
+        /// </summary>
+        /// <param name="mode"></param>
+        /// <param name="isolationLevel"></param>
+        /// <returns></returns>
+        IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
     }
 }

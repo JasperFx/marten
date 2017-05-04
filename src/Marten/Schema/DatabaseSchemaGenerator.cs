@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Marten.Services;
 using Baseline;
+using Marten.Storage;
 
 namespace Marten.Schema
 {
@@ -15,13 +16,13 @@ BEGIN";
 $$;
 ";
 
-        private readonly AdvancedOptions _advanced;
+        private readonly ITenant _tenant;
 
-        public DatabaseSchemaGenerator(AdvancedOptions advanced)
+        public DatabaseSchemaGenerator(ITenant tenant)
         {
-            if (advanced == null) throw new ArgumentNullException(nameof(advanced));
+            if (tenant == null) throw new ArgumentNullException(nameof(tenant));
 
-            _advanced = advanced;
+            _tenant = tenant;
         }
 
         public void Generate(StoreOptions options, string[] schemaNames)
@@ -31,7 +32,7 @@ $$;
             var sql = GenerateScript(options, schemaNames);
             if (sql != null)
             {
-                using (var runner = _advanced.OpenConnection())
+                using (var runner = _tenant.OpenConnection())
                 {
                     runner.Execute(sql);
                 }

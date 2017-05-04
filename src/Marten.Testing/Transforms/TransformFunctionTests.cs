@@ -75,7 +75,7 @@ namespace Marten.Testing.Transforms
 
                 var func = TransformFunction.ForFile(new StoreOptions(), _getFullnameJs);
 
-                using (var conn = store.Advanced.OpenConnection())
+                using (var conn = store.DefaultTenant.OpenConnection())
                 {
                     conn.Execute(cmd => cmd.Sql(func.GenerateFunction()).ExecuteNonQuery());
 

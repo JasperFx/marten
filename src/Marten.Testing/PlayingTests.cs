@@ -35,8 +35,8 @@ namespace Marten.Testing
                     session.Store(target);
                     session.SaveChanges();
                 }
-
-                using (var conn = store.Advanced.OpenConnection())
+                
+                using (var conn = store.DefaultTenant.OpenConnection())
                 {
                     var json = conn.Execute(cmd =>
                     {
@@ -63,7 +63,7 @@ namespace Marten.Testing
                 var sql = mapping.As<DocumentMapping>().FieldFor(nameof(User.UserName)).As<JsonLocatorField>().ToComputedIndex(mapping.Table)
                     .Replace("d.data", "data");
 
-                using (var conn = store.Advanced.OpenConnection())
+                using (var conn = store.DefaultTenant.OpenConnection())
                 {
                     conn.Execute(cmd => cmd.Sql(sql).ExecuteNonQuery());
                 }

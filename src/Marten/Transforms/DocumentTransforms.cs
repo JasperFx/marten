@@ -44,7 +44,7 @@ namespace Marten.Transforms
             });
 
 
-            using (var conn = _store.Advanced.OpenConnection())
+            using (var conn = _tenant.OpenConnection())
             {
                 conn.Execute(cmd, c =>
                 {
@@ -143,7 +143,7 @@ namespace Marten.Transforms
             });
 
 
-            using (var conn = _store.Advanced.OpenConnection())
+            using (var conn = _tenant.OpenConnection())
             {
                 conn.Execute(cmd, c => c.ExecuteNonQuery());
             }

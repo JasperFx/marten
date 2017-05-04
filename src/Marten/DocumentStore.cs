@@ -146,7 +146,7 @@ namespace Marten
             if (Options.AutoCreateSchemaObjects == AutoCreate.None) return;
 
             var allSchemaNames = Storage.AllSchemaNames();
-            var generator = new DatabaseSchemaGenerator(Advanced);
+            var generator = new DatabaseSchemaGenerator(DefaultTenant);
             generator.Generate(Options, allSchemaNames);
         }
 

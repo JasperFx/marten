@@ -21,7 +21,7 @@ namespace Marten.Testing.Storage
             var writer = new StringWriter();
             table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
 
-            using (var conn = theStore.Advanced.OpenConnection())
+            using (var conn = theStore.DefaultTenant.OpenConnection())
             {
                 conn.Execute(cmd =>
                 {
@@ -47,7 +47,7 @@ namespace Marten.Testing.Storage
             var writer = new StringWriter();
             table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
 
-            using (var conn = theStore.Advanced.OpenConnection())
+            using (var conn = theStore.DefaultTenant.OpenConnection())
             {
                 conn.Execute(cmd =>
                 {
@@ -75,7 +75,7 @@ namespace Marten.Testing.Storage
             var writer = new StringWriter();
             table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
 
-            using (var conn = theStore.Advanced.OpenConnection())
+            using (var conn = theStore.DefaultTenant.OpenConnection())
             {
                 conn.Execute(cmd =>
                 {

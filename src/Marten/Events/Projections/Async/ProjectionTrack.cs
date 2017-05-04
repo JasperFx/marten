@@ -279,7 +279,7 @@ namespace Marten.Events.Projections.Async
             var sql =
                 $"delete from {_store.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
 
-            using (var conn = _store.Advanced.OpenConnection())
+            using (var conn = _tenant.OpenConnection())
             {
                 await conn.ExecuteAsync(async (cmd, tkn) =>
                 {

@@ -96,7 +96,7 @@ namespace Marten.Testing
             if (schemaName != StoreOptions.DefaultDatabaseSchemaName)
             {
                 var sql = $"DROP SCHEMA {schemaName} CASCADE;";
-                using (var conn = Advanced.OpenConnection())
+                using (var conn = DefaultTenant.OpenConnection())
                 {
                     conn.Execute(cmd => cmd.CommandText = sql);
                 }

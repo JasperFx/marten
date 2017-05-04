@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
@@ -11,14 +10,13 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten
 {
     public class AdvancedOptions
     {
-        private readonly CharArrayTextWriter.IPool _writerPool;
         private readonly DocumentStore _store;
+        private readonly CharArrayTextWriter.IPool _writerPool;
 
         public AdvancedOptions(DocumentStore store, IDocumentCleaner cleaner, CharArrayTextWriter.IPool writerPool)
         {
@@ -40,17 +38,7 @@ namespace Marten
 
         public ISerializer Serializer => _store.Serializer;
 
-        /// <summary>
-        ///     Directly open a managed connection to the underlying Postgresql database
-        /// </summary>
-        /// <param name="mode"></param>
-        /// <param name="isolationLevel"></param>
-        /// <returns></returns>
-        public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit,
-            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
-        {
-            return new ManagedConnection(Options.ConnectionFactory(), mode, isolationLevel);
-        }
+
 
         /// <summary>
         ///     Creates an UpdateBatch object for low level batch updates
@@ -58,7 +46,7 @@ namespace Marten
         /// <returns></returns>
         public UpdateBatch CreateUpdateBatch()
         {
-            return new UpdateBatch(_store, OpenConnection(), new VersionTracker(), _writerPool);
+            return new UpdateBatch(_store, _store.DefaultTenant.OpenConnection(), new VersionTracker(), _writerPool);
         }
 
         /// <summary>
@@ -78,7 +66,8 @@ namespace Marten
         /// <returns></returns>
         public IList<IDocumentStorage> PrecompileAllStorage()
         {
-            return Options.Storage.AllDocumentMappings.Select(x => _store.DefaultTenant.StorageFor(x.DocumentType)).ToList();
+            return Options.Storage.AllDocumentMappings.Select(x => _store.DefaultTenant.StorageFor(x.DocumentType))
+                .ToList();
         }
 
         /// <summary>
@@ -93,7 +82,7 @@ namespace Marten
             var handler = new EntityMetadataQueryHandler(entity, _store.DefaultTenant.StorageFor(typeof(T)),
                 _store.DefaultTenant.MappingFor(typeof(T)));
 
-            using (var connection = OpenConnection())
+            using (var connection = _store.DefaultTenant.OpenConnection())
             {
                 return connection.Fetch(handler, null, null);
             }
@@ -105,22 +94,23 @@ namespace Marten
         /// <param name="entity"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public async Task<DocumentMetadata> MetadataForAsync<T>(T entity, CancellationToken token = default(CancellationToken))
+        public async Task<DocumentMetadata> MetadataForAsync<T>(T entity,
+            CancellationToken token = default(CancellationToken))
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
             var handler = new EntityMetadataQueryHandler(entity, _store.DefaultTenant.StorageFor(typeof(T)),
                 _store.DefaultTenant.MappingFor(typeof(T)));
 
-            using (var connection = OpenConnection())
+            using (var connection = _store.DefaultTenant.OpenConnection())
             {
                 return await connection.FetchAsync(handler, null, null, token).ConfigureAwait(false);
             }
         }
 
         /// <summary>
-        /// Set the minimum sequence number for a Hilo sequence for a specific document type
-        /// to the specified floor. Useful for migrating data between databases 
+        ///     Set the minimum sequence number for a Hilo sequence for a specific document type
+        ///     to the specified floor. Useful for migrating data between databases
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="floor"></param>
@@ -135,7 +125,8 @@ namespace Marten
 
     public class DocumentMetadata
     {
-        public DocumentMetadata(DateTime lastModified, Guid currentVersion, string dotNetType, string documentType, bool deleted, DateTime? deletedAt)
+        public DocumentMetadata(DateTime lastModified, Guid currentVersion, string dotNetType, string documentType,
+            bool deleted, DateTime? deletedAt)
         {
             LastModified = lastModified;
             CurrentVersion = currentVersion;
@@ -155,10 +146,10 @@ namespace Marten
 
     public class EntityMetadataQueryHandler : IQueryHandler<DocumentMetadata>
     {
-        private readonly object _id;
-        private readonly IDocumentStorage _storage;
-        private readonly IDocumentMapping _mapping;
         private readonly Dictionary<string, int> _fields;
+        private readonly object _id;
+        private readonly IDocumentMapping _mapping;
+        private readonly IDocumentStorage _storage;
 
         public EntityMetadataQueryHandler(object entity, IDocumentStorage storage, IDocumentMapping mapping)
         {
@@ -175,9 +166,7 @@ namespace Marten
             };
             var queryableDocument = _mapping.ToQueryableDocument();
             if (queryableDocument.SelectFields().Contains(DocumentMapping.DocumentTypeColumn))
-            {
                 _fields.Add(DocumentMapping.DocumentTypeColumn, fieldIndex++);
-            }
             if (queryableDocument.DeleteStyle == DeleteStyle.SoftDelete)
             {
                 _fields.Add(DocumentMapping.DeletedColumn, fieldIndex++);
@@ -192,7 +181,7 @@ namespace Marten
             var fields = _fields.OrderBy(kv => kv.Value).Select(kv => kv.Key).ToArray();
 
             sql.Append(fields[0]);
-            for (int i = 1; i < fields.Length; i++)
+            for (var i = 1; i < fields.Length; i++)
             {
                 sql.Append(", ");
                 sql.Append(fields[i]);
@@ -221,6 +210,26 @@ namespace Marten
             return new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt);
         }
 
+        public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats,
+            CancellationToken token)
+        {
+            var hasAny = await reader.ReadAsync(token).ConfigureAwait(false);
+            if (!hasAny) return null;
+
+            var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
+            var timestamp = await reader.GetFieldValueAsync<DateTime>(1, token).ConfigureAwait(false);
+            var dotNetType = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
+            var docType = await GetOptionalFieldValueAsync<string>(reader, DocumentMapping.DocumentTypeColumn, token)
+                .ConfigureAwait(false);
+            var deleted = await GetOptionalFieldValueAsync<bool>(reader, DocumentMapping.DeletedColumn, token)
+                .ConfigureAwait(false);
+            var deletedAt =
+                await GetOptionalFieldValueAsync<DateTime>(reader, DocumentMapping.DeletedAtColumn, null, token)
+                    .ConfigureAwait(false);
+
+            return new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt);
+        }
+
         private T GetOptionalFieldValue<T>(DbDataReader reader, string fieldName)
         {
             int ordinal;
@@ -237,33 +246,22 @@ namespace Marten
             return defaultValue;
         }
 
-        public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
-        {
-            var hasAny = await reader.ReadAsync(token).ConfigureAwait(false);
-            if (!hasAny) return null;
-
-            var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
-            var timestamp = await reader.GetFieldValueAsync<DateTime>(1, token).ConfigureAwait(false);
-            var dotNetType = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
-            var docType = await GetOptionalFieldValueAsync<string>(reader, DocumentMapping.DocumentTypeColumn, token).ConfigureAwait(false);
-            var deleted = await GetOptionalFieldValueAsync<bool>(reader, DocumentMapping.DeletedColumn, token).ConfigureAwait(false);
-            var deletedAt = await GetOptionalFieldValueAsync<DateTime>(reader, DocumentMapping.DeletedAtColumn, null, token).ConfigureAwait(false);
-
-            return new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt);
-        }
-
-        private async Task<T> GetOptionalFieldValueAsync<T>(DbDataReader reader, string fieldName, CancellationToken token)
+        private async Task<T> GetOptionalFieldValueAsync<T>(DbDataReader reader, string fieldName,
+            CancellationToken token)
         {
             int ordinal;
-            if (_fields.TryGetValue(fieldName, out ordinal) && !await reader.IsDBNullAsync(ordinal, token).ConfigureAwait(false))
+            if (_fields.TryGetValue(fieldName, out ordinal) &&
+                !await reader.IsDBNullAsync(ordinal, token).ConfigureAwait(false))
                 return await reader.GetFieldValueAsync<T>(ordinal, token).ConfigureAwait(false);
             return default(T);
         }
 
-        private async Task<T?> GetOptionalFieldValueAsync<T>(DbDataReader reader, string fieldName, T? defaultValue, CancellationToken token) where T : struct
+        private async Task<T?> GetOptionalFieldValueAsync<T>(DbDataReader reader, string fieldName, T? defaultValue,
+            CancellationToken token) where T : struct
         {
             int ordinal;
-            if (_fields.TryGetValue(fieldName, out ordinal) && !await reader.IsDBNullAsync(ordinal, token).ConfigureAwait(false))
+            if (_fields.TryGetValue(fieldName, out ordinal) &&
+                !await reader.IsDBNullAsync(ordinal, token).ConfigureAwait(false))
                 return await reader.GetFieldValueAsync<T>(ordinal, token).ConfigureAwait(false);
             return defaultValue;
         }
