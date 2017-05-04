@@ -7,16 +7,12 @@ namespace Marten.Storage
     public class Tenants
     {
         private readonly StoreOptions _options;
-        private readonly ITenantStrategy _strategy;
-        private readonly AutoCreate _autoCreate;
-        public const string Default = "*DEFAULT*";
+        public const string DefaultTenantId = "*DEFAULT*";
         private readonly ConcurrentDictionary<string, ITenant> _tenants = new ConcurrentDictionary<string, ITenant>();
 
-        public Tenants(StoreOptions options, ITenantStrategy strategy, AutoCreate autoCreate)
+        public Tenants(StoreOptions options)
         {
             _options = options;
-            _strategy = strategy;
-            _autoCreate = autoCreate;
         }
 
         internal void ApplyToAll(Action<ITenant> action)
@@ -24,14 +20,15 @@ namespace Marten.Storage
             
         }
 
+        public ITenant Default => this[DefaultTenantId];
+
         public ITenant this[string tenantId]
         {
             get
             {
                 return _tenants.GetOrAdd(tenantId, id =>
                 {
-                    var factory = _strategy.Create(tenantId, _autoCreate);
-                    // TODO -- check if the database exists? Nah, do that in the strategy
+                    var factory = _options.Tenancy.Create(tenantId, _options.AutoCreateSchemaObjects);
 
                     var tenant = new Tenant(_options.Storage, _options, factory, tenantId);
                     seedSchemas(tenant);
@@ -68,7 +65,7 @@ namespace Marten.Storage
 
         public string[] AllKnownTenants()
         {
-            return new[] {Tenants.Default};
+            return new[] {Tenants.DefaultTenantId};
         }
 
         public IConnectionFactory Create(string tenantId, AutoCreate autoCreate)

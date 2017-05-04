@@ -78,10 +78,10 @@ namespace Marten
 
             _logger = options.Logger();
 
-            // TODO -- think this is temporary
-            var tenant = new Tenant(options.Storage, options, options.ConnectionFactory, "default");
-            DefaultTenant = tenant;
-            Schema = new TenantSchema(options, _connectionFactory, tenant);
+            Tenants = new Tenants(options);
+            DefaultTenant = Tenants[Tenants.DefaultTenantId];
+
+            Schema = new TenantSchema(options, _connectionFactory, DefaultTenant.As<Tenant>());
 
 
 
@@ -114,6 +114,8 @@ namespace Marten
 
             Events = options.Events;
         }
+
+        public Tenants Tenants { get; }
 
         public EventGraph Events { get; }
 
