@@ -55,39 +55,5 @@ namespace Marten.Testing.Util
         }
 
 
-        [Fact]
-        public void write_multiple_calls_with_json_supplied()
-        {
-            // Just forcing the table and schema objects to be created
-            var initialTarget = Target.Random();
-            theSession.Store(initialTarget);
-            theSession.SaveChanges();
-
-            var batch = theStore.Advanced.CreateUpdateBatch();
-
-            var target1 = Target.Random();
-            var target2 = Target.Random();
-            var target3 = Target.Random();
-
-            var upsert = theMapping.UpsertFunction;
-
-            var serializer = new TestsSerializer();
-
-            batch.Sproc(upsert).Param("docId", target1.Id).JsonBody("doc", serializer.ToJson(target1)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
-            batch.Sproc(upsert).Param("docId", target2.Id).JsonBody("doc", serializer.ToJson(target2)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
-            batch.Sproc(upsert).Param("docId", target3.Id).JsonBody("doc", serializer.ToJson(target3)).Param("docVersion", Guid.NewGuid()).Param("docDotNetType", typeof(Target).AssemblyQualifiedName);
-
-
-
-            batch.Execute();
-            batch.Connection.Dispose();
-
-            var targets = theSession.Query<Target>().ToArray();
-
-            targets.Any(x => x.Id == target1.Id).ShouldBeTrue();
-            targets.Any(x => x.Id == target2.Id).ShouldBeTrue();
-            targets.Any(x => x.Id == target3.Id).ShouldBeTrue();
-
-        }
     }
 }

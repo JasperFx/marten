@@ -38,38 +38,6 @@ namespace Marten
 
         public ISerializer Serializer => _store.Serializer;
 
-
-
-        /// <summary>
-        ///     Creates an UpdateBatch object for low level batch updates
-        /// </summary>
-        /// <returns></returns>
-        public UpdateBatch CreateUpdateBatch()
-        {
-            return new UpdateBatch(_store, _store.DefaultTenant.OpenConnection(), new VersionTracker(), _writerPool);
-        }
-
-        /// <summary>
-        ///     Creates a new Marten UnitOfWork that could be used to express
-        ///     a transaction
-        /// </summary>
-        /// <returns></returns>
-        public UnitOfWork CreateUnitOfWork()
-        {
-            // TODO -- this is going to have to move out when we go multi-tenanted
-            return new UnitOfWork(_store, _store.DefaultTenant);
-        }
-
-        /// <summary>
-        ///     Compiles all of the IDocumentStorage classes upfront for all known document types
-        /// </summary>
-        /// <returns></returns>
-        public IList<IDocumentStorage> PrecompileAllStorage()
-        {
-            return Options.Storage.AllDocumentMappings.Select(x => _store.DefaultTenant.StorageFor(x.DocumentType))
-                .ToList();
-        }
-
         /// <summary>
         ///     Fetch the entity version and last modified time from the database
         /// </summary>

@@ -10,40 +10,6 @@ using Marten.Testing.Documents;
 
 namespace Marten.Testing
 {
-    public static class StorageTypesCache
-    {
-        private static readonly Task<List<Type>> _loader; 
-
-        static StorageTypesCache()
-        {
-            _loader = Task.Factory.StartNew(() =>
-            {
-                using (var store = DocumentStore.For(_ =>
-                {
-                    _.Connection(ConnectionSource.ConnectionString);
-
-                    _.RegisterDocumentType<Target>();
-
-                    // TODO -- maybe add the other user types here later?
-                    _.RegisterDocumentType<User>();
-                    _.RegisterDocumentType<Issue>();
-                    _.RegisterDocumentType<Company>();
-                    _.RegisterDocumentType<IntDoc>();
-                    _.RegisterDocumentType<LongDoc>();
-
-                }))
-                {
-                    return store.Advanced.PrecompileAllStorage().Select(x => x.GetType()).ToList();
-                }
-            });
-        }
-
-        public static IList<Type> PrebuiltStorage()
-        {
-            _loader.Wait(10.Seconds());
-            return _loader.Result;
-        } 
-    }
 
     public class TestingDocumentStore : DocumentStore
     {
