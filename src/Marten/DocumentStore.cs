@@ -100,9 +100,6 @@ namespace Marten
 
             Diagnostics = new Diagnostics(this);
 
-
-            seedSchemas();
-
             Transform = new DocumentTransforms(this, _connectionFactory, Tenants.Default);
 
             options.InitialData.Each(x => x.Populate(this));
@@ -139,15 +136,6 @@ namespace Marten
 
         public IDocumentSchema Schema { get; }
         public AdvancedOptions Advanced { get; }
-
-        private void seedSchemas()
-        {
-            if (Options.AutoCreateSchemaObjects == AutoCreate.None) return;
-
-            var allSchemaNames = Storage.AllSchemaNames();
-            var generator = new DatabaseSchemaGenerator(Tenants.Default);
-            generator.Generate(Options, allSchemaNames);
-        }
 
         public void BulkInsert<T>(T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
