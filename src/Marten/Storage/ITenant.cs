@@ -8,6 +8,7 @@ using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services;
 using Marten.Transforms;
+using Npgsql;
 
 namespace Marten.Storage
 {
@@ -91,5 +92,11 @@ namespace Marten.Storage
         /// <returns></returns>
         Task<DocumentMetadata> MetadataForAsync<T>(T entity,
             CancellationToken token = default(CancellationToken));
+
+        /// <summary>
+        /// Fetch a connection to the tenant database
+        /// </summary>
+        /// <returns></returns>
+        NpgsqlConnection CreateConnection();
     }
 }

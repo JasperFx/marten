@@ -13,6 +13,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services;
 using Marten.Transforms;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Storage
 {
@@ -210,8 +211,16 @@ namespace Marten.Storage
         /// <returns></returns>
         public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int timeout = 30)
         {
-            // TODO -- this is going to have to change.
-            return new ManagedConnection(_options.ConnectionFactory, mode, isolationLevel, timeout);
+            return new ManagedConnection(_factory, mode, isolationLevel, timeout);
+        }
+
+        /// <summary>
+        /// Fetch a connection to the tenant database
+        /// </summary>
+        /// <returns></returns>
+        public NpgsqlConnection CreateConnection()
+        {
+            return _factory.Create();
         }
 
         /// <summary>
