@@ -39,6 +39,18 @@ namespace Marten
         void BulkInsert<T>(T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000);
 
         /// <summary>
+        ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
+        ///     a large number of documents of type "T" to the database. This operation is transactional.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="tenantId"></param>
+        /// <param name="documents"></param>
+        /// <param name="mode"></param>
+        /// <param name="batchSize"></param>
+        void BulkInsert<T>(string tenantId, T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000);
+
+
+        /// <summary>
         ///     Open a new IDocumentSession with the supplied DocumentTracking.
         ///     "IdentityOnly" is the default.
         /// </summary>
@@ -46,6 +58,16 @@ namespace Marten
         /// <returns></returns>
         IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+
+        /// <summary>
+        ///     Open a new IDocumentSession with the supplied DocumentTracking.
+        ///     "IdentityOnly" is the default.
+        /// </summary>
+        /// <param name="tracking"></param>
+        /// <returns></returns>
+        IDocumentSession OpenSession(string tenantId, DocumentTracking tracking = DocumentTracking.IdentityOnly,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+
 
         /// <summary>
         ///     Open a new IDocumentSession with the supplied DocumentTracking.
@@ -63,11 +85,28 @@ namespace Marten
         IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
         /// <summary>
+        ///     Convenience method to create a new "lightweight" IDocumentSession with no IdentityMap
+        ///     or automatic dirty checking
+        /// </summary>
+        /// <returns></returns>
+        IDocumentSession LightweightSession(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+
+
+        /// <summary>
         ///     Convenience method to create an IDocumentSession with both IdentityMap and automatic
         ///     dirty checking
         /// </summary>
         /// <returns></returns>
         IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+
+
+        /// <summary>
+        ///     Convenience method to create an IDocumentSession with both IdentityMap and automatic
+        ///     dirty checking
+        /// </summary>
+        /// <returns></returns>
+        IDocumentSession DirtyTrackedSession(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+
 
         /// <summary>
         ///     Opens a read-only IQuerySession to the current document store for efficient
@@ -75,6 +114,13 @@ namespace Marten
         /// </summary>
         /// <returns></returns>
         IQuerySession QuerySession();
+
+        /// <summary>
+        ///     Opens a read-only IQuerySession to the current document store for efficient
+        ///     querying without any underlying object tracking.
+        /// </summary>
+        /// <returns></returns>
+        IQuerySession QuerySession(string tenantId);
 
         /// <summary>
         ///     Opens a read-only IQuerySession to the current document store for efficient
@@ -91,6 +137,15 @@ namespace Marten
         /// <param name="mode"></param>
         /// <param name="batchSize"></param>
         void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000);
+
+        /// <summary>
+        ///     Bulk insert a potentially mixed enumerable of document types
+        /// </summary>
+        /// <param name="documents"></param>
+        /// <param name="mode"></param>
+        /// <param name="batchSize"></param>
+        void BulkInsertDocuments(string tenantId, IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000);
 
 

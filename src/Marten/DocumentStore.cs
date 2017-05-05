@@ -12,8 +12,6 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Transforms;
-using Marten.Util;
-using Npgsql;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
@@ -119,6 +117,7 @@ namespace Marten
 
         internal MartenExpressionParser Parser { get; }
 
+        [Obsolete("get rid of this")]
         private readonly IConnectionFactory _connectionFactory;
         private readonly IMartenLogger _logger;
         private readonly CharArrayTextWriter.IPool _writerPool;
@@ -149,6 +148,20 @@ namespace Marten
             bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
         }
 
+        public void BulkInsert<T>(string tenantId, T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000)
+        {
+            var bulkInsertion = new BulkInsertion(Tenants[tenantId], Options, _writerPool);
+            bulkInsertion.BulkInsert(documents, mode, batchSize);
+        }
+
+        public void BulkInsertDocuments(string tenantId, IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000)
+        {
+            var bulkInsertion = new BulkInsertion(Tenants[tenantId], Options, _writerPool);
+            bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
+        }
+
         public IDiagnostics Diagnostics { get; }
 
         public IDocumentSession OpenSession(SessionOptions options)
@@ -163,6 +176,17 @@ namespace Marten
             {
                 Tracking = tracking,
                 IsolationLevel = isolationLevel
+            });
+        }
+
+        public IDocumentSession OpenSession(string tenantId, DocumentTracking tracking = DocumentTracking.IdentityOnly,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        {
+            return openSession(new SessionOptions
+            {
+                Tracking = tracking,
+                IsolationLevel = isolationLevel,
+                TenantId = tenantId
             });
         }
 
@@ -211,18 +235,31 @@ namespace Marten
             return OpenSession(DocumentTracking.DirtyTracking, isolationLevel);
         }
 
+        public IDocumentSession DirtyTrackedSession(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        {
+            return OpenSession(tenantId, DocumentTracking.DirtyTracking, isolationLevel);
+        }
+
         public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             return OpenSession(DocumentTracking.None, isolationLevel);
+        }
+
+        public IDocumentSession LightweightSession(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        {
+            return OpenSession(tenantId, DocumentTracking.None, isolationLevel);
         }
 
         public IQuerySession QuerySession(SessionOptions options)
         {
             var parser = new MartenQueryParser();
 
+            var tenant = Tenants[options.TenantId];
+            var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
+
             var session = new QuerySession(this,
-                new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout), parser,
-                new NulloIdentityMap(Serializer), Tenants.Default);
+                connection, parser,
+                new NulloIdentityMap(Serializer), tenant);
 
             session.Logger = _logger.StartSession(session);
 
@@ -231,11 +268,19 @@ namespace Marten
 
         public IQuerySession QuerySession()
         {
+            return QuerySession(Tenants.DefaultTenantId);
+        }
+
+        public IQuerySession QuerySession(string tenantId)
+        {
             var parser = new MartenQueryParser();
 
+            var tenant = Tenants[tenantId];
+            var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
+
             var session = new QuerySession(this,
-                new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser,
-                new NulloIdentityMap(Serializer), Tenants.Default);
+                connection, parser,
+                new NulloIdentityMap(Serializer), tenant);
 
             session.Logger = _logger.StartSession(session);
 
@@ -243,6 +288,7 @@ namespace Marten
         }
 
         public IDocumentTransforms Transform { get; }
+
         public IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null)
         {
             Tenants.Default.EnsureStorageExists(typeof(EventStream));
