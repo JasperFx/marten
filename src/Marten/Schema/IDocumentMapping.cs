@@ -14,7 +14,7 @@ namespace Marten.Schema
 
         DbObjectName Table { get; }
 
-        void DeleteAllDocuments(IConnectionFactory factory);
+        void DeleteAllDocuments(ITenant factory);
 
         IdAssignment<T> ToIdAssignment<T>(ITenant tenant);
 

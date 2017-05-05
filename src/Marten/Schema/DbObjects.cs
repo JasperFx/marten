@@ -10,12 +10,12 @@ namespace Marten.Schema
 {
     public class DbObjects : IDbObjects
     {
-        private readonly IConnectionFactory _factory;
+        private readonly ITenant _tenant;
         private readonly StorageFeatures _features;
 
-        public DbObjects(IConnectionFactory factory, StorageFeatures features)
+        public DbObjects(ITenant tenant, StorageFeatures features)
         {
-            _factory = factory;
+            _tenant = tenant;
             _features = features;
         }
 
@@ -32,7 +32,7 @@ namespace Marten.Schema
                 "SELECT specific_schema, routine_name FROM information_schema.routines WHERE type_udt_name != 'trigger' and routine_name like ? and specific_schema = ANY(?);";
 
             return
-                _factory.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%", _features.AllSchemaNames()).ToArray();
+                _tenant.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%", _features.AllSchemaNames()).ToArray();
         }
 
         public DbObjectName[] SchemaTables()
@@ -45,7 +45,7 @@ namespace Marten.Schema
             var schemaNames = _features.AllSchemaNames();
 
             var tablePattern = DocumentMapping.MartenPrefix + "%";
-            var tables = _factory.Fetch(sql, transform, tablePattern, schemaNames).ToArray();
+            var tables = _tenant.Fetch(sql, transform, tablePattern, schemaNames).ToArray();
 
 
             return tables;
@@ -92,7 +92,7 @@ WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system tabl
             Func<DbDataReader, ActualIndex> transform =
                 r => new ActualIndex(DbObjectName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
 
-            return _factory.Fetch(sql, transform);
+            return _tenant.Fetch(sql, transform);
         }
 
         public IEnumerable<ActualIndex> IndexesFor(DbObjectName table)
@@ -115,7 +115,7 @@ WHERE  p.proname = :function
 AND    n.nspname = :schema;
 ";
 
-            using (var conn = _factory.Create())
+            using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
 
@@ -159,7 +159,7 @@ AND    n.nspname = :schema;
             var sql =
                 "select constraint_name, constraint_schema, table_name from information_schema.table_constraints where constraint_name LIKE 'mt_%' and constraint_type = 'FOREIGN KEY'";
 
-            return _factory.Fetch(sql, reader).ToArray();
+            return _tenant.Fetch(sql, reader).ToArray();
         }
 
         public Table ExistingTableFor(Type type)
@@ -167,7 +167,7 @@ AND    n.nspname = :schema;
             var mapping = _features.MappingFor(type).As<DocumentMapping>();
             var expected = new DocumentTable(mapping);
 
-            using (var conn = _factory.Create())
+            using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
 
@@ -182,7 +182,7 @@ AND    n.nspname = :schema;
             var sql =
                 "select column_name, data_type from information_schema.columns where table_schema = ? and table_name = ? order by ordinal_position";
 
-            return _factory.Fetch(sql, transform, documentMapping.Table.Schema, documentMapping.Table.Name);
+            return _tenant.Fetch(sql, transform, documentMapping.Table.Schema, documentMapping.Table.Name);
         }
 
         private string[] primaryKeysFor(IDocumentMapping documentMapping)
@@ -198,7 +198,7 @@ where attrelid = (select pg_class.oid
 and i.indisprimary; 
 ";
 
-            return _factory.GetStringList(sql, documentMapping.Table.Schema, documentMapping.Table.Name).ToArray();
+            return _tenant.GetStringList(sql, documentMapping.Table.Schema, documentMapping.Table.Name).ToArray();
         }
     }
 }

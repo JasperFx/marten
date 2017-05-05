@@ -78,7 +78,7 @@ namespace Marten
 
             Tenants = new Tenants(options);
 
-            Schema = new TenantSchema(options, _connectionFactory, Tenants.Default.As<Tenant>());
+            Schema = new TenantSchema(options, Tenants.Default.As<Tenant>());
 
 
 
@@ -88,7 +88,7 @@ namespace Marten
 
             Serializer = options.Serializer();
 
-            var cleaner = new DocumentCleaner(_connectionFactory, this, Tenants.Default);
+            var cleaner = new DocumentCleaner(this, Tenants.Default);
             if (options.UseCharBufferPooling)
             {
                 _writerPool = new CharArrayTextWriter.Pool();

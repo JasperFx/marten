@@ -27,22 +27,20 @@ LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
 WHERE  p.proname = '{0}'
 AND    n.nspname = '{1}';";
 
-        private readonly IConnectionFactory _factory;
         private readonly DocumentStore _store;
         private readonly ITenant _tenant;
 
-        public DocumentCleaner(IConnectionFactory factory, DocumentStore store, ITenant tenant)
+        public DocumentCleaner(DocumentStore store, ITenant tenant)
         {
-            _factory = factory;
             _store = store;
             _tenant = tenant;
         }
 
         public void DeleteAllDocuments()
         {
-            var dbObjects = new DbObjects(_factory, _store.Storage);
+            var dbObjects = new DbObjects(_tenant, _store.Storage);
 
-            using (var conn = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
+            using (var conn = _tenant.OpenConnection(CommandRunnerMode.Transactional))
             {
                 dbObjects.DocumentTables().Each(tableName =>
                 {
@@ -56,7 +54,7 @@ AND    n.nspname = '{1}';";
         public void DeleteDocumentsFor(Type documentType)
         {
             var mapping = _store.Storage.FindMapping(documentType);
-            mapping.DeleteAllDocuments(_factory);
+            mapping.DeleteAllDocuments(_tenant);
         }
 
         public void DeleteDocumentsExcept(params Type[] documentTypes)
@@ -64,7 +62,7 @@ AND    n.nspname = '{1}';";
             var documentMappings = _store.Storage.AllDocumentMappings.Where(x => !documentTypes.Contains(x.DocumentType));
             foreach (var mapping in documentMappings)
             {
-                mapping.As<IDocumentMapping>().DeleteAllDocuments(_factory);
+                mapping.As<IDocumentMapping>().DeleteAllDocuments(_tenant);
             }
         }
 
@@ -72,7 +70,7 @@ AND    n.nspname = '{1}';";
         {
             var mapping = _store.Storage.MappingFor(documentType);
 
-            using (var conn = _factory.Create())
+            using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
 
@@ -82,9 +80,9 @@ AND    n.nspname = '{1}';";
 
         public void CompletelyRemoveAll()
         {
-            var dbObjects = new DbObjects(_factory, _store.Storage);
+            var dbObjects = new DbObjects(_tenant, _store.Storage);
 
-            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
+            using (var connection = _tenant.OpenConnection(CommandRunnerMode.Transactional))
             {
                 var schemaTables = dbObjects.SchemaTables();
                 schemaTables
@@ -100,7 +98,7 @@ AND    n.nspname = '{1}';";
 
         public void DeleteAllEventData()
         {
-            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
+            using (var connection = _tenant.OpenConnection(CommandRunnerMode.Transactional))
             {
                 connection.Execute($"truncate table {_store.Events.DatabaseSchemaName}.mt_events cascade;" +
                                    $"truncate table {_store.Events.DatabaseSchemaName}.mt_streams cascade");

@@ -120,7 +120,7 @@ namespace Marten.Schema
                 .As<IDocumentStorage>();
         }
 
-        void IDocumentMapping.DeleteAllDocuments(IConnectionFactory factory)
+        void IDocumentMapping.DeleteAllDocuments(ITenant factory)
         {
             var sql = "truncate {0} cascade".ToFormat(Table.QualifiedName);
             factory.RunSql(sql);

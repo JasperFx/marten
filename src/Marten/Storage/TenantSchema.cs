@@ -9,13 +9,11 @@ namespace Marten.Storage
     public class TenantSchema : IDocumentSchema
     {
         private readonly StorageFeatures _features;
-        private readonly IConnectionFactory _factory;
         private readonly Tenant _tenant;
 
-        public TenantSchema(StoreOptions options, IConnectionFactory factory, Tenant tenant)
+        public TenantSchema(StoreOptions options, Tenant tenant)
         {
             _features = options.Storage;
-            _factory = factory;
             _tenant = tenant;
             StoreOptions = options;
         }
@@ -91,7 +89,7 @@ namespace Marten.Storage
             return writer.ToString();
         }
 
-        public IDbObjects DbObjects => new DbObjects(_factory, _features);
+        public IDbObjects DbObjects => new DbObjects(_tenant, _features);
 
         public void WritePatch(string filename, bool withSchemas = true)
         {
@@ -120,7 +118,7 @@ namespace Marten.Storage
 
             var @objects = _features.AllActiveFeatures().SelectMany(x => x.Objects).ToArray();
 
-            using (var conn = _factory.Create())
+            using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
 
@@ -148,7 +146,7 @@ namespace Marten.Storage
             {
                 try
                 {
-                    _factory.RunSql(ddl);
+                    _tenant.RunSql(ddl);
                     StoreOptions.Logger().SchemaChange(ddl);
 
                     _tenant.MarkAllFeaturesAsChecked();
@@ -166,7 +164,7 @@ namespace Marten.Storage
 
             var patch = new SchemaPatch(StoreOptions.DdlRules);
 
-            using (var conn = _factory.Create())
+            using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
 
@@ -186,7 +184,7 @@ namespace Marten.Storage
             var features = _features.AllActiveFeatures().ToArray();
             writeDatabaseSchemaGenerationScript(directory, system, features);
 
-            using (var conn = _factory.Create())
+            using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
 
