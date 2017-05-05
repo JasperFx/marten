@@ -28,5 +28,21 @@ namespace Marten.Testing.Linq
             query.ToList().Count.ShouldBeGreaterThanOrEqualTo(2);
 
         }
+
+        // Testcase for issue #548
+        [Fact]
+        public void TestBooleanAndQuery()
+        {
+            var target1 = new Target { Flag = true };
+
+            theSession.Store(target1);
+            theSession.SaveChanges();
+
+            var query = theSession.Query<Target>().Where(item => item.Flag && false);
+            
+            query.ToList().Count.ShouldBe(0);
+
+        }
+
     }
 }
