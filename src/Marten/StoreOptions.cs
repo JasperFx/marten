@@ -148,7 +148,7 @@ namespace Marten
         /// <param name="connectionString"></param>
         public void Connection(string connectionString)
         {
-            ConnectionFactory = new ConnectionFactory(connectionString);
+            Tenancy = new SingleTenant(new ConnectionFactory(connectionString), this);
         }
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace Marten
         /// <param name="connectionSource"></param>
         public void Connection(Func<string> connectionSource)
         {
-            ConnectionFactory = new ConnectionFactory(connectionSource);
+            Tenancy = new SingleTenant(new ConnectionFactory(connectionSource), this);
         }
 
         /// <summary>
@@ -167,7 +167,7 @@ namespace Marten
         /// <param name="source"></param>
         public void Connection(Func<NpgsqlConnection> source)
         {
-            ConnectionFactory = new LambdaConnectionFactory(source);
+            Tenancy = new SingleTenant(new LambdaConnectionFactory(source), this);
         }
 
         /// <summary>
@@ -201,22 +201,6 @@ namespace Marten
         public ISerializer Serializer()
         {
             return _serializer ?? new JsonNetSerializer();
-        }
-
-        [Obsolete("Try to eliminate this")]
-        internal IConnectionFactory ConnectionFactory
-        {
-            get
-            {
-                if (_factory == null) throw new InvalidOperationException("No database connection source is configured");
-
-                return _factory;
-            }
-            set
-            {
-                _factory = value;
-                Tenancy = new SingleTenant(_factory, this);
-            }
         }
 
 

@@ -43,7 +43,7 @@ namespace Marten.Services
         {
             var cmd = PreviewCommand(query);
 
-            using (var conn = new ManagedConnection(_store.Options.ConnectionFactory))
+            using (var conn = _store.Tenancy.Default.OpenConnection())
             {
                 return conn.ExplainQuery(cmd);
             }
