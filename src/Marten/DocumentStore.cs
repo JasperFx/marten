@@ -76,11 +76,10 @@ namespace Marten
 
             _logger = options.Logger();
 
-            Tenants = options.Tenancy;
-            Tenants.Initialize();
+            Tenancy = options.Tenancy;
+            Tenancy.Initialize();
 
-            // TODO -- this needs to hang off of Tenancy
-            Schema = new TenantSchema(options, Tenants.Default.As<Tenant>());
+            Schema = Tenancy.Schema;
 
             Storage = options.Storage;
 
@@ -97,7 +96,7 @@ namespace Marten
 
             Diagnostics = new Diagnostics(this);
 
-            Transform = new DocumentTransforms(this, _connectionFactory, Tenants.Default);
+            Transform = new DocumentTransforms(this, _connectionFactory, Tenancy.Default);
 
             options.InitialData.Each(x => x.Populate(this));
 
@@ -108,7 +107,7 @@ namespace Marten
             Events = options.Events;
         }
 
-        public ITenancy Tenants { get; }
+        public ITenancy Tenancy { get; }
 
         public EventGraph Events { get; }
 
@@ -137,27 +136,27 @@ namespace Marten
 
         public void BulkInsert<T>(T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
-            var bulkInsertion = new BulkInsertion(Tenants.Default, Options, _writerPool);
+            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options, _writerPool);
             bulkInsertion.BulkInsert(documents, mode, batchSize);
         }
 
         public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
-            var bulkInsertion = new BulkInsertion(Tenants.Default, Options, _writerPool);
+            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options, _writerPool);
             bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
         }
 
         public void BulkInsert<T>(string tenantId, T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000)
         {
-            var bulkInsertion = new BulkInsertion(Tenants[tenantId], Options, _writerPool);
+            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options, _writerPool);
             bulkInsertion.BulkInsert(documents, mode, batchSize);
         }
 
         public void BulkInsertDocuments(string tenantId, IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000)
         {
-            var bulkInsertion = new BulkInsertion(Tenants[tenantId], Options, _writerPool);
+            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options, _writerPool);
             bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
         }
 
@@ -194,7 +193,7 @@ namespace Marten
             var sessionPool = CreateWriterPool();
             var map = createMap(options.Tracking, sessionPool, options.Listeners);
 
-            var tenant = Tenants[options.TenantId];
+            var tenant = Tenancy[options.TenantId];
             var connection = tenant.OpenConnection(CommandRunnerMode.Transactional, options.IsolationLevel, options.Timeout);
             
 
@@ -253,7 +252,7 @@ namespace Marten
         {
             var parser = new MartenQueryParser();
 
-            var tenant = Tenants[options.TenantId];
+            var tenant = Tenancy[options.TenantId];
             var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
 
             var session = new QuerySession(this,
@@ -274,7 +273,7 @@ namespace Marten
         {
             var parser = new MartenQueryParser();
 
-            var tenant = Tenants[tenantId];
+            var tenant = Tenancy[tenantId];
             var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
 
             var session = new QuerySession(this,
@@ -290,14 +289,14 @@ namespace Marten
 
         public IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null)
         {
-            Tenants.Default.EnsureStorageExists(typeof(EventStream));
+            Tenancy.Default.EnsureStorageExists(typeof(EventStream));
 
             if (projections == null)
             {
                 projections = viewTypes?.Select(x => Events.ProjectionFor(x)).Where(x => x != null).ToArray() ?? Events.AsyncProjections.ToArray();
             }
 
-            return new Daemon(this, Tenants.Default, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), projections);
+            return new Daemon(this, Tenancy.Default, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), projections);
         }
     }
 }

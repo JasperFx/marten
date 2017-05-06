@@ -10,7 +10,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void should_create_an_index_for_the_fk()
         {
-            theStore.Tenants.Default.EnsureStorageExists(typeof(DocWithFK));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(DocWithFK));
 
 
             var table = theStore.Schema.DbObjects.ExistingTableFor(typeof(DocWithFK));

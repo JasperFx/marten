@@ -17,7 +17,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
             // Resets the minimum Id number for the IntDoc document
             // type to 2500
-            store.Tenants.Default.ResetHiloSequenceFloor<IntDoc>(2500);
+            store.Tenancy.Default.ResetHiloSequenceFloor<IntDoc>(2500);
             // ENDSAMPLE
 
             using (var session = store.OpenSession())
@@ -43,7 +43,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             var store = DocumentStore.For(ConnectionSource.ConnectionString);
             var mapping = store.Storage.MappingFor(typeof (IntDoc));
 
-            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenants.Default)
+            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
                 .As<IdAssigner<IntDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 
@@ -65,7 +65,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
             var mapping = store.Storage.MappingFor(typeof(IntDoc));
 
-            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenants.Default)
+            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
                 .As<IdAssigner<IntDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 
@@ -90,7 +90,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
             var mapping = store.Storage.MappingFor(typeof(IntDoc));
 
-            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenants.Default)
+            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
                 .As<IdAssigner<IntDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 
@@ -111,7 +111,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             var mapping = store.Storage.MappingFor(typeof(OverriddenHiloDoc));
 
 
-            var idStrategy = mapping.ToIdAssignment<OverriddenHiloDoc>(store.Tenants.Default)
+            var idStrategy = mapping.ToIdAssignment<OverriddenHiloDoc>(store.Tenancy.Default)
                 .As<IdAssigner<OverriddenHiloDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 

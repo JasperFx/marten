@@ -14,7 +14,7 @@ namespace Marten.Testing.Storage
             });
 
             // Would blow up if it doesn't work;)
-            theStore.Tenants.Default.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
         }
 
 

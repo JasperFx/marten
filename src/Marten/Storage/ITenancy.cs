@@ -10,5 +10,7 @@ namespace Marten.Storage
         void Initialize();
 
         IDocumentCleaner Cleaner { get; }
+
+        IDocumentSchema Schema { get; }
     }
 }

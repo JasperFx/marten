@@ -21,7 +21,7 @@ namespace Marten
         /// <summary>
         ///     Used to remove document data and tables from the current Postgresql database
         /// </summary>
-        public IDocumentCleaner Clean => _store.Tenants.Cleaner;
+        public IDocumentCleaner Clean => _store.Tenancy.Cleaner;
 
 
         public ISerializer Serializer => _store.Serializer;

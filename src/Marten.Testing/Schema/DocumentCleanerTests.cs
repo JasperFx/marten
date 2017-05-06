@@ -76,7 +76,7 @@ namespace Marten.Testing.Schema
             theSession.SaveChanges();
             theSession.Dispose();
 
-            var tableName = theStore.Tenants.Default.MappingFor(typeof(Target)).ToQueryableDocument().Table;
+            var tableName = theStore.Tenancy.Default.MappingFor(typeof(Target)).ToQueryableDocument().Table;
 
             theStore.Schema.DbObjects.DocumentTables().Contains(tableName)
                 .ShouldBeTrue();
@@ -97,7 +97,7 @@ namespace Marten.Testing.Schema
 
             var schema = theStore.Schema;
 
-            var upsertName = theStore.Tenants.Default.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
+            var upsertName = theStore.Tenancy.Default.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
 
             schema.DbObjects.Functions().ShouldContain(upsertName);
 

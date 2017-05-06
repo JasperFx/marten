@@ -21,7 +21,7 @@ namespace Marten.Testing.Bugs
             });
 
 
-            theStore.Tenants.Default.StorageFor(typeof(Login)).ShouldNotBeNull();
+            theStore.Tenancy.Default.StorageFor(typeof(Login)).ShouldNotBeNull();
         }
 
         [Fact]
@@ -29,7 +29,7 @@ namespace Marten.Testing.Bugs
         {
             var existing = theStore.TableSchema(typeof(Login));
 
-            var mapping = theStore.Tenants.Default.MappingFor(typeof(Login));
+            var mapping = theStore.Tenancy.Default.MappingFor(typeof(Login));
             var configured = new DocumentTable(mapping.As<DocumentMapping>());
 
             if (!existing.Equals(configured))

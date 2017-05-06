@@ -21,7 +21,7 @@ namespace Marten.Testing.Storage
 
                 store.Advanced.Clean.CompletelyRemoveAll();
 
-                store.Tenants.Default.StorageFor(typeof(User));
+                store.Tenancy.Default.StorageFor(typeof(User));
 
                 store.Schema.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
 
@@ -35,7 +35,7 @@ namespace Marten.Testing.Storage
 
                 store.Storage.MappingFor(typeof(User)).As<DocumentMapping>().DuplicateField("UserName");
 
-                store.Tenants.Default.StorageFor(typeof(User));
+                store.Tenancy.Default.StorageFor(typeof(User));
 
                 store.Schema.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
 
@@ -59,7 +59,7 @@ namespace Marten.Testing.Storage
 
                 store.Advanced.Clean.CompletelyRemoveAll();
 
-                store.Tenants.Default.EnsureStorageExists(typeof(User));
+                store.Tenancy.Default.EnsureStorageExists(typeof(User));
 
                 store.Schema.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
 
@@ -73,7 +73,7 @@ namespace Marten.Testing.Storage
 
                 store.Storage.MappingFor(typeof(User)).As<DocumentMapping>().DuplicateField("UserName");
 
-                store.Tenants.Default.EnsureStorageExists(typeof(User));
+                store.Tenancy.Default.EnsureStorageExists(typeof(User));
 
                 store.Schema.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
 

@@ -8,7 +8,7 @@ namespace Marten.Testing.Patching
         [Fact]
         public void does_not_blow_up()
         {
-            var transform = theStore.Tenants.Default.TransformFor("patch_doc");
+            var transform = theStore.Tenancy.Default.TransformFor("patch_doc");
 
             theStore.Schema.DbObjects.Functions()
                 .ShouldContain(transform.Identifier);

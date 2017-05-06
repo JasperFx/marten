@@ -11,7 +11,7 @@ namespace Marten.Testing.Schema
             StoreOptions(_ => _.Schema.For<Target>().Duplicate(x => x.Number).Duplicate(x => x.StringField));
 
 
-            var loader = theStore.Tenants.Default.BulkLoaderFor<Target>();
+            var loader = theStore.Tenancy.Default.BulkLoaderFor<Target>();
 
             loader.ShouldNotBeNull();
         }

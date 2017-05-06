@@ -212,7 +212,7 @@ namespace Marten.Testing.Acceptance
                 session.Delete(user3);
                 session.SaveChanges();
 
-                var epoch = session.DocumentStore.Tenants.Default.MetadataFor(user3).DeletedAt;
+                var epoch = session.DocumentStore.Tenancy.Default.MetadataFor(user3).DeletedAt;
                 session.Delete(user4);
                 session.SaveChanges();
 
@@ -241,7 +241,7 @@ namespace Marten.Testing.Acceptance
                 session.Delete(user4);
                 session.SaveChanges();
 
-                var epoch = session.DocumentStore.Tenants.Default.MetadataFor(user4).DeletedAt;
+                var epoch = session.DocumentStore.Tenancy.Default.MetadataFor(user4).DeletedAt;
 
                 session.Query<User>().Where(x => x.DeletedBefore(epoch.Value)).Select(x => x.UserName)
                     .ToList().ShouldHaveTheSameElementsAs("baz");
@@ -396,8 +396,8 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void soft_deleted_documents_work_with_linq_include()
         {
-            theStore.Tenants.Default.EnsureStorageExists(typeof(User));
-            theStore.Tenants.Default.EnsureStorageExists(typeof(File));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(File));
 
             using (var session = theStore.OpenSession())
             {

@@ -56,7 +56,7 @@ namespace Marten.Testing.Acceptance
         //[Fact] -- Unreliable on CI
         public void use_transform_in_production_mode()
         {
-            theStore.Tenants.Default.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             using (var store = DocumentStore.For(_ =>

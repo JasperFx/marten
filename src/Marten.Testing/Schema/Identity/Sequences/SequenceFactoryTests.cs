@@ -15,7 +15,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
         {
             _schema = theStore.Schema;
 
-            theStore.Tenants.Default.Sequences.Hilo(typeof(Target), new HiloSettings())
+            theStore.Tenancy.Default.Sequences.Hilo(typeof(Target), new HiloSettings())
                 .ShouldBeOfType<HiloSequence>();
         }
 
@@ -41,7 +41,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
         {
             StoreOptions(x => x.DatabaseSchemaName = "seq_other");
 
-            theStore.Tenants.Default.Sequences.Hilo(typeof(Target), new HiloSettings())
+            theStore.Tenancy.Default.Sequences.Hilo(typeof(Target), new HiloSettings())
                 .ShouldBeOfType<HiloSequence>();
         }
 

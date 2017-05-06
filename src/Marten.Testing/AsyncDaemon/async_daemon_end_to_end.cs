@@ -106,7 +106,7 @@ namespace Marten.Testing.AsyncDaemon
             _testHelper.PublishAllProjectEvents(theStore, false);
 
             // Increment seq_id so events have a respective 1 and 102 seq_id
-            using (var conn = theStore.Tenants.Default.OpenConnection())
+            using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
                 var command = conn.Connection.CreateCommand();
                 command.CommandText = "UPDATE mt_events SET seq_id = 102 WHERE seq_id = 2";

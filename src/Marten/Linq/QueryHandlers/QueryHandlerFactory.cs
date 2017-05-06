@@ -57,7 +57,7 @@ namespace Marten.Linq.QueryHandlers
         public IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model, IIncludeJoin[] joins,
             QueryStatistics statistics)
         {
-            _store.Tenants.Default.EnsureStorageExists(model.SourceType());
+            _store.Tenancy.Default.EnsureStorageExists(model.SourceType());
 
             return tryFindScalarQuery<T>(model, joins, statistics);
         }
@@ -67,7 +67,7 @@ namespace Marten.Linq.QueryHandlers
             QueryStatistics statistics,
             bool returnDefaultWhenEmpty)
         {
-            _store.Tenants.Default.EnsureStorageExists(model.SourceType());
+            _store.Tenancy.Default.EnsureStorageExists(model.SourceType());
 
             return tryFindSingleQuery<T>(model, joins, statistics);
         }
@@ -183,7 +183,7 @@ namespace Marten.Linq.QueryHandlers
             Expression expression = query.QueryIs();
             var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
 
-            var queryableDocument = _store.Tenants.Default.MappingFor(typeof(TDoc)).ToQueryableDocument();
+            var queryableDocument = _store.Tenancy.Default.MappingFor(typeof(TDoc)).ToQueryableDocument();
 
             var setters = findSetters(queryableDocument, queryType, expression, _store.Serializer);
 
@@ -192,7 +192,7 @@ namespace Marten.Linq.QueryHandlers
             validateCompiledQuery(model);
 
             // TODO -- move this outside of this call
-            _store.Tenants.Default.EnsureStorageExists(typeof(TDoc));
+            _store.Tenancy.Default.EnsureStorageExists(typeof(TDoc));
 
             var includeJoins = new IIncludeJoin[0];
 

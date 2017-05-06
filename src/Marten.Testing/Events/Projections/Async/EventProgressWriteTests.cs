@@ -12,7 +12,7 @@ namespace Marten.Testing.Events.Projections.Async
     {
         public EventProgressWriteTests()
         {
-            theStore.Tenants.Default.EnsureStorageExists(typeof(EventStream));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(EventStream));
         }
 
 

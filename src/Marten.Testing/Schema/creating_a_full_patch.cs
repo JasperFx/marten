@@ -12,10 +12,10 @@ namespace Marten.Testing.Schema
             {
                 store.Advanced.Clean.CompletelyRemoveAll();
 
-                store.Tenants.Default.EnsureStorageExists(typeof(User));
-                store.Tenants.Default.EnsureStorageExists(typeof(Target));
-                store.Tenants.Default.EnsureStorageExists(typeof(Issue));
-                store.Tenants.Default.EnsureStorageExists(typeof(Company));
+                store.Tenancy.Default.EnsureStorageExists(typeof(User));
+                store.Tenancy.Default.EnsureStorageExists(typeof(Target));
+                store.Tenancy.Default.EnsureStorageExists(typeof(Issue));
+                store.Tenancy.Default.EnsureStorageExists(typeof(Company));
             }
 
             using (var store2 = DocumentStore.For(_ =>

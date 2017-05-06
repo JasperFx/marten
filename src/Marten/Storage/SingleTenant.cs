@@ -1,3 +1,4 @@
+using Baseline;
 using Marten.Schema;
 
 namespace Marten.Storage
@@ -30,6 +31,7 @@ namespace Marten.Storage
         {
             Default = new Tenant(options.Storage, options, factory, Tenancy.DefaultTenantId);
             Cleaner = new DocumentCleaner(options, Default);
+            Schema = new TenantSchema(options, Default.As<Tenant>());
         }
 
         public ITenant this[string tenantId] => Default;
@@ -42,5 +44,6 @@ namespace Marten.Storage
         }
 
         public IDocumentCleaner Cleaner { get; }
+        public IDocumentSchema Schema { get; }
     }
 }
