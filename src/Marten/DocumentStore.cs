@@ -88,13 +88,12 @@ namespace Marten
 
             Serializer = options.Serializer();
 
-            var cleaner = new DocumentCleaner(this, Tenants.Default);
             if (options.UseCharBufferPooling)
             {
                 _writerPool = new CharArrayTextWriter.Pool();
             }
 
-            Advanced = new AdvancedOptions(this, cleaner, _writerPool);
+            Advanced = new AdvancedOptions(this);
 
             Diagnostics = new Diagnostics(this);
 

@@ -29,6 +29,7 @@ namespace Marten.Storage
         public SingleTenant(IConnectionFactory factory, StoreOptions options) : base(options)
         {
             Default = new Tenant(options.Storage, options, factory, Tenancy.DefaultTenantId);
+            Cleaner = new DocumentCleaner(options, Default);
         }
 
         public ITenant this[string tenantId] => Default;
@@ -39,5 +40,7 @@ namespace Marten.Storage
         {
             seedSchemas(Default);
         }
+
+        public IDocumentCleaner Cleaner { get; }
     }
 }

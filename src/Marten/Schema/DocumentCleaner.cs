@@ -27,18 +27,18 @@ LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
 WHERE  p.proname = '{0}'
 AND    n.nspname = '{1}';";
 
-        private readonly DocumentStore _store;
+        private readonly StoreOptions _options;
         private readonly ITenant _tenant;
 
-        public DocumentCleaner(DocumentStore store, ITenant tenant)
+        public DocumentCleaner(StoreOptions options, ITenant tenant)
         {
-            _store = store;
+            _options = options;
             _tenant = tenant;
         }
 
         public void DeleteAllDocuments()
         {
-            var dbObjects = new DbObjects(_tenant, _store.Storage);
+            var dbObjects = new DbObjects(_tenant, _options.Storage);
 
             using (var conn = _tenant.OpenConnection(CommandRunnerMode.Transactional))
             {
@@ -53,13 +53,13 @@ AND    n.nspname = '{1}';";
 
         public void DeleteDocumentsFor(Type documentType)
         {
-            var mapping = _store.Storage.FindMapping(documentType);
+            var mapping = _options.Storage.FindMapping(documentType);
             mapping.DeleteAllDocuments(_tenant);
         }
 
         public void DeleteDocumentsExcept(params Type[] documentTypes)
         {
-            var documentMappings = _store.Storage.AllDocumentMappings.Where(x => !documentTypes.Contains(x.DocumentType));
+            var documentMappings = _options.Storage.AllDocumentMappings.Where(x => !documentTypes.Contains(x.DocumentType));
             foreach (var mapping in documentMappings)
             {
                 mapping.As<IDocumentMapping>().DeleteAllDocuments(_tenant);
@@ -68,19 +68,19 @@ AND    n.nspname = '{1}';";
 
         public void CompletelyRemove(Type documentType)
         {
-            var mapping = _store.Storage.MappingFor(documentType);
+            var mapping = _options.Storage.MappingFor(documentType);
 
             using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
 
-                mapping.RemoveAllObjects(_store.Options.DdlRules, conn);
+                mapping.RemoveAllObjects(_options.DdlRules, conn);
             }
         }
 
         public void CompletelyRemoveAll()
         {
-            var dbObjects = new DbObjects(_tenant, _store.Storage);
+            var dbObjects = new DbObjects(_tenant, _options.Storage);
 
             using (var connection = _tenant.OpenConnection(CommandRunnerMode.Transactional))
             {
@@ -88,7 +88,7 @@ AND    n.nspname = '{1}';";
                 schemaTables
                     .Each(tableName => { connection.Execute($"DROP TABLE IF EXISTS {tableName} CASCADE;"); });
 
-                var drops = connection.GetStringList(DropAllFunctionSql, new object[] { _store.Storage.AllSchemaNames() });
+                var drops = connection.GetStringList(DropAllFunctionSql, new object[] { _options.Storage.AllSchemaNames() });
                 drops.Each(drop => connection.Execute(drop));
                 connection.Commit();
 
@@ -100,8 +100,8 @@ AND    n.nspname = '{1}';";
         {
             using (var connection = _tenant.OpenConnection(CommandRunnerMode.Transactional))
             {
-                connection.Execute($"truncate table {_store.Events.DatabaseSchemaName}.mt_events cascade;" +
-                                   $"truncate table {_store.Events.DatabaseSchemaName}.mt_streams cascade");
+                connection.Execute($"truncate table {_options.Events.DatabaseSchemaName}.mt_events cascade;" +
+                                   $"truncate table {_options.Events.DatabaseSchemaName}.mt_streams cascade");
                 connection.Commit();
             }
         }

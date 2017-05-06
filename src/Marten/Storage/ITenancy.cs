@@ -1,4 +1,6 @@
-﻿namespace Marten.Storage
+﻿using Marten.Schema;
+
+namespace Marten.Storage
 {
     public interface ITenancy
     {
@@ -6,5 +8,7 @@
         ITenant Default { get; }
 
         void Initialize();
+
+        IDocumentCleaner Cleaner { get; }
     }
 }
