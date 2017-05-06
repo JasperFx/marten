@@ -155,7 +155,7 @@ namespace Marten
         IDocumentTransforms Transform { get; }
 
         EventGraph Events { get; }
-        Tenants Tenants { get; }
+        ITenancy Tenants { get; }
 
 
         IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null);

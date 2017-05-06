@@ -1,10 +1,17 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using Marten.Schema;
 
 namespace Marten.Storage
 {
-    public class Tenants
+    public interface ITenancy
+    {
+        ITenant this[string tenantId] { get; }
+        ITenant Default { get; }
+    }
+
+    public class Tenants : ITenancy
     {
         private readonly StoreOptions _options;
         public const string DefaultTenantId = "*DEFAULT*";
@@ -13,11 +20,6 @@ namespace Marten.Storage
         public Tenants(StoreOptions options)
         {
             _options = options;
-        }
-
-        internal void ApplyToAll(Action<ITenant> action)
-        {
-            
         }
 
         public ITenant Default => this[DefaultTenantId];
@@ -45,32 +47,6 @@ namespace Marten.Storage
             var allSchemaNames = _options.Storage.AllSchemaNames();
             var generator = new DatabaseSchemaGenerator(tenant);
             generator.Generate(_options, allSchemaNames);
-        }
-    }
-
-    public interface ITenantStrategy
-    {
-        string[] AllKnownTenants();
-        IConnectionFactory Create(string tenantId, AutoCreate autoCreate);
-    }
-
-    public class SingleTenant : ITenantStrategy
-    {
-        private readonly IConnectionFactory _factory;
-
-        public SingleTenant(IConnectionFactory factory)
-        {
-            _factory = factory;
-        }
-
-        public string[] AllKnownTenants()
-        {
-            return new[] {Tenants.DefaultTenantId};
-        }
-
-        public IConnectionFactory Create(string tenantId, AutoCreate autoCreate)
-        {
-            return _factory;
         }
     }
 }

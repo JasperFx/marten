@@ -109,7 +109,7 @@ namespace Marten
             Events = options.Events;
         }
 
-        public Tenants Tenants { get; }
+        public ITenancy Tenants { get; }
 
         public EventGraph Events { get; }
 
@@ -268,7 +268,7 @@ namespace Marten
 
         public IQuerySession QuerySession()
         {
-            return QuerySession(Tenants.DefaultTenantId);
+            return QuerySession(Marten.Storage.Tenants.DefaultTenantId);
         }
 
         public IQuerySession QuerySession(string tenantId)
