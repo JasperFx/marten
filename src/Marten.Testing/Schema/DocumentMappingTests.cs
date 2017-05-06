@@ -113,6 +113,8 @@ namespace Marten.Testing.Schema
             {
                 throw new NotImplementedException();
             }
+
+            public bool RequiresSequences { get; } = false;
         }
 
         // SAMPLE: ConfigureMarten-generic

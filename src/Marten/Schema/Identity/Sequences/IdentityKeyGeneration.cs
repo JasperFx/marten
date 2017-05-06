@@ -5,7 +5,7 @@ using Marten.Storage;
 
 namespace Marten.Schema.Identity.Sequences
 {
-    public class IdentityKeyGeneration : IIdGenerationWithDependencies
+    public class IdentityKeyGeneration : IIdGeneration
     {
         private readonly HiloSettings _hiloSettings;
         private readonly DocumentMapping _mapping;
@@ -25,6 +25,8 @@ namespace Marten.Schema.Identity.Sequences
         {
             return (IIdGenerator<T>) new IdentityKeyGenerator(_mapping.DocumentType, _mapping.Alias);
         }
+
+        public bool RequiresSequences { get; } = true;
 
         public Type[] DependentFeatures()
         {

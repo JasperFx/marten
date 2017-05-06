@@ -12,5 +12,7 @@ namespace Marten.Schema.Identity
         {
             return (IIdGenerator<T>) new GuidIdGenerator(Guid.NewGuid);
         }
+
+        public bool RequiresSequences { get; } = false;
     }
 }

@@ -20,6 +20,8 @@ namespace Marten.Testing.Schema.Identity.Sequences
             return (IIdGenerator<T>) new CustomIdGenerator();
         }
 
+        public bool RequiresSequences { get; } = false;
+
         public class CustomIdGenerator : IIdGenerator<string>
         {
             public string Assign(ITenant tenant, string existing, out bool assigned)

@@ -33,7 +33,7 @@ namespace Marten.Storage
             system.DeleteDirectory(directory);
             system.CreateDirectory(directory);
 
-            var features = _features.AllActiveFeatures().ToArray();
+            var features = _features.AllActiveFeatures(_tenant).ToArray();
             writeDatabaseSchemaGenerationScript(directory, system, features);
 
 
@@ -80,7 +80,7 @@ namespace Marten.Storage
                 var allSchemaNames = StoreOptions.Storage.AllSchemaNames();
                 DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, w);
 
-                foreach (var feature in _features.AllActiveFeatures())
+                foreach (var feature in _features.AllActiveFeatures(_tenant))
                 {
                     feature.Write(StoreOptions.DdlRules, writer);
                 }
@@ -116,7 +116,7 @@ namespace Marten.Storage
                 DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, patch.UpWriter);
             }
 
-            var @objects = _features.AllActiveFeatures().SelectMany(x => x.Objects).ToArray();
+            var @objects = _features.AllActiveFeatures(_tenant).SelectMany(x => x.Objects).ToArray();
 
             using (var conn = _tenant.CreateConnection())
             {
@@ -181,7 +181,7 @@ namespace Marten.Storage
             system.DeleteDirectory(directory);
             system.CreateDirectory(directory);
 
-            var features = _features.AllActiveFeatures().ToArray();
+            var features = _features.AllActiveFeatures(_tenant).ToArray();
             writeDatabaseSchemaGenerationScript(directory, system, features);
 
             using (var conn = _tenant.CreateConnection())

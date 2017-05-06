@@ -24,8 +24,6 @@ namespace Marten.Testing.Schema
         public DocumentSchemaOnOtherSchemaTests()
         {
             StoreOptions(_ => _.DatabaseSchemaName = "other");
-
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(SequenceFactory));
         }
 
         [Fact]

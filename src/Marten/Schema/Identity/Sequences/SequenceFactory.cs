@@ -9,11 +9,13 @@ namespace Marten.Schema.Identity.Sequences
     public class SequenceFactory : ISequences, IFeatureSchema
     {
         private readonly StoreOptions _options;
+        private readonly ITenant _tenant;
         private readonly ConcurrentDictionary<Type, ISequence> _sequences = new ConcurrentDictionary<Type, ISequence>();
 
-        public SequenceFactory(StoreOptions options)
+        public SequenceFactory(StoreOptions options, ITenant tenant)
         {
             _options = options;
+            _tenant = tenant;
         }
 
         public string Name { get; } = "mt_hilo";
@@ -55,14 +57,14 @@ namespace Marten.Schema.Identity.Sequences
             return _sequences.GetOrAdd(documentType, type =>
             {
                 var settings = _options.Storage.MappingFor(type).HiloSettings ?? _options.HiloSequenceDefaults;
-                return new HiloSequence(_options.ConnectionFactory, _options, documentType.Name, settings);
+                return new HiloSequence(_tenant, _options, documentType.Name, settings);
             });
         }
 
         public ISequence Hilo(Type documentType, HiloSettings settings)
         {
             return _sequences.GetOrAdd(documentType,
-                type => new HiloSequence(_options.ConnectionFactory, _options, documentType.Name, settings));
+                type => new HiloSequence(_tenant, _options, documentType.Name, settings));
         }
 
 

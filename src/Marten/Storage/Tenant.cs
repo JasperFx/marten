@@ -23,6 +23,7 @@ namespace Marten.Storage
         private readonly IConnectionFactory _factory;
         private readonly StorageFeatures _features;
         private readonly StoreOptions _options;
+        private Lazy<SequenceFactory> _sequences;
 
         public Tenant(StorageFeatures features, StoreOptions options, IConnectionFactory factory, string tenantId)
         {
@@ -30,6 +31,22 @@ namespace Marten.Storage
             _features = features;
             _options = options;
             _factory = factory;
+
+            resetSequences();
+
+        }
+
+        private void resetSequences()
+        {
+            _sequences = new Lazy<SequenceFactory>(() =>
+            {
+                var sequences = new SequenceFactory(_options, this);
+
+                generateOrUpdateFeature(typeof(SequenceFactory), sequences);
+
+
+                return sequences;
+            });
         }
 
         public string TenantId { get; }
@@ -50,18 +67,14 @@ namespace Marten.Storage
         public void ResetSchemaExistenceChecks()
         {
             _checks.Clear();
+            resetSequences();
         }
 
         public void EnsureStorageExists(Type featureType)
         {
             if (_options.AutoCreateSchemaObjects == AutoCreate.None) return;
 
-
-
-
             ensureStorageExists(new List<Type>(), featureType);
-
-
         }
 
         private void ensureStorageExists(IList<Type> types, Type featureType)
@@ -138,15 +151,8 @@ namespace Marten.Storage
             return _features.FindMapping(documentType);
         }
 
-        public ISequences Sequences
-        {
-            get
-            {
-                EnsureStorageExists(typeof(SequenceFactory));
+        public ISequences Sequences => _sequences.Value;
 
-                return _features.Sequences;
-            }
-        }
         public IDocumentStorage<T> StorageFor<T>()
         {
             EnsureStorageExists(typeof(T));
@@ -196,7 +202,7 @@ namespace Marten.Storage
 
         public void MarkAllFeaturesAsChecked()
         {
-            foreach (var feature in _features.AllActiveFeatures())
+            foreach (var feature in _features.AllActiveFeatures(this))
             {
                 _checks[feature.StorageType] = true;
             }

@@ -15,6 +15,8 @@ namespace Marten.Schema.Identity
             return this.As<IIdGenerator<T>>();
         }
 
+        public bool RequiresSequences { get; } = false;
+
         public string Assign(ITenant tenant, string existing, out bool assigned)
         {
             if (existing.IsEmpty())

@@ -481,14 +481,6 @@ namespace Marten.Schema
         {
             yield return typeof(SystemFunctions);
 
-            if (IdStrategy is IIdGenerationWithDependencies)
-            {
-                foreach (var dependency in IdStrategy.As<IIdGenerationWithDependencies>().DependentFeatures())
-                {
-                    yield return dependency;
-                }
-            }
-
             foreach (var foreignKey in ForeignKeys)
             {
                 yield return foreignKey.ReferenceDocumentType;

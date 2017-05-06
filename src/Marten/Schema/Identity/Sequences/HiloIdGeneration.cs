@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Marten.Storage;
 
 namespace Marten.Schema.Identity.Sequences
 {
-    public class HiloIdGeneration : IIdGenerationWithDependencies
+    public class HiloIdGeneration : IIdGeneration
     {
         private readonly HiloSettings _hiloSettings;
 
@@ -31,9 +30,6 @@ namespace Marten.Schema.Identity.Sequences
             return (IIdGenerator<T>) new LongHiloGenerator(DocumentType);
         }
 
-        public Type[] DependentFeatures()
-        {
-            return new Type[] {typeof(SequenceFactory)};
-        }
+        public bool RequiresSequences { get; } = true;
     }
 }

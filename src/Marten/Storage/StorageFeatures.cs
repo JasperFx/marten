@@ -33,12 +33,10 @@ namespace Marten.Storage
             _options = options;
 
             SystemFunctions = new SystemFunctions(options);
-            Sequences = new SequenceFactory(options);
 
             store(SystemFunctions);
             Transforms = options.Transforms.As<Transforms.Transforms>();
             store(Transforms.As<IFeatureSchema>());
-            store(Sequences);
 
             store(options.Events);
             _features[typeof(StreamState)] = options.Events;
@@ -50,9 +48,6 @@ namespace Marten.Storage
         }
 
         public Transforms.Transforms Transforms { get; }
-
-        [Obsolete("This will have to be moved to Tenant")]
-        public SequenceFactory Sequences { get;}
 
         private void store(IFeatureSchema feature)
         {
@@ -173,7 +168,7 @@ namespace Marten.Storage
             return schemas.Select(x => x.ToLowerInvariant()).ToArray();
         }
 
-        public IEnumerable<IFeatureSchema> AllActiveFeatures()
+        public IEnumerable<IFeatureSchema> AllActiveFeatures(ITenant tenant)
         {
             yield return SystemFunctions;
 
@@ -193,12 +188,9 @@ namespace Marten.Storage
                 yield return mapping;
             }
 
-            // Sequences needs to be on Tenant in the longer run
-            // TODO -- maybe split SequenceFactory from its IFeatureSchema?
-            // The sequence is required is to maintain the behavior from 1.*
-            if (sequenceIsRequired())
+            if (SequenceIsRequired())
             {
-                yield return new SequenceFactory(_options);
+                yield return tenant.Sequences;
             }
 
             
@@ -211,12 +203,9 @@ namespace Marten.Storage
             }
         }
 
-        private bool sequenceIsRequired()
+        internal bool SequenceIsRequired()
         {
-            return _documentMappings.Values.Select(x => x.IdStrategy)
-                .OfType<IIdGenerationWithDependencies>()
-                .SelectMany(x => x.DependentFeatures())
-                .Contains(typeof(SequenceFactory));
+            return _documentMappings.Values.Any(x => x.IdStrategy.RequiresSequences);
         }
     }
 }

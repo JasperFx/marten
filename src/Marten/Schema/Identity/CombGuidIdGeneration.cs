@@ -18,6 +18,8 @@ namespace Marten.Schema.Identity
             return (IIdGenerator<T>) new GuidIdGenerator(() => Create(Guid.NewGuid(), DateTime.UtcNow));
         }
 
+        public bool RequiresSequences { get; } = false;
+
         /*
             FROM: https://github.com/richardtallent/RT.Comb/blob/master/RT.Comb/RT.CombByteOrder.Comb.cs
 

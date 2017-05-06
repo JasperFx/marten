@@ -14,6 +14,8 @@ namespace Marten.Schema.Identity
             return new NoOpIdGenerator<T>();
         }
 
+        public bool RequiresSequences { get; } = false;
+
         public class NoOpIdGenerator<T> : IIdGenerator<T>
         {
             public T Assign(ITenant tenant, T existing, out bool assigned)
