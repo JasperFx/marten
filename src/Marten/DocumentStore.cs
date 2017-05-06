@@ -76,11 +76,11 @@ namespace Marten
 
             _logger = options.Logger();
 
-            Tenants = new Tenants(options);
+            Tenants = options.Tenancy;
+            Tenants.Initialize();
 
+            // TODO -- this needs to hang off of Tenancy
             Schema = new TenantSchema(options, Tenants.Default.As<Tenant>());
-
-
 
             Storage = options.Storage;
 
@@ -268,7 +268,7 @@ namespace Marten
 
         public IQuerySession QuerySession()
         {
-            return QuerySession(Marten.Storage.Tenants.DefaultTenantId);
+            return QuerySession(Marten.Storage.Tenancy.DefaultTenantId);
         }
 
         public IQuerySession QuerySession(string tenantId)

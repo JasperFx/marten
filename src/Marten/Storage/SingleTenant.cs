@@ -1,22 +1,43 @@
+using Marten.Schema;
+
 namespace Marten.Storage
 {
-    public class SingleTenant : ITenantStrategy
+    public abstract class Tenancy
     {
-        private readonly IConnectionFactory _factory;
+        public const string DefaultTenantId = "*DEFAULT*";
 
-        public SingleTenant(IConnectionFactory factory)
+        protected Tenancy(StoreOptions options)
         {
-            _factory = factory;
+            Options = options;
         }
 
-        public string[] AllKnownTenants()
+        public StoreOptions Options { get; }
+
+        protected void seedSchemas(ITenant tenant)
         {
-            return new[] {Tenants.DefaultTenantId};
+            if (Options.AutoCreateSchemaObjects == AutoCreate.None) return;
+
+            var allSchemaNames = Options.Storage.AllSchemaNames();
+            var generator = new DatabaseSchemaGenerator(tenant);
+            generator.Generate(Options, allSchemaNames);
+        }
+    }
+
+
+    public class SingleTenant : Tenancy, ITenancy
+    { 
+        public SingleTenant(IConnectionFactory factory, StoreOptions options) : base(options)
+        {
+            Default = new Tenant(options.Storage, options, factory, Tenancy.DefaultTenantId);
         }
 
-        public IConnectionFactory Create(string tenantId, AutoCreate autoCreate)
+        public ITenant this[string tenantId] => Default;
+
+        public ITenant Default { get; }
+
+        public void Initialize()
         {
-            return _factory;
+            seedSchemas(Default);
         }
     }
 }

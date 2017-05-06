@@ -29,6 +29,6 @@ namespace Marten.Services
         /// <summary>
         /// Override the tenant id for the requested session
         /// </summary>
-        public string TenantId { get; set; } = Tenants.DefaultTenantId;
+        public string TenantId { get; set; } = Tenancy.DefaultTenantId;
     }
 }

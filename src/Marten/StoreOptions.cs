@@ -47,6 +47,8 @@ namespace Marten
         public readonly MartenRegistry Schema;
 
         private string _databaseSchemaName = DefaultDatabaseSchemaName;
+
+        [Obsolete("Get rid of this")]
         private IConnectionFactory _factory;
         private IMartenLogger _logger = new NulloMartenLogger();
         private ISerializer _serializer;
@@ -201,7 +203,7 @@ namespace Marten
             return _serializer ?? new JsonNetSerializer();
         }
 
-
+        [Obsolete("Try to eliminate this")]
         internal IConnectionFactory ConnectionFactory
         {
             get
@@ -213,7 +215,7 @@ namespace Marten
             set
             {
                 _factory = value;
-                Tenancy = new SingleTenant(_factory);
+                Tenancy = new SingleTenant(_factory, this);
             }
         }
 
@@ -266,6 +268,6 @@ namespace Marten
             throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
         }
 
-        internal ITenantStrategy Tenancy { get; private set; }
+        internal ITenancy Tenancy { get; private set; }
     }
 }
