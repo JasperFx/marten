@@ -21,10 +21,9 @@ namespace Marten.Schema.Identity.Sequences
 
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(string)};
 
-        public IIdGenerator<T> Build<T>(ITenant tenant)
+        public IIdGenerator<T> Build<T>()
         {
-            var sequence = tenant.Sequences.Hilo(_mapping.DocumentType, _hiloSettings);
-            return (IIdGenerator<T>) new IdentityKeyGenerator(_mapping.Alias, sequence);
+            return (IIdGenerator<T>) new IdentityKeyGenerator(_mapping.DocumentType, _mapping.Alias);
         }
 
         public Type[] DependentFeatures()
@@ -35,20 +34,21 @@ namespace Marten.Schema.Identity.Sequences
 
     public class IdentityKeyGenerator : IIdGenerator<string>
     {
-        public IdentityKeyGenerator(string alias, ISequence sequence)
+        private readonly Type _documentType;
+
+        public IdentityKeyGenerator(Type documentType, string alias)
         {
+            _documentType = documentType;
             Alias = alias;
-            Sequence = sequence;
         }
 
         public string Alias { get; set; }
-        public ISequence Sequence { get; }
 
-        public string Assign(string existing, out bool assigned)
+        public string Assign(ITenant tenant, string existing, out bool assigned)
         {
             if (existing.IsEmpty())
             {
-                var next = Sequence.NextLong();
+                var next = tenant.Sequences.SequenceFor(_documentType).NextLong();
                 assigned = true;
 
                 return $"{Alias}/{next}";

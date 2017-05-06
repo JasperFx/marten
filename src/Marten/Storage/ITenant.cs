@@ -98,5 +98,6 @@ namespace Marten.Storage
         /// </summary>
         /// <returns></returns>
         NpgsqlConnection CreateConnection();
+
     }
 }

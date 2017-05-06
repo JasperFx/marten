@@ -8,7 +8,7 @@ namespace Marten.Schema.Identity
     {
         IEnumerable<Type> KeyTypes { get; }
 
-        IIdGenerator<T> Build<T>(ITenant tenant);
+        IIdGenerator<T> Build<T>();
     }
 
     public interface IIdGenerationWithDependencies : IIdGeneration

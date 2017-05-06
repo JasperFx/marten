@@ -21,16 +21,14 @@ namespace Marten.Schema.Identity.Sequences
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(int), typeof(long)};
 
 
-        public IIdGenerator<T> Build<T>(ITenant tenant)
+        public IIdGenerator<T> Build<T>()
         {
-            var sequence = tenant.Sequences.Hilo(DocumentType, _hiloSettings);
-
             if (typeof(T) == typeof(int))
             {
-                return (IIdGenerator<T>) new IntHiloGenerator(sequence);
+                return (IIdGenerator<T>) new IntHiloGenerator(DocumentType);
             }
 
-            return (IIdGenerator<T>) new LongHiloGenerator(sequence);
+            return (IIdGenerator<T>) new LongHiloGenerator(DocumentType);
         }
 
         public Type[] DependentFeatures()

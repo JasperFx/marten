@@ -20,7 +20,7 @@ namespace Marten.Schema
 
         public override void Modify(DocumentMapping mapping)
         {
-            mapping.HiloSettings(_settings);
+            mapping.HiloSettings = _settings;
         }
     }
 }

@@ -43,13 +43,12 @@ namespace Marten.Testing.Schema.Identity.Sequences
             var store = DocumentStore.For(ConnectionSource.ConnectionString);
             var mapping = store.Storage.MappingFor(typeof (IntDoc));
 
-            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
+            mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
                 .As<IdAssigner<IntDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 
-
-
-            idStrategy.Sequence.MaxLo.ShouldBe(defaults.MaxLo);
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(defaults.MaxLo);
         }
 
         [Fact]
@@ -69,9 +68,8 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 .As<IdAssigner<IntDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 
-
-
-            idStrategy.Sequence.MaxLo.ShouldBe(55);
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(55);
         }
 
         [Fact]
@@ -90,13 +88,12 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
             var mapping = store.Storage.MappingFor(typeof(IntDoc));
 
-            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
+            mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
                 .As<IdAssigner<IntDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 
-
-
-            idStrategy.Sequence.MaxLo.ShouldBe(66);
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(66);
         }
 
         [Fact]
@@ -111,13 +108,12 @@ namespace Marten.Testing.Schema.Identity.Sequences
             var mapping = store.Storage.MappingFor(typeof(OverriddenHiloDoc));
 
 
-            var idStrategy = mapping.ToIdAssignment<OverriddenHiloDoc>(store.Tenancy.Default)
+            mapping.ToIdAssignment<OverriddenHiloDoc>(store.Tenancy.Default)
                 .As<IdAssigner<OverriddenHiloDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 
-
-
-            idStrategy.Sequence.MaxLo.ShouldBe(33);
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(OverriddenHiloDoc)).MaxLo.ShouldBe(33);
         }
     }
 

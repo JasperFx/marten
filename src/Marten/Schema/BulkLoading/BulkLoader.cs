@@ -57,21 +57,21 @@ namespace Marten.Schema.BulkLoading
             _transferData = ExpressionCompiler.Compile<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter>>(lambda);
         }
 
-        public void Load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
+        public void Load(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
         {
-            load(serializer, conn, documents, _sql, textWriter);
+            load(tenant, serializer, conn, documents, _sql, textWriter);
         }
 
-        public void Load(DbObjectName table, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
+        public void Load(ITenant tenant, DbObjectName table, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
         {
             var sql = _baseSql.Replace("%TABLE%", table.QualifiedName);
-            load(serializer, conn, documents, sql, textWriter);
+            load(tenant, serializer, conn, documents, sql, textWriter);
         }
 
-        public void LoadIntoTempTable(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
+        public void LoadIntoTempTable(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
         {
             var sql = _baseSql.Replace("%TABLE%", _tempTableName);
-            load(serializer, conn, documents, sql, textWriter);
+            load(tenant, serializer, conn, documents, sql, textWriter);
         }
 
         public string CopyNewDocumentsFromTempTable()
@@ -106,14 +106,14 @@ namespace Marten.Schema.BulkLoading
 
         public DbObjectName StorageTable => _mapping.Table;
 
-        private void load(ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, string sql, CharArrayTextWriter textWriter)
+        private void load(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, string sql, CharArrayTextWriter textWriter)
         {
             using (var writer = conn.BeginBinaryImport(sql))
             {
                 foreach (var document in documents)
                 {
                     var assigned = false;
-                    _assignment.Assign(document, out assigned);
+                    _assignment.Assign(tenant, document, out assigned);
 
                     writer.StartRow();
 

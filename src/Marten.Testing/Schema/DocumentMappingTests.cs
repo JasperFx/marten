@@ -109,7 +109,7 @@ namespace Marten.Testing.Schema
         {
             public IEnumerable<Type> KeyTypes { get; }
 
-            public IIdGenerator<T> Build<T>(ITenant tenant)
+            public IIdGenerator<T> Build<T>()
             {
                 throw new NotImplementedException();
             }
@@ -147,7 +147,7 @@ namespace Marten.Testing.Schema
 
             var newDef = new HiloSettings {MaxLo = 33};
 
-            mapping.HiloSettings(newDef);
+            mapping.HiloSettings = newDef;
 
             var sequence = mapping.IdStrategy.ShouldBeOfType<HiloIdGeneration>();
             sequence.MaxLo.ShouldBe(newDef.MaxLo);
@@ -620,7 +620,7 @@ namespace Marten.Testing.Schema
         public void trying_to_replace_the_hilo_settings_when_not_using_hilo_for_the_sequence_throws()
         {
             Exception<InvalidOperationException>.ShouldBeThrownBy(
-                () => { DocumentMapping.For<StringId>().HiloSettings(new HiloSettings()); });
+                () => { DocumentMapping.For<StringId>().HiloSettings = new HiloSettings(); });
         }
 
         [Fact]

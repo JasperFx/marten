@@ -1,9 +1,11 @@
-﻿namespace Marten.Schema.Identity
+﻿using Marten.Storage;
+
+namespace Marten.Schema.Identity
 {
     public interface IdAssignment<T>
     {
-        object Assign(T document, out bool assigned);
+        object Assign(ITenant tenant, T document, out bool assigned);
 
-        void Assign(T document, object id);
+        void Assign(ITenant tenant, T document, object id);
     }
 }

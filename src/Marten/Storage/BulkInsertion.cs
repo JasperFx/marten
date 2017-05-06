@@ -118,11 +118,11 @@ namespace Marten.Storage
                 {
                     if (mode == BulkInsertMode.InsertsOnly)
                     {
-                        loader.Load(Serializer, conn, documents, writer);
+                        loader.Load(_tenant, Serializer, conn, documents, writer);
                     }
                     else
                     {
-                        loader.LoadIntoTempTable(Serializer, conn, documents, writer);
+                        loader.LoadIntoTempTable(_tenant, Serializer, conn, documents, writer);
                     }
 
                 }
@@ -137,11 +137,11 @@ namespace Marten.Storage
 
                         if (mode == BulkInsertMode.InsertsOnly)
                         {
-                            loader.Load(Serializer, conn, batch, writer);
+                            loader.Load(_tenant, Serializer, conn, batch, writer);
                         }
                         else
                         {
-                            loader.LoadIntoTempTable(Serializer, conn, batch, writer);
+                            loader.LoadIntoTempTable(_tenant, Serializer, conn, batch, writer);
                         }
 
 

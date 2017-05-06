@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity;
@@ -16,14 +15,14 @@ namespace Marten.Testing.Schema.Identity.Sequences
     {
         public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
 
-        public IIdGenerator<T> Build<T>(ITenant tenant)
+        public IIdGenerator<T> Build<T>()
         {
             return (IIdGenerator<T>) new CustomIdGenerator();
         }
 
         public class CustomIdGenerator : IIdGenerator<string>
         {
-            public string Assign(string existing, out bool assigned)
+            public string Assign(ITenant tenant, string existing, out bool assigned)
             {
                 assigned = true;
                 return "newId";

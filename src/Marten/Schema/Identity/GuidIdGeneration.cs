@@ -8,7 +8,7 @@ namespace Marten.Schema.Identity
     {
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(Guid)};
 
-        public IIdGenerator<T> Build<T>(ITenant tenant)
+        public IIdGenerator<T> Build<T>()
         {
             return (IIdGenerator<T>) new GuidIdGenerator(Guid.NewGuid);
         }

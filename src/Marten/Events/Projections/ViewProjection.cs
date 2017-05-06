@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async;
 using Marten.Schema.Identity;
+using Marten.Storage;
 
 namespace Marten.Events.Projections
 {
@@ -113,7 +114,7 @@ namespace Marten.Events.Projections
                 TView view;
                 if (!viewMap.TryGetValue(viewId, out view))
                 {
-                    view = newView(idAssigner, viewId);
+                    view = newView(session.Tenant, idAssigner, viewId);
                     viewMap.Add(viewId, view);
                 }
                 session.Store(view);
@@ -122,10 +123,10 @@ namespace Marten.Events.Projections
             return viewMap;
         }
 
-        private static TView newView(IdAssignment<TView> idAssigner, Guid id)
+        private static TView newView(ITenant tenant, IdAssignment<TView> idAssigner, Guid id)
         {
             var view = new TView();
-            idAssigner.Assign(view, id);
+            idAssigner.Assign(tenant, view, id);
             return view;
         }
 

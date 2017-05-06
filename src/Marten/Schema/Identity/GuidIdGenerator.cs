@@ -1,4 +1,5 @@
 ﻿using System;
+using Marten.Storage;
 
 namespace Marten.Schema.Identity
 {
@@ -11,7 +12,7 @@ namespace Marten.Schema.Identity
             _guidmaker = guidmaker;
         }
 
-        public Guid Assign(Guid existing, out bool assigned)
+        public Guid Assign(ITenant tenant, Guid existing, out bool assigned)
         {
             if (existing == Guid.Empty)
             {

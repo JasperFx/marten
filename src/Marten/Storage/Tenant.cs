@@ -223,6 +223,7 @@ namespace Marten.Storage
             return _factory.Create();
         }
 
+
         /// <summary>
         ///     Set the minimum sequence number for a Hilo sequence for a specific document type
         ///     to the specified floor. Useful for migrating data between databases

@@ -16,9 +16,6 @@ namespace Marten.Schema.Identity.Sequences
             _options = options;
         }
 
-        private DbObjectName Table => new DbObjectName(_options.DatabaseSchemaName, "mt_hilo");
-
-
         public string Name { get; } = "mt_hilo";
 
         public IEnumerable<Type> DependentTypes()
@@ -55,8 +52,11 @@ namespace Marten.Schema.Identity.Sequences
 
         public ISequence SequenceFor(Type documentType)
         {
-            // Okay to let it blow up if it doesn't exist here IMO
-            return _sequences[documentType];
+            return _sequences.GetOrAdd(documentType, type =>
+            {
+                var settings = _options.Storage.MappingFor(type).HiloSettings ?? _options.HiloSequenceDefaults;
+                return new HiloSequence(_options.ConnectionFactory, _options, documentType.Name, settings);
+            });
         }
 
         public ISequence Hilo(Type documentType, HiloSettings settings)

@@ -387,16 +387,22 @@ namespace Marten.Schema
             return false;
         }
 
-        public void HiloSettings(HiloSettings hilo)
+        private HiloSettings _hiloSettings;
+        public HiloSettings HiloSettings
         {
-            if (IdStrategy is HiloIdGeneration)
+            get { return _hiloSettings; }
+            set
             {
-                IdStrategy = new HiloIdGeneration(DocumentType, hilo);
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override Hilo sequence configuration");
+                if (IdStrategy is HiloIdGeneration)
+                {
+                    IdStrategy = new HiloIdGeneration(DocumentType, value);
+                    _hiloSettings = value;
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override Hilo sequence configuration");
+                }
             }
         }
 

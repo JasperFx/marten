@@ -13,18 +13,18 @@ namespace Marten.Schema.Identity
 
         public IdAssigner(MemberInfo member, IIdGeneration generation, ITenant tenant)
         {
-            _generator = generation.Build<TId>(tenant);
+            _generator = generation.Build<TId>();
             _getter = LambdaBuilder.Getter<TDoc, TId>(member);
             _setter = LambdaBuilder.Setter<TDoc, TId>(member);
         }
 
         public IIdGenerator<TId> Generator => _generator;
 
-        public object Assign(TDoc document, out bool assigned)
+        public object Assign(ITenant tenant, TDoc document, out bool assigned)
         {
             var original = _getter != null ? _getter(document) : default(TId);
 
-            var id = _generator.Assign(original, out assigned);
+            var id = _generator.Assign(tenant, original, out assigned);
 
             if (assigned)
             {
@@ -39,7 +39,7 @@ namespace Marten.Schema.Identity
             return id;
         }
 
-        public void Assign(TDoc document, object id)
+        public void Assign(ITenant tenant, TDoc document, object id)
         {
             _setter?.Invoke(document, (TId) id);
         }

@@ -24,7 +24,7 @@ namespace Marten.Testing.Schema.Identity
             var user = new User();
             var id = Guid.NewGuid();
 
-            theAssigner.Assign(user, id);
+            theAssigner.Assign(null, user, id);
 
             user.Id.ShouldBe(id);
         }
@@ -37,7 +37,7 @@ namespace Marten.Testing.Schema.Identity
             var originalId = Guid.NewGuid();
             var user = new User {Id = originalId};
 
-            theAssigner.Assign(user, out assigned);
+            theAssigner.Assign(null, user, out assigned);
 
             user.Id.ShouldBe(originalId);
             assigned.ShouldBeFalse();
@@ -51,7 +51,7 @@ namespace Marten.Testing.Schema.Identity
 
             var user = new User {Id = Guid.Empty};
 
-            theAssigner.Assign(user, out assigned);
+            theAssigner.Assign(null, user, out assigned);
 
             assigned.ShouldBeTrue();
             user.Id.ShouldNotBe(Guid.Empty);
@@ -68,7 +68,7 @@ namespace Marten.Testing.Schema.Identity
             var user = new UserWithPrivateId();
             var id = Guid.NewGuid();
 
-            theAssigner.Assign(user, id);
+            theAssigner.Assign(null, user, id);
 
             user.Id.ShouldBe(id);
         }
