@@ -72,7 +72,6 @@ namespace Marten
             options.CreatePatching();
 
             Options = options;
-            _connectionFactory = options.ConnectionFactory;
 
             _logger = options.Logger();
 
@@ -96,7 +95,7 @@ namespace Marten
 
             Diagnostics = new Diagnostics(this);
 
-            Transform = new DocumentTransforms(this, _connectionFactory, Tenancy.Default);
+            Transform = new DocumentTransforms(this, Tenancy.Default);
 
             options.InitialData.Each(x => x.Populate(this));
 
@@ -115,8 +114,6 @@ namespace Marten
 
         internal MartenExpressionParser Parser { get; }
 
-        [Obsolete("get rid of this")]
-        private readonly IConnectionFactory _connectionFactory;
         private readonly IMartenLogger _logger;
         private readonly CharArrayTextWriter.IPool _writerPool;
 

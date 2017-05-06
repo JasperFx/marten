@@ -16,13 +16,11 @@ namespace Marten.Transforms
     public class DocumentTransforms : IDocumentTransforms
     {
         private readonly DocumentStore _store;
-        private readonly IConnectionFactory _factory;
         private readonly ITenant _tenant;
 
-        public DocumentTransforms(DocumentStore store, IConnectionFactory factory, ITenant tenant)
+        public DocumentTransforms(DocumentStore store, ITenant tenant)
         {
             _store = store;
-            _factory = factory;
             _tenant = tenant;
         }
 
@@ -88,7 +86,7 @@ namespace Marten.Transforms
 
 
 
-            using (var conn = _factory.Create())
+            using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
 
