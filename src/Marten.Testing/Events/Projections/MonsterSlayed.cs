@@ -12,4 +12,10 @@ namespace Marten.Testing.Events.Projections
         public Guid QuestId { get; set; }
         public string Name { get; set; }
     }
+
+    public class MonsterDestroyed
+    {
+        public Guid QuestId { get; set; }
+        public string Name { get; set; }
+    }
 }
