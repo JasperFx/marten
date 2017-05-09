@@ -29,7 +29,9 @@ namespace Marten.Linq
         Task<TResult> MinAsync<TResult>(CancellationToken token);
         Task<TResult> MaxAsync<TResult>(CancellationToken token);
         Task<double> AverageAsync(CancellationToken token);
-        QueryPlan Explain(FetchType fetchType = FetchType.FetchMany);
+
+        /// <param name="configureExplain">Configure EXPLAIN options as documented in <see href="https://www.postgresql.org/docs/9.6/static/sql-explain.html">EXPLAIN documentation</see></param>        
+        QueryPlan Explain(FetchType fetchType = FetchType.FetchMany, Action<IConfigureExplainExpressions> configureExplain = null);
 
         /// <summary>
         ///     Applies a pre-loaded Javascript transformation to the documents
