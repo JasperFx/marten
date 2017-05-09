@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -17,16 +18,26 @@ namespace Marten.Services
             return runner.Execute(cmd => cmd.WithText(sql).ExecuteNonQuery());
         }
 
-        public static QueryPlan ExplainQuery(this IManagedConnection runner, NpgsqlCommand cmd)
+        public static QueryPlan ExplainQuery(this IManagedConnection runner, NpgsqlCommand cmd, Action<IConfigureExplainExpressions> configureExplain = null)
         {
             var serializer = new JsonNetSerializer();
-            cmd.CommandText = string.Concat("explain (format json) ", cmd.CommandText);
+
+            var config = new ConfigureExplainExpressions();
+            configureExplain?.Invoke(config);
+
+            cmd.CommandText = string.Concat($"explain ({config} format json) ", cmd.CommandText);
             return runner.Execute(cmd, c =>
             {
                 using (var reader = cmd.ExecuteReader())
                 {
                     var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetTextReader(0)) : null;
-                    return queryPlans?[0].Plan;
+                    var planToReturn = queryPlans?[0].Plan;
+                    if (planToReturn != null)
+                    {
+                        planToReturn.PlanningTime = queryPlans[0].PlanningTime;
+                        planToReturn.ExecutionTime = queryPlans[0].ExecutionTime;
+                    }
+                    return planToReturn;
                 }
             });
         }
