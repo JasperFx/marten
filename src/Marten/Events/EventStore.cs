@@ -118,7 +118,7 @@ namespace Marten.Events
             var aggregate = _connection.Fetch(handler, null, null);
 
             var assignment = _tenant.IdAssignmentFor<T>();
-            assignment.Assign(aggregate, streamId);
+            assignment.Assign(_tenant, aggregate, streamId);
 
 
             return aggregate;
@@ -136,7 +136,7 @@ namespace Marten.Events
             var aggregate = await _connection.FetchAsync(handler, null, null, token).ConfigureAwait(false);
 
             var assignment = _tenant.IdAssignmentFor<T>();
-            assignment.Assign(aggregate, streamId);
+            assignment.Assign(_tenant, aggregate, streamId);
 
 
             return aggregate;

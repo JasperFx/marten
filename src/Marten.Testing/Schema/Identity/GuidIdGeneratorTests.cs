@@ -16,7 +16,7 @@ namespace Marten.Testing.Schema.Identity
 
             bool assigned = true;
 
-            generator.Assign(existing, out assigned).ShouldBe(existing);
+            generator.Assign(null, existing, out assigned).ShouldBe(existing);
 
             assigned.ShouldBeFalse();
         }
@@ -29,7 +29,7 @@ namespace Marten.Testing.Schema.Identity
 
             bool assigned = false;
 
-            generator.Assign(Guid.Empty, out assigned)
+            generator.Assign(null, Guid.Empty, out assigned)
                 .ShouldBe(newGuid);
 
             assigned.ShouldBeTrue();

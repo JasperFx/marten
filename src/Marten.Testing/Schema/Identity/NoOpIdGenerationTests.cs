@@ -19,10 +19,10 @@ namespace Marten.Testing.Schema.Identity
         public void never_assign_anything()
         {
             var generator = new NoOpIdGeneration();
-            var ids = generator.Build<int>(null);
+            var ids = generator.Build<int>();
 
             bool assigned = true;
-            ids.Assign(5, out assigned).ShouldBe(5);
+            ids.Assign(null, 5, out assigned).ShouldBe(5);
 
             assigned.ShouldBeFalse();
         }

@@ -47,6 +47,8 @@ namespace Marten
         public readonly MartenRegistry Schema;
 
         private string _databaseSchemaName = DefaultDatabaseSchemaName;
+
+        [Obsolete("Get rid of this")]
         private IConnectionFactory _factory;
         private IMartenLogger _logger = new NulloMartenLogger();
         private ISerializer _serializer;
@@ -146,7 +148,7 @@ namespace Marten
         /// <param name="connectionString"></param>
         public void Connection(string connectionString)
         {
-            _factory = new ConnectionFactory(connectionString);
+            Tenancy = new SingleTenant(new ConnectionFactory(connectionString), this);
         }
 
         /// <summary>
@@ -155,7 +157,7 @@ namespace Marten
         /// <param name="connectionSource"></param>
         public void Connection(Func<string> connectionSource)
         {
-            _factory = new ConnectionFactory(connectionSource);
+            Tenancy = new SingleTenant(new ConnectionFactory(connectionSource), this);
         }
 
         /// <summary>
@@ -165,7 +167,7 @@ namespace Marten
         /// <param name="source"></param>
         public void Connection(Func<NpgsqlConnection> source)
         {
-            _factory = new LambdaConnectionFactory(source);
+            Tenancy = new SingleTenant(new LambdaConnectionFactory(source), this);
         }
 
         /// <summary>
@@ -201,12 +203,6 @@ namespace Marten
             return _serializer ?? new JsonNetSerializer();
         }
 
-        internal IConnectionFactory ConnectionFactory()
-        {
-            if (_factory == null) throw new InvalidOperationException("No database connection source is configured");
-
-            return _factory;
-        }
 
         public IMartenLogger Logger()
         {
@@ -255,5 +251,7 @@ namespace Marten
             if (name.Length < NameDataLength) return;
             throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
         }
+
+        internal ITenancy Tenancy { get; private set; }
     }
 }

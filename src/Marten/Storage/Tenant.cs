@@ -1,14 +1,19 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Services;
 using Marten.Transforms;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Storage
 {
@@ -18,6 +23,7 @@ namespace Marten.Storage
         private readonly IConnectionFactory _factory;
         private readonly StorageFeatures _features;
         private readonly StoreOptions _options;
+        private Lazy<SequenceFactory> _sequences;
 
         public Tenant(StorageFeatures features, StoreOptions options, IConnectionFactory factory, string tenantId)
         {
@@ -25,6 +31,22 @@ namespace Marten.Storage
             _features = features;
             _options = options;
             _factory = factory;
+
+            resetSequences();
+
+        }
+
+        private void resetSequences()
+        {
+            _sequences = new Lazy<SequenceFactory>(() =>
+            {
+                var sequences = new SequenceFactory(_options, this);
+
+                generateOrUpdateFeature(typeof(SequenceFactory), sequences);
+
+
+                return sequences;
+            });
         }
 
         public string TenantId { get; }
@@ -45,18 +67,14 @@ namespace Marten.Storage
         public void ResetSchemaExistenceChecks()
         {
             _checks.Clear();
+            resetSequences();
         }
 
         public void EnsureStorageExists(Type featureType)
         {
             if (_options.AutoCreateSchemaObjects == AutoCreate.None) return;
 
-
-
-
             ensureStorageExists(new List<Type>(), featureType);
-
-
         }
 
         private void ensureStorageExists(IList<Type> types, Type featureType)
@@ -133,15 +151,8 @@ namespace Marten.Storage
             return _features.FindMapping(documentType);
         }
 
-        public ISequences Sequences
-        {
-            get
-            {
-                EnsureStorageExists(typeof(SequenceFactory));
+        public ISequences Sequences => _sequences.Value;
 
-                return _features.Sequences;
-            }
-        }
         public IDocumentStorage<T> StorageFor<T>()
         {
             EnsureStorageExists(typeof(T));
@@ -191,9 +202,83 @@ namespace Marten.Storage
 
         public void MarkAllFeaturesAsChecked()
         {
-            foreach (var feature in _features.AllActiveFeatures())
+            foreach (var feature in _features.AllActiveFeatures(this))
             {
                 _checks[feature.StorageType] = true;
+            }
+        }
+
+        /// <summary>
+        ///     Directly open a managed connection to the underlying Postgresql database
+        /// </summary>
+        /// <param name="mode"></param>
+        /// <param name="isolationLevel"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
+        public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int timeout = 30)
+        {
+            return new ManagedConnection(_factory, mode, isolationLevel, timeout);
+        }
+
+        /// <summary>
+        /// Fetch a connection to the tenant database
+        /// </summary>
+        /// <returns></returns>
+        public NpgsqlConnection CreateConnection()
+        {
+            return _factory.Create();
+        }
+
+
+        /// <summary>
+        ///     Set the minimum sequence number for a Hilo sequence for a specific document type
+        ///     to the specified floor. Useful for migrating data between databases
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="floor"></param>
+        public void ResetHiloSequenceFloor<T>(long floor)
+        {
+            // Make sure that the sequence is built for this one
+            IdAssignmentFor<T>();
+            var sequence = Sequences.SequenceFor(typeof(T));
+            sequence.SetFloor(floor);
+        }
+
+        /// <summary>
+        ///     Fetch the entity version and last modified time from the database
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public DocumentMetadata MetadataFor<T>(T entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
+                MappingFor(typeof(T)));
+
+            using (var connection = OpenConnection())
+            {
+                return connection.Fetch(handler, null, null);
+            }
+        }
+
+        /// <summary>
+        ///     Fetch the entity version and last modified time from the database
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<DocumentMetadata> MetadataForAsync<T>(T entity,
+            CancellationToken token = default(CancellationToken))
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
+                MappingFor(typeof(T)));
+
+            using (var connection = OpenConnection())
+            {
+                return await connection.FetchAsync(handler, null, null, token).ConfigureAwait(false);
             }
         }
     }

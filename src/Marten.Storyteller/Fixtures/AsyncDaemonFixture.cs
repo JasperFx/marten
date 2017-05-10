@@ -123,7 +123,7 @@ namespace Marten.Storyteller.Fixtures
         public void CreateSequentialGap(int original, int seq)
         {
             // Increment seq_id so events have a respective 1 and 101 seq_id
-            using (var conn = _store.Value.Advanced.OpenConnection())
+            using (var conn = _store.Value.Tenancy.Default.OpenConnection())
             {
                 var command = conn.Connection.CreateCommand();
                 command.CommandText = "UPDATE mt_events SET seq_id = :seq WHERE seq_id = :original";

@@ -11,7 +11,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_schema_objects_if_necessary()
         {
-            using (var conn = theStore.Advanced.OpenConnection())
+            using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
                 conn.Execute(
                     cmd => cmd.Sql("drop function if exists public.mt_immutable_timestamp(text)").ExecuteNonQuery());
@@ -20,9 +20,9 @@ namespace Marten.Testing.Schema
             theStore.Schema.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamp"))
                 .ShouldBeNull();
 
-            theStore.DefaultTenant.ResetSchemaExistenceChecks();
+            theStore.Tenancy.Default.ResetSchemaExistenceChecks();
 
-            theStore.DefaultTenant.EnsureStorageExists(typeof(SystemFunctions));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(SystemFunctions));
 
             theStore.Schema.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamp"))
                 .ShouldNotBeNull();

@@ -125,7 +125,7 @@ namespace Marten
                     if (_unitOfWork.Contains<T>(entity)) continue;
 
                     var assigned = false;
-                    var id = idAssignment.Assign(entity, out assigned);
+                    var id = idAssignment.Assign(Tenant, entity, out assigned);
 
                     storage.Store(IdentityMap, id, entity);
                     if (assigned)

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Marten.Storage;
 
 namespace Marten.Schema.Identity
 {
@@ -8,13 +7,11 @@ namespace Marten.Schema.Identity
     {
         IEnumerable<Type> KeyTypes { get; }
 
-        IIdGenerator<T> Build<T>(ITenant tenant);
+        IIdGenerator<T> Build<T>();
+
+        bool RequiresSequences { get; }
     }
 
-    public interface IIdGenerationWithDependencies : IIdGeneration
-    {
-        Type[] DependentFeatures();
-    }
 
 
 }

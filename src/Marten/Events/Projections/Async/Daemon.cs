@@ -113,7 +113,7 @@ namespace Marten.Events.Projections.Async
 
         private void findCurrentEventLogPositions()
         {
-            using (var conn = _store.Advanced.OpenConnection())
+            using (var conn = _tenant.OpenConnection())
             {
                 conn.Execute(cmd =>
                 {
@@ -213,7 +213,7 @@ namespace Marten.Events.Projections.Async
 
         private async Task<long> currentEventNumber(CancellationToken token)
         {
-            using (var conn = _store.Advanced.OpenConnection())
+            using (var conn = _tenant.OpenConnection())
             {
                 return await conn.ExecuteAsync(async (cmd, tkn) =>
                 {

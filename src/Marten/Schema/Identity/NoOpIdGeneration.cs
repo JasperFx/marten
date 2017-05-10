@@ -9,14 +9,16 @@ namespace Marten.Schema.Identity
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(int), typeof(long), typeof(string), typeof(Guid)};
 
 
-        public IIdGenerator<T> Build<T>(ITenant tenant)
+        public IIdGenerator<T> Build<T>()
         {
             return new NoOpIdGenerator<T>();
         }
 
+        public bool RequiresSequences { get; } = false;
+
         public class NoOpIdGenerator<T> : IIdGenerator<T>
         {
-            public T Assign(T existing, out bool assigned)
+            public T Assign(ITenant tenant, T existing, out bool assigned)
             {
                 assigned = false;
                 return existing;

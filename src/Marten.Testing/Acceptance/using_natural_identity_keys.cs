@@ -45,7 +45,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ => _.Schema.For<OverriddenIdDoc>().Identity(x => x.Name));
 
-            var mapping = theStore.DefaultTenant.MappingFor(typeof(OverriddenIdDoc)).As<DocumentMapping>();
+            var mapping = theStore.Tenancy.Default.MappingFor(typeof(OverriddenIdDoc)).As<DocumentMapping>();
             mapping.IdType.ShouldBe(typeof(string));
             mapping.IdMember.Name.ShouldBe(nameof(OverriddenIdDoc.Name));
             mapping.IdStrategy.ShouldBeOfType<StringIdGeneration>();

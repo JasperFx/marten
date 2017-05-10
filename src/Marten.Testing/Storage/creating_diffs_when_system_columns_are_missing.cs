@@ -14,14 +14,14 @@ namespace Marten.Testing.Storage
         [Fact]
         public void can_fill_in_the_version_column()
         {
-            var mapping = theStore.DefaultTenant.MappingFor(typeof(User));
+            var mapping = theStore.Tenancy.Default.MappingFor(typeof(User));
             var table = new DocumentTable(mapping.As<DocumentMapping>());
             table.RemoveColumn(DocumentMapping.VersionColumn);
 
             var writer = new StringWriter();
             table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
 
-            using (var conn = theStore.Advanced.OpenConnection())
+            using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
                 conn.Execute(cmd =>
                 {
@@ -29,8 +29,8 @@ namespace Marten.Testing.Storage
                 });
             }
 
-            theStore.DefaultTenant.ResetSchemaExistenceChecks();
-            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.ResetSchemaExistenceChecks();
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
             var actual = theStore.Schema.DbObjects.ExistingTableFor(typeof(User));
 
@@ -40,14 +40,14 @@ namespace Marten.Testing.Storage
         [Fact]
         public void can_fill_in_the_dotnettype_column()
         {
-            var mapping = theStore.DefaultTenant.MappingFor(typeof(User));
+            var mapping = theStore.Tenancy.Default.MappingFor(typeof(User));
             var table = new DocumentTable(mapping.As<DocumentMapping>());
             table.RemoveColumn(DocumentMapping.DotNetTypeColumn);
 
             var writer = new StringWriter();
             table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
 
-            using (var conn = theStore.Advanced.OpenConnection())
+            using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
                 conn.Execute(cmd =>
                 {
@@ -55,8 +55,8 @@ namespace Marten.Testing.Storage
                 });
             }
 
-            theStore.DefaultTenant.ResetSchemaExistenceChecks();
-            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.ResetSchemaExistenceChecks();
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
 
 
@@ -68,14 +68,14 @@ namespace Marten.Testing.Storage
         [Fact]
         public void can_fill_in_the_lastmodified_column()
         {
-            var mapping = theStore.DefaultTenant.MappingFor(typeof(User));
+            var mapping = theStore.Tenancy.Default.MappingFor(typeof(User));
             var table = new DocumentTable(mapping.As<DocumentMapping>());
             table.RemoveColumn(DocumentMapping.LastModifiedColumn);
 
             var writer = new StringWriter();
             table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
 
-            using (var conn = theStore.Advanced.OpenConnection())
+            using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
                 conn.Execute(cmd =>
                 {
@@ -83,8 +83,8 @@ namespace Marten.Testing.Storage
                 });
             }
 
-            theStore.DefaultTenant.ResetSchemaExistenceChecks();
-            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.ResetSchemaExistenceChecks();
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
             var actual = theStore.Schema.DbObjects.ExistingTableFor(typeof(User));
 

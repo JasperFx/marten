@@ -50,7 +50,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void does_not_drop_the_table_if_it_all_exists()
         {
-            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
             var patch = theStore.Schema.ToPatch();
 
@@ -60,7 +60,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_drop_added_columns_in_document_storage()
         {
-            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
             using (var store = DocumentStore.For(_ =>
             {
@@ -77,7 +77,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_drop_indexes_that_were_added()
         {
-            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
             using (var store = DocumentStore.For(_ =>
             {
@@ -99,7 +99,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<User>()
                     .Duplicate(x => x.UserName, configure: i => i.Method = IndexMethod.btree);
             });
-            theStore.DefaultTenant.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
             using (var store = DocumentStore.For(_ =>
             {

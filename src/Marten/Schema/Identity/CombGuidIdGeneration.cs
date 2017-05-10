@@ -13,10 +13,12 @@ namespace Marten.Schema.Identity
 
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(Guid)};
 
-        public IIdGenerator<T> Build<T>(ITenant tenant)
+        public IIdGenerator<T> Build<T>()
         {
             return (IIdGenerator<T>) new GuidIdGenerator(() => Create(Guid.NewGuid(), DateTime.UtcNow));
         }
+
+        public bool RequiresSequences { get; } = false;
 
         /*
             FROM: https://github.com/richardtallent/RT.Comb/blob/master/RT.Comb/RT.CombByteOrder.Comb.cs

@@ -17,7 +17,7 @@ namespace Marten.Testing.Events.Projections.Async
 
         public FetcherTests()
         {
-            theStore.DefaultTenant.EnsureStorageExists(typeof(EventStream));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(EventStream));
 
             
         }

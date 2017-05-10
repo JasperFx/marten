@@ -19,7 +19,7 @@ namespace Marten.Testing.Bugs
             {
                 store1.Advanced.Clean.CompletelyRemoveAll();
 
-                store1.DefaultTenant.EnsureStorageExists(typeof(User));
+                store1.Tenancy.Default.EnsureStorageExists(typeof(User));
             }
 
             using (var store2 = DocumentStore.For(_ =>

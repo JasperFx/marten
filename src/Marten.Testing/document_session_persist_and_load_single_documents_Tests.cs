@@ -28,7 +28,7 @@ namespace Marten.Testing
 
             theSession.SaveChanges();
 
-            using (var runner = theStore.Advanced.OpenConnection())
+            using (var runner = theStore.Tenancy.Default.OpenConnection())
             {
                 var json = runner.QueryScalar<string>("select data from mt_doc_user where id = '{0}'".ToFormat(user.Id));
 

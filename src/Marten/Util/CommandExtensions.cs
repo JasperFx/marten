@@ -5,7 +5,6 @@ using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using Baseline;
-using Marten.Linq;
 using Marten.Schema;
 using Npgsql;
 using NpgsqlTypes;
@@ -164,15 +163,5 @@ namespace Marten.Util
             return cmd;
         }
 
-        public static NpgsqlConnection LongLivedConnection(this IConnectionFactory factory)
-        {
-            var conn = factory.Create();
-            if (!conn.ConnectionString.Contains("Keepalive", StringComparison.OrdinalIgnoreCase))
-            {
-                conn.ConnectionString = conn.ConnectionString.TrimEnd(';') + ";Keepalive=10";
-            }
-
-            return conn;
-        }
     }
 }

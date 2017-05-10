@@ -126,7 +126,7 @@ namespace Marten.Schema
         }
 
 
-        public void DeleteAllDocuments(IConnectionFactory factory)
+        public void DeleteAllDocuments(ITenant factory)
         {
             factory.RunSql(
                 $"delete from {Parent.Table.QualifiedName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");

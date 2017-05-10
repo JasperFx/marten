@@ -31,5 +31,6 @@ namespace Marten.Services
         Task BeginTransactionAsync(CancellationToken token);
         Task CommitAsync(CancellationToken token);
         Task RollbackAsync(CancellationToken token);
+        void BeginSession();
     }
 }

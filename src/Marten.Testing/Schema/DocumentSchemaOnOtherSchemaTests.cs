@@ -24,16 +24,14 @@ namespace Marten.Testing.Schema
         public DocumentSchemaOnOtherSchemaTests()
         {
             StoreOptions(_ => _.DatabaseSchemaName = "other");
-
-            theStore.DefaultTenant.EnsureStorageExists(typeof(SequenceFactory));
         }
 
         [Fact]
         public void generate_ddl()
         {
-            theStore.DefaultTenant.StorageFor(typeof(User));
-            theStore.DefaultTenant.StorageFor(typeof(Issue));
-            theStore.DefaultTenant.StorageFor(typeof(Company));
+            theStore.Tenancy.Default.StorageFor(typeof(User));
+            theStore.Tenancy.Default.StorageFor(typeof(Issue));
+            theStore.Tenancy.Default.StorageFor(typeof(Company));
 
 
 
@@ -68,9 +66,9 @@ namespace Marten.Testing.Schema
         [Fact]
         public void builds_schema_objects_on_the_fly_as_needed()
         {
-            theStore.DefaultTenant.StorageFor(typeof(User)).ShouldNotBeNull();
-            theStore.DefaultTenant.StorageFor(typeof(Issue)).ShouldNotBeNull();
-            theStore.DefaultTenant.StorageFor(typeof(Company)).ShouldNotBeNull();
+            theStore.Tenancy.Default.StorageFor(typeof(User)).ShouldNotBeNull();
+            theStore.Tenancy.Default.StorageFor(typeof(Issue)).ShouldNotBeNull();
+            theStore.Tenancy.Default.StorageFor(typeof(Company)).ShouldNotBeNull();
 
             var tables = theSchema.DbObjects.SchemaTables();
             tables.ShouldContain("other.mt_doc_user");
@@ -270,7 +268,7 @@ namespace Marten.Testing.Schema
                 _.Events.AddEventType(typeof(RaceStarted));
             });
 
-            theStore.DefaultTenant.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.Tenancy.Default.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 
@@ -279,7 +277,7 @@ namespace Marten.Testing.Schema
         {
             theStore.Events.AddEventType(typeof(RaceStarted));
 
-            theStore.DefaultTenant.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.Tenancy.Default.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 

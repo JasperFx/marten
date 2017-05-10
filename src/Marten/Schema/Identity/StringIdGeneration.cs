@@ -10,12 +10,14 @@ namespace Marten.Schema.Identity
         public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(string)};
 
 
-        public IIdGenerator<T> Build<T>(ITenant tenant)
+        public IIdGenerator<T> Build<T>()
         {
             return this.As<IIdGenerator<T>>();
         }
 
-        public string Assign(string existing, out bool assigned)
+        public bool RequiresSequences { get; } = false;
+
+        public string Assign(ITenant tenant, string existing, out bool assigned)
         {
             if (existing.IsEmpty())
             {

@@ -21,7 +21,7 @@ namespace Marten.Testing.Acceptance
                 session.Store(user1, user2, user3, user4);
                 session.SaveChanges();
 
-                var epoch = session.DocumentStore.Advanced.MetadataFor(user4).LastModified;
+                var epoch = session.DocumentStore.Tenancy.Default.MetadataFor(user4).LastModified;
                 session.Store(user3, user4);
                 session.SaveChanges();
 
@@ -54,7 +54,7 @@ namespace Marten.Testing.Acceptance
                 session.Store(user3, user4);
                 session.SaveChanges();
 
-                var epoch = session.DocumentStore.Advanced.MetadataFor(user4).LastModified;
+                var epoch = session.DocumentStore.Tenancy.Default.MetadataFor(user4).LastModified;
 
                 // no where clause
                 session.Query<User>().Where(x => x.ModifiedBefore(epoch)).OrderBy(x => x.UserName).Select(x => x.UserName)

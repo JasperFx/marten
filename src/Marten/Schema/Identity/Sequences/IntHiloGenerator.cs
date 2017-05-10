@@ -1,15 +1,18 @@
+using System;
+using Marten.Storage;
+
 namespace Marten.Schema.Identity.Sequences
 {
     public class IntHiloGenerator : IIdGenerator<int>
     {
-        public IntHiloGenerator(ISequence sequence)
+        private readonly Type _documentType;
+
+        public IntHiloGenerator(Type documentType)
         {
-            Sequence = sequence;
+            _documentType = documentType;
         }
 
-        public ISequence Sequence { get; }
-
-        public int Assign(int existing, out bool assigned)
+        public int Assign(ITenant tenant, int existing, out bool assigned)
         {
             if (existing > 0)
             {
@@ -17,7 +20,7 @@ namespace Marten.Schema.Identity.Sequences
                 return existing;
             }
 
-            var next = Sequence.NextInt();
+            var next = tenant.Sequences.SequenceFor(_documentType).NextInt();
 
             assigned = true;
 

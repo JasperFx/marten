@@ -60,7 +60,7 @@ var store = DocumentStore.For(_ =>
             {
                 var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
                 {
-                    store2.DefaultTenant.EnsureStorageExists(typeof(User));
+                    store2.Tenancy.Default.EnsureStorageExists(typeof(User));
                 });
 
                 ex.Message.ShouldBe($"Marten cannot apply updates in CreateOnly mode to existing items public.mt_doc_user, public.mt_upsert_user");

@@ -20,7 +20,7 @@ namespace Marten.Testing.Schema.Identity
         {
             var generator = new StringIdGeneration();
 
-            generator.Build<string>(null).ShouldBeSameAs(generator);
+            generator.Build<string>().ShouldBeSameAs(generator);
         }
 
         [Fact]
@@ -29,7 +29,7 @@ namespace Marten.Testing.Schema.Identity
             bool assigned = true;
 
             var generator = new StringIdGeneration();
-            generator.Assign("something", out assigned).ShouldBe("something");
+            generator.Assign(null, "something", out assigned).ShouldBe("something");
 
             assigned.ShouldBeFalse();
         }
@@ -44,7 +44,7 @@ namespace Marten.Testing.Schema.Identity
 
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
-                generator.Assign(String.Empty, out assigned);
+                generator.Assign(null, String.Empty, out assigned);
             });
         }
 
@@ -58,7 +58,7 @@ namespace Marten.Testing.Schema.Identity
 
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
-                generator.Assign(null, out assigned);
+                generator.Assign(null, null, out assigned);
             });
         }
     }

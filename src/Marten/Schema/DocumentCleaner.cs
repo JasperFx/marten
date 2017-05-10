@@ -27,22 +27,20 @@ LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
 WHERE  p.proname = '{0}'
 AND    n.nspname = '{1}';";
 
-        private readonly IConnectionFactory _factory;
-        private readonly DocumentStore _store;
+        private readonly StoreOptions _options;
         private readonly ITenant _tenant;
 
-        public DocumentCleaner(IConnectionFactory factory, DocumentStore store, ITenant tenant)
+        public DocumentCleaner(StoreOptions options, ITenant tenant)
         {
-            _factory = factory;
-            _store = store;
+            _options = options;
             _tenant = tenant;
         }
 
         public void DeleteAllDocuments()
         {
-            var dbObjects = new DbObjects(_factory, _store.Storage);
+            var dbObjects = new DbObjects(_tenant, _options.Storage);
 
-            using (var conn = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
+            using (var conn = _tenant.OpenConnection(CommandRunnerMode.Transactional))
             {
                 dbObjects.DocumentTables().Each(tableName =>
                 {
@@ -55,42 +53,42 @@ AND    n.nspname = '{1}';";
 
         public void DeleteDocumentsFor(Type documentType)
         {
-            var mapping = _store.Storage.FindMapping(documentType);
-            mapping.DeleteAllDocuments(_factory);
+            var mapping = _options.Storage.FindMapping(documentType);
+            mapping.DeleteAllDocuments(_tenant);
         }
 
         public void DeleteDocumentsExcept(params Type[] documentTypes)
         {
-            var documentMappings = _store.Storage.AllDocumentMappings.Where(x => !documentTypes.Contains(x.DocumentType));
+            var documentMappings = _options.Storage.AllDocumentMappings.Where(x => !documentTypes.Contains(x.DocumentType));
             foreach (var mapping in documentMappings)
             {
-                mapping.As<IDocumentMapping>().DeleteAllDocuments(_factory);
+                mapping.As<IDocumentMapping>().DeleteAllDocuments(_tenant);
             }
         }
 
         public void CompletelyRemove(Type documentType)
         {
-            var mapping = _store.Storage.MappingFor(documentType);
+            var mapping = _options.Storage.MappingFor(documentType);
 
-            using (var conn = _factory.Create())
+            using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
 
-                mapping.RemoveAllObjects(_store.Options.DdlRules, conn);
+                mapping.RemoveAllObjects(_options.DdlRules, conn);
             }
         }
 
         public void CompletelyRemoveAll()
         {
-            var dbObjects = new DbObjects(_factory, _store.Storage);
+            var dbObjects = new DbObjects(_tenant, _options.Storage);
 
-            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
+            using (var connection = _tenant.OpenConnection(CommandRunnerMode.Transactional))
             {
                 var schemaTables = dbObjects.SchemaTables();
                 schemaTables
                     .Each(tableName => { connection.Execute($"DROP TABLE IF EXISTS {tableName} CASCADE;"); });
 
-                var drops = connection.GetStringList(DropAllFunctionSql, new object[] { _store.Storage.AllSchemaNames() });
+                var drops = connection.GetStringList(DropAllFunctionSql, new object[] { _options.Storage.AllSchemaNames() });
                 drops.Each(drop => connection.Execute(drop));
                 connection.Commit();
 
@@ -100,10 +98,10 @@ AND    n.nspname = '{1}';";
 
         public void DeleteAllEventData()
         {
-            using (var connection = new ManagedConnection(_factory, CommandRunnerMode.Transactional))
+            using (var connection = _tenant.OpenConnection(CommandRunnerMode.Transactional))
             {
-                connection.Execute($"truncate table {_store.Events.DatabaseSchemaName}.mt_events cascade;" +
-                                   $"truncate table {_store.Events.DatabaseSchemaName}.mt_streams cascade");
+                connection.Execute($"truncate table {_options.Events.DatabaseSchemaName}.mt_events cascade;" +
+                                   $"truncate table {_options.Events.DatabaseSchemaName}.mt_streams cascade");
                 connection.Commit();
             }
         }

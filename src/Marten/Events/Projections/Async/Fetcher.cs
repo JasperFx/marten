@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Marten.Events.Projections.Async.ErrorHandling;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -15,7 +16,6 @@ namespace Marten.Events.Projections.Async
 {
     public class Fetcher : IDisposable, IFetcher
     {
-        private readonly IConnectionFactory _connectionFactory;
         private readonly IDaemonLogger _logger;
         private readonly IDaemonErrorHandler _errorHandler;
         private readonly NulloIdentityMap _map;
@@ -27,6 +27,7 @@ namespace Marten.Events.Projections.Async
         private CancellationToken _token = default(CancellationToken);
         private IProjectionTrack _track;
         private readonly string _sql;
+        private ITenant _tenant;
 
         public Fetcher(IDocumentStore store, DaemonSettings settings, AsyncOptions options, IDaemonLogger logger, IDaemonErrorHandler errorHandler, IEnumerable<Type> eventTypes)
         {
@@ -36,7 +37,8 @@ namespace Marten.Events.Projections.Async
             _errorHandler = errorHandler;
             State = FetcherState.Waiting;
 
-            _connectionFactory = store.Advanced.Options.ConnectionFactory();
+            // TODO -- this will have to change
+            _tenant = store.Tenancy.Default;
 
             _selector = new EventSelector(store.Events, store.Advanced.Serializer);
             _map = new NulloIdentityMap(store.Advanced.Serializer);
@@ -134,7 +136,7 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
 
         private async Task<EventPage> fetchNextPage(long lastEncountered)
         {
-            using (var conn = _connectionFactory.Create())
+            using (var conn = _tenant.CreateConnection())
             {
                 try
                 {

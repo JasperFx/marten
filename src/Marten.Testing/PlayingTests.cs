@@ -35,8 +35,8 @@ namespace Marten.Testing
                     session.Store(target);
                     session.SaveChanges();
                 }
-
-                using (var conn = store.Advanced.OpenConnection())
+                
+                using (var conn = store.Tenancy.Default.OpenConnection())
                 {
                     var json = conn.Execute(cmd =>
                     {
@@ -57,13 +57,13 @@ namespace Marten.Testing
         {
             using (var store = TestingDocumentStore.Basic())
             {
-                store.DefaultTenant.EnsureStorageExists(typeof(User));
+                store.Tenancy.Default.EnsureStorageExists(typeof(User));
 
                 var mapping = store.Storage.MappingFor(typeof(User));
                 var sql = mapping.As<DocumentMapping>().FieldFor(nameof(User.UserName)).As<JsonLocatorField>().ToComputedIndex(mapping.Table)
                     .Replace("d.data", "data");
 
-                using (var conn = store.Advanced.OpenConnection())
+                using (var conn = store.Tenancy.Default.OpenConnection())
                 {
                     conn.Execute(cmd => cmd.Sql(sql).ExecuteNonQuery());
                 }

@@ -120,7 +120,7 @@ namespace Marten.Schema
                 .As<IDocumentStorage>();
         }
 
-        void IDocumentMapping.DeleteAllDocuments(IConnectionFactory factory)
+        void IDocumentMapping.DeleteAllDocuments(ITenant factory)
         {
             var sql = "truncate {0} cascade".ToFormat(Table.QualifiedName);
             factory.RunSql(sql);
@@ -387,16 +387,22 @@ namespace Marten.Schema
             return false;
         }
 
-        public void HiloSettings(HiloSettings hilo)
+        private HiloSettings _hiloSettings;
+        public HiloSettings HiloSettings
         {
-            if (IdStrategy is HiloIdGeneration)
+            get { return _hiloSettings; }
+            set
             {
-                IdStrategy = new HiloIdGeneration(DocumentType, hilo);
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override Hilo sequence configuration");
+                if (IdStrategy is HiloIdGeneration)
+                {
+                    IdStrategy = new HiloIdGeneration(DocumentType, value);
+                    _hiloSettings = value;
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override Hilo sequence configuration");
+                }
             }
         }
 
@@ -474,14 +480,6 @@ namespace Marten.Schema
         IEnumerable<Type> IFeatureSchema.DependentTypes()
         {
             yield return typeof(SystemFunctions);
-
-            if (IdStrategy is IIdGenerationWithDependencies)
-            {
-                foreach (var dependency in IdStrategy.As<IIdGenerationWithDependencies>().DependentFeatures())
-                {
-                    yield return dependency;
-                }
-            }
 
             foreach (var foreignKey in ForeignKeys)
             {

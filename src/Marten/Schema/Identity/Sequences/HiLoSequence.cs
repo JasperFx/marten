@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Threading;
+using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
 
@@ -8,16 +9,16 @@ namespace Marten.Schema.Identity.Sequences
 {
     public class HiloSequence : ISequence
     {
-        private readonly IConnectionFactory _factory;
+        private readonly ITenant _tenant;
         private readonly StoreOptions _options;
         private readonly string _entityName;
         private readonly object _lock = new object();
 
         private DbObjectName GetNextFunction => new DbObjectName(_options.DatabaseSchemaName, "mt_get_next_hi");
 
-        public HiloSequence(IConnectionFactory factory, StoreOptions options, string entityName, HiloSettings settings)
+        public HiloSequence(ITenant tenant, StoreOptions options, string entityName, HiloSettings settings)
         {
-            _factory = factory;
+            _tenant = tenant;
             _options = options;
             _entityName = entityName;
 
@@ -41,7 +42,7 @@ namespace Marten.Schema.Identity.Sequences
             // This guarantees that the hilo row exists
             AdvanceToNextHi();
 
-            using (var conn = _factory.Create())
+            using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
 
@@ -85,7 +86,7 @@ namespace Marten.Schema.Identity.Sequences
 
         public void AdvanceToNextHi()
         {
-            using (var conn = _factory.Create())
+            using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
 

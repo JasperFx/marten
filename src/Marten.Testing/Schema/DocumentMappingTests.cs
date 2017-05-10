@@ -109,10 +109,12 @@ namespace Marten.Testing.Schema
         {
             public IEnumerable<Type> KeyTypes { get; }
 
-            public IIdGenerator<T> Build<T>(ITenant tenant)
+            public IIdGenerator<T> Build<T>()
             {
                 throw new NotImplementedException();
             }
+
+            public bool RequiresSequences { get; } = false;
         }
 
         // SAMPLE: ConfigureMarten-generic
@@ -147,7 +149,7 @@ namespace Marten.Testing.Schema
 
             var newDef = new HiloSettings {MaxLo = 33};
 
-            mapping.HiloSettings(newDef);
+            mapping.HiloSettings = newDef;
 
             var sequence = mapping.IdStrategy.ShouldBeOfType<HiloIdGeneration>();
             sequence.MaxLo.ShouldBe(newDef.MaxLo);
@@ -292,10 +294,10 @@ namespace Marten.Testing.Schema
                 var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
 
 
-                var mapping = store.DefaultTenant.MappingFor(typeof(User)).As<DocumentMapping>();
+                var mapping = store.Tenancy.Default.MappingFor(typeof(User)).As<DocumentMapping>();
                 mapping.DuplicateField("FirstName");
 
-                store.DefaultTenant.EnsureStorageExists(typeof(User));
+                store.Tenancy.Default.EnsureStorageExists(typeof(User));
 
                 schema.DbObjects.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
             }
@@ -620,7 +622,7 @@ namespace Marten.Testing.Schema
         public void trying_to_replace_the_hilo_settings_when_not_using_hilo_for_the_sequence_throws()
         {
             Exception<InvalidOperationException>.ShouldBeThrownBy(
-                () => { DocumentMapping.For<StringId>().HiloSettings(new HiloSettings()); });
+                () => { DocumentMapping.For<StringId>().HiloSettings = new HiloSettings(); });
         }
 
         [Fact]

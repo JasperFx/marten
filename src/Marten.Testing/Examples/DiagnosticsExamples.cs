@@ -52,22 +52,6 @@ namespace Marten.Testing.Examples
             // ENDSAMPLE
         }
 
-        public void pregenerate_storage_code()
-        {
-            // SAMPLE: pregenerate_storage_code
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.Connection("something");
-
-                // Document types that are known upfront
-                _.Schema.For<User>();
-                _.Schema.For<Issue>();
-            }))
-            {
-                store.Advanced.PrecompileAllStorage();
-            }
-            // ENDSAMPLE
-        }
 
         public void use_request_count()
         {

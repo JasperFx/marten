@@ -1,20 +1,28 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Marten.Storage;
+using Marten.Testing.Events;
 using Shouldly;
 using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Schema.Identity.Sequences
 {
+    public class Foo
+    {
+        public int Id;
+    }
+
     public class HiloSequenceTests
     {
         private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
 
-        private readonly HiloSequence _theSequence;
+        private readonly HiloSequence theSequence;
+        private Tenant theTenant;
 
         public HiloSequenceTests()
         {
@@ -22,59 +30,60 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
             var storeOptions = new StoreOptions();
 
-            _container.GetInstance<ITenant>().EnsureStorageExists(typeof(SequenceFactory));
             
-            _theSequence = new HiloSequence(new ConnectionSource(), storeOptions, "foo", new HiloSettings());
+            theTenant = new Tenant(storeOptions.Storage, storeOptions, new ConnectionSource(), Tenancy.DefaultTenantId);
+
+            theSequence = theTenant.Sequences.SequenceFor(typeof(Foo)).As<HiloSequence>();
         }
 
         [Fact]
         public void default_values()
         {
-            _theSequence.CurrentHi.ShouldBe(-1);
-            _theSequence.MaxLo.ShouldBe(1000);
+            theSequence.CurrentHi.ShouldBe(-1);
+            theSequence.MaxLo.ShouldBe(1000);
         }
 
         [Fact]
         public void should_advance_initial_case()
         {
-            _theSequence.ShouldAdvanceHi().ShouldBeTrue();
+            theSequence.ShouldAdvanceHi().ShouldBeTrue();
         }
 
         [Fact]
         public void advance_to_next_hi_from_initial_state()
         {
-            _theSequence.AdvanceToNextHi();
+            theSequence.AdvanceToNextHi();
 
-            _theSequence.CurrentLo.ShouldBe(1);
-            _theSequence.CurrentHi.ShouldBe(0);
+            theSequence.CurrentLo.ShouldBe(1);
+            theSequence.CurrentHi.ShouldBe(0);
         }
 
         [Fact]
         public void advance_to_next_hi_several_times()
         {
-            _theSequence.AdvanceToNextHi();
+            theSequence.AdvanceToNextHi();
 
-            _theSequence.AdvanceToNextHi();
-            _theSequence.CurrentHi.ShouldBe(1);
+            theSequence.AdvanceToNextHi();
+            theSequence.CurrentHi.ShouldBe(1);
 
-            _theSequence.AdvanceToNextHi();
-            _theSequence.CurrentHi.ShouldBe(2);
+            theSequence.AdvanceToNextHi();
+            theSequence.CurrentHi.ShouldBe(2);
 
-            _theSequence.AdvanceToNextHi();
-            _theSequence.CurrentHi.ShouldBe(3);
+            theSequence.AdvanceToNextHi();
+            theSequence.CurrentHi.ShouldBe(3);
         }
 
         [Fact]
         public void advance_value_from_initial_state()
         {
             // Gotta do this at least once
-            _theSequence.AdvanceToNextHi();
+            theSequence.AdvanceToNextHi();
 
-            _theSequence.AdvanceValue().ShouldBe(1);
-            _theSequence.AdvanceValue().ShouldBe(2);
-            _theSequence.AdvanceValue().ShouldBe(3);
-            _theSequence.AdvanceValue().ShouldBe(4);
-            _theSequence.AdvanceValue().ShouldBe(5);
+            theSequence.AdvanceValue().ShouldBe(1);
+            theSequence.AdvanceValue().ShouldBe(2);
+            theSequence.AdvanceValue().ShouldBe(3);
+            theSequence.AdvanceValue().ShouldBe(4);
+            theSequence.AdvanceValue().ShouldBe(5);
         }
 
         [Fact]
@@ -82,7 +91,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
         {
             for (var i = 0; i < 5000; i++)
             {
-                _theSequence.NextLong().ShouldBe(i + 1);
+                theSequence.NextLong().ShouldBe(i + 1);
             }
         }
 
@@ -94,7 +103,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
                 for (int i = 0; i < 1000; i++)
                 {
-                    list.Add(_theSequence.NextInt());
+                    list.Add(theSequence.NextInt());
                 }
 
                 return list;

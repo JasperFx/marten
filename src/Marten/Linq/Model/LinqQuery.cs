@@ -42,7 +42,7 @@ namespace Marten.Linq.Model
             _joins = joins;
 
             // TODO -- going to have to push in the ITenant eventually
-            _mapping = store.DefaultTenant.MappingFor(model.SourceType()).ToQueryableDocument();
+            _mapping = store.Tenancy.Default.MappingFor(model.SourceType()).ToQueryableDocument();
 
             for (var i = 0; i < model.BodyClauses.Count; i++)
             {
@@ -258,7 +258,7 @@ namespace Marten.Linq.Model
             IIncludeJoin[] includeJoins)
         {
             var selector =
-                _innerSelector = SelectorParser.ChooseSelector<T>("d.data", _store.DefaultTenant, _mapping, Model, subQuery, _store.Serializer, joins);
+                _innerSelector = SelectorParser.ChooseSelector<T>("d.data", _store.Tenancy.Default, _mapping, Model, subQuery, _store.Serializer, joins);
 
             if (stats != null)
             {

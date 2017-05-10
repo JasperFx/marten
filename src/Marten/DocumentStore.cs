@@ -12,8 +12,6 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Transforms;
-using Marten.Util;
-using Npgsql;
 using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
@@ -74,16 +72,13 @@ namespace Marten
             options.CreatePatching();
 
             Options = options;
-            _connectionFactory = options.ConnectionFactory();
 
             _logger = options.Logger();
 
-            // TODO -- think this is temporary
-            var tenant = new Tenant(options.Storage, options, options.ConnectionFactory(), "default");
-            DefaultTenant = tenant;
-            Schema = new TenantSchema(options, _connectionFactory, tenant);
+            Tenancy = options.Tenancy;
+            Tenancy.Initialize();
 
-
+            Schema = Tenancy.Schema;
 
             Storage = options.Storage;
 
@@ -91,20 +86,16 @@ namespace Marten
 
             Serializer = options.Serializer();
 
-            var cleaner = new DocumentCleaner(_connectionFactory, this, DefaultTenant);
             if (options.UseCharBufferPooling)
             {
                 _writerPool = new CharArrayTextWriter.Pool();
             }
 
-            Advanced = new AdvancedOptions(this, cleaner, _writerPool);
+            Advanced = new AdvancedOptions(this);
 
             Diagnostics = new Diagnostics(this);
 
-
-            CreateDatabaseObjects();
-
-            Transform = new DocumentTransforms(this, _connectionFactory, DefaultTenant);
+            Transform = new DocumentTransforms(this, Tenancy.Default);
 
             options.InitialData.Each(x => x.Populate(this));
 
@@ -115,15 +106,14 @@ namespace Marten
             Events = options.Events;
         }
 
-        public EventGraph Events { get; }
+        public ITenancy Tenancy { get; }
 
-        public ITenant DefaultTenant { get; }
+        public EventGraph Events { get; }
 
         internal IQueryHandlerFactory HandlerFactory { get; }
 
         internal MartenExpressionParser Parser { get; }
 
-        private readonly IConnectionFactory _connectionFactory;
         private readonly IMartenLogger _logger;
         private readonly CharArrayTextWriter.IPool _writerPool;
 
@@ -141,185 +131,70 @@ namespace Marten
         public IDocumentSchema Schema { get; }
         public AdvancedOptions Advanced { get; }
 
-        private void CreateDatabaseObjects()
-        {
-            if (Options.AutoCreateSchemaObjects == AutoCreate.None) return;
-
-            var allSchemaNames = Storage.AllSchemaNames();
-            var generator = new DatabaseSchemaGenerator(Advanced);
-            generator.Generate(Options, allSchemaNames);
-        }
-
         public void BulkInsert<T>(T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
-            if (typeof (T) == typeof (object))
-            {
-                BulkInsertDocuments(documents.OfType<object>(), mode: mode);
-            }
-            else
-            {
-                using (var conn = _connectionFactory.Create())
-                {
-                    conn.Open();
-                    var tx = conn.BeginTransaction();
-
-                    try
-                    {
-                        bulkInsertDocuments(documents, batchSize, conn, mode);
-
-                        tx.Commit();
-                    }
-                    catch (Exception)
-                    {
-                        tx.Rollback();
-                        throw;
-                    }
-                }
-            }
+            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options, _writerPool);
+            bulkInsertion.BulkInsert(documents, mode, batchSize);
         }
 
         public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
-            var groups =
-                documents.Where(x => x != null)
-                         .GroupBy(x => x.GetType())
-                         .Select(group => typeof(BulkInserter<>).CloseAndBuildAs<IBulkInserter>(@group, @group.Key))
-                         .ToArray();
-
-            using (var conn = _connectionFactory.Create())
-            {
-                conn.Open();
-                var tx = conn.BeginTransaction();
-
-                try
-                {
-                    groups.Each(x => x.BulkInsert(batchSize, conn, this, mode));
-
-                    tx.Commit();
-                }
-                catch (Exception)
-                {
-                    tx.Rollback();
-                    throw;
-                }
-            }
+            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options, _writerPool);
+            bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
         }
 
-
-        internal interface IBulkInserter
+        public void BulkInsert<T>(string tenantId, T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000)
         {
-            void BulkInsert(int batchSize, NpgsqlConnection connection, DocumentStore parent, BulkInsertMode mode);
+            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options, _writerPool);
+            bulkInsertion.BulkInsert(documents, mode, batchSize);
         }
 
-        internal class BulkInserter<T> : IBulkInserter
+        public void BulkInsertDocuments(string tenantId, IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000)
         {
-            private readonly T[] _documents;
-
-            public BulkInserter(IEnumerable<object> documents)
-            {
-                _documents = documents.OfType<T>().ToArray();
-            }
-
-            public void BulkInsert(int batchSize, NpgsqlConnection connection, DocumentStore parent, BulkInsertMode mode)
-            {
-                parent.bulkInsertDocuments(_documents, batchSize, connection, mode);
-            }
-        }
-
-        private void bulkInsertDocuments<T>(T[] documents, int batchSize, NpgsqlConnection conn, BulkInsertMode mode)
-        {
-            var loader = DefaultTenant.BulkLoaderFor<T>();
-
-            if (mode != BulkInsertMode.InsertsOnly)
-            {
-                var sql = loader.CreateTempTableForCopying();
-                conn.RunSql(sql);
-            }
-
-            var writer = Options.UseCharBufferPooling ? _writerPool.Lease() : null;
-            try
-            {
-                if (documents.Length <= batchSize)
-                {
-                    if (mode == BulkInsertMode.InsertsOnly)
-                    {
-                        loader.Load(Serializer, conn, documents, writer);
-                    }
-                    else
-                    {
-                        loader.LoadIntoTempTable(Serializer, conn, documents, writer);
-                    }
-
-                }
-                else
-                {
-                    var total = 0;
-                    var page = 0;
-
-                    while (total < documents.Length)
-                    {
-                        var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
-
-                        if (mode == BulkInsertMode.InsertsOnly)
-                        {
-                            loader.Load(Serializer, conn, batch, writer);
-                        }
-                        else
-                        {
-                            loader.LoadIntoTempTable(Serializer, conn, batch, writer);
-                        }
-
-
-                        page++;
-                        total += batch.Length;
-                    }
-                }
-            }
-            finally
-            {
-                if (writer != null)
-                {
-                    _writerPool.Release(writer);
-                }
-            }
-
-            if (mode == BulkInsertMode.IgnoreDuplicates)
-            {
-                var copy = loader.CopyNewDocumentsFromTempTable();
-
-                conn.RunSql(copy);
-            }
-            else if (mode == BulkInsertMode.OverwriteExisting)
-            {
-                var overwrite = loader.OverwriteDuplicatesFromTempTable();
-                var copy = loader.CopyNewDocumentsFromTempTable();
-                
-                conn.RunSql(overwrite, copy);
-            }
+            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options, _writerPool);
+            bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
         }
 
         public IDiagnostics Diagnostics { get; }
 
         public IDocumentSession OpenSession(SessionOptions options)
         {
-            var connection = new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, options.IsolationLevel, options.Timeout);
-            return openSession(options.Tracking, connection, options.Listeners);
+            return openSession(options);
         }
 
         public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
-            var connection = new ManagedConnection(_connectionFactory, CommandRunnerMode.Transactional, isolationLevel);
-            return openSession(tracking, connection, new List<IDocumentSessionListener>());
+            return openSession(new SessionOptions
+            {
+                Tracking = tracking,
+                IsolationLevel = isolationLevel
+            });
         }
 
-        private IDocumentSession openSession(DocumentTracking tracking, ManagedConnection connection, IList<IDocumentSessionListener> localListeners)
+        public IDocumentSession OpenSession(string tenantId, DocumentTracking tracking = DocumentTracking.IdentityOnly,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        {
+            return openSession(new SessionOptions
+            {
+                Tracking = tracking,
+                IsolationLevel = isolationLevel,
+                TenantId = tenantId
+            });
+        }
+
+        private IDocumentSession openSession(SessionOptions options)
         {
             var sessionPool = CreateWriterPool();
-            var map = createMap(tracking, sessionPool, localListeners);
+            var map = createMap(options.Tracking, sessionPool, options.Listeners);
 
-            // TODO -- need to pass in the default tenant instead when that exists
-            var session = new DocumentSession(this, connection, _parser, map, DefaultTenant, localListeners);
+            var tenant = Tenancy[options.TenantId];
+            var connection = tenant.OpenConnection(CommandRunnerMode.Transactional, options.IsolationLevel, options.Timeout);
+            
+
+            var session = new DocumentSession(this, connection, _parser, map, tenant, options.Listeners);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
@@ -355,18 +230,31 @@ namespace Marten
             return OpenSession(DocumentTracking.DirtyTracking, isolationLevel);
         }
 
+        public IDocumentSession DirtyTrackedSession(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        {
+            return OpenSession(tenantId, DocumentTracking.DirtyTracking, isolationLevel);
+        }
+
         public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             return OpenSession(DocumentTracking.None, isolationLevel);
+        }
+
+        public IDocumentSession LightweightSession(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        {
+            return OpenSession(tenantId, DocumentTracking.None, isolationLevel);
         }
 
         public IQuerySession QuerySession(SessionOptions options)
         {
             var parser = new MartenQueryParser();
 
+            var tenant = Tenancy[options.TenantId];
+            var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
+
             var session = new QuerySession(this,
-                new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout), parser,
-                new NulloIdentityMap(Serializer), DefaultTenant);
+                connection, parser,
+                new NulloIdentityMap(Serializer), tenant);
 
             session.Logger = _logger.StartSession(session);
 
@@ -375,11 +263,19 @@ namespace Marten
 
         public IQuerySession QuerySession()
         {
+            return QuerySession(Marten.Storage.Tenancy.DefaultTenantId);
+        }
+
+        public IQuerySession QuerySession(string tenantId)
+        {
             var parser = new MartenQueryParser();
 
+            var tenant = Tenancy[tenantId];
+            var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
+
             var session = new QuerySession(this,
-                new ManagedConnection(_connectionFactory, CommandRunnerMode.ReadOnly), parser,
-                new NulloIdentityMap(Serializer), DefaultTenant);
+                connection, parser,
+                new NulloIdentityMap(Serializer), tenant);
 
             session.Logger = _logger.StartSession(session);
 
@@ -387,16 +283,17 @@ namespace Marten
         }
 
         public IDocumentTransforms Transform { get; }
+
         public IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null)
         {
-            DefaultTenant.EnsureStorageExists(typeof(EventStream));
+            Tenancy.Default.EnsureStorageExists(typeof(EventStream));
 
             if (projections == null)
             {
                 projections = viewTypes?.Select(x => Events.ProjectionFor(x)).Where(x => x != null).ToArray() ?? Events.AsyncProjections.ToArray();
             }
 
-            return new Daemon(this, DefaultTenant, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), projections);
+            return new Daemon(this, Tenancy.Default, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), projections);
         }
     }
 }

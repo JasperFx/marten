@@ -1,15 +1,18 @@
+using System;
+using Marten.Storage;
+
 namespace Marten.Schema.Identity.Sequences
 {
     public class LongHiloGenerator : IIdGenerator<long>
     {
-        public LongHiloGenerator(ISequence sequence)
+        private readonly Type _documentType;
+
+        public LongHiloGenerator(Type documentType)
         {
-            Sequence = sequence;
+            _documentType = documentType;
         }
 
-        public ISequence Sequence { get; }
-
-        public long Assign(long existing, out bool assigned)
+        public long Assign(ITenant tenant, long existing, out bool assigned)
         {
             if (existing > 0)
             {
@@ -17,7 +20,7 @@ namespace Marten.Schema.Identity.Sequences
                 return existing;
             }
 
-            var next = Sequence.NextLong();
+            var next = tenant.Sequences.SequenceFor(_documentType).NextLong();
 
             assigned = true;
 

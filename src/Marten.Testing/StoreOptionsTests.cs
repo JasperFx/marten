@@ -4,6 +4,7 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Npgsql;
 using NpgsqlTypes;
@@ -146,12 +147,12 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public object Assign(User document, out bool assigned)
+            public object Assign(ITenant tenant, User document, out bool assigned)
             {
                 throw new NotImplementedException();
             }
 
-            public void Assign(User document, object id)
+            public void Assign(ITenant tenant, User document, object id)
             {
                 document.Id = (Guid) id;
             }
@@ -226,12 +227,12 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public object Assign(Company document, out bool assigned)
+            public object Assign(ITenant tenant, Company document, out bool assigned)
             {
                 throw new NotImplementedException();
             }
 
-            public void Assign(Company document, object id)
+            public void Assign(ITenant tenant, Company document, object id)
             {
                 document.Id = (Guid) id;
             }
