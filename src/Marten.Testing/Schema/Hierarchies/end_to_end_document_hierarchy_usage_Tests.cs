@@ -325,7 +325,6 @@ namespace Marten.Testing.Schema.Hierarchies
             StoreOptions(
                 _ =>
                 {
-                    _.Logger(new ConsoleMartenLogger());
                     _.Schema.For<User>().AddSubClass<SuperUser>().AddSubClass<AdminUser>().Duplicate(x => x.UserName);
                 });
         }

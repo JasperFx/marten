@@ -8,11 +8,6 @@ namespace Marten.Testing
 {
     public class bulk_loading_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
-        public bulk_loading_Tests()
-        {
-            StoreOptions(_ => _.Logger(new ConsoleMartenLogger()));
-        }
-
         [Fact]
         public void load_with_ignore_duplicates()
         {
