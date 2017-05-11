@@ -35,6 +35,11 @@ namespace Marten.Storage
                 AddColumn<DeletedAtColumn>();
             }
 
+            if (mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                AddColumn<TenantIdColumn>();
+            }
+
             Indexes.AddRange(mapping.Indexes);
             ForeignKeys.AddRange(mapping.ForeignKeys);
         }
@@ -83,6 +88,17 @@ namespace Marten.Storage
     {
         protected SystemColumn(string name, string type) : base(name, type)
         {
+        }
+    }
+
+    public class TenantIdColumn : SystemColumn
+    {
+        public static readonly string Name = "tenant_id";
+
+        public TenantIdColumn() : base(Name, "varchar")
+        {
+            CanAdd = true;
+            Directive = $"DEFAULT '{Tenancy.DefaultTenantId}'";
         }
     }
 

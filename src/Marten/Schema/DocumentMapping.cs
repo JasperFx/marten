@@ -55,6 +55,8 @@ namespace Marten.Schema
             applyAnyMartenAttributes(documentType);
         }
 
+        public TenancyStyle TenancyStyle => _storeOptions.Tenancy.Style;
+
         private void applyAnyMartenAttributes(Type documentType)
         {
             documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
