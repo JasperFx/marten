@@ -70,6 +70,44 @@ namespace Marten.Testing
         }
 
         [Fact]
+        public void single_tenancy_by_default()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+            });
+
+            store.Tenancy.ShouldBeOfType<SingleTenant>();
+        }
+
+        [Fact]
+        public void configure_conjoined_tenancy()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString)
+                    .MultiTenanted();
+            });
+
+            store.Tenancy.Style.ShouldBe(TenancyStyle.Conjoined);
+            store.Tenancy.ShouldBeOfType<ConjoinedTenancy>();
+        }
+
+        [Fact]
+        public void configure_conjoined_tenancy_2()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(() => ConnectionSource.ConnectionString)
+                    .MultiTenanted();
+                
+            });
+
+            store.Tenancy.Style.ShouldBe(TenancyStyle.Conjoined);
+            store.Tenancy.ShouldBeOfType<ConjoinedTenancy>();
+        }
+
+        [Fact]
         public void default_ddl_rules()
         {
             var options = new StoreOptions();

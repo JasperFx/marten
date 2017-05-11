@@ -14,6 +14,8 @@ namespace Marten.Storage
 {
     public interface ITenant
     {
+        string TenantId { get; }
+
         /// <summary>
         /// Retrieves or generates the active IDocumentStorage object
         /// for the given document type

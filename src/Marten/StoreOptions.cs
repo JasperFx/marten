@@ -18,7 +18,7 @@ namespace Marten
     ///     necessary to customize and bootstrap a working
     ///     DocumentStore
     /// </summary>
-    public class StoreOptions
+    public class StoreOptions : StoreOptions.ITenancyExpression
     {
 
         /// <summary>
@@ -48,8 +48,6 @@ namespace Marten
 
         private string _databaseSchemaName = DefaultDatabaseSchemaName;
 
-        [Obsolete("Get rid of this")]
-        private IConnectionFactory _factory;
         private IMartenLogger _logger = new NulloMartenLogger();
         private ISerializer _serializer;
 
@@ -146,18 +144,20 @@ namespace Marten
         ///     Supply the connection string to the Postgresql database
         /// </summary>
         /// <param name="connectionString"></param>
-        public void Connection(string connectionString)
+        public ITenancyExpression Connection(string connectionString)
         {
-            Tenancy = new SingleTenant(new ConnectionFactory(connectionString), this);
+            _factory = new ConnectionFactory(connectionString);
+            return this;
         }
 
         /// <summary>
         ///     Supply a source for the connection string to a Postgresql database
         /// </summary>
         /// <param name="connectionSource"></param>
-        public void Connection(Func<string> connectionSource)
+        public ITenancyExpression Connection(Func<string> connectionSource)
         {
-            Tenancy = new SingleTenant(new ConnectionFactory(connectionSource), this);
+            _factory = new ConnectionFactory(connectionSource);
+            return this;
         }
 
         /// <summary>
@@ -165,9 +165,10 @@ namespace Marten
         ///     the Postgresql database
         /// </summary>
         /// <param name="source"></param>
-        public void Connection(Func<NpgsqlConnection> source)
+        public ITenancyExpression Connection(Func<NpgsqlConnection> source)
         {
-            Tenancy = new SingleTenant(new LambdaConnectionFactory(source), this);
+            _factory = new LambdaConnectionFactory(source);
+            return this;
         }
 
         /// <summary>
@@ -252,7 +253,6 @@ namespace Marten
             throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
         }
 
-        internal ITenancy Tenancy { get; private set; }
 
         internal void Validate()
         {
@@ -260,6 +260,35 @@ namespace Marten
             {
                 mapping.Validate();
             }
-}
+		}
+
+        private ITenancy _tenancy;
+        private TenancyStyle _tenancyStyle = TenancyStyle.Single;
+        private IConnectionFactory _factory;
+
+        internal ITenancy Tenancy
+        {
+            get
+            {
+                if (_tenancy == null)
+                {
+                    _tenancy = _tenancyStyle == TenancyStyle.Single
+                        ? new SingleTenant(_factory, this).As<ITenancy>()
+                        : new ConjoinedTenancy(_factory, this).As<ITenancy>();
+                }
+
+                return _tenancy;
+            }
+        }
+
+        void ITenancyExpression.MultiTenanted()
+        {
+            _tenancyStyle = TenancyStyle.Conjoined;
+        }
+
+        public interface ITenancyExpression
+        {
+            void MultiTenanted();
+        }
     }
 }

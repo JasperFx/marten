@@ -33,7 +33,7 @@ namespace Marten.Storage
                 {DocumentMapping.DotNetTypeColumn, fieldIndex++}
             };
             var queryableDocument = _mapping.ToQueryableDocument();
-            if (Enumerable.Contains(queryableDocument.SelectFields(), DocumentMapping.DocumentTypeColumn))
+            if (queryableDocument.SelectFields().Contains(DocumentMapping.DocumentTypeColumn))
                 _fields.Add(DocumentMapping.DocumentTypeColumn, fieldIndex++);
             if (queryableDocument.DeleteStyle == DeleteStyle.SoftDelete)
             {
@@ -46,7 +46,7 @@ namespace Marten.Storage
         {
             sql.Append("select ");
 
-            var fields = Enumerable.OrderBy<KeyValuePair<string, int>, int>(_fields, kv => kv.Value).Select(kv => kv.Key).ToArray();
+            var fields = _fields.OrderBy(kv => kv.Value).Select(kv => kv.Key).ToArray();
 
             sql.Append(fields[0]);
             for (var i = 1; i < fields.Length; i++)
