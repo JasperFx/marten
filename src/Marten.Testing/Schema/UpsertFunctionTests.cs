@@ -35,5 +35,34 @@ namespace Marten.Testing.Schema
             func.OrderedArguments().OfType<CurrentVersionArgument>().Any()
                 .ShouldBeFalse();
         }
+
+        [Fact]
+        public void no_tenant_id_if_single_tenant()
+        {
+            var options = new StoreOptions();
+            options.Connection(ConnectionSource.ConnectionString);
+
+            var mapping = new DocumentMapping(typeof(User), options);
+
+            var func = new UpsertFunction(mapping);
+
+            func.Arguments.Any(x => x is TenantIdArgument)
+                .ShouldBeFalse();
+        }
+
+        [Fact]
+        public void tenant_id_argument_when_multi_tenanted()
+        {
+            var options = new StoreOptions();
+            options.Connection(ConnectionSource.ConnectionString)
+                .MultiTenanted();
+
+            var mapping = new DocumentMapping(typeof(User), options);
+
+            var func = new UpsertFunction(mapping);
+
+            func.Arguments.Any(x => x is TenantIdArgument)
+                .ShouldBeTrue();
+        }
     }
 }

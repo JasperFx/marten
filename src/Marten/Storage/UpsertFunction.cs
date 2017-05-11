@@ -52,6 +52,11 @@ namespace Marten.Storage
                 Arguments.Add(new CurrentVersionArgument());
             }
 
+            if (mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                Arguments.Add(new TenantIdArgument());
+            }
+
         }
 
         public override void Write(DdlRules rules, StringWriter writer)

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
+using Marten.Storage;
 using Npgsql;
 
 namespace Marten.Services
@@ -17,7 +18,7 @@ namespace Marten.Services
         private readonly List<CharArrayTextWriter> _writers = new List<CharArrayTextWriter>();
         private readonly DocumentStore _store;
 
-        public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool)
+        public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool, ITenant tenant)
         {
             if (versions == null) throw new ArgumentNullException(nameof(versions));
 
@@ -27,6 +28,7 @@ namespace Marten.Services
 
             _commands.Push(new BatchCommand(_store.Serializer));
             Connection = connection;
+            TenantId = tenant.TenantId;
         }
 
         public ISerializer Serializer => _store.Serializer;
@@ -196,5 +198,6 @@ namespace Marten.Services
         }
 
         public bool UseCharBufferPooling => _store.Options.UseCharBufferPooling;
+        public string TenantId { get; }
     }
 }

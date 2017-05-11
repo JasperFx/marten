@@ -21,7 +21,7 @@ namespace Marten.Schema.BulkLoading
         private readonly DocumentMapping _mapping;
         private readonly string _sql;
 
-        private readonly Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter> _transferData;
+        private readonly Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter, string> _transferData;
         private readonly string _tempTableName;
 
 
@@ -39,11 +39,12 @@ namespace Marten.Schema.BulkLoading
             var alias = Expression.Parameter(typeof(string), "alias");
             var serializerParam = Expression.Parameter(typeof(ISerializer), "serializer");
             var textWriter = Expression.Parameter(typeof(CharArrayTextWriter), "writer");
+            var tenantId = Expression.Parameter(typeof(string), "tenantId");
 
             var arguments = upsertFunction.OrderedArguments().Where(x => !(x is CurrentVersionArgument)).ToArray();
             var expressions =
                 arguments.Select(
-                    x => x.CompileBulkImporter(serializer.EnumStorage, writer, document, alias, serializerParam, textWriter));
+                    x => x.CompileBulkImporter(serializer.EnumStorage, writer, document, alias, serializerParam, textWriter, tenantId));
 
             var columns = arguments.Select(x => $"\"{x.Column}\"").Join(", ");
             _baseSql = $"COPY %TABLE%({columns}) FROM STDIN BINARY";
@@ -51,10 +52,12 @@ namespace Marten.Schema.BulkLoading
 
             var block = Expression.Block(expressions);
 
-            var lambda = Expression.Lambda<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter>>(block, document, alias,
-                serializerParam, writer, textWriter);
+            
 
-            _transferData = ExpressionCompiler.Compile<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter>>(lambda);
+            var lambda = Expression.Lambda<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter, string>>(block, document, alias,
+                serializerParam, writer, textWriter, tenantId);
+
+            _transferData = ExpressionCompiler.Compile<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter, string>>(lambda);
         }
 
         public void Load(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
@@ -117,7 +120,7 @@ namespace Marten.Schema.BulkLoading
 
                     writer.StartRow();
 
-                    _transferData(document, _mapping.AliasFor(document.GetType()), serializer, writer, textWriter);
+                    _transferData(document, _mapping.AliasFor(document.GetType()), serializer, writer, textWriter, tenant.TenantId);
                     textWriter.Clear();
                 }
             }

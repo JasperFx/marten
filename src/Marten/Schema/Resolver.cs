@@ -27,7 +27,7 @@ namespace Marten.Schema
         private readonly DocumentMapping _mapping;
         private readonly bool _useCharBufferPooling;
         private readonly DbObjectName _upsertName;
-        private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid> _sprocWriter;
+        private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string> _sprocWriter;
 
         public DocumentStorage(ISerializer serializer, DocumentMapping mapping, bool useCharBufferPooling)
         {
@@ -67,7 +67,7 @@ namespace Marten.Schema
 
         public string DeleteByIdSql { get; }
 
-        private Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid> buildSprocWriter(DocumentMapping mapping)
+        private Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string> buildSprocWriter(DocumentMapping mapping)
         {
             var call = Expression.Parameter(typeof(SprocCall), "call");
             var doc = Expression.Parameter(typeof(T), "doc");
@@ -77,20 +77,22 @@ namespace Marten.Schema
             var currentVersion = Expression.Parameter(typeof(Guid?), "currentVersion");
             var newVersion = Expression.Parameter(typeof(Guid), "newVersion");
 
+            var tenantId = Expression.Parameter(typeof(string), "tenantId");
+
             var arguments = new UpsertFunction(mapping).OrderedArguments().Select(x =>
             {
-                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, currentVersion, newVersion, _useCharBufferPooling);
+                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, currentVersion, newVersion, tenantId, _useCharBufferPooling);
             });
 
             var block = Expression.Block(arguments);
 
-            var lambda = Expression.Lambda<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid>>(block,
+            var lambda = Expression.Lambda<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string>>(block,
                 new ParameterExpression[]
                 {
-                    call, doc, batch, mappingParam, currentVersion, newVersion
+                    call, doc, batch, mappingParam, currentVersion, newVersion, tenantId
                 });
 
-            return ExpressionCompiler.Compile<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid>>(lambda);
+            return ExpressionCompiler.Compile<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string>>(lambda);
         }
 
         public Type DocumentType => _mapping.DocumentType;
@@ -210,7 +212,7 @@ namespace Marten.Schema
 
             
 
-            _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion);
+            _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion, batch.TenantId);
         }
 
     
