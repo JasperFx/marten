@@ -18,14 +18,14 @@ namespace Marten.Storyteller
         {
             using (var runner = StorytellerRunner.For<MartenSystem>())
             {
-                var results = runner.Run("Event Store / Async Daemon / Rebuild Projection in a Separate Schema Multiple Times");
+                var results = runner.Run("Document Filtering / Default Document Filters");
                 Console.WriteLine(results.Counts);
 
                 //results = runner.Run("Event Store / Async Daemon / Rebuild Projection");
                
                 //Console.WriteLine(results.Counts);
                 
-                //runner.OpenResultsInBrowser();
+                runner.OpenResultsInBrowser();
             }
         }
     }

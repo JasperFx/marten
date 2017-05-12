@@ -127,14 +127,14 @@ namespace Marten.Schema
 
         private IEnumerable<IWhereFragment> defaultFilters()
         {
-            if (_storeOptions.Tenancy.Style == TenancyStyle.Conjoined)
-            {
-                yield return new WhereFragment($"{TenantIdColumn.Name} = :{TenantIdArgument.ArgName}");
-            }
-
             if (DeleteStyle == DeleteStyle.SoftDelete)
             {
                 yield return ExcludeSoftDeletedDocuments();
+            }
+
+            if (_storeOptions.Tenancy.Style == TenancyStyle.Conjoined)
+            {
+                yield return new TenantWhereFragment();
             }
         }
 

@@ -15,10 +15,12 @@ namespace Marten.Schema
 {
     public class SubClassMapping : IDocumentMapping, IQueryableDocument
     {
+        private readonly StoreOptions _storeOptions;
         private readonly DocumentMapping _inner;
 
         public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions, string alias = null)
         {
+            _storeOptions = storeOptions;
             DocumentType = documentType;
             _inner = new DocumentMapping(documentType, storeOptions);
             Parent = parent;
@@ -97,17 +99,36 @@ namespace Marten.Schema
             return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
         }
 
+        private IEnumerable<IWhereFragment> defaultFilters()
+        {
+            yield return toBasicWhere();
+
+            if (_storeOptions.Tenancy.Style == TenancyStyle.Conjoined)
+            {
+                yield return new TenantWhereFragment();
+            }
+
+            if (DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                yield return DocumentMapping.ExcludeSoftDeletedDocuments();
+            }
+
+            
+        }
+
         public IWhereFragment DefaultWhereFragment()
         {
-            var basicWhere = toBasicWhere();
+            var defaults = defaultFilters().ToArray();
+            switch (defaults.Length)
+            {
+                case 0:
+                    return null;
 
-            if (Parent.DeleteStyle == DeleteStyle.Remove)
-            {
-                return basicWhere;
-            }
-            else
-            {
-                return new CompoundWhereFragment(" and ", basicWhere, DocumentMapping.ExcludeSoftDeletedDocuments());
+                case 1:
+                    return defaults[0];
+
+                default:
+                    return new CompoundWhereFragment("and", defaults);
             }
         }
 

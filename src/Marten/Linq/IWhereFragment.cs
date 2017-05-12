@@ -44,11 +44,13 @@ namespace Marten.Linq
 
         public static string ToSql(this IWhereFragment fragment)
         {
+            if (fragment == null) return null;
+
             var cmd = new NpgsqlCommand();
             var builder = new CommandBuilder(cmd);
             fragment.Apply(builder);
 
-            return builder.ToString();
+            return builder.ToString().Trim();
         }
 
     }
