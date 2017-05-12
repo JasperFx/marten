@@ -6,9 +6,12 @@ namespace Marten.Schema.Arguments
 {
     public class TenantIdArgument : UpsertArgument
     {
+        public const string ArgName = "tenantid";
+
+
         public TenantIdArgument()
         {
-            Arg = "tenantid";
+            Arg = ArgName;
             PostgresType = "varchar";
             DbType = NpgsqlDbType.Varchar;
             Column = TenantIdColumn.Name;

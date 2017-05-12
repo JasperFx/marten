@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -743,6 +744,54 @@ namespace Marten.Testing.Schema
 
             var table = new DocumentTable(mapping);
             table.Any(x => x is TenantIdColumn).ShouldBeTrue();
+        }
+    }
+
+    public class default_where_fragments_in_all_its_splendorous_permutations : IntegratedFixture
+    {
+        protected IWhereFragment[] defaultFragmentsFor(Type documentType)
+        {
+            var mapping = theStore.Storage.MappingFor(documentType);
+            return mapping.DefaultWhereFragment().Flatten();
+        }
+
+        [Fact]
+        public void all_defaults()
+        {
+            defaultFragmentsFor(typeof(User)).Any().ShouldBeFalse();
+        }
+
+        [Fact]
+        public void as_soft_deleted()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<User>().SoftDeleted();
+            });
+
+            defaultFragmentsFor(typeof(User)).Single().ToSql()
+                .ShouldBe("d.mt_deleted = False");
+        }
+
+        [Fact]
+        public void as_multi_tenanted()
+        {
+            StoreOptions(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString).MultiTenanted();
+            });
+
+            defaultFragmentsFor(typeof(User)).Single().ToSql()
+                .ShouldBe("tenant_id = :tenantid");
+        }
+
+        [Fact]
+        public void as_soft_deleted_and_multi_tenanted()
+        {
+            StoreOptions(_ =>
+            {
+                
+            });
         }
     }
 }

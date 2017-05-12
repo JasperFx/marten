@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Linq;
+using Marten.Schema.Arguments;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services.Includes;
@@ -99,12 +100,42 @@ namespace Marten.Schema
             }
         }
 
+        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
+        {
+            if (DeleteStyle == DeleteStyle.Remove) return query;
+
+            if (query.Contains(DeletedColumn)) return query;
+
+            return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
+        }
 
         public IWhereFragment DefaultWhereFragment()
         {
-            if (DeleteStyle == DeleteStyle.Remove) return null;
+            var defaults = defaultFilters().ToArray();
+            switch (defaults.Length)
+            {
+                case 0:
+                    return null;
 
-            return ExcludeSoftDeletedDocuments();
+                case 1:
+                    return defaults[0];
+
+                default:
+                    return new CompoundWhereFragment("and", defaults);
+            }
+        }
+
+        private IEnumerable<IWhereFragment> defaultFilters()
+        {
+            if (_storeOptions.Tenancy.Style == TenancyStyle.Conjoined)
+            {
+                yield return new WhereFragment($"{TenantIdColumn.Name} = :{TenantIdArgument.ArgName}");
+            }
+
+            if (DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                yield return ExcludeSoftDeletedDocuments();
+            }
         }
 
         public static IWhereFragment ExcludeSoftDeletedDocuments()
@@ -194,14 +225,7 @@ namespace Marten.Schema
 
 
 
-        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
-        {
-            if (DeleteStyle == DeleteStyle.Remove) return query;
 
-            if (query.Contains(DeletedColumn)) return query;
-
-            return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
-        }
 
         public static DocumentMapping<T> For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName,
             Func<IDocumentMapping, StoreOptions, IIdGeneration> idGeneration = null)
