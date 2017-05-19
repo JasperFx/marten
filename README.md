@@ -25,7 +25,7 @@ From there, open Visual Studio.Net or whatever editor you prefer and go to town.
 
 ## Tooling
 
-We're using [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly) for unit testing and [paket](https://fsprojects.github.io/Paket/) for improved Nuget workflow. We're temporarily using rake for build automation, but it's not mandatory for development.
+We're using [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly) for unit testing and [paket](https://fsprojects.github.io/Paket/) for improved Nuget workflow. We're using rake for build automation, but it's not mandatory for development.
 
 ## Mocha Specs
 
