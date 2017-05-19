@@ -86,17 +86,24 @@ namespace Marten.Schema
 
         public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
         {
-            if (Parent.DeleteStyle == DeleteStyle.Remove)
+            var extras = extraFilters(query).ToArray();
+
+            return query.Append(extras);
+        }
+
+        private IEnumerable<IWhereFragment> extraFilters(IWhereFragment query)
+        {
+            yield return toBasicWhere();
+
+            if (DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(DocumentMapping.DeletedColumn))
             {
-                return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
+                yield return DocumentMapping.ExcludeSoftDeletedDocuments();
             }
 
-            if (query.Contains(DocumentMapping.DeletedColumn))
+            if (_storeOptions.Tenancy.Style == TenancyStyle.Conjoined)
             {
-                return new CompoundWhereFragment("and", toBasicWhere(), query);
+                yield return new TenantWhereFragment();
             }
-
-            return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
         }
 
         private IEnumerable<IWhereFragment> defaultFilters()
@@ -135,7 +142,7 @@ namespace Marten.Schema
         private WhereFragment toBasicWhere()
         {
             var aliasValues = Aliases.Select(a => $"d.{DocumentMapping.DocumentTypeColumn} = '{a}'").ToArray().Join(" or ");
-            var basicWhere = new WhereFragment(aliasValues);
+            var basicWhere = new WhereFragment($"({aliasValues})");
             return basicWhere;
         }
 

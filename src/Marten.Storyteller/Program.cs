@@ -18,7 +18,7 @@ namespace Marten.Storyteller
         {
             using (var runner = StorytellerRunner.For<MartenSystem>())
             {
-                var results = runner.Run("Document Filtering / Default Document Filters");
+                var results = runner.Run("Document Filtering / Non Default Document Filters");
                 Console.WriteLine(results.Counts);
 
                 //results = runner.Run("Event Store / Async Daemon / Rebuild Projection");

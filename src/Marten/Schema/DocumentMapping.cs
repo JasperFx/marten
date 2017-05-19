@@ -102,11 +102,23 @@ namespace Marten.Schema
 
         public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
         {
-            if (DeleteStyle == DeleteStyle.Remove) return query;
+            var extras = extraFilters(query).ToArray();
 
-            if (query.Contains(DeletedColumn)) return query;
+            return query.Append(extras);
 
-            return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
+        }
+
+        private IEnumerable<IWhereFragment> extraFilters(IWhereFragment query)
+        {
+            if (DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(DeletedColumn))
+            {
+                yield return ExcludeSoftDeletedDocuments();
+            }
+
+            if (_storeOptions.Tenancy.Style == TenancyStyle.Conjoined)
+            {
+                yield return new TenantWhereFragment();
+            }
         }
 
         public IWhereFragment DefaultWhereFragment()

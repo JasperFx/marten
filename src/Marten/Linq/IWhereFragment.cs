@@ -30,6 +30,18 @@ namespace Marten.Linq
 
         }
 
+        public static IWhereFragment Append(this IWhereFragment fragment, IWhereFragment[] others)
+        {
+            if (!others.Any()) return fragment;
+
+            foreach (var other in others)
+            {
+                fragment = fragment.Append(other);
+            }
+
+            return fragment;
+        }
+
         public static IWhereFragment[] Flatten(this IWhereFragment fragment)
         {
             if (fragment == null) return new IWhereFragment[0];
