@@ -322,7 +322,12 @@ namespace Marten
             {
                 var storage = _parent.Tenant.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IDocumentStorage<TDoc>>();
-                var cmd = storage.LoadByArrayCommand(keys);
+                var tenancyStyle = _parent._store.Tenancy.Style;
+                var cmd = storage.LoadByArrayCommand(tenancyStyle, keys);
+                if (tenancyStyle == TenancyStyle.Conjoined)
+                {
+                    cmd.AddNamedParameter(TenantIdArgument.ArgName, _parent.Tenant.TenantId);
+                }
 
                 var list = new List<TDoc>();
 
@@ -345,7 +350,7 @@ namespace Marten
             {
                 var storage = _parent.Tenant.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IDocumentStorage<TDoc>>();
-                var cmd = storage.LoadByArrayCommand(keys);
+                var cmd = storage.LoadByArrayCommand(_parent._store.Tenancy.Style, keys);
 
                 var list = new List<TDoc>();
 

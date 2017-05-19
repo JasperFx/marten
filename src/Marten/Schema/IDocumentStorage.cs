@@ -17,7 +17,7 @@ namespace Marten.Schema
         NpgsqlDbType IdType { get; }
         NpgsqlCommand LoaderCommand(object id);
 
-        NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids);
+        NpgsqlCommand LoadByArrayCommand<TKey>(TenancyStyle tenancyStyle, TKey[] ids);
 
         object Identity(object document);
 

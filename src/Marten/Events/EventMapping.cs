@@ -121,7 +121,7 @@ namespace Marten.Events
             return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = :id and type = '{Alias}'").With("id", id);
         }
 
-        public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
+        public NpgsqlCommand LoadByArrayCommand<TKey>(TenancyStyle tenancyStyle, TKey[] ids)
         {
             return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = ANY(:ids) and type = '{Alias}'").With("ids", ids);
         }

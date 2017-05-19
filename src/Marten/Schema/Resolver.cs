@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Baseline;
 using FastExpressionCompiler;
 using Marten.Linq;
+using Marten.Schema.Arguments;
 using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Services.Deletes;
@@ -170,9 +171,15 @@ namespace Marten.Schema
             return new NpgsqlCommand(_loaderSql).With("id", id);
         }
 
-        public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
+        public NpgsqlCommand LoadByArrayCommand<TKey>(TenancyStyle tenancyStyle, TKey[] ids)
         {
-            return new NpgsqlCommand(_loadArraySql).With("ids", ids);
+            var sql = _loadArraySql;
+            if (tenancyStyle == TenancyStyle.Conjoined)
+            {
+                sql += $" and {TenantIdColumn.Name} = :{TenantIdArgument.ArgName}";
+            }
+
+            return new NpgsqlCommand(sql).With("ids", ids);
         }
 
         public object Identity(object document)
