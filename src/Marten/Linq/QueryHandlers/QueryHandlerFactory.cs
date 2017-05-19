@@ -208,7 +208,7 @@ namespace Marten.Linq.QueryHandlers
 
             var handler = _store.HandlerFactory.BuildHandler<TOut>(model, includeJoins, stats);
 
-            var cmd = CommandBuilder.ToCommand(handler);
+            var cmd = CommandBuilder.ToCommand(_store.Tenancy.Default, handler);
 
             var cachedQuery = new CachedQuery
             {

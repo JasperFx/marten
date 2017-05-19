@@ -41,7 +41,7 @@ namespace Marten.Linq
                 throw new NotSupportedException("Not yet supporting these results: " +
                                                 queryModel.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
 
-            return Connection.Fetch(handler, IdentityMap.ForQuery(), Statistics);
+            return Connection.Fetch(handler, IdentityMap.ForQuery(), Statistics, Tenant);
         }
 
 
@@ -54,7 +54,7 @@ namespace Marten.Linq
                 throw new NotSupportedException("Not yet supporting these results: " +
                                                 queryModel.AllResultOperators().Select(x => x.GetType().Name).Join(", "));
 
-            return Connection.Fetch(handler, IdentityMap.ForQuery(), Statistics);
+            return Connection.Fetch(handler, IdentityMap.ForQuery(), Statistics, Tenant);
         }
 
         IEnumerable<T> IQueryExecutor.ExecuteCollection<T>(QueryModel queryModel)
@@ -63,7 +63,7 @@ namespace Marten.Linq
 
             var handler = new LinqQuery<T>(Store, queryModel, _includes.ToArray(), Statistics).ToList();
 
-            return Connection.Fetch(handler, IdentityMap.ForQuery(), Statistics);
+            return Connection.Fetch(handler, IdentityMap.ForQuery(), Statistics, Tenant);
         }
 
         public void AddInclude(IIncludeJoin include)

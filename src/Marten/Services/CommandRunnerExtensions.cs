@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
+using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 
@@ -42,9 +43,9 @@ namespace Marten.Services
             });
         }
 
-        public static T Fetch<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats)
+        public static T Fetch<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats, ITenant tenant)
         {
-            var command = CommandBuilder.ToCommand(handler);
+            var command = CommandBuilder.ToCommand(tenant, handler);
 
             return runner.Execute(command, c =>
             {
@@ -55,9 +56,9 @@ namespace Marten.Services
             });
         }
 
-        public static async Task<T> FetchAsync<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public static async Task<T> FetchAsync<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats, ITenant tenant, CancellationToken token)
         {
-            var command = CommandBuilder.ToCommand(handler);
+            var command = CommandBuilder.ToCommand(tenant, handler);
 
             return await runner.ExecuteAsync(command, async (c, tkn) =>
             {

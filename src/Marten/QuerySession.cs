@@ -60,7 +60,7 @@ namespace Marten
             assertNotDisposed();
 
             var handler = new UserSuppliedQueryHandler<T>(_store, sql, parameters);
-            return _connection.Fetch(handler, _identityMap.ForQuery(), null);
+            return _connection.Fetch(handler, _identityMap.ForQuery(), null, Tenant);
         }
 
         public Task<IList<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
@@ -68,7 +68,7 @@ namespace Marten
             assertNotDisposed();
 
             var handler = new UserSuppliedQueryHandler<T>(_store, sql, parameters);
-            return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, token);
+            return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, Tenant, token);
         }
 
         public IBatchedQuery CreateBatchQuery()
@@ -363,7 +363,7 @@ namespace Marten
 
             QueryStatistics stats;
             var handler = _store.HandlerFactory.HandlerFor(query, out stats);
-            return _connection.Fetch(handler, _identityMap.ForQuery(), stats);
+            return _connection.Fetch(handler, _identityMap.ForQuery(), stats, Tenant);
         }
 
         public Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
@@ -373,7 +373,7 @@ namespace Marten
 
             QueryStatistics stats;
             var handler = _store.HandlerFactory.HandlerFor(query, out stats);
-            return _connection.FetchAsync(handler, _identityMap.ForQuery(), stats, token);
+            return _connection.FetchAsync(handler, _identityMap.ForQuery(), stats, Tenant, token);
         }
 
         public NpgsqlConnection Connection

@@ -7,6 +7,7 @@ using Marten.Linq.QueryHandlers;
 using Npgsql;
 using NpgsqlTypes;
 using Baseline;
+using Marten.Storage;
 
 namespace Marten.Util
 {
@@ -25,7 +26,7 @@ namespace Marten.Util
             return cmd;
         }
 
-        public static NpgsqlCommand ToCommand(IQueryHandler handler)
+        public static NpgsqlCommand ToCommand(ITenant tenant, IQueryHandler handler)
         {
             var command = new NpgsqlCommand();
 
@@ -34,13 +35,18 @@ namespace Marten.Util
                 handler.ConfigureCommand(builder);
                 command.CommandText = builder._sql.ToString();
 
+                if (command.CommandText.Contains(":tenantid"))
+                {
+                    command.AddNamedParameter("tenantid", tenant.TenantId);
+                }
+
                 return command;
             }
         }
 
-        public static NpgsqlCommand ToBatchCommand(IEnumerable<IQueryHandler> handlers)
+        public static NpgsqlCommand ToBatchCommand(ITenant tenant, IEnumerable<IQueryHandler> handlers)
         {
-            if (handlers.Count() == 1) return ToCommand(handlers.Single());
+            if (handlers.Count() == 1) return ToCommand(tenant, handlers.Single());
 
             var wholeStatement = new StringBuilder();
             var command = new NpgsqlCommand();

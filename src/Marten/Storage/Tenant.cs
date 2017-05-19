@@ -258,7 +258,7 @@ namespace Marten.Storage
 
             using (var connection = OpenConnection())
             {
-                return connection.Fetch(handler, null, null);
+                return connection.Fetch(handler, null, null, this);
             }
         }
 
@@ -278,7 +278,7 @@ namespace Marten.Storage
 
             using (var connection = OpenConnection())
             {
-                return await connection.FetchAsync(handler, null, null, token).ConfigureAwait(false);
+                return await connection.FetchAsync(handler, null, null, this, token).ConfigureAwait(false);
             }
         }
     }

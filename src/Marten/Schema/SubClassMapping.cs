@@ -142,8 +142,7 @@ namespace Marten.Schema
         private WhereFragment toBasicWhere()
         {
             var aliasValues = Aliases.Select(a => $"d.{DocumentMapping.DocumentTypeColumn} = '{a}'").ToArray().Join(" or ");
-            var basicWhere = new WhereFragment($"({aliasValues})");
-            return basicWhere;
+            return new WhereFragment(aliasValues);
         }
 
         public IDocumentStorage BuildStorage(StoreOptions options)

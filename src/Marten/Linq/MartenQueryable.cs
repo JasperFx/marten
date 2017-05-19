@@ -37,7 +37,7 @@ namespace Marten.Linq
         {
             var handler = toDiagnosticHandler(fetchType);
 
-            var cmd = CommandBuilder.ToCommand(handler);
+            var cmd = CommandBuilder.ToCommand(Tenant, handler);
 
             return Executor.As<MartenQueryExecutor>().Connection.ExplainQuery(cmd, configureExplain);
         }
@@ -215,7 +215,7 @@ namespace Marten.Linq
         {
             var handler = toDiagnosticHandler(fetchType);
 
-            return CommandBuilder.ToCommand(handler);
+            return CommandBuilder.ToCommand(Tenant, handler);
         }
 
 
@@ -229,7 +229,7 @@ namespace Marten.Linq
 
             var handler = source(linq);
 
-            return Executor.Connection.FetchAsync(handler, Executor.IdentityMap.ForQuery(), Statistics, token);
+            return Executor.Connection.FetchAsync(handler, Executor.IdentityMap.ForQuery(), Statistics, Tenant, token);
         }
     }
 }
