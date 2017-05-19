@@ -1,9 +1,9 @@
 # Deleting by Id
 
 -> id = 85580f2e-6b08-4bad-bfe1-bc0168a0fce8
--> lifecycle = Acceptance
+-> lifecycle = Regression
 -> max-retries = 0
--> last-updated = 2017-05-19T17:01:52.0939063Z
+-> last-updated = 2017-05-19T19:45:40.2436409Z
 -> tags = 
 
 [MultiTenancyQuerying]

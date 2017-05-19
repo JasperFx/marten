@@ -1,9 +1,9 @@
 # Loading Documents by Id
 
 -> id = 1a213060-4314-4318-9c26-4b2831469b62
--> lifecycle = Acceptance
+-> lifecycle = Regression
 -> max-retries = 0
--> last-updated = 2017-05-19T17:17:15.6617583Z
+-> last-updated = 2017-05-19T19:45:18.2515340Z
 -> tags = 
 
 [MultiTenancyQuerying]
@@ -23,11 +23,12 @@
 |> CanLoadAdminById
     [table]
     |tenant|UserName|returnValue|
-    |Green |Bill    |True       |
+    |Green |Bill    |False      |
     |Blue  |Bill    |False      |
     |Green |Tom     |True       |
     |Blue  |Tom     |False      |
-    |Blue  |Jake    |True       |
+    |Blue  |Jake    |False      |
+    |Blue  |Rachel  |True       |
 
 |> CanLoadAdminById
     [table]

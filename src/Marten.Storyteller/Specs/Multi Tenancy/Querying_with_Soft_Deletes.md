@@ -1,9 +1,9 @@
 # Querying with Soft Deletes
 
 -> id = c26e6142-15e6-49be-8409-e1ff08e2c095
--> lifecycle = Acceptance
+-> lifecycle = Regression
 -> max-retries = 0
--> last-updated = 2017-05-19T16:52:57.9123385Z
+-> last-updated = 2017-05-19T19:45:40.2366409Z
 -> tags = 
 
 [MultiTenancyQuerying]

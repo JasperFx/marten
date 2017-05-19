@@ -7,9 +7,11 @@ using Baseline;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
+using Marten.Schema.Arguments;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Marten.Storage;
+using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Parsing.Structure;
 
@@ -90,6 +92,12 @@ namespace Marten
             var resolver = storage.As<IDocumentStorage<T>>();
 
             var cmd = storage.LoaderCommand(id);
+            if (DocumentStore.Tenancy.Style == TenancyStyle.Conjoined)
+            {
+                cmd.AddNamedParameter(TenantIdArgument.ArgName, Tenant.TenantId);
+                cmd.CommandText += $" and {TenantIdColumn.Name} = :{TenantIdArgument.ArgName}";
+            }
+
             return _connection.Execute(cmd, c =>
             {
                 using (var reader = cmd.ExecuteReader())
