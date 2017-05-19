@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -15,8 +16,7 @@ namespace Marten.Schema
 
         NpgsqlDbType IdType { get; }
         NpgsqlCommand LoaderCommand(object id);
-        NpgsqlCommand DeleteCommandForId(object id);
-        NpgsqlCommand DeleteCommandForEntity(object entity);
+
         NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids);
 
         object Identity(object document);
@@ -27,10 +27,10 @@ namespace Marten.Schema
 
         void Store(IIdentityMap map, object id, object entity);
 
-        IStorageOperation DeletionForId(object id);
-        IStorageOperation DeletionForEntity(object entity);
+        IStorageOperation DeletionForId(TenancyStyle tenancyStyle, object id);
+        IStorageOperation DeletionForEntity(TenancyStyle tenancyStyle, object entity);
 
-        IStorageOperation DeletionForWhere(IWhereFragment @where);
+        IStorageOperation DeletionForWhere(IWhereFragment @where, TenancyStyle tenancyStyle);
 
         void RegisterUpdate(UpdateBatch batch, object entity);
         void RegisterUpdate(UpdateBatch batch, object entity, string json);

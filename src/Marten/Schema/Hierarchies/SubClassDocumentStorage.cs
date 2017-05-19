@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -30,16 +31,6 @@ namespace Marten.Schema.Hierarchies
         public NpgsqlCommand LoaderCommand(object id)
         {
             return _parent.LoaderCommand(id);
-        }
-
-        public NpgsqlCommand DeleteCommandForId(object id)
-        {
-            return _parent.DeleteCommandForId(id);
-        }
-
-        public NpgsqlCommand DeleteCommandForEntity(object entity)
-        {
-            return _parent.DeleteCommandForEntity(entity);
         }
 
         public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
@@ -77,19 +68,19 @@ namespace Marten.Schema.Hierarchies
             _parent.Store(map, id, entity);
         }
 
-        public IStorageOperation DeletionForId(object id)
+        public IStorageOperation DeletionForId(TenancyStyle tenancyStyle, object id)
         {
-            return _parent.DeletionForId(id);
+            return _parent.DeletionForId(tenancyStyle, id);
         }
 
-        public IStorageOperation DeletionForEntity(object entity)
+        public IStorageOperation DeletionForEntity(TenancyStyle tenancyStyle, object entity)
         {
-            return _parent.DeletionForEntity(entity);
+            return _parent.DeletionForEntity(tenancyStyle, entity);
         }
 
-        public IStorageOperation DeletionForWhere(IWhereFragment @where)
+        public IStorageOperation DeletionForWhere(IWhereFragment @where, TenancyStyle tenancyStyle)
         {
-            return _parent.DeletionForWhere(@where);
+            return _parent.DeletionForWhere(@where, tenancyStyle);
         }
 
         public T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)

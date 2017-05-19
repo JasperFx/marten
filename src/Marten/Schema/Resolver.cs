@@ -170,16 +170,6 @@ namespace Marten.Schema
             return new NpgsqlCommand(_loaderSql).With("id", id);
         }
 
-        public NpgsqlCommand DeleteCommandForId(object id)
-        {
-            return new NpgsqlCommand(_deleteSql).With("id", id);
-        }
-
-        public NpgsqlCommand DeleteCommandForEntity(object entity)
-        {
-            return DeleteCommandForId(_identity((T) entity));
-        }
-
         public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
         {
             return new NpgsqlCommand(_loadArraySql).With("ids", ids);
@@ -233,19 +223,19 @@ namespace Marten.Schema
             map.Store<T>(id, (T) entity);
         }
 
-        public IStorageOperation DeletionForId(object id)
+        public IStorageOperation DeletionForId(TenancyStyle tenancyStyle, object id)
         {
-            return new DeleteById(DeleteByIdSql, this, id);
+            return new DeleteById(tenancyStyle, DeleteByIdSql, this, id);
         }
 
-        public IStorageOperation DeletionForEntity(object entity)
+        public IStorageOperation DeletionForEntity(TenancyStyle tenancyStyle, object entity)
         {
-            return new DeleteById(DeleteByIdSql, this, Identity(entity), entity);
+            return new DeleteById(tenancyStyle, DeleteByIdSql, this, Identity(entity), entity);
         }
 
-        public IStorageOperation DeletionForWhere(IWhereFragment @where)
+        public IStorageOperation DeletionForWhere(IWhereFragment @where, TenancyStyle tenancyStyle)
         {
-            return new DeleteWhere(typeof(T), DeleteByWhereSql, @where);
+            return new DeleteWhere(typeof(T), DeleteByWhereSql, @where, tenancyStyle);
         }
     }
 }

@@ -111,7 +111,7 @@ namespace Marten.Storyteller.Fixtures.MultiTenancy
             using (var session = _store.OpenSession(tenantId))
             {
                 var user = _users[name];
-                session.Delete(user.Id);
+                session.Delete(user);
                 session.SaveChanges();
             }
         }

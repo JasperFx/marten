@@ -121,16 +121,6 @@ namespace Marten.Events
             return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = :id and type = '{Alias}'").With("id", id);
         }
 
-        public NpgsqlCommand DeleteCommandForId(object id)
-        {
-            throw new NotSupportedException();
-        }
-
-        public NpgsqlCommand DeleteCommandForEntity(object entity)
-        {
-            throw new NotSupportedException();
-        }
-
         public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
         {
             return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = ANY(:ids) and type = '{Alias}'").With("ids", ids);
@@ -166,17 +156,17 @@ namespace Marten.Events
             throw new InvalidOperationException("Use IDocumentSession.Events for all persistence of IEvent objects");
         }
 
-        public IStorageOperation DeletionForId(object id)
+        public IStorageOperation DeletionForId(TenancyStyle tenancyStyle, object id)
         {
             throw new NotSupportedException("You cannot delete events at this time");
         }
 
-        public IStorageOperation DeletionForEntity(object entity)
+        public IStorageOperation DeletionForEntity(TenancyStyle tenancyStyle, object entity)
         {
             throw new NotSupportedException("You cannot delete events at this time");
         }
 
-        public IStorageOperation DeletionForWhere(IWhereFragment @where)
+        public IStorageOperation DeletionForWhere(IWhereFragment @where, TenancyStyle tenancyStyle)
         {
             throw new NotSupportedException("You cannot delete events at this time");
         }

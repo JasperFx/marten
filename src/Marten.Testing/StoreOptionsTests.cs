@@ -125,16 +125,6 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public NpgsqlCommand DeleteCommandForId(object id)
-            {
-                throw new NotImplementedException();
-            }
-
-            public NpgsqlCommand DeleteCommandForEntity(object entity)
-            {
-                throw new NotImplementedException();
-            }
-
             public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
             {
                 throw new NotImplementedException();
@@ -170,17 +160,17 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public IStorageOperation DeletionForId(object id)
+            public IStorageOperation DeletionForId(TenancyStyle tenancyStyle, object id)
             {
                 throw new NotImplementedException();
             }
 
-            public IStorageOperation DeletionForEntity(object entity)
+            public IStorageOperation DeletionForEntity(TenancyStyle tenancyStyle, object entity)
             {
                 throw new NotImplementedException();
             }
 
-            public IStorageOperation DeletionForWhere(IWhereFragment @where)
+            public IStorageOperation DeletionForWhere(IWhereFragment @where, TenancyStyle tenancyStyle)
             {
                 throw new NotImplementedException();
             }
@@ -205,15 +195,6 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public NpgsqlCommand DeleteCommandForId(object id)
-            {
-                throw new NotImplementedException();
-            }
-
-            public NpgsqlCommand DeleteCommandForEntity(object entity)
-            {
-                throw new NotImplementedException();
-            }
 
             public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
             {
@@ -250,17 +231,17 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public IStorageOperation DeletionForId(object id)
+            public IStorageOperation DeletionForId(TenancyStyle tenancyStyle, object id)
             {
                 throw new NotImplementedException();
             }
 
-            public IStorageOperation DeletionForEntity(object entity)
+            public IStorageOperation DeletionForEntity(TenancyStyle tenancyStyle, object entity)
             {
                 throw new NotImplementedException();
             }
 
-            public IStorageOperation DeletionForWhere(IWhereFragment @where)
+            public IStorageOperation DeletionForWhere(IWhereFragment @where, TenancyStyle tenancyStyle)
             {
                 throw new NotImplementedException();
             }
