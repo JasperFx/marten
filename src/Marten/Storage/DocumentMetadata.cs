@@ -21,5 +21,6 @@ namespace Marten.Storage
         public string DocumentType { get; }
         public bool Deleted { get; }
         public DateTime? DeletedAt { get; }
+        public string TenantId { get; internal set; }
     }
 }

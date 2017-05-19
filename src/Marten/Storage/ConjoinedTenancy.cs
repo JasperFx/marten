@@ -102,13 +102,28 @@ namespace Marten.Storage
 
         public DocumentMetadata MetadataFor<T>(T entity)
         {
-            // THIS MAY NEED TO BE DONE DIFFERENTLY
-            throw new NotImplementedException();
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            var handler = new EntityMetadataQueryHandler(TenancyStyle.Conjoined, entity, StorageFor(typeof(T)),
+                MappingFor(typeof(T)));
+
+            using (var connection = OpenConnection())
+            {
+                return connection.Fetch(handler, null, null, this);
+            }
         }
 
-        public Task<DocumentMetadata> MetadataForAsync<T>(T entity, CancellationToken token = new CancellationToken())
+        public async Task<DocumentMetadata> MetadataForAsync<T>(T entity, CancellationToken token = new CancellationToken())
         {
-            throw new NotImplementedException();
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            var handler = new EntityMetadataQueryHandler(TenancyStyle.Conjoined, entity, StorageFor(typeof(T)),
+                MappingFor(typeof(T)));
+
+            using (var connection = OpenConnection())
+            {
+                return await connection.FetchAsync(handler, null, null, this, token).ConfigureAwait(false);
+            }
         }
 
         public NpgsqlConnection CreateConnection()

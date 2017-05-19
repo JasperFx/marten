@@ -253,7 +253,7 @@ namespace Marten.Storage
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
+            var handler = new EntityMetadataQueryHandler(_options.Tenancy.Style, entity, StorageFor(typeof(T)),
                 MappingFor(typeof(T)));
 
             using (var connection = OpenConnection())
@@ -273,7 +273,7 @@ namespace Marten.Storage
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
+            var handler = new EntityMetadataQueryHandler(_options.Tenancy.Style, entity, StorageFor(typeof(T)),
                 MappingFor(typeof(T)));
 
             using (var connection = OpenConnection())
