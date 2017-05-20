@@ -117,18 +117,7 @@ namespace Marten
 
         public DocumentMapping MappingFor(Type documentType)
         {
-            return _documentMappings.GetOrAdd(documentType, type =>
-            {
-                var mapping = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(this, documentType);
-
-                if (mapping.IdMember == null)
-                {
-                    throw new InvalidDocumentException(
-                        $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
-                }
-
-                return mapping;
-            });
+            return _documentMappings.GetOrAdd(documentType, type => typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(this, documentType));
         }
 
         private readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>> _childDocs 
@@ -274,6 +263,12 @@ namespace Marten
                 throw new PostgresqlIdentifierInvalidException(name);
             if (name.Length < NameDataLength) return;
             throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
+        }
+
+        public void Validate()
+        {
+            foreach (var mapping in AllDocumentMappings)
+                mapping.Validate();
         }
 
         internal IDocumentMapping FindMapping(Type documentType)

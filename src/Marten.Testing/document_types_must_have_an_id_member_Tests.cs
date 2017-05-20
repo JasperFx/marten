@@ -10,10 +10,25 @@ namespace Marten.Testing
         {
             Exception<InvalidDocumentException>.ShouldBeThrownBy(() =>
             {
-                var schema = new DocumentSchema(new StoreOptions(), null, null);
-                schema.MappingFor(typeof(BadDoc)).ShouldBeNull();
+                var options = new StoreOptions();
+                var schema = new DocumentSchema(options, null, null);
+                schema.MappingFor(typeof(BadDoc));
+                options.Validate();
             });
             
+        }
+
+        [Fact]
+        public void cannot_use_a_doc_type_with_no_id_with_store()
+        {
+            Exception<InvalidDocumentException>.ShouldBeThrownBy(() =>
+            {
+                DocumentStore.For(options =>
+                {
+                    options.MappingFor(typeof(BadDoc));
+                });
+            });
+
         }
     }
 
