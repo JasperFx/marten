@@ -70,6 +70,7 @@ namespace Marten
         /// <param name="options"></param>
         public DocumentStore(StoreOptions options)
         {
+            options.Validate();
             options.CreatePatching();
 
             _options = options;
