@@ -9,7 +9,7 @@ See this blog post http://jeremydmiller.com/2015/10/21/postgresql-as-a-document-
 
 ## Working with the Code
 
-Like I said, it's way, way early and this should get smoother later. For now, you'll need to have access to a Postgresql **9.5** server and a database. After cloning the code, put a file named `connection.txt` at `src/Marten.Testing` that just needs to contain the connection string to the Postgresql database you want to use as a testbed. See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about postgresql connection strings.
+Like I said, it's way, way early and this should get smoother later. For now, you'll need to have access to a Postgresql **9.5** server and a database. After cloning the code, set the environment variable `marten-testing-database` to the connection string for the Postgresql database you want to use as a testbed. See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about postgresql connection strings.
 
 You will also need to enable the PLV8 extension inside of Postgresql for running Javascript stored procedures for the nascent projection support. See
 [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries for PLV8 running on Windows. Just drop the folder structure from that download into your main Postgresql installation folder (`c:\program files\postgresql\9.5` on my box). Once the binaries are copied in, run the command `CREATE EXTENSION PLV8;` in your Postgresql database. 
