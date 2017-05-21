@@ -64,18 +64,7 @@ namespace Marten.Storage
 
         public DocumentMapping MappingFor(Type documentType)
         {
-            return _documentMappings.GetOrAdd(documentType, type =>
-            {
-                var mapping = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType);
-
-                if (mapping.IdMember == null)
-                {
-                    throw new InvalidDocumentException(
-                        $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
-                }
-
-                return mapping;
-            });
+            return _documentMappings.GetOrAdd(documentType, type => typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType));
         }
 
 

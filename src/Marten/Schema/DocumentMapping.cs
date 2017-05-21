@@ -472,6 +472,15 @@ namespace Marten.Schema
             return Indexes.OfType<IndexDefinition>().Where(x => x.Columns.Contains(column));
         }
 
+        public void Validate()
+        {
+            if (IdMember == null)
+            {
+                throw new InvalidDocumentException(
+                    $"Could not determine an 'id/Id' field or property for requested document type {DocumentType.FullName}");
+            }
+        }
+
         public override string ToString()
         {
             return $"Storage for {DocumentType}, Table: {Table}";

@@ -253,5 +253,13 @@ namespace Marten
         }
 
         internal ITenancy Tenancy { get; private set; }
+
+        internal void Validate()
+        {
+            foreach (var mapping in Storage.AllDocumentMappings)
+            {
+                mapping.Validate();
+            }
+}
     }
 }
