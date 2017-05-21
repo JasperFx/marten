@@ -20,7 +20,7 @@ namespace Marten.Storyteller
             {
                 //var results = runner.Run("Multi Tenancy / Deleting by Id");
                 //var results = runner.Run("Multi Tenancy / Loading Documents by Id");
-                var results = runner.Run("Multi Tenancy / Loading by Id Array");
+                var results = runner.Run("Multi Tenancy / Querying via Compiled Queries");
                 Console.WriteLine(results.Counts);
 
                 //results = runner.Run("Event Store / Async Daemon / Rebuild Projection");

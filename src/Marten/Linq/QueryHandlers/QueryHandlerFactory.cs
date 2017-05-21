@@ -209,6 +209,10 @@ namespace Marten.Linq.QueryHandlers
             var handler = _store.HandlerFactory.BuildHandler<TOut>(model, includeJoins, stats);
 
             var cmd = CommandBuilder.ToCommand(_store.Tenancy.Default, handler);
+            for (int i = 0; i < setters.Count && i < cmd.Parameters.Count; i++)
+            {
+                setters[i].ReplaceValue(cmd.Parameters[i]);
+            }
 
             var cachedQuery = new CachedQuery
             {

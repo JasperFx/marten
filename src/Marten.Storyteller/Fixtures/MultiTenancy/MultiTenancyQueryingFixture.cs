@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using Marten.Linq;
 using Marten.Linq.SoftDeletes;
 using Marten.Testing;
 using Marten.Testing.Documents;
@@ -175,7 +177,7 @@ namespace Marten.Storyteller.Fixtures.MultiTenancy
         public string[] Querying([Header("Tenant Id")] string tenant, 
             
             
-            [SelectionValues("All Users", "Admin Users", "All User Names starting with 'A'", "Admin User Names starting with 'A'", "All Deleted Users", "Deleted Admin Users")]string Query)
+            [SelectionValues("All Users", "Admin Users", "All User Names starting with 'A'", "Admin User Names starting with 'A'", "All Deleted Users", "Deleted Admin Users", "User names starting with 'A' via compiled query")]string Query)
         {
             using (var session = _store.OpenSession(tenant))
             {
@@ -197,11 +199,22 @@ namespace Marten.Storyteller.Fixtures.MultiTenancy
                         return session.Query<User>().Where(x => x.IsDeleted()).Select(x => x.UserName).ToArray();
 
                     case "Deleted Admin Users":
-                        return session.Query<AdminUser>().Where(x => x.IsDeleted()).Select(x => x.UserName).ToArray(); 
+                        return session.Query<AdminUser>().Where(x => x.IsDeleted()).Select(x => x.UserName).ToArray();
+
+                    case "User names starting with 'A' via compiled query":
+                        return session.Query(new UserNameStartsWithA()).ToArray();
                 }
 
                 throw new ArgumentOutOfRangeException(nameof(Query));
             }
+        }
+    }
+
+    public class UserNameStartsWithA : ICompiledListQuery<User, string>
+    {
+        Expression<Func<IQueryable<User>, IEnumerable<string>>> ICompiledQuery<User, IEnumerable<string>>.QueryIs()
+        {
+            return query => query.Where(x => x.UserName.StartsWith("A")).Select(x => x.UserName);
         }
     }
 }

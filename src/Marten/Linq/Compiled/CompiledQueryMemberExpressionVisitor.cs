@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Baseline.Reflection;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Util;
@@ -33,7 +34,7 @@ namespace Marten.Linq.Compiled
         private readonly Type _queryType;
         private readonly ISerializer _serializer;
         private IField _lastMember;
-        private static readonly string[] _skippedMethods = new[] {nameof(CompiledQueryExtensions.Include),nameof(CompiledQueryExtensions.Stats)};
+        private static readonly string[] _skippedMethods = new[] {nameof(CompiledQueryExtensions.Include),nameof(CompiledQueryExtensions.Stats), };
         private StringComparisonParser _parser;
 
         public CompiledQueryMemberExpressionVisitor(IQueryableDocument mapping, Type queryType, ISerializer serializer)
@@ -97,7 +98,7 @@ namespace Marten.Linq.Compiled
             // skip Visiting Include or Stats method members
             if (_skippedMethods.Contains(node.Method.Name)) return node;
 
-            
+            if (node.Method.HasAttribute<SkipOnCompiledQueryParsingAttribute>()) return node;
 
             if (IsContainmentMethod(node.Method))
             {
