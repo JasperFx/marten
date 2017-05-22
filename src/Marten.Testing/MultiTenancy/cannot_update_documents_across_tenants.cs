@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Marten.Testing.Examples;
 using Shouldly;
 using Xunit;
@@ -105,6 +106,37 @@ namespace Marten.Testing.MultiTenancy
                 var final = red.Load<User>(user.Id);
                 final.FirstName.ShouldBe("Jeremy");
             }
+        }
+
+        [Fact]
+        public void bulk_insert_respects_tenancy()
+        {
+            var reds = Target.GenerateRandomData(20).ToArray();
+            var greens = Target.GenerateRandomData(15).ToArray();
+
+            StoreOptions(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString)
+                 .MultiTenanted();
+            });
+
+            theStore.BulkInsert("Red", reds);
+            theStore.BulkInsert("Green", greens);
+
+            Guid[] actualReds = null;
+            Guid[] actualGreens = null;
+
+            using (var query = theStore.QuerySession("Red"))
+            {
+                actualReds = query.Query<Target>().Select(x => x.Id).ToArray();
+            }
+
+            using (var query = theStore.QuerySession("Green"))
+            {
+                actualGreens = query.Query<Target>().Select(x => x.Id).ToArray();
+            }
+
+            actualGreens.Intersect(actualReds).Any().ShouldBeFalse();
         }
     }
 }
