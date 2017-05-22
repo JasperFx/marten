@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
 using Xunit;
@@ -97,7 +98,12 @@ namespace Marten.Testing.Schema.Hierarchies
             theHierarchy.AddSubClass(typeof(FootballTeam));
         }
 
-        [Fact]
+		[Fact]
+		public void contains_index_for_documenttype_column() {
+			Assert.True(theHierarchy.Indexes.Any(x => x.IndexName == "mt_doc_squad_idx_mt_doc_type"));
+		}
+
+		[Fact]
         public void can_generate_upsert_function_for_95()
         {
             var writer = new StringWriter();
