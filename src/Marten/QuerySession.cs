@@ -148,10 +148,7 @@ namespace Marten
 
             assertCorrectIdType<T>(id);
 
-            var resolver = storage<T>().As<IDocumentStorage<T>>();
-
-            
-            return resolver.Resolve(_identityMap, this, id);
+            return storage<T>().Resolve(_identityMap, this, id);
         }
 
         private void assertCorrectIdType<T>(object id)
