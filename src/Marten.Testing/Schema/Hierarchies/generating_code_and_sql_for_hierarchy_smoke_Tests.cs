@@ -100,7 +100,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
 		[Fact]
 		public void contains_index_for_documenttype_column() {
-			Assert.True(theHierarchy.Indexes.Any(x => x.IndexName == "mt_doc_squad_idx_mt_doc_type"));
+			Assert.True(theHierarchy.Indexes.Any(x => x.IndexName == $"mt_doc_squad_idx_{DocumentMapping.DocumentTypeColumn}"));
 		}
 
 		[Fact]
