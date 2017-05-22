@@ -126,6 +126,7 @@ namespace Marten.Storage
         {
             CanAdd = true;
             Directive = $"DEFAULT '{mapping.AliasFor(mapping.DocumentType)}'";
+			      mapping.AddIndex(DocumentMapping.DocumentTypeColumn);
         }
     }
 
