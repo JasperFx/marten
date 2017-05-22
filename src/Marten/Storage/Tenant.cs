@@ -81,6 +81,7 @@ namespace Marten.Storage
         {
             if (_checks.ContainsKey(featureType)) return;
 
+
             // TODO -- ensure the system type here too?
             var feature = _features.FindFeature(featureType);
             if (feature == null)
@@ -105,35 +106,42 @@ namespace Marten.Storage
 
             // TODO -- might need to do a lock here.
             generateOrUpdateFeature(featureType, feature);
+
         }
+
+        
+        private readonly object _updateLock = new object();
 
         private void generateOrUpdateFeature(Type featureType, IFeatureSchema feature)
         {
-            using (var conn = _factory.Create())
+            lock (_updateLock)
             {
-                conn.Open();
-
-                var patch = new SchemaPatch(_options.DdlRules);
-                patch.Apply(conn, _options.AutoCreateSchemaObjects, feature.Objects);
-                patch.AssertPatchingIsValid(_options.AutoCreateSchemaObjects);
-
-                var ddl = patch.UpdateDDL;
-                if (patch.Difference != SchemaPatchDifference.None && ddl.IsNotEmpty())
+                using (var conn = _factory.Create())
                 {
-                    var cmd = conn.CreateCommand(ddl);
-                    try
+                    conn.Open();
+
+                    var patch = new SchemaPatch(_options.DdlRules);
+                    patch.Apply(conn, _options.AutoCreateSchemaObjects, feature.Objects);
+                    patch.AssertPatchingIsValid(_options.AutoCreateSchemaObjects);
+
+                    var ddl = patch.UpdateDDL;
+                    if (patch.Difference != SchemaPatchDifference.None && ddl.IsNotEmpty())
                     {
-                        cmd.ExecuteNonQuery();
-                        _options.Logger().SchemaChange(ddl);
-                        _checks[featureType] = true;
-                        if (feature.StorageType != featureType)
+                        var cmd = conn.CreateCommand(ddl);
+                        try
                         {
-                            _checks[feature.StorageType] = true;
+                            cmd.ExecuteNonQuery();
+                            _options.Logger().SchemaChange(ddl);
+                            _checks[featureType] = true;
+                            if (feature.StorageType != featureType)
+                            {
+                                _checks[feature.StorageType] = true;
+                            }
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        throw new MartenCommandException(cmd, e);
+                        catch (Exception e)
+                        {
+                            throw new MartenCommandException(cmd, e);
+                        }
                     }
                 }
             }
