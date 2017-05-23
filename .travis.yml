@@ -1,0 +1,29 @@
+language: csharp
+sudo: required
+dist: trusty
+mono: none
+dotnet: 1.0.3
+
+env:
+  global:
+    - marten_testing_database="Host=localhost;Port=5432;Database=marten_test;Username=postgres;Password=Password12!"
+
+addons:
+  postgresql: "9.5"
+
+before_install:
+  - sudo apt-get install postgresql-9.5-plv8
+  - nvm install 6.0.0
+
+install:
+  - export DOTNET_CLI_TELEMETRY_OPTOUT=1
+  - export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+  - travis_retry npm install
+
+before_script:
+  - psql -c 'create database marten_test;' -U postgres
+  - psql -d marten_test -c 'create extension if not exists plv8;'
+  - chmod a+x ./build.sh
+
+script:
+  - ./build.sh
