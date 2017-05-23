@@ -41,7 +41,7 @@ build_script:
   - dotnet build .\src\Marten.sln --configuration Release
 
 after_build:
-  - dotnet pack .\src\Marten -o artifacts --configuration Release
+  - dotnet pack .\src\Marten -o artifacts --configuration Release /p:Version=%APPVEYOR_BUILD_VERSION%
   - dotnet pack .\src\Marten.CommandLine -o artifacts --configuration Release
 
 test_script:
