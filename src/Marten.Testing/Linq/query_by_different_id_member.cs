@@ -1,81 +1,57 @@
 ﻿using System.Linq;
 using Shouldly;
 using Xunit;
-using System.Collections.Generic;
-using System.Reflection;
 
 namespace Marten.Testing.Linq
 {
-    public class query_by_different_id_member
+    public class query_by_different_id_member : IntegratedFixture
     {
-        private static List<string> listIds = new List<string>() { "qwe", "zxc" };
-        private static List<string> listSystemIds = new List<string>() { "123", "456" };
-
-        [Fact]
-        public void get_by_id_property()
-        {
-            int resultId1;
-            int resultId2;
-
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.Connection(ConnectionSource.ConnectionString);
-                var memberInfo = typeof(BaseClass).GetMember("SystemId").FirstOrDefault();
-                _.MappingFor(typeof(BaseClass)).IdMember = memberInfo;
-            }))
-            {
-                store.BulkInsert(new BaseClass[] {
-                    new BaseClass() { Id = "qwe", SystemId = "123" },
-                    new BaseClass() { Id = "asd", SystemId = "456" },
-                    new BaseClass() { Id = "zxc", SystemId = "789" }
-                });
-
-                using (var session = store.QuerySession())
-                {
-                    var martenQueryable = session.Query<BaseClass>();
-                    resultId1 = martenQueryable.Count(o => listIds.Contains(o.Id));
-                    resultId2 = martenQueryable.Count(o => listSystemIds.Contains(o.Id));
-                }
-            }
-
-            resultId1.ShouldBe(2);
-            resultId2.ShouldBe(0);
-        }
+        private static readonly string[] listIds = {"qwe", "zxc"};
+        private static readonly string[] listSystemIds = {"123", "456"};
 
         [Fact]
         public void get_by_id_member_property()
         {
-            int resultSystemId3;
-            int resultSystemId4;
+            StoreOptions(_ => { _.Schema.For<BaseClass>().Identity(x => x.SystemId); });
 
-            using (var store = DocumentStore.For(_ =>
+            theStore.BulkInsert(new[]
             {
-                _.Connection(ConnectionSource.ConnectionString);
-                var memberInfo = typeof(BaseClass).GetMember("SystemId").FirstOrDefault();
-                _.MappingFor(typeof(BaseClass)).IdMember = memberInfo;
-            }))
-            {
-                store.BulkInsert(new BaseClass[] {
-                    new BaseClass() { Id = "qwe", SystemId = "123" },
-                    new BaseClass() { Id = "asd", SystemId = "456" },
-                    new BaseClass() { Id = "zxc", SystemId = "789" }
-                });
+                new BaseClass {Id = "qwe", SystemId = "123"},
+                new BaseClass {Id = "asd", SystemId = "456"},
+                new BaseClass {Id = "zxc", SystemId = "789"}
+            });
 
-                using (var session = store.QuerySession())
-                {
-                    var martenQueryable = session.Query<BaseClass>();
-                    resultSystemId3 = martenQueryable.Count(o => listIds.Contains(o.SystemId));
-                    resultSystemId4 = martenQueryable.Count(o => listSystemIds.Contains(o.SystemId));
-                }
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<BaseClass>().Count(x => x.Id.IsOneOf(listSystemIds)).ShouldBe(0);
+                session.Query<BaseClass>().Count(x => x.SystemId.IsOneOf(listSystemIds)).ShouldBe(2);
             }
+        }
 
-            resultSystemId3.ShouldBe(0);
-            resultSystemId4.ShouldBe(2);
+        [Fact]
+        public void get_by_id_property()
+        {
+            StoreOptions(_ => { _.Schema.For<BaseClass>().Identity(x => x.SystemId); });
+
+            theStore.BulkInsert(new[]
+            {
+                new BaseClass {Id = "qwe", SystemId = "123"},
+                new BaseClass {Id = "asd", SystemId = "456"},
+                new BaseClass {Id = "zxc", SystemId = "789"}
+            });
+
+            using (var session = theStore.QuerySession())
+            {
+                session.LoadMany<BaseClass>(listSystemIds).Count.ShouldBe(2);
+
+                session.Query<BaseClass>().Count(x => x.Id.IsOneOf(listIds)).ShouldBe(2);
+                session.Query<BaseClass>().Count(x => x.SystemId.IsOneOf(listSystemIds)).ShouldBe(2);
+
+                session.Query<BaseClass>().Count(x => x.Id.IsOneOf("123", "456")).ShouldBe(0);
+                session.Query<BaseClass>().Count(x => x.SystemId.IsOneOf("qwe", "zxc")).ShouldBe(0);
+            }
         }
     }
-
-
-
 
 
     public interface IIdentity
