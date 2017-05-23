@@ -27,6 +27,7 @@ before_build:
   - createdb %PG_DB%
   - psql -d %PG_DB% -c "create extension if not exists plv8;"
   - npm install
+  - dotnet --info
   - dotnet restore .\src\Marten.sln
 
 assembly_info:
