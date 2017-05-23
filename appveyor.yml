@@ -46,7 +46,7 @@ after_build:
 
 test_script:
   - npm run test
-  - dotnet test .\src\Marten.Testing\Marten.Testing.csproj --configuration Release
+  - dotnet test .\src\Marten.Testing\Marten.Testing.csproj --framework netcoreapp1.0 --configuration Release
 
 artifacts:
   - path: '**\Marten.*.nupkg' # find all NuGet packages recursively
