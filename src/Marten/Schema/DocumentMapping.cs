@@ -205,6 +205,8 @@ namespace Marten.Schema
             get { return _idMember; }
             set
             {
+                
+
                 _idMember = value;
 
                 if (_idMember != null && !_idMember.GetMemberType().IsOneOf(typeof(int), typeof(Guid), typeof(long), typeof(string)))
@@ -214,9 +216,10 @@ namespace Marten.Schema
 
                 if (_idMember != null)
                 {
-                    var idField = new IdField(IdMember);
-                    setField(IdMember.Name, idField);
+                    removeIdField();
 
+                    var idField = new IdField(_idMember);
+                    setField(_idMember.Name, idField);
                     IdStrategy = defineIdStrategy(DocumentType, _storeOptions);
                 }
             }
@@ -510,13 +513,16 @@ namespace Marten.Schema
             return Indexes.OfType<IndexDefinition>().Where(x => x.Columns.Contains(column));
         }
 
-        public void Validate()
+        internal void Validate()
         {
             if (IdMember == null)
             {
                 throw new InvalidDocumentException(
                     $"Could not determine an 'id/Id' field or property for requested document type {DocumentType.FullName}");
             }
+
+            var idField = new IdField(IdMember);
+            setField(IdMember.Name, idField);
         }
 
         public override string ToString()

@@ -21,6 +21,16 @@ namespace Marten.Schema
             _options = options;
         }
 
+        protected void removeIdField()
+        {
+            var idFields = _fields.Where(x => x.Value is IdField).ToArray();
+            foreach (var pair in idFields)
+            {
+                IField field;
+                _fields.TryRemove(pair.Key, out field);
+            }
+        }
+
         protected void setField(string name, IField field)
         {
             _fields[name] = field;
