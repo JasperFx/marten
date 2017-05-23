@@ -31,7 +31,8 @@ namespace Marten.Storage
 
             if (mapping.DeleteStyle == DeleteStyle.SoftDelete)
             {
-                AddColumn(new DeletedColumn(mapping));
+                AddColumn<DeletedColumn>();
+                Indexes.Add(new IndexDefinition(mapping, DocumentMapping.DeletedColumn));
                 AddColumn<DeletedAtColumn>();
             }
 
@@ -104,12 +105,11 @@ namespace Marten.Storage
 
     public class DeletedColumn : SystemColumn
     {
-        public DeletedColumn(DocumentMapping mapping) : base(DocumentMapping.DeletedColumn, "boolean")
+        public DeletedColumn() : base(DocumentMapping.DeletedColumn, "boolean")
         {
             Directive = "DEFAULT FALSE";
             CanAdd = true;
-					mapping.AddIndex(DocumentMapping.DeletedColumn);
-				}
+		}
     }
 
     public class DeletedAtColumn : SystemColumn
