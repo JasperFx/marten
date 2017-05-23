@@ -1,7 +1,7 @@
 # Marten _Postgresql as a Document Database and Event Store for .Net Applications_
 
 [![Join the chat at https://gitter.im/JasperFx/Marten](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JasperFx/Marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Windows Build Status](https://img.shields.io/teamcity/http/build.fubu-project.org/s/marten_master.svg?label=TeamCity&style=flat)](http://build.fubu-project.org/project.html?projectId=Marten&tab=projectOverview&guest=1)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/jasperfx/marten?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten)
 [![Nuget Package](https://img.shields.io/nuget/v/Marten.svg?style=flat)](https://www.nuget.org/packages/Marten/)
 
 Hey, we're just getting started, but there'll be stuff here soon. Check the issue list as quasi-roadmap and feel free to jump into the Gitter room linked above.
