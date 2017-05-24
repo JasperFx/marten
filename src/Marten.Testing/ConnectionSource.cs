@@ -1,5 +1,4 @@
 ﻿using System;
-using Baseline;
 
 namespace Marten.Testing
 {
@@ -11,7 +10,7 @@ namespace Marten.Testing
         {
             if (ConnectionString.IsEmpty())
                 throw new Exception(
-                    "You need to set the connection string for your local Postgresql database in the environment variable 'marten-testing-database'");
+                    "You need to set the connection string for your local Postgresql database in the environment variable 'marten_testing_database'");
         }
 
 
