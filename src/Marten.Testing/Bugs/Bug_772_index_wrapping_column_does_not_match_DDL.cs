@@ -55,7 +55,7 @@ namespace Marten.Testing.Bugs
             theStore.Schema.AssertDatabaseMatchesConfiguration();
         }
 
-        //[Fact] // Experiment, failed
+        // [Fact] // Experiment, failed
         public void index_with_expression_wrapping_column_should_match_DDL()
         {
             StoreOptions(_ =>
