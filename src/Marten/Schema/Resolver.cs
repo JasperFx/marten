@@ -230,19 +230,19 @@ namespace Marten.Schema
             map.Store<T>(id, (T) entity);
         }
 
-        public IStorageOperation DeletionForId(TenancyStyle tenancyStyle, object id)
+        public IStorageOperation DeletionForId(object id)
         {
-            return new DeleteById(tenancyStyle, DeleteByIdSql, this, id);
+            return new DeleteById(_mapping.TenancyStyle, DeleteByIdSql, this, id);
         }
 
-        public IStorageOperation DeletionForEntity(TenancyStyle tenancyStyle, object entity)
+        public IStorageOperation DeletionForEntity(object entity)
         {
-            return new DeleteById(tenancyStyle, DeleteByIdSql, this, Identity(entity), entity);
+            return new DeleteById(_mapping.TenancyStyle, DeleteByIdSql, this, Identity(entity), entity);
         }
 
-        public IStorageOperation DeletionForWhere(IWhereFragment @where, TenancyStyle tenancyStyle)
+        public IStorageOperation DeletionForWhere(IWhereFragment @where)
         {
-            return new DeleteWhere(typeof(T), DeleteByWhereSql, @where, tenancyStyle);
+            return new DeleteWhere(typeof(T), DeleteByWhereSql, @where, _mapping.TenancyStyle);
         }
     }
 }

@@ -159,17 +159,17 @@ namespace Marten.Events
             throw new InvalidOperationException("Use IDocumentSession.Events for all persistence of IEvent objects");
         }
 
-        public IStorageOperation DeletionForId(TenancyStyle tenancyStyle, object id)
+        public IStorageOperation DeletionForId(object id)
         {
             throw new NotSupportedException("You cannot delete events at this time");
         }
 
-        public IStorageOperation DeletionForEntity(TenancyStyle tenancyStyle, object entity)
+        public IStorageOperation DeletionForEntity(object entity)
         {
             throw new NotSupportedException("You cannot delete events at this time");
         }
 
-        public IStorageOperation DeletionForWhere(IWhereFragment @where, TenancyStyle tenancyStyle)
+        public IStorageOperation DeletionForWhere(IWhereFragment @where)
         {
             throw new NotSupportedException("You cannot delete events at this time");
         }

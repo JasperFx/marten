@@ -29,10 +29,10 @@ namespace Marten.Schema
 
         void Store(IIdentityMap map, object id, object entity);
 
-        IStorageOperation DeletionForId(TenancyStyle tenancyStyle, object id);
-        IStorageOperation DeletionForEntity(TenancyStyle tenancyStyle, object entity);
+        IStorageOperation DeletionForId(object id);
+        IStorageOperation DeletionForEntity(object entity);
 
-        IStorageOperation DeletionForWhere(IWhereFragment @where, TenancyStyle tenancyStyle);
+        IStorageOperation DeletionForWhere(IWhereFragment @where);
 
         void RegisterUpdate(UpdateBatch batch, object entity);
         void RegisterUpdate(UpdateBatch batch, object entity, string json);

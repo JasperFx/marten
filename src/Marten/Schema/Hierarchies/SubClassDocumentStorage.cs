@@ -69,19 +69,19 @@ namespace Marten.Schema.Hierarchies
             _parent.Store(map, id, entity);
         }
 
-        public IStorageOperation DeletionForId(TenancyStyle tenancyStyle, object id)
+        public IStorageOperation DeletionForId(object id)
         {
-            return _parent.DeletionForId(tenancyStyle, id);
+            return _parent.DeletionForId(id);
         }
 
-        public IStorageOperation DeletionForEntity(TenancyStyle tenancyStyle, object entity)
+        public IStorageOperation DeletionForEntity(object entity)
         {
-            return _parent.DeletionForEntity(tenancyStyle, entity);
+            return _parent.DeletionForEntity(entity);
         }
 
-        public IStorageOperation DeletionForWhere(IWhereFragment @where, TenancyStyle tenancyStyle)
+        public IStorageOperation DeletionForWhere(IWhereFragment @where)
         {
-            return _parent.DeletionForWhere(@where, tenancyStyle);
+            return _parent.DeletionForWhere(@where);
         }
 
         public T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)

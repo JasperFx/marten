@@ -50,7 +50,7 @@ namespace Marten
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
             var storage = Tenant.StorageFor(typeof(T));
-            var deletion = storage.DeletionForEntity(DocumentStore.Tenancy.Style, entity);
+            var deletion = storage.DeletionForEntity(entity);
 
             _unitOfWork.Add(deletion);
 
@@ -66,7 +66,7 @@ namespace Marten
         {
             assertNotDisposed();
             var storage = Tenant.StorageFor(typeof(T));
-            var deletion = storage.DeletionForId(DocumentStore.Tenancy.Style, id);
+            var deletion = storage.DeletionForId(id);
             _unitOfWork.Add(deletion);
 
             storage.Delete(IdentityMap, id);
@@ -95,7 +95,7 @@ namespace Marten
 
             var where = QueryModelExtensions.BuildWhereFragment(_store, model, Tenant);
 
-            var deletion = Tenant.StorageFor(typeof(T)).DeletionForWhere(@where, DocumentStore.Tenancy.Style);
+            var deletion = Tenant.StorageFor(typeof(T)).DeletionForWhere(@where);
 
             _unitOfWork.Add(deletion);
         }
