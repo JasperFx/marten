@@ -25,6 +25,7 @@ namespace Marten.Schema.Hierarchies
             _mapping = mapping;
         }
 
+        public TenancyStyle TenancyStyle => _parent.TenancyStyle;
         public Type DocumentType => typeof(T);
         public NpgsqlDbType IdType => _parent.IdType;
 

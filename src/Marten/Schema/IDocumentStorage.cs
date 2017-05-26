@@ -12,6 +12,8 @@ namespace Marten.Schema
 {
     public interface IDocumentStorage
     {
+        TenancyStyle TenancyStyle { get; }
+
         Type DocumentType { get; }
 
         NpgsqlDbType IdType { get; }

@@ -116,6 +116,9 @@ namespace Marten.Events
             return this;
         }
 
+        // TODO -- will change later
+        public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
+
         public NpgsqlCommand LoaderCommand(object id)
         {
             return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = :id and type = '{Alias}'").With("id", id);

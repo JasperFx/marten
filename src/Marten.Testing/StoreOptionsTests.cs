@@ -118,6 +118,7 @@ namespace Marten.Testing
 
         public class FakeUserStorage : IDocumentStorage, IdAssignment<User>
         {
+            public TenancyStyle TenancyStyle { get; }
             public Type DocumentType { get; } = typeof (User);
             public NpgsqlDbType IdType { get; }
             public NpgsqlCommand LoaderCommand(object id)
@@ -188,6 +189,7 @@ namespace Marten.Testing
 
         public class FakeCompanyStorage : IDocumentStorage, IdAssignment<Company>
         {
+            public TenancyStyle TenancyStyle { get; }
             public Type DocumentType { get; } = typeof (Company);
             public NpgsqlDbType IdType { get; }
             public NpgsqlCommand LoaderCommand(object id)

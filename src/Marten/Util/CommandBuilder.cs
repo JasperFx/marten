@@ -68,6 +68,8 @@ namespace Marten.Util
 
             command.CommandText = wholeStatement.ToString();
 
+            command.AddTenancy(tenant);
+
             return command;
         }
 

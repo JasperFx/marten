@@ -99,6 +99,7 @@ namespace Marten.Schema
             return ExpressionCompiler.Compile<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string>>(lambda);
         }
 
+        public TenancyStyle TenancyStyle => _mapping.TenancyStyle;
         public Type DocumentType => _mapping.DocumentType;
         public NpgsqlDbType IdType { get; }
 
