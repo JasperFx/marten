@@ -92,11 +92,7 @@ namespace Marten
             var resolver = storage.As<IDocumentStorage<T>>();
 
             var cmd = storage.LoaderCommand(id);
-            if (DocumentStore.Tenancy.Style == TenancyStyle.Conjoined)
-            {
-                cmd.AddNamedParameter(TenantIdArgument.ArgName, Tenant.TenantId);
-                cmd.CommandText += $" and {TenantIdColumn.Name} = :{TenantIdArgument.ArgName}";
-            }
+            cmd.AddTenancy(Tenant);
 
             return _connection.Execute(cmd, c =>
             {
@@ -115,6 +111,7 @@ namespace Marten
             var resolver = storage.As<IDocumentStorage<T>>();
 
             var cmd = storage.LoaderCommand(id);
+            cmd.AddTenancy(Tenant);
 
             return _connection.ExecuteAsync(cmd, async (c, tkn) =>
             {
@@ -319,12 +316,9 @@ namespace Marten
             {
                 var storage = _parent.Tenant.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IDocumentStorage<TDoc>>();
-                var tenancyStyle = _parent._store.Tenancy.Style;
-                var cmd = storage.LoadByArrayCommand(tenancyStyle, keys);
-                if (tenancyStyle == TenancyStyle.Conjoined)
-                {
-                    cmd.AddNamedParameter(TenantIdArgument.ArgName, _parent.Tenant.TenantId);
-                }
+                var cmd = storage.LoadByArrayCommand(keys);
+                cmd.AddTenancy(_parent.Tenant);
+                
 
                 var list = new List<TDoc>();
 
@@ -347,7 +341,8 @@ namespace Marten
             {
                 var storage = _parent.Tenant.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IDocumentStorage<TDoc>>();
-                var cmd = storage.LoadByArrayCommand(_parent._store.Tenancy.Style, keys);
+                var cmd = storage.LoadByArrayCommand(keys);
+                cmd.AddTenancy(_parent.Tenant);
 
                 var list = new List<TDoc>();
 

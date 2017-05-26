@@ -33,9 +33,9 @@ namespace Marten.Schema.Hierarchies
             return _parent.LoaderCommand(id);
         }
 
-        public NpgsqlCommand LoadByArrayCommand<TKey>(TenancyStyle tenancyStyle, TKey[] ids)
+        public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
         {
-            return _parent.LoadByArrayCommand(tenancyStyle, ids);
+            return _parent.LoadByArrayCommand(ids);
         }
 
         public object Identity(object document)

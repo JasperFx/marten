@@ -37,8 +37,15 @@ namespace Marten.Schema
 
             _loaderSql =
                 $"select {_mapping.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d where id = :id";
+
             _loadArraySql =
                 $"select {_mapping.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d where id = ANY(:ids)";
+
+            if (mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                _loaderSql += $" and {TenantWhereFragment.Filter}";
+                _loadArraySql += $" and {TenantWhereFragment.Filter}";
+            }
 
 
             _identity = LambdaBuilder.Getter<T, object>(mapping.IdMember);
@@ -167,13 +174,9 @@ namespace Marten.Schema
             return new NpgsqlCommand(_loaderSql).With("id", id);
         }
 
-        public NpgsqlCommand LoadByArrayCommand<TKey>(TenancyStyle tenancyStyle, TKey[] ids)
+        public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
         {
             var sql = _loadArraySql;
-            if (tenancyStyle == TenancyStyle.Conjoined)
-            {
-                sql += $" and {TenantIdColumn.Name} = :{TenantIdArgument.ArgName}";
-            }
 
             return new NpgsqlCommand(sql).With("ids", ids);
         }

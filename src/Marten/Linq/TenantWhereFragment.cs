@@ -5,7 +5,9 @@ namespace Marten.Linq
 {
     public class TenantWhereFragment : WhereFragment
     {
-        public TenantWhereFragment() : base($"d.{TenantIdColumn.Name} = :{TenantIdArgument.ArgName}")
+        public static readonly string Filter = $"d.{TenantIdColumn.Name} = :{TenantIdArgument.ArgName}";
+
+        public TenantWhereFragment() : base(Filter)
         {
         }
     }

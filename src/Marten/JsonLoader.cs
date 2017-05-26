@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Util;
 
 namespace Marten
 {
@@ -38,6 +39,8 @@ namespace Marten
             var storage = _tenant.StorageFor(typeof(T));
 
             var loader = storage.LoaderCommand(id);
+            loader.AddTenancy(_tenant);
+
             return _connection.Execute(loader, c => loader.ExecuteScalar() as string);
         }
 
@@ -46,6 +49,8 @@ namespace Marten
             var storage = _tenant.StorageFor(typeof(T));
 
             var loader = storage.LoaderCommand(id);
+            loader.AddTenancy(_tenant);
+
             return _connection.ExecuteAsync(loader, async (conn, executeAsyncToken) =>
             {
                 var result = await loader.ExecuteScalarAsync(executeAsyncToken).ConfigureAwait(false);

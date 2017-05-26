@@ -43,12 +43,9 @@ namespace Marten.Schema
 
         public DocumentMapping(Type documentType, StoreOptions storeOptions) : base("d.data", documentType, storeOptions)
         {
-            if (documentType == null) throw new ArgumentNullException(nameof(documentType));
-            if (storeOptions == null) throw new ArgumentNullException(nameof(storeOptions));
+            _storeOptions = storeOptions ?? throw new ArgumentNullException(nameof(storeOptions));
 
-            _storeOptions = storeOptions;
-
-            DocumentType = documentType;
+            DocumentType = documentType ?? throw new ArgumentNullException(nameof(documentType));
             Alias = defaultDocumentAliasName(documentType);
 
             IdMember = FindIdMember(documentType);

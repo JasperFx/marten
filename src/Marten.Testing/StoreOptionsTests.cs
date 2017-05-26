@@ -125,7 +125,7 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public NpgsqlCommand LoadByArrayCommand<TKey>(TenancyStyle tenancyStyle, TKey[] ids)
+            public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
             {
                 throw new NotImplementedException();
             }
@@ -196,7 +196,7 @@ namespace Marten.Testing
             }
 
 
-            public NpgsqlCommand LoadByArrayCommand<TKey>(TenancyStyle tenancyStyle, TKey[] ids)
+            public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
             {
                 throw new NotImplementedException();
             }
