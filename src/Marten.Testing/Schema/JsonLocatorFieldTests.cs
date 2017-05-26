@@ -11,9 +11,12 @@ namespace Marten.Testing.Schema
 {
     public class JsonLocatorFieldTests
     {
-        public readonly JsonLocatorField theStringField = JsonLocatorField.For<User>(EnumStorage.AsInteger, x => x.FirstName);
-        public readonly JsonLocatorField theNumberField = JsonLocatorField.For<User>(EnumStorage.AsInteger, x => x.Age);
-        public readonly JsonLocatorField theEnumField = JsonLocatorField.For<Target>(EnumStorage.AsInteger, x => x.Color);
+        public readonly JsonLocatorField theStringField = 
+            JsonLocatorField.For<User>(EnumStorage.AsInteger, Casing.Default, x => x.FirstName);
+        public readonly JsonLocatorField theNumberField = 
+            JsonLocatorField.For<User>(EnumStorage.AsInteger, Casing.Default, x => x.Age);
+        public readonly JsonLocatorField theEnumField = 
+            JsonLocatorField.For<Target>(EnumStorage.AsInteger, Casing.Default, x => x.Color);
 
 
         [Fact]
@@ -53,10 +56,10 @@ namespace Marten.Testing.Schema
         [Fact]
         public void make_datetime_fields_be_containment()
         {
-            JsonLocatorField.For<Target>(EnumStorage.AsInteger, x => x.Date)
+            JsonLocatorField.For<Target>(EnumStorage.AsInteger, Casing.Default, x => x.Date)
                 .ShouldUseContainmentOperator().ShouldBeTrue();
 
-            JsonLocatorField.For<Target>(EnumStorage.AsInteger, x => x.DateOffset)
+            JsonLocatorField.For<Target>(EnumStorage.AsInteger, Casing.Default, x => x.DateOffset)
                 .ShouldUseContainmentOperator().ShouldBeTrue();
         }
 
@@ -75,7 +78,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void locator_for_enum_in_string_mode()
         {
-            var field = JsonLocatorField.For<Target>(EnumStorage.AsString, x => x.Color);
+            var field = JsonLocatorField.For<Target>(EnumStorage.AsString, Casing.Default, x => x.Color);
             field.SqlLocator.ShouldBe("d.data ->> 'Color'");
         }
 
@@ -128,16 +131,16 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_not_use_timestamp_functions_on_selection_locator_for_dates()
         {
-            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, x => x.DateTime)
+            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, Casing.Default, x => x.DateTime)
                 .SelectionLocator.ShouldBe("CAST(d.data ->> 'DateTime' as timestamp without time zone)");
             
-            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, x => x.NullableDateTime)
+            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, Casing.Default, x => x.NullableDateTime)
                 .SelectionLocator.ShouldBe("CAST(d.data ->> 'NullableDateTime' as timestamp without time zone)");
             
-            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, x => x.DateTimeOffset)
+            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, Casing.Default, x => x.DateTimeOffset)
                 .SelectionLocator.ShouldBe("CAST(d.data ->> 'DateTimeOffset' as timestamp with time zone)");
 
-            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, x => x.NullableDateTimeOffset)
+            JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, Casing.Default, x => x.NullableDateTimeOffset)
                 .SelectionLocator.ShouldBe("CAST(d.data ->> 'NullableDateTimeOffset' as timestamp with time zone)");
                 
         }

@@ -11,38 +11,39 @@ namespace Marten.Schema
 {
     public class JsonLocatorField : Field, IField
     {
-        public static JsonLocatorField For<T>(EnumStorage enumStyle, Expression<Func<T, object>> expression)
+        public static JsonLocatorField For<T>(EnumStorage enumStyle, Casing casing, Expression<Func<T, object>> expression)
         {
             var property = ReflectionHelper.GetProperty(expression);
 
-
-            return new JsonLocatorField("d.data", new StoreOptions(), enumStyle, property);
+            return new JsonLocatorField("d.data", new StoreOptions(), enumStyle, casing, property);
         }
 
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
 
-        public JsonLocatorField(string dataLocator, StoreOptions options, EnumStorage enumStyle, MemberInfo member) : base(member)
+        public JsonLocatorField(string dataLocator, StoreOptions options, EnumStorage enumStyle, Casing casing, MemberInfo member) : base(member)
         {
             var memberType = member.GetMemberType();
+
+            var memberName = casing == Casing.Default ? member.Name : member.Name.ToCamelCase();
 
             var isStringEnum = memberType.GetTypeInfo().IsEnum && enumStyle == EnumStorage.AsString;
             if (memberType == typeof (string) || isStringEnum)
             {
-                SqlLocator = $"{dataLocator} ->> '{member.Name}'";
+                SqlLocator = $"{dataLocator} ->> '{memberName}'";
             }
             else if (memberType == typeof(DateTime) || memberType == typeof(DateTime?))
             {
-                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{member.Name}')";
-                SelectionLocator = $"CAST({dataLocator} ->> '{member.Name}' as {PgType})";
+                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{memberName}')";
+                SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
             }
             else if (memberType == typeof(DateTimeOffset) || memberType == typeof(DateTimeOffset?))
             {
-                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{member.Name}')";
-                SelectionLocator = $"CAST({dataLocator} ->> '{member.Name}' as {PgType})";
+                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{memberName}')";
+                SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
             }
             else
             {
-                SqlLocator = $"CAST({dataLocator} ->> '{member.Name}' as {PgType})";
+                SqlLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
             }
 
             if (isStringEnum)

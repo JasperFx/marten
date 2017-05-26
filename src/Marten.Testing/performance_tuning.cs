@@ -63,6 +63,7 @@ namespace Marten.Testing
         }
 
         public EnumStorage EnumStorage => EnumStorage.AsString;
+        public Casing Casing => Casing.Default;
     }
     // ENDSAMPLE
 #endif

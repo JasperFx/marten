@@ -3,6 +3,7 @@ using System.IO;
 using Baseline;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 namespace Marten.Services
 {
@@ -75,6 +76,7 @@ namespace Marten.Services
         }
 
         private EnumStorage _enumStorage = EnumStorage.AsInteger;
+        private Casing _casing = Casing.Default;
         
         /// <summary>
         /// Specify whether .Net Enum values should be stored as integers or strings
@@ -100,6 +102,30 @@ namespace Marten.Services
                 {
                     _serializer.Converters.RemoveAll(x => x is StringEnumConverter);
                     _clean.Converters.RemoveAll(x => x is StringEnumConverter);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Specify whether properties in the JSON document should use Camel or Pascal casing.
+        /// </summary>
+        public Casing Casing
+        {
+            get
+            {
+                return _casing;
+            }
+            set
+            {
+                _casing = value;
+
+                if (value == Casing.Default)
+                {
+                    _serializer.ContractResolver = new DefaultContractResolver();
+                }
+                else
+                {
+                    _serializer.ContractResolver = new CamelCasePropertyNamesContractResolver();
                 }
             }
         }
