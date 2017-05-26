@@ -88,6 +88,8 @@ namespace Marten.Testing.Schema
             }
 
             public EnumStorage EnumStorage { get; }
+
+            public Casing Casing { get; }
         }
     }
 }
