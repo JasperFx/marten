@@ -39,6 +39,7 @@ namespace Marten.Storage
             if (mapping.TenancyStyle == TenancyStyle.Conjoined)
             {
                 AddColumn<TenantIdColumn>();
+                Indexes.Add(new IndexDefinition(mapping, TenantIdColumn.Name));
             }
 
             Indexes.AddRange(mapping.Indexes);
