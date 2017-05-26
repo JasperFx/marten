@@ -53,5 +53,8 @@ namespace Marten.Util
 
             return new string(chars);
         }
+
+        public static string FormatCase(this string s, Casing casing)
+            => casing == Casing.Default ? s : s.ToCamelCase();
     }
 }
