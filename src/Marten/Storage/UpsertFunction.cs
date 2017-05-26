@@ -81,7 +81,7 @@ namespace Marten.Storage
 
             if (Arguments.Any(x => x is TenantIdArgument))
             {
-                whereClauses.Add($"{_tableName.QualifiedName}.{TenantIdColumn.Name} = tenantid");
+                whereClauses.Add($"{_tableName.QualifiedName}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}");
             }
 
             if (whereClauses.Any())

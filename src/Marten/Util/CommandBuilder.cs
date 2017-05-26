@@ -7,12 +7,15 @@ using Marten.Linq.QueryHandlers;
 using Npgsql;
 using NpgsqlTypes;
 using Baseline;
+using Marten.Schema.Arguments;
 using Marten.Storage;
 
 namespace Marten.Util
 {
     public class CommandBuilder  : IDisposable
     {
+        public static readonly string TenantIdArg = ":" + TenantIdArgument.ArgName;
+
         public static NpgsqlCommand BuildCommand(Action<CommandBuilder> configure)
         {
             var cmd = new NpgsqlCommand();
@@ -35,9 +38,9 @@ namespace Marten.Util
                 handler.ConfigureCommand(builder);
                 command.CommandText = builder._sql.ToString();
 
-                if (command.CommandText.Contains(":tenantid"))
+                if (command.CommandText.Contains(TenantIdArg))
                 {
-                    command.AddNamedParameter("tenantid", tenant.TenantId);
+                    command.AddNamedParameter(TenantIdArgument.ArgName, tenant.TenantId);
                 }
 
                 return command;
