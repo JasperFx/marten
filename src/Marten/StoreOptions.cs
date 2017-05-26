@@ -61,7 +61,7 @@ namespace Marten
         public StoreOptions()
         {
             Events = new EventGraph(this);
-            Schema = new MartenRegistry(this);
+            Schema = new MartenRegistry();
             Transforms = new Transforms.Transforms(this);
             Storage = new StorageFeatures(this);
         }
@@ -254,8 +254,10 @@ namespace Marten
         }
 
 
-        internal void Validate()
+        internal void ApplyConfiguration()
         {
+            Schema.Apply(this);
+
             foreach (var mapping in Storage.AllDocumentMappings)
             {
                 mapping.Validate();
@@ -289,6 +291,67 @@ namespace Marten
         public interface ITenancyExpression
         {
             void MultiTenanted();
+        }
+
+        private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>();
+
+        internal void applyPolicies(DocumentMapping mapping)
+        {
+            foreach (var policy in _policies)
+            {
+                policy.Apply(mapping);
+            }
+        }
+
+        /// <summary>
+        /// Apply conventional policies to how documents are mapped
+        /// </summary>
+        public PoliciesExpression Policies => new PoliciesExpression(this);
+
+        public class PoliciesExpression
+        {
+            private readonly StoreOptions _parent;
+
+            public PoliciesExpression(StoreOptions parent)
+            {
+                _parent = parent;
+            }
+
+            public PoliciesExpression OnDocuments<T>() where T : IDocumentPolicy, new()
+            {
+                return OnDocuments(new T());
+            }
+
+            public PoliciesExpression OnDocuments(IDocumentPolicy policy) 
+            {
+                _parent._policies.Add(policy);
+                return this;
+            }
+
+            public PoliciesExpression ForAllDocuments(Action<DocumentMapping> configure)
+            {
+                return OnDocuments(new LambdaDocumentPolicy(configure));
+            }
+        }
+    }
+
+    public interface IDocumentPolicy
+    {
+        void Apply(DocumentMapping mapping);
+    }
+
+    internal class LambdaDocumentPolicy : IDocumentPolicy
+    {
+        private readonly Action<DocumentMapping> _modify;
+
+        public LambdaDocumentPolicy(Action<DocumentMapping> modify)
+        {
+            _modify = modify;
+        }
+
+        public void Apply(DocumentMapping mapping)
+        {
+            _modify(mapping);
         }
     }
 }

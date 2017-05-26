@@ -426,6 +426,7 @@ namespace Marten.Schema
         }
 
         private HiloSettings _hiloSettings;
+
         public HiloSettings HiloSettings
         {
             get { return _hiloSettings; }
