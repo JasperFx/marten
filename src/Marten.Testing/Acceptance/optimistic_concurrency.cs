@@ -78,6 +78,21 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
+        public void can_patch_and_store_document_with_optimistic_concurrency_before_savechanges()
+        {
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                session.SaveChanges();
+
+                session.Patch<CoffeeShop>(doc1.Id).Set(x => x.Name, "New Name");
+                session.Store(doc1);
+                session.SaveChanges();
+            }
+        }
+
+        [Fact]
         public void can_update_with_optimistic_concurrency_95()
         {
             var doc1 = new CoffeeShop();
