@@ -161,7 +161,7 @@ namespace Marten.Schema
 
             var closedType = resolverType.MakeGenericType(DocumentType);
 
-            return Activator.CreateInstance(closedType, options.Serializer(), this, options.UseCharBufferPooling)
+            return Activator.CreateInstance(closedType, options.Serializer(), this)
                 .As<IDocumentStorage>();
         }
 

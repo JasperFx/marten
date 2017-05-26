@@ -20,27 +20,23 @@ namespace Marten.Schema
 {
     public class DocumentStorage<T> : IDocumentStorage<T> where T : class
     {
-        private readonly string _deleteSql;
         private readonly Func<T, object> _identity;
         private readonly string _loadArraySql;
         private readonly string _loaderSql;
         private readonly ISerializer _serializer;
         private readonly DocumentMapping _mapping;
-        private readonly bool _useCharBufferPooling;
         private readonly DbObjectName _upsertName;
         private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string> _sprocWriter;
 
-        public DocumentStorage(ISerializer serializer, DocumentMapping mapping, bool useCharBufferPooling)
+        public DocumentStorage(ISerializer serializer, DocumentMapping mapping)
         {
             _serializer = serializer;
             _mapping = mapping;
-            _useCharBufferPooling = useCharBufferPooling;
             IdType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
 
 
             _loaderSql =
                 $"select {_mapping.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d where id = :id";
-            _deleteSql = $"delete from {_mapping.Table.QualifiedName} where id = :id";
             _loadArraySql =
                 $"select {_mapping.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d where id = ANY(:ids)";
 
@@ -82,7 +78,7 @@ namespace Marten.Schema
 
             var arguments = new UpsertFunction(mapping).OrderedArguments().Select(x =>
             {
-                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, currentVersion, newVersion, tenantId, _useCharBufferPooling);
+                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, currentVersion, newVersion, tenantId, true);
             });
 
             var block = Expression.Block(arguments);
