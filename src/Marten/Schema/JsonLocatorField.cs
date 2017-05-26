@@ -23,8 +23,7 @@ namespace Marten.Schema
         public JsonLocatorField(string dataLocator, StoreOptions options, EnumStorage enumStyle, Casing casing, MemberInfo member) : base(member)
         {
             var memberType = member.GetMemberType();
-
-            var memberName = casing == Casing.Default ? member.Name : member.Name.ToCamelCase();
+            var memberName = member.Name.FormatCase(casing);
 
             var isStringEnum = memberType.GetTypeInfo().IsEnum && enumStyle == EnumStorage.AsString;
             if (memberType == typeof (string) || isStringEnum)
@@ -61,30 +60,18 @@ namespace Marten.Schema
             }
         }
 
-        public JsonLocatorField(string dataLocator, EnumStorage enumStyle, MemberInfo[] members) : base(members)
+        public JsonLocatorField(string dataLocator, EnumStorage enumStyle, Casing casing, MemberInfo[] members) : base(members)
         {
             var locator = dataLocator;
 
-            if (members.Length == 1)
+            for (int i = 0; i < members.Length - 1; i++)
             {
-                locator += $" ->> '{members.Single().Name}'";
-            }
-            else
-            {
-                for (int i = 0; i < members.Length - 1; i++)
-                {
-                    locator += $" -> '{members[i].Name}'";
-                }
-
-                
-                locator += $" ->> '{members.Last().Name}'";
-
+                locator += $" -> '{members[i].Name.FormatCase(casing)}'";
             }
 
-
+            locator += $" ->> '{members.Last().Name.FormatCase(casing)}'";
 
             SqlLocator = MemberType == typeof (string) ? locator : locator.ApplyCastToLocator(enumStyle, MemberType);
-
 
             var isStringEnum = MemberType.GetTypeInfo().IsEnum && enumStyle == EnumStorage.AsString;
             if (isStringEnum)

@@ -78,7 +78,7 @@ namespace Marten.Schema
         // TODO -- have this take in CommandBuilder
         public string UpdateSqlFragment()
         {
-            var jsonField = new JsonLocatorField("d.data", _enumStorage, Members);
+            var jsonField = new JsonLocatorField("d.data", _enumStorage, Casing.Default, Members);
             // HOKEY, but I'm letting it pass for now.
             var sqlLocator = jsonField.SqlLocator.Replace("d.", "");
 
