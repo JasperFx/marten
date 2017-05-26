@@ -100,7 +100,7 @@ namespace Marten.Schema
                 yield return DocumentMapping.ExcludeSoftDeletedDocuments();
             }
 
-            if (_storeOptions.Tenancy.Style == TenancyStyle.Conjoined)
+            if (Parent.TenancyStyle == TenancyStyle.Conjoined)
             {
                 yield return new TenantWhereFragment();
             }
@@ -110,7 +110,7 @@ namespace Marten.Schema
         {
             yield return toBasicWhere();
 
-            if (_storeOptions.Tenancy.Style == TenancyStyle.Conjoined)
+            if (Parent.TenancyStyle == TenancyStyle.Conjoined)
             {
                 yield return new TenantWhereFragment();
             }
