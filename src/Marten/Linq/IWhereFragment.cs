@@ -1,5 +1,6 @@
 using System.Linq;
 using Baseline;
+using Marten.Linq.Parsing;
 using Marten.Util;
 using Npgsql;
 
@@ -63,6 +64,11 @@ namespace Marten.Linq
             fragment.Apply(builder);
 
             return builder.ToString().Trim();
+        }
+
+        public static bool SpecifiesTenant(this IWhereFragment fragment)
+        {
+            return fragment.Flatten().OfType<ITenantWhereFragment>().Any();
         }
 
     }
