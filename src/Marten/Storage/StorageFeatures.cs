@@ -64,14 +64,7 @@ namespace Marten.Storage
 
         public DocumentMapping MappingFor(Type documentType)
         {
-            return _documentMappings.GetOrAdd(documentType, type =>
-            {
-                var mapping = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType);
-                _options.applyPolicies(mapping);
-
-
-                return mapping;
-            });
+            return _documentMappings.GetOrAdd(documentType, type => typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType));
         }
 
 

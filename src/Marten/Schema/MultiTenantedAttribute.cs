@@ -13,5 +13,7 @@ namespace Marten.Schema
         {
             mapping.TenancyStyle = TenancyStyle.Conjoined;
         }
+
+
     }
 }

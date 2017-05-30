@@ -50,6 +50,8 @@ namespace Marten.Schema
 
             IdMember = FindIdMember(documentType);
 
+            _storeOptions.applyPolicies(this);
+
             applyAnyMartenAttributes(documentType);
         }
 
