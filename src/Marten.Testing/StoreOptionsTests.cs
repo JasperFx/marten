@@ -16,6 +16,12 @@ namespace Marten.Testing
     public class StoreOptionsTests
     {
         [Fact]
+        public void PLV8Enabled_is_true_by_default()
+        {
+            new StoreOptions().PLV8Enabled.ShouldBeTrue();
+        }
+
+        [Fact]
         public void add_document_types()
         {
             var options = new StoreOptions();

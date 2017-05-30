@@ -278,6 +278,8 @@ namespace Marten
         /// </summary>
         public PoliciesExpression Policies => new PoliciesExpression(this);
 
+        public bool PLV8Enabled { get; set; } = true;
+
         public class PoliciesExpression
         {
             private readonly StoreOptions _parent;
