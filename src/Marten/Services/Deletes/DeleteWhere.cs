@@ -31,7 +31,7 @@ namespace Marten.Services.Deletes
 
             if (_tenancyStyle == TenancyStyle.Conjoined)
             {
-                builder.Append($" and {TenantIdColumn.Name} = :{TenantIdArgument.ArgName}");
+                builder.Append($" and {TenantWhereFragment.Filter}");
             }
         }
 

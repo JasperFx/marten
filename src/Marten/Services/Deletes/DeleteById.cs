@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Storage;
@@ -37,7 +38,7 @@ namespace Marten.Services.Deletes
             builder.Append(Sql.Replace("?", ":" + param.ParameterName));
             if (_tenancyStyle == TenancyStyle.Conjoined)
             {
-                builder.Append($" and {TenantIdColumn.Name} = :{TenantIdArgument.ArgName}");
+                builder.Append($" and {TenantWhereFragment.Filter}");
             }
         }
 
