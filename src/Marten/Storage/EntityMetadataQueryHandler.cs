@@ -17,13 +17,11 @@ namespace Marten.Storage
         private readonly Dictionary<string, int> _fields;
         private readonly object _id;
         private readonly IDocumentMapping _mapping;
-        private readonly TenancyStyle _tenancyStyle;
         private readonly IDocumentStorage _storage;
 
-        public EntityMetadataQueryHandler(TenancyStyle tenancyStyle, object entity, IDocumentStorage storage, IDocumentMapping mapping)
+        public EntityMetadataQueryHandler(object entity, IDocumentStorage storage, IDocumentMapping mapping)
         {
             _id = storage.Identity(entity);
-            _tenancyStyle = tenancyStyle;
             _storage = storage;
             _mapping = mapping;
 
@@ -46,7 +44,7 @@ namespace Marten.Storage
                 _fields.Add(DocumentMapping.DeletedAtColumn, fieldIndex++);
             }
 
-            if (tenancyStyle == TenancyStyle.Conjoined)
+            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
             {
                 _fields.Add(TenantIdColumn.Name, fieldIndex);
             }
@@ -112,7 +110,7 @@ namespace Marten.Storage
 
 
             var metadata = new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt);
-            if (_tenancyStyle == TenancyStyle.Conjoined)
+            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
             {
                 metadata.TenantId = await GetOptionalFieldValueAsync<string>(reader, TenantIdColumn.Name, token)
                     .ConfigureAwait(false);

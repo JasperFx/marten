@@ -21,9 +21,8 @@ namespace Marten.Services.Deletes
             Sql = sql;
             _tenancyStyle = tenancyStyle;
             _storage = storage;
-            if (id == null) throw new ArgumentNullException(nameof(id));
 
-            Id = id;
+            Id = id ?? throw new ArgumentNullException(nameof(id));
             Document = document;
 
         }

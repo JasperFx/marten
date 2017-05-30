@@ -54,10 +54,11 @@ namespace Marten.Testing.Schema
         public void tenant_id_argument_when_multi_tenanted()
         {
             var options = new StoreOptions();
-            options.Connection(ConnectionSource.ConnectionString)
-                .MultiTenanted();
+            options.Connection(ConnectionSource.ConnectionString);
+            options.Policies.AllDocumentsAreMultiTenanted();
 
             var mapping = new DocumentMapping(typeof(User), options);
+            mapping.TenancyStyle = TenancyStyle.Conjoined;
 
             var func = new UpsertFunction(mapping);
 

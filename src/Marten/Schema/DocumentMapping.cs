@@ -53,7 +53,7 @@ namespace Marten.Schema
             applyAnyMartenAttributes(documentType);
         }
 
-        public TenancyStyle TenancyStyle => _storeOptions.Tenancy.Style;
+        public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
         private void applyAnyMartenAttributes(Type documentType)
         {
@@ -112,7 +112,7 @@ namespace Marten.Schema
                 yield return ExcludeSoftDeletedDocuments();
             }
 
-            if (_storeOptions.Tenancy.Style == TenancyStyle.Conjoined)
+            if (TenancyStyle == TenancyStyle.Conjoined)
             {
                 yield return new TenantWhereFragment();
             }
@@ -141,7 +141,7 @@ namespace Marten.Schema
                 yield return ExcludeSoftDeletedDocuments();
             }
 
-            if (_storeOptions.Tenancy.Style == TenancyStyle.Conjoined)
+            if (TenancyStyle == TenancyStyle.Conjoined)
             {
                 yield return new TenantWhereFragment();
             }

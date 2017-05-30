@@ -18,7 +18,7 @@ namespace Marten
     ///     necessary to customize and bootstrap a working
     ///     DocumentStore
     /// </summary>
-    public class StoreOptions : StoreOptions.ITenancyExpression
+    public class StoreOptions
     {
 
         /// <summary>
@@ -144,20 +144,18 @@ namespace Marten
         ///     Supply the connection string to the Postgresql database
         /// </summary>
         /// <param name="connectionString"></param>
-        public ITenancyExpression Connection(string connectionString)
+        public void Connection(string connectionString)
         {
-            _factory = new ConnectionFactory(connectionString);
-            return this;
+            Tenancy = new DefaultTenancy(new ConnectionFactory(connectionString), this);
         }
 
         /// <summary>
         ///     Supply a source for the connection string to a Postgresql database
         /// </summary>
         /// <param name="connectionSource"></param>
-        public ITenancyExpression Connection(Func<string> connectionSource)
+        public void Connection(Func<string> connectionSource)
         {
-            _factory = new ConnectionFactory(connectionSource);
-            return this;
+            Tenancy = new DefaultTenancy(new ConnectionFactory(connectionSource), this);
         }
 
         /// <summary>
@@ -165,10 +163,9 @@ namespace Marten
         ///     the Postgresql database
         /// </summary>
         /// <param name="source"></param>
-        public ITenancyExpression Connection(Func<NpgsqlConnection> source)
+        public void Connection(Func<NpgsqlConnection> source)
         {
-            _factory = new LambdaConnectionFactory(source);
-            return this;
+            Tenancy = new DefaultTenancy(new LambdaConnectionFactory(source), this);
         }
 
         /// <summary>
@@ -264,34 +261,7 @@ namespace Marten
             }
 		}
 
-        private ITenancy _tenancy;
-        private TenancyStyle _tenancyStyle = TenancyStyle.Single;
-        private IConnectionFactory _factory;
-
-        internal ITenancy Tenancy
-        {
-            get
-            {
-                if (_tenancy == null)
-                {
-                    _tenancy = _tenancyStyle == TenancyStyle.Single
-                        ? new SingleTenant(_factory, this).As<ITenancy>()
-                        : new ConjoinedTenancy(_factory, this).As<ITenancy>();
-                }
-
-                return _tenancy;
-            }
-        }
-
-        void ITenancyExpression.MultiTenanted()
-        {
-            _tenancyStyle = TenancyStyle.Conjoined;
-        }
-
-        public interface ITenancyExpression
-        {
-            void MultiTenanted();
-        }
+        public ITenancy Tenancy { get; set; }
 
         private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>();
 
@@ -331,6 +301,11 @@ namespace Marten
             public PoliciesExpression ForAllDocuments(Action<DocumentMapping> configure)
             {
                 return OnDocuments(new LambdaDocumentPolicy(configure));
+            }
+
+            public PoliciesExpression AllDocumentsAreMultiTenanted()
+            {
+                return ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
             }
         }
     }

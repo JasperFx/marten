@@ -13,8 +13,8 @@ namespace Marten.Testing.MultiTenancy
         {
             StoreOptions(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString)
-                    .MultiTenanted();
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Policies.AllDocumentsAreMultiTenanted();
             });
 
             var user = new User {UserName = "Me"};
@@ -51,8 +51,8 @@ namespace Marten.Testing.MultiTenancy
         {
             StoreOptions(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString)
-                 .MultiTenanted();
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Policies.AllDocumentsAreMultiTenanted();
             });
 
             var user = new User { UserName = "Me", FirstName = "Jeremy", LastName = "Miller"};
@@ -82,8 +82,8 @@ namespace Marten.Testing.MultiTenancy
         {
             StoreOptions(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString)
-                 .MultiTenanted();
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Policies.AllDocumentsAreMultiTenanted();
             });
 
             var user = new User { UserName = "Me", FirstName = "Jeremy", LastName = "Miller" };
@@ -116,8 +116,8 @@ namespace Marten.Testing.MultiTenancy
 
             StoreOptions(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString)
-                 .MultiTenanted();
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Policies.AllDocumentsAreMultiTenanted();
             });
 
             theStore.BulkInsert("Red", reds);

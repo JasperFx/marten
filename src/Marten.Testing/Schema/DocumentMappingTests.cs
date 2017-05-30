@@ -738,9 +738,11 @@ namespace Marten.Testing.Schema
         public void add_the_tenant_id_column_when_it_is_conjoined_tenancy()
         {
             var options = new StoreOptions();
-            options.Connection(ConnectionSource.ConnectionString).MultiTenanted();
+            options.Connection(ConnectionSource.ConnectionString);
+            options.Policies.AllDocumentsAreMultiTenanted();
 
             var mapping = new DocumentMapping(typeof(User), options);
+            mapping.TenancyStyle = TenancyStyle.Conjoined;
 
             var table = new DocumentTable(mapping);
             table.Any(x => x is TenantIdColumn).ShouldBeTrue();

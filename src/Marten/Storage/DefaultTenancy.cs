@@ -13,13 +13,13 @@ using Npgsql;
 
 namespace Marten.Storage
 {
-    public class ConjoinedTenancy : Tenancy, ITenancy
+    public class DefaultTenancy : Tenancy, ITenancy
     {
-        public ConjoinedTenancy(IConnectionFactory factory, StoreOptions options) : base(options)
+        public DefaultTenancy(IConnectionFactory factory, StoreOptions options) : base(options)
         {
-            Default = new Tenant(options.Storage, options, factory, Tenancy.DefaultTenantId);
+            Default = new Tenant(options.Storage, options, factory, DefaultTenantId);
             Cleaner = new DocumentCleaner(options, Default);
-            Schema = new TenantSchema(options, TypeExtensions.As<Tenant>(Default));
+            Schema = new TenantSchema(options, Default.As<Tenant>());
         }
 
         public ITenant this[string tenantId] => new LightweightTenant(tenantId, Default);
@@ -104,8 +104,8 @@ namespace Marten.Storage
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var handler = new EntityMetadataQueryHandler(TenancyStyle.Conjoined, entity, StorageFor(typeof(T)),
-                MappingFor(typeof(T)));
+            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
+                MappingFor(typeof(T)).As<DocumentMapping>());
 
             using (var connection = OpenConnection())
             {
@@ -117,8 +117,8 @@ namespace Marten.Storage
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var handler = new EntityMetadataQueryHandler(TenancyStyle.Conjoined, entity, StorageFor(typeof(T)),
-                MappingFor(typeof(T)));
+            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
+                MappingFor(typeof(T)).As<DocumentMapping>());
 
             using (var connection = OpenConnection())
             {

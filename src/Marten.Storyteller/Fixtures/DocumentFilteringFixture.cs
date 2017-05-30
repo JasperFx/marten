@@ -49,8 +49,9 @@ namespace Marten.Storyteller.Fixtures
 
                 if (tenancy == TenancyStyle.Conjoined)
                 {
-                    _.Connection(ConnectionSource.ConnectionString)
-                        .MultiTenanted();
+                    _.Connection(ConnectionSource.ConnectionString);
+                    _.Policies.AllDocumentsAreMultiTenanted();
+                    
                 }
                 else
                 {

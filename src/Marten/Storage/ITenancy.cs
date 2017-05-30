@@ -12,7 +12,5 @@ namespace Marten.Storage
         IDocumentCleaner Cleaner { get; }
 
         IDocumentSchema Schema { get; }
-
-        TenancyStyle Style { get; }
     }
 }

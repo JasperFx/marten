@@ -24,8 +24,8 @@ namespace Marten.Storyteller.Fixtures.MultiTenancy
         [FormatAs("Uses Conjoined Multi-Tenancy")]
         public void UsesConjoinedMultiTenancy()
         {
-            _options.Connection(ConnectionSource.ConnectionString)
-                .MultiTenanted();
+            _options.Connection(ConnectionSource.ConnectionString);
+            _options.Policies.AllDocumentsAreMultiTenanted();
         }
 
         [FormatAs("User documents are soft deleted")]

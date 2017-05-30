@@ -198,5 +198,6 @@ namespace Marten.Schema
         }
 
         public Type IdType => Parent.IdType;
+        public TenancyStyle TenancyStyle => Parent.TenancyStyle;
     }
 }

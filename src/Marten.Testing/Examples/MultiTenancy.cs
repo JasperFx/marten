@@ -14,8 +14,9 @@ public void use_multiple_tenants()
     {
         // This sets up the DocumentStore to be multi-tenanted
         // by a tenantid column
-        _.Connection(ConnectionSource.ConnectionString)
-            .MultiTenanted();
+        _.Connection(ConnectionSource.ConnectionString);
+
+        _.Policies.AllDocumentsAreMultiTenanted();
     });
 
     // Write some User documents to tenant "tenant1"

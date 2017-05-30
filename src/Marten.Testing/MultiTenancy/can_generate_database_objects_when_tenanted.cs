@@ -11,8 +11,8 @@ namespace Marten.Testing.MultiTenancy
         {
             var store = DocumentStore.For(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString)
-                    .MultiTenanted();
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Policies.AllDocumentsAreMultiTenanted();
             });
 
             store.Tenancy.Default.EnsureStorageExists(typeof(User));
@@ -23,8 +23,8 @@ namespace Marten.Testing.MultiTenancy
         {
             var store = DocumentStore.For(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString)
-                    .MultiTenanted();
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Policies.AllDocumentsAreMultiTenanted();
             });
 
             using (var session = store.OpenSession("123"))
@@ -39,8 +39,8 @@ namespace Marten.Testing.MultiTenancy
         {
             var store = DocumentStore.For(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString)
-                    .MultiTenanted();
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Policies.AllDocumentsAreMultiTenanted();
             });
 
             store.Advanced.Clean.CompletelyRemoveAll();

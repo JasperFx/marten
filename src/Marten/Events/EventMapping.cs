@@ -42,6 +42,7 @@ namespace Marten.Events
         public string Alias { get; }
         public MemberInfo IdMember { get; }
         public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
+        public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
 
         Type IDocumentMapping.IdType => typeof(Guid);
 

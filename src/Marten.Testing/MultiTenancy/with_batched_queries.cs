@@ -13,7 +13,8 @@ namespace Marten.Testing.MultiTenancy
         {
             StoreOptions(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString).MultiTenanted();
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Policies.AllDocumentsAreMultiTenanted();
             });
 
             theStore.BulkInsert("Red", _reds);

@@ -12,8 +12,8 @@ namespace Marten.Testing.MultiTenancy
         {
             StoreOptions(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString)
-                    .MultiTenanted();
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Policies.AllDocumentsAreMultiTenanted();
             });
 
             var user1 = new User();
@@ -31,8 +31,8 @@ namespace Marten.Testing.MultiTenancy
         {
             StoreOptions(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString)
-                 .MultiTenanted();
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Policies.AllDocumentsAreMultiTenanted();
             });
 
             var user1 = new User();
