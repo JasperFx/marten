@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Baseline;
 using System.Text.RegularExpressions;
-using System.Text;
+using Baseline;
 using Marten.Storage;
 
 namespace Marten.Schema
@@ -89,9 +88,18 @@ namespace Marten.Schema
                 actual = actual.Replace("USING btree", "");
             }
 
-            string columnsMatchPattern = "\\((?<columns>.*(?:(?:[\\w.]+)\\s?(?:[\\w_]+).*))\\)";
+            var columnsGroupPattern = "(?<columns>.*(?:(?:[\\w.]+)\\s?(?:[\\w_]+).*))";
+            var columnsMatchPattern = $"\\({columnsGroupPattern}\\)";
+
+            if (Expression.IsNotEmpty())
+            {
+                var escapedExpression = Regex.Escape(Expression);
+
+                columnsMatchPattern = $"\\({escapedExpression.Replace("\\?", columnsGroupPattern)}\\)";
+            }
+
             var match = Regex.Match(actual, columnsMatchPattern);
-            var replace = string.Empty;
+
             if (match.Success)
             {
                 var columns = match.Groups["columns"].Value;
@@ -100,7 +108,11 @@ namespace Marten.Schema
                     columns = Regex.Replace(columns, $"({col})\\s?([\\w_]+)?", "\"$1\" $2");
                 });
 
-                actual = Regex.Replace(actual, columnsMatchPattern, $"({columns.Trim()})");
+                var replacement = Expression.IsEmpty() ?
+                    $"({columns.Trim()})" :
+                    $"({Expression.Replace("?", columns.Trim())})";
+
+                actual = Regex.Replace(actual, columnsMatchPattern, replacement);
             }
 
             if (!actual.Contains(_parent.Table.QualifiedName))
