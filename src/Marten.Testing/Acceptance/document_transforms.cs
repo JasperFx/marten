@@ -48,12 +48,18 @@ namespace Marten.Testing.Acceptance
 
             // Transform all User documents
             store.Transform.All<User>("default_username");
+
+            // Only transform documents from the "tenant1" tenant
+            store.Transform.Tenant<User>("default_username", "tenant1");
+
+            // Only transform documents from the named tenants
+            store.Transform.Tenants<User>("default_username", "tenant1", "tenant2");
         }
         // ENDSAMPLE
 
 
 
-        //[Fact] -- Unreliable on CI
+        [Fact] //-- Unreliable on CI
         public void use_transform_in_production_mode()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
@@ -89,6 +95,37 @@ namespace Marten.Testing.Acceptance
                 session.Load<User>(user3.Id).UserName.ShouldBe("tim.cools");
             }
         }
+
+        [Fact]
+        public void transform_for_tenants()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<User>().MultiTenanted();
+                _.Transforms.LoadFile("default_username.js");
+            });
+
+            var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
+            var user2 = new User { FirstName = "Corey", LastName = "Kaylor" };
+            var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "NotTransformed"};
+
+            theStore.BulkInsert("Purple",new User[]{user1, user2});
+            theStore.BulkInsert("Orange",new User[]{user3});
+
+            theStore.Transform.Tenant<User>("default_username", "Purple");
+
+            using (var query = theStore.QuerySession("Purple"))
+            {
+                query.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
+            }
+
+            using (var query = theStore.QuerySession("Orange"))
+            {
+                query.Load<User>(user3.Id).UserName.ShouldBe("NotTransformed");
+            }
+        }
+
+        
 
         [Fact]
         public void transform_a_single_document()
