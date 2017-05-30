@@ -127,10 +127,13 @@ namespace Marten
 
         internal void CreatePatching()
         {
-            var patching = new TransformFunction(this, PatchDoc, SchemaBuilder.GetJavascript(this, "mt_patching"));
-            patching.OtherArgs.Add("patch");
+            if (PLV8Enabled)
+            {
+                var patching = new TransformFunction(this, PatchDoc, SchemaBuilder.GetJavascript(this, "mt_patching"));
+                patching.OtherArgs.Add("patch");
 
-            Transforms.Load(patching);
+                Transforms.Load(patching);
+            }
         }
 
         internal ChildDocument GetChildDocument(string locator, Type documentType)

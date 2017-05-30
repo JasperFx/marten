@@ -182,11 +182,14 @@ namespace Marten.Storage
                 yield return tenant.Sequences;
             }
 
-            
 
-            yield return Transforms;
 
-            if (_options.Events.IsActive)
+            if (Transforms.IsActive(_options))
+            {
+                yield return Transforms;
+            }
+
+            if (_options.Events.IsActive(_options))
             {
                 yield return _options.Events;
             }

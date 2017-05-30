@@ -119,7 +119,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_not_write_event_sql_if_the_event_graph_is_not_active()
         {
-            theStore.Events.IsActive.ShouldBeFalse();
+            theStore.Events.IsActive(null).ShouldBeFalse();
 
             theStore.Schema.ToDDL().ShouldNotContain("public.mt_streams");
         }
@@ -128,7 +128,7 @@ namespace Marten.Testing.Schema
         public void do_write_the_event_sql_if_the_event_graph_is_active()
         {
             theStore.Events.AddEventType(typeof(MembersJoined));
-            theStore.Events.IsActive.ShouldBeTrue();
+            theStore.Events.IsActive(null).ShouldBeTrue();
 
             theStore.Schema.ToDDL().ShouldContain("public.mt_streams");
         }
@@ -316,7 +316,7 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Events.IsActive.ShouldBeFalse();
+                store.Events.IsActive(null).ShouldBeFalse();
                 store.Schema.WriteDDLByType(_binAllsql);
             }
 
@@ -339,7 +339,7 @@ namespace Marten.Testing.Schema
                 _.Connection("");
             }))
             {
-                store.Events.IsActive.ShouldBeFalse();
+                store.Events.IsActive(null).ShouldBeFalse();
                 store.Schema.WriteDDLByType(_binAllsql);
             }
 
@@ -362,7 +362,7 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Events.IsActive.ShouldBeTrue();
+                store.Events.IsActive(null).ShouldBeTrue();
                 store.Schema.WriteDDLByType(_binAllsql);
             }
 
@@ -473,7 +473,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_not_write_event_sql_if_the_event_graph_is_not_active()
         {
-            theStore.Events.IsActive.ShouldBeFalse();
+            theStore.Events.IsActive(null).ShouldBeFalse();
             _sql.ShouldNotContain("public.mt_streams");
         }
 
@@ -623,7 +623,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_write_the_event_sql_if_the_event_graph_is_active()
         {
-            theStore.Events.IsActive.ShouldBeTrue();
+            theStore.Events.IsActive(null).ShouldBeTrue();
             _schema.ToDDL().ShouldContain("other.mt_streams");
         }
 

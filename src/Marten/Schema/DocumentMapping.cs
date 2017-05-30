@@ -540,7 +540,7 @@ namespace Marten.Schema
             }
         }
 
-        bool IFeatureSchema.IsActive => true;
+        bool IFeatureSchema.IsActive(StoreOptions options) => true;
 
         ISchemaObject[] IFeatureSchema.Objects => new ISchemaObject[]
         {

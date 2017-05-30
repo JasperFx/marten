@@ -83,7 +83,7 @@ namespace Marten.Events
         }
 
 
-        public bool IsActive => _events.Any() || _aggregates.Any();
+        public bool IsActive(StoreOptions options) => _events.Any() || _aggregates.Any();
 
         public string DatabaseSchemaName
         {

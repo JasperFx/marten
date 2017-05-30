@@ -9,7 +9,7 @@ namespace Marten.Storage
     public interface IFeatureSchema
     {
         IEnumerable<Type> DependentTypes();
-        bool IsActive { get; }
+        bool IsActive(StoreOptions options);
         ISchemaObject[] Objects { get; }
         Type StorageType { get; }
 
