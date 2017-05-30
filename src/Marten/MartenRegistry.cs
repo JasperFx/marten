@@ -9,6 +9,7 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Storage;
 
 namespace Marten
 {
@@ -335,6 +336,16 @@ namespace Marten
             public DocumentMappingExpression<T> DdlTemplate(string templateName)
             {
                 alter = m => m.DdlTemplate = templateName;
+                return this;
+            }
+
+            /// <summary>
+            /// Marks just this document type as being stored with conjoined multi-tenancy
+            /// </summary>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> MultiTenanted()
+            {
+                alter = m => m.TenancyStyle = TenancyStyle.Conjoined;
                 return this;
             }
         }
