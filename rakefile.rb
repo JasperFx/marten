@@ -169,7 +169,7 @@ end
 
 desc 'Build the Nupkg file'
 task :pack => [:compile] do
-	sh "dotnet pack ./src/Marten -o artifacts --configuration Release"
+	sh "dotnet pack ./src/Marten -o artifacts --configuration Release --version 2.0.0-alpha-#{build_revision}"
 	sh "dotnet pack ./src/Marten.CommandLine -o artifacts --configuration Release"
 end
 
