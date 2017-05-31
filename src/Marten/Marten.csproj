@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
-    <VersionPrefix>2.0.0-alpha-*</VersionPrefix>
+    <Version>2.0.0-alpha-*</Version>
     <Authors>Jeremy D. Miller;Tim Cools;Jeff Doolittle</Authors>
     <TargetFrameworks>netstandard1.3;net46</TargetFrameworks>
     <AssemblyName>Marten</AssemblyName>
