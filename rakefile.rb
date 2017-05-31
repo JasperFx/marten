@@ -167,7 +167,6 @@ task :recordbenchmarks do
 end
 
 
-
 desc 'Build the Nupkg file'
 task :pack => [:compile] do
 	sh "dotnet pack ./src/Marten -o artifacts --configuration Release --version-suffix alpha-#{build_revision}"
