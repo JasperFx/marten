@@ -4,7 +4,7 @@ namespace Marten.Testing
 {
     public class ConnectionSource : ConnectionFactory
     {
-        public static readonly string ConnectionString = Environment.GetEnvironmentVariable("marten_testing_database");
+        public static readonly string ConnectionString = Environment.GetEnvironmentVariable("marten-testing-database");
 
         static ConnectionSource()
         {
