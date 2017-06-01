@@ -57,12 +57,12 @@ namespace Marten.Schema
 
             if (mapping.DeleteStyle == DeleteStyle.Remove)
             {
-                DeleteByIdSql = $"delete from {_mapping.Table.QualifiedName} where id = ?";
+                DeleteByIdSql = $"delete from {_mapping.Table.QualifiedName} as d where id = ?";
                 DeleteByWhereSql = $"delete from {_mapping.Table.QualifiedName} as d where ?";
             }
             else
             {
-                DeleteByIdSql = $"update {_mapping.Table.QualifiedName} set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where id = ?";
+                DeleteByIdSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where id = ?";
                 DeleteByWhereSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where ?";
             }
         }
