@@ -145,15 +145,36 @@ namespace Marten.Events.Projections.Async
 
         public Task WaitUntilEventIsProcessed(long sequence, CancellationToken token = new CancellationToken())
         {
+            if (_tracks.Values.Any(x => !x.IsRunning))
+            {
+                throw new InvalidOperationException("This daemon has not been started");
+            }
+
             var tasks = _tracks.Values.Select(x => x.WaitUntilEventIsProcessed(sequence));
             return Task.WhenAll(tasks);
         }
 
         public async Task WaitForNonStaleResults(CancellationToken token = new CancellationToken())
         {
+            if (_tracks.Values.Any(x => !x.IsRunning))
+            {
+                throw new InvalidOperationException("This daemon has not been started");
+            }
+
             var last = await currentEventNumber(token).ConfigureAwait(false);
 
             await WaitUntilEventIsProcessed(last, token).ConfigureAwait(false);
+        }
+
+        private void assertStarted(Type viewType)
+        {
+            if (_tracks.ContainsKey(viewType))
+            {
+                if (!_tracks[viewType].IsRunning)
+                {
+                    throw new InvalidOperationException($"The projection track for view {viewType.FullName} has not been started");
+                }
+            }
         }
 
         public Task WaitForNonStaleResultsOf<T>(CancellationToken token = new CancellationToken())
@@ -163,6 +184,8 @@ namespace Marten.Events.Projections.Async
 
         public async Task WaitForNonStaleResultsOf(Type viewType, CancellationToken token)
         {
+            assertStarted(viewType);
+
             if (!_tracks.ContainsKey(viewType))
             {
                 throw new ArgumentOutOfRangeException(nameof(viewType));

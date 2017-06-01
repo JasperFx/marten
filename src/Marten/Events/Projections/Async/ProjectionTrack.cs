@@ -125,8 +125,10 @@ namespace Marten.Events.Projections.Async
             Lifecycle = lifecycle;
             _fetcher.Start(this, lifecycle, _cancellation.Token);
 
-
+            IsRunning = true;
         }
+
+        public bool IsRunning { get; private set; }
 
         public async Task Stop()
         {
@@ -135,7 +137,11 @@ namespace Marten.Events.Projections.Async
             await _fetcher.Stop().ConfigureAwait(false);
             _logger.Stopped(this);
 
+            IsRunning = false;
+
             _rebuildCompletion.TrySetResult(LastEncountered);
+
+
         }
 
         public Task Start()
