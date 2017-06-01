@@ -6,7 +6,7 @@ using Marten.Events.Projections.Async;
 
 namespace Marten.Events.Projections
 {
-    public class OneForOneProjection<TEvent, TView> : IProjection
+    public class OneForOneProjection<TEvent, TView> : DocumentProjection<TView>, IDocumentProjection
     {
         private readonly ITransform<TEvent, TView> _transform;
 
@@ -15,7 +15,6 @@ namespace Marten.Events.Projections
             _transform = transform;
 
             Consumes = new[] {typeof(TEvent)};
-            Produces = typeof(TView);
         }
 
         public void Apply(IDocumentSession session, EventStream[] streams)
@@ -37,7 +36,6 @@ namespace Marten.Events.Projections
         }
 
         public Type[] Consumes { get; }
-        public Type Produces { get; }
 
         public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
     }

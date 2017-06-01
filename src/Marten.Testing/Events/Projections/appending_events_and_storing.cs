@@ -9,6 +9,7 @@ using System.Threading;
 using System.Linq;
 using Marten.Events.Projections.Async;
 using System.Threading.Tasks;
+using Marten.Storage;
 
 namespace Marten.Testing.Events
 {
@@ -68,6 +69,11 @@ namespace Marten.Testing.Events
             public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
             {
                 return Task.CompletedTask;
+            }
+
+            public void EnsureStorageExists(ITenant tenant)
+            {
+                tenant.EnsureStorageExists(typeof(QuestPatchTestProjection));
             }
 
             public Type[] Consumes { get; } = new Type[] { typeof(Quest), typeof(QuestStarted) };

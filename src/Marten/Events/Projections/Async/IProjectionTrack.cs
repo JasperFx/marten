@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async.ErrorHandling;
+using Marten.Storage;
 
 namespace Marten.Events.Projections.Async
 {
@@ -17,5 +18,6 @@ namespace Marten.Events.Projections.Async
 
         void QueuePage(EventPage page);
         void Finished(long lastEncountered);
+        void EnsureStorageExists(ITenant tenant);
     }
 }

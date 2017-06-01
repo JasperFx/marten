@@ -9,6 +9,7 @@ using Xunit;
 using Xunit.Abstractions;
 using System.Linq;
 using Baseline.Dates;
+using Marten.Storage;
 using Shouldly;
 
 namespace Marten.Testing.AsyncDaemon
@@ -158,6 +159,11 @@ namespace Marten.Testing.AsyncDaemon
                 return Task.CompletedTask;
             }
 
+            public void EnsureStorageExists(ITenant tenant)
+            {
+                
+            }
+
             public int ProjectCount { get; set; }
 
             public void Apply(ProjectStarted @event)
@@ -192,6 +198,11 @@ namespace Marten.Testing.AsyncDaemon
                 _failed = false;
 
                 return Task.CompletedTask;
+            }
+
+            public void EnsureStorageExists(ITenant tenant)
+            {
+                
             }
         }
 

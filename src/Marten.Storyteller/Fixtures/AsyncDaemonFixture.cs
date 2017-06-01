@@ -5,6 +5,7 @@ using Baseline.Dates;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
+using Marten.Storage;
 using Marten.Testing;
 using Marten.Testing.AsyncDaemon;
 using Marten.Testing.CodeTracker;
@@ -158,6 +159,11 @@ namespace Marten.Storyteller.Fixtures
             _failed = false;
 
             return Task.CompletedTask;
+        }
+
+        public void EnsureStorageExists(ITenant tenant)
+        {
+            
         }
     }
 

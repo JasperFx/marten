@@ -10,7 +10,7 @@ using Marten.Storage;
 
 namespace Marten.Events.Projections
 {
-    public class ViewProjection<TView> : IProjection where TView : class, new()
+    public class ViewProjection<TView> : DocumentProjection<TView>, IDocumentProjection where TView : class, new()
     {
         private class EventHandler
         {
@@ -39,7 +39,6 @@ namespace Marten.Events.Projections
         private readonly IDictionary<Type, EventHandler> _handlers = new ConcurrentDictionary<Type, EventHandler>();
 
         public Type[] Consumes => getUniqueEventTypes();
-        public Type Produces => typeof(TView);
         public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
 
         public ViewProjection<TView> ProjectEvent<TEvent>(Action<TView, TEvent> handler) where TEvent : class

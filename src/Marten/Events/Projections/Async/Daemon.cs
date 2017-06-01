@@ -28,12 +28,12 @@ namespace Marten.Events.Projections.Async
             {
                 if (projection == null)
                     throw new ArgumentOutOfRangeException(nameof(projection),
-                        $"No projection is configured for view type {projection.Produces.FullName}");
+                        $"No projection is configured for view type {projection.ProjectedType().FullName}");
 
                 var fetcher = new Fetcher(store, settings, projection, logger, _errorHandler);
                 var track = new ProjectionTrack(fetcher, store, projection, logger, _errorHandler, tenant);
 
-                _tracks.Add(projection.Produces, track);
+                _tracks.Add(projection.ProjectedType(), track);
             }
         }
 
@@ -96,7 +96,7 @@ namespace Marten.Events.Projections.Async
 
             foreach (var track in _tracks.Values)
             {
-                _tenant.EnsureStorageExists(track.ViewType);
+                track.EnsureStorageExists(_tenant);
             }
 
             _tenant.EnsureStorageExists(typeof(EventStream));

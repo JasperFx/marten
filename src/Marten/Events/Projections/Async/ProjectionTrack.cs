@@ -37,7 +37,7 @@ namespace Marten.Events.Projections.Async
 
             _events = store.Events;
 
-            ViewType = _projection.Produces;
+            ViewType = _projection.ProjectedType();
         }
 
         private void startConsumers()
@@ -114,11 +114,16 @@ namespace Marten.Events.Projections.Async
 
         }
 
+        public void EnsureStorageExists(ITenant tenant)
+        {
+            _projection.EnsureStorageExists(tenant);
+        }
+
         public void Start(DaemonLifecycle lifecycle)
         {
             _logger.StartingProjection(this, lifecycle);
 
-            _tenant.EnsureStorageExists(_projection.Produces);
+            EnsureStorageExists(_tenant);
 
             startConsumers();
 
@@ -162,18 +167,27 @@ namespace Marten.Events.Projections.Async
 
         public Task<long> RunUntilEndOfEvents(CancellationToken token = default(CancellationToken))
         {
-            _tenant.EnsureStorageExists(_projection.Produces);
+            ensureStorageExists();
+            
 
             Start(DaemonLifecycle.StopAtEndOfEventData);
 
             return _rebuildCompletion.Task;
         }
 
+        private void ensureStorageExists()
+        {
+            if (_projection is IDocumentProjection)
+            {
+                _tenant.EnsureStorageExists(_projection.ProjectedType());
+            }
+        }
+
         public async Task Rebuild(CancellationToken token = new CancellationToken())
         {
             Lifecycle = DaemonLifecycle.StopAtEndOfEventData;
 
-            _tenant.EnsureStorageExists(_projection.Produces);
+            ensureStorageExists();
 
             await _fetcher.Stop().ConfigureAwait(false);
 
@@ -209,7 +223,7 @@ namespace Marten.Events.Projections.Async
             {
                 await _projection.ApplyAsync(session, page.Streams, cancellation).ConfigureAwait(false);
 
-                session.QueueOperation(new EventProgressWrite(_events, _projection.Produces.FullName, page.To));
+                session.QueueOperation(new EventProgressWrite(_events, _projection.ProjectedType().FullName, page.To));
 
                 await session.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -220,7 +234,7 @@ namespace Marten.Events.Projections.Async
 
                 evaluateWaiters();
 
-                UpdateBlock?.Post(new StoreProgress(_projection.Produces, page));
+                UpdateBlock?.Post(new StoreProgress(_projection.ProjectedType(), page));
             }
         }
 
@@ -281,7 +295,7 @@ namespace Marten.Events.Projections.Async
         {
             _logger.ClearingExistingState(this);
 
-            var tableName = _tenant.MappingFor(_projection.Produces).Table;
+            var tableName = _tenant.MappingFor(_projection.ProjectedType()).Table;
             var sql =
                 $"delete from {_store.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
 
@@ -290,7 +304,7 @@ namespace Marten.Events.Projections.Async
                 await conn.ExecuteAsync(async (cmd, tkn) =>
                 {
                     await cmd.Sql(sql)
-                        .With("name", _projection.Produces.FullName)
+                        .With("name", _projection.ProjectedType().FullName)
                         .ExecuteNonQueryAsync(tkn)
                         .ConfigureAwait(false);
                 }, token).ConfigureAwait(false);
