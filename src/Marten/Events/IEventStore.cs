@@ -34,12 +34,30 @@ namespace Marten.Events
         Guid StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class, new();
 
         /// <summary>
+        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
+        /// </summary>
+        /// <typeparam name="TAggregate"></typeparam>
+        /// <param name="id"></param>
+        /// <param name="events"></param>
+        /// <returns></returns>
+        Guid StartStream(Guid id, params object[] events);
+
+
+        /// <summary>
         /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
         /// </summary>
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>
         /// <returns></returns>
         Guid StartStream<TAggregate>(params object[] events) where TAggregate : class, new();
+
+        /// <summary>
+        /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
+        /// </summary>
+        /// <typeparam name="TAggregate"></typeparam>
+        /// <param name="events"></param>
+        /// <returns></returns>
+        Guid StartStream(params object[] events);
 
         /// <summary>
         /// Synchronously fetches all of the events for the named stream

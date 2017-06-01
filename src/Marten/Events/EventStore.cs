@@ -85,9 +85,25 @@ namespace Marten.Events
             return id;
         }
 
+        public Guid StartStream(Guid id, params object[] events)
+        {
+            _tenant.EnsureStorageExists(typeof(EventStream));
+
+            var stream = new EventStream(id, events.Select(EventStream.ToEvent).ToArray(), true);
+
+            _unitOfWork.StoreStream(stream);
+
+            return id;
+        }
+
         public Guid StartStream<TAggregate>(params object[] events) where TAggregate : class, new()
         {
             return StartStream<TAggregate>(Guid.NewGuid(), events);
+        }
+
+        public Guid StartStream(params object[] events)
+        {
+            return StartStream(Guid.NewGuid(), events);
         }
 
         public IList<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
