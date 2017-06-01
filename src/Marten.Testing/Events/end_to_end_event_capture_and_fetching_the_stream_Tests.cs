@@ -564,6 +564,7 @@ namespace Marten.Testing.Events
         }
 
 
+
         private static DocumentStore InitStore(string databascSchema = null, bool cleanShema = true)
         {
             var store = DocumentStore.For(_ =>

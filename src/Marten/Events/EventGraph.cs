@@ -120,7 +120,7 @@ namespace Marten.Events
             var aggregate = AllAggregates().FirstOrDefault(x => x.Alias == aggregateTypeName);
             if (aggregate == null)
             {
-                throw new ArgumentOutOfRangeException(nameof(aggregateTypeName), $"Unknown aggregate type '{aggregateTypeName}'. You may need to register this aggregate type with StoreOptions.Events.AggregateFor<T>()");
+                return null;
             }
 
             return
