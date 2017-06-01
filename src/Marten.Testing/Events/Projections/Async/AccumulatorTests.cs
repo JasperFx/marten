@@ -5,6 +5,21 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections.Async
 {
+
+    public static class EventMother
+    {
+        public static IEvent[] Random(int count)
+        {
+            var events = new IEvent[count];
+            for (int i = 0; i < events.Length; i++)
+            {
+                events[i] = new Event<MembersJoined>(new MembersJoined{Day = i});
+            }
+
+            return events;
+        }
+    }
+
     public class AccumulatorTests
     {
         private readonly Accumulator theAccumulator = new Accumulator();
@@ -20,7 +35,7 @@ namespace Marten.Testing.Events.Projections.Async
 
         private EventPage toPage(long from, long to, int eventCount)
         {
-            return new EventPage(from, to, new IEvent[0]) {Count = eventCount};
+            return new EventPage(from, to, EventMother.Random(eventCount));
         }
 
         [Fact]

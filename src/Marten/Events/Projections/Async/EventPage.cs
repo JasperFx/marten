@@ -14,6 +14,9 @@ namespace Marten.Events.Projections.Async
 
     public class EventPage
     {
+        private EventStream[] _streams;
+        private IList<IEvent> _events;
+
         public static EventStream[] ToStreams(IEnumerable<IEvent> events)
         {
             return events.GroupBy(x => x.StreamId)
@@ -37,8 +40,21 @@ namespace Marten.Events.Projections.Async
 
         public long From { get; set; }
         public long To { get; set; }
-        public EventStream[] Streams { get; set; }
-        public int Count { get; set; }
+
+        public EventStream[] Streams
+        {
+            get
+            {
+                if (_streams == null)
+                {
+                    _streams = ToStreams(Events);
+                }
+
+                return _streams;
+            }
+        }
+
+        public int Count => Events.Count;
         public EventPage Next { get; set; }
 
         public IList<long> Sequences { get; set; } = new List<long>();
@@ -58,20 +74,40 @@ namespace Marten.Events.Projections.Async
             return From;
         }
 
+        public EventPage(EventStream[] streams)
+        {
+            _streams = streams;
+            From = 0;
+            To = 0;
+        }
+
         public EventPage(long from, long to, IList<IEvent> events)
         {
+            _events = events;
             From = @from;
             To = to;
-            Streams = ToStreams(events);
-            Count = events.Count;
+            _streams = ToStreams(events);
+        }
+
+        public IList<IEvent> Events
+        {
+            get
+            {
+                if (_events == null && _streams != null)
+                {
+                    _events = _streams.SelectMany(x => x.Events).OrderBy(x => x.Sequence).ToList();
+                }
+
+                return _events;
+            }
         }
 
         public EventPage(long @from, IList<long> sequences, IList<IEvent> events)
         {
+            _events = events;
             Sequences = sequences;
             From = @from;
             To = Sequences.LastOrDefault();
-            Streams = ToStreams(events);
         }
 
         public bool IsSequential()

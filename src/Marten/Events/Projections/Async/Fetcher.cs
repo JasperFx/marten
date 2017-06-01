@@ -210,7 +210,6 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
 
             return new EventPage(@from, sequences, events)
             {
-                Count = events.Count,
                 NextKnownSequence = nextKnown,
                 LastKnownSequence = lastKnown
             };
