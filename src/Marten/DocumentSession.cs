@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
+using Marten.Events.Projections.Async;
 using Marten.Linq;
 using Marten.Patching;
 using Marten.Schema;
@@ -296,19 +297,19 @@ namespace Marten
         
         private void applyProjections()
         {
-            var streams = PendingChanges.Streams().ToArray();
+            var eventPage = new EventPage(PendingChanges.Streams().ToArray());
             foreach (var projection in _store.Events.InlineProjections)
             {
-                projection.Apply(this, streams);
+                projection.Apply(this, eventPage);
             }
         }
 
         private async Task applyProjectionsAsync(CancellationToken token)
         {
-            var streams = PendingChanges.Streams().ToArray();
+            var eventPage = new EventPage(PendingChanges.Streams().ToArray());
             foreach (var projection in _store.Events.InlineProjections)
             {
-                await projection.ApplyAsync(this, streams, token).ConfigureAwait(false);
+                await projection.ApplyAsync(this, eventPage, token).ConfigureAwait(false);
             }
         }
 

@@ -17,9 +17,9 @@ namespace Marten.Events.Projections
             Consumes = new[] {typeof(TEvent)};
         }
 
-        public void Apply(IDocumentSession session, EventStream[] streams)
+        public void Apply(IDocumentSession session, EventPage page)
         {
-            foreach (var stream in streams)
+            foreach (var stream in page.Streams)
             {
                 foreach (var @event in stream.Events.OfType<Event<TEvent>>())
                 {
@@ -28,9 +28,9 @@ namespace Marten.Events.Projections
             }
         }
 
-        public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+        public Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
         {
-            Apply(session, streams);
+            Apply(session, page);
 
             return Task.CompletedTask;
         }

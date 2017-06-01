@@ -11,8 +11,8 @@ namespace Marten.Events.Projections
         Type[] Consumes { get; }
         
         AsyncOptions AsyncOptions { get; }
-        void Apply(IDocumentSession session, EventStream[] streams);
-        Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token);
+        void Apply(IDocumentSession session, EventPage page);
+        Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token);
         void EnsureStorageExists(ITenant tenant);
     }
 
