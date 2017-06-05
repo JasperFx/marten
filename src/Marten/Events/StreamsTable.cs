@@ -5,9 +5,13 @@ namespace Marten.Events
 {
     public class StreamsTable : Table
     {
-        public StreamsTable(string schemaName) : base(new DbObjectName(schemaName, "mt_streams"))
+        public StreamsTable(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, "mt_streams"))
         {
-            AddPrimaryKey(new TableColumn("id", "uuid"));
+            AddPrimaryKey(events.StreamIdentity == StreamIdentity.AsGuid
+                ? new TableColumn("id", "uuid")
+                : new TableColumn("id", "varchar"));
+
+
             AddColumn("type", "varchar", "NULL");
             AddColumn("version", "integer", "NOT NULL");
             AddColumn("timestamp", "timestamptz", "default (now()) NOT NULL");

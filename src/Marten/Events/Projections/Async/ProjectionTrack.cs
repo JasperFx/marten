@@ -221,7 +221,7 @@ namespace Marten.Events.Projections.Async
             // TODO -- have to pass in the tenant here
             using (var session = _store.OpenSession())
             {
-                await _projection.ApplyAsync(session, page.Streams, cancellation).ConfigureAwait(false);
+                await _projection.ApplyAsync(session, page, cancellation).ConfigureAwait(false);
 
                 session.QueueOperation(new EventProgressWrite(_events, _projection.ProjectedType().FullName, page.To));
 

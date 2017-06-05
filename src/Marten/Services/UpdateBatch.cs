@@ -17,15 +17,13 @@ namespace Marten.Services
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private readonly List<CharArrayTextWriter> _writers = new List<CharArrayTextWriter>();
         private readonly DocumentStore _store;
-        private ITenant _tenant;
+        private readonly ITenant _tenant;
 
         public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool, ITenant tenant)
         {
-            if (versions == null) throw new ArgumentNullException(nameof(versions));
-
             _store = store;
             _writerPool = writerPool;
-            Versions = versions;
+            Versions = versions ?? throw new ArgumentNullException(nameof(versions));
 
             _commands.Push(new BatchCommand(_store.Serializer, tenant));
             Connection = connection;

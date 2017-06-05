@@ -15,7 +15,7 @@ namespace Marten.Testing.Schema.Identity
         public IdAssignerTests()
         {
             var member = ReflectionHelper.GetProperty<User>(x => x.Id);
-            theAssigner = new IdAssigner<User, Guid>(member, new GuidIdGeneration(), null);
+            theAssigner = new IdAssigner<User, Guid>(member, new GuidIdGeneration());
         }
 
         [Fact]
@@ -64,7 +64,7 @@ namespace Marten.Testing.Schema.Identity
         public void assign_a_given_id_setter_is_private()
         {
             var member = ReflectionHelper.GetProperty<UserWithPrivateId>(x => x.Id);
-            var theAssigner = new IdAssigner<UserWithPrivateId, Guid>(member, new GuidIdGeneration(), null);
+            var theAssigner = new IdAssigner<UserWithPrivateId, Guid>(member, new GuidIdGeneration());
             var user = new UserWithPrivateId();
             var id = Guid.NewGuid();
 

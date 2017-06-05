@@ -17,15 +17,24 @@ namespace Marten.Events.Projections.Async
         private EventStream[] _streams;
         private IList<IEvent> _events;
 
-        public static EventStream[] ToStreams(IEnumerable<IEvent> events)
+        public static EventStream[] ToStreams(StreamIdentity streamIdentity, IEnumerable<IEvent> events)
         {
-            return events.GroupBy(x => x.StreamId)
-                        .Select(
-                            group =>
-                            {
-                                return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
-                            })
-                        .ToArray();
+            if (streamIdentity == StreamIdentity.AsGuid)
+            {
+                return events.GroupBy(x => x.StreamId)
+                    .Select(group =>
+                    {
+                        return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
+                    })
+                    .ToArray();
+            }
+
+            return events.GroupBy(x => x.StreamKey)
+                .Select(group =>
+                {
+                    return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
+                })
+                .ToArray();
         }
 
         public static bool IsCompletelySequential(IList<long> sequences)
@@ -41,18 +50,7 @@ namespace Marten.Events.Projections.Async
         public long From { get; set; }
         public long To { get; set; }
 
-        public EventStream[] Streams
-        {
-            get
-            {
-                if (_streams == null)
-                {
-                    _streams = ToStreams(Events);
-                }
-
-                return _streams;
-            }
-        }
+        public EventStream[] Streams => _streams ?? (_streams = ToStreams(StreamIdentity, Events));
 
         public int Count => Events.Count;
         public EventPage Next { get; set; }
@@ -86,8 +84,9 @@ namespace Marten.Events.Projections.Async
             _events = events;
             From = @from;
             To = to;
-            _streams = ToStreams(events);
         }
+
+        public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
 
         public IList<IEvent> Events
         {

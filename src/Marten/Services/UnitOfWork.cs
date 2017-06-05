@@ -221,7 +221,10 @@ namespace Marten.Services
         private void writeEvents(UpdateBatch batch)
         {
             var upsert = new EventStreamAppender(_store.Events);
-            _events.Values.Each(stream => { upsert.RegisterUpdate(batch, stream); });
+            _events.Values.Each(stream =>
+            {
+                upsert.RegisterUpdate(batch, stream);
+            });
         }
 
         private IEnumerable<Type> GetTypeDependencies(Type type)
@@ -280,6 +283,17 @@ namespace Marten.Services
         public IEnumerable<T> NonDocumentOperationsOf<T>() where T : IStorageOperation
         {
             return _ancillaryOperations.OfType<T>();
+        }
+
+
+        public bool HasStream(string stream)
+        {
+            return _events.Values.Any(x => x.Key == stream);
+        }
+
+        public EventStream StreamFor(string stream)
+        {
+            return _events.Values.First(x => x.Key == stream);
         }
     }
 

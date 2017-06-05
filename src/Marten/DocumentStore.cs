@@ -83,7 +83,7 @@ namespace Marten
 
             Storage = options.Storage;
 
-            Storage.CompileSubClasses();
+            Storage.PostProcessConfiguration();
 
             Serializer = options.Serializer();
 

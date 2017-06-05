@@ -5,11 +5,13 @@ namespace Marten.Events
 {
     public class EventsTable : Table
     {
-        public EventsTable(string schemaName) : base(new DbObjectName(schemaName, "mt_events"))
+        public EventsTable(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, "mt_events"))
         {
+            var stringIdType = events.GetStreamIdType();
+
             AddPrimaryKey(new TableColumn("seq_id", "bigint"));
             AddColumn("id", "uuid", "NOT NULL");
-            AddColumn("stream_id", "uuid", $"REFERENCES {schemaName}.mt_streams ON DELETE CASCADE");
+            AddColumn("stream_id", stringIdType, $"REFERENCES {events.DatabaseSchemaName}.mt_streams ON DELETE CASCADE");
             AddColumn("version", "integer", "NOT NULL");
             AddColumn("data", "jsonb", "NOT NULL");
             AddColumn("type", "varchar(100)", "NOT NULL");

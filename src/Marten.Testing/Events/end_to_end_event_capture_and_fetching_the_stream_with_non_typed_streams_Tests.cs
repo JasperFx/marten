@@ -33,7 +33,7 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream(joined, departed);
+                var id = session.Events.StartStream(joined, departed).Id;
                 session.SaveChanges();
                 // ENDSAMPLE
 
@@ -62,7 +62,7 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream(joined, departed);
+                var id = session.Events.StartStream(joined, departed).Id;
                 await session.SaveChangesAsync();
                 // ENDSAMPLE
 
@@ -91,7 +91,7 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream(joined, departed);
+                var id = session.Events.StartStream(joined, departed).Id;
                 await session.SaveChangesAsync();
                 // ENDSAMPLE
 
@@ -121,7 +121,7 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream(joined, departed);
+                var id = session.Events.StartStream(joined, departed).Id;
                 session.SaveChanges();
                 // ENDSAMPLE
 
@@ -161,7 +161,7 @@ namespace Marten.Testing.Events
                 var liveAggregate = session.Events.AggregateStream<QuestParty>(questId);
                 var inlinedAggregate = session.Load<QuestParty>(questId);
                 liveAggregate.Id.ShouldBe(inlinedAggregate.Id);
-                ShouldBeStringTestExtensions.ShouldBe(inlinedAggregate.ToString(), liveAggregate.ToString());
+                inlinedAggregate.ToString().ShouldBe(liveAggregate.ToString());
             }
         }
 
@@ -398,7 +398,7 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream(joined, departed);
+                var id = session.Events.StartStream(joined, departed).Id;
                 session.SaveChanges();
 
                 var streamEvents = session.Events.FetchStream(id);

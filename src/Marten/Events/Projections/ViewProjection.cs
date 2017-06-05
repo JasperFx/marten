@@ -68,9 +68,9 @@ namespace Marten.Events.Projections
             return this;
         }
 
-        void IProjection.Apply(IDocumentSession session, EventStream[] streams)
+        void IProjection.Apply(IDocumentSession session, EventPage page)
         {
-            var projections = getEventProjections(session, streams);
+            var projections = getEventProjections(session, page);
 
             var viewIds = projections.Select(projection => projection.ViewId).Distinct().ToArray();
             var views = session.LoadMany<TView>(viewIds);
@@ -78,9 +78,9 @@ namespace Marten.Events.Projections
             applyProjections(session, projections, views);
         }
 
-        async Task IProjection.ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+        async Task IProjection.ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
         {
-            var projections = getEventProjections(session, streams);
+            var projections = getEventProjections(session, page);
 
             var viewIds = projections.Select(projection => projection.ViewId).Distinct().ToArray();
             var views = await session.LoadManyAsync<TView>(token, viewIds).ConfigureAwait(false);
@@ -129,18 +129,16 @@ namespace Marten.Events.Projections
             return view;
         }
 
-        private IList<EventProjection> getEventProjections(IDocumentSession session, EventStream[] streams)
+        private IList<EventProjection> getEventProjections(IDocumentSession session, EventPage page)
         {
-            var streamEvents = streams.SelectMany(stream => stream.Events.Select(@event => new { StreamId = stream.Id, Event = @event } ));
-
             var projections = new List<EventProjection>();
-            foreach (var streamEvent in streamEvents)
+            foreach (var streamEvent in page.Events)
             {
                 EventHandler handler;
-                if (_handlers.TryGetValue(streamEvent.Event.Data.GetType(), out handler))
+                if (_handlers.TryGetValue(streamEvent.Data.GetType(), out handler))
                 {
-                    var viewId = handler.IdSelector(session, streamEvent.Event.Data, streamEvent.StreamId);
-                    projections.Add(new EventProjection(handler, viewId, streamEvent.Event));
+                    var viewId = handler.IdSelector(session, streamEvent.Data, streamEvent.StreamId);
+                    projections.Add(new EventProjection(handler, viewId, streamEvent));
                 }
             }
             return projections;

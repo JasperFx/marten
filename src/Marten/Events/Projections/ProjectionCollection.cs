@@ -28,7 +28,12 @@ namespace Marten.Events.Projections
         public AggregationProjection<T> AggregateStreamsWith<T>() where T : class, new()
         {            
             var aggregator = _options.Events.AggregateFor<T>();
-            var finder = new AggregateFinder<T>();
+
+
+            IAggregationFinder<T> finder = _options.Events.StreamIdentity == StreamIdentity.AsGuid
+                ? (IAggregationFinder<T>)new AggregateFinder<T>()
+                : new StringIdentifiedAggregateFinder<T>();
+
             var projection = new AggregationProjection<T>(finder, aggregator);
 
             Add(projection);

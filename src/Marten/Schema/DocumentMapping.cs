@@ -170,13 +170,14 @@ namespace Marten.Schema
             factory.RunSql(sql);
         }
 
+        // TODO -- see if you can eliminate the tenant argument here
         public IdAssignment<T> ToIdAssignment<T>(ITenant tenant)
         {
             var idType = IdMember.GetMemberType();
 
             var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
 
-            return (IdAssignment<T>) Activator.CreateInstance(assignerType, IdMember, IdStrategy, tenant);
+            return (IdAssignment<T>) Activator.CreateInstance(assignerType, IdMember, IdStrategy);
         }
 
         public IQueryableDocument ToQueryableDocument()

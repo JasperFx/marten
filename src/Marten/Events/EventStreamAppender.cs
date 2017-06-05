@@ -30,13 +30,29 @@ namespace Marten.Events
             var eventTypes = events.Select(x => _graph.EventMappingFor(x.Data.GetType()).EventTypeName).ToArray();
             var ids = events.Select(x => x.Id).ToArray();
 
-            var sprocCall = batch.Sproc(AppendEventFunction, new EventStreamVersioningCallback(stream))
-                .Param("stream", stream.Id)
-                .Param("stream_type", streamTypeName)
-                .Param("event_ids", ids)
-                .Param("event_types", eventTypes);
+            var sprocCall = toAppendSprocCall(batch, stream, streamTypeName, ids, eventTypes);
 
             AddJsonBodies(batch, sprocCall, events);
+        }
+
+        private SprocCall toAppendSprocCall(UpdateBatch batch, EventStream stream, string streamTypeName, Guid[] ids,
+            string[] eventTypes)
+        {
+            if (_graph.StreamIdentity == StreamIdentity.AsGuid)
+            {
+                return batch.Sproc(AppendEventFunction, new EventStreamVersioningCallback(stream))
+                                     .Param("stream", stream.Id)
+                                     .Param("stream_type", streamTypeName)
+                                     .Param("event_ids", ids)
+                                     .Param("event_types", eventTypes);
+            }
+
+
+            return batch.Sproc(AppendEventFunction, new EventStreamVersioningCallback(stream))
+                        .Param("stream", stream.Key)
+                        .Param("stream_type", streamTypeName)
+                        .Param("event_ids", ids)
+                        .Param("event_types", eventTypes);
         }
 
         static void AddJsonBodies(UpdateBatch batch, SprocCall sprocCall, IEvent[] events)

@@ -41,7 +41,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
             var started = new QuestStarted { Name = name };
             using (var session = _store.LightweightSession())
             {
-                _lastStream = session.Events.StartStream<Quest>(started);
+                _lastStream = session.Events.StartStream<Quest>(started).Id;
 
                 _streams[name] = _lastStream;
 

@@ -1,38 +1,37 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
+using Marten;
+using Marten.Events;
+using Marten.Testing;
 using Marten.Testing.Events.Projections;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class end_to_end_event_capture_and_fetching_the_stream_Tests
+
+
+
+    public class end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers
     {
-        public static TheoryData<DocumentTracking> SessionTypes = new TheoryData<DocumentTracking>
-        {
-            DocumentTracking.IdentityOnly,
-            DocumentTracking.DirtyTracking
-        };
-
-
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void capture_events_to_a_new_stream_and_fetch_the_events_back(DocumentTracking sessionType)
+        [Fact]
+        public void capture_events_to_a_new_stream_and_fetch_the_events_back()
         {
             var store = InitStore();
 
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
-                // SAMPLE: start-stream-with-aggregate-type
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream<Quest>(joined, departed).Id;
+                var id = "First";
+                    
+                session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
-                // ENDSAMPLE
 
                 var streamEvents = session.Events.FetchStream(id);
 
@@ -46,20 +45,20 @@ namespace Marten.Testing.Events
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_async(DocumentTracking sessionType)
+        [Fact]
+        public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_async()
         {
             var store = InitStore();
 
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
                 // SAMPLE: start-stream-with-aggregate-type
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream<Quest>(joined, departed).Id;
+                var id = "Second";
+                session.Events.StartStream<Quest>(id, joined, departed);
                 await session.SaveChangesAsync();
                 // ENDSAMPLE
 
@@ -75,26 +74,26 @@ namespace Marten.Testing.Events
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_async_with_linq(DocumentTracking sessionType)
+        [Fact]
+        public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_async_with_linq()
         {
             var store = InitStore();
 
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
                 // SAMPLE: start-stream-with-aggregate-type
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream<Quest>(joined, departed).Id;
+                var id = "Third";
+                session.Events.StartStream<Quest>(id, joined, departed);
                 await session.SaveChangesAsync();
                 // ENDSAMPLE
 
                 var streamEvents = await session.Events.QueryAllRawEvents()
-                    .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToListAsync();
-                    
+                                                .Where(x => x.StreamKey == id).OrderBy(x => x.Version).ToListAsync();
+
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -106,25 +105,25 @@ namespace Marten.Testing.Events
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void capture_events_to_a_new_stream_and_fetch_the_events_back_sync_with_linq(DocumentTracking sessionType)
+        [Fact]
+        public void capture_events_to_a_new_stream_and_fetch_the_events_back_sync_with_linq()
         {
             var store = InitStore();
 
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
                 // SAMPLE: start-stream-with-aggregate-type
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream<Quest>(joined, departed).Id;
+                var id = "Fourth";
+                session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
                 // ENDSAMPLE
 
                 var streamEvents = session.Events.QueryAllRawEvents()
-                    .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToList();
+                                          .Where(x => x.StreamKey == id).OrderBy(x => x.Version).ToList();
 
 
                 streamEvents.Count().ShouldBe(2);
@@ -138,12 +137,11 @@ namespace Marten.Testing.Events
         }
 
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void live_aggregate_equals_inlined_aggregate_without_hidden_contracts(DocumentTracking sessionType)
+        [Fact]
+        public void live_aggregate_equals_inlined_aggregate_without_hidden_contracts()
         {
             var store = InitStore("event_store");
-            var questId = Guid.NewGuid();
+            var questId = "Fifth";
 
             using (var session = store.OpenSession())
             {
@@ -157,24 +155,23 @@ namespace Marten.Testing.Events
 
             using (var session = store.OpenSession())
             {
-                var liveAggregate = session.Events.AggregateStream<QuestParty>(questId);
-                var inlinedAggregate = session.Load<QuestParty>(questId);
+                var liveAggregate = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);
+                var inlinedAggregate = session.Load<QuestPartyWithStringIdentifier>(questId);
                 liveAggregate.Id.ShouldBe(inlinedAggregate.Id);
                 inlinedAggregate.ToString().ShouldBe(liveAggregate.ToString());
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void open_persisted_stream_in_new_store_with_same_settings(DocumentTracking sessionType)
+        [Fact]
+        public void open_persisted_stream_in_new_store_with_same_settings()
         {
             var store = InitStore("event_store");
-            var questId = Guid.NewGuid();
+            var questId = "Sixth";
 
             using (var session = store.OpenSession())
             {
                 //Note "Id = questId" @see live_aggregate_equals_inlined_aggregate...
-                var started = new QuestStarted { Id = questId, Name = "Destroy the One Ring" };
+                var started = new QuestStarted { Name = "Destroy the One Ring" };
                 var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
 
                 session.Events.StartStream<Quest>(questId, started, joined1);
@@ -185,25 +182,24 @@ namespace Marten.Testing.Events
             using (var session = store.OpenSession())
             {
                 // questId is the id of the stream
-                var party = session.Events.AggregateStream<QuestParty>(questId);
+                var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);
 
-                party.Id.ShouldBe(questId);
                 party.ShouldNotBeNull();
 
                 var party_at_version_3 = session.Events
-                    .AggregateStream<QuestParty>(questId, 3);
+                                                .AggregateStream<QuestPartyWithStringIdentifier>(questId, 3);
 
                 party_at_version_3.ShouldNotBeNull();
 
                 var party_yesterday = session.Events
-                    .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
+                                             .AggregateStream<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
                 party_yesterday.ShouldNotBeNull();
             }
 
             using (var session = store.OpenSession())
             {
-                var party = session.Load<QuestParty>(questId);
-                party.Id.ShouldBe(questId);
+                var party = session.Load<QuestPartyWithStringIdentifier>(questId);
+                party.ShouldNotBeNull();
             }
 
             var newStore = InitStore("event_store", false);
@@ -211,13 +207,13 @@ namespace Marten.Testing.Events
             //Inline is working
             using (var session = store.OpenSession())
             {
-                var party = session.Load<QuestParty>(questId);
+                var party = session.Load<QuestPartyWithStringIdentifier>(questId);
                 party.ShouldNotBeNull();
             }
             //GetAll
             using (var session = store.OpenSession())
             {
-                var parties = session.Events.QueryRawEventDataOnly<QuestParty>().ToArray();
+                var parties = session.Events.QueryRawEventDataOnly<QuestPartyWithStringIdentifier>().ToArray();
                 foreach (var party in parties)
                 {
                     party.ShouldNotBeNull();
@@ -227,29 +223,28 @@ namespace Marten.Testing.Events
             using (var session = newStore.OpenSession())
             {
                 // questId is the id of the stream
-                var party = session.Events.AggregateStream<QuestParty>(questId);//Here we get NPE
-                party.Id.ShouldBe(questId);
+                var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);//Here we get NPE
+                party.ShouldNotBeNull();
 
                 var party_at_version_3 = session.Events
-                    .AggregateStream<QuestParty>(questId, 3);
-                party_at_version_3.Id.ShouldBe(questId);
+                                                .AggregateStream<QuestPartyWithStringIdentifier>(questId, 3);
+                party_at_version_3.ShouldNotBeNull();
 
                 var party_yesterday = session.Events
-                    .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-                party_yesterday.Id.ShouldBe(questId);
+                                             .AggregateStream<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
+                party_yesterday.ShouldNotBeNull();
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void query_before_saving(DocumentTracking sessionType)
+        [Fact]
+        public void query_before_saving()
         {
             var store = InitStore("event_store");
-            var questId = Guid.NewGuid();
+            var questId = "Seventh";
 
             using (var session = store.OpenSession())
             {
-                var parties = session.Query<QuestParty>().ToArray();
+                var parties = session.Query<QuestPartyWithStringIdentifier>().ToArray();
                 parties.Length.ShouldBeLessThanOrEqualTo(0);
             }
 
@@ -262,8 +257,8 @@ namespace Marten.Testing.Events
                 session.Events.StartStream<Quest>(questId, started, joined1);
                 session.SaveChanges();
 
-                var party = session.Events.AggregateStream<QuestParty>(questId);
-                party.Id.ShouldBe(questId);
+                var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);
+                party.ShouldNotBeNull();
             }
         }
 
@@ -271,11 +266,11 @@ namespace Marten.Testing.Events
         public async Task aggregate_stream_async_has_the_id()
         {
             var store = InitStore("event_store");
-            var questId = Guid.NewGuid();
+            var questId = "Eighth";
 
             using (var session = store.OpenSession())
             {
-                var parties = await session.Query<QuestParty>().ToListAsync();
+                var parties = await session.Query<QuestPartyWithStringIdentifier>().ToListAsync();
                 parties.Count.ShouldBeLessThanOrEqualTo(0);
             }
 
@@ -288,28 +283,24 @@ namespace Marten.Testing.Events
                 session.Events.StartStream<Quest>(questId, started, joined1);
                 await session.SaveChangesAsync();
 
-                var party = await session.Events.AggregateStreamAsync<QuestParty>(questId);
-                party.Id.ShouldBe(questId);
+                var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId);
+                party.ShouldNotBeNull();
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided(
-            DocumentTracking sessionType)
+        [Fact]
+        public void capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided()
         {
             var store = InitStore();
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
-                // SAMPLE: start-stream-with-existing-guid
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = Guid.NewGuid();
+                var id = "Tenth";
                 session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
-                // ENDSAMPLE
 
                 var streamEvents = session.Events.FetchStream(id);
 
@@ -321,18 +312,17 @@ namespace Marten.Testing.Events
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back(DocumentTracking sessionType)
+        [Fact]
+        public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back()
         {
             var store = InitStore();
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = Guid.NewGuid();
+                var id = "Eleventh";
                 session.Events.StartStream<Quest>(id, joined);
                 session.Events.Append(id, departed);
 
@@ -348,22 +338,21 @@ namespace Marten.Testing.Events
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void capture_events_to_an_existing_stream_and_fetch_the_events_back(DocumentTracking sessionType)
+        [Fact]
+        public void capture_events_to_an_existing_stream_and_fetch_the_events_back()
         {
             var store = InitStore();
 
-            var id = Guid.NewGuid();
+            var id = "Twelth";
             var started = new QuestStarted();
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
                 session.Events.StartStream<Quest>(id, started);
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -385,19 +374,18 @@ namespace Marten.Testing.Events
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema(
-            DocumentTracking sessionType)
+        [Fact]
+        public void capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema()
         {
             var store = InitStore("event_store");
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream<Quest>(joined, departed).Id;
+                var id = "Thirteen";
+                session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
 
                 var streamEvents = session.Events.FetchStream(id);
@@ -410,20 +398,17 @@ namespace Marten.Testing.Events
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void
-            capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided_in_another_database_schema(
-            DocumentTracking sessionType)
+        [Fact]
+        public void capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided_in_another_database_schema()
         {
             var store = InitStore("event_store");
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = Guid.NewGuid();
+                var id = "Fourteen";
                 session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
 
@@ -439,19 +424,17 @@ namespace Marten.Testing.Events
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema(
-            DocumentTracking sessionType)
+        [Fact]
+        public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema()
         {
             var store = InitStore("event_store");
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = Guid.NewGuid();
+                var id = "Fourteen";
                 session.Events.StartStream<Quest>(id, joined);
                 session.Events.Append(id, departed);
 
@@ -468,32 +451,28 @@ namespace Marten.Testing.Events
         }
 
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema(
-            DocumentTracking sessionType)
+        [Fact]
+        public void capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema()
         {
             var store = InitStore("event_store");
 
-            var id = Guid.NewGuid();
+            var id = "Fifteen";
             var started = new QuestStarted();
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
                 session.Events.StartStream<Quest>(id, started);
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession(sessionType))
+            using (var session = store.OpenSession())
             {
-                // SAMPLE: append-events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 session.Events.Append(id, joined, departed);
 
                 session.SaveChanges();
-                // ENDSAMPLE
 
                 var streamEvents = session.Events.FetchStream(id);
 
@@ -507,19 +486,16 @@ namespace Marten.Testing.Events
             }
         }
 
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void assert_on_max_event_id_on_event_stream_append(
-            DocumentTracking sessionType)
+        [Fact]
+        public void assert_on_max_event_id_on_event_stream_append()
         {
             var store = InitStore("event_store");
 
-            var id = Guid.NewGuid();
+            var id = "Sixteen";
             var started = new QuestStarted();
-            
-            using (var session = store.OpenSession(sessionType))
+
+            using (var session = store.OpenSession())
             {
-                // SAMPLE: append-events-assert-on-eventid
                 session.Events.StartStream<Quest>(id, started);
                 session.SaveChanges();
 
@@ -531,38 +507,8 @@ namespace Marten.Testing.Events
                 session.Events.Append(id, 3, joined, departed);
 
                 session.SaveChanges();
-                // ENDSAMPLE
             }
         }
-
-
-        [Theory]
-        [MemberData("SessionTypes")]
-        public void capture_immutable_events(DocumentTracking sessionType)
-        {
-            var store = InitStore();
-
-            var id = Guid.NewGuid();
-            var immutableEvent = new ImmutableEvent(id, "some-name");
-
-            using (var session = store.OpenSession(sessionType))
-            {
-                session.Events.Append(id, immutableEvent);
-                session.SaveChanges();
-            }
-
-            using (var session = store.OpenSession(sessionType))
-            {
-                var streamEvents = session.Events.FetchStream(id);
-
-                streamEvents.Count.ShouldBe(1);
-                var @event = streamEvents.ElementAt(0).Data.ShouldBeOfType<ImmutableEvent>();
-
-                @event.Id.ShouldBe(id);
-                @event.Name.ShouldBe("some-name");
-            }
-        }
-
 
 
         private static DocumentStore InitStore(string databascSchema = null, bool cleanShema = true)
@@ -578,11 +524,13 @@ namespace Marten.Testing.Events
 
                 _.Connection(ConnectionSource.ConnectionString);
 
-                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.StreamIdentity = StreamIdentity.AsString;
+                _.Events.InlineProjections.AggregateStreamsWith<QuestPartyWithStringIdentifier>();
 
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));
                 _.Events.AddEventType(typeof(QuestStarted));
+
             });
 
             if (cleanShema)
@@ -591,6 +539,52 @@ namespace Marten.Testing.Events
             }
 
             return store;
+        }
+    }
+
+    public class QuestPartyWithStringIdentifier
+    {
+        private readonly IList<string> _members = new List<string>();
+
+        public string[] Members
+        {
+            get
+            {
+                return _members.ToArray();
+            }
+            set
+            {
+                _members.Clear();
+                _members.AddRange(value);
+            }
+        }
+
+        public IList<string> Slayed { get; } = new List<string>();
+
+        public void Apply(MembersJoined joined)
+        {
+            if (joined.Members != null) _members.Fill(joined.Members);
+        }
+
+        public void Apply(MembersDeparted departed)
+        {
+            _members.RemoveAll(x => departed.Members.Contains(x));
+        }
+
+        public void Apply(QuestStarted started)
+        {
+            Name = started.Name;
+        }
+
+        public string Key { get; set; }
+
+        public string Name { get; set; }
+
+        public string Id { get; set; }
+
+        public override string ToString()
+        {
+            return $"Quest party '{Name}' is {Members.Join(", ")}";
         }
     }
 }

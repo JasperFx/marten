@@ -49,9 +49,9 @@ namespace Marten.Testing.Events
 
             public string Name { get; set; }
 
-            public void Apply(IDocumentSession session, EventStream[] streams)
+            public void Apply(IDocumentSession session, EventPage page)
             {
-                var questEvents = streams.SelectMany(s => s.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
+                var questEvents = page.Events.OrderBy(s => s.Sequence).Select(s => s.Data);
 
                 foreach (var @event in questEvents)
                 {
@@ -66,7 +66,7 @@ namespace Marten.Testing.Events
                 }
             }
 
-            public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+            public Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
             {
                 return Task.CompletedTask;
             }

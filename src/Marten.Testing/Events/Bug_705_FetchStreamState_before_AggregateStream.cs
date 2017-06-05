@@ -17,7 +17,7 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                id = session.Events.StartStream<Quest>(joined, departed);
+                id = session.Events.StartStream<Quest>(joined, departed).Id;
                 await session.SaveChangesAsync();
             }
 
