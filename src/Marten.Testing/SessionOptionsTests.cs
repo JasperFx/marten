@@ -1,6 +1,7 @@
 ﻿using Baseline;
 using Marten.Services;
 using Npgsql;
+using Shouldly;
 using StructureMap;
 using Xunit;
 
@@ -19,6 +20,14 @@ public void ConfigureCommandTimeout(IDocumentStore store)
     }
 }
         // ENDSAMPLE
+
+
+        [Fact]
+        public void the_default_concurrency_checks_is_enabled()
+        {
+            new SessionOptions().ConcurrencyChecks
+                .ShouldBe(ConcurrencyChecks.Enabled);
+        }
 
         [Fact]
         public void can_choke_on_custom_timeout()

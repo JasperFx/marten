@@ -30,5 +30,24 @@ namespace Marten.Services
         /// Override the tenant id for the requested session
         /// </summary>
         public string TenantId { get; set; } = Tenancy.DefaultTenantId;
+
+        /// <summary>
+        /// Use to enable or disable optimistic concurrency for just this session
+        /// </summary>
+        public ConcurrencyChecks ConcurrencyChecks { get; set; } = ConcurrencyChecks.Enabled;
+
+    }
+
+    public enum ConcurrencyChecks
+    {
+        /// <summary>
+        /// Optimistic concurrency checks are enforced (Default)
+        /// </summary>
+        Enabled,
+
+        /// <summary>
+        /// Optimistic concurrency checks are disabled for this session
+        /// </summary>
+        Disabled
     }
 }
