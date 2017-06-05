@@ -21,13 +21,14 @@ namespace Marten.Events.Projections.Async
         private readonly NulloIdentityMap _map;
         private readonly DaemonSettings _settings;
         private readonly AsyncOptions _options;
-        private readonly EventSelector _selector;
+        private readonly IEventSelector _selector;
         private Task _fetchingTask;
         private long _lastEncountered;
         private CancellationToken _token = default(CancellationToken);
         private IProjectionTrack _track;
         private readonly string _sql;
-        private ITenant _tenant;
+        private readonly ITenant _tenant;
+        private StreamIdentity _streamIdentity;
 
         public Fetcher(IDocumentStore store, DaemonSettings settings, AsyncOptions options, IDaemonLogger logger, IDaemonErrorHandler errorHandler, IEnumerable<Type> eventTypes)
         {
@@ -40,7 +41,12 @@ namespace Marten.Events.Projections.Async
             // TODO -- this will have to change
             _tenant = store.Tenancy.Default;
 
-            _selector = new EventSelector(store.Events, store.Advanced.Serializer);
+            _streamIdentity = store.Events.StreamIdentity;
+
+            _selector = store.Events.StreamIdentity == StreamIdentity.AsGuid
+                ? (IEventSelector)new EventSelector(store.Events, store.Advanced.Serializer)
+                : new StringIdentifiedEventSelector(store.Events, store.Advanced.Serializer);
+
             _map = new NulloIdentityMap(store.Advanced.Serializer);
 
             EventTypeNames = eventTypes.Select(x => store.Events.EventMappingFor(x).Alias).ToArray();
@@ -211,7 +217,8 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
             return new EventPage(@from, sequences, events)
             {
                 NextKnownSequence = nextKnown,
-                LastKnownSequence = lastKnown
+                LastKnownSequence = lastKnown,
+                StreamIdentity = _streamIdentity
             };
         }
 

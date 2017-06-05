@@ -9,6 +9,12 @@ namespace Marten.Testing.Events
     {
         private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
 
+        [Fact]
+        public void stream_identity_is_guid_by_default()
+        {
+            theGraph.StreamIdentity.ShouldBe(StreamIdentity.AsGuid);
+        }
+
 
         [Fact]
         public void find_stream_mapping_initially()

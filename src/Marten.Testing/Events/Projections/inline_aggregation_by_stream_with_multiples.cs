@@ -43,7 +43,8 @@ namespace Marten.Testing.Events.Projections
                 _.Events.InlineProjections.AggregateStreamsWith<QuestMonsters>();
             });
 
-            var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
             theSession.SaveChanges();
 
             theSession.Load<QuestMonsters>(streamId).Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
@@ -63,7 +64,8 @@ namespace Marten.Testing.Events.Projections
                 _.Events.InlineProjections.AggregateStreamsWith<QuestMonsters>();
             });
 
-            var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
             await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             (await theSession.LoadAsync<QuestMonsters>(streamId).ConfigureAwait(false)).Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");

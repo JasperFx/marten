@@ -23,7 +23,8 @@ namespace Marten.Testing.Events
         public void fetch_synchronously()
         {
 
-            var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
             theSession.SaveChanges();
 
             var events = theSession.Events.FetchStream(streamId);
@@ -45,7 +46,8 @@ namespace Marten.Testing.Events
         public async Task fetch_asynchronously()
         {
 
-            var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
             await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             var events = theSession.Events.FetchStream(streamId);
@@ -67,7 +69,8 @@ namespace Marten.Testing.Events
         [Fact]
         public async Task fetch_in_batch_query()
         {
-            var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
             await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             var events = theSession.Events.FetchStream(streamId);

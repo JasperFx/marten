@@ -1,25 +1,28 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Events
 {
-    internal class EventQueryHandler : IQueryHandler<IList<IEvent>>
+    internal interface IEventQueryHandler : IQueryHandler<IList<IEvent>>
     {
-        private readonly EventSelector _selector;
-        private readonly Guid _streamId;
+        
+    }
+
+    internal class EventQueryHandler<TIdentity> : IEventQueryHandler
+    {
+        private readonly ISelector<IEvent> _selector;
+        private readonly TIdentity _streamId;
         private readonly DateTime? _timestamp;
         private readonly int _version;
 
-        public EventQueryHandler(EventSelector selector, Guid streamId, int version = 0, DateTime? timestamp = null)
+        public EventQueryHandler(ISelector<IEvent> selector, TIdentity streamId, int version = 0, DateTime? timestamp = null)
         {
             if (timestamp != null && timestamp.Value.Kind != DateTimeKind.Utc)
             {

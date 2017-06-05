@@ -1,4 +1,25 @@
-﻿CREATE OR REPLACE FUNCTION {databaseSchema}.mt_append_event(stream uuid, stream_type varchar, event_ids uuid[], event_types varchar[], bodies jsonb[]) RETURNS int[] AS $$
+using System.IO;
+using Marten.Schema;
+using Marten.Storage;
+
+namespace Marten.Events
+{
+    public class AppendEventFunction : Function
+    {
+        private readonly EventGraph _events;
+
+        public AppendEventFunction(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, "mt_append_event"))
+        {
+            _events = events;
+        }
+
+        public override void Write(DdlRules rules, StringWriter writer)
+        {
+            var streamIdType = _events.GetStreamIdType();
+            var databaseSchema = _events.DatabaseSchemaName;
+
+            writer.WriteLine($@"
+CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, event_ids uuid[], event_types varchar[], bodies jsonb[]) RETURNS int[] AS $$
 DECLARE
 	event_version int;
 	event_type varchar;
@@ -41,3 +62,13 @@ BEGIN
 	return return_value;
 END
 $$ LANGUAGE plpgsql;
+");
+        }
+
+        protected override string toDropSql()
+        {
+            var streamIdType = _events.GetStreamIdType();
+            return $"drop function if exists {Identifier} ({streamIdType}, varchar, uuid[], varchar[], jsonb[])";
+        }
+    }
+}

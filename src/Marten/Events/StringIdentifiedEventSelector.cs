@@ -1,6 +1,5 @@
 using System;
 using System.Data.Common;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -11,12 +10,12 @@ using Marten.Util;
 
 namespace Marten.Events
 {
-    internal class EventSelector : IEventSelector
+    internal class StringIdentifiedEventSelector : IEventSelector
     {
         public EventGraph Events { get; }
         private readonly ISerializer _serializer;
 
-        internal EventSelector(EventGraph events, ISerializer serializer)
+        internal StringIdentifiedEventSelector(EventGraph events, ISerializer serializer)
         {
             Events = events;
             _serializer = serializer;
@@ -37,17 +36,17 @@ namespace Marten.Events
                 throw new UnknownEventTypeException(eventTypeName);
             }
 
-            var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
+            var data = TypeExtensions.As<object>(_serializer.FromJson(mapping.DocumentType, dataJson));
 
             var sequence = reader.GetFieldValue<long>(4);
-            var stream = reader.GetFieldValue<Guid>(5);
+            var stream = reader.GetFieldValue<string>(5);
             var timestamp = reader.GetFieldValue<DateTimeOffset>(6);
 
             var @event = EventStream.ToEvent(data);
             @event.Version = version;
             @event.Id = id;
             @event.Sequence = sequence;
-            @event.StreamId = stream;
+            @event.StreamKey = stream;
             @event.Timestamp = timestamp;
 
 
@@ -69,17 +68,17 @@ namespace Marten.Events
                 throw new UnknownEventTypeException(eventTypeName);
             }
 
-            var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
+            var data = TypeExtensions.As<object>(_serializer.FromJson(mapping.DocumentType, dataJson));
 
             var sequence = await reader.GetFieldValueAsync<long>(4, token).ConfigureAwait(false);
-            var stream = await reader.GetFieldValueAsync<Guid>(5, token).ConfigureAwait(false);
+            var stream = await reader.GetFieldValueAsync<string>(5, token).ConfigureAwait(false);
             var timestamp = await reader.GetFieldValueAsync<DateTimeOffset>(6, token).ConfigureAwait(false);
 
             var @event = EventStream.ToEvent(data);
             @event.Version = version;
             @event.Id = id;
             @event.Sequence = sequence;
-            @event.StreamId = stream;
+            @event.StreamKey = stream;
             @event.Timestamp = timestamp;
 
             return @event;
@@ -87,13 +86,13 @@ namespace Marten.Events
 
         public string[] SelectFields()
         {
-            return new[] {"id", "type", "version", "data", "seq_id", "stream_id", "timestamp"};
+            return new[] { "id", "type", "version", "data", "seq_id", "stream_id", "timestamp" };
         }
 
         public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
             sql.Append("select id, type, version, data, seq_id, stream_id, timestamp from ");
-            sql.Append(Events.DatabaseSchemaName);
+            sql.Append((string) Events.DatabaseSchemaName);
             sql.Append(".mt_events as d");
         }
     }

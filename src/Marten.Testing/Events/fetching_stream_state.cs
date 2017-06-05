@@ -89,7 +89,7 @@ namespace Marten.Testing.Events
             var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-            theStreamId = theSession.Events.StartStream<Quest>(joined, departed);
+            theStreamId = theSession.Events.StartStream<Quest>(joined, departed).Id;
             theSession.SaveChanges();
         }
 

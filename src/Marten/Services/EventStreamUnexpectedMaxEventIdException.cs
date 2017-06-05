@@ -1,11 +1,10 @@
 using System;
-using Marten.Services.Events;
 
 namespace Marten.Services
 {
     public class EventStreamUnexpectedMaxEventIdException : Exception
     {
-        public EventStreamUnexpectedMaxEventIdException(Exception inner) : base(EventContracts.UnexpectedMaxEventIdForStream, inner)
+        public EventStreamUnexpectedMaxEventIdException(int expected, int actual) : base($"Unexpected MAX(id) for event stream, expected {expected} but got {actual}")
         {
             
         }

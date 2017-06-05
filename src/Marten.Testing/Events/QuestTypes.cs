@@ -106,4 +106,17 @@ namespace Marten.Testing.Events
             Name = name;
         }
     }
+
+    public class ImmutableEvent2
+    {
+        public string Key { get; }
+        public string Name { get; private set; }
+
+
+        public ImmutableEvent2(string key, string name)
+        {
+            Key = key;
+            Name = name;
+        }
+    }
 }

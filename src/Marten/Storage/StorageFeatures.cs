@@ -43,7 +43,7 @@ namespace Marten.Storage
             _features[typeof(EventStream)] = options.Events;
             _features[typeof(IEvent)] = options.Events;
 
-            _mappings[typeof(IEvent)] = new EventQueryMapping(_options);
+            
            
         }
 
@@ -132,8 +132,10 @@ namespace Marten.Storage
         }
 
 
-        internal void CompileSubClasses()
+        internal void PostProcessConfiguration()
         {
+            _mappings[typeof(IEvent)] = new EventQueryMapping(_options);
+
             foreach (var mapping in _documentMappings.Values)
             {
                 foreach (var subClass in mapping.SubClasses)

@@ -13,7 +13,14 @@ namespace Marten.Events
         /// </summary>
         /// <param name="stream"></param>
         /// <param name="events"></param>
-        void Append(Guid stream, params object[] events);
+        EventStream Append(Guid stream, params object[] events);
+
+        /// <summary>
+        /// Append one or more events in order to an existing stream
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="events"></param>
+        EventStream Append(string stream, params object[] events);
 
         /// <summary>
         /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
@@ -22,7 +29,16 @@ namespace Marten.Events
         /// <param name="stream"></param>
         /// <param name="expectedVersion">Expected maximum event version after append</param>
         /// <param name="events"></param>
-        void Append(Guid stream, int expectedVersion, params object[] events);
+        EventStream Append(Guid stream, int expectedVersion, params object[] events);
+
+        /// <summary>
+        /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
+        /// matches supplied expected version or transaction is aborted.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="expectedVersion">Expected maximum event version after append</param>
+        /// <param name="events"></param>
+        EventStream Append(string stream, int expectedVersion, params object[] events);
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -31,16 +47,33 @@ namespace Marten.Events
         /// <param name="id"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        Guid StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class, new();
+        EventStream StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class, new();
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
         /// </summary>
         /// <typeparam name="TAggregate"></typeparam>
+        /// <param name="streamKey">String identifier of this stream</param>
+        /// <param name="events"></param>
+        /// <returns></returns>
+        EventStream StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class, new();
+
+        /// <summary>
+        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
+        /// </summary>
         /// <param name="id"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        Guid StartStream(Guid id, params object[] events);
+        EventStream StartStream(Guid id, params object[] events);
+
+
+        /// <summary>
+        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
+        /// </summary>
+        /// <param name="streamKey"></param>
+        /// <param name="events"></param>
+        /// <returns></returns>
+        EventStream StartStream(string streamKey, params object[] events);
 
 
         /// <summary>
@@ -49,7 +82,7 @@ namespace Marten.Events
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>
         /// <returns></returns>
-        Guid StartStream<TAggregate>(params object[] events) where TAggregate : class, new();
+        EventStream StartStream<TAggregate>(params object[] events) where TAggregate : class, new();
 
         /// <summary>
         /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
@@ -57,7 +90,7 @@ namespace Marten.Events
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>
         /// <returns></returns>
-        Guid StartStream(params object[] events);
+        EventStream StartStream(params object[] events);
 
         /// <summary>
         /// Synchronously fetches all of the events for the named stream
@@ -79,6 +112,26 @@ namespace Marten.Events
         Task<IList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken));
 
         /// <summary>
+        /// Synchronously fetches all of the events for the named stream
+        /// </summary>
+        /// <param name="streamKey"></param>
+        /// <param name="version">If set, queries for events up to and including this version</param>
+        /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
+        /// <returns></returns>
+        IList<IEvent> FetchStream(string streamKey, int version = 0, DateTime? timestamp = null);
+
+        /// <summary>
+        /// Synchronously fetches all of the events for the named stream
+        /// </summary>
+        /// <param name="streamKey"></param>
+        /// <param name="version">If set, queries for events up to and including this version</param>
+        /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<IList<IEvent>> FetchStreamAsync(string streamKey, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken));
+
+
+        /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -98,6 +151,28 @@ namespace Marten.Events
         /// <param name="token"></param>
         /// <returns></returns>
         Task<T> AggregateStreamAsync<T>(Guid streamId, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken)) where T : class, new();
+
+
+        /// <summary>
+        /// Perform a live aggregation of the raw events in this stream to a T object
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="streamKey"></param>
+        /// <param name="version"></param>
+        /// <param name="timestamp"></param>
+        /// <returns></returns>
+        T AggregateStream<T>(string streamKey, int version = 0, DateTime? timestamp = null) where T : class, new();
+
+        /// <summary>
+        /// Perform a live aggregation of the raw events in this stream to a T object
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="streamKey"></param>
+        /// <param name="version"></param>
+        /// <param name="timestamp"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<T> AggregateStreamAsync<T>(string streamKey, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken)) where T : class, new();
 
 
         /// <summary>
@@ -161,5 +236,21 @@ namespace Marten.Events
         /// <param name="token"></param>
         /// <returns></returns>
         Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = default(CancellationToken));
+
+        /// <summary>
+        /// Fetches only the metadata about a stream by id
+        /// </summary>
+        /// <param name="streamKey"></param>
+        /// <returns></returns>
+        StreamState FetchStreamState(string streamKey);
+
+        /// <summary>
+        /// Fetches only the metadata about a stream by id
+        /// </summary>
+        /// <param name="streamKey"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<StreamState> FetchStreamStateAsync(string streamKey, CancellationToken token = default(CancellationToken));
+
     }
 }

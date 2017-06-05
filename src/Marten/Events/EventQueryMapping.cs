@@ -10,13 +10,26 @@ namespace Marten.Events
     {
         public EventQueryMapping(StoreOptions storeOptions) : base(typeof(IEvent), storeOptions)
         {
-            Selector = new EventSelector(storeOptions.Events, storeOptions.Serializer());
+
+
+            Selector = storeOptions.Events.StreamIdentity == StreamIdentity.AsGuid 
+                ? (ISelector<IEvent>) new EventSelector(storeOptions.Events, storeOptions.Serializer())
+                : new StringIdentifiedEventSelector(storeOptions.Events, storeOptions.Serializer());
+
             DatabaseSchemaName = storeOptions.Events.DatabaseSchemaName;
 
             Table = new DbObjectName(DatabaseSchemaName, "mt_events");
 
             duplicateField(x => x.Sequence, "seq_id");
-            duplicateField(x => x.StreamId, "stream_id");
+            if (storeOptions.Events.StreamIdentity == StreamIdentity.AsGuid)
+            {
+                duplicateField(x => x.StreamId, "stream_id");
+            }
+            else
+            {
+                duplicateField(x => x.StreamKey, "stream_id");
+            }
+
             duplicateField(x => x.Version, "version");
             duplicateField(x => x.Timestamp, "timestamp");
         }

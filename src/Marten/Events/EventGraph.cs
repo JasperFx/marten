@@ -10,6 +10,13 @@ using Marten.Storage;
 
 namespace Marten.Events
 {
+
+    public enum StreamIdentity
+    {
+        AsGuid,
+        AsString
+    }
+
     public class EventGraph : IFeatureSchema
     {
         private readonly ConcurrentDictionary<string, IAggregator> _aggregateByName =
@@ -41,6 +48,8 @@ namespace Marten.Events
             InlineProjections = new ProjectionCollection(options);
             AsyncProjections = new ProjectionCollection(options);            
         }
+
+        public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
 
         internal StoreOptions Options { get; }
 
@@ -168,22 +177,21 @@ namespace Marten.Events
         {
             get
             {
-                var eventsTable = new EventsTable(DatabaseSchemaName);
+                var eventsTable = new EventsTable(this);
                 var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
                 {
                     Owner = eventsTable.Identifier,
                     OwnerColumn = "seq_id"
                 };
 
-
-
                 return new ISchemaObject[]
                 {
-                    new StreamsTable(DatabaseSchemaName),
+                    new StreamsTable(this),
                     eventsTable,
                     new EventProgressionTable(DatabaseSchemaName), 
                     sequence,  
-                    new SystemFunction(DatabaseSchemaName, "mt_append_event", "uuid, varchar, uuid[], varchar[], jsonb[]"), 
+                    
+                    new AppendEventFunction(this), 
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"), 
                 };
             }
@@ -194,6 +202,11 @@ namespace Marten.Events
         public void WritePermissions(DdlRules rules, StringWriter writer)
         {
             // Nothing
+        }
+
+        internal string GetStreamIdType()
+        {
+            return StreamIdentity == StreamIdentity.AsGuid ? "uuid" : "varchar";
         }
     }
 }

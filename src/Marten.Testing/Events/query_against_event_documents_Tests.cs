@@ -163,8 +163,8 @@ public void example_of_querying_for_event_data(IDocumentSession session, Guid st
         [Fact]
         public void can_search_by_stream()
         {
-            var stream1 = theSession.Events.StartStream<Quest>(joined1, departed1);
-            var stream2 = theSession.Events.StartStream<Quest>(joined2, departed2);
+            var stream1 = theSession.Events.StartStream<Quest>(joined1, departed1).Id;
+            var stream2 = theSession.Events.StartStream<Quest>(joined2, departed2).Id;
 
             theSession.SaveChanges();
 

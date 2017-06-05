@@ -41,6 +41,8 @@ public class QuestParty
         Name = started.Name;
     }
 
+    public string Key { get; set; }
+
     public string Name { get; set; }
 
     public Guid Id { get; set; }
