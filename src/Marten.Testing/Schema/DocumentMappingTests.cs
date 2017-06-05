@@ -747,6 +747,28 @@ namespace Marten.Testing.Schema
             var table = new DocumentTable(mapping);
             table.Any(x => x is TenantIdColumn).ShouldBeTrue();
         }
+
+        [Fact]
+        public void no_overwrite_function_if_no_optimistic_concurrency()
+        {
+            var mapping = DocumentMapping.For<User>();
+            var objects = mapping.As<IFeatureSchema>().Objects;
+
+            objects.Length.ShouldBe(2);
+            objects.OfType<UpsertFunction>().Single().Identifier.ShouldBe(mapping.UpsertFunction);
+        }
+
+        [Fact]
+        public void add_overwrite_function_if_optimistic_concurrency()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.UseOptimisticConcurrency = true;
+
+            var objects = mapping.As<IFeatureSchema>().Objects;
+
+            objects.Length.ShouldBe(3);
+            objects.OfType<OverwriteFunction>().Any().ShouldBeTrue();
+        }
     }
 
 }

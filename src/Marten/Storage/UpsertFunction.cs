@@ -9,6 +9,13 @@ using Marten.Util;
 
 namespace Marten.Storage
 {
+    public class OverwriteFunction : UpsertFunction
+    {
+        public OverwriteFunction(DocumentMapping mapping) : base(mapping, mapping.OverwriteFunction, false)
+        {
+        }
+    }
+
     public class UpsertFunction : Function
     {
         private readonly string _primaryKeyConstraintName;
@@ -16,7 +23,7 @@ namespace Marten.Storage
 
         public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
 
-        public UpsertFunction(DocumentMapping mapping) : base(mapping.UpsertFunction)
+        public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool allowConcurrencyChecks = true) : base(identifier ?? mapping.UpsertFunction)
         {
             if (mapping == null) throw new ArgumentNullException(nameof(mapping));
 
@@ -47,7 +54,7 @@ namespace Marten.Storage
                 Arguments.Add(new DocTypeArgument());
             }
 
-            if (mapping.UseOptimisticConcurrency)
+            if (mapping.UseOptimisticConcurrency && allowConcurrencyChecks)
             {
                 Arguments.Add(new CurrentVersionArgument());
             }
@@ -95,8 +102,18 @@ namespace Marten.Storage
 
             
 
+            writeFunction(writer, argList, securityDeclaration, inserts, valueList, updates);
+
+
+        }
+
+        protected void writeFunction(StringWriter writer, string argList, string securityDeclaration, string inserts,
+            string valueList, string updates)
+        {
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {securityDeclaration} AS $function$
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
+                    securityDeclaration
+                } AS $function$
 DECLARE
   final_version uuid;
 BEGIN
@@ -109,8 +126,6 @@ INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
 END;
 $function$;
 ");
-
-
         }
 
         public UpsertArgument[] OrderedArguments()
