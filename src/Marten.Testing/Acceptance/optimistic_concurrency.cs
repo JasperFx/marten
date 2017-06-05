@@ -180,6 +180,53 @@ namespace Marten.Testing.Acceptance
 
 
         [Fact]
+        public void overwrite_with_stale_version_standard()
+        {
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                session.SaveChanges();
+            }
+
+            var session1 = theStore.OpenSession(new SessionOptions
+            {
+                ConcurrencyChecks = ConcurrencyChecks.Disabled,
+                Tracking = DocumentTracking.DirtyTracking
+            });
+
+            var session2 = theStore.DirtyTrackedSession();
+
+            var session1Copy = session1.Load<CoffeeShop>(doc1.Id);
+            var session2Copy = session2.Load<CoffeeShop>(doc1.Id);
+
+            try
+            {
+                session1Copy.Name = "Mozart's";
+                session2Copy.Name = "Dominican Joe's";
+
+                // Should go through just fine
+                session2.SaveChanges();
+
+
+                session1.SaveChanges();
+
+            }
+            finally
+            {
+                session1.Dispose();
+                session2.Dispose();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
+            }
+
+        }
+
+
+        [Fact]
         public async Task update_with_stale_version_standard_async()
         {
             var doc1 = new CoffeeShop();

@@ -199,15 +199,22 @@ namespace Marten.Schema
             var currentVersion = batch.Versions.Version<T>(Identity(entity));
 
             ICallback callback = null;
+            var sprocName = _upsertName;
+
             if (_mapping.UseOptimisticConcurrency)
             {
-                callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions, newVersion, currentVersion);
+                if (batch.Concurrency == ConcurrencyChecks.Enabled)
+                {
+                    callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions, newVersion,
+                        currentVersion);
+                }
+                else
+                {
+                    sprocName = _mapping.OverwriteFunction;
+                }
             }
 
-
-            var call = batch.Sproc(_upsertName, callback);
-
-            
+            var call = batch.Sproc(sprocName, callback);
 
             _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion, batch.TenantId);
         }

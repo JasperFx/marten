@@ -9,7 +9,6 @@ using Marten.Events;
 using Marten.Events.Projections.Async;
 using Marten.Linq;
 using Marten.Patching;
-using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Remotion.Linq.Parsing.Structure;
@@ -22,7 +21,7 @@ namespace Marten
         private readonly UnitOfWork _unitOfWork;
         private readonly IList<IDocumentSessionListener> _sessionListeners;
 
-        public DocumentSession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, ITenant tenant, IList<IDocumentSessionListener> localListeners)
+        public DocumentSession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, ITenant tenant, ConcurrencyChecks concurrency, IList<IDocumentSessionListener> localListeners)
             : base(store, connection, parser, identityMap, tenant)
 
         {
@@ -30,6 +29,7 @@ namespace Marten
             _sessionListeners = _store.Options.Listeners.Concat(localListeners).ToList();
 
             IdentityMap = identityMap;
+            Concurrency = concurrency;
 
             _unitOfWork = new UnitOfWork(_store, tenant);
 
@@ -43,6 +43,11 @@ namespace Marten
 
         // This is here for testing purposes, not part of IDocumentSession
         public IIdentityMap IdentityMap { get; }
+
+        /// <summary>
+        /// Use to enable or disable optimistic concurrency checks for this session
+        /// </summary>
+        public ConcurrencyChecks Concurrency { get; set; }
 
         public void Delete<T>(T entity)
         {
@@ -180,7 +185,7 @@ namespace Marten
 
             _sessionListeners.Each(x => x.BeforeSaveChanges(this));
 
-            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant);
+            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency);
             var changes = _unitOfWork.ApplyChanges(batch);
 
             try
@@ -217,7 +222,7 @@ namespace Marten
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
             }
 
-            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant);
+            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency);
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
 
 

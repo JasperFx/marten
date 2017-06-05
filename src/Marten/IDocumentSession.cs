@@ -106,6 +106,8 @@ namespace Marten
         /// </summary>
         IEventStore Events { get; }
 
+        ConcurrencyChecks Concurrency { get; }
+
 
         /// <summary>
         /// Patch a single document of type T with the given id

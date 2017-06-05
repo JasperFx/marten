@@ -195,7 +195,7 @@ namespace Marten
             var connection = tenant.OpenConnection(CommandRunnerMode.Transactional, options.IsolationLevel, options.Timeout);
             
 
-            var session = new DocumentSession(this, connection, _parser, map, tenant, options.Listeners);
+            var session = new DocumentSession(this, connection, _parser, map, tenant, options.ConcurrencyChecks, options.Listeners);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);

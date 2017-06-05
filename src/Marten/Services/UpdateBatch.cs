@@ -19,7 +19,7 @@ namespace Marten.Services
         private readonly DocumentStore _store;
         private readonly ITenant _tenant;
 
-        public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool, ITenant tenant)
+        public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool, ITenant tenant, ConcurrencyChecks concurrency)
         {
             _store = store;
             _writerPool = writerPool;
@@ -27,6 +27,7 @@ namespace Marten.Services
 
             _commands.Push(new BatchCommand(_store.Serializer, tenant));
             Connection = connection;
+            Concurrency = concurrency;
             TenantId = tenant.TenantId;
             _tenant = tenant;
         }
@@ -36,6 +37,7 @@ namespace Marten.Services
         public VersionTracker Versions { get; }
 
         public IManagedConnection Connection { get; }
+        public ConcurrencyChecks Concurrency { get; }
 
         public CharArrayTextWriter GetWriter()
         {

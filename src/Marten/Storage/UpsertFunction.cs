@@ -9,22 +9,17 @@ using Marten.Util;
 
 namespace Marten.Storage
 {
-    public class OverwriteFunction : UpsertFunction
-    {
-        public OverwriteFunction(DocumentMapping mapping) : base(mapping, mapping.OverwriteFunction, false)
-        {
-        }
-    }
-
     public class UpsertFunction : Function
     {
-        private readonly string _primaryKeyConstraintName;
-        private readonly DbObjectName _tableName;
+        private readonly bool _disableConcurrency;
+        protected readonly string _primaryKeyConstraintName;
+        protected readonly DbObjectName _tableName;
 
         public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
 
-        public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool allowConcurrencyChecks = true) : base(identifier ?? mapping.UpsertFunction)
+        public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool disableConcurrency = false) : base(identifier ?? mapping.UpsertFunction)
         {
+            _disableConcurrency = disableConcurrency;
             if (mapping == null) throw new ArgumentNullException(nameof(mapping));
 
             _tableName = mapping.Table;
@@ -54,7 +49,7 @@ namespace Marten.Storage
                 Arguments.Add(new DocTypeArgument());
             }
 
-            if (mapping.UseOptimisticConcurrency && allowConcurrencyChecks)
+            if (mapping.UseOptimisticConcurrency)
             {
                 Arguments.Add(new CurrentVersionArgument());
             }
@@ -81,7 +76,7 @@ namespace Marten.Storage
 
             var whereClauses = new List<string>();
 
-            if (Arguments.Any(x => x is CurrentVersionArgument))
+            if (Arguments.Any(x => x is CurrentVersionArgument) && !_disableConcurrency)
             {
                 whereClauses.Add($"{_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version");
             }
@@ -107,7 +102,7 @@ namespace Marten.Storage
 
         }
 
-        protected void writeFunction(StringWriter writer, string argList, string securityDeclaration, string inserts,
+        protected virtual void writeFunction(StringWriter writer, string argList, string securityDeclaration, string inserts,
             string valueList, string updates)
         {
             writer.WriteLine($@"
