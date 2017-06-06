@@ -51,6 +51,7 @@ namespace Marten.Events
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
+        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
         /// </summary>
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="streamKey">String identifier of this stream</param>
@@ -59,7 +60,7 @@ namespace Marten.Events
         EventStream StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class, new();
 
         /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
+        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
         /// </summary>
         /// <param name="id"></param>
         /// <param name="events"></param>
@@ -69,6 +70,7 @@ namespace Marten.Events
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
+        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
         /// </summary>
         /// <param name="streamKey"></param>
         /// <param name="events"></param>
@@ -78,6 +80,7 @@ namespace Marten.Events
 
         /// <summary>
         /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
+        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
         /// </summary>
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>
@@ -86,6 +89,7 @@ namespace Marten.Events
 
         /// <summary>
         /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
+        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
         /// </summary>
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>

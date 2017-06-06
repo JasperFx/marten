@@ -92,6 +92,11 @@ namespace Marten.Events
             {
                 throw new EventStreamUnexpectedMaxEventIdException(ExpectedVersionOnServer, version);
             }
+
+            if (IsNew && version > _events.Count)
+            {
+                throw new ExistingStreamIdCollisionException(Key ?? Id.ToString());
+            }
         }
     }
 }
