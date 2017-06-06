@@ -55,6 +55,7 @@ namespace Marten.Events
             var version = reader.GetFieldValue<int>(1);
             var typeName = reader.IsDBNull(2) ? null : reader.GetFieldValue<string>(2);
             var timestamp = reader.GetFieldValue<DateTime>(3);
+            var created = reader.GetFieldValue<DateTime>(4);
 
             Type aggregateType = null;
             if (typeName.IsNotEmpty())
@@ -62,7 +63,7 @@ namespace Marten.Events
                 aggregateType = _events.AggregateTypeFor(typeName);
             }
 
-            return new StreamState(id, version, aggregateType, timestamp.ToUniversalTime());
+            return new StreamState(id, version, aggregateType, timestamp.ToUniversalTime(), created);
         }
 
         public async Task<StreamState> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
@@ -71,6 +72,7 @@ namespace Marten.Events
             var version = await reader.GetFieldValueAsync<int>(1, token).ConfigureAwait(false);
             var typeName = await reader.IsDBNullAsync(2, token).ConfigureAwait(false) ? null : await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
             var timestamp = await reader.GetFieldValueAsync<DateTime>(3, token).ConfigureAwait(false);
+            var created = await reader.GetFieldValueAsync<DateTime>(4, token).ConfigureAwait(false);
 
             Type aggregateType = null;
             if (typeName.IsNotEmpty())
@@ -78,17 +80,17 @@ namespace Marten.Events
                 aggregateType = _events.AggregateTypeFor(typeName);
             }
 
-            return new StreamState(id, version, aggregateType, timestamp.ToUniversalTime());
+            return new StreamState(id, version, aggregateType, timestamp.ToUniversalTime(), created);
         }
 
         public string[] SelectFields()
         {
-            return new string[] { "id", "version", "type", "timestamp" };
+            return new string[] { "id", "version", "type", "timestamp", "created" };
         }
 
         public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
-            sql.Append("select id, version, type, timestamp as timestamp from ");
+            sql.Append("select id, version, type, timestamp, created as timestamp from ");
             sql.Append(_events.DatabaseSchemaName);
             sql.Append(".mt_streams");
         }
@@ -136,6 +138,7 @@ namespace Marten.Events
             var version = reader.GetFieldValue<int>(1);
             var typeName = reader.IsDBNull(2) ? null : reader.GetFieldValue<string>(2);
             var timestamp = reader.GetFieldValue<DateTime>(3);
+            var created = reader.GetFieldValue<DateTime>(4);
 
             Type aggregateType = null;
             if (typeName.IsNotEmpty())
@@ -143,7 +146,7 @@ namespace Marten.Events
                 aggregateType = _events.AggregateTypeFor(typeName);
             }
 
-            return new StreamState(id, version, aggregateType, timestamp.ToUniversalTime());
+            return new StreamState(id, version, aggregateType, timestamp.ToUniversalTime(), created);
         }
 
         public async Task<StreamState> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
@@ -152,6 +155,7 @@ namespace Marten.Events
             var version = await reader.GetFieldValueAsync<int>(1, token).ConfigureAwait(false);
             var typeName = await reader.IsDBNullAsync(2, token).ConfigureAwait(false) ? null : await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
             var timestamp = await reader.GetFieldValueAsync<DateTime>(3, token).ConfigureAwait(false);
+            var created = await reader.GetFieldValueAsync<DateTime>(4, token).ConfigureAwait(false);
 
             Type aggregateType = null;
             if (typeName.IsNotEmpty())
@@ -159,17 +163,17 @@ namespace Marten.Events
                 aggregateType = _events.AggregateTypeFor(typeName);
             }
 
-            return new StreamState(id, version, aggregateType, timestamp.ToUniversalTime());
+            return new StreamState(id, version, aggregateType, timestamp.ToUniversalTime(), created);
         }
 
         public string[] SelectFields()
         {
-            return new string[] { "id", "version", "type", "timestamp" };
+            return new string[] { "id", "version", "type", "timestamp", "created" };
         }
 
         public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
-            sql.Append("select id, version, type, timestamp as timestamp from ");
+            sql.Append("select id, version, type, timestamp, created as timestamp from ");
             sql.Append(_events.DatabaseSchemaName);
             sql.Append(".mt_streams");
         }

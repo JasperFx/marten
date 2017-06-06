@@ -104,6 +104,7 @@ namespace Marten.Testing.Events
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
             state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
+            state.Created.ShouldNotBe(DateTime.MinValue);
         }
 
         [Fact]
@@ -115,6 +116,7 @@ namespace Marten.Testing.Events
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
             state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
+            state.Created.ShouldNotBe(DateTime.MinValue);
         }
 
         [Fact]

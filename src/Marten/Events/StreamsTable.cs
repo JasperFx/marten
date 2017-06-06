@@ -17,6 +17,7 @@ namespace Marten.Events
             AddColumn("timestamp", "timestamptz", "default (now()) NOT NULL");
             AddColumn("snapshot", "jsonb");
             AddColumn("snapshot_version", "integer");
+            AddColumn("created", "timestamptz", "default (now()) NOT NULL");
         }
     }
 }
