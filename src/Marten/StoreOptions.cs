@@ -56,7 +56,16 @@ namespace Marten
         ///     property is "All" by default for more efficient development, but can be set to lower values for production usage.
         /// </summary>
         public AutoCreate AutoCreateSchemaObjects = AutoCreate.All;
+        
+        /// <summary>
+        /// Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created
+        /// </summary>        
+        public void CreateDatabasesForTenants(Action<IDatabaseCreationExpressions> configure)
+        {
+            CreateDatabases = configure ?? throw new ArgumentNullException(nameof(configure));
+        }
 
+        public Action<IDatabaseCreationExpressions> CreateDatabases { get; set; }
 
         public StoreOptions()
         {
