@@ -77,7 +77,14 @@ namespace Marten
             _logger = options.Logger();
 
             Tenancy = options.Tenancy;
-            Tenancy.Initialize();
+
+            if (options.CreateDatabases != null)
+            {
+                IDatabaseGenerator databaseGenerator = new DatabaseGenerator();                
+                databaseGenerator.CreateDatabases(Tenancy, options.CreateDatabases);
+            }
+
+            Tenancy.Initialize();            
 
             Schema = Tenancy.Schema;
 
