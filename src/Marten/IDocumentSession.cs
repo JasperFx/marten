@@ -79,6 +79,14 @@ namespace Marten
         void Store<T>(params T[] entities);
 
         /// <summary>
+        /// Explicitly marks a document as needing to be inserted or updated upon the next call to SaveChanges()
+        /// to a specific tenant
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Store<T>(string tenantId, params T[] entities);
+
+        /// <summary>
         /// Explicitly marks a document as needing to be updated and supplies the
         /// current known version for the purpose of optimistic versioning checks
         /// </summary>

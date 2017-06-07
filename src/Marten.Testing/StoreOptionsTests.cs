@@ -116,12 +116,12 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity)
+            public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity)
             {
                 throw new NotImplementedException();
             }
 
-            public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
+            public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
             {
                 throw new NotImplementedException();
             }
@@ -188,12 +188,12 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity)
+            public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity)
             {
                 throw new NotImplementedException();
             }
 
-            public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
+            public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
             {
                 throw new NotImplementedException();
             }

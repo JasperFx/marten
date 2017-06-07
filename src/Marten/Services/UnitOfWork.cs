@@ -220,7 +220,7 @@ namespace Marten.Services
             {
                 var upsert = _tenant.StorageFor(group.Key);
 
-                group.Each(c => { upsert.RegisterUpdate(UpdateStyle.Upsert, batch, c.Document, c.Json); });
+                group.Each(c => { upsert.RegisterUpdate(null, UpdateStyle.Upsert, batch, c.Document, c.Json); });
             });
 
             return changes;
@@ -327,11 +327,13 @@ namespace Marten.Services
         {
         }
 
+        public string TenantOverride { get; set; }
+
 
         public bool Persist(UpdateBatch batch, ITenant tenant)
         {
             var upsert = tenant.StorageFor(Document.GetType());
-            upsert.RegisterUpdate(UpdateStyle, batch, Document);
+            upsert.RegisterUpdate(TenantOverride, UpdateStyle, batch, Document);
 
             return true;
         }
@@ -339,11 +341,18 @@ namespace Marten.Services
 
     public class UpsertDocument : DocumentStorageOperation
     {
+        private string tenantId;
+
         public UpsertDocument(object document) : base(UpdateStyle.Upsert, document)
         {
         }
 
+        public UpsertDocument(object document, string tenantId) : this(document)
+        {
+            TenantOverride = tenantId;
+        }
 
+        
     }
 
     public class UpdateDocument : DocumentStorageOperation

@@ -188,16 +188,14 @@ namespace Marten.Schema
             return _identity((T) document);
         }
 
-        public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity)
+        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity)
         {
             var json = batch.Serializer.ToJson(entity);
-            RegisterUpdate(updateStyle, batch, entity, json);
+            RegisterUpdate(tenantIdOverride, updateStyle, batch, entity, json);
         }
 
         private DbObjectName determineDbObjectName(UpdateStyle updateStyle, UpdateBatch batch)
         {
-           
-
             switch (updateStyle)
             {
                 case UpdateStyle.Upsert:
@@ -218,13 +216,15 @@ namespace Marten.Schema
             }
         }
 
-        public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
+        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
         {
             var newVersion = CombGuidIdGeneration.NewGuid();
             var currentVersion = batch.Versions.Version<T>(Identity(entity));
 
             ICallback callback = null;
             var sprocName = determineDbObjectName(updateStyle, batch);
+
+            var tenantId = tenantIdOverride ?? batch.TenantId;
 
             if (_mapping.UseOptimisticConcurrency && batch.Concurrency == ConcurrencyChecks.Enabled)
             {
@@ -240,7 +240,7 @@ namespace Marten.Schema
 
             var call = batch.Sproc(sprocName, callback);
 
-            _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion, batch.TenantId);
+            _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion, tenantId);
         }
 
 

@@ -43,8 +43,8 @@ namespace Marten.Schema
 
         IStorageOperation DeletionForWhere(IWhereFragment @where);
 
-        void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity);
-        void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity, string json);
+        void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity);
+        void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json);
     }
 
     public interface IDocumentStorage<T> : IDocumentStorage
