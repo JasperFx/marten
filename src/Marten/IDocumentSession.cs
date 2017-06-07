@@ -96,6 +96,14 @@ namespace Marten
         void Insert<T>(params T[] entities);
 
         /// <summary>
+        /// Explicitly marks a document as needing to be updated upon the next call to SaveChanges().
+        /// Will throw an exception if the document does not already exists
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Update<T>(params T[] entities);
+
+        /// <summary>
         /// Insert an enumerable of potentially mixed documents. Will throw exceptions
         /// if a document overwrite is detected
         /// </summary>

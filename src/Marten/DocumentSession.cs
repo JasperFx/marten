@@ -140,7 +140,7 @@ namespace Marten
                     }
                     else
                     {
-                        _unitOfWork.StoreUpdates(entity);
+                        _unitOfWork.StoreUpserts(entity);
                     }
                 }
             }
@@ -175,6 +175,39 @@ namespace Marten
 
                     storage.Store(IdentityMap, id, entity);
                     _unitOfWork.StoreInserts(entity);
+                }
+            }
+        }
+
+        public void Update<T>(params T[] entities)
+        {
+            assertNotDisposed();
+
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
+
+            if (typeof(T).IsGenericEnumerable())
+            {
+                throw new ArgumentOutOfRangeException(typeof(T).Name, "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
+            }
+
+            if (typeof(T) == typeof(object))
+            {
+                InsertObjects(entities.OfType<object>());
+            }
+            else
+            {
+                var storage = Tenant.StorageFor(typeof(T));
+                var idAssignment = Tenant.IdAssignmentFor<T>();
+
+                foreach (var entity in entities)
+                {
+                    if (_unitOfWork.Contains<T>(entity)) continue;
+
+                    var assigned = false;
+                    var id = idAssignment.Assign(Tenant, entity, out assigned);
+
+                    storage.Store(IdentityMap, id, entity);
+                    _unitOfWork.StoreUpdates(entity);
                 }
             }
         }

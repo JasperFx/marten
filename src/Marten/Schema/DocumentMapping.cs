@@ -558,6 +558,7 @@ namespace Marten.Schema
             yield return new DocumentTable(this);
             yield return new UpsertFunction(this);
             yield return new InsertFunction(this);
+            yield return new UpdateFunction(this);
 
             if (UseOptimisticConcurrency)
             {

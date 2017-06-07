@@ -232,6 +232,11 @@ namespace Marten.Schema
                     currentVersion);
             }
 
+            if (!_mapping.UseOptimisticConcurrency && updateStyle == UpdateStyle.Update)
+            {
+                callback = new UpdateDocumentCallback<T>(Identity(entity));
+            }
+
 
             var call = batch.Sproc(sprocName, callback);
 

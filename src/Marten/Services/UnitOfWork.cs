@@ -123,11 +123,19 @@ namespace Marten.Services
             list.Add(patch);
         }
 
-        public void StoreUpdates<T>(params T[] documents)
+        public void StoreUpserts<T>(params T[] documents)
         {
             var list = _operations.GetOrAdd(typeof(T), type => new List<IStorageOperation>());
 
             list.AddRange(documents.Select(x => new UpsertDocument(x)));
+
+        }
+
+        public void StoreUpdates<T>(params T[] documents)
+        {
+            var list = _operations.GetOrAdd(typeof(T), type => new List<IStorageOperation>());
+
+            list.AddRange(documents.Select(x => new UpdateDocument(x)));
 
         }
 
@@ -336,6 +344,13 @@ namespace Marten.Services
         }
 
 
+    }
+
+    public class UpdateDocument : DocumentStorageOperation
+    {
+        public UpdateDocument(object document) : base(UpdateStyle.Update, document)
+        {
+        }
     }
 
     public class InsertDocument : DocumentStorageOperation
