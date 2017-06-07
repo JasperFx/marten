@@ -30,7 +30,7 @@ namespace Marten.Testing
 
         protected string toJson<T>(T doc)
         {
-            return theStore.Advanced.Options.Serializer().ToJson(doc);
+            return theStore.Options.Serializer().ToJson(doc);
         }
 
         protected DocumentStore theStore => _store.Value.As<DocumentStore>();

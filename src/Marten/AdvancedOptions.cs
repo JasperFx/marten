@@ -11,13 +11,6 @@ namespace Marten
         {
             _store = store;
         }
-
-        /// <summary>
-        ///     The original StoreOptions used to configure the current DocumentStore
-        /// </summary>
-        [Obsolete("This needs to be some new kind of readonly view")]
-        public StoreOptions Options => _store.Options;
-
         /// <summary>
         ///     Used to remove document data and tables from the current Postgresql database
         /// </summary>
