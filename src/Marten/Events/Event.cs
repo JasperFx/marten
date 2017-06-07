@@ -34,6 +34,11 @@ namespace Marten.Events
         /// </summary>
         DateTimeOffset Timestamp { get; set; }
 
+        /// <summary>
+        /// If using multi-tenancy by tenant id
+        /// </summary>
+        string TenantId { get; set; }
+
         void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new();
     }
@@ -84,6 +89,8 @@ namespace Marten.Events
         /// The UTC time that this event was originally captured
         /// </summary>
         public DateTimeOffset Timestamp { get; set; }
+
+        public string TenantId { get; set; }
         // ENDSAMPLE
 
 

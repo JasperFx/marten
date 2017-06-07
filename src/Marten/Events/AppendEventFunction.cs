@@ -19,7 +19,7 @@ namespace Marten.Events
             var databaseSchema = _events.DatabaseSchemaName;
 
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, event_ids uuid[], event_types varchar[], bodies jsonb[]) RETURNS int[] AS $$
+CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], bodies jsonb[]) RETURNS int[] AS $$
 DECLARE
 	event_version int;
 	event_type varchar;
@@ -27,12 +27,20 @@ DECLARE
 	body jsonb;
 	index int;
 	seq int;
+    actual_tenant varchar;
 	return_value int[];
 BEGIN
 	select version into event_version from {databaseSchema}.mt_streams where id = stream;
 	if event_version IS NULL then
 		event_version = 0;
-		insert into {databaseSchema}.mt_streams (id, type, version, timestamp) values (stream, stream_type, 0, now());
+		insert into {databaseSchema}.mt_streams (id, type, version, timestamp, tenant_id) values (stream, stream_type, 0, now(), tenantid);
+    else
+        if tenantid IS NOT NULL then
+            select tenant_id into actual_tenant from {databaseSchema}.mt_streams where id = stream;
+            if actual_tenant != tenantid then
+                RAISE EXCEPTION 'The tenantid does not match the existing stream';
+            end if;
+        end if;
 	end if;
 
 
@@ -49,9 +57,9 @@ BEGIN
 		body = bodies[index];
 
 		insert into {databaseSchema}.mt_events 
-			(seq_id, id, stream_id, version, data, type) 
+			(seq_id, id, stream_id, version, data, type, tenant_id) 
 		values 
-			(seq, event_id, stream, event_version, body, event_type);
+			(seq, event_id, stream, event_version, body, event_type, tenantid);
 
 		
 		index := index + 1;
@@ -68,7 +76,7 @@ $$ LANGUAGE plpgsql;
         protected override string toDropSql()
         {
             var streamIdType = _events.GetStreamIdType();
-            return $"drop function if exists {Identifier} ({streamIdType}, varchar, uuid[], varchar[], jsonb[])";
+            return $"drop function if exists {Identifier} ({streamIdType}, varchar, varchar, uuid[], varchar[], jsonb[])";
         }
     }
 }

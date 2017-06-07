@@ -7,6 +7,7 @@ using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Events
@@ -42,6 +43,7 @@ namespace Marten.Events
             var sequence = reader.GetFieldValue<long>(4);
             var stream = reader.GetFieldValue<Guid>(5);
             var timestamp = reader.GetFieldValue<DateTimeOffset>(6);
+            var tenantId = reader.GetFieldValue<string>(7);
 
             var @event = EventStream.ToEvent(data);
             @event.Version = version;
@@ -49,6 +51,7 @@ namespace Marten.Events
             @event.Sequence = sequence;
             @event.StreamId = stream;
             @event.Timestamp = timestamp;
+            @event.TenantId = tenantId;
 
 
             return @event;
@@ -74,6 +77,7 @@ namespace Marten.Events
             var sequence = await reader.GetFieldValueAsync<long>(4, token).ConfigureAwait(false);
             var stream = await reader.GetFieldValueAsync<Guid>(5, token).ConfigureAwait(false);
             var timestamp = await reader.GetFieldValueAsync<DateTimeOffset>(6, token).ConfigureAwait(false);
+            var tenantId = await reader.GetFieldValueAsync<string>(7, token).ConfigureAwait(false);
 
             var @event = EventStream.ToEvent(data);
             @event.Version = version;
@@ -81,18 +85,19 @@ namespace Marten.Events
             @event.Sequence = sequence;
             @event.StreamId = stream;
             @event.Timestamp = timestamp;
+            @event.TenantId = tenantId;
 
             return @event;
         }
 
         public string[] SelectFields()
         {
-            return new[] {"id", "type", "version", "data", "seq_id", "stream_id", "timestamp"};
+            return new[] {"id", "type", "version", "data", "seq_id", "stream_id", "timestamp", TenantIdColumn.Name};
         }
 
         public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
-            sql.Append("select id, type, version, data, seq_id, stream_id, timestamp from ");
+            sql.Append("select id, type, version, data, seq_id, stream_id, timestamp, tenant_id from ");
             sql.Append(Events.DatabaseSchemaName);
             sql.Append(".mt_events as d");
         }

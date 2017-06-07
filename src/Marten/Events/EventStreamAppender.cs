@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Schema.Arguments;
 using Marten.Services;
 
 namespace Marten.Events
@@ -43,6 +44,7 @@ namespace Marten.Events
                 return batch.Sproc(AppendEventFunction, new EventStreamVersioningCallback(stream))
                                      .Param("stream", stream.Id)
                                      .Param("stream_type", streamTypeName)
+                                     .Param(TenantIdArgument.ArgName, batch.TenantId)
                                      .Param("event_ids", ids)
                                      .Param("event_types", eventTypes);
             }
@@ -51,6 +53,7 @@ namespace Marten.Events
             return batch.Sproc(AppendEventFunction, new EventStreamVersioningCallback(stream))
                         .Param("stream", stream.Key)
                         .Param("stream_type", streamTypeName)
+                        .Param(TenantIdArgument.ArgName, batch.TenantId)
                         .Param("event_ids", ids)
                         .Param("event_types", eventTypes);
         }
