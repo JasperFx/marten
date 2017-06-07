@@ -23,6 +23,7 @@ namespace Marten.Schema
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
         public const string UpsertPrefix = "mt_upsert_";
+        public const string InsertPrefix = "mt_insert_";
         public const string OverwritePrefix = "mt_overwrite_";
         public const string DocumentTypeColumn = "mt_doc_type";
         public const string MartenPrefix = "mt_";
@@ -80,6 +81,7 @@ namespace Marten.Schema
         public IEnumerable<SubClassMapping> SubClasses => _subClasses;
 
         public DbObjectName UpsertFunction => new DbObjectName(DatabaseSchemaName, $"{UpsertPrefix}{_alias}");
+        public DbObjectName InsertFunction => new DbObjectName(DatabaseSchemaName, $"{InsertPrefix}{_alias}");
         public DbObjectName OverwriteFunction => new DbObjectName(DatabaseSchemaName, $"{OverwritePrefix}{_alias}");
 
 
@@ -553,6 +555,7 @@ namespace Marten.Schema
         {
             yield return new DocumentTable(this);
             yield return new UpsertFunction(this);
+            yield return new InsertFunction(this);
 
             if (UseOptimisticConcurrency)
             {

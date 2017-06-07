@@ -738,8 +738,8 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<User>();
             var objects = mapping.As<IFeatureSchema>().Objects;
 
-            objects.Length.ShouldBe(2);
-            objects.OfType<UpsertFunction>().Single().Identifier.ShouldBe(mapping.UpsertFunction);
+            objects.Length.ShouldBe(3);
+            objects.Where(x => x.GetType() == typeof(UpsertFunction)).Single().Identifier.ShouldBe(mapping.UpsertFunction);
         }
 
         [Fact]
@@ -750,7 +750,7 @@ namespace Marten.Testing.Schema
 
             var objects = mapping.As<IFeatureSchema>().Objects;
 
-            objects.Length.ShouldBe(3);
+            objects.Length.ShouldBe(4);
             objects.OfType<OverwriteFunction>().Any().ShouldBeTrue();
         }
     }

@@ -10,6 +10,8 @@ using NpgsqlTypes;
 
 namespace Marten.Schema
 {
+
+
     public interface IDocumentStorage
     {
         TenancyStyle TenancyStyle { get; }
