@@ -24,6 +24,7 @@ namespace Marten.Schema
         public const string TablePrefix = "mt_doc_";
         public const string UpsertPrefix = "mt_upsert_";
         public const string InsertPrefix = "mt_insert_";
+        public const string UpdatePrefix = "mt_update_";
         public const string OverwritePrefix = "mt_overwrite_";
         public const string DocumentTypeColumn = "mt_doc_type";
         public const string MartenPrefix = "mt_";
@@ -82,6 +83,7 @@ namespace Marten.Schema
 
         public DbObjectName UpsertFunction => new DbObjectName(DatabaseSchemaName, $"{UpsertPrefix}{_alias}");
         public DbObjectName InsertFunction => new DbObjectName(DatabaseSchemaName, $"{InsertPrefix}{_alias}");
+        public DbObjectName UpdateFunction => new DbObjectName(DatabaseSchemaName, $"{UpdatePrefix}{_alias}");
         public DbObjectName OverwriteFunction => new DbObjectName(DatabaseSchemaName, $"{OverwritePrefix}{_alias}");
 
 

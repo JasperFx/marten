@@ -146,6 +146,40 @@ namespace Marten
             }
         }
 
+        public void Insert<T>(params T[] entities)
+        {
+            assertNotDisposed();
+
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
+
+            if (typeof(T).IsGenericEnumerable())
+            {
+                throw new ArgumentOutOfRangeException(typeof(T).Name, "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
+            }
+
+            if (typeof(T) == typeof(object))
+            {
+                InsertObjects(entities.OfType<object>());
+            }
+            else
+            {
+                var storage = Tenant.StorageFor(typeof(T));
+                var idAssignment = Tenant.IdAssignmentFor<T>();
+
+                foreach (var entity in entities)
+                {
+                    if (_unitOfWork.Contains<T>(entity)) continue;
+
+                    var assigned = false;
+                    var id = idAssignment.Assign(Tenant, entity, out assigned);
+
+                    storage.Store(IdentityMap, id, entity);
+                    _unitOfWork.StoreInserts(entity);
+                }
+            }
+        }
+
+
         public void Store<T>(T entity, Guid version)
         {
             assertNotDisposed();
@@ -161,6 +195,17 @@ namespace Marten
         public IUnitOfWork PendingChanges => _unitOfWork;
 
         public void StoreObjects(IEnumerable<object> documents)
+        {
+            assertNotDisposed();
+
+            documents.Where(x => x != null).GroupBy(x => x.GetType()).Each(group =>
+            {
+                var handler = typeof(Handler<>).CloseAndBuildAs<IHandler>(group.Key);
+                handler.Store(this, group);
+            });
+        }
+
+        public void InsertObjects(IEnumerable<object> documents)
         {
             assertNotDisposed();
 
@@ -328,6 +373,14 @@ namespace Marten
             public void Store(IDocumentSession session, IEnumerable<object> objects)
             {
                 session.Store(objects.OfType<T>().ToArray());
+            }
+        }
+
+        internal class InsertHandler<T> : IHandler
+        {
+            public void Store(IDocumentSession session, IEnumerable<object> objects)
+            {
+                session.Insert(objects.OfType<T>().ToArray());
             }
         }
     }

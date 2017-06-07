@@ -44,14 +44,14 @@ namespace Marten.Schema.Hierarchies
             return _parent.Identity(document);
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity)
+        public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity)
         {
-            _parent.RegisterUpdate(batch, entity);
+            _parent.RegisterUpdate(updateStyle, batch, entity);
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity, string json)
+        public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
         {
-            _parent.RegisterUpdate(batch, entity, json);
+            _parent.RegisterUpdate(updateStyle, batch, entity, json);
         }
 
         public void Remove(IIdentityMap map, object entity)

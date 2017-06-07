@@ -12,6 +12,13 @@ namespace Marten.Schema
 {
 
 
+    public enum UpdateStyle
+    {
+        Upsert,
+        Insert,
+        Update
+    }
+
     public interface IDocumentStorage
     {
         TenancyStyle TenancyStyle { get; }
@@ -36,8 +43,8 @@ namespace Marten.Schema
 
         IStorageOperation DeletionForWhere(IWhereFragment @where);
 
-        void RegisterUpdate(UpdateBatch batch, object entity);
-        void RegisterUpdate(UpdateBatch batch, object entity, string json);
+        void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity);
+        void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity, string json);
     }
 
     public interface IDocumentStorage<T> : IDocumentStorage

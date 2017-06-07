@@ -135,12 +135,12 @@ namespace Marten.Events
             return document.As<IEvent>().Id;
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity)
+        public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity)
         {
             // Do nothing
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity, string json)
+        public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
         {
             // Do nothing
         }

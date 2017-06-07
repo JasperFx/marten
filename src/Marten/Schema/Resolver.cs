@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
@@ -187,39 +188,56 @@ namespace Marten.Schema
             return _identity((T) document);
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity)
+        public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity)
         {
             var json = batch.Serializer.ToJson(entity);
-            RegisterUpdate(batch, entity, json);
+            RegisterUpdate(updateStyle, batch, entity, json);
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity, string json)
+        private DbObjectName determineDbObjectName(UpdateStyle updateStyle, UpdateBatch batch)
+        {
+           
+
+            switch (updateStyle)
+            {
+                case UpdateStyle.Upsert:
+                    if (_mapping.UseOptimisticConcurrency && batch.Concurrency == ConcurrencyChecks.Disabled)
+                    {
+                        return _mapping.OverwriteFunction;
+                    }
+
+                    return _mapping.UpsertFunction;
+
+                case UpdateStyle.Insert:
+                    return _mapping.InsertFunction;
+                    case UpdateStyle.Update:
+                        return _mapping.UpdateFunction;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public void RegisterUpdate(UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
         {
             var newVersion = CombGuidIdGeneration.NewGuid();
             var currentVersion = batch.Versions.Version<T>(Identity(entity));
 
             ICallback callback = null;
-            var sprocName = _upsertName;
+            var sprocName = determineDbObjectName(updateStyle, batch);
 
-            if (_mapping.UseOptimisticConcurrency)
+            if (_mapping.UseOptimisticConcurrency && batch.Concurrency == ConcurrencyChecks.Enabled)
             {
-                if (batch.Concurrency == ConcurrencyChecks.Enabled)
-                {
-                    callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions, newVersion,
-                        currentVersion);
-                }
-                else
-                {
-                    sprocName = _mapping.OverwriteFunction;
-                }
+                callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions, newVersion,
+                    currentVersion);
             }
+
 
             var call = batch.Sproc(sprocName, callback);
 
             _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion, batch.TenantId);
         }
 
-    
 
         public void Remove(IIdentityMap map, object entity)
         {

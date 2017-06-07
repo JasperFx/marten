@@ -87,6 +87,21 @@ namespace Marten
         /// <param name="version"></param>
         void Store<T>(T entity, Guid version);
 
+        /// <summary>
+        /// Explicitly marks a document as needing to be inserted upon the next call to SaveChanges().
+        /// Will throw an exception if the document already exists
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Insert<T>(params T[] entities);
+
+        /// <summary>
+        /// Insert an enumerable of potentially mixed documents. Will throw exceptions
+        /// if a document overwrite is detected
+        /// </summary>
+        /// <param name="documents"></param>
+        void InsertObjects(IEnumerable<object> documents);
+
 
 
         /// <summary>
@@ -99,6 +114,7 @@ namespace Marten
         /// </summary>
         /// <param name="documents"></param>
         void StoreObjects(IEnumerable<object> documents);
+
 
 
         /// <summary>
