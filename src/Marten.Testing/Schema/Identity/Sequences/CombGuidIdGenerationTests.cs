@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Schema.Identity.Sequences
 {
-    public class CombGuidIdGenerationTests
+    public class CombGuidIdGenerationTests : IntegratedFixture
     {
         [Fact]
         public void generate_lots_of_guids()
@@ -38,45 +38,42 @@ namespace Marten.Testing.Schema.Identity.Sequences
         [Fact]
         public void When_documents_are_stored_after_each_other_then_the_first_id_should_be_less_than_the_second()
         {
-            using (var container = ContainerFactory.Configure(
-				// SAMPLE: configuring-global-sequentialguid
-                options => options.DefaultIdStrategy = (mapping, storeOptions) => new CombGuidIdGeneration()
-				// ENDSAMPLE 
-                        ))
+            StoreOptions(options =>
             {
-                container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
-                var store = container.GetInstance<IDocumentStore>();
+                // SAMPLE: configuring-global-sequentialguid
+                options.DefaultIdStrategy = (mapping, storeOptions) => new CombGuidIdGeneration();
+                // ENDSAMPLE 
+            });
 
-                StoreUser(store, "User1");
-                Thread.Sleep(4); //we need some time inbetween to ensure the timepart of the CombGuid is different
-                StoreUser(store, "User2");
-                Thread.Sleep(4);
-                StoreUser(store, "User3");
 
-                var users = GetUsers(store);
+            StoreUser(theStore, "User1");
+            Thread.Sleep(4); //we need some time inbetween to ensure the timepart of the CombGuid is different
+            StoreUser(theStore, "User2");
+            Thread.Sleep(4);
+            StoreUser(theStore, "User3");
 
-                var id1 = FormatIdAsByteArrayString(users, "User1");
-                var id2 = FormatIdAsByteArrayString(users, "User2");
-                var id3 = FormatIdAsByteArrayString(users, "User3");
+            var users = GetUsers(theStore);
 
-                id1.CompareTo(id2).ShouldBe(-1);
-                id2.CompareTo(id3).ShouldBe(-1);
-            }
+            var id1 = FormatIdAsByteArrayString(users, "User1");
+            var id2 = FormatIdAsByteArrayString(users, "User2");
+            var id3 = FormatIdAsByteArrayString(users, "User3");
+
+            id1.CompareTo(id2).ShouldBe(-1);
+            id2.CompareTo(id3).ShouldBe(-1);
         }
 
         [Fact]
         public void When_CombGuid_is_defined_for_a_single_document_then_Guid_should_be_used_as_Default()
         {
-            using (var container = ContainerFactory.Configure(
-				// SAMPLE: configuring-mapping-specific-sequentialguid
-				options => options.Schema.For<UserWithGuid>().IdStrategy(new CombGuidIdGeneration())
-				// ENDSAMPLE 
-                        ))
+            StoreOptions(options =>
             {
-                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
-                store.Storage.MappingFor(typeof (UserWithGuid)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
-                store.Storage.MappingFor(typeof (UserWithGuid2)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
-            }
+                // SAMPLE: configuring-mapping-specific-sequentialguid
+                options.Schema.For<UserWithGuid>().IdStrategy(new CombGuidIdGeneration());
+                // ENDSAMPLE 
+            });
+
+            theStore.Storage.MappingFor(typeof(UserWithGuid)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
+            theStore.Storage.MappingFor(typeof(UserWithGuid2)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
         }
 
         [Fact]

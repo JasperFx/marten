@@ -15,25 +15,22 @@ namespace Marten.Testing.Storage
             DocumentTable table1;
             DocumentTable table2;
 
-            using (var container = ContainerFactory.Default())
+            using (var store = TestingDocumentStore.Basic())
             {
-                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
-
-                store.Advanced.Clean.CompletelyRemoveAll();
-
-                store.Tenancy.Default.StorageFor(typeof (Foo.Document));
-                store.Tenancy.Default.StorageFor(typeof (Bar.Document));
+                store.Tenancy.Default.StorageFor(typeof(Foo.Document));
+                store.Tenancy.Default.StorageFor(typeof(Bar.Document));
 
                 var documentTables = store.Schema.DbObjects.DocumentTables();
                 documentTables.ShouldContain("public.mt_doc_foo_document");
                 documentTables.ShouldContain("public.mt_doc_bar_document");
 
-                table1 = store.TableSchema(typeof (Foo.Document));
+                table1 = store.TableSchema(typeof(Foo.Document));
                 table1.Identifier.Name.ShouldBe("mt_doc_foo_document");
 
-                table2 = store.TableSchema(typeof (Bar.Document));
+                table2 = store.TableSchema(typeof(Bar.Document));
                 table2.Identifier.Name.ShouldBe("mt_doc_bar_document");
             }
+
 
             table2.Equals(table1).ShouldBeFalse();
         }
@@ -44,12 +41,8 @@ namespace Marten.Testing.Storage
             DocumentTable table1;
             DocumentTable table2;
 
-            using (var container = ContainerFactory.OnOtherDatabaseSchema())
+            using (var store = TestingDocumentStore.For(_ => _.DatabaseSchemaName = "other"))
             {
-                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
-
-                store.Advanced.Clean.CompletelyRemoveAll();
-
                 store.Tenancy.Default.StorageFor(typeof(Foo.Document));
                 store.Tenancy.Default.StorageFor(typeof(Bar.Document));
 
@@ -63,6 +56,7 @@ namespace Marten.Testing.Storage
                 table2 = store.TableSchema(typeof(Bar.Document));
                 table2.Identifier.Name.ShouldBe("mt_doc_bar_document");
             }
+
 
             table2.Equals(table1).ShouldBeFalse();
         }

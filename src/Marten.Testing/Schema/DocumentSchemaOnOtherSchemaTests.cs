@@ -1,14 +1,11 @@
 using System;
-using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Events;
 using Marten.Schema;
-using Marten.Schema.Identity.Sequences;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
 using Shouldly;
-using StructureMap;
 using Xunit;
 using Issue = Marten.Testing.Documents.Issue;
 
@@ -84,9 +81,9 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_not_rebuild_a_table_that_already_exists()
         {
-            using (var container1 = Container.For<DevelopmentModeRegistry>())
+            using (var store = TestingDocumentStore.Basic())
             {
-                using (var session = container1.GetInstance<IDocumentStore>().LightweightSession())
+                using (var session = store.LightweightSession())
                 {
                     session.Store(new User());
                     session.Store(new User());
@@ -96,23 +93,26 @@ namespace Marten.Testing.Schema
                 }
             }
 
-            using (var container2 = Container.For<DevelopmentModeRegistry>())
+            using (var store = DocumentStore.For(_ =>
             {
-                using (var session = container2.GetInstance<IDocumentStore>().LightweightSession())
+                _.Connection(ConnectionSource.ConnectionString);
+            }))
+            {
+                using (var session = store.LightweightSession())
                 {
                     session.Query<User>().Count().ShouldBeGreaterThanOrEqualTo(3);
                 }
             }
+
         }
 
         [Fact]
         public void throw_ambigous_alias_exception_when_you_have_duplicate_document_aliases()
         {
-            using (var container = Container.For<DevelopmentModeRegistry>())
+            using (var store = TestingDocumentStore.Basic())
             {
-                var schema = container.GetInstance<IDocumentSchema>();
 
-                var storage = container.GetInstance<IDocumentStore>().As<DocumentStore>().Storage;
+                var storage = store.Storage;
 
                 storage.StorageFor(typeof(Examples.User)).ShouldNotBeNull();
 

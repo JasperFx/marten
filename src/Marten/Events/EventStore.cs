@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
 using Marten.Services;
-using Marten.Services.Events;
 using Marten.Storage;
 
 namespace Marten.Events

@@ -15,7 +15,6 @@ namespace Marten.Storyteller.Fixtures
     public abstract class MartenFixture : Fixture
     {
         protected readonly LightweightCache<Guid, string> IdToName = new LightweightCache<Guid, string>();
-        private IContainer _container;
 
         protected MartenFixture()
         {
@@ -35,8 +34,7 @@ namespace Marten.Storyteller.Fixtures
         {
             IdToName.ClearAll();
 
-            _container = Container.For<DevelopmentModeRegistry>();
-            Store = _container.GetInstance<IDocumentStore>().As<DocumentStore>();
+            Store = TestingDocumentStore.Basic().As<DocumentStore>();
             Store.Advanced.Clean.CompletelyRemoveAll();
 
             Session = Store.OpenSession();
@@ -51,7 +49,7 @@ namespace Marten.Storyteller.Fixtures
         public override void TearDown()
         {
             Session.Dispose();
-            _container.Dispose();
+            Store.Dispose();
         }
 
         public IGrammar TheDocumentsAre()

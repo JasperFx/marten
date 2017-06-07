@@ -3,7 +3,6 @@ using System.Linq;
 using Marten.Testing.Documents;
 using Marten.Util;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Schema

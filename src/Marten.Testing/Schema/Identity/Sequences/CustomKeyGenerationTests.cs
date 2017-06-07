@@ -33,48 +33,44 @@ namespace Marten.Testing.Schema.Identity.Sequences
     }
     // ENDSAMPLE
 
-    public class CustomKeyGenerationTests
+    public class CustomKeyGenerationTests : IntegratedFixture
     {
         [Fact]
         public void When_a_custom_id_generation_is_used()
         {
-            using (var container = ContainerFactory.Configure(
-                // SAMPLE: configuring-global-custom
-                options => options.DefaultIdStrategy = (mapping, storeOptions) => new CustomdIdGeneration()))
-                // ENDSAMPLE
+            StoreOptions(options =>
             {
-                container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
-
-                var store = container.GetInstance<IDocumentStore>();
-
-                // SAMPLE: configuring-global-custom-test
-                using (var session = store.OpenSession())
-                {
-                    session.Store(new UserWithString { LastName = "last" });
-                    session.SaveChanges();
-                }
-
-                using (var session1 = store.QuerySession())
-                {
-                    var users = session1.Query<UserWithString>().ToArray<UserWithString>();
-                    users.Single(user => user.LastName == "last").Id.ShouldBe("newId");
-                }
+                // SAMPLE: configuring-global-custom
+                options.DefaultIdStrategy = (mapping, storeOptions) => new CustomdIdGeneration();
                 // ENDSAMPLE
+            });
+
+            // SAMPLE: configuring-global-custom-test
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new UserWithString { LastName = "last" });
+                session.SaveChanges();
             }
+
+            using (var session1 = theStore.QuerySession())
+            {
+                var users = session1.Query<UserWithString>().ToArray<UserWithString>();
+                users.Single(user => user.LastName == "last").Id.ShouldBe("newId");
+            }
+            // ENDSAMPLE
         }
 
         [Fact]
         public void When_a_custom_stregy_is_defined_for_a_single_document_then_Guid_should_be_used_as_Default()
         {
-            using (var container = ContainerFactory.Configure(
-                // SAMPLE: configuring-mapping-specific-custom
-                options => options.Schema.For<UserWithString>().IdStrategy(new CustomdIdGeneration())
-                // ENDSAMPLE 
-                        ))
+            StoreOptions(options =>
             {
-                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
-                store.Storage.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomdIdGeneration>();
-            }
+                // SAMPLE: configuring-mapping-specific-custom
+                options.Schema.For<UserWithString>().IdStrategy(new CustomdIdGeneration());
+                // ENDSAMPLE 
+            });
+
+            theStore.Storage.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomdIdGeneration>();
         }
     }
 }

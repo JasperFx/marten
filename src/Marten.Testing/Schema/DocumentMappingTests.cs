@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using Baseline;
-using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Schema.Hierarchies;
-using Marten.Util;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Schema
@@ -41,15 +37,7 @@ namespace Marten.Testing.Schema
             public Guid Id { get; set; } = Guid.NewGuid();
         }
 
-        private static void createRoles()
-        {
-            using (var conn = new ConnectionSource().Create())
-            {
-                conn.Open();
-                conn.CreateCommand("DROP ROLE IF EXISTS foo;create role foo;").ExecuteNonQuery();
-                conn.CreateCommand("DROP ROLE IF EXISTS bar;create role bar;").ExecuteNonQuery();
-            }
-        }
+
 
 
         public class IntId
@@ -286,22 +274,18 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_a_table_to_the_database_with_duplicated_field()
         {
-            using (var container = Container.For<DevelopmentModeRegistry>())
+            using (var store = TestingDocumentStore.Basic())
             {
-                container.GetInstance<DocumentCleaner>().CompletelyRemove(typeof(User));
-
-                var schema = container.GetInstance<IDocumentSchema>();
-
-                var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
-
+                store.Advanced.Clean.CompletelyRemove(typeof(User));
 
                 var mapping = store.Tenancy.Default.MappingFor(typeof(User)).As<DocumentMapping>();
                 mapping.DuplicateField("FirstName");
 
                 store.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-                schema.DbObjects.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
+                store.Tenancy.Schema.DbObjects.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
             }
+
         }
 
         [Fact]

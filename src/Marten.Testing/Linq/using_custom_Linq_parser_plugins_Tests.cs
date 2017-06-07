@@ -9,7 +9,6 @@ using Marten.Linq;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Linq

@@ -16,7 +16,6 @@ namespace Marten.Storyteller.Fixtures.EventStore
     public class EventStoreFixture : Fixture
     {
         private readonly LightweightCache<string, Guid> _streams = new LightweightCache<string, Guid>();
-        private IContainer _container;
         private IDocumentStore _store;
         private Guid _lastStream;
         private int _version;
@@ -27,9 +26,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
         {
             _streams.ClearAll();
 
-            _container = Container.For<DevelopmentModeRegistry>();
-            _store = _container.GetInstance<IDocumentStore>();
-            _store.Advanced.Clean.CompletelyRemoveAll();
+            _store = TestingDocumentStore.Basic();
 
             Context.State.Store(_store);
         }

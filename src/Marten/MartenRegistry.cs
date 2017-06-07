@@ -348,6 +348,16 @@ namespace Marten
                 alter = m => m.TenancyStyle = TenancyStyle.Conjoined;
                 return this;
             }
+
+            /// <summary>
+            /// Opt into the identity key generation strategy
+            /// </summary>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> UseIdentityKey()
+            {
+                alter = m => m.IdStrategy = new IdentityKeyGeneration(m, m.HiloSettings);
+                return this;
+            }
         }
     }
 

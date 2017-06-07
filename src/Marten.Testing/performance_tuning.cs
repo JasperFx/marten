@@ -7,7 +7,6 @@ using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
-using StructureMap;
 #if NET46
 using HtmlTags;
 using Jil;
@@ -117,13 +116,6 @@ var store = DocumentStore.For(_ =>
             where TSerializer : ISerializer
             where TRegistry : MartenRegistry, new()
         {
-            var container = Container.For<DevelopmentModeRegistry>();
-            container.Configure(_ => _.For<ISerializer>().Use<TSerializer>());
-
-
-            // Completely removes all the database schema objects for the
-            // Target document type
-            container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
 
             // Apply the schema customizations
             //container.GetInstance<IDocumentSchema>().Alter<TRegistry>();
@@ -166,14 +158,6 @@ var store = DocumentStore.For(_ =>
             where TSerializer : ISerializer
             where TRegistry : MartenRegistry, new()
         {
-            var container = Container.For<DevelopmentModeRegistry>();
-            container.Configure(_ => _.For<ISerializer>().Use<TSerializer>());
-
-
-            // Completely removes all the database schema objects for the
-            // Target document type
-            container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
-            
             // Apply the schema customizations
             //container.GetInstance<IDocumentSchema>().Alter<TRegistry>();
             throw new NotImplementedException("See above line of code");
@@ -354,61 +338,9 @@ public class ContainmentOperator : MartenRegistry
 
     public class performance_tuning
     {
-        private readonly IContainer theContainer = Container.For<DevelopmentModeRegistry>();
 
 
-        public void generate_data()
-        {
-            //theContainer.Inject<ISerializer>(new TestsSerializer());
 
-            theContainer.GetInstance<DocumentCleaner>().CompletelyRemove(typeof (Target));
-
-            // Get Roslyn spun up before measuring anything
-            var schema = theContainer.GetInstance<IDocumentSchema>();
-
-            var storage = theContainer.GetInstance<IDocumentStore>().As<DocumentStore>().Storage;
-
-            storage.MappingFor(typeof (Target)).As<DocumentMapping>().DuplicateField("Date");
-
-            storage.StorageFor(typeof (Target)).ShouldNotBeNull();
-
-            theContainer.GetInstance<DocumentCleaner>().DeleteDocumentsFor(typeof (Target));
-
-
-            var session = theContainer.GetInstance<IDocumentStore>().OpenSession();
-            var store = theContainer.GetInstance<IDocumentStore>();
-
-            var data = Target.GenerateRandomData(10000).ToArray();
-            Timings.Time(() => { store.BulkInsert(data); });
-
-
-            var theDate = DateTime.Today.AddDays(3);
-
-            var one = Timings.Time(() =>
-            {
-                var sql = "select data from mt_doc_target where (data ->> 'Date')::date = ?";
-                session.Query<Target>(sql, theDate).ToArray().Length.ShouldBeGreaterThan(0);
-            });
-
-
-            var two = Timings.Time(() =>
-            {
-                var sql =
-                    "select r.data from mt_doc_target as r, LATERAL jsonb_to_record(r.data) as l(\"Date\" date) where l.\"Date\" = ?";
-
-                session.Query<Target>(sql, theDate).ToArray().Count().ShouldBeGreaterThan(0);
-            });
-
-            var three = Timings.Time(() =>
-            {
-                var sql =
-                    "select r.data from mt_doc_target as r where r.date = ?";
-
-                session.Query<Target>(sql, theDate).ToArray().Count().ShouldBeGreaterThan(0);
-            });
-
-            Debug.WriteLine($"json locator: {one}, lateral join: {two}, searchable field: {three}");
-        }
     }
 
     public static class Timings
