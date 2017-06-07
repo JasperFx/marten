@@ -152,9 +152,9 @@ namespace Marten.Events
             return AsyncProjections.ForView(viewType) ?? InlineProjections.ForView(viewType);
         }
 
-        public ViewProjection<TView> ProjectView<TView>() where TView : class, new()
+        public ViewProjection<TView, TId> ProjectView<TView, TId>() where TView : class, new()
         {
-            var projection = new ViewProjection<TView>();
+            var projection = new ViewProjection<TView, TId>();
             InlineProjections.Add(projection);
             return projection;
         }
