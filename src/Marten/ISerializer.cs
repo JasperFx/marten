@@ -66,6 +66,8 @@ namespace Marten
         /// as int's or string's in the JSON
         /// </summary>
         EnumStorage EnumStorage { get; }
+
+        Casing Casing { get; }
     }
     // ENDSAMPLE
 
@@ -75,5 +77,9 @@ namespace Marten
         AsString
     }
 
-
+    public enum Casing
+    {
+        Default,
+        CamelCase,
+    }
 }
