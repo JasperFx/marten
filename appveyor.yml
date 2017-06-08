@@ -1,5 +1,5 @@
 # set version as running build number for CI build use
-version: {build}
+version: Build {build}
 
 configuration: Release
 
