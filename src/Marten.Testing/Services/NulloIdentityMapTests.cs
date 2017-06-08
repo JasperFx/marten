@@ -8,28 +8,6 @@ namespace Marten.Testing.Services
     public class NulloIdentityMapTests
     {
         [Fact]
-        public void lazy_get_hit()
-        {
-            var serializer = new TestsSerializer();
-            var target = new Target();
-            var json = serializer.ToJson(target).ToReader();
-
-            var map = new NulloIdentityMap(serializer);
-
-            var target2 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, json, null));
-            target2.Id.ShouldBe(target.Id);
-           
-        }
-
-        [Fact]
-        public void lazy_get_miss()
-        {
-            var map = new NulloIdentityMap(new TestsSerializer());
-
-            map.Get<Target>(Guid.NewGuid(), () => null).ShouldBeNull();
-        }
-
-        [Fact]
         public void get_with_json()
         {
             var serializer = new TestsSerializer();

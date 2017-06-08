@@ -111,33 +111,6 @@ namespace Marten.Schema.Hierarchies
         }
 
 
-        public FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
-        {
-            if (!reader.Read()) return null;
-
-            var json = reader.GetTextReader(0);
-            var doc = serializer.FromJson<T>(json);
-
-            var version = reader.GetFieldValue<Guid>(3);
-
-            return new FetchResult<T>(doc, json, version);
-        }
-
-        // TODO -- this is all duplicated from Resolver<T>, fix that.
-        public async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
-        {
-            var found = await reader.ReadAsync(token).ConfigureAwait(false);
-            if (!found) return null;
-
-            var json = reader.GetTextReader(0);
-            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-            var doc = serializer.FromJson<T>(json);
-
-            var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
-
-            return new FetchResult<T>(doc, json, version);
-        }
-
         public T Resolve(IIdentityMap map, IQuerySession session, object id)
         {
             return _parent.Resolve(map, session, id) as T;
