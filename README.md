@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/JasperFx/Marten](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JasperFx/Marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/jasperfx/marten?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten)
-[![Linux Build status](https://api.travis-ci.org/jasperfx/marten.svg)](https://travis-ci.org/jasperfx/marten)
+[![Linux Build status](https://api.travis-ci.org/JasperFx/marten.svg)](https://travis-ci.org/JasperFx/marten)
 [![Nuget Package](https://img.shields.io/nuget/v/Marten.svg?style=flat)](https://www.nuget.org/packages/Marten/)
 
 Hey, we're just getting started, but there'll be stuff here soon. Check the issue list as quasi-roadmap and feel free to jump into the Gitter room linked above.

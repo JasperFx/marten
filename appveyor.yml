@@ -1,4 +1,5 @@
-version: 2.0.0.{build}
+# set version as running build number for CI build use
+version: Build {build}
 
 configuration: Release
 
@@ -33,13 +34,6 @@ before_build:
   - psql -d %PG_DB% -c "create extension if not exists plv8;"
   - npm install
   - dotnet --info
-
-assembly_info:
-  patch: true
-  file: '**\CommonAssemblyInfo.cs'
-  assembly_version: '{version}'
-  assembly_file_version: '{version}'
-  assembly_informational_version: '{version}'
 
 build_script:
 - cmd: >-
