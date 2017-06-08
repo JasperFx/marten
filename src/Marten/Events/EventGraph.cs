@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Baseline;
 using Marten.Events.Projections;
 using Marten.Schema;
@@ -207,6 +208,18 @@ namespace Marten.Events
         internal string GetStreamIdType()
         {
             return StreamIdentity == StreamIdentity.AsGuid ? "uuid" : "varchar";
+        }
+
+        private readonly ConcurrentDictionary<Type, string> _dotnetTypeNames = new ConcurrentDictionary<Type, string>();
+
+        internal string DotnetTypeNameFor(Type type)
+        {
+            if (!_dotnetTypeNames.ContainsKey(type))
+            {
+                _dotnetTypeNames[type] = $"{type.FullName}, {type.GetTypeInfo().Assembly.GetName().Name}";
+            }
+
+            return _dotnetTypeNames[type];
         }
     }
 }

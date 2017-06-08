@@ -17,6 +17,7 @@ namespace Marten.Events
             AddColumn("type", "varchar(100)", "NOT NULL");
             AddColumn("timestamp", "timestamptz", "default (now()) NOT NULL");
             AddColumn<TenantIdColumn>();
+            AddColumn(new DotNetTypeColumn {Directive = "NULL"});
 
             Constraints.Add("CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version)");
             Constraints.Add("CONSTRAINT pk_mt_events_id_unique UNIQUE(id)");

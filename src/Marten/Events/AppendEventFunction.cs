@@ -19,7 +19,7 @@ namespace Marten.Events
             var databaseSchema = _events.DatabaseSchemaName;
 
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], bodies jsonb[]) RETURNS int[] AS $$
+CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]) RETURNS int[] AS $$
 DECLARE
 	event_version int;
 	event_type varchar;
@@ -57,9 +57,9 @@ BEGIN
 		body = bodies[index];
 
 		insert into {databaseSchema}.mt_events 
-			(seq_id, id, stream_id, version, data, type, tenant_id) 
+			(seq_id, id, stream_id, version, data, type, tenant_id, {DocumentMapping.DotNetTypeColumn}) 
 		values 
-			(seq, event_id, stream, event_version, body, event_type, tenantid);
+			(seq, event_id, stream, event_version, body, event_type, tenantid, dotnet_types[index]);
 
 		
 		index := index + 1;

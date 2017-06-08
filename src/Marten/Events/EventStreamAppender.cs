@@ -29,15 +29,16 @@ namespace Marten.Events
 
             var events = stream.Events.ToArray();
             var eventTypes = events.Select(x => _graph.EventMappingFor(x.Data.GetType()).EventTypeName).ToArray();
+            var dotnetTypes = events.Select(x => _graph.DotnetTypeNameFor(x.Data.GetType())).ToArray();
+
             var ids = events.Select(x => x.Id).ToArray();
 
-            var sprocCall = toAppendSprocCall(batch, stream, streamTypeName, ids, eventTypes);
+            var sprocCall = toAppendSprocCall(batch, stream, streamTypeName, ids, eventTypes, dotnetTypes);
 
             AddJsonBodies(batch, sprocCall, events);
         }
 
-        private SprocCall toAppendSprocCall(UpdateBatch batch, EventStream stream, string streamTypeName, Guid[] ids,
-            string[] eventTypes)
+        private SprocCall toAppendSprocCall(UpdateBatch batch, EventStream stream, string streamTypeName, Guid[] ids, string[] eventTypes, string[] dotnetTypes)
         {
             if (_graph.StreamIdentity == StreamIdentity.AsGuid)
             {
@@ -46,7 +47,8 @@ namespace Marten.Events
                                      .Param("stream_type", streamTypeName)
                                      .Param(TenantIdArgument.ArgName, batch.TenantId)
                                      .Param("event_ids", ids)
-                                     .Param("event_types", eventTypes);
+                                     .Param("event_types", eventTypes)
+                                     .Param("dotnet_types", dotnetTypes);
             }
 
 
@@ -55,7 +57,8 @@ namespace Marten.Events
                         .Param("stream_type", streamTypeName)
                         .Param(TenantIdArgument.ArgName, batch.TenantId)
                         .Param("event_ids", ids)
-                        .Param("event_types", eventTypes);
+                        .Param("event_types", eventTypes)
+                        .Param("dotnet_types", dotnetTypes);
         }
 
         static void AddJsonBodies(UpdateBatch batch, SprocCall sprocCall, IEvent[] events)
