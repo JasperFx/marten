@@ -23,11 +23,11 @@ namespace Marten.Linq
             return map.Serializer.FromJson<T>(json);
         }
 
-        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var json = reader.GetTextReader(0);
             //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-            return map.Serializer.FromJson<T>(json);
+            return Task.FromResult(map.Serializer.FromJson<T>(json));
         }
     }
 }

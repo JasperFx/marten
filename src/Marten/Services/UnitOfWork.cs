@@ -341,8 +341,6 @@ namespace Marten.Services
 
     public class UpsertDocument : DocumentStorageOperation
     {
-        private string tenantId;
-
         public UpsertDocument(object document) : base(UpdateStyle.Upsert, document)
         {
         }

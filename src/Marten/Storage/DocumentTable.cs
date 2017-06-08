@@ -95,7 +95,7 @@ namespace Marten.Storage
 
     public class TenantIdColumn : SystemColumn
     {
-        public static readonly string Name = "tenant_id";
+        public new static readonly string Name = "tenant_id";
 
         public TenantIdColumn() : base(Name, "varchar")
         {

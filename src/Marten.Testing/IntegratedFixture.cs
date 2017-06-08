@@ -10,7 +10,9 @@ namespace Marten.Testing
     public abstract class IntegratedFixture : IDisposable
     {
         private Lazy<IDocumentStore> _store;
+#if NET46
         private CultureInfo _originalCulture;
+#endif
 
         protected IntegratedFixture()
         {
