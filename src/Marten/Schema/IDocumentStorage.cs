@@ -56,12 +56,6 @@ namespace Marten.Schema
         // Goes through the IdentityMap to do its thing
         T Resolve(IIdentityMap map, IQuerySession session, object id);
         Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id);
-
-        // Used to load by id
-        FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer);
-
-
-        Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token);
     }
 
 }

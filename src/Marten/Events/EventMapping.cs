@@ -192,56 +192,44 @@ namespace Marten.Events
             return map.Get<T>(id, json, null);
         }
 
-        public FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
-        {
-            if (!reader.Read()) return null;
-
-            var json = reader.GetTextReader(0);
-            var doc = serializer.FromJson<T>(json);
-
-            return new FetchResult<T>(doc, json, null);
-        }
-
-        public async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
-        {
-            var found = await reader.ReadAsync(token).ConfigureAwait(false);
-
-            if (!found) return null;
-
-            var json = reader.GetTextReader(0);
-            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-            var doc = serializer.FromJson<T>(json);
-
-
-            return new FetchResult<T>(doc, json, null);
-        }
-
         public T Resolve(IIdentityMap map, IQuerySession session, object id)
         {
-            return map.Get(id, () =>
+            if (map.Has<T>(id)) return map.Retrieve<T>(id);
+
+            var cmd = LoaderCommand(id);
+            cmd.Connection = session.Connection;
+            using (var reader = cmd.ExecuteReader())
             {
-                var cmd = LoaderCommand(id);
-                cmd.Connection = session.Connection;
-                using (var reader = cmd.ExecuteReader())
-                {
-                    return Fetch(reader, session.Serializer);
-                }
-            });
+                if (!reader.Read()) return null;
+
+                var json = reader.GetTextReader(0);
+                var doc = session.Serializer.FromJson<T>(json);
+                map.Store(id, doc);
+
+                return doc;
+            }
         }
 
-        public Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
+        public async Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
         {
-            return map.GetAsync(id, async tkn =>
-            {
-                var cmd = LoaderCommand(id);
-                cmd.Connection = session.Connection;
+            if (map.Has<T>(id)) return map.Retrieve<T>(id);
 
-                using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
-                {
-                    var result = await FetchAsync(reader, session.Serializer, tkn).ConfigureAwait(false);
-                    return result;
-                }
-            }, token);
+            var cmd = LoaderCommand(id);
+            cmd.Connection = session.Connection;
+
+            using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+            {
+                var found = await reader.ReadAsync(token).ConfigureAwait(false);
+
+                if (!found) return null;
+
+                var json = reader.GetTextReader(0);
+                //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+                var doc = session.Serializer.FromJson<T>(json);
+                map.Store(id, doc);
+
+                return doc;
+            }
         }
 
 
