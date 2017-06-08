@@ -133,61 +133,56 @@ namespace Marten.Schema
 
         public T Resolve(IIdentityMap map, IQuerySession session, object id)
         {
-            return map.Get(id, () =>
+            if (map.Has<T>(id)) return map.Retrieve<T>(id);
+
+            var cmd = LoaderCommand(id);
+            cmd.AddTenancy(session.Tenant);
+            cmd.Connection = session.Connection;
+            using (var reader = cmd.ExecuteReader())
             {
-                var cmd = LoaderCommand(id);
-                cmd.AddTenancy(session.Tenant);
-                cmd.Connection = session.Connection;
-                using (var reader = cmd.ExecuteReader())
-                {
-                    return Fetch(reader, session.Serializer);
-                }
-            });
+                return Fetch(id, reader, map);
+            }
         }
 
-        public Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
+        public async Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
         {
-            return map.GetAsync(id, async tk =>
-            {
-                var cmd = LoaderCommand(id);
-                cmd.AddTenancy(session.Tenant);
-                cmd.Connection = session.Connection;
+            if (map.Has<T>(id)) return map.Retrieve<T>(id);
 
-                using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
-                {
-                    var result = await FetchAsync(reader, session.Serializer, token).ConfigureAwait(false);
-                    return result;
-                }
-            }, token);
+            var cmd = LoaderCommand(id);
+            cmd.AddTenancy(session.Tenant);
+            cmd.Connection = session.Connection;
+
+            using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+            {
+                return await FetchAsync(id, reader, map, token).ConfigureAwait(false);
+            }
         }
 
 
 
-        public virtual FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
+        public virtual T Fetch(object id, DbDataReader reader, IIdentityMap map)
         {
             var found = reader.Read();
             if (!found) return null;
 
             var json = reader.GetTextReader(0);
-            var doc = serializer.FromJson<T>(json);
 
             var version = reader.GetFieldValue<Guid>(2);
 
-            return new FetchResult<T>(doc, json, version);
+            return map.Get<T>(id, json, version);
         }
 
-        public virtual async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
+        public virtual async Task<T> FetchAsync(object id, DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             var found = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!found) return null;
 
             var json = reader.GetTextReader(0);
             //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-            var doc = serializer.FromJson<T>(json);
 
             var version = await reader.GetFieldValueAsync<Guid>(2, token).ConfigureAwait(false);
 
-            return new FetchResult<T>(doc, json, version);
+            return map.Get<T>(id, json, version);
         }
 
 

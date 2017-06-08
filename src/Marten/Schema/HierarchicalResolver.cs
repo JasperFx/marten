@@ -44,7 +44,7 @@ namespace Marten.Schema
         }
 
 
-        public override FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
+        public override T Fetch(object id, DbDataReader reader, IIdentityMap map)
         {
             if (!reader.Read()) return null;
 
@@ -53,14 +53,12 @@ namespace Marten.Schema
 
             var actualType = _hierarchy.TypeFor(typeAlias);
 
-            var doc = (T)serializer.FromJson(actualType, json);
-
             var version = reader.GetFieldValue<Guid>(3);
 
-            return new FetchResult<T>(doc, json, version);
+            return map.Get<T>(id, actualType, json, version);
         }
 
-        public override async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
+        public override async Task<T> FetchAsync(object id, DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             var found = await reader.ReadAsync(token).ConfigureAwait(false);
 
@@ -72,11 +70,9 @@ namespace Marten.Schema
 
             var actualType = _hierarchy.TypeFor(typeAlias);
 
-            var doc = (T)serializer.FromJson(actualType, json);
-
             var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
 
-            return new FetchResult<T>(doc, json, version);
+            return map.Get<T>(id, actualType, json, version);
         }
     }
 }
