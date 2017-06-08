@@ -117,9 +117,6 @@ namespace Marten.Events
             return this;
         }
 
-        // TODO -- will change later
-        public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
-
         public NpgsqlCommand LoaderCommand(object id)
         {
             return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = :id and type = '{Alias}'").With("id", id);
@@ -219,14 +216,32 @@ namespace Marten.Events
             return new FetchResult<T>(doc, json, null);
         }
 
-        public T Resolve(IIdentityMap map, ILoader loader, object id)
+        public T Resolve(IIdentityMap map, IQuerySession session, object id)
         {
-            return map.Get(id, () => loader.LoadDocument<T>(id));
+            return map.Get(id, () =>
+            {
+                var cmd = LoaderCommand(id);
+                cmd.Connection = session.Connection;
+                using (var reader = cmd.ExecuteReader())
+                {
+                    return Fetch(reader, session.Serializer);
+                }
+            });
         }
 
-        public Task<T> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
+        public Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
         {
-            return map.GetAsync(id, tkn => loader.LoadDocumentAsync<T>(id, tkn), token);
+            return map.GetAsync(id, async tkn =>
+            {
+                var cmd = LoaderCommand(id);
+                cmd.Connection = session.Connection;
+
+                using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
+                {
+                    var result = await FetchAsync(reader, session.Serializer, tkn).ConfigureAwait(false);
+                    return result;
+                }
+            }, token);
         }
 
 

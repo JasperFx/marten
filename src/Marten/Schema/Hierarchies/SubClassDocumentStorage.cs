@@ -16,10 +16,10 @@ namespace Marten.Schema.Hierarchies
         where T : class, TBase
         where TBase : class
     {
-        private readonly IDocumentStorage _parent;
+        private readonly IDocumentStorage<TBase> _parent;
         private readonly SubClassMapping _mapping;
 
-        public SubClassDocumentStorage(IDocumentStorage parent, SubClassMapping mapping)
+        public SubClassDocumentStorage(IDocumentStorage<TBase> parent, SubClassMapping mapping)
         {
             _parent = parent;
             _mapping = mapping;
@@ -138,16 +138,15 @@ namespace Marten.Schema.Hierarchies
             return new FetchResult<T>(doc, json, version);
         }
 
-        public T Resolve(IIdentityMap map, ILoader loader, object id)
+        public T Resolve(IIdentityMap map, IQuerySession session, object id)
         {
-            // TODO -- watch it here if it's the wrong type
-            return map.Get(id, () => loader.LoadDocument<TBase>(id)) as T;
+            return _parent.Resolve(map, session, id) as T;
         }
 
-        public Task<T> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
+        public async Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
         {
-            return map.GetAsync(id, tk => loader.LoadDocumentAsync<TBase>(id, tk), token)
-                .ContinueWith(x => x.Result as T, token);
+            var doc = await _parent.ResolveAsync(map, session, token, id).ConfigureAwait(false);
+            return doc as T;
         }
 
         public T Resolve(DbDataReader reader, ISerializer serializer)

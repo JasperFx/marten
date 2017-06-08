@@ -7,7 +7,6 @@ using Baseline;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
-using Marten.Schema.Arguments;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Marten.Storage;
@@ -17,7 +16,7 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
-    public class QuerySession : IQuerySession, ILoader
+    public class QuerySession : IQuerySession
     {
         public ITenant Tenant { get; }
         private readonly IManagedConnection _connection;
@@ -36,7 +35,10 @@ namespace Marten
             _identityMap = identityMap;
 
             WriterPool = store.CreateWriterPool();
+            Serializer = store.Serializer;
         }
+
+        public ISerializer Serializer { get; }
 
         public IDocumentStore DocumentStore => _store;
 
@@ -84,43 +86,6 @@ namespace Marten
             return Tenant.StorageFor<T>();
         }
 
-        public FetchResult<T> LoadDocument<T>(object id) where T : class
-        {
-            assertNotDisposed();
-
-            var storage = storage<T>();
-            var resolver = storage.As<IDocumentStorage<T>>();
-
-            var cmd = storage.LoaderCommand(id);
-            cmd.AddTenancy(Tenant);
-
-            return _connection.Execute(cmd, c =>
-            {
-                using (var reader = cmd.ExecuteReader())
-                {
-                    return resolver.Fetch(reader, _store.Serializer);
-                }
-            });
-        }
-
-        public Task<FetchResult<T>> LoadDocumentAsync<T>(object id, CancellationToken token) where T : class
-        {
-            assertNotDisposed();
-
-            var storage = storage<T>();
-            var resolver = storage.As<IDocumentStorage<T>>();
-
-            var cmd = storage.LoaderCommand(id);
-            cmd.AddTenancy(Tenant);
-
-            return _connection.ExecuteAsync(cmd, async (c, tkn) =>
-            {
-                using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
-                {
-                    return await resolver.FetchAsync(reader, _store.Serializer, token).ConfigureAwait(false);
-                }
-            }, token);
-        }
 
         public T Load<T>(string id)
         {

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,7 +7,6 @@ using System.Threading.Tasks;
 using Baseline;
 using FastExpressionCompiler;
 using Marten.Linq;
-using Marten.Schema.Arguments;
 using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Services.Deletes;
@@ -133,15 +131,37 @@ namespace Marten.Schema
             return map.Get<T>(id, json, version);
         }
 
-        public T Resolve(IIdentityMap map, ILoader loader, object id)
+        public T Resolve(IIdentityMap map, IQuerySession session, object id)
         {
-            return map.Get(id, () => loader.LoadDocument<T>(id));
+            return map.Get(id, () =>
+            {
+                var cmd = LoaderCommand(id);
+                cmd.AddTenancy(session.Tenant);
+                cmd.Connection = session.Connection;
+                using (var reader = cmd.ExecuteReader())
+                {
+                    return Fetch(reader, session.Serializer);
+                }
+            });
         }
 
-        public Task<T> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
+        public Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
         {
-            return map.GetAsync(id, async tk => await loader.LoadDocumentAsync<T>(id, tk).ConfigureAwait(false), token);
+            return map.GetAsync(id, async tk =>
+            {
+                var cmd = LoaderCommand(id);
+                cmd.AddTenancy(session.Tenant);
+                cmd.Connection = session.Connection;
+
+                using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+                {
+                    var result = await FetchAsync(reader, session.Serializer, token).ConfigureAwait(false);
+                    return result;
+                }
+            }, token);
         }
+
+
 
         public virtual FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
         {

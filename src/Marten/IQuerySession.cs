@@ -249,5 +249,6 @@ namespace Marten
         IJsonLoader Json { get; }
 
         ITenant Tenant { get; }
+        ISerializer Serializer { get; }
     }
 }

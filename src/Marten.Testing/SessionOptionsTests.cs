@@ -1,4 +1,5 @@
-﻿using Baseline;
+﻿using System;
+using Baseline;
 using Marten.Services;
 using Npgsql;
 using Shouldly;
@@ -38,7 +39,7 @@ public void ConfigureCommandTimeout(IDocumentStore store)
             {
                 var e = Assert.Throws<MartenCommandException>(() =>
                 {
-                    session.Query<QuerySessionTests.FryGuy>("select pg_sleep(2)");
+                    session.Query<FryGuy>("select pg_sleep(2)");
                 });
 
                 Assert.Contains("connected party did not properly respond after a period of time", e.InnerException.InnerException.Message);
@@ -48,9 +49,9 @@ public void ConfigureCommandTimeout(IDocumentStore store)
         [Fact]
         public void can_define_custom_timeout()
         {
-            var guy1 = new QuerySessionTests.FryGuy();
-            var guy2 = new QuerySessionTests.FryGuy();
-            var guy3 = new QuerySessionTests.FryGuy();
+            var guy1 = new FryGuy();
+            var guy2 = new FryGuy();
+            var guy3 = new FryGuy();
 
             using (var session = theStore.OpenSession())
             {
@@ -62,8 +63,13 @@ public void ConfigureCommandTimeout(IDocumentStore store)
 
             using (var query = theStore.QuerySession(options).As<QuerySession>())
             {
-                query.LoadDocument<QuerySessionTests.FryGuy>(guy2.id).ShouldNotBeNull();
+                query.Load<FryGuy>(guy2.Id).ShouldNotBeNull();
             }
+        }
+
+        public class FryGuy
+        {
+            public Guid Id;
         }
     }
 }
