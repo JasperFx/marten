@@ -221,5 +221,17 @@ namespace Marten.Events
 
             return _dotnetTypeNames[type];
         }
+
+        private readonly ConcurrentDictionary<string, Type> _nameToType = new ConcurrentDictionary<string, Type>();
+
+        internal Type TypeForDotNetName(string assemblyQualifiedName)
+        {
+            if (!_nameToType.ContainsKey(assemblyQualifiedName))
+            {
+                _nameToType[assemblyQualifiedName] = Type.GetType(assemblyQualifiedName);
+            }
+
+            return _nameToType[assemblyQualifiedName];
+        }
     }
 }

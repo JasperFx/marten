@@ -35,7 +35,14 @@ namespace Marten.Events
 
             if (mapping == null)
             {
-                throw new UnknownEventTypeException(eventTypeName);
+                var dotnetTypeName = reader.GetFieldValue<string>(8);
+                if (dotnetTypeName.IsEmpty())
+                {
+                    throw new UnknownEventTypeException(eventTypeName);
+                }
+
+                var type = Events.TypeForDotNetName(dotnetTypeName);
+                mapping = Events.EventMappingFor(type);
             }
 
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
@@ -69,7 +76,14 @@ namespace Marten.Events
 
             if (mapping == null)
             {
-                throw new UnknownEventTypeException(eventTypeName);
+                var dotnetTypeName = await reader.GetFieldValueAsync<string>(8, token).ConfigureAwait(false);
+                if (dotnetTypeName.IsEmpty())
+                {
+                    throw new UnknownEventTypeException(eventTypeName);
+                }
+
+                var type = Events.TypeForDotNetName(dotnetTypeName);
+                mapping = Events.EventMappingFor(type);
             }
 
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
@@ -92,12 +106,12 @@ namespace Marten.Events
 
         public string[] SelectFields()
         {
-            return new[] {"id", "type", "version", "data", "seq_id", "stream_id", "timestamp", TenantIdColumn.Name};
+            return new[] {"id", "type", "version", "data", "seq_id", "stream_id", "timestamp", TenantIdColumn.Name, DocumentMapping.DotNetTypeColumn};
         }
 
         public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
-            sql.Append("select id, type, version, data, seq_id, stream_id, timestamp, tenant_id from ");
+            sql.Append($"select id, type, version, data, seq_id, stream_id, timestamp, tenant_id, {DocumentMapping.DotNetTypeColumn} from ");
             sql.Append(Events.DatabaseSchemaName);
             sql.Append(".mt_events as d");
         }
