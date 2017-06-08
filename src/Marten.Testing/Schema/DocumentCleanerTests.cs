@@ -78,12 +78,12 @@ namespace Marten.Testing.Schema
 
             var tableName = theStore.Tenancy.Default.MappingFor(typeof(Target)).ToQueryableDocument().Table;
 
-            theStore.Schema.DbObjects.DocumentTables().Contains(tableName)
+            theStore.Tenancy.Default.DbObjects.DocumentTables().Contains(tableName)
                 .ShouldBeTrue();
 
             theCleaner.CompletelyRemove(typeof(Target));
 
-            theStore.Schema.DbObjects.DocumentTables().Contains(tableName)
+            theStore.Tenancy.Default.DbObjects.DocumentTables().Contains(tableName)
                 .ShouldBeFalse();
         }
 
@@ -95,15 +95,15 @@ namespace Marten.Testing.Schema
 
             theSession.SaveChanges();
 
-            var schema = theStore.Schema;
+            var dbObjects = theStore.Tenancy.Default.DbObjects;
 
             var upsertName = theStore.Tenancy.Default.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
 
-            schema.DbObjects.Functions().ShouldContain(upsertName);
+            dbObjects.Functions().ShouldContain(upsertName);
 
             theCleaner.CompletelyRemove(typeof(Target));
 
-            schema.DbObjects.Functions().Contains(upsertName)
+            dbObjects.Functions().Contains(upsertName)
                 .ShouldBeFalse();
         }
 
@@ -121,10 +121,10 @@ namespace Marten.Testing.Schema
 
             theCleaner.CompletelyRemoveAll();
 
-            var schema = theStore.Schema;
+            var dbObjects = theStore.Tenancy.Default.DbObjects;
 
-            ShouldBeEmpty(schema.DbObjects.DocumentTables());
-            ShouldBeEmpty(schema.DbObjects.Functions().Where(x => x.Name != "mt_immutable_timestamp").ToArray());
+            ShouldBeEmpty(dbObjects.DocumentTables());
+            ShouldBeEmpty(dbObjects.Functions().Where(x => x.Name != "mt_immutable_timestamp").ToArray());
         }
 
         [Fact]

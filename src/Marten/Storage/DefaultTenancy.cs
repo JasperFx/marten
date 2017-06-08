@@ -46,6 +46,8 @@ namespace Marten.Storage
             TenantId = tenantId;
         }
 
+        public IDbObjects DbObjects => _inner.DbObjects;
+
         public string TenantId { get; }
 
         public IDocumentStorage StorageFor(Type documentType)

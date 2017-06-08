@@ -19,7 +19,7 @@ namespace Marten.Testing.Storage
             {
                 store.Tenancy.Default.StorageFor(typeof(User));
 
-                store.Schema.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
+                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
 
                 table1 = store.TableSchema(typeof(User));
                 table1.ShouldNotContain(x => x.Name == "user_name");
@@ -31,7 +31,7 @@ namespace Marten.Testing.Storage
 
                 store.Tenancy.Default.StorageFor(typeof(User));
 
-                store.Schema.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
+                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
 
                 table2 = store.TableSchema(typeof(User));
             }
@@ -51,7 +51,7 @@ namespace Marten.Testing.Storage
             {
                 store.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-                store.Schema.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
+                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
 
                 table1 = store.TableSchema(typeof(User));
                 table1.ShouldNotContain(x => x.Name == "user_name");
@@ -67,7 +67,7 @@ namespace Marten.Testing.Storage
 
                 store.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-                store.Schema.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
+                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
 
                 table2 = store.TableSchema(typeof(User));
             }

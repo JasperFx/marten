@@ -24,7 +24,7 @@ namespace Marten.Testing.Bugs
             {
                 store.Tenancy.Default.EnsureStorageExists(typeof(UserHolder));
 
-                store.Schema.DbObjects
+                store.Tenancy.Default.DbObjects
                     .AllForeignKeys()
                     .Any(x => x.Name == "mt_doc_userholder_user_id_fkey")
                     .ShouldBeTrue();

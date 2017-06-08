@@ -14,7 +14,7 @@ namespace Marten.Testing.Bugs
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             var expected = new DbObjectName("other", "mt_transform_patch_doc");
-            theStore.Schema.DbObjects.Functions().Contains(expected).ShouldBeTrue();
+            theStore.Tenancy.Default.DbObjects.Functions().Contains(expected).ShouldBeTrue();
         }
     }
 }

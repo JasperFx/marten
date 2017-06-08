@@ -283,7 +283,7 @@ namespace Marten.Testing.Schema
 
                 store.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-                store.Tenancy.Schema.DbObjects.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
+                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
             }
 
         }

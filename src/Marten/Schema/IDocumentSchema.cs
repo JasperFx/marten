@@ -6,13 +6,6 @@ namespace Marten.Schema
     {
         DdlRules DdlRules { get; }
 
-
-        /// <summary>
-        ///     Query against the actual Postgresql database schema objects
-        /// </summary>
-        [Obsolete("Hang this directly off of ITenant now")]
-        IDbObjects DbObjects { get; }
-
         /// <summary>
         ///     Write the SQL script to build the database schema
         ///     objects to a file

@@ -59,7 +59,7 @@ namespace Marten.Testing.Storage
                 }
 
 
-                var table = store2.Schema.DbObjects.ExistingTableFor(typeof(User));
+                var table = store2.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
                 table.HasColumn(DocumentMapping.DeletedColumn).ShouldBeTrue();
                 table.HasColumn(DocumentMapping.DeletedAtColumn).ShouldBeTrue();

@@ -58,10 +58,10 @@ namespace Marten.Testing.Events
 
             store.Tenancy.Default.EnsureStorageExists(typeof(EventStream));
 
-            var schemaDbObjectNames = store.Schema.DbObjects.Functions();
+            var schemaDbObjectNames = store.Tenancy.Default.DbObjects.Functions();
             schemaDbObjectNames.ShouldContain("event_store.mt_append_event");
 
-            var schemaTableNames = store.Schema.DbObjects.SchemaTables();
+            var schemaTableNames = store.Tenancy.Default.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain("event_store.mt_streams");
             schemaTableNames.ShouldContain("event_store.mt_events");
         }
@@ -73,10 +73,10 @@ namespace Marten.Testing.Events
 
             store.Tenancy.Default.EnsureStorageExists(typeof(EventStream));
 
-            var schemaDbObjectNames = store.Schema.DbObjects.Functions();
+            var schemaDbObjectNames = store.Tenancy.Default.DbObjects.Functions();
             schemaDbObjectNames.ShouldContain("public.mt_append_event");
 
-            var schemaTableNames = store.Schema.DbObjects.SchemaTables();
+            var schemaTableNames = store.Tenancy.Default.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain("public.mt_streams");
             schemaTableNames.ShouldContain("public.mt_events");
             schemaTableNames.ShouldContain("public.mt_event_progression");
@@ -92,10 +92,10 @@ namespace Marten.Testing.Events
 
             store.Tenancy.Default.EnsureStorageExists(typeof(EventStream));
 
-            var schemaDbObjectNames = store.Schema.DbObjects.Functions();
+            var schemaDbObjectNames = store.Tenancy.Default.DbObjects.Functions();
             schemaDbObjectNames.ShouldContain("other.mt_append_event");
 
-            var schemaTableNames = store.Schema.DbObjects.SchemaTables();
+            var schemaTableNames = store.Tenancy.Default.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain("other.mt_streams");
             schemaTableNames.ShouldContain("other.mt_events");
             schemaTableNames.ShouldContain("other.mt_event_progression");

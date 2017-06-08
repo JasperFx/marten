@@ -50,6 +50,7 @@ namespace Marten.Storage
         }
 
         public string TenantId { get; }
+        public IDbObjects DbObjects => new DbObjects(this, _features);
 
         public void RemoveSchemaItems(Type featureType, StorageFeatures features)
         {

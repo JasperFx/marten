@@ -32,7 +32,7 @@ namespace Marten.Testing.Storage
             theStore.Tenancy.Default.ResetSchemaExistenceChecks();
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-            var actual = theStore.Schema.DbObjects.ExistingTableFor(typeof(User));
+            var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
             actual.HasColumn(DocumentMapping.VersionColumn).ShouldBeTrue();
         }
@@ -60,7 +60,7 @@ namespace Marten.Testing.Storage
 
 
 
-            var actual = theStore.Schema.DbObjects.ExistingTableFor(typeof(User));
+            var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
             actual.HasColumn(DocumentMapping.DotNetTypeColumn).ShouldBeTrue();
         }
@@ -86,7 +86,7 @@ namespace Marten.Testing.Storage
             theStore.Tenancy.Default.ResetSchemaExistenceChecks();
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-            var actual = theStore.Schema.DbObjects.ExistingTableFor(typeof(User));
+            var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
             actual.HasColumn(DocumentMapping.LastModifiedColumn).ShouldBeTrue();
 

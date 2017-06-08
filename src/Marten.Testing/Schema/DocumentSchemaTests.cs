@@ -138,12 +138,12 @@ namespace Marten.Testing.Schema
             theStore.Tenancy.Default.StorageFor(typeof(Issue)).ShouldNotBeNull();
             theStore.Tenancy.Default.StorageFor(typeof(Company)).ShouldNotBeNull();
 
-            var tables = theStore.Schema.DbObjects.SchemaTables();
+            var tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
             tables.ShouldContain("public.mt_doc_user");
             tables.ShouldContain("public.mt_doc_issue");
             tables.ShouldContain("public.mt_doc_company");
 
-            var functions = theStore.Schema.DbObjects.Functions();
+            var functions = theStore.Tenancy.Default.DbObjects.Functions();
             functions.ShouldContain("public.mt_upsert_user");
             functions.ShouldContain("public.mt_upsert_issue");
             functions.ShouldContain("public.mt_upsert_company");
@@ -415,8 +415,8 @@ namespace Marten.Testing.Schema
                 session.SaveChanges();
             }
 
-            _tables = _schema.DbObjects.SchemaTables();
-            _functions = _schema.DbObjects.Functions();
+            _tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
+            _functions = theStore.Tenancy.Default.DbObjects.Functions();
         }
 
 
@@ -574,8 +574,8 @@ namespace Marten.Testing.Schema
                 session.SaveChanges();
             }
 
-            _tables = _schema.DbObjects.SchemaTables();
-            _functions = _schema.DbObjects.Functions();
+            _tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
+            _functions = theStore.Tenancy.Default.DbObjects.Functions();
         }
 
 

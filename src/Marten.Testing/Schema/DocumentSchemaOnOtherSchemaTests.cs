@@ -67,12 +67,12 @@ namespace Marten.Testing.Schema
             theStore.Tenancy.Default.StorageFor(typeof(Issue)).ShouldNotBeNull();
             theStore.Tenancy.Default.StorageFor(typeof(Company)).ShouldNotBeNull();
 
-            var tables = theSchema.DbObjects.SchemaTables();
+            var tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
             tables.ShouldContain("other.mt_doc_user");
             tables.ShouldContain("other.mt_doc_issue");
             tables.ShouldContain("other.mt_doc_company");
 
-            var functions = theSchema.DbObjects.Functions();
+            var functions = theStore.Tenancy.Default.DbObjects.Functions();
             functions.ShouldContain("other.mt_upsert_user");
             functions.ShouldContain("other.mt_upsert_issue");
             functions.ShouldContain("other.mt_upsert_company");

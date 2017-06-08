@@ -92,7 +92,6 @@ namespace Marten.Storage
             return writer.ToString();
         }
 
-        public IDbObjects DbObjects => new DbObjects(_tenant, _features);
 
         public void WritePatch(string filename, bool withSchemas = true)
         {
