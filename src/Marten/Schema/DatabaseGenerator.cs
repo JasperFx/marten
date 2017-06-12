@@ -31,11 +31,13 @@ namespace Marten.Schema
             private readonly StringBuilder _createOptions = new StringBuilder();
             public bool DropExistingDatabase { get; private set; }
             public bool CheckAgainstCatalog { get; private set; }
+            public bool KillConnections { get; private set; }
             public Action<NpgsqlConnection> OnDbCreated { get; private set; }
 
-            public ITenantDatabaseCreationExpressions DropExisting()
+            public ITenantDatabaseCreationExpressions DropExisting(bool killConnections = false)
             {
                 DropExistingDatabase = true;
+                KillConnections = killConnections;
                 return this;
             }
 
@@ -183,7 +185,12 @@ namespace Marten.Schema
 
             if (dropExisting)
             {
-                cmdText = $"DROP DATABASE IF EXISTS {catalog};";
+                if (config.KillConnections)
+                {
+                    cmdText =
+                        $"SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '{catalog}' AND pid <> pg_backend_pid();";
+                }
+                cmdText += $"DROP DATABASE IF EXISTS {catalog};";
             }
 
             using (var connection = new NpgsqlConnection(maintenanceDb))
