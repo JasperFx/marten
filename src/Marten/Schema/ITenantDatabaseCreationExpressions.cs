@@ -12,8 +12,9 @@ namespace Marten.Schema
         /// <summary>
         /// If database exists, it is dropped prior to re-creation.
         /// </summary>
+        /// <param name="killConnections">Kill connections to database prior to drop</param>
         /// <remarks>Requires CREATEDB privilege</remarks>
-        ITenantDatabaseCreationExpressions DropExisting();
+        ITenantDatabaseCreationExpressions DropExisting(bool killConnections = false);
         ITenantDatabaseCreationExpressions WithEncoding(string encoding);
         ITenantDatabaseCreationExpressions WithOwner(string owner);
         ITenantDatabaseCreationExpressions ConnectionLimit(int limit);
