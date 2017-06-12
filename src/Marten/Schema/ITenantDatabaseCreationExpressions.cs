@@ -3,8 +3,16 @@ using Npgsql;
 
 namespace Marten.Schema
 {
+    /// <summary>
+    /// Specify options that are passed to CREATE DATABASE.
+    /// <see href="https://www.postgresql.org/docs/current/static/sql-createdatabase.html">CREATE DATABASE</see> documentation for options.
+    /// </summary>
     public interface ITenantDatabaseCreationExpressions
     {
+        /// <summary>
+        /// If database exists, it is dropped prior to re-creation.
+        /// </summary>
+        /// <remarks>Requires CREATEDB privilege</remarks>
         ITenantDatabaseCreationExpressions DropExisting();
         ITenantDatabaseCreationExpressions WithEncoding(string encoding);
         ITenantDatabaseCreationExpressions WithOwner(string owner);
@@ -17,6 +25,9 @@ namespace Marten.Schema
         /// </summary>
         /// <returns></returns>
         ITenantDatabaseCreationExpressions CheckAgainstPgDatabase();
+        /// <summary>
+        /// Callback to be invoked after database creation
+        /// </summary>
         ITenantDatabaseCreationExpressions OnDatabaseCreated(Action<NpgsqlConnection> onDbCreated);
     }
 }

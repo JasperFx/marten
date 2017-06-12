@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Marten.Testing.Bugs;
 using Xunit;
 using Marten.Testing.Documents;
 using Npgsql;
@@ -27,23 +28,34 @@ namespace Marten.Testing.Schema
                 });
             }
 
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.Connection(dbToCreateConnectionString);
-                _.PLV8Enabled = false;
-                _.CreateDatabasesForTenants(c =>
+            var dbCreated = false;
+
+            using (var store = DocumentStore.For(storeOptions =>
+            {                
+                storeOptions.Connection(dbToCreateConnectionString);
+                storeOptions.PLV8Enabled = false;
+                // SAMPLE: marten_create_database
+                storeOptions.CreateDatabasesForTenants(c =>
                 {
+                    // Specify a db to which to connect in case database needs to be created.
+                    // If not specified, defaults to 'postgres' on the connection for a tenant.
                     c.MaintenanceDatabase(cstring);
                     c.ForTenant()
                         .CheckAgainstPgDatabase()
                         .WithOwner("postgres")
                         .WithEncoding("UTF-8")
-                        .ConnectionLimit(-1);
+                        .ConnectionLimit(-1)
+                        .OnDatabaseCreated(_ =>
+                        {
+                            dbCreated = true;
+                        });
                 });
+                // ENDSAMPLE
             }))
             {                
                 store.Schema.ApplyAllConfiguredChangesToDatabase();
                 store.Schema.AssertDatabaseMatchesConfiguration();
+                Assert.True(dbCreated);
             }
         }
 

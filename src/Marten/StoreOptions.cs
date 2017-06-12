@@ -60,6 +60,7 @@ namespace Marten
         /// <summary>
         /// Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created
         /// </summary>        
+        /// <remarks>Creating and dropping databases requires the CREATEDB privilege</remarks>
         public void CreateDatabasesForTenants(Action<IDatabaseCreationExpressions> configure)
         {
             CreateDatabases = configure ?? throw new ArgumentNullException(nameof(configure));

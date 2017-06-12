@@ -110,31 +110,39 @@ namespace Marten.Schema
         private void CreateDb(ITenant tenant, TenantDatabaseCreationExpressions config)
         {
             string catalog;
+            var maintenanceDb = _maintenanceDbConnectionString;
 
             using (var t = tenant.CreateConnection())
             {
                 catalog = t.Database;
 
+                if (maintenanceDb == null)
+                {
+                    var cstringBuilder = new NpgsqlConnectionStringBuilder(t.ConnectionString);
+                    cstringBuilder.Database = "postgres";
+                    maintenanceDb = cstringBuilder.ToString();
+                }
+
                 var noExistingDb = config.CheckAgainstCatalog
-                    ? new Func<bool>(() => IsNotInPgDatabase(catalog))
+                    ? new Func<bool>(() => IsNotInPgDatabase(catalog, maintenanceDb))
                     : (() => CannotConnectDueToInvalidCatalog(t));
 
                 if (noExistingDb())
                 {
-                    CreateDb(catalog, config, false);
+                    CreateDb(catalog, config, false, maintenanceDb);
                     return;
                 }
             }
 
             if (config.DropExistingDatabase)
             {
-                CreateDb(catalog, config, true);
+                CreateDb(catalog, config, true, maintenanceDb);
             }
         }
 
-        private bool IsNotInPgDatabase(string catalog)
+        private bool IsNotInPgDatabase(string catalog, string maintenanceDb)
         {
-            using (var connection = new NpgsqlConnection(_maintenanceDbConnectionString))
+            using (var connection = new NpgsqlConnection(maintenanceDb))
             using (var cmd = connection.CreateCommand("SELECT datname FROM pg_database where datname = @catalog"))
             {
                 cmd.AddNamedParameter("catalog", catalog);
@@ -169,7 +177,7 @@ namespace Marten.Schema
             return false;
         }
 
-        private void CreateDb(string catalog, TenantDatabaseCreationExpressions config, bool dropExisting)
+        private void CreateDb(string catalog, TenantDatabaseCreationExpressions config, bool dropExisting, string maintenanceDb)
         {
             var cmdText = string.Empty;
 
@@ -178,7 +186,7 @@ namespace Marten.Schema
                 cmdText = $"DROP DATABASE IF EXISTS {catalog};";
             }
 
-            using (var connection = new NpgsqlConnection(_maintenanceDbConnectionString))
+            using (var connection = new NpgsqlConnection(maintenanceDb))
             using (var cmd = connection.CreateCommand(cmdText))
             {
                 cmd.CommandText += $"CREATE DATABASE {catalog} WITH" + config;
