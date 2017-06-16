@@ -23,6 +23,7 @@ public void use_multiple_tenants()
         // ENDSAMPLE
     });
 
+    // SAMPLE: tenancy-scoping-session-write
     // Write some User documents to tenant "tenant1"
     using (var session = store.OpenSession("tenant1"))
     {
@@ -30,6 +31,7 @@ public void use_multiple_tenants()
         session.Store(new User{UserName = "Lindsey"});
         session.SaveChanges();
     }
+    // ENDSAMPLE
 
     // Write some User documents to tenant "tenant2"
     using (var session = store.OpenSession("tenant2"))
@@ -39,6 +41,7 @@ public void use_multiple_tenants()
         session.SaveChanges();
     }
 
+    // SAMPLE: tenancy-scoping-session-read
     // When you query for data from the "tenant1" tenant,
     // you only get data for that tenant
     using (var query = store.QuerySession("tenant1"))
@@ -48,6 +51,7 @@ public void use_multiple_tenants()
             .ToList()
             .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
     }
+    // ENDSAMPLE
 
     using (var query = store.QuerySession("tenant2"))
     {
