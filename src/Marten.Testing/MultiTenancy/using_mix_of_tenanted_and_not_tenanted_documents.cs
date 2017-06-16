@@ -18,6 +18,7 @@ namespace Marten.Testing.MultiTenancy
         [Fact]
         public void can_query_on_non_tenanted_documents()
         {
+            // SAMPLE: tenancy-mixed-tenancy-non-tenancy-sample
             var greens = Target.GenerateRandomData(10).ToArray();
             var reds = Target.GenerateRandomData(11).ToArray();
 
@@ -40,6 +41,7 @@ namespace Marten.Testing.MultiTenancy
                 red.Query<User>().Count().ShouldBe(2);
                 red.Query<Target>().Count().ShouldBe(11);
             }
+            // ENDSAMPLE
         }
     }
 }
