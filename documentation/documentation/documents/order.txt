@@ -1,6 +1,7 @@
 identity
 basics
 querying
+tenancy
 configuration
 json
 advanced

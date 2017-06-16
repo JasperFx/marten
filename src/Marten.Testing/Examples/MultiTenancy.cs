@@ -10,13 +10,17 @@ public void use_multiple_tenants()
 {
     // Set up a basic DocumentStore with multi-tenancy
     // via a tenant_id column
-    var store = DocumentStore.For(_ =>
+    var store = DocumentStore.For(storeOptions =>
     {
         // This sets up the DocumentStore to be multi-tenanted
         // by a tenantid column
-        _.Connection(ConnectionSource.ConnectionString);
+        storeOptions.Connection(ConnectionSource.ConnectionString);
 
-        _.Policies.AllDocumentsAreMultiTenanted();
+        // SAMPLE: tenancy-configure-through-policy
+        storeOptions.Policies.AllDocumentsAreMultiTenanted();
+        // Shorthand for
+        // storeOptions.Policies.ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
+        // ENDSAMPLE
     });
 
     // Write some User documents to tenant "tenant1"

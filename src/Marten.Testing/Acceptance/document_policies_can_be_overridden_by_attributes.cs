@@ -23,10 +23,12 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void fluent_interface_overrides_policies()
         {
-            StoreOptions(_ =>
+            StoreOptions(storeOptions =>
             {
-                _.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Single);  
-                _.Schema.For<Target>().MultiTenanted();
+                // SAMPLE: tenancy-configure-override
+                storeOptions.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Single);  
+                storeOptions.Schema.For<Target>().MultiTenanted();
+                // ENDSAMPLE
             });
 
             theStore.Storage.MappingFor(typeof(Target))
