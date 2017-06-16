@@ -10,12 +10,14 @@ namespace Marten.Testing.Events
     public class event_store_with_string_identifiers_for_stream : IntegratedFixture
     {
         public event_store_with_string_identifiers_for_stream()
-        {
-            StoreOptions(_ =>
+        {            
+            StoreOptions(storeOptions =>
             {
-                _.Events.StreamIdentity = StreamIdentity.AsString;
-                _.Events.AsyncProjections.AggregateStreamsWith<QuestPartyWithStringIdentifier>();
-            });
+                // SAMPLE: eventstore-configure-stream-identity
+                storeOptions.Events.StreamIdentity = StreamIdentity.AsString;
+                storeOptions.Events.AsyncProjections.AggregateStreamsWith<QuestPartyWithStringIdentifier>();
+                // ENDSAMPLE
+            });            
         }
 
         [Fact]

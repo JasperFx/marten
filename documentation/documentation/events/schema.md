@@ -17,9 +17,11 @@ The events are stored in the `mt_events` table, with these columns:
 * `stream_id` - A foreign key to the event stream that contains the event
 * `version` - A numerical version of the event's position within its event stream
 * `data` - The actual event data stored as JSONB
-* `type` - A string identifier for the event type taht's derived from the event type name. For example, events of type `IssueResolved` would be identified as "issue_resolved." The `type`
+* `type` - A string identifier for the event type that's derived from the event type name. For example, events of type `IssueResolved` would be identified as "issue_resolved." The `type`
   column exists so that Marten can be effectively used without the underlying JSON serializer having to embed type metadata.
 * `timestamp` - A database timestamp written by the database when events are committed.
+* `tenant_id` - Identifies the tenancy of the event
+* `mt_dotnet_type` - The full name of the underlying event type, including assembly name, e.g. "Marten.Testing.Events.IssueResolved, Marten.Testing"
 
 The "Async Daemon" projection support keys off of the sequential id, but we retained the Guid id field for backward compatibility
 and to retain a potential way to uniquely identify events across databases.

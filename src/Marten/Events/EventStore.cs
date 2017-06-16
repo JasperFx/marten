@@ -50,7 +50,7 @@ namespace Marten.Events
 
         private void ensureAsGuidStorage()
         {
-            if (StreamIdentity == StreamIdentity.AsString) throw new InvalidOperationException("This Marten event store is configured to identify streams with Guids");
+            if (StreamIdentity == StreamIdentity.AsString) throw new InvalidOperationException("This Marten event store is configured to identify streams with strings");
             _tenant.EnsureStorageExists(typeof(EventStream));
         }
 
