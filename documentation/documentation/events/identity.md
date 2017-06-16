@@ -1,6 +1,6 @@
 <!--Title:Stream Identity-->
 
-The Event Store in Marten can identify and index streams either as GUIDs (`System.Guid`) or strings (`System.String`). This is reflected in the overloads of `IEventStore.Append` and `IEventStore.StartStream` that accept either `string` or `Guid` as the stream identifier. 
+The Event Store in Marten can identify and index streams either as GUIDs (`System.Guid`) or strings (`System.String`). This is reflected in the overloads of `IEventStore` such as `IEventStore.StartStream`, `IEventStore.Append` and `IEventStore.AggregateStream` that accept either `string` or `Guid` as the stream identifier.
 
 ## Configuring Event Stream Identity
  
