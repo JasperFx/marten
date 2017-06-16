@@ -1,4 +1,5 @@
 schema
+identity
 appending
 streams
 projections
