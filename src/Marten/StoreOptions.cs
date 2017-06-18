@@ -194,9 +194,10 @@ namespace Marten
         ///     stored as either integers or strings
         /// </summary>
         /// <param name="enumStyle"></param>
-        public void UseDefaultSerialization(EnumStorage enumStyle)
+        /// <param name="casing">Casing style to be used in serialization</param>
+        public void UseDefaultSerialization(EnumStorage enumStyle = EnumStorage.AsInteger, Casing casing = Casing.Default)
         {
-            Serializer(new JsonNetSerializer {EnumStorage = enumStyle});
+            Serializer(new JsonNetSerializer {EnumStorage = enumStyle, Casing = casing});
         }
 
         /// <summary>
