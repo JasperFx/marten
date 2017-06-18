@@ -3,6 +3,7 @@ cli
 documents
 events
 precompiling
+troubleshoot
 scenarios
 admin
 postgres
