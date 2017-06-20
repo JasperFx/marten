@@ -22,6 +22,11 @@ To demonstrate the failure case, consider the following  acceptance test from M
 
 Marten is throwing an AggregateException for the entire batch of changes being persisted from SaveChanges()/SaveChangesAsync() after rolling back the current database transaction. The individual ConcurrencyException's inside of the aggregated exception expose information about the actual document type and identity that failed.
 
+### Overriding Optimistic Concurrency in Session
+
+Marten allows overriding store-wide optimistic concurrency settings within a session via `SessionOptions`, whereby the `ConcurrencyChecks` can be set to `ConcurrencyChecks.Disabled`.
+
+<[sample:sample-override-optimistic-concurrency]>
 
 ## How it works
 
