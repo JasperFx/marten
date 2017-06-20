@@ -363,8 +363,16 @@ namespace Marten
 
         public int RequestCount => _connection.RequestCount;
 
+
+        ~QuerySession()
+        {
+            Dispose();
+        }
+
         public void Dispose()
         {
+            if (_disposed) return;
+
             _disposed = true;
             _connection.Dispose();
             WriterPool?.Dispose();
