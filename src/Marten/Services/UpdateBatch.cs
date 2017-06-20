@@ -101,7 +101,7 @@ namespace Marten.Services
                     catch (Exception e) when (batch.HasExceptionTransforms())
                     {
                         Exception transformed = null;
-                        if (batch.ExceptionTransforms.Any(x => x.TryTransform(e, out transformed)))
+                        if (batch.ExceptionTransforms.Any(x => x != null && x.TryTransform(e, out transformed)))
                         {
                             throw transformed;
                         }

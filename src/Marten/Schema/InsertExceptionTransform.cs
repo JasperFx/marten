@@ -20,8 +20,8 @@ namespace Marten.Schema
         {
             transformed = null;
 
-            if (original.Message.IndexOf(ExpectedMessage, StringComparison.OrdinalIgnoreCase) > -1 &&
-                original.Message.IndexOf(tableName, StringComparison.Ordinal) > -1)
+            if (original.Message?.IndexOf(ExpectedMessage, StringComparison.OrdinalIgnoreCase) > -1 &&
+                original.Message?.IndexOf(tableName, StringComparison.Ordinal) > -1)
             {
                 transformed = new DocumentAlreadyExistsException(original, typeof(T), id);
                 return true;
