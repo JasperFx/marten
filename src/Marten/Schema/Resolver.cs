@@ -237,6 +237,7 @@ namespace Marten.Schema
             var currentVersion = batch.Versions.Version<T>(Identity(entity));
 
             ICallback callback = null;
+            IExceptionTransform exceptionTransform = null;
             var sprocName = determineDbObjectName(updateStyle, batch);
 
             var tenantId = tenantIdOverride ?? batch.TenantId;
@@ -248,12 +249,17 @@ namespace Marten.Schema
             }
 
             if (!_mapping.UseOptimisticConcurrency && updateStyle == UpdateStyle.Update)
-            {
+            {                
                 callback = new UpdateDocumentCallback<T>(Identity(entity));
             }
 
+            if (updateStyle == UpdateStyle.Insert)
+            {
+                exceptionTransform = new InsertExceptionTransform<T>(Identity(entity), _mapping.Table.Name);
+            }
 
-            var call = batch.Sproc(sprocName, callback);
+
+            var call = batch.Sproc(sprocName, callback, exceptionTransform);
 
             _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion, tenantId);
         }

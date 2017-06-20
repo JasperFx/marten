@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.TrackingSession;
+using Marten.Schema;
 using Shouldly;
 using Xunit;
 
@@ -55,15 +56,17 @@ namespace Marten.Testing.Acceptance
         {
             var target = Target.Random();
 
+            // SAMPLE: sample-document-insertonly
             using (var session = theStore.OpenSession())
             {
                 session.Insert(target);
                 session.SaveChanges();
             }
+            // ENDSAMPLE
 
             using (var session = theStore.OpenSession())
             {
-                Exception<MartenCommandException>.ShouldBeThrownBy(() =>
+                Exception<DocumentAlreadyExistsException>.ShouldBeThrownBy(() =>
                 {
                     session.Insert(target);
                     session.SaveChanges();

@@ -68,11 +68,11 @@ namespace Marten.Services
             batch.AddCall(operation, operation as ICallback);
         }
 
-        public SprocCall Sproc(DbObjectName function, ICallback callback = null)
+        public SprocCall Sproc(DbObjectName function, ICallback callback = null, IExceptionTransform exceptionTransform = null)
         {
             if (function == null) throw new ArgumentNullException(nameof(function));
 
-            return Current().Sproc(function, callback);
+            return Current().Sproc(function, callback, exceptionTransform);
         }
 
         public void Execute()
@@ -82,19 +82,31 @@ namespace Marten.Services
             try
             {
                 foreach (var batch in _commands.ToArray())
-                {
+                {                    
                     var cmd = batch.BuildCommand();
-                    Connection.Execute(cmd, c =>
+                    try
                     {
-                        if (batch.HasCallbacks())
+                        Connection.Execute(cmd, c =>
                         {
-                            executeCallbacks(cmd, batch, list);
-                        }
-                        else
+                            if (batch.HasCallbacks())
+                            {
+                                executeCallbacks(cmd, batch, list);
+                            }
+                            else
+                            {
+                                cmd.ExecuteNonQuery();
+                            }
+                        });
+                    }
+                    catch (Exception e) when (batch.HasExceptionTransforms())
+                    {
+                        Exception transformed = null;
+                        if (batch.ExceptionTransforms.Any(x => x.TryTransform(e, out transformed)))
                         {
-                            cmd.ExecuteNonQuery();
+                            throw transformed;
                         }
-                    });
+                        throw;
+                    }
                 }
 
                 if (list.Any())
