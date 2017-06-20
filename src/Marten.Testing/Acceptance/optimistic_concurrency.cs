@@ -188,12 +188,13 @@ namespace Marten.Testing.Acceptance
                 session.Store(doc1);
                 session.SaveChanges();
             }
-
+            // SAMPLE: sample-override-optimistic-concurrency
             var session1 = theStore.OpenSession(new SessionOptions
             {
                 ConcurrencyChecks = ConcurrencyChecks.Disabled,
                 Tracking = DocumentTracking.DirtyTracking
             });
+            // ENDSAMPLE
 
             var session2 = theStore.DirtyTrackedSession();
 
