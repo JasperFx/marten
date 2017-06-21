@@ -22,8 +22,10 @@ namespace Marten.Testing.Linq
 
             using (var query = theStore.QuerySession())
             {
+                // SAMPLE: sample-linq-EqualsIgnoreCase
                 query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("abc")).Id.ShouldBe(user1.Id);
                 query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("aBc")).Id.ShouldBe(user1.Id);
+                // ENDSAMPLE
                 query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("def")).Id.ShouldBe(user2.Id);
 
                 query.Query<User>().Any(x => x.UserName.EqualsIgnoreCase("abcd")).ShouldBeFalse();
