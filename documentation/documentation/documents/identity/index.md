@@ -33,5 +33,7 @@ the "id" or "Id" or "ID" convention:
 
 <[sample:IdentityAttribute]>
 
+The identity property or field can also be configured through `StoreOptions` by using the `Schema` to obtain a document mapping:
 
+<[sample:sample-override-id-fluent-interance]>
 
