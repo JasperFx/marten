@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace Marten.Events.Projections.Async
@@ -15,7 +14,7 @@ namespace Marten.Events.Projections.Async
     public class EventPage
     {
         private EventStream[] _streams;
-        private IList<IEvent> _events;
+        private IReadOnlyList<IEvent> _events;
 
         public static EventStream[] ToStreams(StreamIdentity streamIdentity, IEnumerable<IEvent> events)
         {
@@ -79,7 +78,7 @@ namespace Marten.Events.Projections.Async
             To = 0;
         }
 
-        public EventPage(long from, long to, IList<IEvent> events)
+        public EventPage(long from, long to, IReadOnlyList<IEvent> events)
         {
             _events = events;
             From = @from;
@@ -88,7 +87,7 @@ namespace Marten.Events.Projections.Async
 
         public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
 
-        public IList<IEvent> Events
+        public IReadOnlyList<IEvent> Events
         {
             get
             {
@@ -101,7 +100,7 @@ namespace Marten.Events.Projections.Async
             }
         }
 
-        public EventPage(long @from, IList<long> sequences, IList<IEvent> events)
+        public EventPage(long @from, IList<long> sequences, IReadOnlyList<IEvent> events)
         {
             _events = events;
             Sequences = sequences;

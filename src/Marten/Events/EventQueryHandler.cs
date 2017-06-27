@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
@@ -10,7 +10,7 @@ using Marten.Util;
 
 namespace Marten.Events
 {
-    internal interface IEventQueryHandler : IQueryHandler<IList<IEvent>>
+    internal interface IEventQueryHandler : IQueryHandler<IReadOnlyList<IEvent>>
     {
         
     }
@@ -63,12 +63,12 @@ namespace Marten.Events
             sql.Append(" order by version");
         }
 
-        public IList<IEvent> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
+        public IReadOnlyList<IEvent> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             return _selector.Read(reader, map, stats);
         }
 
-        public Task<IList<IEvent>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public Task<IReadOnlyList<IEvent>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             return _selector.ReadAsync(reader, map, stats, token);
         }

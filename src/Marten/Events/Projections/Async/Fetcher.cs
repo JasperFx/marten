@@ -182,13 +182,13 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
             }
         }
 
-        private async Task<EventPage> buildEventPage(long @from, NpgsqlCommand cmd)
+        private async Task<EventPage> buildEventPage(long from, NpgsqlCommand cmd)
         {
-            IList<IEvent> events = null;
+            IReadOnlyList<IEvent> events;
             IList<long> sequences = new List<long>();
 
-            long nextKnown = 0;
-            long lastKnown = 0;
+            long nextKnown;
+            long lastKnown;
 
             using (var reader = await cmd.ExecuteReaderAsync(_token).ConfigureAwait(false))
             {
@@ -214,7 +214,7 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
                 lastKnown = await getLong(reader).ConfigureAwait(false);
             }
 
-            return new EventPage(@from, sequences, events)
+            return new EventPage(from, sequences, events)
             {
                 NextKnownSequence = nextKnown,
                 LastKnownSequence = lastKnown,

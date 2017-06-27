@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,7 +43,7 @@ namespace Marten.Services.BatchQuerying
         /// <param name="version"></param>
         /// <param name="timestamp"></param>
         /// <returns></returns>
-        Task<IList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null);
+        Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null);
     }
 
     public interface IBatchedQuery
@@ -83,7 +83,7 @@ namespace Marten.Services.BatchQuerying
         /// <param name="sql"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        Task<IList<T>> Query<T>(string sql, params object[] parameters) where T : class;
+        Task<IReadOnlyList<T>> Query<T>(string sql, params object[] parameters) where T : class;
 
         /// <summary>
         /// Execute this batched query

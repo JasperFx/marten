@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -59,7 +59,7 @@ namespace Marten
             return new MartenQueryable<T>(queryProvider);
         }
 
-        public IList<T> Query<T>(string sql, params object[] parameters)
+        public IReadOnlyList<T> Query<T>(string sql, params object[] parameters)
         {
             assertNotDisposed();
 
@@ -67,7 +67,7 @@ namespace Marten
             return _connection.Fetch(handler, _identityMap.ForQuery(), null, Tenant);
         }
 
-        public Task<IList<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
+        public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters)
         {
             assertNotDisposed();
 
@@ -86,7 +86,6 @@ namespace Marten
             return Tenant.StorageFor<T>();
         }
 
-
         public T Load<T>(string id)
         {
             return load<T>(id);
@@ -95,11 +94,6 @@ namespace Marten
         public Task<T> LoadAsync<T>(string id, CancellationToken token)
         {
             return loadAsync<T>(id, token);
-        }
-
-        public T Load<T>(ValueType id)
-        {
-            return load<T>(id);
         }
 
         private T load<T>(object id)
@@ -132,79 +126,71 @@ namespace Marten
             return storage<T>().As<IDocumentStorage<T>>().ResolveAsync(_identityMap, this, token, id);
         }
 
-        public ILoadByKeys<T> LoadMany<T>()
+        private ILoadByKeys<T> LoadMany<T>()
         {
             assertNotDisposed();
             return new LoadByKeys<T>(this);
         }
 
-
-
-
-        public IList<T> LoadMany<T>(params string[] ids)
+        public IReadOnlyList<T> LoadMany<T>(params string[] ids)
         {
-            assertNotDisposed();
             return LoadMany<T>().ById(ids);
         }
 
-        public IList<T> LoadMany<T>(params Guid[] ids)
+        public IReadOnlyList<T> LoadMany<T>(params Guid[] ids)
         {
-            assertNotDisposed();
             return LoadMany<T>().ById(ids);
         }
 
-        public IList<T> LoadMany<T>(params int[] ids)
+        public IReadOnlyList<T> LoadMany<T>(params int[] ids)
         {
-            assertNotDisposed();
             return LoadMany<T>().ById(ids);
         }
 
-        public IList<T> LoadMany<T>(params long[] ids)
+        public IReadOnlyList<T> LoadMany<T>(params long[] ids)
         {
-            assertNotDisposed();
             return LoadMany<T>().ById(ids);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(params string[] ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(params string[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(params Guid[] ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(params Guid[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(params int[] ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(params int[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(params long[] ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(params long[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids, token);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params Guid[] ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params Guid[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids, token);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params int[] ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params int[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids, token);
         }
 
-        public Task<IList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids)
         {
             return LoadMany<T>().ByIdAsync(ids, token);
         }
-
 
         private class LoadByKeys<TDoc> : ILoadByKeys<TDoc>
         {
@@ -215,7 +201,7 @@ namespace Marten
                 _parent = parent;
             }
 
-            public IList<TDoc> ById<TKey>(params TKey[] keys)
+            public IReadOnlyList<TDoc> ById<TKey>(params TKey[] keys)
             {
                 assertCorrectIdType<TKey>();
 
@@ -239,18 +225,17 @@ namespace Marten
                 }
             }
 
-            public Task<IList<TDoc>> ByIdAsync<TKey>(params TKey[] keys)
+            public Task<IReadOnlyList<TDoc>> ByIdAsync<TKey>(params TKey[] keys)
             {
                 return ByIdAsync(keys, CancellationToken.None);
             }
 
-            public IList<TDoc> ById<TKey>(IEnumerable<TKey> keys)
+            public IReadOnlyList<TDoc> ById<TKey>(IEnumerable<TKey> keys)
             {
                 return ById(keys.ToArray());
             }
 
-            public async Task<IList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys,
-                CancellationToken token = default(CancellationToken))
+            public async Task<IReadOnlyList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys, CancellationToken token = default(CancellationToken))
             {
                 assertCorrectIdType<TKey>();
 
@@ -262,7 +247,7 @@ namespace Marten
                 return concatDocuments(hits, documents);
             }
 
-            private IList<TDoc> concatDocuments<TKey>(TKey[] hits, IEnumerable<TDoc> documents)
+            private IReadOnlyList<TDoc> concatDocuments<TKey>(TKey[] hits, IEnumerable<TDoc> documents)
             {
                 return
                     hits.Select(key => _parent._identityMap.Retrieve<TDoc>(key))
@@ -407,7 +392,5 @@ namespace Marten
         {
             return loadAsync<T>(id, token);
         }
-
-
     }
 }

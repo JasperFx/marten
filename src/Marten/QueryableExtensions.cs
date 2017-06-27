@@ -20,7 +20,7 @@ namespace Marten
 
         #region ToList
 
-        public static Task<IList<T>> ToListAsync<T>(this IQueryable<T> queryable,
+        public static Task<IReadOnlyList<T>> ToListAsync<T>(this IQueryable<T> queryable,
             CancellationToken token = default(CancellationToken))
         {
             return queryable.As<IMartenQueryable>().ToListAsync<T>(token);
