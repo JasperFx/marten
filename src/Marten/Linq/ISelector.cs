@@ -51,7 +51,7 @@ namespace Marten.Linq
     public abstract class BasicSelector
     {
         private readonly string[] _selectFields;
-        private readonly bool _distinct = false;
+        private readonly bool _distinct;
 
         protected BasicSelector(params string[] selectFields)
         {
@@ -99,7 +99,7 @@ namespace Marten.Linq
             return builder.ToString();
         }
 
-        public static IList<T> Read<T>(this ISelector<T> selector, DbDataReader reader, IIdentityMap map, QueryStatistics stats)
+        public static IReadOnlyList<T> Read<T>(this ISelector<T> selector, DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             var list = new List<T>();
 
@@ -111,7 +111,7 @@ namespace Marten.Linq
             return list;
         }
 
-        public static async Task<IList<T>> ReadAsync<T>(this ISelector<T> selector, DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public static async Task<IReadOnlyList<T>> ReadAsync<T>(this ISelector<T> selector, DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var list = new List<T>();
 

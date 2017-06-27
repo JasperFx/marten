@@ -1,19 +1,16 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class UserSuppliedQueryHandler<T> : IQueryHandler<IList<T>>
+    public class UserSuppliedQueryHandler<T> : IQueryHandler<IReadOnlyList<T>>
     {
         private readonly DocumentStore _store;
         private readonly string _sql;
@@ -68,13 +65,13 @@ namespace Marten.Linq.QueryHandlers
             }
         }
 
-        public IList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
+        public IReadOnlyList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             var selector = new DeserializeSelector<T>(_store.Serializer);
             return selector.Read(reader, map, stats);
         }
 
-        public Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var selector = new DeserializeSelector<T>(_store.Serializer);
 

@@ -206,7 +206,7 @@ namespace Marten
         /// <typeparam name="TKey"></typeparam>
         /// <param name="keys"></param>
         /// <returns></returns>
-        IList<TDoc> ById<TKey>(params TKey[] keys);
+        IReadOnlyList<TDoc> ById<TKey>(params TKey[] keys);
 
         /// <summary>
         /// Supply the document id's to load asynchronously
@@ -214,7 +214,7 @@ namespace Marten
         /// <typeparam name="TKey"></typeparam>
         /// <param name="keys"></param>
         /// <returns></returns>
-        Task<IList<TDoc>> ByIdAsync<TKey>(params TKey[] keys);
+        Task<IReadOnlyList<TDoc>> ByIdAsync<TKey>(params TKey[] keys);
 
         /// <summary>
         /// Supply the document id's to load
@@ -222,7 +222,7 @@ namespace Marten
         /// <typeparam name="TKey"></typeparam>
         /// <param name="keys"></param>
         /// <returns></returns>
-        IList<TDoc> ById<TKey>(IEnumerable<TKey> keys);
+        IReadOnlyList<TDoc> ById<TKey>(IEnumerable<TKey> keys);
 
         /// <summary>
         /// Supply the document id's to load asynchronously
@@ -231,6 +231,6 @@ namespace Marten
         /// <param name="keys"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<IList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys, CancellationToken token = default(CancellationToken));
+        Task<IReadOnlyList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys, CancellationToken token = default(CancellationToken));
     }
 }

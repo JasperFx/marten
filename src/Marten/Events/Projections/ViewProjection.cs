@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +15,7 @@ namespace Marten.Events.Projections
     public class ViewProjection<TView, TId> : DocumentProjection<TView>, IDocumentProjection 
         where TView : class, new()
     {
-        private readonly Func<DocumentSession, TId[], IList<TView>> _sessionLoadMany;
+        private readonly Func<DocumentSession, TId[], IReadOnlyList<TView>> _sessionLoadMany;
 
         public ViewProjection()
         {
@@ -31,7 +31,7 @@ namespace Marten.Events.Projections
             var sessionParameter = Expression.Parameter(typeof(DocumentSession), "a");
             var idParameter = Expression.Parameter(typeof(TId[]), "e");
             var body = Expression.Call(sessionParameter, loadManyMethod.MakeGenericMethod(typeof(TView)), idParameter);
-            var lambda = Expression.Lambda<Func<DocumentSession, TId[], IList<TView>>>(body, sessionParameter, idParameter);
+            var lambda = Expression.Lambda<Func<DocumentSession, TId[], IReadOnlyList<TView>>>(body, sessionParameter, idParameter);
             _sessionLoadMany = lambda.Compile();
         }
 
@@ -209,7 +209,7 @@ namespace Marten.Events.Projections
             return Task.CompletedTask;
         }
 
-        private void applyProjections(IDocumentSession session, IList<EventProjection> projections, IList<TView> views)
+        private void applyProjections(IDocumentSession session, ICollection<EventProjection> projections, IEnumerable<TView> views)
         {
             var viewMap = createViewMap(session, projections, views);
 
@@ -228,7 +228,7 @@ namespace Marten.Events.Projections
             }
         }
 
-        private IDictionary<TId, TView> createViewMap(IDocumentSession session, IList<EventProjection> projections, IList<TView> views)
+        private IDictionary<TId, TView> createViewMap(IDocumentSession session, IEnumerable<EventProjection> projections, IEnumerable<TView> views)
         {
             var idAssigner = session.Tenant.IdAssignmentFor<TView>();
             var resolver = session.Tenant.StorageFor<TView>();

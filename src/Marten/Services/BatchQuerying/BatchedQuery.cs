@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -8,7 +8,6 @@ using Marten.Events;
 using Marten.Linq;
 using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema;
 using Marten.Util;
 using Npgsql;
 
@@ -49,7 +48,7 @@ namespace Marten.Services.BatchQuerying
             return new BatchLoadByKeys<TDoc>(this);
         }
 
-        public Task<IList<T>> Query<T>(string sql, params object[] parameters) where T : class
+        public Task<IReadOnlyList<T>> Query<T>(string sql, params object[] parameters) where T : class
         {
             return AddItem(new UserSuppliedQueryHandler<T>(_store, sql, parameters), null);
         }
@@ -151,7 +150,7 @@ namespace Marten.Services.BatchQuerying
             return AddItem(handler, null);
         }
 
-        public Task<IList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
+        public Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
         {
             var selector = new EventSelector(_store.Events, _store.Serializer);
             var handler = new EventQueryHandler<Guid>(selector, streamId, version, timestamp);
@@ -189,7 +188,7 @@ namespace Marten.Services.BatchQuerying
             return AddItem(queryable.ToLinqQuery().ToCount<long>(), null);
         }
 
-        internal Task<IList<T>> Query<T>(IMartenQueryable<T> queryable)
+        internal Task<IReadOnlyList<T>> Query<T>(IMartenQueryable<T> queryable)
         {
             var expression = queryable.Expression;
 

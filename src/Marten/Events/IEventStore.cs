@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -103,7 +103,7 @@ namespace Marten.Events
         /// <param name="version">If set, queries for events up to and including this version</param>
         /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
         /// <returns></returns>
-        IList<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null);
+        IReadOnlyList<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null);
 
         /// <summary>
         /// Synchronously fetches all of the events for the named stream
@@ -113,7 +113,7 @@ namespace Marten.Events
         /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<IList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken));
+        Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken));
 
         /// <summary>
         /// Synchronously fetches all of the events for the named stream
@@ -122,7 +122,7 @@ namespace Marten.Events
         /// <param name="version">If set, queries for events up to and including this version</param>
         /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
         /// <returns></returns>
-        IList<IEvent> FetchStream(string streamKey, int version = 0, DateTime? timestamp = null);
+        IReadOnlyList<IEvent> FetchStream(string streamKey, int version = 0, DateTime? timestamp = null);
 
         /// <summary>
         /// Synchronously fetches all of the events for the named stream
@@ -132,7 +132,7 @@ namespace Marten.Events
         /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<IList<IEvent>> FetchStreamAsync(string streamKey, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken));
+        Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken));
 
 
         /// <summary>

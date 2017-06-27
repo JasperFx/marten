@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -16,7 +16,7 @@ namespace Marten.Linq
         IEnumerable<IIncludeJoin> Includes { get; }
 
         QueryStatistics Statistics { get; }
-        Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token);
+        Task<IReadOnlyList<TResult>> ToListAsync<TResult>(CancellationToken token);
         Task<bool> AnyAsync(CancellationToken token);
         Task<int> CountAsync(CancellationToken token);
         Task<long> CountLongAsync(CancellationToken token);
@@ -54,7 +54,6 @@ namespace Marten.Linq
 
         IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
             IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner);
-
 
         IMartenQueryable<T> Stats(out QueryStatistics stats);
 

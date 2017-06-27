@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -172,7 +172,7 @@ namespace Marten.Events
             return StartStream(Guid.NewGuid(), events);
         }
 
-        public IList<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
+        public IReadOnlyList<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
         {
             ensureAsGuidStorage();
 
@@ -180,8 +180,7 @@ namespace Marten.Events
             return _connection.Fetch(handler, null, null, _tenant);
         }
 
-        public Task<IList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null,
-            CancellationToken token = new CancellationToken())
+        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken))
         {
             ensureAsGuidStorage();
 
@@ -189,7 +188,7 @@ namespace Marten.Events
             return _connection.FetchAsync(handler, null, null, _tenant, token);
         }
 
-        public IList<IEvent> FetchStream(string streamKey, int version = 0, DateTime? timestamp = null)
+        public IReadOnlyList<IEvent> FetchStream(string streamKey, int version = 0, DateTime? timestamp = null)
         {
             ensureAsStringStorage();
 
@@ -197,8 +196,7 @@ namespace Marten.Events
             return _connection.Fetch(handler, null, null, _tenant);
         }
 
-        public Task<IList<IEvent>> FetchStreamAsync(string streamKey, int version = 0, DateTime? timestamp = null,
-            CancellationToken token = new CancellationToken())
+        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken))
         {
             ensureAsStringStorage();
 
