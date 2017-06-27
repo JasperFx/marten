@@ -45,7 +45,6 @@
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
     <PackageReference Include="HtmlTags" Version="3.0.0.186" />
-    <PackageReference Include="Jil" Version="2.14.3" />
     <PackageReference Include="Storyteller" Version="3.0.0.329-rc" />
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="1.0.2" />
     <Reference Include="System.Web" />
