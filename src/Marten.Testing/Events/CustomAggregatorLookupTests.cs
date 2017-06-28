@@ -19,17 +19,32 @@ namespace Marten.Testing.Events
     public class CustomAggregatorLookupTests : DocumentSessionFixture<NulloIdentityMap>
     {        
         public CustomAggregatorLookupTests()
-        {            
-            StoreOptions(options =>
+        {    
+            this.InProfile(TestingContracts.CamelCase, () =>
             {
-                // SAMPLE: scenarios-immutableprojections-storesetup
-                var serializer = new JsonNetSerializer();
-                serializer.Customize(c => c.ContractResolver = new ResolvePrivateSetters());
-                options.Serializer(serializer);
-                options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);
-                options.Events.InlineProjections.AggregateStreamsWith<AggregateWithPrivateEventApply>();
-                // ENDSAMPLE
-            });
+                StoreOptions(options =>
+                {
+                    var serializer = new JsonNetSerializer();                    
+                    var resolver = new ResolvePrivateSetters {NamingStrategy = new CamelCaseNamingStrategy()};
+
+                    serializer.Customize(c => c.ContractResolver = resolver);
+                    options.Serializer(serializer);
+                    options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);
+                    options.Events.InlineProjections.AggregateStreamsWith<AggregateWithPrivateEventApply>();                    
+                });
+            }).Otherwise(() =>
+            {
+                StoreOptions(options =>
+                {
+                    // SAMPLE: scenarios-immutableprojections-storesetup
+                    var serializer = new JsonNetSerializer();
+                    serializer.Customize(c => c.ContractResolver = new ResolvePrivateSetters());
+                    options.Serializer(serializer);
+                    options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);
+                    options.Events.InlineProjections.AggregateStreamsWith<AggregateWithPrivateEventApply>();
+                    // ENDSAMPLE
+                });
+            });    
         }
 
         [Fact]

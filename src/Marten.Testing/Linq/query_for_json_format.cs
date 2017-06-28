@@ -76,7 +76,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var listJson = theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToJsonArray();
-            listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
+            listJson.ShouldBe($@"[{user1.ToJson().CaseBy(theStore.Serializer.Casing)},{user2.ToJson().CaseBy(theStore.Serializer.Casing)}]");
         }
 
         [Fact]
@@ -107,7 +107,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var listJson = await theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToJsonArrayAsync().ConfigureAwait(false);
-            listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
+            listJson.ShouldBe($@"[{user1.ToJson().CaseBy(theStore.Serializer.Casing)},{user2.ToJson().CaseBy(theStore.Serializer.Casing)}]");
         }
 
         [Fact]
@@ -138,7 +138,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().First();
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBe($@"{user1.ToJson()}".CaseBy(theStore.Serializer.Casing));
         }
 
         [Fact]
@@ -169,7 +169,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().AsJson().First();
-            userJson.ShouldBe($@"{user0.ToJson()}");
+            userJson.ShouldBe($@"{user0.ToJson()}".CaseBy(theStore.Serializer.Casing));
         }
 
         [Fact]
@@ -224,7 +224,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBe($@"{user1.ToJson()}".CaseBy(theStore.Serializer.Casing));
         }
 
         [Fact]
@@ -255,7 +255,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().AsJson().FirstAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user0.ToJson()}");
+            userJson.ShouldBe($@"{user0.ToJson()}".CaseBy(theStore.Serializer.Casing));
         }
 
         [Fact]
@@ -311,7 +311,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstOrDefault();
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBe($@"{user1.ToJson()}".CaseBy(theStore.Serializer.Casing));
         }
 
         [Fact]
@@ -342,7 +342,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().AsJson().FirstOrDefault();
-            userJson.ShouldBe($@"{user0.ToJson()}");
+            userJson.ShouldBe($@"{user0.ToJson()}".CaseBy(theStore.Serializer.Casing));
         }
 
         [Fact]
@@ -373,7 +373,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBe($@"{user1.ToJson()}".CaseBy(theStore.Serializer.Casing));
         }
 
         [Fact]
@@ -404,7 +404,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user0.ToJson()}");
+            userJson.ShouldBe($@"{user0.ToJson()}".CaseBy(theStore.Serializer.Casing));
         }
 
         [Fact]

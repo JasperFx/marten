@@ -9,7 +9,10 @@ namespace Marten.Testing.Linq
     {
         public using_containment_operator_in_linq_Tests()
         {
-            StoreOptions(_ => { _.Schema.For<Target>().GinIndexJsonData(); });
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Target>().GinIndexJsonData();
+            });
         }
 
         [Fact]

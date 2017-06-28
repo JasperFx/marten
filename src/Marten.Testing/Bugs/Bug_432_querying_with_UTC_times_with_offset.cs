@@ -52,7 +52,7 @@ namespace Marten.Testing.Bugs
 
                 _output.WriteLine(cmd.CommandText);
 
-                var sql = "select public.mt_immutable_timestamp(d.data ->> \'DateTimeField\') as time from public.mt_doc_dateclass as d";
+                var sql = $"select public.mt_immutable_timestamp(d.data ->> '{session.ColumnName<DateClass>(t => t.DateTimeField)}') as time from public.mt_doc_dateclass as d";
 
                 using (var reader = session.Connection.CreateCommand().Sql(sql).ExecuteReader())
                 {

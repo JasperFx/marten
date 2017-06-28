@@ -26,6 +26,16 @@ namespace Marten.Schema
 
     public static class DocumentMappingExtensions
     {
+        public static string ColumnName(this IQueryableDocument mapping, Expression expression)
+        {
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+
+            var field = mapping.FieldFor(visitor.Members);
+
+            return field.ColumnName;
+        }
         public static string JsonLocator(this IQueryableDocument mapping, Expression expression)
         {
             var visitor = new FindMembers();
@@ -35,6 +45,16 @@ namespace Marten.Schema
             var field = mapping.FieldFor(visitor.Members);
 
             return field.SqlLocator;
+        }
+        public static IField FieldInfo(this IQueryableDocument mapping, Expression expression)
+        {
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+
+            var field = mapping.FieldFor(visitor.Members);
+
+            return field;
         }
     }
 }

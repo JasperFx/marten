@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks>netcoreapp1.0;net46</TargetFrameworks>
     <AssemblyName>Marten.Testing</AssemblyName>
@@ -9,7 +8,6 @@
     <RuntimeFrameworkVersion Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">1.0.4</RuntimeFrameworkVersion>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
   </PropertyGroup>
-
   <ItemGroup>
     <None Update="**/*.js;connection.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -19,12 +17,10 @@
     </None>
     <None Include="App.config" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Marten\Marten.csproj" />
     <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Jil" Version="2.15.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
@@ -34,15 +30,12 @@
     <PackageReference Include="Shouldly" Version="2.8.0" />
     <PackageReference Include="structuremap" Version="4.2.0.402" />
   </ItemGroup>
-
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
     <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
   </ItemGroup>
-
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
     <Compile Remove="**\Fixtures\**\*.cs;**\Github\**\*.cs;StorytellerHarness.cs" />
   </ItemGroup>
-
   <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
     <PackageReference Include="HtmlTags" Version="3.0.0.186" />
     <PackageReference Include="Jil" Version="2.14.3" />
@@ -52,9 +45,7 @@
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
-
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
-
 </Project>

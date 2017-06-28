@@ -1,9 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
-  <VersionPrefix>2.0.0</VersionPrefix>
-  <VersionSuffix>alpha-</VersionSuffix>
+    <VersionPrefix>2.0.0</VersionPrefix>
+    <VersionSuffix>alpha-</VersionSuffix>
     <Authors>Jeremy D. Miller;Tim Cools;Jeff Doolittle</Authors>
     <TargetFrameworks>netstandard1.3;net46</TargetFrameworks>
     <AssemblyName>Marten</AssemblyName>
@@ -20,7 +19,6 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="..\CommonAssemblyInfo.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
     <EmbeddedResource Include="Schema\SQL\mt_transforms.js" />
@@ -31,7 +29,6 @@
     <EmbeddedResource Include="Schema\SQL\mt_get_next_hi.sql" />
     <EmbeddedResource Include="Schema\SchemaObjects.sql" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
     <PackageReference Include="Remotion.Linq" Version="2.1.1" />
@@ -40,16 +37,13 @@
     <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.7.0" />
     <PackageReference Include="FastExpressionCompiler" Version="1.0.1" />
   </ItemGroup>
-
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
     <PackageReference Include="NETStandard.Library" Version="1.6.1" />
   </ItemGroup>
-
   <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
     <Reference Include="System.Data" />
     <Reference Include="System.Threading.Tasks" />
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
-
 </Project>

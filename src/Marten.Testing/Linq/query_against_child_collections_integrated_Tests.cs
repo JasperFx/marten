@@ -15,7 +15,13 @@ namespace Marten.Testing.Linq
     {
         public query_against_child_collections_integrated_Tests()
         {
-            StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
+            this.InProfile(TestingContracts.CamelCase, () =>
+            {
+                StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase));
+            }).Otherwise(() =>
+            {
+                StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
+            });                          
         }
 
         private Target[] targets;

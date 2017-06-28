@@ -59,4 +59,91 @@ namespace Marten.Testing
 #endif
         }
     }
+
+    public sealed class TestingContracts
+    {
+        public readonly string Value;
+
+        public static readonly TestingContracts CamelCase = new TestingContracts("marten-testing-CamelCase");
+
+        public TestingContracts(string value)
+        {
+            Value = value;
+        }
+
+        public static TestingContracts Is(string value)
+        {
+            return new TestingContracts(value);
+        }
+
+        private bool Equals(TestingContracts other)
+        {
+            return string.Equals(Value, other.Value);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj is TestingContracts && Equals((TestingContracts)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return Value?.GetHashCode() ?? 0;
+        }
+
+        public static implicit operator TestingContracts(string item)
+        {
+            return new TestingContracts(item);
+        }
+
+        public static implicit operator string(TestingContracts item)
+        {
+            return item.Value;
+        }
+    }
+
+    public static class IntegratedFixtureMixins
+    {
+        public static IntegratedFixtureProfile InProfile(this IntegratedFixture fixture, TestingContracts profile, Action inProfile)
+        {
+            if (Environment.GetEnvironmentVariable(profile.Value) != null)
+            {
+                inProfile();
+                return new IntegratedFixtureProfile(fixture, true);
+            }
+            return new IntegratedFixtureProfile(fixture, false);
+        }
+
+        public static void Otherwise(this IntegratedFixtureProfile fixture, Action inProfile)
+        {
+            if (!fixture)
+            {
+                inProfile();
+            }
+        }
+
+        public sealed class IntegratedFixtureProfile
+        {
+            private readonly IntegratedFixture _fixture;
+            private readonly bool _enabled;
+
+            public IntegratedFixtureProfile(IntegratedFixture fixture, bool enabled)
+            {
+                _fixture = fixture;
+                _enabled = enabled;
+            }
+
+            public static implicit operator IntegratedFixture(IntegratedFixtureProfile profile)
+            {
+                return profile._fixture;
+            }
+
+            public static implicit operator bool(IntegratedFixtureProfile profile)
+            {
+                return profile._enabled;
+            }
+        }
+    }
 }

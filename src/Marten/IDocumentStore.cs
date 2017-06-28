@@ -158,6 +158,6 @@ namespace Marten
         ITenancy Tenancy { get; }
 
 
-        IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null);
+        IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null);               
     }
 }

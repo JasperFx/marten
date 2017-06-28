@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
+using Xunit.Extensions;
 
 namespace Marten.Testing.Acceptance
 {
@@ -10,8 +12,14 @@ namespace Marten.Testing.Acceptance
         public document_transforms()
         {
             StoreOptions(_ =>
-            {
-                _.Transforms.LoadFile("default_username.js");
+            {                
+                this.InProfile(TestingContracts.CamelCase, () =>
+                {
+                    _.Transforms.LoadFile("default_username_camelCase.js", "default_username");
+                }).Otherwise(() =>
+                {
+                    _.Transforms.LoadFile("default_username.js", "default_username");
+                });                
             });
         }
 
@@ -57,9 +65,7 @@ namespace Marten.Testing.Acceptance
         }
         // ENDSAMPLE
 
-
-
-        [Fact] //-- Unreliable on CI
+        [Fact] //-- Unreliable on CI        
         public void use_transform_in_production_mode()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
@@ -102,7 +108,13 @@ namespace Marten.Testing.Acceptance
             StoreOptions(_ =>
             {
                 _.Schema.For<User>().MultiTenanted();
-                _.Transforms.LoadFile("default_username.js");
+                this.InProfile(TestingContracts.CamelCase, () =>
+                {
+                    _.Transforms.LoadFile("default_username_camelCase.js", "default_username");
+                }).Otherwise(() =>
+                {
+                    _.Transforms.LoadFile("default_username.js", "default_username");
+                });
             });
 
             var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };

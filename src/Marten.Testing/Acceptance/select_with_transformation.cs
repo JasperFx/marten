@@ -14,7 +14,16 @@ namespace Marten.Testing.Acceptance
     {
         public select_with_transformation()
         {
-            StoreOptions(_ => _.Transforms.LoadFile("get_fullname.js"));
+            StoreOptions(_ =>
+            {
+                this.InProfile(TestingContracts.CamelCase, () =>
+                {
+                    _.Transforms.LoadFile("get_fullname_camelCase.js", "get_fullname");
+                }).Otherwise(() =>
+                {
+                    _.Transforms.LoadFile("get_fullname.js", "get_fullname");
+                });
+            });
         }
 
         public void load_transformation()
