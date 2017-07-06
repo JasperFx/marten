@@ -316,8 +316,19 @@ namespace Marten.Events.Projections
         private Type[] getUniqueEventTypes()
         {
             return _handlers.Keys
-                .Union(_handlers.Keys)
                 .Distinct()
+                .Select(type =>
+                {
+                    var genericType = type.GenericTypeArguments.FirstOrDefault();
+                    if (genericType == null)
+                    {
+                        return type;
+                    }
+                    else
+                    {
+                        return genericType;
+                    }
+                })
                 .ToArray();
         }
     }
