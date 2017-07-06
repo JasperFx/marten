@@ -84,6 +84,7 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public async void from_configuration_async()
         {
+            // SAMPLE: viewprojection-from-configuration 
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -91,11 +92,12 @@ namespace Marten.Testing.Events.Projections
                 _.Events.ProjectView<PersistedView, Guid>()
                     .ProjectEvent<QuestStarted>((view, @event) => { view.Events.Add(@event); })
                     .ProjectEvent<MembersJoined>(e => e.QuestId, (view, @event) => { view.Events.Add(@event); })
-                    .ProjectEvent<MonsterSlayed>(e => e.QuestId, (view, @event) => { view.Events.Add(@event); })
+                    .ProjectEvent<ProjectionEvent<MonsterSlayed>>(e => e.Data.QuestId, (view, @event) => { view.Events.Add(@event.Data); })
                     .DeleteEvent<QuestEnded>()
                     .DeleteEvent<MembersDeparted>(e => e.QuestId)
                     .DeleteEvent<MonsterDestroyed>((session, e) => session.Load<QuestParty>(e.QuestId).Id);
             });
+            // ENDSAMPLE 
 
             theSession.Events.StartStream<QuestParty>(streamId, started, joined);
             await theSession.SaveChangesAsync();
@@ -321,6 +323,7 @@ namespace Marten.Testing.Events.Projections
         public List<object> Events { get; } = new List<object>();
     }
 
+    // SAMPLE: viewprojection-from-class 
     public class PersistViewProjection : ViewProjection<PersistedView, Guid>
     {
         public PersistViewProjection()
@@ -338,4 +341,5 @@ namespace Marten.Testing.Events.Projections
             view.Events.Add(@event);
         }
     }
+    // ENDSAMPLE 
 }
