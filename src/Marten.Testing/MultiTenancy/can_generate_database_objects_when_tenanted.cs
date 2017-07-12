@@ -1,5 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.MultiTenancy
@@ -16,6 +18,48 @@ namespace Marten.Testing.MultiTenancy
             });
 
             store.Tenancy.Default.EnsureStorageExists(typeof(User));
+        }
+
+        [Fact]
+        public void can_add_same_primary_key_to_multiple_tenant()
+        {
+            var guid = Guid.NewGuid();
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Policies.AllDocumentsAreMultiTenanted();
+            });
+
+            using (var session = store.OpenSession("123"))
+            {
+                var target = Target.Random();
+                target.Id = guid;
+                target.String = "123";
+                session.Store("123", target);
+                session.SaveChanges();
+            }
+            using (var session = store.OpenSession("abc"))
+            {
+                var target = Target.Random();
+                target.Id = guid;
+                target.String = "abc";
+                session.Store("abc", target);
+                session.SaveChanges();
+            }
+
+            using (var session = store.OpenSession("123"))
+            {
+                var target = session.Load<Target>(guid);
+                target.ShouldNotBeNull();
+                target.String.ShouldBe("123");
+            }
+
+            using (var session = store.OpenSession("abc"))
+            {
+                var target = session.Load<Target>(guid);
+                target.ShouldNotBeNull();
+                target.String.ShouldBe("abc");
+            }
         }
 
         [Fact]
