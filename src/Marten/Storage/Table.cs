@@ -117,7 +117,10 @@ namespace Marten.Storage
 
             writer.WriteLine($"    {lines.Last()}");
 
-            writer.WriteLine($"   ,PRIMARY KEY ({PrimaryKeys.Select(x => x.Name).Join(", ")})");
+            if (PrimaryKeys.Any())
+            {
+                writer.WriteLine($"   ,PRIMARY KEY ({PrimaryKeys.Select(x => x.Name).Join(", ")})");
+            }
 
             writer.WriteLine(");");
 

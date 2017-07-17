@@ -23,7 +23,19 @@ namespace Marten.Storage
             if (mapping == null) throw new ArgumentNullException(nameof(mapping));
 
             _tableName = mapping.Table;
-            _primaryKeyConstraintName = "pk_" + mapping.Table.Name;
+
+
+            var table = new DocumentTable(mapping);
+            if (table.PrimaryKeys.Count > 1)
+            {
+                _primaryKeyConstraintName =  mapping.Table.Name + "_pkey";
+            }
+            else
+            {
+                _primaryKeyConstraintName = "pk_" + mapping.Table.Name;
+            }
+
+            
                 
             var idType = mapping.IdMember.GetMemberType();
             var pgIdType = TypeMappings.GetPgType(idType);

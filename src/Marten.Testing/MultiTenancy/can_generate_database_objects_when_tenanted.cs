@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -28,7 +29,16 @@ namespace Marten.Testing.MultiTenancy
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Policies.AllDocumentsAreMultiTenanted();
+                _.Logger(new ConsoleMartenLogger());
             });
+
+            store.Tenancy.Default.EnsureStorageExists(typeof(Target));
+            var existing = store.Tenancy.Default.DbObjects.ExistingTableFor(typeof(Target));
+            var mapping = store.Options.Storage.MappingFor(typeof(Target));
+            var expected = new DocumentTable(mapping);
+
+            var delta = new TableDelta(expected, existing);
+            delta.Matches.ShouldBeTrue();
 
             using (var session = store.OpenSession("123"))
             {

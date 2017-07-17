@@ -55,7 +55,15 @@ namespace Marten.Storage
             foreach (var index in obsoleteIndexes)
             {
                 IndexRollbacks.Add(index.DDL);
-                IndexChanges.Add($"drop index concurrently if exists {schemaName}.{index.Name};");
+
+                if (!index.Name.EndsWith("pkey"))
+                {
+                    IndexChanges.Add($"drop index concurrently if exists {schemaName}.{index.Name};");
+                }
+/*                else
+                {
+                    IndexChanges.Add($"alter table {_tableName} drop constraint if exists {schemaName}.{index.Name};");
+                }*/
             }
         }
 
