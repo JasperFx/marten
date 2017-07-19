@@ -32,6 +32,12 @@ namespace Marten.Storage
             _columns.Add(column);
         }
 
+        public void AddPrimaryKeys(List<TableColumn> columns)
+        {
+            PrimaryKeys.AddRange(columns);
+            _columns.AddRange(columns);
+        }
+
         public TableColumn PrimaryKey { get; private set; }
 
         public void AddColumn<T>() where T : TableColumn, new()
@@ -111,6 +117,11 @@ namespace Marten.Storage
 
             writer.WriteLine($"    {lines.Last()}");
 
+            if (PrimaryKeys.Any())
+            {
+                writer.WriteLine($"   ,PRIMARY KEY ({PrimaryKeys.Select(x => x.Name).Join(", ")})");
+            }
+
             writer.WriteLine(");");
 
             writer.WriteLine(OriginWriter.OriginStatement("TABLE", Identifier.QualifiedName));
@@ -127,6 +138,8 @@ namespace Marten.Storage
                 writer.WriteLine(index.ToDDL());
             }
         }
+
+        public List<TableColumn> PrimaryKeys { get; } = new List<TableColumn>();
 
 
         public void WriteDropStatement(DdlRules rules, StringWriter writer)
