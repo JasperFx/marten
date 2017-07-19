@@ -14,18 +14,20 @@ namespace Marten.Storage
             var pgIdType = TypeMappings.GetPgType(mapping.IdMember.GetMemberType());
             var pgTextType = TypeMappings.GetPgType(string.Empty.GetType());
 
+            var idColumn = new TableColumn("id", pgIdType);
             if (mapping.TenancyStyle == TenancyStyle.Conjoined)
             {
                 AddPrimaryKeys(new List<TableColumn>
                 {
-                    new TableColumn("id", pgIdType),
-                    new TableColumn("tenant_id", pgTextType)
+                    idColumn,
+                    new TenantIdColumn()
                 });
+
                 Indexes.Add(new IndexDefinition(mapping, TenantIdColumn.Name));
             }
             else
             {
-                AddPrimaryKey(new TableColumn("id", pgIdType));
+                AddPrimaryKey(idColumn);
             }
 
             AddColumn("data", "jsonb", "NOT NULL");
