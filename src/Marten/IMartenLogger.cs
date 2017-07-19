@@ -92,12 +92,18 @@ namespace Marten
         public void LogSuccess(NpgsqlCommand command)
         {
             Console.WriteLine(command.CommandText);
+            foreach (var p in command.Parameters.OfType<NpgsqlParameter>()) {
+                Console.WriteLine($"  {p.ParameterName}: {p.Value}");
+            }
         }
 
         public void LogFailure(NpgsqlCommand command, Exception ex)
         {
             Console.WriteLine("Postgresql command failed!");
             Console.WriteLine(command.CommandText);
+            foreach (var p in command.Parameters.OfType<NpgsqlParameter>()) {
+                Console.WriteLine($"  {p.ParameterName}: {p.Value}");
+            }
             Console.WriteLine(ex);
         }
 
