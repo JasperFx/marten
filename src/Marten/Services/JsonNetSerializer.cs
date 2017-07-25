@@ -122,10 +122,12 @@ namespace Marten.Services
                 if (value == Casing.Default)
                 {
                     _serializer.ContractResolver = new DefaultContractResolver();
+                    _clean.ContractResolver = new DefaultContractResolver();
                 }
                 else
                 {
                     _serializer.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                    _clean.ContractResolver = new CamelCasePropertyNamesContractResolver();
                 }
             }
         }

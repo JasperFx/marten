@@ -69,7 +69,7 @@ namespace Marten.Testing
 
     public class TestsSerializer : JsonNetSerializer
     {
-        
+
     }
 
 

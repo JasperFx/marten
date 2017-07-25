@@ -65,5 +65,38 @@ namespace Marten.Testing.Storage
                 table.HasColumn(DocumentMapping.DeletedAtColumn).ShouldBeTrue();
             }
         }
+
+        [Fact]
+        public void can_generate_the_patch_with_camel_casing()
+        {
+            using (var store1 = TestingDocumentStore.For(_ =>
+            {
+                _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);
+            }))
+            {
+                store1.BulkInsert(new User[] { new User { UserName = "foo" }, new User { UserName = "bar" } });
+            }
+
+            using (var store2 = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<User>().SoftDeleted();
+                _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);
+            }))
+            {
+                // Verifying that we didn't lose any data
+                using (var session = store2.QuerySession())
+                {
+                    session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+                        .ToList().ShouldHaveTheSameElementsAs("bar", "foo");
+                }
+
+
+                var table = store2.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
+
+                table.HasColumn(DocumentMapping.DeletedColumn).ShouldBeTrue();
+                table.HasColumn(DocumentMapping.DeletedAtColumn).ShouldBeTrue();
+            }
+        }
     }
 }
