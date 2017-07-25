@@ -95,5 +95,8 @@ A shorthand extension method `EventGraph.UseAggregatorLookup(this EventGraph eve
 
 - `AggregationLookupStrategy.UsePublicApply` resolves aggregators that use public Apply
 - `AggregationLookupStrategy.UsePrivateApply` resolves aggregators that use private Apply  
+- `AggregationLookupStrategy.UsePublicAndPrivateApply` resolves aggregators that use public or private Apply  
+
+The aggregation lookup can also be set in the `StoreOptions.Events.UserAggregatorLookup`
 
 <[sample:register-custom-aggregator-lookup]>

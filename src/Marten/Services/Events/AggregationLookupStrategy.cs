@@ -10,5 +10,8 @@ namespace Marten.Services.Events
 
         public static IAggregatorLookup UsePrivateApply
             => new AggregatorLookup(type => typeof(AggregatorApplyPrivate<>).CloseAndBuildAs<IAggregator>(type));
+
+        public static IAggregatorLookup UsePublicAndPrivateApply
+            => new AggregatorLookup(type => typeof(AggregatorApplyPublicAndPrivate<>).CloseAndBuildAs<IAggregator>(type));
     }
 }
