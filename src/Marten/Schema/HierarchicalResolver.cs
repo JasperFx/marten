@@ -2,7 +2,9 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Services;
+using Npgsql;
 
 namespace Marten.Schema
 {
@@ -31,8 +33,7 @@ namespace Marten.Schema
         {
             if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false)) return null;
 
-            var json = reader.GetTextReader(startingIndex);
-            //var json = await reader.GetFieldValueAsync<string>(startingIndex, token).ConfigureAwait(false);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
 
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
@@ -64,8 +65,7 @@ namespace Marten.Schema
 
             if (!found) return null;
 
-            var json = reader.GetTextReader(0);
-            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
             var typeAlias = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
 
             var actualType = _hierarchy.TypeFor(typeAlias);

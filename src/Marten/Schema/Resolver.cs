@@ -121,8 +121,7 @@ namespace Marten.Schema
             if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false)) return null;
 
 
-            var json = reader.GetTextReader(startingIndex);
-            //var json = await reader.GetFieldValueAsync<string>(startingIndex, token).ConfigureAwait(false);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
 
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
@@ -177,8 +176,7 @@ namespace Marten.Schema
             var found = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!found) return null;
 
-            var json = reader.GetTextReader(0);
-            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
 
             var version = await reader.GetFieldValueAsync<Guid>(2, token).ConfigureAwait(false);
 

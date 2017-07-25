@@ -184,10 +184,7 @@ namespace Marten.Events
         {
             var id = await reader.GetFieldValueAsync<Guid>(startingIndex, token).ConfigureAwait(false);
 
-            // TODO -- DO NOT LIKE THIS. Ask the Npgsql guys if this is okay
-            var json = reader.GetTextReader(startingIndex + 1);
-            
-            //var json = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex + 1).ConfigureAwait(false);
 
             return map.Get<T>(id, json, null);
         }

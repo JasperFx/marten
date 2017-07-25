@@ -9,6 +9,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Events
 {
@@ -69,8 +70,7 @@ namespace Marten.Events
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var eventTypeName = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(2, token).ConfigureAwait(false);
-            var dataJson = reader.GetTextReader(3);
-            //var dataJson = await reader.GetFieldValueAsync<string>(3, token).ConfigureAwait(false);
+            var dataJson = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(3).ConfigureAwait(false);
 
             var mapping = Events.EventMappingFor(eventTypeName);
 
