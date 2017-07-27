@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
 using Marten.Linq.LastModified;
+using Marten.Linq.MatchesSql;
 using Marten.Linq.Parsing;
 using Marten.Linq.SoftDeletes;
 using Marten.Schema;
@@ -86,6 +87,9 @@ namespace Marten.Linq
             // last modified
             new ModifiedSinceParser(),
             new ModifiedBeforeParser(),
+
+            // matches sql
+            new MatchesSqlParser(),
 
             // dictionaries
             new DictionaryExpressions()

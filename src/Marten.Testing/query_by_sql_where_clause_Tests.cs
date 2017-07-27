@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Marten.Linq.MatchesSql;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -174,6 +175,23 @@ namespace Marten.Testing
 
                 var user = session.Query<User>("where data ->> 'FirstName' = 'Jeremy'").Single();
                 user.LastName.ShouldBe("Miller");
+                user.Id.ShouldBe(u.Id);
+            }
+        }
+        // ENDSAMPLE
+
+        // SAMPLE: query_with_matches_sql
+        [Fact]
+        public void query_with_matches_sql()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                var u = new User { FirstName = "Eric", LastName = "Smith" };
+                session.Store(u);
+                session.SaveChanges();
+
+                var user = session.Query<User>().Where(x => x.MatchesSql("data->> 'FirstName' = ?", "Eric")).Single();
+                user.LastName.ShouldBe("Smith");
                 user.Id.ShouldBe(u.Id);
             }
         }
