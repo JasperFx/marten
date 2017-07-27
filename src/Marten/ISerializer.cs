@@ -65,5 +65,6 @@ namespace Marten
     {
         Default,
         CamelCase,
+        SnakeCase
     }
 }
