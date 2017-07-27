@@ -69,48 +69,44 @@ namespace Marten.Testing.Schema
         }
 
         [Theory]
-        [InlineData(Casing.Default)]
-        [InlineData(Casing.CamelCase)]
-        public void locator_for_number(Casing casing)
+        [InlineData(Casing.Default, "Age")]
+        [InlineData(Casing.CamelCase, "age")]
+        [InlineData(Casing.SnakeCase, "age")]
+        public void locator_for_number(Casing casing, string memberName)
         {
-            var memberName = casing == Casing.Default ? "Age" : "age";
-
             JsonLocatorField.For<User>(EnumStorage.AsInteger, casing, x => x.Age)
                 .SqlLocator.ShouldBe($"CAST(d.data ->> '{memberName}' as integer)");
         }
 
         [Theory]
-        [InlineData(Casing.Default)]
-        [InlineData(Casing.CamelCase)]
-        public void locator_for_enum_in_integer_mode(Casing casing)
+        [InlineData(Casing.Default, "Color")]
+        [InlineData(Casing.CamelCase, "color")]
+        [InlineData(Casing.SnakeCase, "color")]
+        public void locator_for_enum_in_integer_mode(Casing casing, string memberName)
         {
-            var memberName = casing == Casing.Default ? "Color" : "color";
-
             JsonLocatorField.For<Target>(EnumStorage.AsInteger, casing, x => x.Color)
                 .SqlLocator.ShouldBe($"CAST(d.data ->> '{memberName}' as integer)");
         }
 
         [Theory]
-        [InlineData(Casing.Default)]
-        [InlineData(Casing.CamelCase)]
-        public void locator_for_enum_in_string_mode(Casing casing)
+        [InlineData(Casing.Default, "Color")]
+        [InlineData(Casing.CamelCase, "color")]
+        [InlineData(Casing.SnakeCase, "color")]
+        public void locator_for_enum_in_string_mode(Casing casing, string memberName)
         {
-            var memberName = casing == Casing.Default ? "Color" : "color";
-
             JsonLocatorField.For<Target>(EnumStorage.AsString, casing, x => x.Color)
                 .SqlLocator.ShouldBe($"d.data ->> '{memberName}'");
         }
 
 
         [Theory]
-        [InlineData(Casing.Default)]
-        [InlineData(Casing.CamelCase)]
-        public void two_deep_members_json_locator(Casing casing)
+        [InlineData(Casing.Default, "Inner", "Number")]
+        [InlineData(Casing.CamelCase, "inner", "number")]
+        [InlineData(Casing.SnakeCase, "inner", "number")]
+        public void two_deep_members_json_locator(Casing casing, string innerName, string numberName)
         {
             var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);
             var number = ReflectionHelper.GetProperty<Target>(x => x.Number);
-            var innerName = casing == Casing.Default ? "Inner" : "inner";
-            var numberName = casing == Casing.Default ? "Number" : "number";
 
             var twodeep = new JsonLocatorField("d.data", EnumStorage.AsInteger, casing, new MemberInfo[] {inner, number});
 
@@ -119,14 +115,13 @@ namespace Marten.Testing.Schema
 
 
         [Theory]
-        [InlineData(Casing.Default)]
-        [InlineData(Casing.CamelCase)]
-        public void three_deep_members_json_locator(Casing casing)
+        [InlineData(Casing.Default, "Inner", "Number")]
+        [InlineData(Casing.CamelCase, "inner", "number")]
+        [InlineData(Casing.SnakeCase, "inner", "number")]
+        public void three_deep_members_json_locator(Casing casing, string innerName, string numberName)
         {
             var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);
             var number = ReflectionHelper.GetProperty<Target>(x => x.Number);
-            var innerName = casing == Casing.Default ? "Inner" : "inner";
-            var numberName = casing == Casing.Default ? "Number" : "number";
 
             var deep = new JsonLocatorField("d.data", EnumStorage.AsInteger, casing, new MemberInfo[] { inner, inner, number });
 
@@ -134,14 +129,13 @@ namespace Marten.Testing.Schema
         }
 
         [Theory]
-        [InlineData(Casing.Default)]
-        [InlineData(Casing.CamelCase)]
-        public void three_deep_members_json_locator_for_string_property(Casing casing)
+        [InlineData(Casing.Default, "Inner", "String")]
+        [InlineData(Casing.CamelCase, "inner", "string")]
+        [InlineData(Casing.SnakeCase, "inner", "string")]
+        public void three_deep_members_json_locator_for_string_property(Casing casing, string innerName, string stringName)
         {
             var inner = ReflectionHelper.GetProperty<Target>(x => x.Inner);
             var stringProp = ReflectionHelper.GetProperty<Target>(x => x.String);
-            var innerName = casing == Casing.Default ? "Inner" : "inner";
-            var stringName = casing == Casing.Default ? "String" : "string";
 
             var deep = new JsonLocatorField("d.data", EnumStorage.AsInteger, casing, new MemberInfo[] { inner, inner, stringProp });
 
@@ -160,26 +154,22 @@ namespace Marten.Testing.Schema
         }
 
         [Theory]
-        [InlineData(Casing.Default)]
-        [InlineData(Casing.CamelCase)]
-        public void do_not_use_timestamp_functions_on_selection_locator_for_dates(Casing casing)
+        [InlineData(Casing.Default, "DateTime", "NullableDateTime", "DateTimeOffset", "NullableDateTimeOffset")]
+        [InlineData(Casing.CamelCase, "dateTime", "nullableDateTime", "dateTimeOffset", "nullableDateTimeOffset")]
+        [InlineData(Casing.SnakeCase, "date_time", "nullable_date_time", "date_time_offset", "nullable_date_time_offset")]
+        public void do_not_use_timestamp_functions_on_selection_locator_for_dates(Casing casing, string dateTimeName, string nullableDateTimeName, string dateTimeOffsetName, string nullableDateTimeOffsetName)
         {
-            var name = casing == Casing.Default ? "DateTime" : "dateTime";
-
             JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, casing, x => x.DateTime)
-                .SelectionLocator.ShouldBe($"CAST(d.data ->> '{name}' as timestamp without time zone)");
+                .SelectionLocator.ShouldBe($"CAST(d.data ->> '{dateTimeName}' as timestamp without time zone)");
             
-            name = casing == Casing.Default ? "NullableDateTime" : "nullableDateTime";
             JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, casing, x => x.NullableDateTime)
-                .SelectionLocator.ShouldBe($"CAST(d.data ->> '{name}' as timestamp without time zone)");
+                .SelectionLocator.ShouldBe($"CAST(d.data ->> '{nullableDateTimeName}' as timestamp without time zone)");
             
-            name = casing == Casing.Default ? "DateTimeOffset" : "dateTimeOffset";
             JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, casing, x => x.DateTimeOffset)
-                .SelectionLocator.ShouldBe($"CAST(d.data ->> '{name}' as timestamp with time zone)");
+                .SelectionLocator.ShouldBe($"CAST(d.data ->> '{dateTimeOffsetName}' as timestamp with time zone)");
 
-            name = casing == Casing.Default ? "NullableDateTimeOffset" : "nullableDateTimeOffset";
             JsonLocatorField.For<DocWithDates>(EnumStorage.AsString, casing, x => x.NullableDateTimeOffset)
-                .SelectionLocator.ShouldBe($"CAST(d.data ->> '{name}' as timestamp with time zone)");
+                .SelectionLocator.ShouldBe($"CAST(d.data ->> '{nullableDateTimeOffsetName}' as timestamp with time zone)");
                 
         }
     }

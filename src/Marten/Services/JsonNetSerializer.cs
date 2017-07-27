@@ -124,10 +124,15 @@ namespace Marten.Services
                     _serializer.ContractResolver = new DefaultContractResolver();
                     _clean.ContractResolver = new DefaultContractResolver();
                 }
+                else if (value == Casing.CamelCase)
+                {
+                    _serializer.ContractResolver = new DefaultContractResolver { NamingStrategy = new CamelCaseNamingStrategy() };
+                    _clean.ContractResolver = new DefaultContractResolver { NamingStrategy = new CamelCaseNamingStrategy { ProcessDictionaryKeys = true, OverrideSpecifiedNames = true } };
+                }
                 else
                 {
-                    _serializer.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                    _clean.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                    _serializer.ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() };
+                    _clean.ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy { ProcessDictionaryKeys = true, OverrideSpecifiedNames = true } };
                 }
             }
         }
