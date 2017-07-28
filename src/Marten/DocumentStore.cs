@@ -258,13 +258,15 @@ namespace Marten
             var parser = new MartenQueryParser();
 
             var tenant = Tenancy[options.TenantId];
-            var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
+            var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout);
 
             var session = new QuerySession(this,
                 connection, parser,
                 new NulloIdentityMap(Serializer), tenant);
 
-            session.Logger = _logger.StartSession(session);
+	        connection.BeginSession();
+
+			session.Logger = _logger.StartSession(session);
 
             return session;
         }
@@ -284,6 +286,8 @@ namespace Marten
             var session = new QuerySession(this,
                 connection, parser,
                 new NulloIdentityMap(Serializer), tenant);
+
+			connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
 
