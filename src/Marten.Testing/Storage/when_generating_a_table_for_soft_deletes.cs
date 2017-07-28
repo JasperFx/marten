@@ -40,13 +40,16 @@ namespace Marten.Testing.Storage
         [Fact]
         public void can_generate_the_patch()
         {
+            ISerializer serializer;
             using (var store1 = TestingDocumentStore.Basic())
             {
+                serializer = store1.Serializer;
                 store1.BulkInsert(new User [] {new User {UserName = "foo"}, new User { UserName = "bar" } });
             }
 
             using (var store2 = DocumentStore.For(_ =>
             {
+                _.Serializer(serializer);
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<User>().SoftDeleted();
             }))

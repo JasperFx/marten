@@ -27,6 +27,22 @@ namespace Marten.Testing.Documents
         {
             return $"{{\"Id\": \"{Id}\", \"Age\": {Age}, \"FullName\": \"{FullName}\", \"Internal\": {Internal.ToString().ToLowerInvariant()}, \"LastName\": \"{LastName}\", \"UserName\": \"{UserName}\", \"FirstName\": \"{FirstName}\"}}";
         }
+        
+        public string ToJson(Casing casing)
+        {
+            // puke
+            switch (casing)
+            {
+                case Casing.CamelCase:
+                {
+                    return $"{{\"id\": \"{Id}\", \"age\": {Age}, \"fullName\": \"{FullName}\", \"internal\": {Internal.ToString().ToLowerInvariant()}, \"lastName\": \"{LastName}\", \"userName\": \"{UserName}\", \"firstName\": \"{FirstName}\"}}";
+                }
+                default:
+                {
+                    return ToJson();
+                }
+            }            
+        }
 
         public void From(User user)
         {

@@ -98,7 +98,7 @@ namespace Marten.Testing.Linq
             plan.ActualTotalTime.ShouldBeGreaterThan(0m);
             plan.PlanningTime.ShouldBeGreaterThan(0m);
             plan.ExecutionTime.ShouldBeGreaterThan(0m);
-            plan.SortKey.ShouldContain("(((d.data ->> 'Number'::text))::integer)");
+            plan.SortKey.ShouldContain($"(((d.data ->> '{theSession.ColumnName<SimpleUser>(u => u.Number)}'::text))::integer)");
             plan.Plans.ShouldNotBeEmpty();
         }
     }

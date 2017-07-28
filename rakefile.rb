@@ -12,7 +12,7 @@ BUILD_NUMBER = build_number
 
 task :ci => [:connection, :version, :default, :storyteller, 'pack']
 
-task :default => [:mocha, :test, :storyteller]
+task :default => [:mocha, :tests, :storyteller]
 
 desc "Prepares the working directory for a new build"
 task :clean do
@@ -75,6 +75,19 @@ end
 desc 'Compile the code'
 task :compile => [:clean, :restore] do
   sh "dotnet build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp1.0 --configuration #{COMPILE_TARGET}"
+end
+
+desc 'Run the unit tests against all profiles'
+task :tests do
+  ["", "marten-testing-CamelCase"].each do |x|
+	begin
+		ENV[x]="true" unless x.empty?
+		Rake::Task["test"].invoke()
+		Rake::Task["test"].reenable
+	ensure
+		ENV.delete(x) unless x.empty?
+	end
+  end
 end
 
 desc 'Run the unit tests'

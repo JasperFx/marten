@@ -1,6 +1,8 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Marten.Schema;
 using Marten.Services;
+using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 
@@ -18,7 +20,7 @@ namespace Marten.Testing
             theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
 
             theSession.SaveChanges();
-            var sumResults = await theSession.QueryAsync<int>("select sum(CAST(d.data ->> 'Number' as integer)) as number from mt_doc_target as d").ConfigureAwait(false);
+            var sumResults = await theSession.QueryAsync<int>($"select sum({theSession.Locator<Target>(u => u.Number)}) as number from mt_doc_target as d").ConfigureAwait(false);
             var sum = sumResults.Single();
             sum.ShouldBe(10);
         }

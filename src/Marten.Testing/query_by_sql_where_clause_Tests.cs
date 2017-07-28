@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -23,7 +24,7 @@ namespace Marten.Testing
                 session.SaveChanges();
 
                 var firstnames =
-                    session.Query<User>("where data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
+                    session.Query<User>($"where data ->> '{session.ColumnName<User>(u => u.LastName)}' = ?", "Miller").OrderBy(x => x.FirstName)
                            .Select(x => x.FirstName).ToArray();
 
                 firstnames.Length.ShouldBe(3);
@@ -45,7 +46,7 @@ namespace Marten.Testing
                 session.SaveChanges();
 
                 var firstnames =
-                    session.Query<User>("where data ->> 'LastName' = :Name", new { Name = "Miller" }).OrderBy(x => x.FirstName)
+                    session.Query<User>($"where data ->> '{session.ColumnName<User>(u => u.LastName)}' = :Name", new { Name = "Miller" }).OrderBy(x => x.FirstName)
                            .Select(x => x.FirstName).ToArray();
 
                 firstnames.Length.ShouldBe(3);
@@ -67,7 +68,7 @@ namespace Marten.Testing
                 session.SaveChanges();
                 // SAMPLE: using_parameterized_sql
                 var user =
-                    session.Query<User>("where data ->> 'FirstName' = ? and data ->> 'LastName' = ?", "Jeremy",
+                    session.Query<User>($"where data ->> '{theStore.Storage.ColumnName<User>(u => u.FirstName)}' = ? and data ->> '{session.ColumnName<User>(u => u.LastName)}' = ?", "Jeremy",
                                "Miller")
                            .Single();
                 // ENDSAMPLE
@@ -90,7 +91,7 @@ namespace Marten.Testing
                 session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
                 session.SaveChanges();
                 var user =
-                    session.Query<User>("where data ->> 'FirstName' = :FirstName and data ->> 'LastName' = :LastName", new { FirstName = "Jeremy", LastName = "Miller" })
+                    session.Query<User>($"where data ->> '{theStore.Storage.ColumnName<User>(u => u.FirstName)}' = :FirstName and data ->> '{session.ColumnName<User>(u => u.LastName)}' = :LastName", new { FirstName = "Jeremy", LastName = "Miller" })
                            .Single();
 
                 user.ShouldNotBeNull();
@@ -109,7 +110,7 @@ namespace Marten.Testing
                 session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
                 session.SaveChanges();
                 var user =
-                    session.Query<User>("where data ->> 'FirstName' = :Name or data ->> 'LastName' = :Name", new { Name = "Jeremy" })
+                    session.Query<User>($"where data ->> '{session.ColumnName<User>(u => u.FirstName)}' = :Name or data ->> '{session.ColumnName<User>(u => u.LastName)}' = :Name", new { Name = "Jeremy" })
                            .Single();
 
                 user.ShouldNotBeNull();
@@ -128,7 +129,7 @@ namespace Marten.Testing
                 session.SaveChanges();
 
                 var firstnames =
-                    session.Query<User>("where data ->> 'LastName' = 'Miller'").OrderBy(x => x.FirstName)
+                    session.Query<User>($"where data ->> '{session.ColumnName<User>(u => u.LastName)}' = 'Miller'").OrderBy(x => x.FirstName)
                            .Select(x => x.FirstName).ToArray();
 
                 firstnames.Length.ShouldBe(3);
@@ -151,7 +152,7 @@ namespace Marten.Testing
                 session.SaveChanges();
 
                 var firstnames =
-                    session.Query<User>("where data ->> 'LastName' = 'Miller' order by data ->> 'FirstName'")
+                    session.Query<User>($"where data ->> '{session.ColumnName<User>(u => u.LastName)}' = 'Miller' order by data ->> '{session.ColumnName<User>(u => u.FirstName)}ttes'")
                            .Select(x => x.FirstName).ToArray();
 
                 firstnames.Length.ShouldBe(3);
@@ -172,7 +173,7 @@ namespace Marten.Testing
                 session.Store(u);
                 session.SaveChanges();
 
-                var user = session.Query<User>("where data ->> 'FirstName' = 'Jeremy'").Single();
+                var user = session.Query<User>($"where data ->> '{theStore.Storage.ColumnName<User>(z => z.FirstName)}' = 'Jeremy'").Single();
                 user.LastName.ShouldBe("Miller");
                 user.Id.ShouldBe(u.Id);
             }
@@ -190,7 +191,7 @@ namespace Marten.Testing
 
                 // SAMPLE: use_all_your_own_sql
                 var user =
-                    session.Query<User>("select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'")
+                    session.Query<User>($"select data from mt_doc_user where data ->> '{theStore.Storage.ColumnName<User>(z => z.FirstName)}' = 'Jeremy'")
                            .Single();
                 // ENDSAMPLE
                 user.LastName.ShouldBe("Miller");
@@ -210,7 +211,7 @@ namespace Marten.Testing
                 var users =
                     await
                         session.QueryAsync<User>(
-                                   "select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'")
+                                   $"select data from mt_doc_user where data ->> '{theStore.Storage.ColumnName<User>(z => z.FirstName)}' = 'Jeremy'")
                                .ConfigureAwait(false);
                 var user = users.Single();
 

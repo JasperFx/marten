@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -17,7 +18,7 @@ namespace Marten.Testing.Linq
 
             var cmd = theSession.Query<User>().Select(x => x.UserName).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data ->> 'UserName' from public.mt_doc_user as d");
+            cmd.CommandText.ShouldBe($"select d.data ->> '{theStore.Storage.ColumnName<User>(u => u.UserName)}' from public.mt_doc_user as d");
         }
     }
 
@@ -33,7 +34,7 @@ namespace Marten.Testing.Linq
 
             var cmd = theSession.Query<User>().Select(x => x.UserName).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data ->> 'UserName' from other_select.mt_doc_user as d");
+            cmd.CommandText.ShouldBe($"select d.data ->> '{theStore.Storage.ColumnName<User>(u => u.UserName)}' from other_select.mt_doc_user as d");
         }
     }
 }

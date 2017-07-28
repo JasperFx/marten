@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -33,7 +34,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var cmd = theStore.Diagnostics.PreviewCommand(new UserByUsername {UserName = "hank"});
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_user as d where d.data ->> 'UserName' = :arg0 LIMIT 1");
+            cmd.CommandText.ShouldBe($"select d.data, d.id, d.mt_version from public.mt_doc_user as d where d.data ->> '{theStore.Storage.ColumnName<UserByUsername>(t => t.UserName)}' = :arg0 LIMIT 1");
 
             cmd.Parameters.Single().Value.ShouldBe("hank");
         }
@@ -81,7 +82,7 @@ namespace Marten.Testing.Linq.Compiled
             var user = theSession.Query(new FindJsonUserByUsername() {Username = "jdm"});
 
             user.ShouldNotBeNull();
-            user.ShouldBe(_user1.ToJson());
+            user.ShouldBe(_user1.ToJson(theStore.Advanced.Serializer.Casing));
         }
         // ENDSAMPLE
 
@@ -92,7 +93,7 @@ namespace Marten.Testing.Linq.Compiled
             var user = theSession.Query(new FindJsonOrderedUsersByUsername() {FirstName = "Jeremy" });
 
             user.ShouldNotBeNull();
-            user.ShouldBe($"[{_user1.ToJson()},{_user5.ToJson()}]");
+            user.ShouldBe($"[{_user1.ToJson(theStore.Advanced.Serializer.Casing)},{_user5.ToJson(theStore.Advanced.Serializer.Casing)}]");
         }
         // ENDSAMPLE
 

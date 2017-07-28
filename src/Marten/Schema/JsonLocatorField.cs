@@ -54,6 +54,8 @@ namespace Marten.Schema
                 };
             }
 
+            ColumnName = memberName;
+
             if (SelectionLocator.IsEmpty())
             {
                 SelectionLocator = SqlLocator;
@@ -91,7 +93,7 @@ namespace Marten.Schema
 
         public string SqlLocator { get; }
         public string SelectionLocator { get; }
-        public string ColumnName => String.Empty;
+        public string ColumnName { get; private set; }
         public void WritePatch(DocumentMapping mapping, SchemaPatch patch)
         {
             throw new NotSupportedException();

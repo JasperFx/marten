@@ -1,5 +1,6 @@
 using System;
 using Marten.Schema;
+using Marten.Storage;
 
 namespace Marten
 {
@@ -18,5 +19,7 @@ namespace Marten
 
 
         public ISerializer Serializer => _store.Serializer;
+
+        public StorageFeatures Storage => _store.Storage;
     }
 }
