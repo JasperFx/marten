@@ -140,6 +140,7 @@ end
 desc 'Restores nuget packages'
 task :restore do
     sh 'dotnet restore src/Marten.sln --runtime netstandard1.3'
+	
 end
 
 
