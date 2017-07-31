@@ -17,7 +17,7 @@ namespace Marten.Testing.Schema
             var patch = theStore.Schema.ToPatch();
 
             patch.UpdateDDL.ShouldContain("CREATE TABLE public.mt_doc_user");
-            patch.UpdateDDL.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user(doc JSONB, docDotNetType varchar, docId uuid, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
+            patch.UpdateDDL.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user(doc JSONB, docDotNetType varchar, docId uuid) RETURNS bigint LANGUAGE plpgsql SECURITY INVOKER AS $function$");
         }
 
         [Fact]

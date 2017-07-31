@@ -24,7 +24,7 @@ namespace Marten.Schema
             var id = reader[startingIndex + 1];
             var typeAlias = reader.GetString(startingIndex + 2);
 
-            var version = reader.GetFieldValue<Guid>(3);
+            var version = reader.GetFieldValue<long>(3);
 
             return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json, version);
         }
@@ -39,7 +39,7 @@ namespace Marten.Schema
 
             var typeAlias = await reader.GetFieldValueAsync<string>(startingIndex + 2, token).ConfigureAwait(false);
 
-            var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
+            var version = await reader.GetFieldValueAsync<long>(3, token).ConfigureAwait(false);
 
             return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json, version);
         }
@@ -54,7 +54,7 @@ namespace Marten.Schema
 
             var actualType = _hierarchy.TypeFor(typeAlias);
 
-            var version = reader.GetFieldValue<Guid>(3);
+            var version = reader.GetFieldValue<long>(3);
 
             return map.Get<T>(id, actualType, json, version);
         }
@@ -70,7 +70,7 @@ namespace Marten.Schema
 
             var actualType = _hierarchy.TypeFor(typeAlias);
 
-            var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
+            var version = await reader.GetFieldValueAsync<long>(3, token).ConfigureAwait(false);
 
             return map.Get<T>(id, actualType, json, version);
         }

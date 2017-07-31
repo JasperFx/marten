@@ -25,7 +25,7 @@ namespace Marten.Schema
         private readonly ISerializer _serializer;
         private readonly DocumentMapping _mapping;
         private readonly DbObjectName _upsertName;
-        private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string> _sprocWriter;
+        private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, long?, string> _sprocWriter;
 
         public DocumentStorage(ISerializer serializer, DocumentMapping mapping)
         {
@@ -61,8 +61,8 @@ namespace Marten.Schema
             }
             else
             {
-                DeleteByIdSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where id = ?";
-                DeleteByWhereSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where ?";
+                DeleteByIdSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now(), {DocumentMapping.VersionColumn} = {DocumentMapping.VersionColumn} + 1 where id = ?";
+                DeleteByWhereSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now(), {DocumentMapping.VersionColumn} = {DocumentMapping.VersionColumn} + 1 where ?";
             }
         }
 
@@ -70,32 +70,31 @@ namespace Marten.Schema
 
         public string DeleteByIdSql { get; }
 
-        private Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string> buildSprocWriter(DocumentMapping mapping)
+        private Action<SprocCall, T, UpdateBatch, DocumentMapping, long?, string> buildSprocWriter(DocumentMapping mapping)
         {
             var call = Expression.Parameter(typeof(SprocCall), "call");
             var doc = Expression.Parameter(typeof(T), "doc");
             var batch = Expression.Parameter(typeof(UpdateBatch), "batch");
             var mappingParam = Expression.Parameter(typeof(DocumentMapping), "mapping");
 
-            var currentVersion = Expression.Parameter(typeof(Guid?), "currentVersion");
-            var newVersion = Expression.Parameter(typeof(Guid), "newVersion");
+            var currentVersion = Expression.Parameter(typeof(long?), "currentVersion");
 
             var tenantId = Expression.Parameter(typeof(string), "tenantId");
 
             var arguments = new UpsertFunction(mapping).OrderedArguments().Select(x =>
             {
-                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, currentVersion, newVersion, tenantId, true);
+                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, currentVersion, tenantId, true);
             });
 
             var block = Expression.Block(arguments);
 
-            var lambda = Expression.Lambda<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string>>(block,
+            var lambda = Expression.Lambda<Action<SprocCall, T, UpdateBatch, DocumentMapping, long?, string>>(block,
                 new ParameterExpression[]
                 {
-                    call, doc, batch, mappingParam, currentVersion, newVersion, tenantId
+                    call, doc, batch, mappingParam, currentVersion, tenantId
                 });
 
-            return ExpressionCompiler.Compile<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string>>(lambda);
+            return ExpressionCompiler.Compile<Action<SprocCall, T, UpdateBatch, DocumentMapping, long?, string>>(lambda);
         }
 
         public TenancyStyle TenancyStyle => _mapping.TenancyStyle;
@@ -110,7 +109,7 @@ namespace Marten.Schema
             var json = reader.GetTextReader(startingIndex);
             var id = reader[startingIndex + 1];
 
-            var version = reader.GetFieldValue<Guid>(startingIndex + 2);
+            var version = reader.GetFieldValue<long>(startingIndex + 2);
 
             return map.Get<T>(id, json, version);
         }
@@ -125,7 +124,7 @@ namespace Marten.Schema
 
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
-            var version = await reader.GetFieldValueAsync<Guid>(startingIndex + 2, token).ConfigureAwait(false);
+            var version = await reader.GetFieldValueAsync<long>(startingIndex + 2, token).ConfigureAwait(false);
 
             return map.Get<T>(id, json, version);
         }
@@ -166,7 +165,7 @@ namespace Marten.Schema
 
             var json = reader.GetTextReader(0);
 
-            var version = reader.GetFieldValue<Guid>(2);
+            var version = reader.GetFieldValue<long>(2);
 
             return map.Get<T>(id, json, version);
         }
@@ -178,7 +177,7 @@ namespace Marten.Schema
 
             var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
 
-            var version = await reader.GetFieldValueAsync<Guid>(2, token).ConfigureAwait(false);
+            var version = await reader.GetFieldValueAsync<long>(2, token).ConfigureAwait(false);
 
             return map.Get<T>(id, json, version);
         }
@@ -231,7 +230,6 @@ namespace Marten.Schema
 
         public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
         {
-            var newVersion = CombGuidIdGeneration.NewGuid();
             var currentVersion = batch.Versions.Version<T>(Identity(entity));
 
             ICallback callback = null;
@@ -242,8 +240,7 @@ namespace Marten.Schema
 
             if (_mapping.UseOptimisticConcurrency && batch.Concurrency == ConcurrencyChecks.Enabled)
             {
-                callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions, newVersion,
-                    currentVersion);
+                callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions);
             }
 
             if (!_mapping.UseOptimisticConcurrency && updateStyle == UpdateStyle.Update)
@@ -259,7 +256,7 @@ namespace Marten.Schema
 
             var call = batch.Sproc(sprocName, callback, exceptionTransform);
 
-            _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion, tenantId);
+            _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, tenantId);
         }
 
 

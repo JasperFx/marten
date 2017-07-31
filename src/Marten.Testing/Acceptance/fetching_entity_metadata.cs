@@ -31,7 +31,7 @@ namespace Marten.Testing.Acceptance
             var metadata = theStore.Tenancy.Default.MetadataFor(shop);
 
             metadata.ShouldNotBeNull();
-            metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
+            metadata.CurrentVersion.ShouldBe(1);
             metadata.LastModified.ShouldNotBe(default(DateTime));
             metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);
             metadata.DocumentType.ShouldBeNull();
@@ -62,7 +62,7 @@ namespace Marten.Testing.Acceptance
             var metadata = await theStore.Tenancy.Default.MetadataForAsync(shop);
 
             metadata.ShouldNotBeNull();
-            metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
+            metadata.CurrentVersion.ShouldBe(2);
             metadata.LastModified.ShouldNotBe(default(DateTime));
             metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);
             metadata.DocumentType.ShouldBe("coffee_shop");

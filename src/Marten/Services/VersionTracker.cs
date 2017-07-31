@@ -5,15 +5,15 @@ namespace Marten.Services
 {
     public class VersionTracker
     {
-        private readonly IDictionary<Type, IDictionary<object, Guid>> _versions = new Dictionary<Type, IDictionary<object, Guid>>();
+        private readonly IDictionary<Type, IDictionary<object, long>> _versions = new Dictionary<Type, IDictionary<object, long>>();
         
         
-        public void Store<T>(object id, Guid version)
+        public void Store<T>(object id, long version)
         {
-            IDictionary<object, Guid> dict;
+            IDictionary<object, long> dict;
             if (!_versions.TryGetValue(typeof(T), out dict))
             {
-                dict = new Dictionary<object, Guid>();
+                dict = new Dictionary<object, long>();
                 _versions.Add(typeof(T), dict);
             }
 
@@ -27,13 +27,13 @@ namespace Marten.Services
             }
         }
 
-        public Guid? Version<T>(object id)
+        public long? Version<T>(object id)
         {
             if (!_versions.ContainsKey(typeof(T))) return null;
 
             var dict = _versions[typeof(T)];
 
-            return dict.ContainsKey(id) ? dict[id] : (Guid?) null;
+            return dict.ContainsKey(id) ? dict[id] : (long?) null;
         }
 
         public void ClearAll()

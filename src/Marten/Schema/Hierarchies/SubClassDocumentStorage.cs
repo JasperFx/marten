@@ -89,7 +89,7 @@ namespace Marten.Schema.Hierarchies
             var json = reader.GetTextReader(startingIndex);
             var id = reader[startingIndex + 1];
 
-            var version = reader.GetFieldValue<Guid>(3);
+            var version = reader.GetFieldValue<long>(3);
             var typeAlias = reader.GetString(startingIndex + 2);
 
             var actualType = _mapping.TypeFor(typeAlias);
@@ -103,7 +103,7 @@ namespace Marten.Schema.Hierarchies
             var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
-            var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
+            var version = await reader.GetFieldValueAsync<long>(3, token).ConfigureAwait(false);
             var typeAlias = await reader.GetFieldValueAsync<string>(startingIndex + 2, token).ConfigureAwait(false);
 
             return map.Get<TBase>(id, _mapping.TypeFor(typeAlias), json, version) as T;

@@ -544,7 +544,7 @@ namespace Marten.Testing.Acceptance
                 doc1.Name = "Mozart's";
 
                 // Some random version that won't match
-                session.Store(doc1, Guid.NewGuid());
+                session.Store(doc1, 56);
 
                 Exception<AggregateException>.ShouldBeThrownBy(() =>
                 {
@@ -571,7 +571,7 @@ namespace Marten.Testing.Acceptance
                 doc1.Name = "Mozart's";
 
                 // Some random version that won't match
-                session.Store(doc1, Guid.NewGuid());
+                session.Store(doc1, 56);
 
                 await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
                 {

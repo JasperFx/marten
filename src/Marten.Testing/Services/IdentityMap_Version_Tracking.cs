@@ -26,7 +26,7 @@ namespace Marten.Testing.Services
         public void store_by_version()
         {
             var target = Target.Random();
-            var version = Guid.NewGuid();
+            var version = 1;
 
             theIdentityMap.Store(target.Id, target, version);
 
@@ -40,7 +40,7 @@ namespace Marten.Testing.Services
             var target = Target.Random();
             var json = theStore.Advanced.Serializer.ToJson(target);
 
-            var version = Guid.NewGuid();
+            var version = 1;
 
             theIdentityMap.Get<Target>(target.Id, json.ToReader(), version);
 
@@ -54,7 +54,7 @@ namespace Marten.Testing.Services
             var target = Target.Random();
             var json = theStore.Advanced.Serializer.ToJson(target);
 
-            var version = Guid.NewGuid();
+            var version = 1;
 
             theIdentityMap.Get<Target>(target.Id, typeof(Target), json.ToReader(), version);
 

@@ -93,7 +93,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
         /// <param name="version"></param>
-        void Store<T>(T entity, Guid version);
+        void Store<T>(T entity, long version);
 
         /// <summary>
         /// Explicitly marks a document as needing to be inserted upon the next call to SaveChanges().

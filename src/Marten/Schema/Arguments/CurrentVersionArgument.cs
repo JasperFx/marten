@@ -9,8 +9,8 @@ namespace Marten.Schema.Arguments
         public CurrentVersionArgument()
         {
             Arg = "current_version";
-            PostgresType = "uuid";
-            DbType = NpgsqlDbType.Uuid;
+            PostgresType = "bigint";
+            DbType = NpgsqlDbType.Bigint;
             Column = null;
         }
 
@@ -19,7 +19,7 @@ namespace Marten.Schema.Arguments
             throw new NotSupportedException("This should not be used for CurrentVersionArgument");
         }
 
-        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion, ParameterExpression tenantId, bool useCharBufferPooling)
+        public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression tenantId, bool useCharBufferPooling)
         {
             var argName = Expression.Constant(Arg);
 

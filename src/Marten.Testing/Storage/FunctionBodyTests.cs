@@ -12,11 +12,11 @@ CREATE OR REPLACE FUNCTION public.mt_upsert_target(
     doc jsonb,
     docdotnettype character varying,
     docid uuid,
-    docversion uuid)
-  RETURNS uuid AS
+    docversion bigint)
+  RETURNS bigint AS
 $BODY$
 DECLARE
-  final_version uuid;
+  final_version bigint;
 BEGIN
 INSERT INTO public.mt_doc_target (""data"", ""mt_dotnet_type"", ""id"", ""mt_version"", mt_last_modified) VALUES (doc, docDotNetType, docId, docVersion, transaction_timestamp())
   ON CONFLICT ON CONSTRAINT pk_mt_doc_target
@@ -36,7 +36,7 @@ $BODY$
 
             var func = new FunctionBody(new DbObjectName("public", "mt_upsert_target"), new string[0], theFunctionBody);
 
-            func.Signature().ShouldBe("public.mt_upsert_target(jsonb, character varying, uuid, uuid)");
+            func.Signature().ShouldBe("public.mt_upsert_target(jsonb, character varying, uuid, bigint)");
         }
 
         [Fact]
