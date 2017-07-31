@@ -142,6 +142,7 @@ task :restore do
     sh 'dotnet restore src/Marten.sln --runtime netstandard1.3'
 end
 
+
 desc 'Run Benchmarks'
 task :benchmarks => [:restore] do
 	sh 'dotnet run --project src/MartenBenchmarks --configuration Release'
