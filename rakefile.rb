@@ -123,7 +123,7 @@ task :publish do
 		end
 	end
 	
-	sh "dotnet restore src/Marten.sln --runtime netstandard1.3"
+	sh "dotnet restore"
 	sh "dotnet stdocs export doc-target ProjectWebsite --version #{BUILD_VERSION} --project marten"
 	
 	Dir.chdir "doc-target" do
@@ -169,7 +169,7 @@ end
 
 desc 'Build the Nupkg file'
 task :pack => [:compile] do
-	sh "dotnet pack ./src/Marten -o ./../../artifacts --configuration Release --version-suffix rc-#{build_revision}"
+	sh "dotnet pack ./src/Marten -o ./../../artifacts --configuration Release"
 	sh "dotnet pack ./src/Marten.CommandLine -o ./../../artifacts --configuration Release"
 end
 
