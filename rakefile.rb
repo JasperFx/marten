@@ -145,8 +145,6 @@ end
 desc 'Run Benchmarks'
 task :benchmarks => [:restore] do
 	sh 'dotnet run --project src/MartenBenchmarks --configuration Release'
-	
-
 end
 
 desc 'Record Benchmarks'
