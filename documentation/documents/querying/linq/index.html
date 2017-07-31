@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -125,7 +125,10 @@ using the <code>&amp;&amp;</code> operator:</p>
 <p>Marten supports a subset of the common sub/string searches:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void string_fields(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.StartsWith(&quot;A&quot;));&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.EndsWith(&quot;Suffix&quot;));&#xD;&#xA;&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.Contains(&quot;something&quot;));&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.Equals(&quot;The same thing&quot;));&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Marten also supports case insensitive substring searches:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public void case_insensitive_string_fields(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.StartsWith(&quot;A&quot;, StringComparison.OrdinalIgnoreCase));&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.EndsWith(&quot;SuFfiX&quot;, StringComparison.OrdinalIgnoreCase));&#xD;&#xA;&#xD;&#xA;    // using Marten.Util&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.Contains(&quot;soMeThiNg&quot;, StringComparison.OrdinalIgnoreCase));&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public void case_insensitive_string_fields(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.StartsWith(&quot;A&quot;, StringComparison.OrdinalIgnoreCase));&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.EndsWith(&quot;SuFfiX&quot;, StringComparison.OrdinalIgnoreCase));&#xD;&#xA;&#xD;&#xA;    // using Marten.Util&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.Contains(&quot;soMeThiNg&quot;, StringComparison.OrdinalIgnoreCase));&#xD;&#xA;&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.String.Equals(&quot;ThE SaMe ThInG&quot;, StringComparison.OrdinalIgnoreCase));&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>A shorthand for case-insensitive string matching is provided through <code>EqualsIgnoreCase</code> (string extension method in <em>Baseline</em>):</p>
+<pre><code class="language-csharp">&#xD;&#xA;query.Query&lt;User&gt;().Single(x =&gt; x.UserName.EqualsIgnoreCase(&quot;abc&quot;)).Id.ShouldBe(user1.Id);&#xD;&#xA;query.Query&lt;User&gt;().Single(x =&gt; x.UserName.EqualsIgnoreCase(&quot;aBc&quot;)).Id.ShouldBe(user1.Id);&#xD;&#xA;</code></pre>
+<p>This defaults to <code>String.Equals</code> with <code>StringComparison.CurrentCultureIgnoreCase</code> as comparison type.</p>
 <h2 id="count">Count()</h2>
 <p>Marten supports the <code>IQueryable.Count()</code> method:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void count_with_a_where_clause()&#xD;&#xA;{&#xD;&#xA;    // theSession is an IDocumentSession in this test&#xD;&#xA;    theSession.Store(new Target { Number = 1 });&#xD;&#xA;    theSession.Store(new Target { Number = 2 });&#xD;&#xA;    theSession.Store(new Target { Number = 3 });&#xD;&#xA;    theSession.Store(new Target { Number = 4 });&#xD;&#xA;    theSession.Store(new Target { Number = 5 });&#xD;&#xA;    theSession.Store(new Target { Number = 6 });&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;Target&gt;().Count(x =&gt; x.Number &gt; 3).ShouldBe(3);&#xD;&#xA;}&#xD;&#xA;</code></pre>
@@ -227,7 +230,6 @@ a field or property matching one of many supplied values:</p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

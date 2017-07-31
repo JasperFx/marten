@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -115,11 +115,11 @@ All/None/CreateOnly/CreateOrUpdate rules as the table storage.</strong></p>
 <pre><code class="language-csharp">&#xD;&#xA;_.DatabaseSchemaName = &quot;other&quot;;&#xD;&#xA;</code></pre>
 <p>The <code>Hilo</code> sequence table is always created in this document store database schema.</p>
 <p>If you wish to assign certain document tables to different (new or existing) schemas, you can do so like that:</p>
-<pre><code class="language-csharp">&#xD;&#xA;StoreOptions(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.MappingFor(typeof(User)).DatabaseSchemaName = &quot;other&quot;;&#xD;&#xA;    _.MappingFor(typeof(Issue)).DatabaseSchemaName = &quot;overriden&quot;;&#xD;&#xA;    _.MappingFor(typeof(Company));&#xD;&#xA;&#xD;&#xA;    // this will tell marten to use the default &#x27;public&#x27; schema name.&#xD;&#xA;    _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;StoreOptions(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Storage.MappingFor(typeof(User)).DatabaseSchemaName = &quot;other&quot;;&#xD;&#xA;    _.Storage.MappingFor(typeof(Issue)).DatabaseSchemaName = &quot;overriden&quot;;&#xD;&#xA;    _.Storage.MappingFor(typeof(Company));&#xD;&#xA;    _.Storage.MappingFor(typeof(IntDoc));&#xD;&#xA;&#xD;&#xA;    // this will tell marten to use the default &#x27;public&#x27; schema name.&#xD;&#xA;    _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>This will create the following tables in your database: <code>other.mt_doc_user</code>, <code>overriden.mt_doc_issue</code> and <code>public.mt_doc_company</code>. When a schema doesn't exist it will be generated in the database.</p>
 <h3 id="event-store">Event Store</h3>
 <p>The EventStore database object are by default created in the document store DatabaseSchemaName. This can be overridden by setting the DatabaseSchemaName property of the event store options.</p>
-<pre><code class="language-csharp">&#xD;&#xA;_.Events.DatabaseSchemaName = &quot;event_store&quot;&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;_.Events.DatabaseSchemaName = &quot;event_store&quot;;&#xD;&#xA;</code></pre>
 <p>This will ensure that all EventStore tables (mt_stream, mt_events, ...) and functions (mt_apply_transform, mt_apply_aggregation, ...) are created in the <code>event_store</code> schema.</p>
 
 			      	</div>
@@ -150,7 +150,6 @@ All/None/CreateOnly/CreateOrUpdate rules as the table storage.</strong></p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

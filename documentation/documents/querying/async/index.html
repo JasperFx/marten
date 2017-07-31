@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -110,7 +110,7 @@
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public async Task use_to_list_async_in_query()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Hank&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Bill&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Sam&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Tom&quot; });&#xD;&#xA;&#xD;&#xA;    await theSession.SaveChangesAsync().ConfigureAwait(false);&#xD;&#xA;&#xD;&#xA;    var users = await theSession&#xD;&#xA;        .Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.FirstName == &quot;Sam&quot;)&#xD;&#xA;        .ToListAsync().ConfigureAwait(false);&#xD;&#xA;&#xD;&#xA;    users.Single().FirstName.ShouldBe(&quot;Sam&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="querying-by-sql">Querying by SQL</h2>
 <p>To query for results with user-supplied SQL, use:</p>
-<pre><code class="language-csharp">&#xD;&#xA;using (var session = store.OpenSession())&#xD;&#xA;{&#xD;&#xA;    var u = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};&#xD;&#xA;    session.Store(u);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;&#xD;&#xA;    var users =&#xD;&#xA;        await&#xD;&#xA;            session.QueryAsync&lt;User&gt;(&#xD;&#xA;                &quot;select data from mt_doc_user where data -&gt;&gt; &#x27;FirstName&#x27; = &#x27;Jeremy&#x27;&quot;)&#xD;&#xA;                .ConfigureAwait(false);&#xD;&#xA;    var user = users.Single();&#xD;&#xA;&#xD;&#xA;    user.LastName.ShouldBe(&quot;Miller&quot;);&#xD;&#xA;    user.Id.ShouldBe(u.Id);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p class="bg-warning" style="padding:10px"><b>Missing code sample &#x27;using-queryasync&#x27;</b><small> -- Wait for dotnet stdocs to catch up reading samples or CTRL&#x2B;SHIFT&#x2B;R to force refresh</small></p>
 
 			      	</div>
 
@@ -140,7 +140,6 @@
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

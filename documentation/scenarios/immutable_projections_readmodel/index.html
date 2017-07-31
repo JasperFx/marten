@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -94,7 +94,7 @@
 <p>This use case demonstrates how to create immutable projections from event streams.</p>
 <h2 id="scenario">Scenario</h2>
 <p>To make projections immutable, the event application methods invoked by aggregators need to be made private, as well as any property setters.</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class AggregateWithPrivateEventApply&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; private set; }&#xD;&#xA;    &#xD;&#xA;    private void Apply(QuestStarted started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Name { get; private set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class AggregateWithPrivateEventApply&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; private set; }&#xD;&#xA;    &#xD;&#xA;    private void Apply(QuestStarted started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(QuestEnded ended)&#xD;&#xA;    {&#xD;&#xA;        Name = ended.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Name { get; private set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>To run aggregators against such projections, aggregator lookup strategy is configured to use aggregators that look for private <code>Apply([Event Type])</code> methods. Furthermore, document deserialization is configured to look for private property setters, allowing hydration of the projected objects from the database.</p>
 <p>This can be done in the store configuration as follows:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var serializer = new JsonNetSerializer();&#xD;&#xA;serializer.Customize(c =&gt; c.ContractResolver = new ResolvePrivateSetters());&#xD;&#xA;options.Serializer(serializer);&#xD;&#xA;options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);&#xD;&#xA;options.Events.InlineProjections.AggregateStreamsWith&lt;AggregateWithPrivateEventApply&gt;();&#xD;&#xA;</code></pre>
@@ -132,7 +132,6 @@ Given the setup, a stream can now be projected using `AggregateWithPrivateEventA
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

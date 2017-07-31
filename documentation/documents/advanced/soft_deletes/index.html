@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -119,7 +119,7 @@ as shown below:</p>
 <h2 id="fetching-documents-deleted-before-or-after-a-specific-time">Fetching Documents Deleted before or after a specific time</h2>
 <p>To search for documents that have been deleted before a specific time use Marten's <code>DeletedBefore(DateTimeOffset)</code> method
 and the counterpart <code>DeletedSince(DateTimeOffset)</code> as show below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_is_soft_deleted_since_docs()&#xD;&#xA;{&#xD;&#xA;    var user1 = new User { UserName = &quot;foo&quot; };&#xD;&#xA;    var user2 = new User { UserName = &quot;bar&quot; };&#xD;&#xA;    var user3 = new User { UserName = &quot;baz&quot; };&#xD;&#xA;    var user4 = new User { UserName = &quot;jack&quot; };&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(user1, user2, user3, user4);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        session.Delete(user3);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        var epoch = session.DocumentStore.Advanced.MetadataFor(user3).DeletedAt;&#xD;&#xA;        session.Delete(user4);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        session.Query&lt;User&gt;().Where(x =&gt; x.DeletedSince(epoch.Value)).Select(x =&gt; x.UserName)&#xD;&#xA;            .ToList().ShouldHaveTheSameElementsAs(&quot;jack&quot;);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_is_soft_deleted_since_docs()&#xD;&#xA;{&#xD;&#xA;    var user1 = new User { UserName = &quot;foo&quot; };&#xD;&#xA;    var user2 = new User { UserName = &quot;bar&quot; };&#xD;&#xA;    var user3 = new User { UserName = &quot;baz&quot; };&#xD;&#xA;    var user4 = new User { UserName = &quot;jack&quot; };&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(user1, user2, user3, user4);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        session.Delete(user3);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        var epoch = session.DocumentStore.Tenancy.Default.MetadataFor(user3).DeletedAt;&#xD;&#xA;        session.Delete(user4);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        session.Query&lt;User&gt;().Where(x =&gt; x.DeletedSince(epoch.Value)).Select(x =&gt; x.UserName)&#xD;&#xA;            .ToList().ShouldHaveTheSameElementsAs(&quot;jack&quot;);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p><em>Neither <code>DeletedSince</code> nor <code>DeletedBefore</code> are inclusive searches as shown</em></p>
 
 			      	</div>
@@ -150,7 +150,6 @@ and the counterpart <code>DeletedSince(DateTimeOffset)</code> as show below:</p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Case Sensitivity (under construction)</title>
+		<title>Marten - Case Sensitivity</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/postgres">Postgres for SQL Server users</a></li><li class="active">Case Sensitivity (under construction)</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/postgres">Postgres for SQL Server users</a></li><li class="active">Case Sensitivity</li></ol>
 		  	</nav>
 		  </div>
 
@@ -85,14 +85,19 @@
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Case Sensitivity (under construction) <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/postgres/casing/index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Case Sensitivity <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/postgres/casing/index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title:Case Sensitivity (under construction)-->
+			      		<!--Title:Case Sensitivity-->
 <!--Url:case-sensitivity-->
-<p>//TODO</p>
+<p>String comparisons in PostgreSQL are case sensitive* (unless a case-insensitive collation were to be introduced). To work around this, PostgreSQL has several methods to match strings in a case-insensitive manner. Consequently, Marten also makes use of these methods to translate case-insensitive queries to pgSQL. See <a href="/marten/documentation/documents/querying/linq">Querying Documents with Linq</a> for querying by strings.</p>
+<p>*Remarks: Databases, tables, fields and column names are case-independent, unless created with double quotes.</p>
+<h2 id="case-insensitivity-marten-internals">Case-Insensitivity &amp; Marten Internals</h2>
+<p>Marten query parser recognizes case-insensitive comparisons from the use of <code>StringComparison.CurrentCultureIgnoreCase</code>. Such comparisons are translated to use the <code>ILIKE</code> (or its equivalent operator <code>~~*</code>) PostgreSQL extension that matches strings independent of case.</p>
+<p>The use of <code>ILIKE</code> pattern match in place of equality comparison has the consequence that matching on <em>%</em> wildcard literal needs to be escaped as <em>\%</em>, e.g. <em>abc%</em> would match on <em>abc</em> followed by any characters, whereas <em>abc\%</em> would only match the exact string of <em>abc%</em>.</p>
+<p>See <a href="https://www.postgresql.org/docs/current/static/functions-matching.html">Postgresql documentation on pattern matching</a> for more.</p>
 
 			      	</div>
 
@@ -122,7 +127,6 @@
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

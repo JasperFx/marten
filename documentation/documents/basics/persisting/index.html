@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -104,6 +104,10 @@ what documents have changed</li>
 <pre><code class="language-csharp">&#xD;&#xA;user1 = new User {FirstName = &quot;Jeremy&quot;};&#xD;&#xA;user2 = new User {FirstName = &quot;Jens&quot;};&#xD;&#xA;user3 = new User {FirstName = &quot;Jeff&quot;};&#xD;&#xA;user4 = new User {FirstName = &quot;Corey&quot;};&#xD;&#xA;&#xD;&#xA;theSession.Store(user1, user2, user3, user4);&#xD;&#xA;</code></pre>
 <p>You can also store a mixed array of different types by using either the <code>IDocumentSession.StoreObjects()</code> method or by calling <code>IDocumentSession.Store&lt;object&gt;(object[])</code>.</p>
 <pre><code class="language-csharp">&#xD;&#xA;var user1 = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};&#xD;&#xA;var issue1 = new Issue {Title = &quot;TV won&#x27;t turn on&quot;}; // unfortunately true as I write this...&#xD;&#xA;var company1 = new Company{Name = &quot;Widgets, inc.&quot;};&#xD;&#xA;var company2 = new Company{Name = &quot;BigCo&quot;};&#xD;&#xA;var company3 = new Company{Name = &quot;SmallCo&quot;};&#xD;&#xA;&#xD;&#xA;theSession.Store&lt;object&gt;(user1, issue1, company1, company2, company3);&#xD;&#xA;</code></pre>
+<h2 id="insert-update">Insert &amp; Update</h2>
+<p>While <code>IDocumentSession.Store</code> will perform either insertion or update depending on the existence of documents, <code>IDocumentSession</code> also exposes methods to explicitly control this persistence behavior through <code>IDocumentSession.Insert</code> and <code>IDocumentSession.Update</code>.</p>
+<p><code>IDocumentSession.Insert</code> stores a document only in the case that it does not already exist. Otherwise a <code>DocumentAlreadyExistsException</code> is thrown. <code>IDocumentSession.Update</code> on the other hand performs an update on an existing document or throws a <code>NonExistentDocumentException</code> in case the document cannot be found.</p>
+<pre><code class="language-csharp">&#xD;&#xA;using (var session = theStore.OpenSession())&#xD;&#xA;{&#xD;&#xA;    session.Insert(target);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="manual-change-tracking">Manual Change Tracking</h2>
 <p>The first step is to create a new <code>DocumentSession</code> with the <code>IDocumentStore.LightweightSession()</code> (or <code>IDocumentStore.OpenSession()</code>):</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void lightweight_document_session(IDocumentStore store)&#xD;&#xA;{&#xD;&#xA;    using (var session = store.LightweightSession())&#xD;&#xA;    {&#xD;&#xA;        var user = new User {FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot;};&#xD;&#xA;        &#xD;&#xA;        // Manually adding the new user to the session&#xD;&#xA;        session.Store(user);&#xD;&#xA;&#xD;&#xA;        var existing = session.Query&lt;User&gt;().Single(x =&gt; x.FirstName == &quot;Max&quot;);&#xD;&#xA;        existing.Internal = false;&#xD;&#xA;&#xD;&#xA;        // Manually marking an existing user as changed&#xD;&#xA;        session.Store(existing);&#xD;&#xA;&#xD;&#xA;        // Marking another existing User document as deleted&#xD;&#xA;        session.Delete&lt;User&gt;(Guid.NewGuid());&#xD;&#xA;&#xD;&#xA;        // Persisting the changes to the database&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
@@ -155,7 +159,6 @@ shown that this technique is much faster than issuing one ADO.Net call at a time
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

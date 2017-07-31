@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -104,6 +104,7 @@ Marten may support Postgresql sequences or star-based algorithms as later altern
 <li>When the ID member of a document is not settable or not-public a <code>NoOpIdGeneration</code> strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.</li>
 <li>A <code>Custom</code> ID generator strategy is used to implement the ID generation strategy yourself.</li>
 </ol>
+<p>Marten by default uses the identity value set on documents and only assigns one in case it has no value (<code>Guid.Empty</code>, <code>0</code>, <code>string.Empty</code> etc).</p>
 <div class="alert alert-info">When using a `Guid`/`CombGuid`, `Int`, or `Long` identifier, Marten will ensure the identity is set immediately after calling `IDocumentSession.Store` on the entity.</div>
 <p>See these topics for more information about specific Id types:</p>
 <ul class="table-of-contents"><li><a href="/marten/documentation/documents/identity/custom">Custom Identity Strategies</a></li><li><a href="/marten/documentation/documents/identity/guid">Guid Identifiers</a></li><li><a href="/marten/documentation/documents/identity/sequential">Sequential Identifiers with Hilo</a></li></ul>
@@ -114,6 +115,8 @@ Marten may support Postgresql sequences or star-based algorithms as later altern
 the <code>[Identity]</code> attribute to force Marten to use a property or field as the identifier that doesn't match
 the &quot;id&quot; or &quot;Id&quot; or &quot;ID&quot; convention:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class NonStandardDoc&#xD;&#xA;{&#xD;&#xA;    [Identity]&#xD;&#xA;    public string Name;&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>The identity property or field can also be configured through <code>StoreOptions</code> by using the <code>Schema</code> to obtain a document mapping:</p>
+<pre><code class="language-csharp">&#xD;&#xA;storeOptions.Schema.For&lt;OverriddenIdDoc&gt;().Identity(x =&gt; x.Name);&#xD;&#xA;</code></pre>
 
 			      	</div>
 
@@ -143,7 +146,6 @@ the &quot;id&quot; or &quot;Id&quot; or &quot;ID&quot; convention:</p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

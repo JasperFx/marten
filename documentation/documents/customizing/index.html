@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -43,7 +43,7 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/querying" title="Querying Documents">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/tenancy" title="Tenancy">Previous</a></li>
 		      	<li><a href="/marten/documentation/documents/customizing/computed_index" title="Calculated Index">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
@@ -78,7 +78,7 @@
 		        </ul>
 
 		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/querying">Querying Documents</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/tenancy">Tenancy</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -112,7 +112,7 @@ will prefer to use either attributes or the new embedded configuration option wi
 better to keep the persistence configuration on the document type itself for easier traceability. Either way,
 Marten has you covered with the various configuration options shown here.</p>
 <p>The configuration options you'll most likely use are:</p>
-<ul class="table-of-contents"><li><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></li><li><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></li><li><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a></li><li><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></li><li><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a></li></ul>
+<ul class="table-of-contents"><li><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></li><li><a href="/marten/documentation/documents/customizing/document_policies">Document Policies</a></li><li><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></li><li><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a></li><li><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></li><li><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a></li></ul>
 <h2 id="postgresql-limits-on-naming">Postgresql Limits on Naming</h2>
 <p>Postgresql out of the box has a limitation on the length of database object names to 64. This can be overridden in a
 Postgresql database by <a href="https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS">setting the <code>NAMEDATALEN</code> property</a>.</p>
@@ -134,6 +134,9 @@ your own subclass of <code>MartenRegistry</code> and place declarations in the c
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;your connection string&quot;);&#xD;&#xA;    _.Schema.Include&lt;MyMartenRegistry&gt;();&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>Do note that you could happily use multiple <code>MartenRegistry</code> classes in larger applications if that is advantageous.</p>
 <p>If you dislike using infrastructure attributes in your application code, you will probably prefer to use MartenRegistry.</p>
+<h2 id="custom-indexes">Custom Indexes</h2>
+<p>If you intend to write your own indexes against Marten document tables, just ensure that the index names are <strong>not</strong> prefixed with &quot;mt_&quot; so
+that Marten will ignore your manual indexes when calculating schema differences.</p>
 <h2 id="custom-attributes">Custom Attributes</h2>
 <p>If there's some kind of customization you'd like to use attributes for that isn't already supported by Marten,
 you're still in luck. If you write a subclass of the <code>MartenAttribute</code> shown below:</p>
@@ -162,7 +165,7 @@ some convenience methods for indexing or duplicating fields that depend on .Net 
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/querying">Querying Documents</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/tenancy">Tenancy</a>
 
 				        </span>
 				        <span class="pull-right">
@@ -184,7 +187,6 @@ some convenience methods for indexing or duplicating fields that depend on .Net 
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

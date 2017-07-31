@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -44,7 +44,7 @@
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
 		      	<li><a href="/marten/documentation/events" title="Marten as Event Store">Previous</a></li>
-		      	<li><a href="/marten/documentation/events/appending" title="Appending Events">Next</a></li>
+		      	<li><a href="/marten/documentation/events/identity" title="Stream Identity">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -77,7 +77,7 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/appending">Appending Events</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/identity">Stream Identity</a></p>
 		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events">Marten as Event Store</a></p>
 
 		        </ul>
@@ -103,9 +103,11 @@ you can segregate the event store objects into a separate schema with this synta
 <li><code>stream_id</code> - A foreign key to the event stream that contains the event</li>
 <li><code>version</code> - A numerical version of the event's position within its event stream</li>
 <li><code>data</code> - The actual event data stored as JSONB</li>
-<li><code>type</code> - A string identifier for the event type taht's derived from the event type name. For example, events of type <code>IssueResolved</code> would be identified as &quot;issue_resolved.&quot; The <code>type</code>
+<li><code>type</code> - A string identifier for the event type that's derived from the event type name. For example, events of type <code>IssueResolved</code> would be identified as &quot;issue_resolved.&quot; The <code>type</code>
 column exists so that Marten can be effectively used without the underlying JSON serializer having to embed type metadata.</li>
 <li><code>timestamp</code> - A database timestamp written by the database when events are committed.</li>
+<li><code>tenant_id</code> - Identifies the tenancy of the event</li>
+<li><code>mt_dotnet_type</code> - The full name of the underlying event type, including assembly name, e.g. &quot;Marten.Testing.Events.IssueResolved, Marten.Testing&quot;</li>
 </ul>
 <p>The &quot;Async Daemon&quot; projection support keys off of the sequential id, but we retained the Guid id field for backward compatibility
 and to retain a potential way to uniquely identify events across databases.</p>
@@ -121,7 +123,7 @@ and to retain a potential way to uniquely identify events across databases.</p>
 </ul>
 <h2 id="event-metadata-in-code">Event Metadata in Code</h2>
 <p>Hopefully, it's relatively clear how the fields in <code>mt_events</code> maps to the <code>IEvent</code> interface in Marten:</p>
-<pre><code class="language-csharp">&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// A reference to the stream that contains&#xD;&#xA;/// this event&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public Guid StreamId { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// An alternative Guid identifier to identify&#xD;&#xA;/// events across databases&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// An event&#x27;s version position within its event stream&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public int Version { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// A global sequential number identifying the Event&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public long Sequence { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// The actual event data&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public T Data { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// The UTC time that this event was originally captured&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public DateTimeOffset Timestamp { get; set; }&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// A reference to the stream that contains&#xD;&#xA;/// this event&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public Guid StreamId { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// A reference to the stream if the stream&#xD;&#xA;/// identier mode is AsString&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public string StreamKey { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// An alternative Guid identifier to identify&#xD;&#xA;/// events across databases&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// An event&#x27;s version position within its event stream&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public int Version { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// A global sequential number identifying the Event&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public long Sequence { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// The actual event data&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public T Data { get; set; }&#xD;&#xA;&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// The UTC time that this event was originally captured&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public DateTimeOffset Timestamp { get; set; }&#xD;&#xA;&#xD;&#xA;public string TenantId { get; set; }&#xD;&#xA;</code></pre>
 <p>The full event data is available on <code>EventStream</code> and <code>IEvent</code> objects immediately after committing a transaction that involves
 event capture. See <a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a> for more information on capturing event data in the instrumentation
 hooks.</p>
@@ -137,7 +139,7 @@ hooks.</p>
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/events/appending">Appending Events</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/events/identity">Stream Identity</a>
 
 				        </span>
 			      	</nav>
@@ -154,7 +156,6 @@ hooks.</p>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

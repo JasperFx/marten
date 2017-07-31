@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -95,7 +95,7 @@
 <p><em>Ensures that each object gets loaded only once by keeping every loaded object in a map. Looks up objects using the map when referring to them.</em></p>
 <p><a href="http://martinfowler.com/eaaCatalog/identityMap.html">Martin Fowler</a></p>
 <p>Marten's <code>IDocumentSession</code> implements the <a href="https://en.wikipedia.org/wiki/Identity_map_pattern"><em>Identity Map</em></a> pattern that seeks to cache documents loaded by id. This behavior can be very valuable, for example, in handling web requests or service bus messages when many different objects or functions may need to access the same logical document. Using the identity map mechanics allows the application to easily share data and avoid the extra database access hits -- as long as the <code>IDocumentSession</code> is scoped to the web request.</p>
-<pre><code class="language-csharp">&#xD;&#xA;public void using_identity_map()&#xD;&#xA;{&#xD;&#xA;    var container = Container.For&lt;DevelopmentModeRegistry&gt;();&#xD;&#xA;    var store = container.GetInstance&lt;IDocumentStore&gt;();&#xD;&#xA;&#xD;&#xA;    var user = new User {FirstName = &quot;Tamba&quot;, LastName = &quot;Hali&quot;};&#xD;&#xA;    store.BulkInsert(new [] {user});&#xD;&#xA;&#xD;&#xA;    // Open a document session with the identity map&#xD;&#xA;    using (var session = store.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Load&lt;User&gt;(user.Id)&#xD;&#xA;            .ShouldBeTheSameAs(session.Load&lt;User&gt;(user.Id));&#xD;&#xA;    }&#xD;&#xA;} &#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public void using_identity_map()&#xD;&#xA;{&#xD;&#xA;&#xD;&#xA;    var user = new User {FirstName = &quot;Tamba&quot;, LastName = &quot;Hali&quot;};&#xD;&#xA;    theStore.BulkInsert(new [] {user});&#xD;&#xA;&#xD;&#xA;    // Open a document session with the identity map&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Load&lt;User&gt;(user.Id)&#xD;&#xA;            .ShouldBeTheSameAs(session.Load&lt;User&gt;(user.Id));&#xD;&#xA;    }&#xD;&#xA;} &#xD;&#xA;</code></pre>
 <p>Do note that using the identity map functionality can be wasteful if you aren't able to take advantage of the identity map caching in a session. In those cases, you may want to either use the <code>IDocumentStore.LightweightSession()</code> which forgos the identity map functionality, or use the read only <code>IQuerySession</code> alternative. RavenDb users will note that Marten does not (yet) support any notion of <code>Evict()</code> to manually remove documents from identity map tracking to avoid memory usage problems. Our hope is that the existence of the lightweight session and the read only interface will alleviate the memory explosion problems that you can run into with naive usage of identity maps or the dirty checking when fetching a large number of documents.</p>
 <p>The Identity Map functionality is applied to all documents loaded by Id or Linq queries with <code>IQuerySession/IDocumentSession.Query&lt;T&gt;()</code>. <strong>Documents loaded by user-supplied SQL in the <code>IQuerySession.Query&lt;T&gt;(sql)</code> mechanism bypass the Identity Map functionality.</strong></p>
 
@@ -127,7 +127,6 @@
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

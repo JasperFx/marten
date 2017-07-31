@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -164,7 +164,7 @@ let's go back to the User document type and assume for some crazy reason that we
 As a default, we might just assign their user names by combining their first and last names like so:</p>
 <pre><code class="language-javascript">&#xD;&#xA;module.exports = function (doc) {&#xD;&#xA;    doc.UserName = (doc.FirstName &#x2B; &#x27;.&#x27; &#x2B; doc.LastName).toLowerCase();&#xD;&#xA;&#xD;&#xA;    return doc;&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>To apply this transformation to existing rows in the database, Marten exposes this syntax:</p>
-<pre><code class="language-csharp">&#xD;&#xA;private static void transform_example(IDocumentStore store)&#xD;&#xA;{&#xD;&#xA;    // Transform User documents with a filter&#xD;&#xA;    store.Transform.Where&lt;User&gt;(&quot;default_username&quot;, x =&gt; x.UserName == null);&#xD;&#xA;&#xD;&#xA;    // Transform a single User document by Id&#xD;&#xA;    store.Transform.Document&lt;User&gt;(&quot;default_username&quot;, Guid.NewGuid());&#xD;&#xA;&#xD;&#xA;    // Transform all User documents&#xD;&#xA;    store.Transform.All&lt;User&gt;(&quot;default_username&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;private static void transform_example(IDocumentStore store)&#xD;&#xA;{&#xD;&#xA;    // Transform User documents with a filter&#xD;&#xA;    store.Transform.Where&lt;User&gt;(&quot;default_username&quot;, x =&gt; x.UserName == null);&#xD;&#xA;&#xD;&#xA;    // Transform a single User document by Id&#xD;&#xA;    store.Transform.Document&lt;User&gt;(&quot;default_username&quot;, Guid.NewGuid());&#xD;&#xA;&#xD;&#xA;    // Transform all User documents&#xD;&#xA;    store.Transform.All&lt;User&gt;(&quot;default_username&quot;);&#xD;&#xA;&#xD;&#xA;    // Only transform documents from the &quot;tenant1&quot; tenant&#xD;&#xA;    store.Transform.Tenant&lt;User&gt;(&quot;default_username&quot;, &quot;tenant1&quot;);&#xD;&#xA;&#xD;&#xA;    // Only transform documents from the named tenants&#xD;&#xA;    store.Transform.Tenants&lt;User&gt;(&quot;default_username&quot;, &quot;tenant1&quot;, &quot;tenant2&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
 			      	</div>
 
@@ -194,7 +194,6 @@ As a default, we might just assign their user names by combining their first and
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

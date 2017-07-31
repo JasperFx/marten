@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -44,7 +44,7 @@
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
 		      	<li><a href="/marten/documentation/events/projections/async_daemon" title="Async Projections Daemon">Previous</a></li>
-		      	<li><a href="/marten/documentation/scenarios" title="Scenarios">Next</a></li>
+		      	<li><a href="/marten/documentation/events/projections/projectionbyeventtype" title="Projecting by Event Type">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -77,7 +77,7 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/scenarios">Scenarios</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/projections/projectionbyeventtype">Projecting by Event Type</a></p>
 		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/projections/async_daemon">Async Projections Daemon</a></p>
 
 		        </ul>
@@ -91,6 +91,18 @@
 
 			      	<div id="main-pane">
 			      		<!--Title: Custom Projections-->
+<h2 id="multistream-projections-using-viewprojection">Multistream Projections using ViewProjection</h2>
+<p>The <code>ViewProjection</code> class is an implementation of the <code>IProjection</code> that can handle building a projection from multiple streams.</p>
+<p>This can be setup from configuration like:</p>
+<pre><code class="language-csharp">&#xD;&#xA;StoreOptions(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xD;&#xA;    _.Events.ProjectView&lt;PersistedView, Guid&gt;()&#xD;&#xA;        .ProjectEvent&lt;QuestStarted&gt;((view, @event) =&gt; { view.Events.Add(@event); })&#xD;&#xA;        .ProjectEvent&lt;MembersJoined&gt;(e =&gt; e.QuestId, (view, @event) =&gt; { view.Events.Add(@event); })&#xD;&#xA;        .ProjectEvent&lt;ProjectionEvent&lt;MonsterSlayed&gt;&gt;(e =&gt; e.Data.QuestId, (view, @event) =&gt; { view.Events.Add(@event.Data); })&#xD;&#xA;        .DeleteEvent&lt;QuestEnded&gt;()&#xD;&#xA;        .DeleteEvent&lt;MembersDeparted&gt;(e =&gt; e.QuestId)&#xD;&#xA;        .DeleteEvent&lt;MonsterDestroyed&gt;((session, e) =&gt; session.Load&lt;QuestParty&gt;(e.QuestId).Id);&#xD;&#xA;});&#xD;&#xA;</code></pre> 
+ 
+or through a class like: 
+ 
+<pre><code class="language-csharp">&#xD;&#xA;public class PersistViewProjection : ViewProjection&lt;PersistedView, Guid&gt;&#xD;&#xA;{&#xD;&#xA;    public PersistViewProjection()&#xD;&#xA;    {&#xD;&#xA;        ProjectEvent&lt;QuestStarted&gt;(Persist);&#xD;&#xA;        ProjectEvent&lt;MembersJoined&gt;(e =&gt; e.QuestId, Persist);&#xD;&#xA;        ProjectEvent&lt;MonsterSlayed&gt;((session, e) =&gt; session.Load&lt;QuestParty&gt;(e.QuestId).Id, Persist);&#xD;&#xA;        DeleteEvent&lt;QuestEnded&gt;();&#xD;&#xA;        DeleteEvent&lt;MembersDeparted&gt;(e =&gt; e.QuestId);&#xD;&#xA;        DeleteEvent&lt;MonsterDestroyed&gt;((session, e) =&gt; session.Load&lt;QuestParty&gt;(e.QuestId).Id);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    private void Persist&lt;T&gt;(PersistedView view, T @event)&#xD;&#xA;    {&#xD;&#xA;        view.Events.Add(@event);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre> 
+ 
+`ProjectEvent` and `DeleteEvent` can operate on events that need a single or multiple Ids operated on. With `ProjectEvent` if a `List<TId>` is passed, the handler method will be called for each Id in the collection. With `DeleteEvent` if a `List<TId>` is passed, then each document tied to the Id in the collection will be removed. Each of these methods take various overloads that allow selecting the Id field implicitly, through a property or through two different Funcs `Func<IDocumentSession, TEvent, TId>` and `Func<TEvent, TId>`. 
+ 
+If additional Marten event details are needed, then events can use the `ProjectionEvent<>` generic when setting them up with `ProjectEvent`. `ProjectionEvent` exposes the Marten Id, Version, Timestamp and Data.
 
 			      	</div>
 
@@ -103,7 +115,7 @@
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/scenarios">Scenarios</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/events/projections/projectionbyeventtype">Projecting by Event Type</a>
 
 				        </span>
 			      	</nav>
@@ -120,7 +132,6 @@
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

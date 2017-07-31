@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -43,7 +43,7 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/events/schema" title="Event Store Schema Objects">Previous</a></li>
+		      	<li><a href="/marten/documentation/events/identity" title="Stream Identity">Previous</a></li>
 		      	<li><a href="/marten/documentation/events/streams" title="Querying Event and Stream Data">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
@@ -78,7 +78,7 @@
 		        </ul>
 
 		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/schema">Event Store Schema Objects</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/identity">Stream Identity</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -114,10 +114,11 @@ future version use that aggregate type to perform versioned snapshots of the ent
 you could just supply either a string to mark the &quot;stream type&quot; or work without a stream type.</p>
 <p>As usual, our sample problem domain is the Lord of the Rings style &quot;Quest.&quot; For now, you can either start a new stream and let Marten assign the Guid
 id for the stream:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = session.Events.StartStream&lt;Quest&gt;(joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = &quot;Fourth&quot;;&#xD;&#xA;session.Events.StartStream&lt;Quest&gt;(id, joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
 <p>Or have Marten use a Guid value that you provide yourself:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = Guid.NewGuid();&#xD;&#xA;session.Events.StartStream&lt;Quest&gt;(id, joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
-<p><strong>At this point, Marten forces you to use <code>System.Guid</code> as the id type of both events or streams</strong></p>
+<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = Guid.NewGuid();&#xD;&#xA;session.Events.StartStream(id, joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
+<p>For stream identity (strings vs. Guids), see <a href="/marten/documentation/events/identity">Stream Identity</a>.</p>
+<p>Note that <code>StartStream</code> checks for existing stream and throws <code>ExistingStreamIdCollisionException</code> in case stream already exists.</p>
 <h2 id="appending-events">Appending Events</h2>
 <p>If you have an existing stream, you can later append additional events with <code>IEventStore.Append()</code> as shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;session.Events.Append(id, joined, departed);&#xD;&#xA;&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
@@ -125,7 +126,9 @@ id for the stream:</p>
 <p><code>IEventStore.Append()</code> supports an overload taking in a parameter <code>int expectedVersion</code> that can be used to assert that events are inserted into the
 event stream if and only if the maximum event id for the stream matches the expected version after event insertions. Otherwise the transaction is aborted
 and a <code>EventStreamUnexpectedMaxEventIdException</code> exception is thrown.</p>
-<pre><code class="language-csharp">&#xD;&#xA;session.Events.StartStream&lt;Quest&gt;(id, started);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;// Events are appended into the stream only if the maximum event id for the stream&#xD;&#xA;// would be 3 after the append operation.&#xD;&#xA;session.Events.Append(id, 3, joined, departed);&#xD;&#xA;&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre> 
+<pre><code class="language-csharp">&#xD;&#xA;session.Events.StartStream(id, started);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;// Events are appended into the stream only if the maximum event id for the stream&#xD;&#xA;// would be 3 after the append operation.&#xD;&#xA;session.Events.Append(id, 3, joined, departed);&#xD;&#xA;&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre> 
+<h3 id="createstream-vs.append">CreateStream vs. Append</h3>
+<p>Both, <code>CreateStream</code> and <code>Append</code> can be used to start a new event stream. The difference with the methods is that <code>CreateStream</code> always checks for existing stream and throws <code>ExistingStreamIdCollisionException</code> in case stream already exists.</p>
 
 			      	</div>
 
@@ -133,7 +136,7 @@ and a <code>EventStreamUnexpectedMaxEventIdException</code> exception is thrown.
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/events/schema">Event Store Schema Objects</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/events/identity">Stream Identity</a>
 
 				        </span>
 				        <span class="pull-right">
@@ -155,7 +158,6 @@ and a <code>EventStreamUnexpectedMaxEventIdException</code> exception is thrown.
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

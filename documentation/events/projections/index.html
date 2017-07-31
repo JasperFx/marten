@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -118,10 +118,10 @@ inline projections.</strong> If you need to use event metadata in your projectio
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <pre><code class="language-csharp">&#xD;&#xA;public void using_live_transformed_events(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    var started = new QuestStarted { Name = &quot;Find the Orb&quot; };&#xD;&#xA;    var joined = new MembersJoined { Day = 2, Location = &quot;Faldor&#x27;s Farm&quot;, Members = new string[] { &quot;Garion&quot;, &quot;Polgara&quot;, &quot;Belgarath&quot; } };&#xD;&#xA;    var slayed1 = new MonsterSlayed { Name = &quot;Troll&quot; };&#xD;&#xA;    var slayed2 = new MonsterSlayed { Name = &quot;Dragon&quot; };&#xD;&#xA;&#xD;&#xA;    MembersJoined joined2 = new MembersJoined { Day = 5, Location = &quot;Sendaria&quot;, Members = new string[] { &quot;Silk&quot;, &quot;Barak&quot; } };&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    session.Events.StartStream&lt;Quest&gt;(started, joined, slayed1, slayed2);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;&#xD;&#xA;    // Our MonsterDefeated documents are created inline&#xD;&#xA;    // with the SaveChanges() call above and are available&#xD;&#xA;    // for querying&#xD;&#xA;    session.Query&lt;MonsterDefeated&gt;().Count()&#xD;&#xA;        .ShouldBe(2);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="aggregated-views-across-a-single-stream">Aggregated Views Across a Single Stream</h2>
-<p>As of now (v1.0), Marten is only supporting aggregation via .Net classes. The out of the box convention is to expose <code>Apply([Event Type])</code> methods
-on your aggregate class to do all incremental updates to an aggregate object. Sticking with the fantasy theme, the <code>QuestParty</code> class shown below
-could be used to aggregate streams of quest data:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class QuestParty&#xD;&#xA;{&#xD;&#xA;    private readonly IList&lt;string&gt; _members = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    public string[] Members&#xD;&#xA;    {&#xD;&#xA;        get&#xD;&#xA;        {&#xD;&#xA;            return _members.ToArray();&#xD;&#xA;        }&#xD;&#xA;        set&#xD;&#xA;        {&#xD;&#xA;            _members.Clear();&#xD;&#xA;            _members.AddRange(value);&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IList&lt;string&gt; Slayed { get; } = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    public void Apply(MembersJoined joined)&#xD;&#xA;    {&#xD;&#xA;        _members.Fill(joined.Members);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(MembersDeparted departed)&#xD;&#xA;    {&#xD;&#xA;        _members.RemoveAll(x =&gt; departed.Members.Contains(x));&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(QuestStarted started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Name { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public override string ToString()&#xD;&#xA;    {&#xD;&#xA;        return $&quot;Quest party &#x27;{Name}&#x27; is {Members.Join(&quot;, &quot;)}&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>As of now (v1.0), Marten is only supporting aggregation via .Net classes. The out of the box convention is to expose <code>public Apply([Event Type])</code> methods
+on your aggregate class to do all incremental updates to an aggregate object.  This can be customised using <a href="#aggregator-lookup">AggregatorLookup</a>.</p>
+<p>Sticking with the fantasy theme, the <code>QuestParty</code> class shown below could be used to aggregate streams of quest data:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class QuestParty&#xD;&#xA;{&#xD;&#xA;    private readonly IList&lt;string&gt; _members = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    public string[] Members&#xD;&#xA;    {&#xD;&#xA;        get&#xD;&#xA;        {&#xD;&#xA;            return _members.ToArray();&#xD;&#xA;        }&#xD;&#xA;        set&#xD;&#xA;        {&#xD;&#xA;            _members.Clear();&#xD;&#xA;            _members.AddRange(value);&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IList&lt;string&gt; Slayed { get; } = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    public void Apply(MembersJoined joined)&#xD;&#xA;    {&#xD;&#xA;        _members.Fill(joined.Members);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(MembersDeparted departed)&#xD;&#xA;    {&#xD;&#xA;        _members.RemoveAll(x =&gt; departed.Members.Contains(x));&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(QuestStarted started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Key { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Name { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public override string ToString()&#xD;&#xA;    {&#xD;&#xA;        return $&quot;Quest party &#x27;{Name}&#x27; is {Members.Join(&quot;, &quot;)}&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>New in Marten 1.2 is the ability to use <code>Event&lt;T&gt;</code> metadata within your projections -- assuming that you're not trying to run the aggregations inline.</p>
 <p>The syntax using the built in aggregation technique is to take in <code>Event&lt;T&gt;</code> as the argument to your <code>Apply(event)</code> methods,
 where &quot;T&quot; is the event type you're interested in:</p>
@@ -147,7 +147,9 @@ case-by-case through <code>EventGraphAddAggregator&lt;T&gt;(IAggregator&lt;T&gt;
 <ul>
 <li><code>AggregationLookupStrategy.UsePublicApply</code> resolves aggregators that use public Apply</li>
 <li><code>AggregationLookupStrategy.UsePrivateApply</code> resolves aggregators that use private Apply</li>
+<li><code>AggregationLookupStrategy.UsePublicAndPrivateApply</code> resolves aggregators that use public or private Apply</li>
 </ul>
+<p>The aggregation lookup can also be set in the <code>StoreOptions.Events.UserAggregatorLookup</code></p>
 <pre><code class="language-csharp">&#xD;&#xA;// Registering an aggregator lookup that provides aggregator supporting private Apply([Event Type]) methods&#xD;&#xA;theGraph.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);&#xD;&#xA;</code></pre>
 
 			      	</div>
@@ -178,7 +180,6 @@ case-by-case through <code>EventGraphAddAggregator&lt;T&gt;(IAggregator&lt;T&gt;
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>

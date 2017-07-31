@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 1.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -125,6 +125,11 @@ ends up meaning that an <code>IDocumentSession</code> should be scoped to a sing
 bus applications.</li>
 </ol>
 <p>There's a lot more capabilities than what we're showing here, so head on over to <a href="/marten/documentation">Documentation</a> to see what else Marten offers.</p>
+<h2 id="using-marten-to-create-databases">Using Marten to create databases</h2>
+<p>Marten can be configured to create (or drop &amp; create) databases in case they do not exist. This is done via store options, through <code>StoreOptions.CreateDatabasesForTenants</code>.</p>
+<pre><code class="language-csharp">&#xD;&#xA;storeOptions.CreateDatabasesForTenants(c =&gt;&#xD;&#xA;{&#xD;&#xA;    // Specify a db to which to connect in case database needs to be created.&#xD;&#xA;    // If not specified, defaults to &#x27;postgres&#x27; on the connection for a tenant.&#xD;&#xA;    c.MaintenanceDatabase(cstring);&#xD;&#xA;    c.ForTenant()&#xD;&#xA;        .CheckAgainstPgDatabase()&#xD;&#xA;        .WithOwner(&quot;postgres&quot;)&#xD;&#xA;        .WithEncoding(&quot;UTF-8&quot;)&#xD;&#xA;        .ConnectionLimit(-1)&#xD;&#xA;        .OnDatabaseCreated(_ =&gt;&#xD;&#xA;        {&#xD;&#xA;            dbCreated = true;&#xD;&#xA;        });&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<p>Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. <code>ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase</code> can be used to alter this behaviour to check for database existence from <code>pg_database</code>.</p>
+<p>Note that database cretion requires the CREATEDB privilege. See PostgreSQL <a href="https://www.postgresql.org/docs/current/static/sql-createdatabase.html">CREATE DATABSE</a> documentation for more.</p>
 
 			      	</div>
 
@@ -154,7 +159,6 @@ bus applications.</li>
         <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-        <script type="text/javascript" src="/marten/content/embed.js"></script>
         <script type="text/javascript" src="/marten/content/prism.js"></script>
         <script type="text/javascript" src="/marten/content/sidebar.js"></script>
         <script type="text/javascript" src="/marten/content/affix.js"></script>
