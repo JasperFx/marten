@@ -123,7 +123,7 @@ task :publish do
 		end
 	end
 	
-	sh "dotnet restore src/Marten.sln --runtime netstandard1.3"
+	sh "dotnet restore"
 	sh "dotnet stdocs export doc-target ProjectWebsite --version #{BUILD_VERSION} --project marten"
 	
 	Dir.chdir "doc-target" do
@@ -140,13 +140,13 @@ end
 desc 'Restores nuget packages'
 task :restore do
     sh 'dotnet restore src/Marten.sln --runtime netstandard1.3'
+	
 end
+
 
 desc 'Run Benchmarks'
 task :benchmarks => [:restore] do
 	sh 'dotnet run --project src/MartenBenchmarks --configuration Release'
-	
-
 end
 
 desc 'Record Benchmarks'
@@ -169,8 +169,8 @@ end
 
 desc 'Build the Nupkg file'
 task :pack => [:compile] do
-	sh "dotnet pack ./src/Marten -o artifacts --configuration Release"
-	sh "dotnet pack ./src/Marten.CommandLine -o artifacts --configuration Release"
+	sh "dotnet pack ./src/Marten -o ./../../artifacts --configuration Release"
+	sh "dotnet pack ./src/Marten.CommandLine -o ./../../artifacts --configuration Release"
 end
 
 

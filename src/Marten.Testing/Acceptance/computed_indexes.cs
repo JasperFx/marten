@@ -44,7 +44,7 @@ namespace Marten.Testing.Acceptance
                         var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data.ToArray());
 
-            theStore.Schema.DbObjects.AllIndexes().Select(x => x.Name)
+            theStore.Tenancy.Default.DbObjects.AllIndexes().Select(x => x.Name)
                 .ShouldContain("mt_doc_target_idx_number");
 
             using (var session = theStore.QuerySession())
@@ -118,7 +118,7 @@ namespace Marten.Testing.Acceptance
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data.ToArray());
 
-            theStore.Schema.DbObjects.AllIndexes()
+            theStore.Tenancy.Default.DbObjects.AllIndexes()
                 .Where(x => x.Name == "mt_doc_target_idx_number")
                 .Select(x => x.DDL.ToLower())
                 .First()
@@ -136,7 +136,7 @@ namespace Marten.Testing.Acceptance
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data.ToArray());
 
-            theStore.Schema.DbObjects.AllIndexes()
+            theStore.Tenancy.Default.DbObjects.AllIndexes()
                 .Where(x => x.Name == "mt_doc_target_idx_date")
                 .Select(x => x.DDL.ToLower())
                 .First()
@@ -161,7 +161,7 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
 
-            theStore.Schema.DbObjects.AllIndexes().Select(x => x.Name)
+            theStore.Tenancy.Default.DbObjects.AllIndexes().Select(x => x.Name)
                     .ShouldContain("mt_doc_target_uidx_string");
             
             using (var session = theStore.LightweightSession())
@@ -202,7 +202,7 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
             
-            theStore.Schema.DbObjects.AllIndexes().Select(x => x.Name)
+            theStore.Tenancy.Default.DbObjects.AllIndexes().Select(x => x.Name)
                     .ShouldContain("mt_banana_index_created_by_nigel");
         }
 
@@ -224,7 +224,7 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
             
-            theStore.Schema.DbObjects.AllIndexes()
+            theStore.Tenancy.Default.DbObjects.AllIndexes()
                     .Where(x => x.Name == "mt_doc_target_idx_string")
                     .Select(x => x.DDL)
                     .ShouldContain(x => x.Contains("WHERE (((data ->> 'Number'::text))::integer > 10)"));
@@ -249,7 +249,7 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
 
-            theStore.Schema.DbObjects.AllIndexes().Select(x => x.Name)
+            theStore.Tenancy.Default.DbObjects.AllIndexes().Select(x => x.Name)
                     .ShouldContain("mt_doc_target_uidx_string");
 
             using (var session = theStore.LightweightSession())

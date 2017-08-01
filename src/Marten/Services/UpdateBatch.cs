@@ -17,18 +17,17 @@ namespace Marten.Services
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private readonly List<CharArrayTextWriter> _writers = new List<CharArrayTextWriter>();
         private readonly DocumentStore _store;
-        private ITenant _tenant;
+        private readonly ITenant _tenant;
 
-        public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool, ITenant tenant)
+        public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool, ITenant tenant, ConcurrencyChecks concurrency)
         {
-            if (versions == null) throw new ArgumentNullException(nameof(versions));
-
             _store = store;
             _writerPool = writerPool;
-            Versions = versions;
+            Versions = versions ?? throw new ArgumentNullException(nameof(versions));
 
             _commands.Push(new BatchCommand(_store.Serializer, tenant));
             Connection = connection;
+            Concurrency = concurrency;
             TenantId = tenant.TenantId;
             _tenant = tenant;
         }
@@ -38,6 +37,7 @@ namespace Marten.Services
         public VersionTracker Versions { get; }
 
         public IManagedConnection Connection { get; }
+        public ConcurrencyChecks Concurrency { get; }
 
         public CharArrayTextWriter GetWriter()
         {
@@ -68,11 +68,11 @@ namespace Marten.Services
             batch.AddCall(operation, operation as ICallback);
         }
 
-        public SprocCall Sproc(DbObjectName function, ICallback callback = null)
+        public SprocCall Sproc(DbObjectName function, ICallback callback = null, IExceptionTransform exceptionTransform = null)
         {
             if (function == null) throw new ArgumentNullException(nameof(function));
 
-            return Current().Sproc(function, callback);
+            return Current().Sproc(function, callback, exceptionTransform);
         }
 
         public void Execute()
@@ -82,19 +82,31 @@ namespace Marten.Services
             try
             {
                 foreach (var batch in _commands.ToArray())
-                {
+                {                    
                     var cmd = batch.BuildCommand();
-                    Connection.Execute(cmd, c =>
+                    try
                     {
-                        if (batch.HasCallbacks())
+                        Connection.Execute(cmd, c =>
                         {
-                            executeCallbacks(cmd, batch, list);
-                        }
-                        else
+                            if (batch.HasCallbacks())
+                            {
+                                executeCallbacks(cmd, batch, list);
+                            }
+                            else
+                            {
+                                cmd.ExecuteNonQuery();
+                            }
+                        });
+                    }
+                    catch (Exception e) when (batch.HasExceptionTransforms())
+                    {
+                        Exception transformed = null;
+                        if (batch.ExceptionTransforms.Any(x => x != null && x.TryTransform(e, out transformed)))
                         {
-                            cmd.ExecuteNonQuery();
+                            throw transformed;
                         }
-                    });
+                        throw;
+                    }
                 }
 
                 if (list.Any())

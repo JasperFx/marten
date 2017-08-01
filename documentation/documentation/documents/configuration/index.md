@@ -67,6 +67,11 @@ Do note that you could happily use multiple `MartenRegistry` classes in larger a
 If you dislike using infrastructure attributes in your application code, you will probably prefer to use MartenRegistry.
 
 
+## Custom Indexes
+
+If you intend to write your own indexes against Marten document tables, just ensure that the index names are **not** prefixed with "mt_" so
+that Marten will ignore your manual indexes when calculating schema differences.
+
 ## Custom Attributes
 
 If there's some kind of customization you'd like to use attributes for that isn't already supported by Marten, 

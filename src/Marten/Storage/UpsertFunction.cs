@@ -11,17 +11,31 @@ namespace Marten.Storage
 {
     public class UpsertFunction : Function
     {
-        private readonly string _primaryKeyConstraintName;
-        private readonly DbObjectName _tableName;
+        private readonly bool _disableConcurrency;
+        protected readonly string _primaryKeyConstraintName;
+        protected readonly DbObjectName _tableName;
 
         public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
 
-        public UpsertFunction(DocumentMapping mapping) : base(mapping.UpsertFunction)
+        public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool disableConcurrency = false) : base(identifier ?? mapping.UpsertFunction)
         {
+            _disableConcurrency = disableConcurrency;
             if (mapping == null) throw new ArgumentNullException(nameof(mapping));
 
             _tableName = mapping.Table;
-            _primaryKeyConstraintName = "pk_" + mapping.Table.Name;
+
+
+            var table = new DocumentTable(mapping);
+            if (table.PrimaryKeys.Count > 1)
+            {
+                _primaryKeyConstraintName =  mapping.Table.Name + "_pkey";
+            }
+            else
+            {
+                _primaryKeyConstraintName = "pk_" + mapping.Table.Name;
+            }
+
+            
                 
             var idType = mapping.IdMember.GetMemberType();
             var pgIdType = TypeMappings.GetPgType(idType);
@@ -74,7 +88,7 @@ namespace Marten.Storage
 
             var whereClauses = new List<string>();
 
-            if (Arguments.Any(x => x is CurrentVersionArgument))
+            if (Arguments.Any(x => x is CurrentVersionArgument) && !_disableConcurrency)
             {
                 whereClauses.Add($"{_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version");
             }
@@ -95,8 +109,18 @@ namespace Marten.Storage
 
             
 
+            writeFunction(writer, argList, securityDeclaration, inserts, valueList, updates);
+
+
+        }
+
+        protected virtual void writeFunction(StringWriter writer, string argList, string securityDeclaration, string inserts,
+            string valueList, string updates)
+        {
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {securityDeclaration} AS $function$
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
+                    securityDeclaration
+                } AS $function$
 DECLARE
   final_version uuid;
 BEGIN
@@ -109,8 +133,6 @@ INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
 END;
 $function$;
 ");
-
-
         }
 
         public UpsertArgument[] OrderedArguments()

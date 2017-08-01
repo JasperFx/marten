@@ -10,7 +10,9 @@ namespace Marten.Testing
     public abstract class IntegratedFixture : IDisposable
     {
         private Lazy<IDocumentStore> _store;
+#if NET46
         private CultureInfo _originalCulture;
+#endif
 
         protected IntegratedFixture()
         {
@@ -30,7 +32,7 @@ namespace Marten.Testing
 
         protected string toJson<T>(T doc)
         {
-            return theStore.Advanced.Options.Serializer().ToJson(doc);
+            return theStore.Options.Serializer().ToJson(doc);
         }
 
         protected DocumentStore theStore => _store.Value.As<DocumentStore>();

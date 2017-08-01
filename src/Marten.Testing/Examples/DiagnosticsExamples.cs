@@ -20,19 +20,17 @@ namespace Marten.Testing.Examples
 
     // ENDSAMPLE
 
-    public class DiagnosticsExamples
+    public class DiagnosticsExamples : IntegratedFixture
     {
         public void use_diagnostics()
         {
             // Marten is NOT coupled to StructureMap, but we 
             // use it in our test suite for convenience
-            var container = Container.For<DevelopmentModeRegistry>();
 
-            var store = container.GetInstance<IDocumentStore>();
 
             // SAMPLE: preview_linq_command
             // store is the active IDocumentStore
-            var queryable = store.QuerySession().Query<Trade>().Where(x => x.Value > 2000);
+            var queryable = theStore.QuerySession().Query<Trade>().Where(x => x.Value > 2000);
             var cmd = queryable.ToCommand(FetchType.FetchMany);
 
             Debug.WriteLine(cmd.CommandText);
@@ -55,12 +53,9 @@ namespace Marten.Testing.Examples
 
         public void use_request_count()
         {
-            var container = Container.For<DevelopmentModeRegistry>();
-
-            var store = container.GetInstance<IDocumentStore>();
 
             // SAMPLE: using_request_count
-            using (var session = store.QuerySession())
+            using (var session = theStore.QuerySession())
             {
                 var users = session.Query<User>().ToList();
                 var count = session.Query<User>().Count();

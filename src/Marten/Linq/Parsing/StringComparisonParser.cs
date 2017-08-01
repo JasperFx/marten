@@ -7,6 +7,9 @@ using Marten.Schema;
 
 namespace Marten.Linq.Parsing
 {
+
+
+
     public abstract class StringComparisonParser : IMethodCallParser
     {
         private readonly MethodInfo[] _supportedMethods;

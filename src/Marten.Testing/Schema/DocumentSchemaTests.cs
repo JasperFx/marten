@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -10,7 +9,6 @@ using Marten.Testing.Documents;
 using Marten.Testing.Events;
 using Marten.Testing.Schema.Hierarchies;
 using Shouldly;
-using StructureMap;
 using Xunit;
 using Issue = Marten.Testing.Documents.Issue;
 
@@ -140,56 +138,17 @@ namespace Marten.Testing.Schema
             theStore.Tenancy.Default.StorageFor(typeof(Issue)).ShouldNotBeNull();
             theStore.Tenancy.Default.StorageFor(typeof(Company)).ShouldNotBeNull();
 
-            var tables = theStore.Schema.DbObjects.SchemaTables();
+            var tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
             tables.ShouldContain("public.mt_doc_user");
             tables.ShouldContain("public.mt_doc_issue");
             tables.ShouldContain("public.mt_doc_company");
 
-            var functions = theStore.Schema.DbObjects.Functions();
+            var functions = theStore.Tenancy.Default.DbObjects.Functions();
             functions.ShouldContain("public.mt_upsert_user");
             functions.ShouldContain("public.mt_upsert_issue");
             functions.ShouldContain("public.mt_upsert_company");
         }
 
-        [Fact]
-        public void do_not_rebuild_a_table_that_already_exists()
-        {
-            using (var container1 = Container.For<DevelopmentModeRegistry>())
-            {
-                using (var session = container1.GetInstance<IDocumentStore>().LightweightSession())
-                {
-                    session.Store(new User());
-                    session.Store(new User());
-                    session.Store(new User());
-
-                    session.SaveChanges();
-                }
-            }
-
-            using (var container2 = Container.For<DevelopmentModeRegistry>())
-            {
-                using (var session = container2.GetInstance<IDocumentStore>().LightweightSession())
-                {
-                    session.Query<User>().Count().ShouldBeGreaterThanOrEqualTo(3);
-                }
-            }
-        }
-
-        [Fact]
-        public void throw_ambigous_alias_exception_when_you_have_duplicate_document_aliases()
-        {
-            using (var container = Container.For<DevelopmentModeRegistry>())
-            {
-                var schema = container.GetInstance<IDocumentSchema>();
-
-                schema.StoreOptions.Storage.StorageFor(typeof(Examples.User)).ShouldNotBeNull();
-
-                Exception<AmbiguousDocumentTypeAliasesException>.ShouldBeThrownBy(() =>
-                {
-                    schema.StoreOptions.Storage.StorageFor(typeof(User));
-                });
-            }
-        }
 
         [Fact]
         public void can_write_ddl_by_type_smoke_test()
@@ -456,8 +415,8 @@ namespace Marten.Testing.Schema
                 session.SaveChanges();
             }
 
-            _tables = _schema.DbObjects.SchemaTables();
-            _functions = _schema.DbObjects.Functions();
+            _tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
+            _functions = theStore.Tenancy.Default.DbObjects.Functions();
         }
 
 
@@ -615,8 +574,8 @@ namespace Marten.Testing.Schema
                 session.SaveChanges();
             }
 
-            _tables = _schema.DbObjects.SchemaTables();
-            _functions = _schema.DbObjects.Functions();
+            _tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
+            _functions = theStore.Tenancy.Default.DbObjects.Functions();
         }
 
 

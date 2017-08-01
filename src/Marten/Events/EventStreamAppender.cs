@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Schema.Arguments;
 using Marten.Services;
 
 namespace Marten.Events
@@ -28,15 +29,36 @@ namespace Marten.Events
 
             var events = stream.Events.ToArray();
             var eventTypes = events.Select(x => _graph.EventMappingFor(x.Data.GetType()).EventTypeName).ToArray();
+            var dotnetTypes = events.Select(x => _graph.DotnetTypeNameFor(x.Data.GetType())).ToArray();
+
             var ids = events.Select(x => x.Id).ToArray();
 
-            var sprocCall = batch.Sproc(AppendEventFunction, new EventStreamVersioningCallback(stream))
-                .Param("stream", stream.Id)
-                .Param("stream_type", streamTypeName)
-                .Param("event_ids", ids)
-                .Param("event_types", eventTypes);
+            var sprocCall = toAppendSprocCall(batch, stream, streamTypeName, ids, eventTypes, dotnetTypes);
 
             AddJsonBodies(batch, sprocCall, events);
+        }
+
+        private SprocCall toAppendSprocCall(UpdateBatch batch, EventStream stream, string streamTypeName, Guid[] ids, string[] eventTypes, string[] dotnetTypes)
+        {
+            if (_graph.StreamIdentity == StreamIdentity.AsGuid)
+            {
+                return batch.Sproc(AppendEventFunction, new EventStreamVersioningCallback(stream))
+                                     .Param("stream", stream.Id)
+                                     .Param("stream_type", streamTypeName)
+                                     .Param(TenantIdArgument.ArgName, batch.TenantId)
+                                     .Param("event_ids", ids)
+                                     .Param("event_types", eventTypes)
+                                     .Param("dotnet_types", dotnetTypes);
+            }
+
+
+            return batch.Sproc(AppendEventFunction, new EventStreamVersioningCallback(stream))
+                        .Param("stream", stream.Key)
+                        .Param("stream_type", streamTypeName)
+                        .Param(TenantIdArgument.ArgName, batch.TenantId)
+                        .Param("event_ids", ids)
+                        .Param("event_types", eventTypes)
+                        .Param("dotnet_types", dotnetTypes);
         }
 
         static void AddJsonBodies(UpdateBatch batch, SprocCall sprocCall, IEvent[] events)

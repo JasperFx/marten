@@ -2,7 +2,9 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Services;
+using Npgsql;
 
 namespace Marten.Schema
 {
@@ -31,8 +33,7 @@ namespace Marten.Schema
         {
             if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false)) return null;
 
-            var json = reader.GetTextReader(startingIndex);
-            //var json = await reader.GetFieldValueAsync<string>(startingIndex, token).ConfigureAwait(false);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
 
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
@@ -44,7 +45,7 @@ namespace Marten.Schema
         }
 
 
-        public override FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
+        public override T Fetch(object id, DbDataReader reader, IIdentityMap map)
         {
             if (!reader.Read()) return null;
 
@@ -53,30 +54,25 @@ namespace Marten.Schema
 
             var actualType = _hierarchy.TypeFor(typeAlias);
 
-            var doc = (T)serializer.FromJson(actualType, json);
-
             var version = reader.GetFieldValue<Guid>(3);
 
-            return new FetchResult<T>(doc, json, version);
+            return map.Get<T>(id, actualType, json, version);
         }
 
-        public override async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
+        public override async Task<T> FetchAsync(object id, DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             var found = await reader.ReadAsync(token).ConfigureAwait(false);
 
             if (!found) return null;
 
-            var json = reader.GetTextReader(0);
-            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
             var typeAlias = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
 
             var actualType = _hierarchy.TypeFor(typeAlias);
 
-            var doc = (T)serializer.FromJson(actualType, json);
-
             var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
 
-            return new FetchResult<T>(doc, json, version);
+            return map.Get<T>(id, actualType, json, version);
         }
     }
 }

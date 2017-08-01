@@ -117,9 +117,6 @@ namespace Marten.Events
             return this;
         }
 
-        // TODO -- will change later
-        public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
-
         public NpgsqlCommand LoaderCommand(object id)
         {
             return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = :id and type = '{Alias}'").With("id", id);
@@ -135,12 +132,12 @@ namespace Marten.Events
             return document.As<IEvent>().Id;
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity)
+        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity)
         {
             // Do nothing
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity, string json)
+        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
         {
             // Do nothing
         }
@@ -187,46 +184,49 @@ namespace Marten.Events
         {
             var id = await reader.GetFieldValueAsync<Guid>(startingIndex, token).ConfigureAwait(false);
 
-            // TODO -- DO NOT LIKE THIS. Ask the Npgsql guys if this is okay
-            var json = reader.GetTextReader(startingIndex + 1);
-            
-            //var json = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex + 1).ConfigureAwait(false);
 
             return map.Get<T>(id, json, null);
         }
 
-        public FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
+        public T Resolve(IIdentityMap map, IQuerySession session, object id)
         {
-            if (!reader.Read()) return null;
+            if (map.Has<T>(id)) return map.Retrieve<T>(id);
 
-            var json = reader.GetTextReader(0);
-            var doc = serializer.FromJson<T>(json);
+            var cmd = LoaderCommand(id);
+            cmd.Connection = session.Connection;
+            using (var reader = cmd.ExecuteReader())
+            {
+                if (!reader.Read()) return null;
 
-            return new FetchResult<T>(doc, json, null);
+                var json = reader.GetTextReader(0);
+                var doc = session.Serializer.FromJson<T>(json);
+                map.Store(id, doc);
+
+                return doc;
+            }
         }
 
-        public async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
+        public async Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
         {
-            var found = await reader.ReadAsync(token).ConfigureAwait(false);
+            if (map.Has<T>(id)) return map.Retrieve<T>(id);
 
-            if (!found) return null;
+            var cmd = LoaderCommand(id);
+            cmd.Connection = session.Connection;
 
-            var json = reader.GetTextReader(0);
-            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-            var doc = serializer.FromJson<T>(json);
+            using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+            {
+                var found = await reader.ReadAsync(token).ConfigureAwait(false);
 
+                if (!found) return null;
 
-            return new FetchResult<T>(doc, json, null);
-        }
+                var json = reader.GetTextReader(0);
+                //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+                var doc = session.Serializer.FromJson<T>(json);
+                map.Store(id, doc);
 
-        public T Resolve(IIdentityMap map, ILoader loader, object id)
-        {
-            return map.Get(id, () => loader.LoadDocument<T>(id));
-        }
-
-        public Task<T> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
-        {
-            return map.GetAsync(id, tkn => loader.LoadDocumentAsync<T>(id, tkn), token);
+                return doc;
+            }
         }
 
 

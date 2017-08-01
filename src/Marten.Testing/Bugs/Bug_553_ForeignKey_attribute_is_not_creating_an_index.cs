@@ -13,7 +13,7 @@ namespace Marten.Testing.Bugs
             theStore.Tenancy.Default.EnsureStorageExists(typeof(DocWithFK));
 
 
-            var table = theStore.Schema.DbObjects.ExistingTableFor(typeof(DocWithFK));
+            var table = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(DocWithFK));
             table.ActualIndices.ContainsKey("mt_doc_docwithfk_idx_user_id").ShouldBeTrue();
         }
     }

@@ -14,10 +14,10 @@ namespace Marten.Events
     internal class AggregationQueryHandler<T> : IQueryHandler<T> where T : class, new()
     {
         private readonly IAggregator<T> _aggregator;
-        private readonly EventQueryHandler _inner;
+        private readonly IEventQueryHandler _inner;
         private readonly IDocumentSession _session;
 
-        public AggregationQueryHandler(IAggregator<T> aggregator, EventQueryHandler inner, IDocumentSession session = null)
+        public AggregationQueryHandler(IAggregator<T> aggregator, IEventQueryHandler inner, IDocumentSession session = null)
         {
             _aggregator = aggregator;
             _inner = inner;

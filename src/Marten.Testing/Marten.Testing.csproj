@@ -26,19 +26,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0-preview-20170106-08" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0-beta5-build1225" />
-    <PackageReference Include="xunit" Version="2.2.0-beta5-build3474" />
-    <PackageReference Include="NSubstitute" Version="2.0.0-rc" />
+    <PackageReference Include="Jil" Version="2.15.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
+    <PackageReference Include="xunit" Version="2.2.0" />
+    <PackageReference Include="NSubstitute" Version="2.0.3" />
     <PackageReference Include="Shouldly" Version="2.8.0" />
     <PackageReference Include="structuremap" Version="4.2.0.402" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
-    <PackageReference Include="System.Diagnostics.TraceSource" Version="4.0.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.1.0" />
-    <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.0.0" />
-    <PackageReference Include="System.Data.Common" Version="4.1.0" />
+    <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
@@ -47,7 +45,6 @@
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
     <PackageReference Include="HtmlTags" Version="3.0.0.186" />
-    <PackageReference Include="Jil" Version="2.14.3" />
     <PackageReference Include="Storyteller" Version="3.0.0.329-rc" />
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="1.0.2" />
     <Reference Include="System.Web" />

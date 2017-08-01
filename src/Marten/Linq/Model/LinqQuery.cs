@@ -188,7 +188,7 @@ namespace Marten.Linq.Model
         }
 
 
-        public IQueryHandler<IList<T>> ToList()
+        public IQueryHandler<IReadOnlyList<T>> ToList()
         {
             return new ListQueryHandler<T>(this);
         }

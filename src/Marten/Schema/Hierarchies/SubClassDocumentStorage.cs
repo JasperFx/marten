@@ -16,10 +16,10 @@ namespace Marten.Schema.Hierarchies
         where T : class, TBase
         where TBase : class
     {
-        private readonly IDocumentStorage _parent;
+        private readonly IDocumentStorage<TBase> _parent;
         private readonly SubClassMapping _mapping;
 
-        public SubClassDocumentStorage(IDocumentStorage parent, SubClassMapping mapping)
+        public SubClassDocumentStorage(IDocumentStorage<TBase> parent, SubClassMapping mapping)
         {
             _parent = parent;
             _mapping = mapping;
@@ -44,14 +44,14 @@ namespace Marten.Schema.Hierarchies
             return _parent.Identity(document);
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity)
+        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity)
         {
-            _parent.RegisterUpdate(batch, entity);
+            _parent.RegisterUpdate(tenantIdOverride, updateStyle, batch, entity);
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity, string json)
+        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
         {
-            _parent.RegisterUpdate(batch, entity, json);
+            _parent.RegisterUpdate(tenantIdOverride, updateStyle, batch, entity, json);
         }
 
         public void Remove(IIdentityMap map, object entity)
@@ -100,8 +100,7 @@ namespace Marten.Schema.Hierarchies
         public async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map,
             CancellationToken token)
         {
-            var json = reader.GetTextReader(startingIndex);
-            //var json = await reader.GetFieldValueAsync<string>(startingIndex, token).ConfigureAwait(false);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
             var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
@@ -111,43 +110,15 @@ namespace Marten.Schema.Hierarchies
         }
 
 
-        public FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
+        public T Resolve(IIdentityMap map, IQuerySession session, object id)
         {
-            if (!reader.Read()) return null;
-
-            var json = reader.GetTextReader(0);
-            var doc = serializer.FromJson<T>(json);
-
-            var version = reader.GetFieldValue<Guid>(3);
-
-            return new FetchResult<T>(doc, json, version);
+            return _parent.Resolve(map, session, id) as T;
         }
 
-        // TODO -- this is all duplicated from Resolver<T>, fix that.
-        public async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
+        public async Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
         {
-            var found = await reader.ReadAsync(token).ConfigureAwait(false);
-            if (!found) return null;
-
-            var json = reader.GetTextReader(0);
-            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-            var doc = serializer.FromJson<T>(json);
-
-            var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
-
-            return new FetchResult<T>(doc, json, version);
-        }
-
-        public T Resolve(IIdentityMap map, ILoader loader, object id)
-        {
-            // TODO -- watch it here if it's the wrong type
-            return map.Get(id, () => loader.LoadDocument<TBase>(id)) as T;
-        }
-
-        public Task<T> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
-        {
-            return map.GetAsync(id, tk => loader.LoadDocumentAsync<TBase>(id, tk), token)
-                .ContinueWith(x => x.Result as T, token);
+            var doc = await _parent.ResolveAsync(map, session, token, id).ConfigureAwait(false);
+            return doc as T;
         }
 
         public T Resolve(DbDataReader reader, ISerializer serializer)

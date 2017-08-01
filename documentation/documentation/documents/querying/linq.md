@@ -67,6 +67,12 @@ Marten also supports case insensitive substring searches:
 
 <[sample:searching_within_case_insensitive_string_fields]>
 
+A shorthand for case-insensitive string matching is provided through `EqualsIgnoreCase` (string extension method in *Baseline*):
+
+<[sample:sample-linq-EqualsIgnoreCase]>
+
+This defaults to `String.Equals` with `StringComparison.CurrentCultureIgnoreCase` as comparison type. 
+
 ## Count()
 
 Marten supports the `IQueryable.Count()` method:

@@ -11,16 +11,13 @@ namespace Marten.Transforms
     {
         public static readonly string Prefix = "mt_transform_";
 
-        private readonly StoreOptions _options;
 
 
         public readonly IList<string> OtherArgs = new List<string>();
-        private bool _checked;
 
         public TransformFunction(StoreOptions options, string name, string body)
             : base(new DbObjectName(options.DatabaseSchemaName, "mt_transform_" + name.Replace(".", "_")))
         {
-            _options = options;
             Name = name;
             Body = body;
         }

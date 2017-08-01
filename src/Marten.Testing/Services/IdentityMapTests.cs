@@ -86,52 +86,6 @@ namespace Marten.Testing.Services
         }
 
         [Fact]
-        public void get_value_on_first_request_with_lazy_json()
-        {
-            var target = Target.Random();
-
-            var serializer = new TestsSerializer();
-
-            var map = new IdentityMap(serializer, null);
-
-            var json = serializer.ToJson(target).ToReader();
-            var clonedTarget = serializer.FromJson<Target>(json);
-
-            var target2 = map.Get<Target>(target.Id, () =>
-            {
-                
-                return new FetchResult<Target>(clonedTarget, json, null);
-            });
-
-            target2.Id.ShouldBe(target.Id);
-            target2.ShouldNotBeTheSameAs(target);
-        }
-
-        [Fact]
-        public void get_value_on_subsequent_requests_with_lazy_json()
-        {
-            var target = Target.Random();
-
-            var serializer = new TestsSerializer();
-
-            var map = new IdentityMap(serializer, null);
-
-            var target2 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target).ToReader(), null));
-            var target3 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target).ToReader(), null));
-            var target4 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target).ToReader(), null));
-            var target5 = map.Get<Target>(target.Id, () => new FetchResult<Target>(target, serializer.ToJson(target).ToReader(), null));
-
-            target2.Id.ShouldBe(target.Id);
-            target3.Id.ShouldBe(target.Id);
-            target4.Id.ShouldBe(target.Id);
-            target5.Id.ShouldBe(target.Id);
-
-            target2.ShouldBeTheSameAs(target3);
-            target2.ShouldBeTheSameAs(target4);
-            target2.ShouldBeTheSameAs(target5);
-        }
-
-        [Fact]
         public void store()
         {
             var target = Target.Random();
@@ -143,15 +97,6 @@ namespace Marten.Testing.Services
 
 
             map.Get<Target>(target.Id, "".ToReader(), null).ShouldBeTheSameAs(target);
-        }
-
-        [Fact]
-        public void get_with_miss_in_database()
-        {
-            var serializer = new TestsSerializer();
-
-            var map = new IdentityMap(serializer, null);
-            map.Get<Target>(Guid.NewGuid(), () => null).ShouldBeNull();
         }
 
         [Fact]

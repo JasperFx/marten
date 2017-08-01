@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace Marten.Events.Projections.Async
@@ -14,15 +13,27 @@ namespace Marten.Events.Projections.Async
 
     public class EventPage
     {
-        public static EventStream[] ToStreams(IEnumerable<IEvent> events)
+        private EventStream[] _streams;
+        private IReadOnlyList<IEvent> _events;
+
+        public static EventStream[] ToStreams(StreamIdentity streamIdentity, IEnumerable<IEvent> events)
         {
-            return events.GroupBy(x => x.StreamId)
-                        .Select(
-                            group =>
-                            {
-                                return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
-                            })
-                        .ToArray();
+            if (streamIdentity == StreamIdentity.AsGuid)
+            {
+                return events.GroupBy(x => x.StreamId)
+                    .Select(group =>
+                    {
+                        return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
+                    })
+                    .ToArray();
+            }
+
+            return events.GroupBy(x => x.StreamKey)
+                .Select(group =>
+                {
+                    return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
+                })
+                .ToArray();
         }
 
         public static bool IsCompletelySequential(IList<long> sequences)
@@ -37,8 +48,10 @@ namespace Marten.Events.Projections.Async
 
         public long From { get; set; }
         public long To { get; set; }
-        public EventStream[] Streams { get; set; }
-        public int Count { get; set; }
+
+        public EventStream[] Streams => _streams ?? (_streams = ToStreams(StreamIdentity, Events));
+
+        public int Count => Events.Count;
         public EventPage Next { get; set; }
 
         public IList<long> Sequences { get; set; } = new List<long>();
@@ -58,20 +71,41 @@ namespace Marten.Events.Projections.Async
             return From;
         }
 
-        public EventPage(long from, long to, IList<IEvent> events)
+        public EventPage(EventStream[] streams)
         {
-            From = @from;
-            To = to;
-            Streams = ToStreams(events);
-            Count = events.Count;
+            _streams = streams;
+            From = 0;
+            To = 0;
         }
 
-        public EventPage(long @from, IList<long> sequences, IList<IEvent> events)
+        public EventPage(long from, long to, IReadOnlyList<IEvent> events)
         {
+            _events = events;
+            From = @from;
+            To = to;
+        }
+
+        public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
+
+        public IReadOnlyList<IEvent> Events
+        {
+            get
+            {
+                if (_events == null && _streams != null)
+                {
+                    _events = _streams.SelectMany(x => x.Events).OrderBy(x => x.Sequence).ToList();
+                }
+
+                return _events;
+            }
+        }
+
+        public EventPage(long @from, IList<long> sequences, IReadOnlyList<IEvent> events)
+        {
+            _events = events;
             Sequences = sequences;
             From = @from;
             To = Sequences.LastOrDefault();
-            Streams = ToStreams(events);
         }
 
         public bool IsSequential()

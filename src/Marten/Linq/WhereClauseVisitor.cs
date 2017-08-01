@@ -108,7 +108,8 @@ namespace Marten.Linq
 
             protected override Expression VisitConstant(ConstantExpression node)
             {
-                if ((node.Type == typeof(bool)) && (bool) node.Value) _top = new WhereFragment("true");
+                if ((node.Type == typeof(bool)))
+                    _register.Peek()(new WhereFragment(node.Value.ToString().ToLower()));
                 return base.VisitConstant(node);
             }
 

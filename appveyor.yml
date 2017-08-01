@@ -1,4 +1,5 @@
-version: 2.0.0.{build}
+# set version as running build number for CI build use
+version: Build {build}
 
 configuration: Release
 
@@ -16,6 +17,11 @@ services:
   - postgresql95
 
 install:
+  - set PATH=C:\Ruby%RUBY_VERSION%\bin;%PATH%
+  - ruby --version
+  - gem install bundler
+  - bundle config --local path vendor/bundle
+  - bundle install
   - SET PATH=%POSTGRES_PATH%\bin;%PATH%
   - curl -L -O -S -s http://www.postgresonline.com/downloads/%PG_PLV8_EXTENSION_ZIP_FILENAME%.zip
   - 7z x %PG_PLV8_EXTENSION_ZIP_FILENAME%.zip
@@ -28,25 +34,11 @@ before_build:
   - psql -d %PG_DB% -c "create extension if not exists plv8;"
   - npm install
   - dotnet --info
-  - dotnet restore .\src\Marten.sln
-
-assembly_info:
-  patch: true
-  file: '**\CommonAssemblyInfo.cs'
-  assembly_version: '{version}'
-  assembly_file_version: '{version}'
-  assembly_informational_version: '{version}'
 
 build_script:
-  - dotnet build .\src\Marten.sln --configuration Release
-
-after_build:
-  - dotnet pack .\src\Marten -o artifacts --configuration Release /p:Version=%APPVEYOR_BUILD_VERSION%
-  - dotnet pack .\src\Marten.CommandLine -o artifacts --configuration Release
-
-test_script:
-  - npm run test
-  - dotnet test .\src\Marten.Testing\Marten.Testing.csproj --framework netcoreapp1.0 --configuration Release
+- cmd: >-
+    rake ci
+test: off
 
 artifacts:
   - path: '**\Marten.*.nupkg' # find all NuGet packages recursively

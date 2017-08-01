@@ -28,7 +28,12 @@ namespace Marten.Events.Projections
         public AggregationProjection<T> AggregateStreamsWith<T>() where T : class, new()
         {            
             var aggregator = _options.Events.AggregateFor<T>();
-            var finder = new AggregateFinder<T>();
+
+
+            IAggregationFinder<T> finder = _options.Events.StreamIdentity == StreamIdentity.AsGuid
+                ? (IAggregationFinder<T>)new AggregateFinder<T>()
+                : new StringIdentifiedAggregateFinder<T>();
+
             var projection = new AggregationProjection<T>(finder, aggregator);
 
             Add(projection);
@@ -47,18 +52,18 @@ namespace Marten.Events.Projections
         public void Add(IProjection projection)
         {
             if (projection == null) throw new ArgumentNullException(nameof(projection));
-            if (projection.Produces == null)
-            {
-                throw new InvalidOperationException("projection.Produces is null. Projection should defined the produced projection type.");
-            }
 
-            _options.Storage.MappingFor(projection.Produces);
+            if (projection is IDocumentProjection)
+            {
+                _options.Storage.MappingFor(projection.ProjectedType());
+            }
+            
             _projections.Add(projection);
         }
 
         public IProjection ForView(Type viewType)
         {
-            return _projections.FirstOrDefault(x => x.Produces == viewType);
+            return _projections.FirstOrDefault(x => x.ProjectedType() == viewType);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Baseline;
 using Marten.Events.Projections;
 using Marten.Schema;
@@ -10,6 +11,13 @@ using Marten.Storage;
 
 namespace Marten.Events
 {
+
+    public enum StreamIdentity
+    {
+        AsGuid,
+        AsString
+    }
+
     public class EventGraph : IFeatureSchema
     {
         private readonly ConcurrentDictionary<string, IAggregator> _aggregateByName =
@@ -41,6 +49,8 @@ namespace Marten.Events
             InlineProjections = new ProjectionCollection(options);
             AsyncProjections = new ProjectionCollection(options);            
         }
+
+        public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
 
         internal StoreOptions Options { get; }
 
@@ -120,7 +130,7 @@ namespace Marten.Events
             var aggregate = AllAggregates().FirstOrDefault(x => x.Alias == aggregateTypeName);
             if (aggregate == null)
             {
-                throw new ArgumentOutOfRangeException(nameof(aggregateTypeName), $"Unknown aggregate type '{aggregateTypeName}'. You may need to register this aggregate type with StoreOptions.Events.AggregateFor<T>()");
+                return null;
             }
 
             return
@@ -143,9 +153,9 @@ namespace Marten.Events
             return AsyncProjections.ForView(viewType) ?? InlineProjections.ForView(viewType);
         }
 
-        public ViewProjection<TView> ProjectView<TView>() where TView : class, new()
+        public ViewProjection<TView, TId> ProjectView<TView, TId>() where TView : class, new()
         {
-            var projection = new ViewProjection<TView>();
+            var projection = new ViewProjection<TView, TId>();
             InlineProjections.Add(projection);
             return projection;
         }
@@ -168,22 +178,21 @@ namespace Marten.Events
         {
             get
             {
-                var eventsTable = new EventsTable(DatabaseSchemaName);
+                var eventsTable = new EventsTable(this);
                 var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
                 {
                     Owner = eventsTable.Identifier,
                     OwnerColumn = "seq_id"
                 };
 
-
-
                 return new ISchemaObject[]
                 {
-                    new StreamsTable(DatabaseSchemaName),
+                    new StreamsTable(this),
                     eventsTable,
                     new EventProgressionTable(DatabaseSchemaName), 
                     sequence,  
-                    new SystemFunction(DatabaseSchemaName, "mt_append_event", "uuid, varchar, uuid[], varchar[], jsonb[]"), 
+                    
+                    new AppendEventFunction(this), 
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"), 
                 };
             }
@@ -195,44 +204,34 @@ namespace Marten.Events
         {
             // Nothing
         }
-    }
 
-    public class StreamsTable : Table
-    {
-        public StreamsTable(string schemaName) : base(new DbObjectName(schemaName, "mt_streams"))
+        internal string GetStreamIdType()
         {
-            AddPrimaryKey(new TableColumn("id", "uuid"));
-            AddColumn("type", "varchar(100)", "NULL");
-            AddColumn("version", "integer", "NOT NULL");
-            AddColumn("timestamp", "timestamptz", "default (now()) NOT NULL");
-            AddColumn("snapshot", "jsonb");
-            AddColumn("snapshot_version", "integer");
+            return StreamIdentity == StreamIdentity.AsGuid ? "uuid" : "varchar";
         }
-    }
 
-    public class EventsTable : Table
-    {
-        public EventsTable(string schemaName) : base(new DbObjectName(schemaName, "mt_events"))
+        private readonly ConcurrentDictionary<Type, string> _dotnetTypeNames = new ConcurrentDictionary<Type, string>();
+
+        internal string DotnetTypeNameFor(Type type)
         {
-            AddPrimaryKey(new TableColumn("seq_id", "bigint"));
-            AddColumn("id", "uuid", "NOT NULL");
-            AddColumn("stream_id", "uuid", $"REFERENCES {schemaName}.mt_streams ON DELETE CASCADE");
-            AddColumn("version", "integer", "NOT NULL");
-            AddColumn("data", "jsonb", "NOT NULL");
-            AddColumn("type", "varchar(100)", "NOT NULL");
-            AddColumn("timestamp", "timestamptz", "default (now()) NOT NULL");
-            
-            Constraints.Add("CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version)");
-            Constraints.Add("CONSTRAINT pk_mt_events_id_unique UNIQUE(id)");
+            if (!_dotnetTypeNames.ContainsKey(type))
+            {
+                _dotnetTypeNames[type] = $"{type.FullName}, {type.GetTypeInfo().Assembly.GetName().Name}";
+            }
+
+            return _dotnetTypeNames[type];
         }
-    }
 
-    public class EventProgressionTable : Table
-    {
-        public EventProgressionTable(string schemaName) : base(new DbObjectName(schemaName, "mt_event_progression"))
+        private readonly ConcurrentDictionary<string, Type> _nameToType = new ConcurrentDictionary<string, Type>();
+
+        internal Type TypeForDotNetName(string assemblyQualifiedName)
         {
-            AddPrimaryKey(new TableColumn("name", "varchar"));
-            AddColumn("last_seq_id", "bigint", "NULL");
+            if (!_nameToType.ContainsKey(assemblyQualifiedName))
+            {
+                _nameToType[assemblyQualifiedName] = Type.GetType(assemblyQualifiedName);
+            }
+
+            return _nameToType[assemblyQualifiedName];
         }
     }
 }

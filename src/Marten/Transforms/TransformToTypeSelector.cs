@@ -2,10 +2,12 @@ using System.Data.Common;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Transforms
 {
@@ -26,12 +28,10 @@ namespace Marten.Transforms
             return map.Serializer.FromJson<T>(json);
         }
 
-        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            var json = reader.GetTextReader(0);
-            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-            var document = map.Serializer.FromJson<T>(json);
-            return Task.FromResult(document);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
+            return map.Serializer.FromJson<T>(json);
         }
 
         public string[] SelectFields()

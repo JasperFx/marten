@@ -2,12 +2,9 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Marten.Storage;
-using Marten.Testing.Events;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Schema.Identity.Sequences
@@ -17,21 +14,15 @@ namespace Marten.Testing.Schema.Identity.Sequences
         public int Id;
     }
 
-    public class HiloSequenceTests
+    public class HiloSequenceTests : IntegratedFixture
     {
-        private readonly IContainer _container = Container.For<DevelopmentModeRegistry>();
 
         private readonly HiloSequence theSequence;
-        private Tenant theTenant;
+        private ITenant theTenant;
 
         public HiloSequenceTests()
         {
-            _container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
-
-            var storeOptions = new StoreOptions();
-
-            
-            theTenant = new Tenant(storeOptions.Storage, storeOptions, new ConnectionSource(), Tenancy.DefaultTenantId);
+            theTenant = theStore.Tenancy.Default;
 
             theSequence = theTenant.Sequences.SequenceFor(typeof(Foo)).As<HiloSequence>();
         }

@@ -3,7 +3,6 @@ using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Schema.Identity.Sequences

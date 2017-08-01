@@ -57,7 +57,7 @@ namespace Marten.Testing
 
         public override void Dispose()
         {
-            var schemaName = Advanced.Options.DatabaseSchemaName;
+            var schemaName = Options.DatabaseSchemaName;
 
             if (schemaName != StoreOptions.DefaultDatabaseSchemaName)
             {

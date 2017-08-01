@@ -40,8 +40,9 @@ Or have Marten use a Guid value that you provide yourself:
 
 <[sample:start-stream-with-existing-guid]>
 
-**At this point, Marten forces you to use `System.Guid` as the id type of both events or streams**
+For stream identity (strings vs. Guids), see <[linkto:documentation/events/identity]>.
 
+Note that `StartStream` checks for existing stream and throws `ExistingStreamIdCollisionException` in case stream already exists.
 
 ## Appending Events
 
@@ -56,3 +57,7 @@ event stream if and only if the maximum event id for the stream matches the expe
 and a `EventStreamUnexpectedMaxEventIdException` exception is thrown.
 
 <[sample:append-events-assert-on-eventid]> 
+
+### CreateStream vs. Append
+
+Both, `CreateStream` and `Append` can be used to start a new event stream. The difference with the methods is that `CreateStream` always checks for existing stream and throws `ExistingStreamIdCollisionException` in case stream already exists.

@@ -2,6 +2,7 @@
 
 [![Join the chat at https://gitter.im/JasperFx/Marten](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JasperFx/Marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/jasperfx/marten?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten)
+[![Linux Build status](https://api.travis-ci.org/JasperFx/marten.svg)](https://travis-ci.org/JasperFx/marten)
 [![Nuget Package](https://img.shields.io/nuget/v/Marten.svg?style=flat)](https://www.nuget.org/packages/Marten/)
 
 Hey, we're just getting started, but there'll be stuff here soon. Check the issue list as quasi-roadmap and feel free to jump into the Gitter room linked above.
@@ -48,4 +49,7 @@ you'll need to wrap the code you wish to insert with
 Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
 
 The content is kept in the main Marten GitHub repository, but the published documentation is done by running the `publish-docs.cmd` command and pushing the generated static HTML to the gh-pages branch of Marten.  
+
+
+
 

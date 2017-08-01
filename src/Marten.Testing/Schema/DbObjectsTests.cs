@@ -28,7 +28,7 @@ namespace Marten.Testing.Schema
 
             store2.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-            var indices = store2.Schema.DbObjects.AllIndexes();
+            var indices = store2.Tenancy.Default.DbObjects.AllIndexes();
 
             indices.Any(x => Equals(x.Table, store1.Storage.MappingFor(typeof(User)).ToQueryableDocument().Table))
                 .ShouldBeTrue();
@@ -50,7 +50,7 @@ namespace Marten.Testing.Schema
 
             var upsert = store1.Storage.MappingFor(typeof(User)).As<DocumentMapping>().UpsertFunction;
 
-            var functionBody = store1.Schema.DbObjects.DefinitionForFunction(upsert);
+            var functionBody = store1.Tenancy.Default.DbObjects.DefinitionForFunction(upsert);
 
             functionBody.Body.ShouldContain("mt_doc_user");
         }

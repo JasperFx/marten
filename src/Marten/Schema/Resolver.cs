@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Baseline;
 using FastExpressionCompiler;
 using Marten.Linq;
-using Marten.Schema.Arguments;
 using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Services.Deletes;
@@ -57,12 +56,12 @@ namespace Marten.Schema
 
             if (mapping.DeleteStyle == DeleteStyle.Remove)
             {
-                DeleteByIdSql = $"delete from {_mapping.Table.QualifiedName} where id = ?";
+                DeleteByIdSql = $"delete from {_mapping.Table.QualifiedName} as d where id = ?";
                 DeleteByWhereSql = $"delete from {_mapping.Table.QualifiedName} as d where ?";
             }
             else
             {
-                DeleteByIdSql = $"update {_mapping.Table.QualifiedName} set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where id = ?";
+                DeleteByIdSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where id = ?";
                 DeleteByWhereSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where ?";
             }
         }
@@ -122,8 +121,7 @@ namespace Marten.Schema
             if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false)) return null;
 
 
-            var json = reader.GetTextReader(startingIndex);
-            //var json = await reader.GetFieldValueAsync<string>(startingIndex, token).ConfigureAwait(false);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
 
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
@@ -132,41 +130,57 @@ namespace Marten.Schema
             return map.Get<T>(id, json, version);
         }
 
-        public T Resolve(IIdentityMap map, ILoader loader, object id)
+        public T Resolve(IIdentityMap map, IQuerySession session, object id)
         {
-            return map.Get(id, () => loader.LoadDocument<T>(id));
+            if (map.Has<T>(id)) return map.Retrieve<T>(id);
+
+            var cmd = LoaderCommand(id);
+            cmd.AddTenancy(session.Tenant);
+            cmd.Connection = session.Connection;
+            using (var reader = cmd.ExecuteReader())
+            {
+                return Fetch(id, reader, map);
+            }
         }
 
-        public Task<T> ResolveAsync(IIdentityMap map, ILoader loader, CancellationToken token, object id)
+        public async Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
         {
-            return map.GetAsync(id, async tk => await loader.LoadDocumentAsync<T>(id, tk).ConfigureAwait(false), token);
+            if (map.Has<T>(id)) return map.Retrieve<T>(id);
+
+            var cmd = LoaderCommand(id);
+            cmd.AddTenancy(session.Tenant);
+            cmd.Connection = session.Connection;
+
+            using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+            {
+                return await FetchAsync(id, reader, map, token).ConfigureAwait(false);
+            }
         }
 
-        public virtual FetchResult<T> Fetch(DbDataReader reader, ISerializer serializer)
+
+
+        public virtual T Fetch(object id, DbDataReader reader, IIdentityMap map)
         {
             var found = reader.Read();
             if (!found) return null;
 
             var json = reader.GetTextReader(0);
-            var doc = serializer.FromJson<T>(json);
 
             var version = reader.GetFieldValue<Guid>(2);
 
-            return new FetchResult<T>(doc, json, version);
+            return map.Get<T>(id, json, version);
         }
 
-        public virtual async Task<FetchResult<T>> FetchAsync(DbDataReader reader, ISerializer serializer, CancellationToken token)
+        public virtual async Task<T> FetchAsync(object id, DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             var found = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!found) return null;
 
-            var json = reader.GetTextReader(0);
-            //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-            var doc = serializer.FromJson<T>(json);
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
 
             var version = await reader.GetFieldValueAsync<Guid>(2, token).ConfigureAwait(false);
 
-            return new FetchResult<T>(doc, json, version);
+            return map.Get<T>(id, json, version);
         }
 
 
@@ -187,32 +201,67 @@ namespace Marten.Schema
             return _identity((T) document);
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity)
+        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity)
         {
             var json = batch.Serializer.ToJson(entity);
-            RegisterUpdate(batch, entity, json);
+            RegisterUpdate(tenantIdOverride, updateStyle, batch, entity, json);
         }
 
-        public void RegisterUpdate(UpdateBatch batch, object entity, string json)
+        private DbObjectName determineDbObjectName(UpdateStyle updateStyle, UpdateBatch batch)
+        {
+            switch (updateStyle)
+            {
+                case UpdateStyle.Upsert:
+                    if (_mapping.UseOptimisticConcurrency && batch.Concurrency == ConcurrencyChecks.Disabled)
+                    {
+                        return _mapping.OverwriteFunction;
+                    }
+
+                    return _mapping.UpsertFunction;
+
+                case UpdateStyle.Insert:
+                    return _mapping.InsertFunction;
+                    case UpdateStyle.Update:
+                        return _mapping.UpdateFunction;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
         {
             var newVersion = CombGuidIdGeneration.NewGuid();
             var currentVersion = batch.Versions.Version<T>(Identity(entity));
 
             ICallback callback = null;
-            if (_mapping.UseOptimisticConcurrency)
+            IExceptionTransform exceptionTransform = null;
+            var sprocName = determineDbObjectName(updateStyle, batch);
+
+            var tenantId = tenantIdOverride ?? batch.TenantId;
+
+            if (_mapping.UseOptimisticConcurrency && batch.Concurrency == ConcurrencyChecks.Enabled)
             {
-                callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions, newVersion, currentVersion);
+                callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions, newVersion,
+                    currentVersion);
+            }
+
+            if (!_mapping.UseOptimisticConcurrency && updateStyle == UpdateStyle.Update)
+            {                
+                callback = new UpdateDocumentCallback<T>(Identity(entity));
+            }
+
+            if (updateStyle == UpdateStyle.Insert)
+            {
+                exceptionTransform = new InsertExceptionTransform<T>(Identity(entity), _mapping.Table.Name);
             }
 
 
-            var call = batch.Sproc(_upsertName, callback);
+            var call = batch.Sproc(sprocName, callback, exceptionTransform);
 
-            
-
-            _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion, batch.TenantId);
+            _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion, tenantId);
         }
 
-    
 
         public void Remove(IIdentityMap map, object entity)
         {

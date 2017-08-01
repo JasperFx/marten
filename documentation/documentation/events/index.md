@@ -21,5 +21,4 @@ Now, let's say that we're starting a new "quest" with the first couple events, t
 
 <[sample:event-store-quickstart]>
 
-
-
+In addition to generic `StartStream<T>`, `IEventStore` has non-generic `StartStream` overload to create streams without associating them with aggregate type (stored in `mt_streams` table).

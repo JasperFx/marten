@@ -7,18 +7,13 @@ using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Events
 {
-    public class UnknownEventTypeException : Exception
-    {
-        public UnknownEventTypeException(string eventTypeName) : base($"Unknown event type name alias '{eventTypeName}.' You may need to register this event type through StoreOptions.Events.AddEventType(type)")
-        {
-        }
-    }
-
-    internal class EventSelector : ISelector<IEvent>
+    internal class EventSelector : IEventSelector
     {
         public EventGraph Events { get; }
         private readonly ISerializer _serializer;
@@ -41,7 +36,14 @@ namespace Marten.Events
 
             if (mapping == null)
             {
-                throw new UnknownEventTypeException(eventTypeName);
+                var dotnetTypeName = reader.GetFieldValue<string>(8);
+                if (dotnetTypeName.IsEmpty())
+                {
+                    throw new UnknownEventTypeException(eventTypeName);
+                }
+
+                var type = Events.TypeForDotNetName(dotnetTypeName);
+                mapping = Events.EventMappingFor(type);
             }
 
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
@@ -49,6 +51,7 @@ namespace Marten.Events
             var sequence = reader.GetFieldValue<long>(4);
             var stream = reader.GetFieldValue<Guid>(5);
             var timestamp = reader.GetFieldValue<DateTimeOffset>(6);
+            var tenantId = reader.GetFieldValue<string>(7);
 
             var @event = EventStream.ToEvent(data);
             @event.Version = version;
@@ -56,6 +59,7 @@ namespace Marten.Events
             @event.Sequence = sequence;
             @event.StreamId = stream;
             @event.Timestamp = timestamp;
+            @event.TenantId = tenantId;
 
 
             return @event;
@@ -66,14 +70,20 @@ namespace Marten.Events
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var eventTypeName = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(2, token).ConfigureAwait(false);
-            var dataJson = reader.GetTextReader(3);
-            //var dataJson = await reader.GetFieldValueAsync<string>(3, token).ConfigureAwait(false);
+            var dataJson = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(3).ConfigureAwait(false);
 
             var mapping = Events.EventMappingFor(eventTypeName);
 
             if (mapping == null)
             {
-                throw new UnknownEventTypeException(eventTypeName);
+                var dotnetTypeName = await reader.GetFieldValueAsync<string>(8, token).ConfigureAwait(false);
+                if (dotnetTypeName.IsEmpty())
+                {
+                    throw new UnknownEventTypeException(eventTypeName);
+                }
+
+                var type = Events.TypeForDotNetName(dotnetTypeName);
+                mapping = Events.EventMappingFor(type);
             }
 
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
@@ -81,6 +91,7 @@ namespace Marten.Events
             var sequence = await reader.GetFieldValueAsync<long>(4, token).ConfigureAwait(false);
             var stream = await reader.GetFieldValueAsync<Guid>(5, token).ConfigureAwait(false);
             var timestamp = await reader.GetFieldValueAsync<DateTimeOffset>(6, token).ConfigureAwait(false);
+            var tenantId = await reader.GetFieldValueAsync<string>(7, token).ConfigureAwait(false);
 
             var @event = EventStream.ToEvent(data);
             @event.Version = version;
@@ -88,18 +99,19 @@ namespace Marten.Events
             @event.Sequence = sequence;
             @event.StreamId = stream;
             @event.Timestamp = timestamp;
+            @event.TenantId = tenantId;
 
             return @event;
         }
 
         public string[] SelectFields()
         {
-            return new[] {"id", "type", "version", "data", "seq_id", "stream_id", "timestamp"};
+            return new[] {"id", "type", "version", "data", "seq_id", "stream_id", "timestamp", TenantIdColumn.Name, DocumentMapping.DotNetTypeColumn};
         }
 
         public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
         {
-            sql.Append("select id, type, version, data, seq_id, stream_id, timestamp from ");
+            sql.Append($"select id, type, version, data, seq_id, stream_id, timestamp, tenant_id, {DocumentMapping.DotNetTypeColumn} from ");
             sql.Append(Events.DatabaseSchemaName);
             sql.Append(".mt_events as d");
         }

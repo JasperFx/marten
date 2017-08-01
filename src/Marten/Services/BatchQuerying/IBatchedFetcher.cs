@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -34,7 +34,7 @@ namespace Marten.Services.BatchQuerying
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         Task<bool> Any(Expression<Func<T, bool>> filter);
-        Task<IList<T>> ToList();
+        Task<IReadOnlyList<T>> ToList();
         Task<T> First();
 
         /// <summary>

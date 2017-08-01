@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -11,7 +12,23 @@ namespace Marten.Storage
         public DocumentTable(DocumentMapping mapping) : base(mapping.Table)
         {
             var pgIdType = TypeMappings.GetPgType(mapping.IdMember.GetMemberType());
-            AddPrimaryKey(new TableColumn("id", pgIdType));
+            var pgTextType = TypeMappings.GetPgType(string.Empty.GetType());
+
+            var idColumn = new TableColumn("id", pgIdType);
+            if (mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                AddPrimaryKeys(new List<TableColumn>
+                {
+                    idColumn,
+                    new TenantIdColumn()
+                });
+
+                Indexes.Add(new IndexDefinition(mapping, TenantIdColumn.Name));
+            }
+            else
+            {
+                AddPrimaryKey(idColumn);
+            }
 
             AddColumn("data", "jsonb", "NOT NULL");
 
@@ -36,11 +53,6 @@ namespace Marten.Storage
                 AddColumn<DeletedAtColumn>();
             }
 
-            if (mapping.TenancyStyle == TenancyStyle.Conjoined)
-            {
-                AddColumn<TenantIdColumn>();
-                Indexes.Add(new IndexDefinition(mapping, TenantIdColumn.Name));
-            }
 
             Indexes.AddRange(mapping.Indexes);
             ForeignKeys.AddRange(mapping.ForeignKeys);
@@ -95,7 +107,7 @@ namespace Marten.Storage
 
     public class TenantIdColumn : SystemColumn
     {
-        public static readonly string Name = "tenant_id";
+        public new static readonly string Name = "tenant_id";
 
         public TenantIdColumn() : base(Name, "varchar")
         {

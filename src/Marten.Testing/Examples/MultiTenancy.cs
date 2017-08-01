@@ -10,15 +10,20 @@ public void use_multiple_tenants()
 {
     // Set up a basic DocumentStore with multi-tenancy
     // via a tenant_id column
-    var store = DocumentStore.For(_ =>
+    var store = DocumentStore.For(storeOptions =>
     {
         // This sets up the DocumentStore to be multi-tenanted
         // by a tenantid column
-        _.Connection(ConnectionSource.ConnectionString);
+        storeOptions.Connection(ConnectionSource.ConnectionString);
 
-        _.Policies.AllDocumentsAreMultiTenanted();
+        // SAMPLE: tenancy-configure-through-policy
+        storeOptions.Policies.AllDocumentsAreMultiTenanted();
+        // Shorthand for
+        // storeOptions.Policies.ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
+        // ENDSAMPLE
     });
 
+    // SAMPLE: tenancy-scoping-session-write
     // Write some User documents to tenant "tenant1"
     using (var session = store.OpenSession("tenant1"))
     {
@@ -26,6 +31,7 @@ public void use_multiple_tenants()
         session.Store(new User{UserName = "Lindsey"});
         session.SaveChanges();
     }
+    // ENDSAMPLE
 
     // Write some User documents to tenant "tenant2"
     using (var session = store.OpenSession("tenant2"))
@@ -35,6 +41,7 @@ public void use_multiple_tenants()
         session.SaveChanges();
     }
 
+    // SAMPLE: tenancy-scoping-session-read
     // When you query for data from the "tenant1" tenant,
     // you only get data for that tenant
     using (var query = store.QuerySession("tenant1"))
@@ -44,6 +51,7 @@ public void use_multiple_tenants()
             .ToList()
             .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
     }
+    // ENDSAMPLE
 
     using (var query = store.QuerySession("tenant2"))
     {

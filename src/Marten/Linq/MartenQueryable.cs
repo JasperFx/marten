@@ -119,9 +119,9 @@ namespace Marten.Linq
             return this;
         }
 
-        public Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token)
+        public Task<IReadOnlyList<TResult>> ToListAsync<TResult>(CancellationToken token)
         {
-            return executeAsync(q => q.ToList().As<IQueryHandler<IList<TResult>>>(), token);
+            return executeAsync(q => q.ToList().As<IQueryHandler<IReadOnlyList<TResult>>>(), token);
         }
 
         public Task<bool> AnyAsync(CancellationToken token)

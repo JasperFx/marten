@@ -23,6 +23,9 @@ namespace Marten.Schema
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
         public const string UpsertPrefix = "mt_upsert_";
+        public const string InsertPrefix = "mt_insert_";
+        public const string UpdatePrefix = "mt_update_";
+        public const string OverwritePrefix = "mt_overwrite_";
         public const string DocumentTypeColumn = "mt_doc_type";
         public const string MartenPrefix = "mt_";
         public const string LastModifiedColumn = "mt_last_modified";
@@ -79,6 +82,11 @@ namespace Marten.Schema
         public IEnumerable<SubClassMapping> SubClasses => _subClasses;
 
         public DbObjectName UpsertFunction => new DbObjectName(DatabaseSchemaName, $"{UpsertPrefix}{_alias}");
+        public DbObjectName InsertFunction => new DbObjectName(DatabaseSchemaName, $"{InsertPrefix}{_alias}");
+        public DbObjectName UpdateFunction => new DbObjectName(DatabaseSchemaName, $"{UpdatePrefix}{_alias}");
+        public DbObjectName OverwriteFunction => new DbObjectName(DatabaseSchemaName, $"{OverwritePrefix}{_alias}");
+
+
 
         public string DatabaseSchemaName
         {
@@ -170,13 +178,14 @@ namespace Marten.Schema
             factory.RunSql(sql);
         }
 
+        // TODO -- see if you can eliminate the tenant argument here
         public IdAssignment<T> ToIdAssignment<T>(ITenant tenant)
         {
             var idType = IdMember.GetMemberType();
 
             var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
 
-            return (IdAssignment<T>) Activator.CreateInstance(assignerType, IdMember, IdStrategy, tenant);
+            return (IdAssignment<T>) Activator.CreateInstance(assignerType, IdMember, IdStrategy);
         }
 
         public IQueryableDocument ToQueryableDocument()
@@ -542,11 +551,20 @@ namespace Marten.Schema
 
         bool IFeatureSchema.IsActive(StoreOptions options) => true;
 
-        ISchemaObject[] IFeatureSchema.Objects => new ISchemaObject[]
+        ISchemaObject[] IFeatureSchema.Objects => toSchemaObjects().ToArray();
+
+        private IEnumerable<ISchemaObject> toSchemaObjects()
         {
-            new DocumentTable(this),
-            new UpsertFunction(this),  
-        };
+            yield return new DocumentTable(this);
+            yield return new UpsertFunction(this);
+            yield return new InsertFunction(this);
+            yield return new UpdateFunction(this);
+
+            if (UseOptimisticConcurrency)
+            {
+                yield return new OverwriteFunction(this);
+            }
+        }
 
         Type IFeatureSchema.StorageType => DocumentType;
         public string Identifier => Alias.ToLowerInvariant();

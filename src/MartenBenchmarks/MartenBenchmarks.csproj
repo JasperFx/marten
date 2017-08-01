@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.10.2" />
-    <PackageReference Include="System.Data.Common" Version="4.1.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">

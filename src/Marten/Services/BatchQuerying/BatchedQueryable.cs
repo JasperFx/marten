@@ -104,9 +104,9 @@ namespace Marten.Services.BatchQuerying
             return _parent.Any(_inner.Where(filter).As<IMartenQueryable<T>>());
         }
 
-        public Task<IList<T>> ToList()
+        public Task<IReadOnlyList<T>> ToList()
         {
-            return _parent.Query<T>(_inner);
+            return _parent.Query(_inner);
         }
 
         public Task<T> First()

@@ -1,5 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Shouldly;
+using StructureMap.Building;
 using Xunit;
 
 namespace Marten.Testing.MultiTenancy
@@ -44,7 +46,12 @@ namespace Marten.Testing.MultiTenancy
 
                 found.Any(x => _greens.Any(t => t.Id == x.Id)).ShouldBeFalse();
 
-                (await groupOfReds).Select(x => x.Id).ShouldHaveTheSameElementsAs(_reds[0].Id, _reds[1].Id);
+                var reds = await groupOfReds;
+
+                reds.Count.ShouldBe(2);
+                reds.Any(x => x.Id == _reds[0].Id).ShouldBeTrue();
+                reds.Any(x => x.Id == _reds[1].Id).ShouldBeTrue();
+
             }
         }
     }

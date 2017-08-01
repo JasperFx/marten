@@ -42,8 +42,13 @@ namespace Marten.Testing.Acceptance
 
         [Fact]
         public void can_override_the_identity_member_with_the_fluent_interface()
-        {
-            StoreOptions(_ => _.Schema.For<OverriddenIdDoc>().Identity(x => x.Name));
+        {            
+            StoreOptions(storeOptions =>
+            {
+                // SAMPLE: sample-override-id-fluent-interance
+                storeOptions.Schema.For<OverriddenIdDoc>().Identity(x => x.Name);
+                // ENDSAMPLE
+            });
 
             var mapping = theStore.Tenancy.Default.MappingFor(typeof(OverriddenIdDoc)).As<DocumentMapping>();
             mapping.IdType.ShouldBe(typeof(string));

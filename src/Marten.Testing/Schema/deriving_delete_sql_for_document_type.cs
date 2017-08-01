@@ -15,7 +15,7 @@ namespace Marten.Testing.Schema
 
             var resolver = new DocumentStorage<User>(new TestsSerializer(), mapping);
 
-            resolver.DeleteByIdSql.ShouldBe("delete from public.mt_doc_user where id = ?");
+            resolver.DeleteByIdSql.ShouldBe("delete from public.mt_doc_user as d where id = ?");
         }
 
         [Fact]
@@ -26,7 +26,7 @@ namespace Marten.Testing.Schema
 
             var resolver = new DocumentStorage<User>(new TestsSerializer(), mapping);
 
-            resolver.DeleteByIdSql.ShouldBe("update public.mt_doc_user set mt_deleted = True, mt_deleted_at = now() where id = ?");
+            resolver.DeleteByIdSql.ShouldBe("update public.mt_doc_user as d set mt_deleted = True, mt_deleted_at = now() where id = ?");
         }
 
         [Fact]

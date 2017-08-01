@@ -19,7 +19,7 @@ namespace Marten.Testing.Storage
             table.RemoveColumn(DocumentMapping.VersionColumn);
 
             var writer = new StringWriter();
-            table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
+            table.Write(theStore.Schema.DdlRules, writer);
 
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
@@ -32,7 +32,7 @@ namespace Marten.Testing.Storage
             theStore.Tenancy.Default.ResetSchemaExistenceChecks();
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-            var actual = theStore.Schema.DbObjects.ExistingTableFor(typeof(User));
+            var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
             actual.HasColumn(DocumentMapping.VersionColumn).ShouldBeTrue();
         }
@@ -45,7 +45,7 @@ namespace Marten.Testing.Storage
             table.RemoveColumn(DocumentMapping.DotNetTypeColumn);
 
             var writer = new StringWriter();
-            table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
+            table.Write(theStore.Schema.DdlRules, writer);
 
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
@@ -60,7 +60,7 @@ namespace Marten.Testing.Storage
 
 
 
-            var actual = theStore.Schema.DbObjects.ExistingTableFor(typeof(User));
+            var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
             actual.HasColumn(DocumentMapping.DotNetTypeColumn).ShouldBeTrue();
         }
@@ -73,7 +73,7 @@ namespace Marten.Testing.Storage
             table.RemoveColumn(DocumentMapping.LastModifiedColumn);
 
             var writer = new StringWriter();
-            table.Write(theStore.Schema.StoreOptions.DdlRules, writer);
+            table.Write(theStore.Schema.DdlRules, writer);
 
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
@@ -86,7 +86,7 @@ namespace Marten.Testing.Storage
             theStore.Tenancy.Default.ResetSchemaExistenceChecks();
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-            var actual = theStore.Schema.DbObjects.ExistingTableFor(typeof(User));
+            var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
             actual.HasColumn(DocumentMapping.LastModifiedColumn).ShouldBeTrue();
 
