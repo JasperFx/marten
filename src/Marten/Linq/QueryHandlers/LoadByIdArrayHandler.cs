@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers
@@ -46,6 +47,11 @@ namespace Marten.Linq.QueryHandlers
             var parameter = sql.AddParameter(_ids);
             sql.Append(parameter.ParameterName);
             sql.Append(")");
+
+            if (storage.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                sql.Append($" and {TenantWhereFragment.Filter}");
+            }
 
         }
 

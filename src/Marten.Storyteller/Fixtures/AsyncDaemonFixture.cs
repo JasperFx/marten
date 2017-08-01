@@ -20,9 +20,6 @@ namespace Marten.Storyteller.Fixtures
         private Lazy<DocumentStore> _store;
         private Lazy<IDaemon> _daemon;
 
-        
-
-
         public override void SetUp()
         {
             _options = new StoreOptions();
@@ -33,7 +30,7 @@ namespace Marten.Storyteller.Fixtures
 
             _settings = new DaemonSettings();
 
-            helper = Context.State.Retrieve<Lazy<AsyncDaemonTestHelper>>().Value;
+            helper = Context.State.Retrieve<AsyncDaemonTestHelper>();
 
             _store = new Lazy<DocumentStore>(() =>
             {

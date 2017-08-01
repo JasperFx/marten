@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
+using Marten.Storage;
 using Npgsql;
 
 namespace Marten.Services
@@ -16,8 +17,9 @@ namespace Marten.Services
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private readonly List<CharArrayTextWriter> _writers = new List<CharArrayTextWriter>();
         private readonly DocumentStore _store;
+        private ITenant _tenant;
 
-        public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool)
+        public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, CharArrayTextWriter.IPool writerPool, ITenant tenant)
         {
             if (versions == null) throw new ArgumentNullException(nameof(versions));
 
@@ -25,8 +27,10 @@ namespace Marten.Services
             _writerPool = writerPool;
             Versions = versions;
 
-            _commands.Push(new BatchCommand(_store.Serializer));
+            _commands.Push(new BatchCommand(_store.Serializer, tenant));
             Connection = connection;
+            TenantId = tenant.TenantId;
+            _tenant = tenant;
         }
 
         public ISerializer Serializer => _store.Serializer;
@@ -52,7 +56,7 @@ namespace Marten.Services
             return _lock.MaybeWrite(
                 () => _commands.Peek(),
                 () => _commands.Peek().Count >= _store.Options.UpdateBatchSize,
-                () => _commands.Push(new BatchCommand(Serializer))
+                () => _commands.Push(new BatchCommand(Serializer, _tenant))
             );
         }
 
@@ -196,5 +200,6 @@ namespace Marten.Services
         }
 
         public bool UseCharBufferPooling => _store.Options.UseCharBufferPooling;
+        public string TenantId { get; }
     }
 }

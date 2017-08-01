@@ -32,13 +32,21 @@ namespace Marten.Storage
                 {DocumentMapping.LastModifiedColumn, fieldIndex++},
                 {DocumentMapping.DotNetTypeColumn, fieldIndex++}
             };
+
+
+
             var queryableDocument = _mapping.ToQueryableDocument();
-            if (Enumerable.Contains(queryableDocument.SelectFields(), DocumentMapping.DocumentTypeColumn))
+            if (queryableDocument.SelectFields().Contains(DocumentMapping.DocumentTypeColumn))
                 _fields.Add(DocumentMapping.DocumentTypeColumn, fieldIndex++);
             if (queryableDocument.DeleteStyle == DeleteStyle.SoftDelete)
             {
                 _fields.Add(DocumentMapping.DeletedColumn, fieldIndex++);
-                _fields.Add(DocumentMapping.DeletedAtColumn, fieldIndex);
+                _fields.Add(DocumentMapping.DeletedAtColumn, fieldIndex++);
+            }
+
+            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                _fields.Add(TenantIdColumn.Name, fieldIndex);
             }
         }
 
@@ -46,7 +54,7 @@ namespace Marten.Storage
         {
             sql.Append("select ");
 
-            var fields = Enumerable.OrderBy<KeyValuePair<string, int>, int>(_fields, kv => kv.Value).Select(kv => kv.Key).ToArray();
+            var fields = _fields.OrderBy(kv => kv.Value).Select(kv => kv.Key).ToArray();
 
             sql.Append(fields[0]);
             for (var i = 1; i < fields.Length; i++)
@@ -74,8 +82,12 @@ namespace Marten.Storage
             var docType = GetOptionalFieldValue<string>(reader, DocumentMapping.DocumentTypeColumn);
             var deleted = GetOptionalFieldValue<bool>(reader, DocumentMapping.DeletedColumn);
             var deletedAt = GetOptionalFieldValue<DateTime>(reader, DocumentMapping.DeletedAtColumn, null);
+            var tenantId = GetOptionalFieldValue<string>(reader, TenantIdColumn.Name);
 
-            return new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt);
+            var metadata = new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt);
+            metadata.TenantId = tenantId ?? Tenancy.DefaultTenantId;
+
+            return metadata;
         }
 
         public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats,
@@ -95,7 +107,16 @@ namespace Marten.Storage
                 await GetOptionalFieldValueAsync<DateTime>(reader, DocumentMapping.DeletedAtColumn, null, token)
                     .ConfigureAwait(false);
 
-            return new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt);
+
+
+            var metadata = new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt);
+            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                metadata.TenantId = await GetOptionalFieldValueAsync<string>(reader, TenantIdColumn.Name, token)
+                    .ConfigureAwait(false);
+            }
+
+            return metadata;
         }
 
         private T GetOptionalFieldValue<T>(DbDataReader reader, string fieldName)

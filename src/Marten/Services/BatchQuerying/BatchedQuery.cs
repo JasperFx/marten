@@ -61,7 +61,7 @@ namespace Marten.Services.BatchQuerying
 
         private NpgsqlCommand buildCommand()
         {
-            return CommandBuilder.ToBatchCommand(_items.Select(x => x.Handler));
+            return CommandBuilder.ToBatchCommand(_parent.Tenant, _items.Select(x => x.Handler));
         }
 
         public async Task Execute(CancellationToken token = default(CancellationToken))

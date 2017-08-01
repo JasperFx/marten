@@ -5,6 +5,7 @@ using System.Text;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -20,11 +21,13 @@ namespace Marten.Services
 
     public class BatchCommand : IBatchCommand
     {
+        private readonly ITenant _tenant;
         public ISerializer Serializer { get; }
         private int _counter = 0;
 
-        public BatchCommand(ISerializer serializer)
+        public BatchCommand(ISerializer serializer, ITenant tenant)
         {
+            _tenant = tenant;
             Serializer = serializer;
         }
 
@@ -47,7 +50,7 @@ namespace Marten.Services
 
         public NpgsqlCommand BuildCommand()
         {
-            return CommandBuilder.ToBatchCommand(Calls);
+            return CommandBuilder.ToBatchCommand(_tenant, Calls);
         }
 
         public void AddCall(IStorageOperation call, ICallback callback = null)

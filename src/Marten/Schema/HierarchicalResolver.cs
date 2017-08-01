@@ -10,8 +10,8 @@ namespace Marten.Schema
     {
         private readonly DocumentMapping _hierarchy;
 
-        public HierarchicalDocumentStorage(ISerializer serializer, DocumentMapping hierarchy, bool useCharBufferPooling)
-            : base(serializer, hierarchy, useCharBufferPooling)
+        public HierarchicalDocumentStorage(ISerializer serializer, DocumentMapping hierarchy)
+            : base(serializer, hierarchy)
         {
             _hierarchy = hierarchy;
         }

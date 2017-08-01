@@ -48,8 +48,6 @@ namespace Marten
 
         private string _databaseSchemaName = DefaultDatabaseSchemaName;
 
-        [Obsolete("Get rid of this")]
-        private IConnectionFactory _factory;
         private IMartenLogger _logger = new NulloMartenLogger();
         private ISerializer _serializer;
 
@@ -63,7 +61,7 @@ namespace Marten
         public StoreOptions()
         {
             Events = new EventGraph(this);
-            Schema = new MartenRegistry(this);
+            Schema = new MartenRegistry();
             Transforms = new Transforms.Transforms(this);
             Storage = new StorageFeatures(this);
         }
@@ -129,10 +127,13 @@ namespace Marten
 
         internal void CreatePatching()
         {
-            var patching = new TransformFunction(this, PatchDoc, SchemaBuilder.GetJavascript(this, "mt_patching"));
-            patching.OtherArgs.Add("patch");
+            if (PLV8Enabled)
+            {
+                var patching = new TransformFunction(this, PatchDoc, SchemaBuilder.GetJavascript(this, "mt_patching"));
+                patching.OtherArgs.Add("patch");
 
-            Transforms.Load(patching);
+                Transforms.Load(patching);
+            }
         }
 
         internal ChildDocument GetChildDocument(string locator, Type documentType)
@@ -148,7 +149,7 @@ namespace Marten
         /// <param name="connectionString"></param>
         public void Connection(string connectionString)
         {
-            Tenancy = new SingleTenant(new ConnectionFactory(connectionString), this);
+            Tenancy = new DefaultTenancy(new ConnectionFactory(connectionString), this);
         }
 
         /// <summary>
@@ -157,7 +158,7 @@ namespace Marten
         /// <param name="connectionSource"></param>
         public void Connection(Func<string> connectionSource)
         {
-            Tenancy = new SingleTenant(new ConnectionFactory(connectionSource), this);
+            Tenancy = new DefaultTenancy(new ConnectionFactory(connectionSource), this);
         }
 
         /// <summary>
@@ -167,7 +168,7 @@ namespace Marten
         /// <param name="source"></param>
         public void Connection(Func<NpgsqlConnection> source)
         {
-            Tenancy = new SingleTenant(new LambdaConnectionFactory(source), this);
+            Tenancy = new DefaultTenancy(new LambdaConnectionFactory(source), this);
         }
 
         /// <summary>
@@ -252,6 +253,85 @@ namespace Marten
             throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
         }
 
-        internal ITenancy Tenancy { get; private set; }
+
+        internal void ApplyConfiguration()
+        {
+            Schema.Apply(this);
+
+            foreach (var mapping in Storage.AllDocumentMappings)
+            {
+                mapping.Validate();
+            }
+		}
+
+        public ITenancy Tenancy { get; set; }
+
+        private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>();
+
+        internal void applyPolicies(DocumentMapping mapping)
+        {
+            foreach (var policy in _policies)
+            {
+                policy.Apply(mapping);
+            }
+        }
+
+        /// <summary>
+        /// Apply conventional policies to how documents are mapped
+        /// </summary>
+        public PoliciesExpression Policies => new PoliciesExpression(this);
+
+        public bool PLV8Enabled { get; set; } = true;
+
+        public class PoliciesExpression
+        {
+            private readonly StoreOptions _parent;
+
+            public PoliciesExpression(StoreOptions parent)
+            {
+                _parent = parent;
+            }
+
+            public PoliciesExpression OnDocuments<T>() where T : IDocumentPolicy, new()
+            {
+                return OnDocuments(new T());
+            }
+
+            public PoliciesExpression OnDocuments(IDocumentPolicy policy) 
+            {
+                _parent._policies.Add(policy);
+                return this;
+            }
+
+            public PoliciesExpression ForAllDocuments(Action<DocumentMapping> configure)
+            {
+                return OnDocuments(new LambdaDocumentPolicy(configure));
+            }
+
+            public PoliciesExpression AllDocumentsAreMultiTenanted()
+            {
+                return ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
+            }
+        }
+    }
+
+    public interface IDocumentPolicy
+    {
+        void Apply(DocumentMapping mapping);
+    }
+
+    internal class LambdaDocumentPolicy : IDocumentPolicy
+    {
+        private readonly Action<DocumentMapping> _modify;
+
+        public LambdaDocumentPolicy(Action<DocumentMapping> modify)
+        {
+            _modify = modify;
+        }
+
+        public void Apply(DocumentMapping mapping)
+        {
+            _modify(mapping);
+        }
     }
 }

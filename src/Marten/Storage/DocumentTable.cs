@@ -32,7 +32,14 @@ namespace Marten.Storage
             if (mapping.DeleteStyle == DeleteStyle.SoftDelete)
             {
                 AddColumn<DeletedColumn>();
+                Indexes.Add(new IndexDefinition(mapping, DocumentMapping.DeletedColumn));
                 AddColumn<DeletedAtColumn>();
+            }
+
+            if (mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                AddColumn<TenantIdColumn>();
+                Indexes.Add(new IndexDefinition(mapping, TenantIdColumn.Name));
             }
 
             Indexes.AddRange(mapping.Indexes);
@@ -86,13 +93,24 @@ namespace Marten.Storage
         }
     }
 
+    public class TenantIdColumn : SystemColumn
+    {
+        public static readonly string Name = "tenant_id";
+
+        public TenantIdColumn() : base(Name, "varchar")
+        {
+            CanAdd = true;
+            Directive = $"DEFAULT '{Tenancy.DefaultTenantId}'";
+        }
+    }
+
     public class DeletedColumn : SystemColumn
     {
         public DeletedColumn() : base(DocumentMapping.DeletedColumn, "boolean")
         {
             Directive = "DEFAULT FALSE";
             CanAdd = true;
-        }
+		}
     }
 
     public class DeletedAtColumn : SystemColumn
@@ -110,6 +128,7 @@ namespace Marten.Storage
         {
             CanAdd = true;
             Directive = $"DEFAULT '{mapping.AliasFor(mapping.DocumentType)}'";
+			      mapping.AddIndex(DocumentMapping.DocumentTypeColumn);
         }
     }
 

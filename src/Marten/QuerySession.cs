@@ -7,9 +7,11 @@ using Baseline;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
+using Marten.Schema.Arguments;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Marten.Storage;
+using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Parsing.Structure;
 
@@ -60,7 +62,7 @@ namespace Marten
             assertNotDisposed();
 
             var handler = new UserSuppliedQueryHandler<T>(_store, sql, parameters);
-            return _connection.Fetch(handler, _identityMap.ForQuery(), null);
+            return _connection.Fetch(handler, _identityMap.ForQuery(), null, Tenant);
         }
 
         public Task<IList<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
@@ -68,7 +70,7 @@ namespace Marten
             assertNotDisposed();
 
             var handler = new UserSuppliedQueryHandler<T>(_store, sql, parameters);
-            return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, token);
+            return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, Tenant, token);
         }
 
         public IBatchedQuery CreateBatchQuery()
@@ -90,6 +92,8 @@ namespace Marten
             var resolver = storage.As<IDocumentStorage<T>>();
 
             var cmd = storage.LoaderCommand(id);
+            cmd.AddTenancy(Tenant);
+
             return _connection.Execute(cmd, c =>
             {
                 using (var reader = cmd.ExecuteReader())
@@ -107,6 +111,7 @@ namespace Marten
             var resolver = storage.As<IDocumentStorage<T>>();
 
             var cmd = storage.LoaderCommand(id);
+            cmd.AddTenancy(Tenant);
 
             return _connection.ExecuteAsync(cmd, async (c, tkn) =>
             {
@@ -140,10 +145,7 @@ namespace Marten
 
             assertCorrectIdType<T>(id);
 
-            var resolver = storage<T>().As<IDocumentStorage<T>>();
-
-            
-            return resolver.Resolve(_identityMap, this, id);
+            return storage<T>().Resolve(_identityMap, this, id);
         }
 
         private void assertCorrectIdType<T>(object id)
@@ -315,6 +317,8 @@ namespace Marten
                 var storage = _parent.Tenant.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IDocumentStorage<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
+                cmd.AddTenancy(_parent.Tenant);
+                
 
                 var list = new List<TDoc>();
 
@@ -338,6 +342,7 @@ namespace Marten
                 var storage = _parent.Tenant.StorageFor(typeof(TDoc));
                 var resolver = storage.As<IDocumentStorage<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
+                cmd.AddTenancy(_parent.Tenant);
 
                 var list = new List<TDoc>();
 
@@ -363,7 +368,7 @@ namespace Marten
 
             QueryStatistics stats;
             var handler = _store.HandlerFactory.HandlerFor(query, out stats);
-            return _connection.Fetch(handler, _identityMap.ForQuery(), stats);
+            return _connection.Fetch(handler, _identityMap.ForQuery(), stats, Tenant);
         }
 
         public Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
@@ -373,7 +378,7 @@ namespace Marten
 
             QueryStatistics stats;
             var handler = _store.HandlerFactory.HandlerFor(query, out stats);
-            return _connection.FetchAsync(handler, _identityMap.ForQuery(), stats, token);
+            return _connection.FetchAsync(handler, _identityMap.ForQuery(), stats, Tenant, token);
         }
 
         public NpgsqlConnection Connection

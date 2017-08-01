@@ -5,7 +5,6 @@ using System.Reflection;
 using Baseline;
 using Marten.Schema;
 using Marten.Util;
-using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Linq.Parsing

@@ -42,6 +42,7 @@ namespace Marten.Events
         public string Alias { get; }
         public MemberInfo IdMember { get; }
         public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
+        public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
 
         Type IDocumentMapping.IdType => typeof(Guid);
 
@@ -116,19 +117,12 @@ namespace Marten.Events
             return this;
         }
 
+        // TODO -- will change later
+        public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
+
         public NpgsqlCommand LoaderCommand(object id)
         {
             return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = :id and type = '{Alias}'").With("id", id);
-        }
-
-        public NpgsqlCommand DeleteCommandForId(object id)
-        {
-            throw new NotSupportedException();
-        }
-
-        public NpgsqlCommand DeleteCommandForEntity(object entity)
-        {
-            throw new NotSupportedException();
         }
 
         public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)

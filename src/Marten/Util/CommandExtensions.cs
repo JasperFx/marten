@@ -6,6 +6,8 @@ using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Schema;
+using Marten.Schema.Arguments;
+using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -13,6 +15,19 @@ namespace Marten.Util
 {
     public static class CommandExtensions
     {
+        public static void AddTenancy(this NpgsqlCommand command, ITenant tenant)
+        {
+            if (command.CommandText.Contains(":" + TenantIdArgument.ArgName))
+            {
+                if (!command.Parameters.Contains(TenantIdArgument.ArgName))
+                {
+                    command.AddNamedParameter(TenantIdArgument.ArgName, tenant.TenantId);
+                }
+            }
+        }
+
+
+
         public static int RunSql(this NpgsqlConnection conn, params string[] sqls)
         {
             var sql = sqls.Join(";");

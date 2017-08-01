@@ -52,6 +52,11 @@ namespace Marten.Storage
                 Arguments.Add(new CurrentVersionArgument());
             }
 
+            if (mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                Arguments.Add(new TenantIdArgument());
+            }
+
         }
 
         public override void Write(DdlRules rules, StringWriter writer)
@@ -67,9 +72,21 @@ namespace Marten.Storage
             var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new [] {DocumentMapping.LastModifiedColumn}).Join(", ");
             var valueList = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).Concat(new [] { "transaction_timestamp()" }).Join(", ");
 
+            var whereClauses = new List<string>();
+
             if (Arguments.Any(x => x is CurrentVersionArgument))
             {
-                updates += $" where {_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version";
+                whereClauses.Add($"{_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version");
+            }
+
+            if (Arguments.Any(x => x is TenantIdArgument))
+            {
+                whereClauses.Add($"{_tableName.QualifiedName}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}");
+            }
+
+            if (whereClauses.Any())
+            {
+                updates += " where " + whereClauses.Join(" and ");
             }
 
             var securityDeclaration = rules.UpsertRights == SecurityRights.Invoker

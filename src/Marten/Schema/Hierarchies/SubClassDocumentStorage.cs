@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -24,22 +25,13 @@ namespace Marten.Schema.Hierarchies
             _mapping = mapping;
         }
 
+        public TenancyStyle TenancyStyle => _parent.TenancyStyle;
         public Type DocumentType => typeof(T);
         public NpgsqlDbType IdType => _parent.IdType;
 
         public NpgsqlCommand LoaderCommand(object id)
         {
             return _parent.LoaderCommand(id);
-        }
-
-        public NpgsqlCommand DeleteCommandForId(object id)
-        {
-            return _parent.DeleteCommandForId(id);
-        }
-
-        public NpgsqlCommand DeleteCommandForEntity(object entity)
-        {
-            return _parent.DeleteCommandForEntity(entity);
         }
 
         public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)

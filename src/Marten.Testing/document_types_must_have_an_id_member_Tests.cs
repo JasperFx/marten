@@ -18,6 +18,19 @@ namespace Marten.Testing
             });
             
         }
+
+        [Fact]
+        public void cannot_use_a_doc_type_with_no_id_with_store()
+        {
+            Exception<InvalidDocumentException>.ShouldBeThrownBy(() =>
+            {
+                DocumentStore.For(options =>
+                {
+                    options.Schema.For<BadDoc>();
+                });
+            });
+
+        }
     }
 
     public class BadDoc

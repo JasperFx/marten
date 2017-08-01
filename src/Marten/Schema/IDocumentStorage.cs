@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -11,12 +12,13 @@ namespace Marten.Schema
 {
     public interface IDocumentStorage
     {
+        TenancyStyle TenancyStyle { get; }
+
         Type DocumentType { get; }
 
         NpgsqlDbType IdType { get; }
         NpgsqlCommand LoaderCommand(object id);
-        NpgsqlCommand DeleteCommandForId(object id);
-        NpgsqlCommand DeleteCommandForEntity(object entity);
+
         NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids);
 
         object Identity(object document);

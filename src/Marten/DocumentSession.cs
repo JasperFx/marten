@@ -95,7 +95,7 @@ namespace Marten
 
             var where = QueryModelExtensions.BuildWhereFragment(_store, model, Tenant);
 
-            var deletion = Tenant.StorageFor(typeof(T)).DeletionForWhere(where);
+            var deletion = Tenant.StorageFor(typeof(T)).DeletionForWhere(@where);
 
             _unitOfWork.Add(deletion);
         }
@@ -179,7 +179,7 @@ namespace Marten
 
             _sessionListeners.Each(x => x.BeforeSaveChanges(this));
 
-            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool);
+            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant);
             var changes = _unitOfWork.ApplyChanges(batch);
 
             try
@@ -216,7 +216,7 @@ namespace Marten
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
             }
 
-            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool);
+            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant);
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
 
 

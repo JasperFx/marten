@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -723,5 +724,29 @@ namespace Marten.Testing.Schema
         {
             Exception<InvalidOperationException>.ShouldBeThrownBy(() => DocumentMapping.For<IntId>().AddDeletedAtIndex());
         }
+
+        [Fact]
+        public void no_tenant_id_column_when_not_conjoined_tenancy()
+        {
+            var mapping = DocumentMapping.For<ConfiguresItselfSpecifically>();
+            var table = new DocumentTable(mapping);
+
+            table.HasColumn(TenantIdColumn.Name).ShouldBeFalse();
+        }
+
+        [Fact]
+        public void add_the_tenant_id_column_when_it_is_conjoined_tenancy()
+        {
+            var options = new StoreOptions();
+            options.Connection(ConnectionSource.ConnectionString);
+            options.Policies.AllDocumentsAreMultiTenanted();
+
+            var mapping = new DocumentMapping(typeof(User), options);
+            mapping.TenancyStyle = TenancyStyle.Conjoined;
+
+            var table = new DocumentTable(mapping);
+            table.Any(x => x is TenantIdColumn).ShouldBeTrue();
+        }
     }
+
 }

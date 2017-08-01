@@ -51,6 +51,16 @@ namespace Marten.Transforms
             }
         }
 
+        public void Tenant<T>(string transformName, string tenantId)
+        {
+            Where<T>(transformName, x => x.TenantIsOneOf(tenantId));
+        }
+
+        public void Tenants<T>(string transformName, params string[] tenantIds)
+        {
+            Where<T>(transformName, x => x.TenantIsOneOf(tenantIds));
+        }
+
         private static void writeBasicSql(CommandBuilder sql, IDocumentMapping mapping, TransformFunction transform)
         {
             var version = CombGuidIdGeneration.NewGuid();

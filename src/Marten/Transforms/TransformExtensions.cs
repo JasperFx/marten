@@ -2,6 +2,7 @@
 using System.Linq;
 using Baseline;
 using Marten.Linq;
+using Marten.Linq.Compiled;
 
 namespace Marten.Transforms
 {
@@ -18,7 +19,6 @@ namespace Marten.Transforms
         {
             return "";
         }
-
 
         public static IQueryable<string> TransformToJson<T>(this IQueryable<T> queryable, string transformName)
         {

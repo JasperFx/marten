@@ -95,7 +95,7 @@ namespace Marten.Events
             _tenant.EnsureStorageExists(typeof(EventStream));
 
             var handler = new EventQueryHandler(_selector, streamId, version, timestamp);
-            return _connection.Fetch(handler, null, null);
+            return _connection.Fetch(handler, null, null, _tenant);
         }
 
         public Task<IList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null,
@@ -104,7 +104,7 @@ namespace Marten.Events
             _tenant.EnsureStorageExists(typeof(EventStream));
 
             var handler = new EventQueryHandler(_selector, streamId, version, timestamp);
-            return _connection.FetchAsync(handler, null, null, token);
+            return _connection.FetchAsync(handler, null, null, _tenant, token);
         }
 
         public T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new()
@@ -115,7 +115,7 @@ namespace Marten.Events
             var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
 
-            var aggregate = _connection.Fetch(handler, null, null);
+            var aggregate = _connection.Fetch(handler, null, null, _tenant);
 
             var assignment = _tenant.IdAssignmentFor<T>();
             assignment.Assign(_tenant, aggregate, streamId);
@@ -133,7 +133,7 @@ namespace Marten.Events
             var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
 
-            var aggregate = await _connection.FetchAsync(handler, null, null, token).ConfigureAwait(false);
+            var aggregate = await _connection.FetchAsync(handler, null, null, _tenant, token).ConfigureAwait(false);
 
             var assignment = _tenant.IdAssignmentFor<T>();
             assignment.Assign(_tenant, aggregate, streamId);
@@ -189,7 +189,7 @@ namespace Marten.Events
             _tenant.EnsureStorageExists(typeof(EventStream));
 
             var handler = new SingleEventQueryHandler(id, _store.Events, _store.Serializer);
-            return _connection.Fetch(handler, new NulloIdentityMap(_store.Serializer), null);
+            return _connection.Fetch(handler, new NulloIdentityMap(_store.Serializer), null, _tenant);
         }
 
         public Task<IEvent> LoadAsync(Guid id, CancellationToken token = default(CancellationToken))
@@ -197,7 +197,7 @@ namespace Marten.Events
             _tenant.EnsureStorageExists(typeof(EventStream));
 
             var handler = new SingleEventQueryHandler(id, _store.Events, _store.Serializer);
-            return _connection.FetchAsync(handler, new NulloIdentityMap(_store.Serializer), null, token);
+            return _connection.FetchAsync(handler, new NulloIdentityMap(_store.Serializer), null, _tenant, token);
         }
 
         public StreamState FetchStreamState(Guid streamId)
@@ -205,7 +205,7 @@ namespace Marten.Events
             _tenant.EnsureStorageExists(typeof(EventStream));
 
             var handler = new StreamStateHandler(_store.Events, streamId);
-            return _connection.Fetch(handler, null, null);
+            return _connection.Fetch(handler, null, null, _tenant);
         }
 
         public Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = new CancellationToken())
@@ -213,7 +213,7 @@ namespace Marten.Events
             _tenant.EnsureStorageExists(typeof(EventStream));
 
             var handler = new StreamStateHandler(_store.Events, streamId);
-            return _connection.FetchAsync(handler, null, null, token);
+            return _connection.FetchAsync(handler, null, null, _tenant, token);
         }
     }
 }

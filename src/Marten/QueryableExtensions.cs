@@ -13,9 +13,9 @@ namespace Marten
 {
     public static class QueryableExtensions
     {
-        public static QueryPlan Explain<T>(this IQueryable<T> queryable)
+        public static QueryPlan Explain<T>(this IQueryable<T> queryable, Action<IConfigureExplainExpressions> configureExplain = null)
         {
-            return queryable.As<IMartenQueryable<T>>().Explain();
+            return queryable.As<IMartenQueryable<T>>().Explain(configureExplain: configureExplain);
         }
 
         #region ToList

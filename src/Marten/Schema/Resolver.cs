@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Baseline;
 using FastExpressionCompiler;
 using Marten.Linq;
+using Marten.Schema.Arguments;
 using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Services.Deletes;
@@ -19,29 +20,32 @@ namespace Marten.Schema
 {
     public class DocumentStorage<T> : IDocumentStorage<T> where T : class
     {
-        private readonly string _deleteSql;
         private readonly Func<T, object> _identity;
         private readonly string _loadArraySql;
         private readonly string _loaderSql;
         private readonly ISerializer _serializer;
         private readonly DocumentMapping _mapping;
-        private readonly bool _useCharBufferPooling;
         private readonly DbObjectName _upsertName;
-        private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid> _sprocWriter;
+        private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string> _sprocWriter;
 
-        public DocumentStorage(ISerializer serializer, DocumentMapping mapping, bool useCharBufferPooling)
+        public DocumentStorage(ISerializer serializer, DocumentMapping mapping)
         {
             _serializer = serializer;
             _mapping = mapping;
-            _useCharBufferPooling = useCharBufferPooling;
             IdType = TypeMappings.ToDbType(mapping.IdMember.GetMemberType());
 
 
             _loaderSql =
                 $"select {_mapping.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d where id = :id";
-            _deleteSql = $"delete from {_mapping.Table.QualifiedName} where id = :id";
+
             _loadArraySql =
                 $"select {_mapping.SelectFields().Join(", ")} from {_mapping.Table.QualifiedName} as d where id = ANY(:ids)";
+
+            if (mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                _loaderSql += $" and {TenantWhereFragment.Filter}";
+                _loadArraySql += $" and {TenantWhereFragment.Filter}";
+            }
 
 
             _identity = LambdaBuilder.Getter<T, object>(mapping.IdMember);
@@ -67,7 +71,7 @@ namespace Marten.Schema
 
         public string DeleteByIdSql { get; }
 
-        private Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid> buildSprocWriter(DocumentMapping mapping)
+        private Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string> buildSprocWriter(DocumentMapping mapping)
         {
             var call = Expression.Parameter(typeof(SprocCall), "call");
             var doc = Expression.Parameter(typeof(T), "doc");
@@ -77,22 +81,25 @@ namespace Marten.Schema
             var currentVersion = Expression.Parameter(typeof(Guid?), "currentVersion");
             var newVersion = Expression.Parameter(typeof(Guid), "newVersion");
 
+            var tenantId = Expression.Parameter(typeof(string), "tenantId");
+
             var arguments = new UpsertFunction(mapping).OrderedArguments().Select(x =>
             {
-                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, currentVersion, newVersion, _useCharBufferPooling);
+                return x.CompileUpdateExpression(_serializer.EnumStorage, call, doc, batch, mappingParam, currentVersion, newVersion, tenantId, true);
             });
 
             var block = Expression.Block(arguments);
 
-            var lambda = Expression.Lambda<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid>>(block,
+            var lambda = Expression.Lambda<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string>>(block,
                 new ParameterExpression[]
                 {
-                    call, doc, batch, mappingParam, currentVersion, newVersion
+                    call, doc, batch, mappingParam, currentVersion, newVersion, tenantId
                 });
 
-            return ExpressionCompiler.Compile<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid>>(lambda);
+            return ExpressionCompiler.Compile<Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string>>(lambda);
         }
 
+        public TenancyStyle TenancyStyle => _mapping.TenancyStyle;
         public Type DocumentType => _mapping.DocumentType;
         public NpgsqlDbType IdType { get; }
 
@@ -168,19 +175,11 @@ namespace Marten.Schema
             return new NpgsqlCommand(_loaderSql).With("id", id);
         }
 
-        public NpgsqlCommand DeleteCommandForId(object id)
-        {
-            return new NpgsqlCommand(_deleteSql).With("id", id);
-        }
-
-        public NpgsqlCommand DeleteCommandForEntity(object entity)
-        {
-            return DeleteCommandForId(_identity((T) entity));
-        }
-
         public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
         {
-            return new NpgsqlCommand(_loadArraySql).With("ids", ids);
+            var sql = _loadArraySql;
+
+            return new NpgsqlCommand(sql).With("ids", ids);
         }
 
         public object Identity(object document)
@@ -210,7 +209,7 @@ namespace Marten.Schema
 
             
 
-            _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion);
+            _sprocWriter(call, (T) entity, batch, _mapping, currentVersion, newVersion, batch.TenantId);
         }
 
     
@@ -233,17 +232,17 @@ namespace Marten.Schema
 
         public IStorageOperation DeletionForId(object id)
         {
-            return new DeleteById(DeleteByIdSql, this, id);
+            return new DeleteById(_mapping.TenancyStyle, DeleteByIdSql, this, id);
         }
 
         public IStorageOperation DeletionForEntity(object entity)
         {
-            return new DeleteById(DeleteByIdSql, this, Identity(entity), entity);
+            return new DeleteById(_mapping.TenancyStyle, DeleteByIdSql, this, Identity(entity), entity);
         }
 
         public IStorageOperation DeletionForWhere(IWhereFragment @where)
         {
-            return new DeleteWhere(typeof(T), DeleteByWhereSql, @where);
+            return new DeleteWhere(typeof(T), DeleteByWhereSql, @where, _mapping.TenancyStyle);
         }
     }
 }

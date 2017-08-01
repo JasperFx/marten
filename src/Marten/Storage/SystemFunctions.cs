@@ -10,6 +10,7 @@ namespace Marten.Storage
     {
         private readonly StoreOptions _options;
         private readonly IDictionary<string, SystemFunction> _systemFunctions = new Dictionary<string, SystemFunction>();
+        private readonly bool _isActive = true;
 
         public SystemFunctions(StoreOptions options)
         {
@@ -29,7 +30,11 @@ namespace Marten.Storage
             yield break;
         }
 
-        public bool IsActive { get; } = true;
+        public bool IsActive(StoreOptions options)
+        {
+            return _isActive;
+        }
+
         public ISchemaObject[] Objects => _systemFunctions.Values.OfType<ISchemaObject>().ToArray();
         public Type StorageType { get; } = typeof(SystemFunctions);
         public string Identifier { get; } = "system_functions";

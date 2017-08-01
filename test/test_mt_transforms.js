@@ -1,4 +1,4 @@
-var mt_transforms = require('./../javascript/mt_transforms');
+var mt_transforms = require('./../src/Marten/Schema/SQL/mt_transforms');
 var expect = require('chai').expect;
 
 describe('mt_transforms', function() {

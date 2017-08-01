@@ -16,6 +16,12 @@ namespace Marten.Testing
     public class StoreOptionsTests
     {
         [Fact]
+        public void PLV8Enabled_is_true_by_default()
+        {
+            new StoreOptions().PLV8Enabled.ShouldBeTrue();
+        }
+
+        [Fact]
         public void add_document_types()
         {
             var options = new StoreOptions();
@@ -70,6 +76,18 @@ namespace Marten.Testing
         }
 
         [Fact]
+        public void single_tenancy_by_default()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+            });
+
+            store.Tenancy.ShouldBeOfType<DefaultTenancy>();
+        }
+
+
+        [Fact]
         public void default_ddl_rules()
         {
             var options = new StoreOptions();
@@ -80,19 +98,10 @@ namespace Marten.Testing
 
         public class FakeUserStorage : IDocumentStorage, IdAssignment<User>
         {
+            public TenancyStyle TenancyStyle { get; }
             public Type DocumentType { get; } = typeof (User);
             public NpgsqlDbType IdType { get; }
             public NpgsqlCommand LoaderCommand(object id)
-            {
-                throw new NotImplementedException();
-            }
-
-            public NpgsqlCommand DeleteCommandForId(object id)
-            {
-                throw new NotImplementedException();
-            }
-
-            public NpgsqlCommand DeleteCommandForEntity(object entity)
             {
                 throw new NotImplementedException();
             }
@@ -160,6 +169,7 @@ namespace Marten.Testing
 
         public class FakeCompanyStorage : IDocumentStorage, IdAssignment<Company>
         {
+            public TenancyStyle TenancyStyle { get; }
             public Type DocumentType { get; } = typeof (Company);
             public NpgsqlDbType IdType { get; }
             public NpgsqlCommand LoaderCommand(object id)
@@ -167,15 +177,6 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
-            public NpgsqlCommand DeleteCommandForId(object id)
-            {
-                throw new NotImplementedException();
-            }
-
-            public NpgsqlCommand DeleteCommandForEntity(object entity)
-            {
-                throw new NotImplementedException();
-            }
 
             public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
             {

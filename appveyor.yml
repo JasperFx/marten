@@ -1,0 +1,52 @@
+version: 2.0.0.{build}
+
+configuration: Release
+
+os: Visual Studio 2017
+
+environment:
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  marten_testing_database: "Host=localhost;Port=5432;Database=marten_test;Username=postgres;Password=Password12!"
+  POSTGRES_PATH: C:\Program Files\PostgreSQL\9.5
+  PG_PLV8_EXTENSION_ZIP_FILENAME: pg95plv8jsbin_w64
+  PG_DB: marten_test
+
+services: 
+  - postgresql95
+
+install:
+  - SET PATH=%POSTGRES_PATH%\bin;%PATH%
+  - curl -L -O -S -s http://www.postgresonline.com/downloads/%PG_PLV8_EXTENSION_ZIP_FILENAME%.zip
+  - 7z x %PG_PLV8_EXTENSION_ZIP_FILENAME%.zip
+  - xcopy /s /y /d %PG_PLV8_EXTENSION_ZIP_FILENAME% "%POSTGRES_PATH%\"
+
+before_build:
+  - SET PGUSER=postgres
+  - SET PGPASSWORD=Password12!
+  - createdb %PG_DB%
+  - psql -d %PG_DB% -c "create extension if not exists plv8;"
+  - npm install
+  - dotnet --info
+  - dotnet restore .\src\Marten.sln
+
+assembly_info:
+  patch: true
+  file: '**\CommonAssemblyInfo.cs'
+  assembly_version: '{version}'
+  assembly_file_version: '{version}'
+  assembly_informational_version: '{version}'
+
+build_script:
+  - dotnet build .\src\Marten.sln --configuration Release
+
+after_build:
+  - dotnet pack .\src\Marten -o artifacts --configuration Release /p:Version=%APPVEYOR_BUILD_VERSION%
+  - dotnet pack .\src\Marten.CommandLine -o artifacts --configuration Release
+
+test_script:
+  - npm run test
+  - dotnet test .\src\Marten.Testing\Marten.Testing.csproj --framework netcoreapp1.0 --configuration Release
+
+artifacts:
+  - path: '**\Marten.*.nupkg' # find all NuGet packages recursively

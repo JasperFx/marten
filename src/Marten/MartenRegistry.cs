@@ -9,6 +9,7 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Storage;
 
 namespace Marten
 {
@@ -17,16 +18,10 @@ namespace Marten
     /// </summary>
     public class MartenRegistry
     {
-        private readonly StoreOptions _options;
         private readonly IList<Action<StoreOptions>> _alterations = new List<Action<StoreOptions>>();
 
         public MartenRegistry()
         {
-        }
-
-        public MartenRegistry(StoreOptions options)
-        {
-            _options = options;
         }
 
         /// <summary>
@@ -43,12 +38,15 @@ namespace Marten
         {
             set
             {
-                if (_options != null)
-                {
-                    value(_options);
-                }
-
                 _alterations.Add(value);
+            }
+        }
+
+        internal void Apply(StoreOptions options)
+        {
+            foreach (var alteration in _alterations)
+            {
+                alteration(options);
             }
         }
 
@@ -61,7 +59,7 @@ namespace Marten
             alter = x =>
             {
                 var registry = new T();
-                registry._alterations.Each(a => alter = a);
+                registry.Apply(x);
             };
         }
 
@@ -71,7 +69,7 @@ namespace Marten
         /// <param name="registry"></param>
         public void Include(MartenRegistry registry)
         {
-            registry._alterations.Each(a => alter = a);
+            alter = registry.Apply;
         }
 
         /// <summary>
@@ -338,6 +336,16 @@ namespace Marten
             public DocumentMappingExpression<T> DdlTemplate(string templateName)
             {
                 alter = m => m.DdlTemplate = templateName;
+                return this;
+            }
+
+            /// <summary>
+            /// Marks just this document type as being stored with conjoined multi-tenancy
+            /// </summary>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> MultiTenanted()
+            {
+                alter = m => m.TenancyStyle = TenancyStyle.Conjoined;
                 return this;
             }
         }

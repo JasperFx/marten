@@ -33,13 +33,13 @@ namespace Marten.Linq
 
         public MartenQueryExecutor Executor => Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
 
-        public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany)
+        public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany, Action<IConfigureExplainExpressions> configureExplain = null)
         {
             var handler = toDiagnosticHandler(fetchType);
 
-            var cmd = CommandBuilder.ToCommand(handler);
+            var cmd = CommandBuilder.ToCommand(Tenant, handler);
 
-            return Executor.As<MartenQueryExecutor>().Connection.ExplainQuery(cmd);
+            return Executor.As<MartenQueryExecutor>().Connection.ExplainQuery(cmd, configureExplain);
         }
 
         public IQueryable<TDoc> TransformTo<TDoc>(string transformName)
@@ -215,7 +215,7 @@ namespace Marten.Linq
         {
             var handler = toDiagnosticHandler(fetchType);
 
-            return CommandBuilder.ToCommand(handler);
+            return CommandBuilder.ToCommand(Tenant, handler);
         }
 
 
@@ -229,7 +229,7 @@ namespace Marten.Linq
 
             var handler = source(linq);
 
-            return Executor.Connection.FetchAsync(handler, Executor.IdentityMap.ForQuery(), Statistics, token);
+            return Executor.Connection.FetchAsync(handler, Executor.IdentityMap.ForQuery(), Statistics, Tenant, token);
         }
     }
 }
