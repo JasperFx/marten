@@ -29,10 +29,10 @@ namespace Marten.Testing.Schema
                 
                 var writer = new StringWriter();
                 writer.WriteLine("Expected:");
-                configured.Write(theStore.Schema.StoreOptions.DdlRules, writer);
+                configured.Write(theStore.Schema.DdlRules, writer);
                 writer.WriteLine();
                 writer.WriteLine("But from the database, was:");
-                existing.Write(theStore.Schema.StoreOptions.DdlRules, writer);
+                existing.Write(theStore.Schema.DdlRules, writer);
 
                 throw new Exception(writer.ToString());
             }

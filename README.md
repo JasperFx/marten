@@ -1,7 +1,8 @@
 # Marten _Postgresql as a Document Database and Event Store for .Net Applications_
 
 [![Join the chat at https://gitter.im/JasperFx/Marten](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JasperFx/Marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Windows Build Status](https://img.shields.io/teamcity/http/build.fubu-project.org/s/marten_master.svg?label=TeamCity&style=flat)](http://build.fubu-project.org/project.html?projectId=Marten&tab=projectOverview&guest=1)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/jasperfx/marten?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten)
+[![Linux Build status](https://api.travis-ci.org/JasperFx/marten.svg)](https://travis-ci.org/JasperFx/marten)
 [![Nuget Package](https://img.shields.io/nuget/v/Marten.svg?style=flat)](https://www.nuget.org/packages/Marten/)
 
 Hey, we're just getting started, but there'll be stuff here soon. Check the issue list as quasi-roadmap and feel free to jump into the Gitter room linked above.
@@ -9,7 +10,7 @@ See this blog post http://jeremydmiller.com/2015/10/21/postgresql-as-a-document-
 
 ## Working with the Code
 
-Like I said, it's way, way early and this should get smoother later. For now, you'll need to have access to a Postgresql **9.5** server and a database. After cloning the code, put a file named `connection.txt` at `src/Marten.Testing` that just needs to contain the connection string to the Postgresql database you want to use as a testbed. See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about postgresql connection strings.
+Like I said, it's way, way early and this should get smoother later. For now, you'll need to have access to a Postgresql **9.5** server and a database. After cloning the code, set the environment variable `marten-testing-database` to the connection string for the Postgresql database you want to use as a testbed. See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about postgresql connection strings.
 
 You will also need to enable the PLV8 extension inside of Postgresql for running Javascript stored procedures for the nascent projection support. See
 [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries for PLV8 running on Windows. Just drop the folder structure from that download into your main Postgresql installation folder (`c:\program files\postgresql\9.5` on my box). Once the binaries are copied in, run the command `CREATE EXTENSION PLV8;` in your Postgresql database. 
@@ -25,7 +26,7 @@ From there, open Visual Studio.Net or whatever editor you prefer and go to town.
 
 ## Tooling
 
-We're using [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly) for unit testing and [paket](https://fsprojects.github.io/Paket/) for improved Nuget workflow. We're temporarily using rake for build automation, but it's not mandatory for development.
+We're using [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly) for unit testing and [paket](https://fsprojects.github.io/Paket/) for improved Nuget workflow. We're using rake for build automation, but it's not mandatory for development.
 
 ## Mocha Specs
 
@@ -48,4 +49,7 @@ you'll need to wrap the code you wish to insert with
 Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
 
 The content is kept in the main Marten GitHub repository, but the published documentation is done by running the `publish-docs.cmd` command and pushing the generated static HTML to the gh-pages branch of Marten.  
+
+
+
 

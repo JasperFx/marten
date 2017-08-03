@@ -21,6 +21,16 @@ namespace Marten.Schema
             _options = options;
         }
 
+        protected void removeIdField()
+        {
+            var idFields = _fields.Where(x => x.Value is IdField).ToArray();
+            foreach (var pair in idFields)
+            {
+                IField field;
+                _fields.TryRemove(pair.Key, out field);
+            }
+        }
+
         protected void setField(string name, IField field)
         {
             _fields[name] = field;
@@ -39,14 +49,18 @@ namespace Marten.Schema
             }
 
             var key = members.Select(x => x.Name).Join("");
+            var serializer = _options.Serializer();
+
             return _fields.GetOrAdd(key,
-                _ => new JsonLocatorField(_dataLocator, _options.Serializer().EnumStorage, members.ToArray()));
+                _ => new JsonLocatorField(_dataLocator, serializer.EnumStorage, serializer.Casing, members.ToArray()));
         }
 
         public IField FieldFor(MemberInfo member)
         {
+            var serializer = _options.Serializer();
+
             return _fields.GetOrAdd(member.Name,
-                name => new JsonLocatorField(_dataLocator, _options, _options.Serializer().EnumStorage, member));
+                name => new JsonLocatorField(_dataLocator, _options, serializer.EnumStorage, serializer.Casing, member));
         }
 
         public IField FieldFor(string memberName)
@@ -58,7 +72,9 @@ namespace Marten.Schema
 
                 if (member == null) return null;
 
-                return new JsonLocatorField(_dataLocator, _options, _options.Serializer().EnumStorage, member);
+                var serializer = _options.Serializer();
+
+                return new JsonLocatorField(_dataLocator, _options, serializer.EnumStorage, serializer.Casing, member);
             });
         }
 

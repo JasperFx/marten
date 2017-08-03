@@ -15,7 +15,7 @@ namespace Marten.Testing.Bugs
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
-            var tables = theStore.Schema.DbObjects.SchemaTables();
+            var tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
 
             tables.Any(x => x.Name == "mt_events").ShouldBeFalse();
             tables.Any(x => x.Name == "mt_streams").ShouldBeFalse();

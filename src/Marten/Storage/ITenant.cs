@@ -14,6 +14,13 @@ namespace Marten.Storage
 {
     public interface ITenant
     {
+        string TenantId { get; }
+
+        /// <summary>
+        ///     Query against the actual Postgresql database schema objects
+        /// </summary>
+        IDbObjects DbObjects { get; }
+
         /// <summary>
         /// Retrieves or generates the active IDocumentStorage object
         /// for the given document type

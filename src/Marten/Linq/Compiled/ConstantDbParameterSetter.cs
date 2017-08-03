@@ -5,7 +5,7 @@ namespace Marten.Linq.Compiled
 {
     internal class ConstantDbParameterSetter : IDbParameterSetter
     {
-        private readonly object _value;
+        private object _value;
 
         public ConstantDbParameterSetter(object value)
         {
@@ -17,6 +17,11 @@ namespace Marten.Linq.Compiled
             var param = command.AddParameter(_value);
 
             return param;
+        }
+
+        public void ReplaceValue(NpgsqlParameter cmdParameter)
+        {
+            _value = cmdParameter.Value; // The Linq provider is the source of truth
         }
     }
 }

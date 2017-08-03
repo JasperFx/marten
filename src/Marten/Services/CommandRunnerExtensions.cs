@@ -1,10 +1,11 @@
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
+using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 
@@ -17,23 +18,33 @@ namespace Marten.Services
             return runner.Execute(cmd => cmd.WithText(sql).ExecuteNonQuery());
         }
 
-        public static QueryPlan ExplainQuery(this IManagedConnection runner, NpgsqlCommand cmd)
+        public static QueryPlan ExplainQuery(this IManagedConnection runner, NpgsqlCommand cmd, Action<IConfigureExplainExpressions> configureExplain = null)
         {
             var serializer = new JsonNetSerializer();
-            cmd.CommandText = string.Concat("explain (format json) ", cmd.CommandText);
+
+            var config = new ConfigureExplainExpressions();
+            configureExplain?.Invoke(config);
+
+            cmd.CommandText = string.Concat($"explain ({config} format json) ", cmd.CommandText);
             return runner.Execute(cmd, c =>
             {
                 using (var reader = cmd.ExecuteReader())
                 {
                     var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetTextReader(0)) : null;
-                    return queryPlans?[0].Plan;
+                    var planToReturn = queryPlans?[0].Plan;
+                    if (planToReturn != null)
+                    {
+                        planToReturn.PlanningTime = queryPlans[0].PlanningTime;
+                        planToReturn.ExecutionTime = queryPlans[0].ExecutionTime;
+                    }
+                    return planToReturn;
                 }
             });
         }
 
-        public static T Fetch<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats)
+        public static T Fetch<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats, ITenant tenant)
         {
-            var command = CommandBuilder.ToCommand(handler);
+            var command = CommandBuilder.ToCommand(tenant, handler);
 
             return runner.Execute(command, c =>
             {
@@ -44,9 +55,9 @@ namespace Marten.Services
             });
         }
 
-        public static async Task<T> FetchAsync<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public static async Task<T> FetchAsync<T>(this IManagedConnection runner, IQueryHandler<T> handler, IIdentityMap map, QueryStatistics stats, ITenant tenant, CancellationToken token)
         {
-            var command = CommandBuilder.ToCommand(handler);
+            var command = CommandBuilder.ToCommand(tenant, handler);
 
             return await runner.ExecuteAsync(command, async (c, tkn) =>
             {

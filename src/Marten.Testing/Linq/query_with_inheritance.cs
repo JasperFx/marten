@@ -130,6 +130,40 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
+        public void get_all_subclasses_of_a_subclass_with_where_with_camel_casing()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<ISmurf>()
+                    .AddSubClassHierarchy(typeof(Smurf), typeof(PapaSmurf), typeof(PapySmurf), typeof(IPapaSmurf), typeof(BrainySmurf));
+
+                // Alternatively, you can use the following:
+                // _.Schema.For<ISmurf>().AddSubClassHierarchy();
+                // this, however, will use the assembly
+                // of type ISmurf to get all its' subclasses/implementations. 
+                // In projects with many types, this approach will be undvisable.
+
+                _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);
+
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+
+                _.Schema.For<ISmurf>().GinIndexJsonData();
+            });
+
+
+            var smurf = new Smurf { Ability = "Follow the herd" };
+            var papa = new PapaSmurf { Ability = "Lead" };
+            var brainy = new BrainySmurf { Ability = "Invent" };
+            theSession.Store(smurf, papa, brainy);
+
+            theSession.SaveChanges();
+
+            theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
+        }
+
+
+        [Fact]
         public void get_all_subclasses_of_an_interface()
         {
             var smurf = new Smurf { Ability = "Follow the herd" };

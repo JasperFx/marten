@@ -29,7 +29,7 @@ namespace Marten.Services
             QueryStatistics stats;
             var handler = _store.HandlerFactory.HandlerFor(query, out stats);
 
-            return CommandBuilder.ToCommand(handler);
+            return CommandBuilder.ToCommand(_store.Tenancy.Default, handler);
         }
 
         /// <summary>

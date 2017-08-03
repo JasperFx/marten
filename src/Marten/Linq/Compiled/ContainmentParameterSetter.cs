@@ -79,6 +79,9 @@ namespace Marten.Linq.Compiled
             return param;
         }
 
-
+        public void ReplaceValue(NpgsqlParameter cmdParameter)
+        {
+            
+        }
     }
 }

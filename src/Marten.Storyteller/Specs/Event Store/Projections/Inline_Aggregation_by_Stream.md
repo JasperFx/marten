@@ -1,9 +1,9 @@
 # Inline Aggregation by Stream
 
 -> id = 870c1c7c-b2bf-441f-92ad-c8e94b390f7d
--> lifecycle = Regression
--> max-retries = 0
--> last-updated = 2016-04-22T00:00:00.0000000
+-> lifecycle = Acceptance
+-> max-retries = 3
+-> last-updated = 2017-05-22T21:38:44.1893169Z
 -> tags = 
 
 [InlineAggregation]

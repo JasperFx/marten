@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
@@ -43,6 +43,11 @@ namespace Marten.Linq.QueryHandlers
             
             var parameter = sql.AddParameter(_id);
             sql.Append(parameter.ParameterName);
+
+            if (storage.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                sql.Append($" and {TenantWhereFragment.Filter}");
+            }
         }
 
         public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

@@ -69,8 +69,13 @@ namespace Marten.Linq
 
             // Added
             new IsOneOf(),
+            new EqualsIgnoreCaseParser(),
             new IsInGenericEnumerable(),
             new IsEmpty(),
+
+            // multi-tenancy
+            new AnyTenant(),
+            new TenantIsOneOf(),
 
             // soft deletes
             new MaybeDeletedParser(),

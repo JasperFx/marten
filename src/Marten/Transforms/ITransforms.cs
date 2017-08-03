@@ -28,13 +28,24 @@ namespace Marten.Transforms
         private readonly IDictionary<string, TransformFunction> _functions 
             = new Dictionary<string, TransformFunction>();
 
+
         public Transforms(StoreOptions options)
         {
             _options = options;
         }
 
+        private void assertAvailable()
+        {
+            if (!_options.PLV8Enabled)
+            {
+                throw new InvalidOperationException("Marten has been configured to disable PLV8");
+            }
+        }
+
         public void LoadFile(string file, string name = null)
         {
+            assertAvailable();
+
             if (!Path.IsPathRooted(file))
             {
                 file = AppContext.BaseDirectory.AppendPath(file);
@@ -46,6 +57,8 @@ namespace Marten.Transforms
 
         public void LoadDirectory(string directory)
         {
+            assertAvailable();
+
             if (!Path.IsPathRooted(directory))
             {
                 directory = AppContext.BaseDirectory.AppendPath(directory);
@@ -59,12 +72,16 @@ namespace Marten.Transforms
 
         public void LoadJavascript(string name, string script)
         {
+            assertAvailable();
+
             var func = new TransformFunction(_options, name, script);
             _functions.Add(func.Name, func);
         }
 
         public void Load(TransformFunction function)
         {
+            assertAvailable();
+
             _functions.Add(function.Name, function);
         }
 
@@ -80,6 +97,7 @@ namespace Marten.Transforms
 
         public IEnumerable<TransformFunction> AllFunctions()
         {
+            assertAvailable();
             return _functions.Values;
         }
 
@@ -88,10 +106,20 @@ namespace Marten.Transforms
             yield break;
         }
 
-        // TODO -- turn this off if PLV8 is disabled
-        public bool IsActive { get; } = true;
+        public bool IsActive(StoreOptions options)
+        {
+            return options.PLV8Enabled && _functions.Any();
+        }
 
-        public ISchemaObject[] Objects => _functions.Values.OfType<ISchemaObject>().ToArray();
+        public ISchemaObject[] Objects
+        {
+            get
+            {
+                assertAvailable();
+                return _functions.Values.OfType<ISchemaObject>().ToArray();
+            }
+        }
+
         public Type StorageType { get; } = typeof(Transforms);
         public string Identifier { get; } = "transforms";
         public void WritePermissions(DdlRules rules, StringWriter writer)

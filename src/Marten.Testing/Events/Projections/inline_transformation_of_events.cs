@@ -29,7 +29,8 @@ namespace Marten.Testing.Events.Projections
                 _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());
             });
 
-            var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
             theSession.SaveChanges();
 
             var monsterEvents =
@@ -53,7 +54,8 @@ namespace Marten.Testing.Events.Projections
                 _.Events.InlineProjections.Add(new OneForOneProjection<MonsterSlayed, MonsterDefeated>(new MonsterDefeatedTransform()));
             });
 
-            var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
             theSession.SaveChanges();
 
             var monsterEvents =
@@ -91,7 +93,8 @@ namespace Marten.Testing.Events.Projections
                 _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());
             });
 
-            var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
             await theSession.SaveChangesAsync();
 
             var monsterEvents =

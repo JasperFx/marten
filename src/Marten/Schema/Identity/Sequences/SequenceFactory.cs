@@ -6,7 +6,7 @@ using Marten.Storage;
 
 namespace Marten.Schema.Identity.Sequences
 {
-    public class SequenceFactory : ISequences, IFeatureSchema
+    public class SequenceFactory : ISequences
     {
         private readonly StoreOptions _options;
         private readonly ITenant _tenant;
@@ -25,7 +25,7 @@ namespace Marten.Schema.Identity.Sequences
             yield break;
         }
 
-        public bool IsActive { get; set; }
+        public bool IsActive(StoreOptions options) => true;
 
         public ISchemaObject[] Objects
         {

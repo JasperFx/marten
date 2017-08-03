@@ -15,9 +15,6 @@ namespace Marten.Testing
 
         public MartenRegistryTests()
         {
-            var storeOptions = new StoreOptions();
-            storeOptions.Schema.Include<TestRegistry>();
-
             var store = TestingDocumentStore.For(_ => _.Schema.Include<TestRegistry>());
 
             theStorage = store.Storage;

@@ -9,6 +9,7 @@ using Xunit;
 using Xunit.Abstractions;
 using System.Linq;
 using Baseline.Dates;
+using Marten.Storage;
 using Shouldly;
 
 namespace Marten.Testing.AsyncDaemon
@@ -140,22 +141,27 @@ namespace Marten.Testing.AsyncDaemon
             public Type[] Consumes { get; } = new Type[] { typeof(ProjectStarted) };
             public Type Produces { get; } = typeof(ProjectCountProjection);
             public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
-            public void Apply(IDocumentSession session, EventStream[] streams)
+            public void Apply(IDocumentSession session, EventPage page)
             {
             }
 
-            public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+            public Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
             {
                 _session = session;
 
-                var projectEvents = streams.SelectMany(s => s.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
+                var projectEvents = page.Events.OrderBy(s => s.Sequence).Select(s => s.Data).OfType<ProjectStarted>();
 
                 foreach (var e in projectEvents)
                 {
-                    Apply((ProjectStarted)e);
+                    Apply(e);
                 }
 
                 return Task.CompletedTask;
+            }
+
+            public void EnsureStorageExists(ITenant tenant)
+            {
+                
             }
 
             public int ProjectCount { get; set; }
@@ -176,12 +182,12 @@ namespace Marten.Testing.AsyncDaemon
             public Type[] Consumes { get; } = new Type[] {typeof(ProjectStarted), typeof(IssueCreated), typeof(IssueClosed), typeof(Commit)};
             public Type Produces { get; } = typeof(FakeThing);
             public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
-            public void Apply(IDocumentSession session, EventStream[] streams)
+            public void Apply(IDocumentSession session, EventPage page)
             {
                 
             }
 
-            public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+            public Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
             {
                 if (!_failed && _random.Next(0, 10) == 9)
                 {
@@ -192,6 +198,11 @@ namespace Marten.Testing.AsyncDaemon
                 _failed = false;
 
                 return Task.CompletedTask;
+            }
+
+            public void EnsureStorageExists(ITenant tenant)
+            {
+                
             }
         }
 

@@ -13,14 +13,14 @@ namespace Marten
 {
     public static class QueryableExtensions
     {
-        public static QueryPlan Explain<T>(this IQueryable<T> queryable)
+        public static QueryPlan Explain<T>(this IQueryable<T> queryable, Action<IConfigureExplainExpressions> configureExplain = null)
         {
-            return queryable.As<IMartenQueryable<T>>().Explain();
+            return queryable.As<IMartenQueryable<T>>().Explain(configureExplain: configureExplain);
         }
 
         #region ToList
 
-        public static Task<IList<T>> ToListAsync<T>(this IQueryable<T> queryable,
+        public static Task<IReadOnlyList<T>> ToListAsync<T>(this IQueryable<T> queryable,
             CancellationToken token = default(CancellationToken))
         {
             return queryable.As<IMartenQueryable>().ToListAsync<T>(token);

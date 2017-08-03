@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten.Testing.AsyncDaemon;
 using Shouldly;
@@ -18,14 +20,16 @@ namespace Marten.Storyteller
         {
             using (var runner = StorytellerRunner.For<MartenSystem>())
             {
-                var results = runner.Run("Event Store / Async Daemon / Rebuild Projection in a Separate Schema Multiple Times");
+                //var results = runner.Run("Multi Tenancy / Deleting by Id");
+                //var results = runner.Run("Multi Tenancy / Loading Documents by Id");
+                var results = runner.Run("Event Store / Async Daemon / Rebuild Projection");
                 Console.WriteLine(results.Counts);
 
                 //results = runner.Run("Event Store / Async Daemon / Rebuild Projection");
                
                 //Console.WriteLine(results.Counts);
                 
-                //runner.OpenResultsInBrowser();
+                runner.OpenResultsInBrowser();
             }
         }
     }
@@ -33,29 +37,32 @@ namespace Marten.Storyteller
 
     public class MartenSystem : SimpleSystem
     {
+        private AsyncDaemonTestHelper _daemonHelper;
+
         public MartenSystem()
         {
             ExceptionFormatting.AsText<ShouldAssertException>(x => x.Message);
         }
 
-        private readonly Lazy<AsyncDaemonTestHelper> _daemonHelper = new Lazy<AsyncDaemonTestHelper>(() =>
-        {
-            var helper = new AsyncDaemonTestHelper();
-            helper.LoadAllProjects();
-            return helper;
-        });
 
         public override void Dispose()
         {
-            if (_daemonHelper.IsValueCreated)
-            {
-                _daemonHelper.Value.Dispose();
-            }
+            _daemonHelper.Dispose();
         }
 
         public override void BeforeEach(SimpleExecutionContext execution, ISpecContext context)
         {
             context.State.Store(_daemonHelper);
+        }
+
+        public override Task Warmup()
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                _daemonHelper = new AsyncDaemonTestHelper();
+                _daemonHelper.LoadAllProjects();
+            });
+
         }
     }
 }

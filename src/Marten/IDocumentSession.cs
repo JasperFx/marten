@@ -79,6 +79,14 @@ namespace Marten
         void Store<T>(params T[] entities);
 
         /// <summary>
+        /// Explicitly marks a document as needing to be inserted or updated upon the next call to SaveChanges()
+        /// to a specific tenant
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Store<T>(string tenantId, params T[] entities);
+
+        /// <summary>
         /// Explicitly marks a document as needing to be updated and supplies the
         /// current known version for the purpose of optimistic versioning checks
         /// </summary>
@@ -86,6 +94,29 @@ namespace Marten
         /// <param name="entity"></param>
         /// <param name="version"></param>
         void Store<T>(T entity, Guid version);
+
+        /// <summary>
+        /// Explicitly marks a document as needing to be inserted upon the next call to SaveChanges().
+        /// Will throw an exception if the document already exists
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Insert<T>(params T[] entities);
+
+        /// <summary>
+        /// Explicitly marks a document as needing to be updated upon the next call to SaveChanges().
+        /// Will throw an exception if the document does not already exists
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Update<T>(params T[] entities);
+
+        /// <summary>
+        /// Insert an enumerable of potentially mixed documents. Will throw exceptions
+        /// if a document overwrite is detected
+        /// </summary>
+        /// <param name="documents"></param>
+        void InsertObjects(IEnumerable<object> documents);
 
 
 
@@ -101,10 +132,13 @@ namespace Marten
         void StoreObjects(IEnumerable<object> documents);
 
 
+
         /// <summary>
         /// Access to the event store functionality
         /// </summary>
         IEventStore Events { get; }
+
+        ConcurrencyChecks Concurrency { get; }
 
 
         /// <summary>
@@ -172,7 +206,7 @@ namespace Marten
         /// <typeparam name="TKey"></typeparam>
         /// <param name="keys"></param>
         /// <returns></returns>
-        IList<TDoc> ById<TKey>(params TKey[] keys);
+        IReadOnlyList<TDoc> ById<TKey>(params TKey[] keys);
 
         /// <summary>
         /// Supply the document id's to load asynchronously
@@ -180,7 +214,7 @@ namespace Marten
         /// <typeparam name="TKey"></typeparam>
         /// <param name="keys"></param>
         /// <returns></returns>
-        Task<IList<TDoc>> ByIdAsync<TKey>(params TKey[] keys);
+        Task<IReadOnlyList<TDoc>> ByIdAsync<TKey>(params TKey[] keys);
 
         /// <summary>
         /// Supply the document id's to load
@@ -188,7 +222,7 @@ namespace Marten
         /// <typeparam name="TKey"></typeparam>
         /// <param name="keys"></param>
         /// <returns></returns>
-        IList<TDoc> ById<TKey>(IEnumerable<TKey> keys);
+        IReadOnlyList<TDoc> ById<TKey>(IEnumerable<TKey> keys);
 
         /// <summary>
         /// Supply the document id's to load asynchronously
@@ -197,6 +231,6 @@ namespace Marten
         /// <param name="keys"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<IList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys, CancellationToken token = default(CancellationToken));
+        Task<IReadOnlyList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys, CancellationToken token = default(CancellationToken));
     }
 }

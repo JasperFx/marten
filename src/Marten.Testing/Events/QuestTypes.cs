@@ -63,9 +63,22 @@ namespace Marten.Testing.Events
         }
     }
 
+    public class QuestEnded
+    {
+        public string Name { get; set; }
+        public Guid Id { get; set; }
+
+        public override string ToString()
+        {
+            return $"Quest {Name} ended";
+        }
+    }
+
     public class MembersDeparted
     {
         public Guid Id { get; set; }
+
+        public Guid QuestId { get; set; }
 
         public int Day { get; set; }
 
@@ -103,6 +116,19 @@ namespace Marten.Testing.Events
         public ImmutableEvent(Guid id, string name)
         {
             Id = id;
+            Name = name;
+        }
+    }
+
+    public class ImmutableEvent2
+    {
+        public string Key { get; }
+        public string Name { get; private set; }
+
+
+        public ImmutableEvent2(string key, string name)
+        {
+            Key = key;
             Name = name;
         }
     }

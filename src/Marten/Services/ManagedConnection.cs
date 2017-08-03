@@ -167,11 +167,6 @@ namespace Marten.Services
 
             if (e is NpgsqlException)
             {
-                if (e.Message.IndexOf(EventContracts.UnexpectedMaxEventIdForStream, StringComparison.Ordinal) > -1)
-                {
-                    throw new EventStreamUnexpectedMaxEventIdException(e);
-                }
-
                 throw new MartenCommandException(cmd, e);
             }
         }

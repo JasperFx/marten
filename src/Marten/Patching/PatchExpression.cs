@@ -202,7 +202,10 @@ namespace Marten.Patching
         {
             var transform = _tenant.TransformFor(StoreOptions.PatchDoc);
             var document = _tenant.MappingFor(typeof(T)).ToQueryableDocument();
-            var operation = new PatchOperation(transform, document, _fragment, Patch, _serializer);
+
+            var where = document.FilterDocuments(null, _fragment);
+
+            var operation = new PatchOperation(transform, document, where, Patch, _serializer);
 
             _unitOfWork.Patch(operation);
         }

@@ -16,7 +16,7 @@ namespace Marten.Testing.Schema
             // Really need to put this in a helper somewhere because
             // it's coming up all over the place
             var directory = AppContext.BaseDirectory;
-            while (!File.Exists(directory.AppendPath("project.json")))
+            while (!File.Exists(directory.AppendPath("App.config")))
             {
                 directory = directory.ParentDirectory();
             }

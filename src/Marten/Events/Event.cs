@@ -17,12 +17,27 @@ namespace Marten.Events
         /// </summary>
         object Data { get; }
 
+        /// <summary>
+        /// If using Guid's for the stream identity, this will
+        /// refer to the Stream's Id, otherwise it will always be Guid.Empty
+        /// </summary>
         Guid StreamId { get; set; }
+
+        /// <summary>
+        /// If using strings as the stream identifier, this will refer
+        /// to the containing Stream's Id
+        /// </summary>
+        string StreamKey { get; set; }
 
         /// <summary>
         /// The UTC time that this event was originally captured
         /// </summary>
         DateTimeOffset Timestamp { get; set; }
+
+        /// <summary>
+        /// If using multi-tenancy by tenant id
+        /// </summary>
+        string TenantId { get; set; }
 
         void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new();
@@ -42,6 +57,12 @@ namespace Marten.Events
         /// this event
         /// </summary>
         public Guid StreamId { get; set; }
+
+        /// <summary>
+        /// A reference to the stream if the stream
+        /// identier mode is AsString
+        /// </summary>
+        public string StreamKey { get; set; }
 
         /// <summary>
         /// An alternative Guid identifier to identify
@@ -68,6 +89,8 @@ namespace Marten.Events
         /// The UTC time that this event was originally captured
         /// </summary>
         public DateTimeOffset Timestamp { get; set; }
+
+        public string TenantId { get; set; }
         // ENDSAMPLE
 
 

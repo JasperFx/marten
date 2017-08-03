@@ -7,29 +7,25 @@ using Xunit;
 
 namespace Marten.Testing.Schema.Identity.Sequences
 {
-    public class IdentityKeyGenerationTests
+    public class IdentityKeyGenerationTests : IntegratedFixture
     {
         [Fact]
         public void When_documents_are_stored_after_each_other_then_the_first_id_should_be_less_than_the_second()
         {
-            using (
-                var container =
-                    ContainerFactory.Configure(options => options.DefaultIdStrategy = (mapping, storeOptions) => new IdentityKeyGeneration(mapping.As<DocumentMapping>(), storeOptions.HiloSequenceDefaults)))
+            StoreOptions(_ =>
             {
-                container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
+                _.Schema.For<UserWithString>().UseIdentityKey();
+            });
 
-                var store = container.GetInstance<IDocumentStore>();
+            StoreUser(theStore, "User1");
+            StoreUser(theStore, "User2");
+            StoreUser(theStore, "User3");
 
-                StoreUser(store, "User1");
-                StoreUser(store, "User2");
-                StoreUser(store, "User3");
+            var users = GetUsers(theStore);
 
-                var users = GetUsers(store);
-
-                GetId(users, "User1").ShouldBe("userwithstring/1");
-                GetId(users, "User2").ShouldBe("userwithstring/2");
-                GetId(users, "User3").ShouldBe("userwithstring/3");
-            }
+            GetId(users, "User1").ShouldBe("userwithstring/1");
+            GetId(users, "User2").ShouldBe("userwithstring/2");
+            GetId(users, "User3").ShouldBe("userwithstring/3");
         }
 
         private static string GetId(UserWithString[] users, string user1)
@@ -49,7 +45,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
         {
             using (var session = documentStore.OpenSession())
             {
-                session.Store(new UserWithString { LastName = lastName });
+                session.Store(new UserWithString { LastName = lastName});
                 session.SaveChanges();
             }
         }

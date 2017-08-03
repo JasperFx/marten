@@ -8,7 +8,7 @@ using Marten.Events.Projections.Async;
 namespace Marten.Events.Projections
 {
     // This is mostly tested through integration tests and in the Storyteller suite
-    public class AggregationProjection<T> : IProjection where T : class, new()
+    public class AggregationProjection<T> : DocumentProjection<T>, IDocumentProjection where T : class, new()
     {
         private readonly IAggregationFinder<T> _finder;
         private readonly IAggregator<T> _aggregator;
@@ -19,9 +19,9 @@ namespace Marten.Events.Projections
             _aggregator = aggregator;
         }
 
-        public void Apply(IDocumentSession session, EventStream[] streams)
+        public void Apply(IDocumentSession session, EventPage page)
         {
-            MatchingStreams(streams).Each(stream =>
+            MatchingStreams(page).Each(stream =>
             {
                 var state = _finder.Find(stream, session);
 
@@ -36,9 +36,9 @@ namespace Marten.Events.Projections
             stream.Events.Each(x => x.Apply(state, _aggregator));
         }
 
-        public async Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+        public async Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
         {
-            var matchingStreams = MatchingStreams(streams);
+            var matchingStreams = MatchingStreams(page);
 
             await _finder.FetchAllAggregates(session, matchingStreams, token).ConfigureAwait(false);
 
@@ -51,13 +51,14 @@ namespace Marten.Events.Projections
             }
         }
 
+
+
         public Type[] Consumes => _aggregator.EventTypes;
-        public Type Produces => typeof(T);
 
 
-        public EventStream[] MatchingStreams(EventStream[] streams)
+        public EventStream[] MatchingStreams(EventPage streams)
         {
-            return streams.Where(_aggregator.AppliesTo).ToArray();
+            return streams.Streams.Where(_aggregator.AppliesTo).ToArray();
         }
 
         public AsyncOptions AsyncOptions { get; } = new AsyncOptions();

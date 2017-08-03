@@ -21,7 +21,7 @@ namespace Marten.Schema
         IQueryableDocument ToQueryableDocument();
 
         Type IdType { get; }
-
+        TenancyStyle TenancyStyle { get; }
     }
 
     public static class DocumentMappingExtensions

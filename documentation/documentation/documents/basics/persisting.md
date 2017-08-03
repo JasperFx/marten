@@ -20,6 +20,13 @@ You can also store a mixed array of different types by using either the `IDocume
 
 <[sample:mixed-docs-to-store]>
 
+## Insert & Update ##
+
+While `IDocumentSession.Store` will perform either insertion or update depending on the existence of documents, `IDocumentSession` also exposes methods to explicitly control this persistence behavior through `IDocumentSession.Insert` and `IDocumentSession.Update`.
+
+`IDocumentSession.Insert` stores a document only in the case that it does not already exist. Otherwise a `DocumentAlreadyExistsException` is thrown. `IDocumentSession.Update` on the other hand performs an update on an existing document or throws a `NonExistentDocumentException` in case the document cannot be found.
+
+<[sample:sample-document-insertonly]>
 
 ## Manual Change Tracking
 

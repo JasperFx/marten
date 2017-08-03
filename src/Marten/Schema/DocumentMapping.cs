@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Linq;
+using Marten.Schema.Arguments;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services.Includes;
@@ -22,6 +23,9 @@ namespace Marten.Schema
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
         public const string UpsertPrefix = "mt_upsert_";
+        public const string InsertPrefix = "mt_insert_";
+        public const string UpdatePrefix = "mt_update_";
+        public const string OverwritePrefix = "mt_overwrite_";
         public const string DocumentTypeColumn = "mt_doc_type";
         public const string MartenPrefix = "mt_";
         public const string LastModifiedColumn = "mt_last_modified";
@@ -42,18 +46,19 @@ namespace Marten.Schema
 
         public DocumentMapping(Type documentType, StoreOptions storeOptions) : base("d.data", documentType, storeOptions)
         {
-            if (documentType == null) throw new ArgumentNullException(nameof(documentType));
-            if (storeOptions == null) throw new ArgumentNullException(nameof(storeOptions));
+            _storeOptions = storeOptions ?? throw new ArgumentNullException(nameof(storeOptions));
 
-            _storeOptions = storeOptions;
-
-            DocumentType = documentType;
+            DocumentType = documentType ?? throw new ArgumentNullException(nameof(documentType));
             Alias = defaultDocumentAliasName(documentType);
 
             IdMember = FindIdMember(documentType);
 
+            _storeOptions.applyPolicies(this);
+
             applyAnyMartenAttributes(documentType);
         }
+
+        public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
         private void applyAnyMartenAttributes(Type documentType)
         {
@@ -77,6 +82,11 @@ namespace Marten.Schema
         public IEnumerable<SubClassMapping> SubClasses => _subClasses;
 
         public DbObjectName UpsertFunction => new DbObjectName(DatabaseSchemaName, $"{UpsertPrefix}{_alias}");
+        public DbObjectName InsertFunction => new DbObjectName(DatabaseSchemaName, $"{InsertPrefix}{_alias}");
+        public DbObjectName UpdateFunction => new DbObjectName(DatabaseSchemaName, $"{UpdatePrefix}{_alias}");
+        public DbObjectName OverwriteFunction => new DbObjectName(DatabaseSchemaName, $"{OverwritePrefix}{_alias}");
+
+
 
         public string DatabaseSchemaName
         {
@@ -97,12 +107,54 @@ namespace Marten.Schema
             }
         }
 
+        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
+        {
+            var extras = extraFilters(query).ToArray();
+
+            return query.Append(extras);
+
+        }
+
+        private IEnumerable<IWhereFragment> extraFilters(IWhereFragment query)
+        {
+            if (DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(DeletedColumn))
+            {
+                yield return ExcludeSoftDeletedDocuments();
+            }
+
+            if (TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
+            {
+                yield return new TenantWhereFragment();
+            }
+        }
 
         public IWhereFragment DefaultWhereFragment()
         {
-            if (DeleteStyle == DeleteStyle.Remove) return null;
+            var defaults = defaultFilters().ToArray();
+            switch (defaults.Length)
+            {
+                case 0:
+                    return null;
 
-            return ExcludeSoftDeletedDocuments();
+                case 1:
+                    return defaults[0];
+
+                default:
+                    return new CompoundWhereFragment("and", defaults);
+            }
+        }
+
+        private IEnumerable<IWhereFragment> defaultFilters()
+        {
+            if (DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                yield return ExcludeSoftDeletedDocuments();
+            }
+
+            if (TenancyStyle == TenancyStyle.Conjoined)
+            {
+                yield return new TenantWhereFragment();
+            }
         }
 
         public static IWhereFragment ExcludeSoftDeletedDocuments()
@@ -116,7 +168,7 @@ namespace Marten.Schema
 
             var closedType = resolverType.MakeGenericType(DocumentType);
 
-            return Activator.CreateInstance(closedType, options.Serializer(), this, options.UseCharBufferPooling)
+            return Activator.CreateInstance(closedType, options.Serializer(), this)
                 .As<IDocumentStorage>();
         }
 
@@ -126,13 +178,14 @@ namespace Marten.Schema
             factory.RunSql(sql);
         }
 
+        // TODO -- see if you can eliminate the tenant argument here
         public IdAssignment<T> ToIdAssignment<T>(ITenant tenant)
         {
             var idType = IdMember.GetMemberType();
 
             var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
 
-            return (IdAssignment<T>) Activator.CreateInstance(assignerType, IdMember, IdStrategy, tenant);
+            return (IdAssignment<T>) Activator.CreateInstance(assignerType, IdMember, IdStrategy);
         }
 
         public IQueryableDocument ToQueryableDocument()
@@ -160,6 +213,8 @@ namespace Marten.Schema
             get { return _idMember; }
             set
             {
+                
+
                 _idMember = value;
 
                 if (_idMember != null && !_idMember.GetMemberType().IsOneOf(typeof(int), typeof(Guid), typeof(long), typeof(string)))
@@ -169,9 +224,10 @@ namespace Marten.Schema
 
                 if (_idMember != null)
                 {
-                    var idField = new IdField(IdMember);
-                    setField(IdMember.Name, idField);
+                    removeIdField();
 
+                    var idField = new IdField(_idMember);
+                    setField(_idMember.Name, idField);
                     IdStrategy = defineIdStrategy(DocumentType, _storeOptions);
                 }
             }
@@ -192,14 +248,7 @@ namespace Marten.Schema
 
 
 
-        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
-        {
-            if (DeleteStyle == DeleteStyle.Remove) return query;
 
-            if (query.Contains(DeletedColumn)) return query;
-
-            return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
-        }
 
         public static DocumentMapping<T> For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName,
             Func<IDocumentMapping, StoreOptions, IIdGeneration> idGeneration = null)
@@ -388,6 +437,7 @@ namespace Marten.Schema
         }
 
         private HiloSettings _hiloSettings;
+
         public HiloSettings HiloSettings
         {
             get { return _hiloSettings; }
@@ -472,6 +522,18 @@ namespace Marten.Schema
             return Indexes.OfType<IndexDefinition>().Where(x => x.Columns.Contains(column));
         }
 
+        internal void Validate()
+        {
+            if (IdMember == null)
+            {
+                throw new InvalidDocumentException(
+                    $"Could not determine an 'id/Id' field or property for requested document type {DocumentType.FullName}");
+            }
+
+            var idField = new IdField(IdMember);
+            setField(IdMember.Name, idField);
+        }
+
         public override string ToString()
         {
             return $"Storage for {DocumentType}, Table: {Table}";
@@ -487,13 +549,22 @@ namespace Marten.Schema
             }
         }
 
-        bool IFeatureSchema.IsActive => true;
+        bool IFeatureSchema.IsActive(StoreOptions options) => true;
 
-        ISchemaObject[] IFeatureSchema.Objects => new ISchemaObject[]
+        ISchemaObject[] IFeatureSchema.Objects => toSchemaObjects().ToArray();
+
+        private IEnumerable<ISchemaObject> toSchemaObjects()
         {
-            new DocumentTable(this),
-            new UpsertFunction(this),  
-        };
+            yield return new DocumentTable(this);
+            yield return new UpsertFunction(this);
+            yield return new InsertFunction(this);
+            yield return new UpdateFunction(this);
+
+            if (UseOptimisticConcurrency)
+            {
+                yield return new OverwriteFunction(this);
+            }
+        }
 
         Type IFeatureSchema.StorageType => DocumentType;
         public string Identifier => Alias.ToLowerInvariant();

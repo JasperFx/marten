@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 using Marten.Linq.Model;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class ListQueryHandler<T> : IQueryHandler<IList<T>>
+    public class ListQueryHandler<T> : IQueryHandler<IReadOnlyList<T>>
     {
         private readonly LinqQuery<T> _query;
 
@@ -19,12 +18,12 @@ namespace Marten.Linq.QueryHandlers
             _query = query;
         }
 
-        public IList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
+        public IReadOnlyList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
             return _query.Selector.Read(reader, map, stats);
         }
 
-        public Task<IList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             return _query.Selector.ReadAsync(reader, map, stats, token);
         }

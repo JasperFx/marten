@@ -62,36 +62,5 @@ namespace Marten.Testing.Services
                 .ShouldBe(version);
         }
 
-        [Fact]
-        public void get_with_sync_fetch()
-        {
-            var target = Target.Random();
-            var json = theStore.Advanced.Serializer.ToJson(target).ToReader();
-
-            var version = Guid.NewGuid();
-
-            theIdentityMap.Get<Target>(target.Id, () => new FetchResult<Target>(target, json, version));
-
-            theIdentityMap.Versions.Version<Target>(target.Id)
-                .ShouldBe(version);
-
-        }
-
-        [Fact]
-        public async Task get_with_async_fetch()
-        {
-            var target = Target.Random();
-            var json = theStore.Advanced.Serializer.ToJson(target).ToReader();
-
-            var version = Guid.NewGuid();
-
-            await theIdentityMap.GetAsync(target.Id, tkn =>
-            {
-                return Task.FromResult(new FetchResult<Target>(target, json, version));
-            }, default(CancellationToken));
-
-            theIdentityMap.Versions.Version<Target>(target.Id)
-                .ShouldBe(version);
-        }
     }
 }

@@ -69,6 +69,7 @@ namespace Marten
         /// <param name="options"></param>
         public DocumentStore(StoreOptions options)
         {
+            options.ApplyConfiguration();
             options.CreatePatching();
 
             Options = options;
@@ -76,13 +77,20 @@ namespace Marten
             _logger = options.Logger();
 
             Tenancy = options.Tenancy;
-            Tenancy.Initialize();
+
+            if (options.CreateDatabases != null)
+            {
+                IDatabaseGenerator databaseGenerator = new DatabaseGenerator();                
+                databaseGenerator.CreateDatabases(Tenancy, options.CreateDatabases);
+            }
+
+            Tenancy.Initialize();            
 
             Schema = Tenancy.Schema;
 
             Storage = options.Storage;
 
-            Storage.CompileSubClasses();
+            Storage.PostProcessConfiguration();
 
             Serializer = options.Serializer();
 
@@ -194,7 +202,7 @@ namespace Marten
             var connection = tenant.OpenConnection(CommandRunnerMode.Transactional, options.IsolationLevel, options.Timeout);
             
 
-            var session = new DocumentSession(this, connection, _parser, map, tenant, options.Listeners);
+            var session = new DocumentSession(this, connection, _parser, map, tenant, options.ConcurrencyChecks, options.Listeners);
             connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
@@ -250,13 +258,15 @@ namespace Marten
             var parser = new MartenQueryParser();
 
             var tenant = Tenancy[options.TenantId];
-            var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
+            var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly, options.IsolationLevel, options.Timeout);
 
             var session = new QuerySession(this,
                 connection, parser,
                 new NulloIdentityMap(Serializer), tenant);
 
-            session.Logger = _logger.StartSession(session);
+	        connection.BeginSession();
+
+			session.Logger = _logger.StartSession(session);
 
             return session;
         }
@@ -276,6 +286,8 @@ namespace Marten
             var session = new QuerySession(this,
                 connection, parser,
                 new NulloIdentityMap(Serializer), tenant);
+
+			connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
 

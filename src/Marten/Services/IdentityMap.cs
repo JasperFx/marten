@@ -3,8 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Baseline;
 
 namespace Marten.Services
@@ -19,80 +17,17 @@ namespace Marten.Services
     {
         private readonly IEnumerable<IDocumentSessionListener> _listeners;
 
-        protected ConcurrentCache<Type, ConcurrentDictionary<object, TCacheValue>> Cache { get; }
-            = new ConcurrentCache<Type, ConcurrentDictionary<object, TCacheValue>>(_ => new ConcurrentDictionary<object, TCacheValue>());
-
-        public ISerializer Serializer { get; }
-
         protected IdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners)
         {
             Serializer = serializer;
             _listeners = listeners ?? new IDocumentSessionListener[] { };
         }
 
-        protected IEnumerable<TCacheValue> allCachedValues()
-        {
-            return Cache.SelectMany(x => x.Values);
-        }
+        protected ConcurrentCache<Type, ConcurrentDictionary<object, TCacheValue>> Cache { get; }
+            = new ConcurrentCache<Type, ConcurrentDictionary<object, TCacheValue>>(
+                _ => new ConcurrentDictionary<object, TCacheValue>());
 
-        protected abstract TCacheValue ToCache(object id, Type concreteType, object document, TextReader json, UnitOfWorkOrigin origin = UnitOfWorkOrigin.Loaded);
-        protected abstract T FromCache<T>(TCacheValue cacheValue);
-
-        private void storeFetched<T>(object id, FetchResult<T> fetched)
-        {
-            if (fetched?.Version != null)
-            {
-                Versions.Store<T>(id, fetched.Version.Value);
-            }
-        }
-
-        public T Get<T>(object id, Func<FetchResult<T>> result)
-        {
-            var cacheValue = Cache[typeof(T)].GetOrAdd(id, _ =>
-            {
-                var fetchResult = result();
-
-                storeFetched(id, fetchResult);
-
-                var document = fetchResult == null ? default(T) : fetchResult.Document;
-                
-                _listeners.Each(listener => listener.DocumentLoaded(id, document));
-
-                return ToCache(id, typeof(T), document, fetchResult?.Json);
-            });
-
-
-            return FromCache<T>(cacheValue);
-        }
-
-        private TCacheValue ToCache(object id, Type concreteType, object document, string json)
-        {
-            return ToCache(id, concreteType, document, json.IsNotEmpty() ? new StringReader(json) : null);
-        }
-
-
-        public async Task<T> GetAsync<T>(object id, Func<CancellationToken, Task<FetchResult<T>>> result, CancellationToken token = default(CancellationToken))
-        {
-            var dictionary = Cache[typeof(T)];
-
-            if (dictionary.ContainsKey(id))
-            {
-                return FromCache<T>(dictionary[id]);
-            }
-
-            var fetchResult = await result(token).ConfigureAwait(false);
-            if (fetchResult == null) return default(T);
-
-            storeFetched(id, fetchResult);
-
-            var document = fetchResult.Document;
-
-            dictionary[id] = ToCache(id, typeof(T), document, fetchResult.Json);
-
-            _listeners.Each(listener => listener.DocumentLoaded(id, document));
-
-            return document;
-        }
+        public ISerializer Serializer { get; }
 
         public T Get<T>(object id, TextReader json, Guid? version)
         {
@@ -104,9 +39,7 @@ namespace Marten.Services
             var cacheValue = Cache[typeof(T)].GetOrAdd(id, _ =>
             {
                 if (version.HasValue)
-                {
                     Versions.Store<T>(id, version.Value);
-                }
 
                 var document = Serializer.FromJson(concreteType, json);
 
@@ -126,9 +59,7 @@ namespace Marten.Services
         public void Store<T>(object id, T entity, Guid? version = null)
         {
             if (version.HasValue)
-            {
                 Versions.Store<T>(id, version.Value);
-            }
 
             var dictionary = Cache[typeof(T)];
 
@@ -136,10 +67,8 @@ namespace Marten.Services
             {
                 var existing = FromCache<T>(dictionary[id]);
                 if (existing != null && !ReferenceEquals(existing, entity))
-                {
                     throw new InvalidOperationException(
                         $"Document '{typeof(T).FullName}' with same Id already added to the session.");
-                }
             }
 
             _listeners.Each(listener => listener.DocumentAddedForStorage(id, entity));
@@ -149,7 +78,7 @@ namespace Marten.Services
             dictionary.AddOrUpdate(id, cacheValue, (i, e) => cacheValue);
         }
 
-        public bool Has<T>(object id) 
+        public bool Has<T>(object id)
         {
             var dict = Cache[typeof(T)];
             return dict.ContainsKey(id) && FromCache<T>(dict[id]) != null;
@@ -171,6 +100,16 @@ namespace Marten.Services
         public virtual void ClearChanges()
         {
         }
+
+        protected IEnumerable<TCacheValue> allCachedValues()
+        {
+            return Cache.SelectMany(x => x.Values);
+        }
+
+        protected abstract TCacheValue ToCache(object id, Type concreteType, object document, TextReader json,
+            UnitOfWorkOrigin origin = UnitOfWorkOrigin.Loaded);
+
+        protected abstract T FromCache<T>(TCacheValue cacheValue);
     }
 
     public class IdentityMap : IdentityMap<object>
@@ -180,7 +119,8 @@ namespace Marten.Services
         {
         }
 
-        protected override object ToCache(object id, Type concreteType, object document, TextReader json, UnitOfWorkOrigin origin = UnitOfWorkOrigin.Loaded)
+        protected override object ToCache(object id, Type concreteType, object document, TextReader json,
+            UnitOfWorkOrigin origin = UnitOfWorkOrigin.Loaded)
         {
             return document;
         }

@@ -89,7 +89,7 @@ namespace Marten.Testing.Events
             var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-            theStreamId = theSession.Events.StartStream<Quest>(joined, departed);
+            theStreamId = theSession.Events.StartStream<Quest>(joined, departed).Id;
             theSession.SaveChanges();
         }
 
@@ -104,6 +104,7 @@ namespace Marten.Testing.Events
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
             state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
+            state.Created.ShouldNotBe(DateTime.MinValue);
         }
 
         [Fact]
@@ -115,6 +116,7 @@ namespace Marten.Testing.Events
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
             state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
+            state.Created.ShouldNotBe(DateTime.MinValue);
         }
 
         [Fact]

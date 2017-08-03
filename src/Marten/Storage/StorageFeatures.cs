@@ -43,7 +43,7 @@ namespace Marten.Storage
             _features[typeof(EventStream)] = options.Events;
             _features[typeof(IEvent)] = options.Events;
 
-            _mappings[typeof(IEvent)] = new EventQueryMapping(_options);
+            
            
         }
 
@@ -64,18 +64,7 @@ namespace Marten.Storage
 
         public DocumentMapping MappingFor(Type documentType)
         {
-            return _documentMappings.GetOrAdd(documentType, type =>
-            {
-                var mapping = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType);
-
-                if (mapping.IdMember == null)
-                {
-                    throw new InvalidDocumentException(
-                        $"Could not determine an 'id/Id' field or property for requested document type {documentType.FullName}");
-                }
-
-                return mapping;
-            });
+            return _documentMappings.GetOrAdd(documentType, type => typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType));
         }
 
 
@@ -143,8 +132,10 @@ namespace Marten.Storage
         }
 
 
-        internal void CompileSubClasses()
+        internal void PostProcessConfiguration()
         {
+            _mappings[typeof(IEvent)] = new EventQueryMapping(_options);
+
             foreach (var mapping in _documentMappings.Values)
             {
                 foreach (var subClass in mapping.SubClasses)
@@ -193,11 +184,14 @@ namespace Marten.Storage
                 yield return tenant.Sequences;
             }
 
-            
 
-            yield return Transforms;
 
-            if (_options.Events.IsActive)
+            if (Transforms.IsActive(_options))
+            {
+                yield return Transforms;
+            }
+
+            if (_options.Events.IsActive(_options))
             {
                 yield return _options.Events;
             }

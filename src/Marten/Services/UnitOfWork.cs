@@ -56,7 +56,7 @@ namespace Marten.Services
 
         public IEnumerable<object> Updates()
         {
-            return _operations.Values.SelectMany(x => x.OfType<UpdateDocument>().Select(u => u.Document))
+            return _operations.Values.SelectMany(x => x.OfType<UpsertDocument>().Select(u => u.Document))
                 .Union(detectTrackerChanges().Select(x => x.Document));
         }
 
@@ -121,6 +121,14 @@ namespace Marten.Services
             var list = _operations.GetOrAdd(patch.DocumentType, type => new List<IStorageOperation>());
 
             list.Add(patch);
+        }
+
+        public void StoreUpserts<T>(params T[] documents)
+        {
+            var list = _operations.GetOrAdd(typeof(T), type => new List<IStorageOperation>());
+
+            list.AddRange(documents.Select(x => new UpsertDocument(x)));
+
         }
 
         public void StoreUpdates<T>(params T[] documents)
@@ -192,9 +200,9 @@ namespace Marten.Services
                 {
                     // No Virginia, I do not approve of this but I'm pulling all my hair
                     // out as is trying to make this work
-                    if (operation is Upsert)
+                    if (operation is DocumentStorageOperation)
                     {
-                        operation.As<Upsert>().Persist(batch, _tenant);
+                        operation.As<DocumentStorageOperation>().Persist(batch, _tenant);
                     }
                     else
                     {
@@ -212,7 +220,7 @@ namespace Marten.Services
             {
                 var upsert = _tenant.StorageFor(group.Key);
 
-                group.Each(c => { upsert.RegisterUpdate(batch, c.Document, c.Json); });
+                group.Each(c => { upsert.RegisterUpdate(null, UpdateStyle.Upsert, batch, c.Document, c.Json); });
             });
 
             return changes;
@@ -221,7 +229,10 @@ namespace Marten.Services
         private void writeEvents(UpdateBatch batch)
         {
             var upsert = new EventStreamAppender(_store.Events);
-            _events.Values.Each(stream => { upsert.RegisterUpdate(batch, stream); });
+            _events.Values.Each(stream =>
+            {
+                upsert.RegisterUpdate(batch, stream);
+            });
         }
 
         private IEnumerable<Type> GetTypeDependencies(Type type)
@@ -269,7 +280,7 @@ namespace Marten.Services
         {
             if (_operations.ContainsKey(typeof(T)))
             {
-                return _operations[typeof(T)].OfType<Upsert>().Any(x => object.ReferenceEquals(entity, x.Document));
+                return _operations[typeof(T)].OfType<DocumentStorageOperation>().Any(x => object.ReferenceEquals(entity, x.Document));
             }
 
             return false;
@@ -281,15 +292,27 @@ namespace Marten.Services
         {
             return _ancillaryOperations.OfType<T>();
         }
+
+
+        public bool HasStream(string stream)
+        {
+            return _events.Values.Any(x => x.Key == stream);
+        }
+
+        public EventStream StreamFor(string stream)
+        {
+            return _events.Values.First(x => x.Key == stream);
+        }
     }
 
-    public abstract class Upsert : IStorageOperation
+    public abstract class DocumentStorageOperation : IStorageOperation
     {
-        protected Upsert(object document)
-        {
-            if (document == null) throw new ArgumentNullException(nameof(document));
+        public UpdateStyle UpdateStyle { get; }
 
-            Document = document;
+        protected DocumentStorageOperation(UpdateStyle updateStyle, object document)
+        {
+            Document = document ?? throw new ArgumentNullException(nameof(document));
+            UpdateStyle = updateStyle;
         }
 
         public Type DocumentType => Document.GetType();
@@ -304,25 +327,42 @@ namespace Marten.Services
         {
         }
 
+        public string TenantOverride { get; set; }
+
+
         public bool Persist(UpdateBatch batch, ITenant tenant)
         {
             var upsert = tenant.StorageFor(Document.GetType());
-            upsert.RegisterUpdate(batch, Document);
+            upsert.RegisterUpdate(TenantOverride, UpdateStyle, batch, Document);
 
             return true;
         }
     }
 
-    public class UpdateDocument : Upsert
+    public class UpsertDocument : DocumentStorageOperation
     {
-        public UpdateDocument(object document) : base(document)
+        public UpsertDocument(object document) : base(UpdateStyle.Upsert, document)
+        {
+        }
+
+        public UpsertDocument(object document, string tenantId) : this(document)
+        {
+            TenantOverride = tenantId;
+        }
+
+        
+    }
+
+    public class UpdateDocument : DocumentStorageOperation
+    {
+        public UpdateDocument(object document) : base(UpdateStyle.Update, document)
         {
         }
     }
 
-    public class InsertDocument : Upsert
+    public class InsertDocument : DocumentStorageOperation
     {
-        public InsertDocument(object document) : base(document)
+        public InsertDocument(object document) : base(UpdateStyle.Insert, document)
         {
         }
     }

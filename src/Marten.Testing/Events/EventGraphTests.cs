@@ -9,6 +9,12 @@ namespace Marten.Testing.Events
     {
         private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
 
+        [Fact]
+        public void stream_identity_is_guid_by_default()
+        {
+            theGraph.StreamIdentity.ShouldBe(StreamIdentity.AsGuid);
+        }
+
 
         [Fact]
         public void find_stream_mapping_initially()
@@ -58,14 +64,14 @@ namespace Marten.Testing.Events
         [Fact]
         public void has_any_in_starting_state()
         {
-            theGraph.IsActive.ShouldBeFalse();
+            theGraph.IsActive(null).ShouldBeFalse();
         }
 
         [Fact]
         public void has_any_is_true_with_any_events()
         {
             theGraph.AddEventType(typeof(IssueAssigned));
-            theGraph.IsActive.ShouldBeTrue();
+            theGraph.IsActive(null).ShouldBeTrue();
         }
 
 

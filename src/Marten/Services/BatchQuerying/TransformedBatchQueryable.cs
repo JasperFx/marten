@@ -1,6 +1,5 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Linq;
@@ -9,7 +8,7 @@ namespace Marten.Services.BatchQuerying
 {
     public interface ITransformedBatchQueryable<TValue>
     {
-        Task<IList<TValue>> ToList();
+        Task<IReadOnlyList<TValue>> ToList();
         Task<TValue> First();
         Task<TValue> FirstOrDefault();
         Task<TValue> Single();
@@ -27,7 +26,7 @@ namespace Marten.Services.BatchQuerying
             _inner = inner;
         }
 
-        public Task<IList<TValue>> ToList()
+        public Task<IReadOnlyList<TValue>> ToList()
         {
             return _parent.Query<TValue>(_inner);
         }

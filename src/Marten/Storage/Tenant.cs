@@ -50,6 +50,7 @@ namespace Marten.Storage
         }
 
         public string TenantId { get; }
+        public IDbObjects DbObjects => new DbObjects(this, _features);
 
         public void RemoveSchemaItems(Type featureType, StorageFeatures features)
         {
@@ -81,6 +82,7 @@ namespace Marten.Storage
         {
             if (_checks.ContainsKey(featureType)) return;
 
+
             // TODO -- ensure the system type here too?
             var feature = _features.FindFeature(featureType);
             if (feature == null)
@@ -105,35 +107,42 @@ namespace Marten.Storage
 
             // TODO -- might need to do a lock here.
             generateOrUpdateFeature(featureType, feature);
+
         }
+
+        
+        private readonly object _updateLock = new object();
 
         private void generateOrUpdateFeature(Type featureType, IFeatureSchema feature)
         {
-            using (var conn = _factory.Create())
+            lock (_updateLock)
             {
-                conn.Open();
-
-                var patch = new SchemaPatch(_options.DdlRules);
-                patch.Apply(conn, _options.AutoCreateSchemaObjects, feature.Objects);
-                patch.AssertPatchingIsValid(_options.AutoCreateSchemaObjects);
-
-                var ddl = patch.UpdateDDL;
-                if (patch.Difference != SchemaPatchDifference.None && ddl.IsNotEmpty())
+                using (var conn = _factory.Create())
                 {
-                    var cmd = conn.CreateCommand(ddl);
-                    try
+                    conn.Open();
+
+                    var patch = new SchemaPatch(_options.DdlRules);
+                    patch.Apply(conn, _options.AutoCreateSchemaObjects, feature.Objects);
+                    patch.AssertPatchingIsValid(_options.AutoCreateSchemaObjects);
+
+                    var ddl = patch.UpdateDDL;
+                    if (patch.Difference != SchemaPatchDifference.None && ddl.IsNotEmpty())
                     {
-                        cmd.ExecuteNonQuery();
-                        _options.Logger().SchemaChange(ddl);
-                        _checks[featureType] = true;
-                        if (feature.StorageType != featureType)
+                        var cmd = conn.CreateCommand(ddl);
+                        try
                         {
-                            _checks[feature.StorageType] = true;
+                            cmd.ExecuteNonQuery();
+                            _options.Logger().SchemaChange(ddl);
+                            _checks[featureType] = true;
+                            if (feature.StorageType != featureType)
+                            {
+                                _checks[feature.StorageType] = true;
+                            }
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        throw new MartenCommandException(cmd, e);
+                        catch (Exception e)
+                        {
+                            throw new MartenCommandException(cmd, e);
+                        }
                     }
                 }
             }
@@ -253,12 +262,13 @@ namespace Marten.Storage
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
+            var mapping = MappingFor(typeof(T));
             var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
-                MappingFor(typeof(T)));
+                mapping);
 
             using (var connection = OpenConnection())
             {
-                return connection.Fetch(handler, null, null);
+                return connection.Fetch(handler, null, null, this);
             }
         }
 
@@ -278,7 +288,7 @@ namespace Marten.Storage
 
             using (var connection = OpenConnection())
             {
-                return await connection.FetchAsync(handler, null, null, token).ConfigureAwait(false);
+                return await connection.FetchAsync(handler, null, null, this, token).ConfigureAwait(false);
             }
         }
     }

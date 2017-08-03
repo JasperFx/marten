@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Events;
@@ -8,7 +6,6 @@ using Marten.Events.Projections;
 using Marten.Services;
 using Marten.Services.Events;
 using Marten.Testing.Events.Projections;
-using Marten.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Shouldly;
@@ -69,6 +66,25 @@ namespace Marten.Testing.Events
         }
 
         [Fact]
+        public void can_set_public_and_private_apply_aggregator_through_extension_methods_and_strategy()
+        {
+            var theGraph = new EventGraph(new StoreOptions());
+            theGraph.UseAggregatorLookup(AggregationLookupStrategy.UsePublicAndPrivateApply);
+
+            var aggregator = theGraph.AggregateFor<AggregateWithPrivateEventApply>();
+
+            var stream = new EventStream(Guid.NewGuid(), false)
+                .Add(new QuestStarted { Name = "Destroy the Ring" });
+
+            var party = aggregator.Build(stream.Events, null);
+            party.Name.ShouldBe("Destroy the Ring");
+
+            stream.Add(new QuestEnded { Name = "Ring Destroyed" });
+            var party2 = aggregator.Build(stream.Events, null);
+            party2.Name.ShouldBe("Ring Destroyed");
+        }
+
+        [Fact]
         public void can_set_aggregator_through_extension_methods_and_strategy()
         {
             var theGraph = new EventGraph(new StoreOptions());
@@ -109,6 +125,11 @@ namespace Marten.Testing.Events
         private void Apply(QuestStarted started)
         {
             Name = started.Name;
+        }
+
+        public void Apply(QuestEnded ended)
+        {
+            Name = ended.Name;
         }
 
         public string Name { get; private set; }

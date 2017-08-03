@@ -30,7 +30,7 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream<Quest>(joined, departed);
+                var id = session.Events.StartStream<Quest>(joined, departed).Id;
                 session.SaveChanges();
                 // ENDSAMPLE
 
@@ -59,7 +59,7 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream<Quest>(joined, departed);
+                var id = session.Events.StartStream<Quest>(joined, departed).Id;
                 await session.SaveChangesAsync();
                 // ENDSAMPLE
 
@@ -88,7 +88,7 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream<Quest>(joined, departed);
+                var id = session.Events.StartStream<Quest>(joined, departed).Id;
                 await session.SaveChangesAsync();
                 // ENDSAMPLE
 
@@ -119,7 +119,7 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream<Quest>(joined, departed);
+                var id = session.Events.StartStream<Quest>(joined, departed).Id;
                 session.SaveChanges();
                 // ENDSAMPLE
 
@@ -397,7 +397,7 @@ namespace Marten.Testing.Events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream<Quest>(joined, departed);
+                var id = session.Events.StartStream<Quest>(joined, departed).Id;
                 session.SaveChanges();
 
                 var streamEvents = session.Events.FetchStream(id);
@@ -562,6 +562,7 @@ namespace Marten.Testing.Events
                 @event.Name.ShouldBe("some-name");
             }
         }
+
 
 
         private static DocumentStore InitStore(string databascSchema = null, bool cleanShema = true)

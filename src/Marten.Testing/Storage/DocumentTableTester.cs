@@ -321,7 +321,8 @@ namespace Marten.Testing.Storage
             theMapping.DeleteStyle = DeleteStyle.SoftDelete;
 
             theTable.HasColumn(DocumentMapping.DeletedColumn);
-            theTable.HasColumn(DocumentMapping.DeletedAtColumn);
+						Assert.True(theTable.Indexes.Any(x => x.IndexName == $"mt_doc_user_idx_{DocumentMapping.DeletedColumn}"));
+						theTable.HasColumn(DocumentMapping.DeletedAtColumn);
         }
 
         [Fact]

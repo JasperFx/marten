@@ -1,12 +1,13 @@
-﻿using Baseline;
+﻿using System;
+using Baseline;
 using Marten.Services;
 using Npgsql;
-using StructureMap;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing
 {
-    public class SessionOptionsTests
+    public class SessionOptionsTests : IntegratedFixture
     {
         // SAMPLE: ConfigureCommandTimeout
 public void ConfigureCommandTimeout(IDocumentStore store)
@@ -20,19 +21,25 @@ public void ConfigureCommandTimeout(IDocumentStore store)
 }
         // ENDSAMPLE
 
+
         [Fact]
+        public void the_default_concurrency_checks_is_enabled()
+        {
+            new SessionOptions().ConcurrencyChecks
+                .ShouldBe(ConcurrencyChecks.Enabled);
+        }
+
+        //[Fact] doesn't play nicely on Travis
         public void can_choke_on_custom_timeout()
         {
-            var container = Container.For<DevelopmentModeRegistry>();
-            var store = container.GetInstance<IDocumentStore>();
 
             var options = new SessionOptions() { Timeout = 1 };
 
-            using (var session = store.OpenSession(options))
+            using (var session = theStore.OpenSession(options))
             {
                 var e = Assert.Throws<MartenCommandException>(() =>
                 {
-                    session.Query<QuerySessionTests.FryGuy>("select pg_sleep(2)");
+                    session.Query<FryGuy>("select pg_sleep(2)");
                 });
 
                 Assert.Contains("connected party did not properly respond after a period of time", e.InnerException.InnerException.Message);
@@ -42,14 +49,11 @@ public void ConfigureCommandTimeout(IDocumentStore store)
         [Fact]
         public void can_define_custom_timeout()
         {
-            var container = Container.For<DevelopmentModeRegistry>();
-            var store = container.GetInstance<IDocumentStore>();
+            var guy1 = new FryGuy();
+            var guy2 = new FryGuy();
+            var guy3 = new FryGuy();
 
-            var guy1 = new QuerySessionTests.FryGuy();
-            var guy2 = new QuerySessionTests.FryGuy();
-            var guy3 = new QuerySessionTests.FryGuy();
-
-            using (var session = store.OpenSession())
+            using (var session = theStore.OpenSession())
             {
                 session.Store(guy1, guy2, guy3);
                 session.SaveChanges();
@@ -57,10 +61,15 @@ public void ConfigureCommandTimeout(IDocumentStore store)
 
             var options = new SessionOptions() { Timeout = 15 };
 
-            using (var query = store.QuerySession(options).As<QuerySession>())
+            using (var query = theStore.QuerySession(options).As<QuerySession>())
             {
-                query.LoadDocument<QuerySessionTests.FryGuy>(guy2.id).ShouldNotBeNull();
+                query.Load<FryGuy>(guy2.Id).ShouldNotBeNull();
             }
+        }
+
+        public class FryGuy
+        {
+            public Guid Id;
         }
     }
 }

@@ -1,7 +1,12 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Marten.Linq
 {
+    // It seems that the output schema is not documented anywhere, so all the possible outputs
+    // should be deciphered from explain.c in PG backend codebase
+    // https://github.com/postgres/postgres/blob/18ce3a4ab22d2984f8540ab480979c851dae5338/src/backend/commands/explain.c
+
     public class QueryPlan
     {
         /// <summary>
@@ -46,10 +51,53 @@ namespace Marten.Linq
         /// </summary>
         [JsonProperty(PropertyName = "Plan Width")]
         public int PlanWidth { get; set; }
+
+        [JsonProperty(PropertyName = "Parallel Aware")]
+        public bool ParallelAware { get; set; }
+
+        [JsonProperty(PropertyName = "Actual Startup Time")]
+        public decimal ActualStartupTime { get; set; }
+
+        [JsonProperty(PropertyName = "Actual Total Time")]
+        public decimal ActualTotalTime { get; set; }
+
+        [JsonProperty(PropertyName = "Actual Rows")]
+        public int ActualRows { get; set; }
+
+        [JsonProperty(PropertyName = "Actual Loops")]
+        public int ActualLoops { get; set; }
+
+        [JsonProperty(PropertyName = "Output")]
+        public string[] Output { get; set; }
+
+        [JsonProperty(PropertyName = "Sort Key")]
+        public string[] SortKey { get; set; }
+
+        [JsonProperty(PropertyName = "Sort Method")]
+        public string SortMethod { get; set; }
+
+        [JsonProperty(PropertyName = "Sort Space Used")]
+        public double SortSpaceUsed { get; set; }
+
+        [JsonProperty(PropertyName = "Sort Space Type")]
+        public string SortSpaceType { get; set; }
+
+        [JsonProperty(PropertyName = "Plans")]
+        public QueryPlan[] Plans { get; set; }
+
+        // Lifted these from QueryPlanContainer so as not to change the returned type alltogether :|
+        public decimal PlanningTime { get; set; }        
+        public decimal ExecutionTime { get; set; }
     }
 
     class QueryPlanContainer
     {
         public QueryPlan Plan { get; set; }
+
+        [JsonProperty(PropertyName = "Planning Time")]
+        public decimal PlanningTime { get; set; }
+
+        [JsonProperty(PropertyName = "Execution Time")]
+        public decimal ExecutionTime { get; set; }
     }
 }

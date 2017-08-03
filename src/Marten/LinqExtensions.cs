@@ -36,5 +36,28 @@ namespace Marten
 
             return !enumerable.Any();
         }
+
+        /// <summary>
+        /// Query across any and all tenants
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="variable"></param>
+        /// <returns></returns>
+        public static bool AnyTenant<T>(this T variable)
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Query for the range of supplied tenants
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="variable"></param>
+        /// <param name="tenantIds"></param>
+        /// <returns></returns>
+        public static bool TenantIsOneOf<T>(this T variable, params string[] tenantIds)
+        {
+            return true;
+        }
     }
 }

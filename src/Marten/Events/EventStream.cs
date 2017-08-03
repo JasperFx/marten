@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Schema.Identity;
+using Marten.Services;
 
 namespace Marten.Events
 {
@@ -24,6 +25,8 @@ namespace Marten.Events
 
         public Guid Id { get; }
 
+        public string Key { get; }
+
         public bool IsNew { get; }
 
         public Type AggregateType { get; set; } 
@@ -34,6 +37,20 @@ namespace Marten.Events
         {
             Id = stream;
             AddEvents(events);
+            IsNew = isNew;
+        }
+
+        public EventStream(string stream, IEvent[] events, bool isNew)
+        {
+            Id = Guid.NewGuid();
+            Key = stream;
+            AddEvents(events);
+            IsNew = isNew;
+        }
+
+        public EventStream(string stream, bool isNew)
+        {
+            Key = stream;
             IsNew = isNew;
         }
 
@@ -48,6 +65,7 @@ namespace Marten.Events
         }
 
         public IEnumerable<IEvent> Events => _events;
+        internal int ExpectedVersionOnServer { get; set; }
 
         /// <summary>
         /// Strictly for testing
@@ -69,6 +87,16 @@ namespace Marten.Events
                 e.Version = current;
                 current--;
             });
+
+            if (ExpectedVersionOnServer > 0 && version != ExpectedVersionOnServer)
+            {
+                throw new EventStreamUnexpectedMaxEventIdException(ExpectedVersionOnServer, version);
+            }
+
+            if (IsNew && version > _events.Count)
+            {
+                throw new ExistingStreamIdCollisionException(Key ?? Id.ToString());
+            }
         }
     }
 }

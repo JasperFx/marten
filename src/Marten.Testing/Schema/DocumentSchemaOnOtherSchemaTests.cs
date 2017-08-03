@@ -1,14 +1,11 @@
 using System;
-using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Events;
 using Marten.Schema;
-using Marten.Schema.Identity.Sequences;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
 using Shouldly;
-using StructureMap;
 using Xunit;
 using Issue = Marten.Testing.Documents.Issue;
 
@@ -49,7 +46,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_not_write_event_sql_if_the_event_graph_is_not_active()
         {
-            theStore.Events.IsActive.ShouldBeFalse();
+            theStore.Events.IsActive(null).ShouldBeFalse();
 
             theSchema.ToDDL().ShouldNotContain("other.mt_streams");
         }
@@ -58,7 +55,7 @@ namespace Marten.Testing.Schema
         public void do_write_the_event_sql_if_the_event_graph_is_active()
         {
             theStore.Events.AddEventType(typeof(MembersJoined));
-            theStore.Events.IsActive.ShouldBeTrue();
+            theStore.Events.IsActive(null).ShouldBeTrue();
 
             theSchema.ToDDL().ShouldContain("other.mt_streams");
         }
@@ -70,12 +67,12 @@ namespace Marten.Testing.Schema
             theStore.Tenancy.Default.StorageFor(typeof(Issue)).ShouldNotBeNull();
             theStore.Tenancy.Default.StorageFor(typeof(Company)).ShouldNotBeNull();
 
-            var tables = theSchema.DbObjects.SchemaTables();
+            var tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
             tables.ShouldContain("other.mt_doc_user");
             tables.ShouldContain("other.mt_doc_issue");
             tables.ShouldContain("other.mt_doc_company");
 
-            var functions = theSchema.DbObjects.Functions();
+            var functions = theStore.Tenancy.Default.DbObjects.Functions();
             functions.ShouldContain("other.mt_upsert_user");
             functions.ShouldContain("other.mt_upsert_issue");
             functions.ShouldContain("other.mt_upsert_company");
@@ -84,9 +81,9 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_not_rebuild_a_table_that_already_exists()
         {
-            using (var container1 = Container.For<DevelopmentModeRegistry>())
+            using (var store = TestingDocumentStore.Basic())
             {
-                using (var session = container1.GetInstance<IDocumentStore>().LightweightSession())
+                using (var session = store.LightweightSession())
                 {
                     session.Store(new User());
                     session.Store(new User());
@@ -96,23 +93,26 @@ namespace Marten.Testing.Schema
                 }
             }
 
-            using (var container2 = Container.For<DevelopmentModeRegistry>())
+            using (var store = DocumentStore.For(_ =>
             {
-                using (var session = container2.GetInstance<IDocumentStore>().LightweightSession())
+                _.Connection(ConnectionSource.ConnectionString);
+            }))
+            {
+                using (var session = store.LightweightSession())
                 {
                     session.Query<User>().Count().ShouldBeGreaterThanOrEqualTo(3);
                 }
             }
+
         }
 
         [Fact]
         public void throw_ambigous_alias_exception_when_you_have_duplicate_document_aliases()
         {
-            using (var container = Container.For<DevelopmentModeRegistry>())
+            using (var store = TestingDocumentStore.Basic())
             {
-                var schema = container.GetInstance<IDocumentSchema>();
 
-                var storage = container.GetInstance<IDocumentStore>().As<DocumentStore>().Storage;
+                var storage = store.Storage;
 
                 storage.StorageFor(typeof(Examples.User)).ShouldNotBeNull();
 
@@ -202,7 +202,7 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Events.IsActive.ShouldBeFalse();
+                store.Events.IsActive(null).ShouldBeFalse();
                 store.Schema.WriteDDLByType(_binAllsql);
             }
 
@@ -225,7 +225,7 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Events.IsActive.ShouldBeTrue();
+                store.Events.IsActive(null).ShouldBeTrue();
                 store.Schema.WriteDDLByType(_binAllsql);
             }
 
@@ -251,7 +251,7 @@ namespace Marten.Testing.Schema
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Events.IsActive.ShouldBeTrue();
+                store.Events.IsActive(null).ShouldBeTrue();
                 store.Schema.WriteDDLByType(_binAllsql);
             }
 

@@ -11,7 +11,7 @@ namespace Marten.Schema.Identity
         private readonly Func<TDoc, TId> _getter;
         private readonly Action<TDoc, TId> _setter;
 
-        public IdAssigner(MemberInfo member, IIdGeneration generation, ITenant tenant)
+        public IdAssigner(MemberInfo member, IIdGeneration generation)
         {
             _generator = generation.Build<TId>();
             _getter = LambdaBuilder.Getter<TDoc, TId>(member);

@@ -6,9 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
+using Marten.Events.Projections.Async;
 using Marten.Linq;
 using Marten.Patching;
-using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Remotion.Linq.Parsing.Structure;
@@ -21,7 +21,7 @@ namespace Marten
         private readonly UnitOfWork _unitOfWork;
         private readonly IList<IDocumentSessionListener> _sessionListeners;
 
-        public DocumentSession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, ITenant tenant, IList<IDocumentSessionListener> localListeners)
+        public DocumentSession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, ITenant tenant, ConcurrencyChecks concurrency, IList<IDocumentSessionListener> localListeners)
             : base(store, connection, parser, identityMap, tenant)
 
         {
@@ -29,6 +29,7 @@ namespace Marten
             _sessionListeners = _store.Options.Listeners.Concat(localListeners).ToList();
 
             IdentityMap = identityMap;
+            Concurrency = concurrency;
 
             _unitOfWork = new UnitOfWork(_store, tenant);
 
@@ -42,6 +43,11 @@ namespace Marten
 
         // This is here for testing purposes, not part of IDocumentSession
         public IIdentityMap IdentityMap { get; }
+
+        /// <summary>
+        /// Use to enable or disable optimistic concurrency checks for this session
+        /// </summary>
+        public ConcurrencyChecks Concurrency { get; set; }
 
         public void Delete<T>(T entity)
         {
@@ -95,7 +101,7 @@ namespace Marten
 
             var where = QueryModelExtensions.BuildWhereFragment(_store, model, Tenant);
 
-            var deletion = Tenant.StorageFor(typeof(T)).DeletionForWhere(where);
+            var deletion = Tenant.StorageFor(typeof(T)).DeletionForWhere(@where);
 
             _unitOfWork.Add(deletion);
         }
@@ -134,11 +140,111 @@ namespace Marten
                     }
                     else
                     {
-                        _unitOfWork.StoreUpdates(entity);
+                        _unitOfWork.StoreUpserts(entity);
                     }
                 }
             }
         }
+
+        public void Store<T>(string tenantId, params T[] entities)
+        {
+            assertNotDisposed();
+
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
+
+            if (typeof(T).IsGenericEnumerable())
+            {
+                throw new ArgumentOutOfRangeException(typeof(T).Name, "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
+            }
+
+            if (typeof(T) == typeof(object))
+            {
+                throw new ArgumentOutOfRangeException("T","'object' is not supported here");
+            }
+            else
+            {
+                var storage = Tenant.StorageFor(typeof(T));
+                var idAssignment = Tenant.IdAssignmentFor<T>();
+
+                foreach (var entity in entities)
+                {
+                    if (_unitOfWork.Contains<T>(entity)) continue;
+
+                    var assigned = false;
+                    var id = idAssignment.Assign(Tenant, entity, out assigned);
+
+                    storage.Store(IdentityMap, id, entity);
+                    _unitOfWork.Add(new UpsertDocument(entity, tenantId));
+                }
+            }
+        }
+
+        public void Insert<T>(params T[] entities)
+        {
+            assertNotDisposed();
+
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
+
+            if (typeof(T).IsGenericEnumerable())
+            {
+                throw new ArgumentOutOfRangeException(typeof(T).Name, "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
+            }
+
+            if (typeof(T) == typeof(object))
+            {
+                InsertObjects(entities.OfType<object>());
+            }
+            else
+            {
+                var storage = Tenant.StorageFor(typeof(T));
+                var idAssignment = Tenant.IdAssignmentFor<T>();
+
+                foreach (var entity in entities)
+                {
+                    if (_unitOfWork.Contains<T>(entity)) continue;
+
+                    var assigned = false;
+                    var id = idAssignment.Assign(Tenant, entity, out assigned);
+
+                    storage.Store(IdentityMap, id, entity);
+                    _unitOfWork.StoreInserts(entity);
+                }
+            }
+        }
+
+        public void Update<T>(params T[] entities)
+        {
+            assertNotDisposed();
+
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
+
+            if (typeof(T).IsGenericEnumerable())
+            {
+                throw new ArgumentOutOfRangeException(typeof(T).Name, "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
+            }
+
+            if (typeof(T) == typeof(object))
+            {
+                InsertObjects(entities.OfType<object>());
+            }
+            else
+            {
+                var storage = Tenant.StorageFor(typeof(T));
+                var idAssignment = Tenant.IdAssignmentFor<T>();
+
+                foreach (var entity in entities)
+                {
+                    if (_unitOfWork.Contains<T>(entity)) continue;
+
+                    var assigned = false;
+                    var id = idAssignment.Assign(Tenant, entity, out assigned);
+
+                    storage.Store(IdentityMap, id, entity);
+                    _unitOfWork.StoreUpdates(entity);
+                }
+            }
+        }
+
 
         public void Store<T>(T entity, Guid version)
         {
@@ -165,6 +271,17 @@ namespace Marten
             });
         }
 
+        public void InsertObjects(IEnumerable<object> documents)
+        {
+            assertNotDisposed();
+
+            documents.Where(x => x != null).GroupBy(x => x.GetType()).Each(group =>
+            {
+                var handler = typeof(Handler<>).CloseAndBuildAs<IHandler>(group.Key);
+                handler.Store(this, group);
+            });
+        }
+
         public IEventStore Events { get; }
 
         public void SaveChanges()
@@ -179,7 +296,7 @@ namespace Marten
 
             _sessionListeners.Each(x => x.BeforeSaveChanges(this));
 
-            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool);
+            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency);
             var changes = _unitOfWork.ApplyChanges(batch);
 
             try
@@ -216,7 +333,7 @@ namespace Marten
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
             }
 
-            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool);
+            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency);
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
 
 
@@ -296,19 +413,19 @@ namespace Marten
         
         private void applyProjections()
         {
-            var streams = PendingChanges.Streams().ToArray();
+            var eventPage = new EventPage(PendingChanges.Streams().ToArray());
             foreach (var projection in _store.Events.InlineProjections)
             {
-                projection.Apply(this, streams);
+                projection.Apply(this, eventPage);
             }
         }
 
         private async Task applyProjectionsAsync(CancellationToken token)
         {
-            var streams = PendingChanges.Streams().ToArray();
+            var eventPage = new EventPage(PendingChanges.Streams().ToArray());
             foreach (var projection in _store.Events.InlineProjections)
             {
-                await projection.ApplyAsync(this, streams, token).ConfigureAwait(false);
+                await projection.ApplyAsync(this, eventPage, token).ConfigureAwait(false);
             }
         }
 
@@ -322,6 +439,14 @@ namespace Marten
             public void Store(IDocumentSession session, IEnumerable<object> objects)
             {
                 session.Store(objects.OfType<T>().ToArray());
+            }
+        }
+
+        internal class InsertHandler<T> : IHandler
+        {
+            public void Store(IDocumentSession session, IEnumerable<object> objects)
+            {
+                session.Insert(objects.OfType<T>().ToArray());
             }
         }
     }

@@ -1,4 +1,4 @@
-var Patch = require('./../javascript/mt_patching');
+var Patch = require('./../src/Marten/Schema/SQL/mt_patching');
 var expect = require('chai').expect;
 
 describe('Patching API', function() {

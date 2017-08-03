@@ -5,6 +5,7 @@ using Baseline.Dates;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
+using Marten.Storage;
 using Marten.Testing;
 using Marten.Testing.AsyncDaemon;
 using Marten.Testing.CodeTracker;
@@ -20,9 +21,6 @@ namespace Marten.Storyteller.Fixtures
         private Lazy<DocumentStore> _store;
         private Lazy<IDaemon> _daemon;
 
-        
-
-
         public override void SetUp()
         {
             _options = new StoreOptions();
@@ -33,7 +31,7 @@ namespace Marten.Storyteller.Fixtures
 
             _settings = new DaemonSettings();
 
-            helper = Context.State.Retrieve<Lazy<AsyncDaemonTestHelper>>().Value;
+            helper = Context.State.Retrieve<AsyncDaemonTestHelper>();
 
             _store = new Lazy<DocumentStore>(() =>
             {
@@ -145,12 +143,12 @@ namespace Marten.Storyteller.Fixtures
         public Type[] Consumes { get; } = new Type[] { typeof(ProjectStarted), typeof(IssueCreated), typeof(IssueClosed), typeof(Commit) };
         public Type Produces { get; } = typeof(FakeThing);
         public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
-        public void Apply(IDocumentSession session, EventStream[] streams)
+        public void Apply(IDocumentSession session, EventPage page)
         {
 
         }
 
-        public Task ApplyAsync(IDocumentSession session, EventStream[] streams, CancellationToken token)
+        public Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
         {
             if (!_failed && _random.Next(0, 10) == 9)
             {
@@ -161,6 +159,11 @@ namespace Marten.Storyteller.Fixtures
             _failed = false;
 
             return Task.CompletedTask;
+        }
+
+        public void EnsureStorageExists(ITenant tenant)
+        {
+            
         }
     }
 

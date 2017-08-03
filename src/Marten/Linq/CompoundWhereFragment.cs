@@ -51,5 +51,7 @@ namespace Marten.Linq
         {
             _children.Add(child);
         }
+
+        public IEnumerable<IWhereFragment> Children => _children;
     }
 }

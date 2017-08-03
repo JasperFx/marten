@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -16,7 +16,7 @@ namespace Marten.Linq
         IEnumerable<IIncludeJoin> Includes { get; }
 
         QueryStatistics Statistics { get; }
-        Task<IList<TResult>> ToListAsync<TResult>(CancellationToken token);
+        Task<IReadOnlyList<TResult>> ToListAsync<TResult>(CancellationToken token);
         Task<bool> AnyAsync(CancellationToken token);
         Task<int> CountAsync(CancellationToken token);
         Task<long> CountLongAsync(CancellationToken token);
@@ -29,7 +29,9 @@ namespace Marten.Linq
         Task<TResult> MinAsync<TResult>(CancellationToken token);
         Task<TResult> MaxAsync<TResult>(CancellationToken token);
         Task<double> AverageAsync(CancellationToken token);
-        QueryPlan Explain(FetchType fetchType = FetchType.FetchMany);
+
+        /// <param name="configureExplain">Configure EXPLAIN options as documented in <see href="https://www.postgresql.org/docs/9.6/static/sql-explain.html">EXPLAIN documentation</see></param>        
+        QueryPlan Explain(FetchType fetchType = FetchType.FetchMany, Action<IConfigureExplainExpressions> configureExplain = null);
 
         /// <summary>
         ///     Applies a pre-loaded Javascript transformation to the documents
@@ -52,7 +54,6 @@ namespace Marten.Linq
 
         IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
             IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner);
-
 
         IMartenQueryable<T> Stats(out QueryStatistics stats);
 

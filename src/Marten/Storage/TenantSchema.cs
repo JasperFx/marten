@@ -16,9 +16,12 @@ namespace Marten.Storage
             _features = options.Storage;
             _tenant = tenant;
             StoreOptions = options;
+            DdlRules = options.DdlRules;
         }
 
         public StoreOptions StoreOptions { get; }
+
+        public DdlRules DdlRules { get; }
 
         public void WriteDDL(string filename)
         {
@@ -89,7 +92,6 @@ namespace Marten.Storage
             return writer.ToString();
         }
 
-        public IDbObjects DbObjects => new DbObjects(_tenant, _features);
 
         public void WritePatch(string filename, bool withSchemas = true)
         {

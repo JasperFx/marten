@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
@@ -13,7 +13,7 @@ namespace Marten.Linq.QueryHandlers
 {
     public class EnumerableQueryHandler<T> : IQueryHandler<IEnumerable<T>>
     {
-        private readonly IQueryHandler<IList<T>> _inner;
+        private readonly IQueryHandler<IReadOnlyList<T>> _inner;
 
         public EnumerableQueryHandler(DocumentStore store, QueryModel query, IIncludeJoin[] joins, QueryStatistics stats)
         {
