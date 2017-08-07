@@ -66,6 +66,7 @@ namespace Marten.Linq
             new StringEndsWith(),
             new StringStartsWith(),
             new StringEquals(),
+			new SimpleEqualsParser(),
 
             // Added
             new IsOneOf(),
