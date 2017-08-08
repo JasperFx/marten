@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
@@ -13,7 +14,7 @@ namespace Marten.Linq.Parsing
 	public sealed class SimpleEqualsParser : IMethodCallParser
 	{
 		private static readonly Type[] SupportedTypes = {
-			typeof(int), typeof(long), typeof(decimal), typeof(Guid), typeof(bool),
+			typeof(int), typeof(long), typeof(decimal), typeof(Guid), typeof(bool)
 		};
 
 		public bool Matches(MethodCallExpression expression)
@@ -47,6 +48,13 @@ namespace Marten.Linq.Parsing
 					throw new BadLinqExpressionException(
 						$"Could not convert {value.Value.GetType().FullName} to {expression.Method.DeclaringType}", e);
 				}
+			}
+			
+			if (mapping.PropertySearching == PropertySearching.ContainmentOperator)
+			{
+				var dict = new Dictionary<string, object>();
+				ContainmentWhereFragment.CreateDictionaryForSearch(dict, expression, valueToQuery);
+				return new ContainmentWhereFragment(serializer, dict);
 			}
 
 			return new WhereFragment($"{locator} = ?", valueToQuery);
