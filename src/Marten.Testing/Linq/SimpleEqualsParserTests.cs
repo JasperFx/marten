@@ -19,6 +19,8 @@ namespace Marten.Testing.Linq
 			public decimal DecimalProp { get; set; }
 			public bool BoolProp { get; set; }
 			public Guid Id { get; set; }
+			public DateTime DateTimeProp { get; set; }
+			public DateTimeOffset DateTimeOffsetProp { get; set; }
 		}		
 
 		[Fact]
@@ -30,7 +32,9 @@ namespace Marten.Testing.Linq
 				LongProp = 2,
 				DecimalProp = 1.1m,
 				BoolProp = true,
-				Id = Guid.NewGuid()
+				Id = Guid.NewGuid(),
+				DateTimeProp = DateTime.UtcNow,
+				DateTimeOffsetProp = DateTimeOffset.UtcNow
 			};
 
 			theSession.Store(queryTarget);
@@ -43,6 +47,8 @@ namespace Marten.Testing.Linq
 				.Where(x => x.DecimalProp.Equals(queryTarget.DecimalProp))
 				.Where(x => x.BoolProp.Equals(queryTarget.BoolProp))
 				.Where(x => x.Id.Equals(queryTarget.Id))
+				.Where(x => x.DateTimeProp.Equals(queryTarget.DateTimeProp))
+				.Where(x => x.DateTimeOffsetProp.Equals(queryTarget.DateTimeOffsetProp))
 				.FirstOrDefault();
 
 			Assert.NotNull(itemFromDb);
@@ -79,7 +85,9 @@ namespace Marten.Testing.Linq
 				new object[] { null },
 				new object[] { false },
 				new object[] { 32m },
-				new object[] { 0L },				
+				new object[] { 0L },
+				new object[] { DateTime.UtcNow },
+				new object[] { DateTimeOffset.UtcNow },
 			};
 
 			public IEnumerator<object[]> GetEnumerator()
@@ -109,7 +117,8 @@ namespace Marten.Testing.Linq
 				LongProp = 2,
 				DecimalProp = 1.1m,
 				BoolProp = true,
-				Id = Guid.NewGuid()
+				Id = Guid.NewGuid(),
+				DateTimeProp = DateTime.UtcNow
 			};
 
 			var queryEquals = theSession.Query<QueryTarget>()
@@ -118,6 +127,8 @@ namespace Marten.Testing.Linq
 				.Where(x => x.DecimalProp.Equals(queryTarget.DecimalProp))
 				.Where(x => x.BoolProp.Equals(queryTarget.BoolProp))
 				.Where(x => x.Id.Equals(queryTarget.Id))
+				.Where(x => x.DateTimeProp.Equals(queryTarget.DateTimeProp))
+				.Where(x => x.DateTimeOffsetProp.Equals(queryTarget.DateTimeOffsetProp))
 				.ToCommand().CommandText;
 
 			var queryEqualOperator = theSession.Query<QueryTarget>()
@@ -126,6 +137,8 @@ namespace Marten.Testing.Linq
 				.Where(x => x.DecimalProp == queryTarget.DecimalProp)
 				.Where(x => x.BoolProp == queryTarget.BoolProp)
 				.Where(x => x.Id == queryTarget.Id)
+				.Where(x => x.DateTimeProp == queryTarget.DateTimeProp)
+				.Where(x => x.DateTimeOffsetProp == queryTarget.DateTimeOffsetProp)
 				.ToCommand().CommandText;
 
 			Assert.Equal(queryEqualOperator, queryEquals);
@@ -161,7 +174,19 @@ namespace Marten.Testing.Linq
 						.Where(x => x.LongProp.Equals(longValue)).ToCommand().CommandText;
 					queryEqualOperator = theSession.Query<QueryTarget>()
 						.Where(x => x.LongProp == longValue).ToCommand().CommandText;
-					break;				
+					break;
+				case DateTime dateTimeValue:
+					queryEquals = theSession.Query<QueryTarget>()
+						.Where(x => x.DateTimeProp.Equals(dateTimeValue)).ToCommand().CommandText;
+					queryEqualOperator = theSession.Query<QueryTarget>()
+						.Where(x => x.DateTimeProp == dateTimeValue).ToCommand().CommandText;
+					break;
+				case DateTimeOffset dateTimeOffsetValue:
+					queryEquals = theSession.Query<QueryTarget>()
+						.Where(x => x.DateTimeOffsetProp.Equals(dateTimeOffsetValue)).ToCommand().CommandText;
+					queryEqualOperator = theSession.Query<QueryTarget>()
+						.Where(x => x.DateTimeOffsetProp == dateTimeOffsetValue).ToCommand().CommandText;
+					break;
 				// Null
 				default:
 					queryEquals = theSession.Query<QueryTarget>()
