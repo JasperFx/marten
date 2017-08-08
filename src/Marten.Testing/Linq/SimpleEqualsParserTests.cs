@@ -192,7 +192,9 @@ namespace Marten.Testing.Linq
 					queryEquals = theSession.Query<QueryTarget>()
 						.Where(x => x.BoolProp.Equals(null)).ToCommand().CommandText;
 					queryEqualOperator = theSession.Query<QueryTarget>()
+#pragma warning disable CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
 						.Where(x => x.BoolProp == null).ToCommand().CommandText;
+#pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
 					break;
 			}
 			Assert.Equal(queryEqualOperator, queryEquals);
