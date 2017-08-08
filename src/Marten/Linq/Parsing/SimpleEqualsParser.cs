@@ -8,13 +8,13 @@ using Marten.Schema;
 namespace Marten.Linq.Parsing
 {
 	/// <summary>
-	/// Implement Equals for <see cref="int"/>, <see cref="long"/>, <see cref="decimal"/>, <see cref="Guid"/>, <see cref="bool"/>.
+	/// Implement Equals for <see cref="int"/>, <see cref="long"/>, <see cref="decimal"/>, <see cref="Guid"/>, <see cref="bool"/>, <see cref="DateTime"/>, <see cref="DateTimeOffset"/>.
 	/// </summary>
 	/// <remarks>Equals(object) calls into <see cref="Convert.ChangeType(object, Type)"/>. Equals(null) is converted to "is null" query.</remarks>
 	public sealed class SimpleEqualsParser : IMethodCallParser
 	{
 		private static readonly Type[] SupportedTypes = {
-			typeof(int), typeof(long), typeof(decimal), typeof(Guid), typeof(bool)
+			typeof(int), typeof(long), typeof(decimal), typeof(Guid), typeof(bool), typeof(DateTime), typeof(DateTimeOffset)
 		};
 
 		public bool Matches(MethodCallExpression expression)
@@ -25,7 +25,8 @@ namespace Marten.Linq.Parsing
 
 		public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
 		{
-			var locator = GetLocator(mapping, expression);
+			var field = GetField(mapping, expression);
+			var locator = field.SqlLocator;
 
 			var value = expression.Arguments.OfType<ConstantExpression>().FirstOrDefault();
 			if (value == null) throw new BadLinqExpressionException("Could not extract value from {0}.".ToFormat(expression), null);
@@ -50,7 +51,7 @@ namespace Marten.Linq.Parsing
 				}
 			}
 			
-			if (mapping.PropertySearching == PropertySearching.ContainmentOperator)
+			if ((mapping.PropertySearching == PropertySearching.ContainmentOperator || field.ShouldUseContainmentOperator()) && !(field is DuplicatedField))
 			{
 				var dict = new Dictionary<string, object>();
 				ContainmentWhereFragment.CreateDictionaryForSearch(dict, expression, valueToQuery);
@@ -60,20 +61,29 @@ namespace Marten.Linq.Parsing
 			return new WhereFragment($"{locator} = ?", valueToQuery);
 		}
 
-		private static string GetLocator(IQueryableDocument mapping, MethodCallExpression expression)
+		private static IField GetField(IQueryableDocument mapping, MethodCallExpression expression)
 		{
+			IField GetField(Expression e)
+			{
+				var visitor = new FindMembers();
+				visitor.Visit(e);
+
+				var field = mapping.FieldFor(visitor.Members);
+				return field;
+			}
+
 			if (!expression.Method.IsStatic && expression.Object != null && expression.Object.NodeType != ExpressionType.Constant)
 			{
 				// x.member.Equals(...)
-				return mapping.JsonLocator(expression.Object);
+				return GetField(expression.Object);
 			}
 			if (expression.Arguments[0].NodeType == ExpressionType.Constant)
 			{
 				// type.Equals("value", x.member) [decimal]
-				return mapping.JsonLocator(expression.Arguments[1]);
+				return GetField(expression.Arguments[1]);
 			}
 			// type.Equals(x.member, "value") [decimal]
-			return mapping.JsonLocator(expression.Arguments[0]);
+			return GetField(expression.Arguments[0]);
 		}
 	}
 }
