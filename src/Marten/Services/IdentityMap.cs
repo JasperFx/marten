@@ -29,12 +29,12 @@ namespace Marten.Services
 
         public ISerializer Serializer { get; }
 
-        public T Get<T>(object id, TextReader json, Guid? version)
+        public T Get<T>(object id, TextReader json, long? version)
         {
             return Get<T>(id, typeof(T), json, version);
         }
 
-        public T Get<T>(object id, Type concreteType, TextReader json, Guid? version)
+        public T Get<T>(object id, Type concreteType, TextReader json, long? version)
         {
             var cacheValue = Cache[typeof(T)].GetOrAdd(id, _ =>
             {
@@ -56,7 +56,7 @@ namespace Marten.Services
             Cache[typeof(T)].TryRemove(id, out value);
         }
 
-        public void Store<T>(object id, T entity, Guid? version = null)
+        public void Store<T>(object id, T entity, long? version = null)
         {
             if (version.HasValue)
                 Versions.Store<T>(id, version.Value);

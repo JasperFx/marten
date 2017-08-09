@@ -82,10 +82,10 @@ namespace Marten.Schema.BulkLoading
             var table = new DocumentTable(_mapping);
 
             var storageTable = table.Identifier.QualifiedName;
-            var columns = table.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"\"{x.Name}\"").Join(", ");
-            var selectColumns = table.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"{_tempTableName}.\"{x.Name}\"").Join(", ");
+            var columns = table.Where(x => x.Name != DocumentMapping.LastModifiedColumn && x.Name != DocumentMapping.VersionColumn).Select(x => $"\"{x.Name}\"").Join(", ");
+            var selectColumns = table.Where(x => x.Name != DocumentMapping.LastModifiedColumn && x.Name != DocumentMapping.VersionColumn).Select(x => $"{_tempTableName}.\"{x.Name}\"").Join(", ");
 
-            return $@"insert into {storageTable} ({columns}, {DocumentMapping.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTableName} 
+            return $@"insert into {storageTable} ({columns}, {DocumentMapping.LastModifiedColumn}, {DocumentMapping.VersionColumn}) (select {selectColumns}, transaction_timestamp(), 1 from {_tempTableName} 
                          left join {storageTable} on {_tempTableName}.id = {storageTable}.id where {storageTable}.id is null)";
         }
 
@@ -94,10 +94,10 @@ namespace Marten.Schema.BulkLoading
             var table = new DocumentTable(_mapping);
             var storageTable = table.Identifier.QualifiedName;
 
-            var updates = table.Where(x => x.Name != "id" && x.Name != DocumentMapping.LastModifiedColumn)
+            var updates = table.Where(x => x.Name != "id" && x.Name != DocumentMapping.LastModifiedColumn && x.Name != DocumentMapping.VersionColumn)
                 .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
 
-            return $@"update {storageTable} target SET {updates}, {DocumentMapping.LastModifiedColumn} = transaction_timestamp() FROM {_tempTableName} source WHERE source.id = target.id";
+            return $@"update {storageTable} target SET {updates}, {DocumentMapping.LastModifiedColumn} = transaction_timestamp(), {DocumentMapping.VersionColumn} = target.{DocumentMapping.VersionColumn} + 1 FROM {_tempTableName} source WHERE source.id = target.id";
         }
 
         public string CreateTempTableForCopying()

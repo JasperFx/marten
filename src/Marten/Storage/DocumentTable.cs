@@ -155,9 +155,9 @@ namespace Marten.Storage
 
     public class VersionColumn : SystemColumn
     {
-        public VersionColumn() : base(DocumentMapping.VersionColumn, "uuid")
+        public VersionColumn() : base(DocumentMapping.VersionColumn, "bigint")
         {
-            Directive = "NOT NULL default(md5(random()::text || clock_timestamp()::text)::uuid)";
+            Directive = "NOT NULL default(1)";
             CanAdd = true;
         }
     }

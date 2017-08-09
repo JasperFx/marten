@@ -17,7 +17,7 @@ namespace Marten.Services
 
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
-            if (!reader.Read() || reader.IsDBNull(0))
+            if (!reader.Read() || reader.GetFieldValue<long>(0) == -1)
             {
                 throw new NonExistentDocumentException(typeof(T), Id);
             };
@@ -32,8 +32,8 @@ namespace Marten.Services
                 throw new NonExistentDocumentException(typeof(T), Id);
             };
 
-            var isNull = await reader.IsDBNullAsync(0, token).ConfigureAwait(false);
-            if (isNull)
+            var version = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            if (version == -1)
             {
                 throw new NonExistentDocumentException(typeof(T), Id);
             }

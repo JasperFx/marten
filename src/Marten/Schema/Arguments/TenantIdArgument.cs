@@ -28,8 +28,7 @@ namespace Marten.Schema.Arguments
         }
 
         public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc,
-            ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion,
-            ParameterExpression newVersion, ParameterExpression tenantId, bool useCharBufferPooling)
+            ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression tenantId, bool useCharBufferPooling)
         {
             var argName = Expression.Constant(Arg);
             var dbType = Expression.Constant(NpgsqlDbType.Varchar);

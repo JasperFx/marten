@@ -73,9 +73,9 @@ namespace Marten.Transforms
             sql.Append(DocumentMapping.LastModifiedColumn);
             sql.Append(" = (now() at time zone 'utc'), ");
             sql.Append(DocumentMapping.VersionColumn);
-            sql.Append(" = '");
-            sql.Append(version);
-            sql.Append("'");
+            sql.Append(" = ");
+            sql.Append(DocumentMapping.VersionColumn);
+            sql.Append(" + 1");
         }
 
         public void Where<T>(string transformName, Expression<Func<T, bool>> @where)

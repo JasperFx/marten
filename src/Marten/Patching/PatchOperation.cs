@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Linq;
 using Marten.Schema;
-using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Transforms;
 using Marten.Util;
-using NpgsqlTypes;
 
 namespace Marten.Patching
 {
@@ -34,7 +32,6 @@ namespace Marten.Patching
         {
             var patchJson = _serializer.ToCleanJson(_patch);
             var patchParam = builder.AddJsonParameter(patchJson);
-            var versionParam = builder.AddParameter(CombGuidIdGeneration.NewGuid(), NpgsqlDbType.Uuid);
 
             builder.Append("update ");
             builder.Append(_document.Table.QualifiedName);
@@ -46,8 +43,9 @@ namespace Marten.Patching
             builder.Append(DocumentMapping.LastModifiedColumn);
             builder.Append(" = (now() at time zone 'utc'), ");
             builder.Append(DocumentMapping.VersionColumn);
-            builder.Append(" = :");
-            builder.Append(versionParam.ParameterName);
+            builder.Append(" = ");
+            builder.Append(DocumentMapping.VersionColumn);
+            builder.Append(" + 1");
 
             if (!_fragment.Contains("where"))
             {

@@ -10,29 +10,27 @@ namespace Marten.Services
     {
         private readonly object _id;
         private readonly VersionTracker _versions;
-        private readonly Guid _newVersion;
-        private readonly Guid? _oldVersion;
 
-        public OptimisticConcurrencyCallback(object id, VersionTracker versions, Guid newVersion, Guid? oldVersion)
+        public OptimisticConcurrencyCallback(object id, VersionTracker versions)
         {
             _id = id;
             _versions = versions;
-            _newVersion = newVersion;
-            _oldVersion = oldVersion;
         }
 
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             var success = false;
+            long newVersion = -1;
+
             if (reader.Read())
             {
-                var version = reader.GetFieldValue<Guid>(0);
-                success = version == _newVersion;
-            };
+                newVersion = reader.GetFieldValue<long>(0);
+                success = newVersion > 0;
+            }
 
             if (success)
             {
-                _versions.Store<T>(_id, _newVersion);                
+                _versions.Store<T>(_id, newVersion);                
             }
             else
             {
@@ -43,15 +41,17 @@ namespace Marten.Services
         public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
         {
             var success = false;
+            long newVersion = -1;
+
             if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
-                success = version == _newVersion;
+                newVersion = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+                success = newVersion > 0;
             }
 
             if (success)
             {
-                _versions.Store<T>(_id, _newVersion);
+                _versions.Store<T>(_id, newVersion);
             }
             else
             {

@@ -1,6 +1,5 @@
 using System.IO;
 using Marten.Schema;
-using Marten.Schema.Arguments;
 
 namespace Marten.Storage
 {
@@ -14,13 +13,13 @@ namespace Marten.Storage
             string updates)
         {
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS bigint LANGUAGE plpgsql {
                     securityDeclaration
                 } AS $function$
 BEGIN
 INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList});
 
-  RETURN {VersionArgument.ArgName};
+  RETURN 1;
 END;
 $function$;
 ");

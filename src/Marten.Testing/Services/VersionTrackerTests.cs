@@ -21,9 +21,9 @@ namespace Marten.Testing.Services
         {
             var id = Guid.NewGuid();
 
-            var userVersion = Guid.NewGuid();
+            var userVersion = 1;
 
-            var issueVersion = Guid.NewGuid();
+            var issueVersion = 2;
 
             var tracker = new VersionTracker();
 
@@ -40,8 +40,8 @@ namespace Marten.Testing.Services
         {
             var id = Guid.NewGuid();
 
-            var version1 = Guid.NewGuid();
-            var version2 = Guid.NewGuid();
+            var version1 = 1;
+            var version2 = 2;
 
             var tracker = new VersionTracker();
             tracker.Store<User>(id, version1);

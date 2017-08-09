@@ -76,7 +76,7 @@ namespace Marten.Storage
         {
             if (!reader.Read()) return null;
 
-            var version = reader.GetFieldValue<Guid>(0);
+            var version = reader.GetFieldValue<long>(0);
             var timestamp = reader.GetFieldValue<DateTime>(1);
             var dotNetType = reader.GetFieldValue<string>(2);
             var docType = GetOptionalFieldValue<string>(reader, DocumentMapping.DocumentTypeColumn);
@@ -96,7 +96,7 @@ namespace Marten.Storage
             var hasAny = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!hasAny) return null;
 
-            var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
+            var version = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
             var timestamp = await reader.GetFieldValueAsync<DateTime>(1, token).ConfigureAwait(false);
             var dotNetType = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
             var docType = await GetOptionalFieldValueAsync<string>(reader, DocumentMapping.DocumentTypeColumn, token)

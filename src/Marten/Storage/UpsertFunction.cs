@@ -52,8 +52,6 @@ namespace Marten.Storage
 
             Arguments.AddRange(mapping.DuplicatedFields.Select(x => x.UpsertArgument));
 
-            Arguments.Add(new VersionArgument());
-
             Arguments.Add(new DotNetTypeArgument());
 
             if (mapping.IsHierarchy())
@@ -79,7 +77,7 @@ namespace Marten.Storage
 
             var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");
 
-            var systemUpdates = new string[] {$"{DocumentMapping.LastModifiedColumn} = transaction_timestamp()" };
+            var systemUpdates = new string[] {$"{DocumentMapping.LastModifiedColumn} = transaction_timestamp()", $"{DocumentMapping.VersionColumn} = {_tableName.QualifiedName}.{DocumentMapping.VersionColumn} + 1" };
             var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
                 .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
@@ -87,6 +85,8 @@ namespace Marten.Storage
             var valueList = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).Concat(new [] { "transaction_timestamp()" }).Join(", ");
 
             var whereClauses = new List<string>();
+
+            whereClauses.Add($"{_tableName.QualifiedName}.id = docId");
 
             if (Arguments.Any(x => x is CurrentVersionArgument) && !_disableConcurrency)
             {
@@ -118,16 +118,23 @@ namespace Marten.Storage
             string valueList, string updates)
         {
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS bigint LANGUAGE plpgsql {
                     securityDeclaration
                 } AS $function$
 DECLARE
-  final_version uuid;
+  final_version bigint;
+  affected integer;
 BEGIN
-INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
+  INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
   ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}
   DO UPDATE SET {updates};
 
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  
+  IF affected = 0 THEN
+  	RETURN -1;
+  END IF;
+  
   SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId;
   RETURN final_version;
 END;

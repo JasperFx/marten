@@ -14,7 +14,7 @@ namespace Marten.Services
 
         public ISerializer Serializer { get; }
 
-        public T Get<T>(object id, TextReader json, Guid? version)
+        public T Get<T>(object id, TextReader json, long? version)
         {
             if (version.HasValue)
                 Versions.Store<T>(id, version.Value);
@@ -22,7 +22,7 @@ namespace Marten.Services
             return Serializer.FromJson<T>(json);
         }
 
-        public T Get<T>(object id, Type concreteType, TextReader json, Guid? version)
+        public T Get<T>(object id, Type concreteType, TextReader json, long? version)
         {
             if (version.HasValue)
                 Versions.Store<T>(id, version.Value);
@@ -35,7 +35,7 @@ namespace Marten.Services
             // nothing
         }
 
-        public void Store<T>(object id, T entity, Guid? version = null)
+        public void Store<T>(object id, T entity, long? version = null)
         {
             if (version.HasValue)
                 Versions.Store<T>(id, version.Value);

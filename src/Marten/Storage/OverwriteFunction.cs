@@ -13,13 +13,13 @@ namespace Marten.Storage
             string updates)
         {
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS bigint LANGUAGE plpgsql {
                     securityDeclaration
                 } AS $function$
 DECLARE
-  final_version uuid;
+  final_version bigint;
 BEGIN
-INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
+  INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
   ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}
   DO UPDATE SET {updates};
 

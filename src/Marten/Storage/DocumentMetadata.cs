@@ -4,7 +4,7 @@ namespace Marten.Storage
 {
     public class DocumentMetadata
     {
-        public DocumentMetadata(DateTime lastModified, Guid currentVersion, string dotNetType, string documentType,
+        public DocumentMetadata(DateTime lastModified, long currentVersion, string dotNetType, string documentType,
             bool deleted, DateTime? deletedAt)
         {
             LastModified = lastModified;
@@ -16,7 +16,7 @@ namespace Marten.Storage
         }
 
         public DateTime LastModified { get; }
-        public Guid CurrentVersion { get; }
+        public long CurrentVersion { get; }
         public string DotNetType { get; }
         public string DocumentType { get; }
         public bool Deleted { get; }

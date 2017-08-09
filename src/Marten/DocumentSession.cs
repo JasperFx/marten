@@ -246,7 +246,7 @@ namespace Marten
         }
 
 
-        public void Store<T>(T entity, Guid version)
+        public void Store<T>(T entity, long version)
         {
             assertNotDisposed();
 

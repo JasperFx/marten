@@ -572,7 +572,7 @@ namespace Marten.Testing.Schema
             var function = new UpsertFunction(mapping);
 
             function.Arguments.Select(x => x.Column)
-                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.VersionColumn,
+                .ShouldHaveTheSameElementsAs("id", "data",
                     DocumentMapping.DotNetTypeColumn);
         }
 
@@ -599,7 +599,7 @@ namespace Marten.Testing.Schema
             var function = new UpsertFunction(mapping);
 
             function.Arguments.Select(x => x.Column)
-                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.VersionColumn,
+                .ShouldHaveTheSameElementsAs("id", "data",
                     DocumentMapping.DotNetTypeColumn, DocumentMapping.DocumentTypeColumn);
         }
 

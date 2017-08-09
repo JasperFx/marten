@@ -13,15 +13,15 @@ namespace Marten.Testing.Services
 {
     public class OptimisticConcurrencyCallbackTests
     {
-        private readonly Guid theNewVersion = Guid.NewGuid();
-        private readonly Guid theOldVersion = Guid.NewGuid();
+        private readonly long theNewVersion = 2;
+        private readonly long theOldVersion = 1;
         private readonly VersionTracker theVersionTracker = new VersionTracker();
         private readonly string theId = "foo";
         private OptimisticConcurrencyCallback<Target> theCallback;
 
         public OptimisticConcurrencyCallbackTests()
         {
-            theCallback = new OptimisticConcurrencyCallback<Target>(theId, theVersionTracker, theNewVersion, theOldVersion);
+            theCallback = new OptimisticConcurrencyCallback<Target>(theId, theVersionTracker);
         }
 
         [Fact]
@@ -29,7 +29,7 @@ namespace Marten.Testing.Services
         {
             var reader = Substitute.For<DbDataReader>();
             reader.Read().Returns(true);
-            reader.GetFieldValue<Guid>(0).Returns(theNewVersion);
+            reader.GetFieldValue<long>(0).Returns(theNewVersion);
 
             var exceptions = new List<Exception>();
             theCallback.Postprocess(reader, exceptions);
@@ -44,7 +44,7 @@ namespace Marten.Testing.Services
         {
             var reader = Substitute.For<DbDataReader>();
             reader.Read().Returns(true);
-            reader.GetFieldValue<Guid>(0).Returns(theOldVersion);
+            reader.GetFieldValue<long>(0).Returns(-1);
 
             var exceptions = new List<Exception>();
             theCallback.Postprocess(reader, exceptions);
@@ -59,7 +59,7 @@ namespace Marten.Testing.Services
 
             var reader = Substitute.For<DbDataReader>();
             reader.ReadAsync(token).Returns(Task.FromResult(true));
-            reader.GetFieldValueAsync<Guid>(0, token).Returns(Task.FromResult(theNewVersion));
+            reader.GetFieldValueAsync<long>(0, token).Returns(Task.FromResult(theNewVersion));
 
             var exceptions = new List<Exception>();
             await theCallback.PostprocessAsync(reader, exceptions, token);
@@ -77,7 +77,7 @@ namespace Marten.Testing.Services
 
             var reader = Substitute.For<DbDataReader>();
             reader.ReadAsync(token).Returns(Task.FromResult(true));
-            reader.GetFieldValueAsync<Guid>(0, token).Returns(Task.FromResult(theOldVersion));
+            reader.GetFieldValueAsync<long>(0, token).Returns(Task.FromResult(-1L));
 
             var exceptions = new List<Exception>();
             await theCallback.PostprocessAsync(reader, exceptions, token);
