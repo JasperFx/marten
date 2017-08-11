@@ -95,7 +95,7 @@ namespace Marten.Linq
                         }
                         else
                         {
-                            var visitor = new NotVisitor(this, _mapping, _register.Peek());
+                            var visitor = new NotVisitor(this, _mapping, _register.Peek(), _parent._serializer);
                             visitor.Visit(node);
                         }
 
