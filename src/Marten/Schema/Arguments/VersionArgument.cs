@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using Baseline;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
@@ -21,7 +22,7 @@ namespace Marten.Schema.Arguments
             PostgresType = "uuid";
         }
 
-        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, ParameterExpression tenantId)
+        public override Expression CompileBulkImporter(DocumentMapping mapping, EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, ParameterExpression tenantId)
         {
             Expression value = Expression.Call(_newGuid);
 
@@ -29,7 +30,26 @@ namespace Marten.Schema.Arguments
 
             var method = writeMethod.MakeGenericMethod(typeof(Guid));
 
-            return Expression.Call(writer, method, value, dbType);
+            var writeExpression = Expression.Call(writer, method, value, dbType);
+            if (mapping.VersionMember == null)
+            {
+                return writeExpression;
+            }
+            else if (mapping.VersionMember is FieldInfo)
+            {
+                var fieldAccess = Expression.Field(document, (FieldInfo) mapping.VersionMember);
+                var fieldSetter = Expression.Assign(fieldAccess, value);
+
+                return Expression.Block(fieldSetter, writeExpression);
+            }
+            else
+            {
+                var property = mapping.VersionMember.As<PropertyInfo>();
+                var setMethod = property.SetMethod;
+                var callSetMethod = Expression.Call(document, setMethod, value);
+
+                return Expression.Block(callSetMethod, writeExpression);
+            }
         }
 
         public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion, ParameterExpression tenantId, bool useCharBufferPooling)

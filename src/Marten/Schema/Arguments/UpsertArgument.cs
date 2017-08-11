@@ -26,19 +26,14 @@ namespace Marten.Schema.Arguments
 
         public string PostgresType
         {
-            get { return _postgresType; }
+            get => _postgresType;
             set
             {
                 if (value == null) throw new ArgumentNullException();
 
-                if (value.Contains("("))
-                {
-                    _postgresType = value.Split('(')[0].Trim();
-                }
-                else
-                {
-                    _postgresType = value;
-                }
+                _postgresType = value.Contains("(") 
+                    ? value.Split('(')[0].Trim() 
+                    : value;
             }
         }
 
@@ -46,7 +41,7 @@ namespace Marten.Schema.Arguments
 
         public MemberInfo[] Members
         {
-            get { return _members; }
+            get => _members;
             set
             {
                 _members = value;
@@ -64,7 +59,7 @@ namespace Marten.Schema.Arguments
             return $"{Arg} {PostgresType}";
         }
 
-        public virtual Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, ParameterExpression tenantId)
+        public virtual Expression CompileBulkImporter(DocumentMapping mapping, EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, ParameterExpression tenantId)
         {
             var memberType = Members.Last().GetMemberType();
 

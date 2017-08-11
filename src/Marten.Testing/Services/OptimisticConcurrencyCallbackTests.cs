@@ -18,10 +18,11 @@ namespace Marten.Testing.Services
         private readonly VersionTracker theVersionTracker = new VersionTracker();
         private readonly string theId = "foo";
         private OptimisticConcurrencyCallback<Target> theCallback;
+        private Guid theCurrentDocVersion = Guid.Empty;
 
         public OptimisticConcurrencyCallbackTests()
         {
-            theCallback = new OptimisticConcurrencyCallback<Target>(theId, theVersionTracker, theNewVersion, theOldVersion);
+            theCallback = new OptimisticConcurrencyCallback<Target>(ConcurrencyChecks.Enabled, theId, theVersionTracker, theNewVersion, theOldVersion, v => theCurrentDocVersion = v);
         }
 
         [Fact]
@@ -37,6 +38,10 @@ namespace Marten.Testing.Services
             exceptions.Any().ShouldBeFalse();
 
             theVersionTracker.Version<Target>(theId).ShouldBe(theNewVersion);
+
+            theCurrentDocVersion.ShouldBe(theNewVersion);
+
+
         }
 
         [Fact]
@@ -50,6 +55,8 @@ namespace Marten.Testing.Services
             theCallback.Postprocess(reader, exceptions);
 
             exceptions.Single().ShouldBeOfType<ConcurrencyException>();
+
+            theCurrentDocVersion.ShouldBe(theOldVersion);
         }
 
         [Fact]
@@ -67,6 +74,8 @@ namespace Marten.Testing.Services
             exceptions.Any().ShouldBeFalse();
 
             theVersionTracker.Version<Target>(theId).ShouldBe(theNewVersion);
+
+            theCurrentDocVersion.ShouldBe(theNewVersion);
         }
 
 
@@ -83,6 +92,8 @@ namespace Marten.Testing.Services
             await theCallback.PostprocessAsync(reader, exceptions, token);
 
             exceptions.Single().ShouldBeOfType<ConcurrencyException>();
+
+            theCurrentDocVersion.ShouldBe(theOldVersion);
         }
 
     }
