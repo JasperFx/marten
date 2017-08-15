@@ -15,6 +15,7 @@ namespace Marten.Linq
         private readonly IQueryableDocument _mapping;
         private readonly Action<IWhereFragment> _callback;
 	    private static readonly IMethodCallParser[] _parsers = {
+			new SimpleNotEqualsParser(),
 			new StringNotEquals(),
 			new StringNotContains(),
 		    new StringNotStartsWith(),
@@ -48,7 +49,7 @@ namespace Marten.Linq
             if (expression.Type == typeof (bool))
             {
                 var locator = _mapping.JsonLocator(expression);
-                var @where = new WhereFragment($"{locator} = False");
+                var @where = new WhereFragment($"{locator} != ?", true);
                 _callback(@where);
             }
 			

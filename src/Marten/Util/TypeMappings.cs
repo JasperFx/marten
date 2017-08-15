@@ -151,11 +151,8 @@ namespace Marten.Util
                 return enumStyle == EnumStorage.AsInteger ? "({0})::int".ToFormat(locator) : locator;
             }
 
-            if (!PgTypes.ContainsKey(memberType))
-                throw new ArgumentOutOfRangeException(nameof(memberType),
-                    "There is not a known Postgresql cast for member type " + memberType.FullName);
-
-            return "CAST({0} as {1})".ToFormat(locator, PgTypes[memberType]);
+			// Treat "unknown" PgTypes as jsonb (this way null checks of arbitary depth won't fail on cast).
+            return "CAST({0} as {1})".ToFormat(locator, GetPgType(memberType));
         }
 
         public static bool IsDate(this object value)

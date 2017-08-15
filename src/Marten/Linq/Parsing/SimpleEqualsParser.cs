@@ -11,11 +11,22 @@ namespace Marten.Linq.Parsing
 	/// Implement Equals for <see cref="int"/>, <see cref="long"/>, <see cref="decimal"/>, <see cref="Guid"/>, <see cref="bool"/>, <see cref="DateTime"/>, <see cref="DateTimeOffset"/>.
 	/// </summary>
 	/// <remarks>Equals(object) calls into <see cref="Convert.ChangeType(object, Type)"/>. Equals(null) is converted to "is null" query.</remarks>
-	public sealed class SimpleEqualsParser : IMethodCallParser
+	public class SimpleEqualsParser : IMethodCallParser
 	{
 		private static readonly Type[] SupportedTypes = {
 			typeof(int), typeof(long), typeof(decimal), typeof(Guid), typeof(bool), typeof(DateTime), typeof(DateTimeOffset)
 		};
+
+		private readonly string _equalsOperator;
+		private readonly string _isOperator;
+		private readonly bool _supportContainment;
+
+		public SimpleEqualsParser(string equalsOperator = "=", string isOperator = "is", bool supportContainment = true)
+		{
+			_equalsOperator = equalsOperator;
+			_isOperator = isOperator;
+			_supportContainment = supportContainment;
+		}
 
 		public bool Matches(MethodCallExpression expression)
 		{
@@ -35,7 +46,7 @@ namespace Marten.Linq.Parsing
 
 			if (valueToQuery == null)
 			{
-				return new WhereFragment($"({locator}) is null");
+				return new WhereFragment($"({locator}) {_isOperator} null");
 			}
 
 			if (valueToQuery.GetType() != expression.Method.DeclaringType)
@@ -50,15 +61,17 @@ namespace Marten.Linq.Parsing
 						$"Could not convert {value.Value.GetType().FullName} to {expression.Method.DeclaringType}", e);
 				}
 			}
-			
-			if ((mapping.PropertySearching == PropertySearching.ContainmentOperator || field.ShouldUseContainmentOperator()) && !(field is DuplicatedField))
+
+			if (_supportContainment && ((mapping.PropertySearching == PropertySearching.ContainmentOperator ||
+			                             field.ShouldUseContainmentOperator()) &&
+			                            !(field is DuplicatedField)))
 			{
 				var dict = new Dictionary<string, object>();
 				ContainmentWhereFragment.CreateDictionaryForSearch(dict, expression, valueToQuery);
 				return new ContainmentWhereFragment(serializer, dict);
 			}
 
-			return new WhereFragment($"{locator} = ?", valueToQuery);
+			return new WhereFragment($"{locator} {_equalsOperator} ?", valueToQuery);
 		}
 
 		private static IField GetField(IQueryableDocument mapping, MethodCallExpression expression)
