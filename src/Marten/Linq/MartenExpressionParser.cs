@@ -148,6 +148,11 @@ namespace Marten.Linq
                 return new WhereFragment("{0} % {1} {2} ?".ToFormat(jsonLocator, moduloByValue, op), value);
             }
 
+			// ! == -> <>
+	        if (binary.Left.NodeType == ExpressionType.Not && binary.NodeType == ExpressionType.Equal)
+	        {
+		        op = _operators[ExpressionType.NotEqual];
+	        }
 
             return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
         }
