@@ -1,4 +1,6 @@
-﻿namespace Marten.Linq.Parsing
+﻿using System;
+
+namespace Marten.Linq.Parsing
 {
 	/// <summary>
 	/// Implement !Equals for <see cref="int"/>, <see cref="long"/>, <see cref="decimal"/>, <see cref="Guid"/>, <see cref="bool"/>, <see cref="DateTime"/>, <see cref="DateTimeOffset"/>.

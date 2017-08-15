@@ -38,7 +38,9 @@ namespace Marten.Linq
 			if (parser != null)
 			{
 				var where = parser.Parse(_mapping, _serializer, expression);
-				_callback(where);				
+				_callback(where);
+
+				return expression;
 			}
 	
 			return base.VisitMethodCall(expression);
