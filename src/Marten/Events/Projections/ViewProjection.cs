@@ -248,7 +248,10 @@ namespace Marten.Events.Projections
                 }
                 else
                 {
-                    eventProjection.ProjectTo(view).Wait();
+                    using (Util.NoSynchronizationContextScope.Enter())
+                    {
+                        eventProjection.ProjectTo(view).Wait();
+                    }
                 }
             }
         }
