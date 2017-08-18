@@ -218,24 +218,25 @@ namespace Marten.Testing
 
         [Fact]
         public async Task query_with_select_in_query_async()
-        {
-            using (var session = theStore.OpenSession())
+        {	        
+			using (var session = theStore.OpenSession())
             {
                 var u = new User { FirstName = "Jeremy", LastName = "Miller" };
                 session.Store(u);
                 session.SaveChanges();
 
+                // SAMPLE: using-queryasync
                 var users =
                     await
                         session.QueryAsync<User>(
                                    "select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'")
                                .ConfigureAwait(false);
                 var user = users.Single();
+                // ENDSAMPLE
 
-                user.LastName.ShouldBe("Miller");
+				user.LastName.ShouldBe("Miller");
                 user.Id.ShouldBe(u.Id);
-            }
-            // ENDSAMPLE
+            }            
         }
     }
 }
