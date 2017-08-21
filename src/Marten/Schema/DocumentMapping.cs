@@ -128,10 +128,15 @@ namespace Marten.Schema
 
         public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
         {
-            var extras = extraFilters(query).ToArray();
+            var extras = extraFilters(query).ToList();
 
-            return query.Append(extras);
+            if (extras.Count > 0)
+            {
+                extras.Add(query);
+                return new CompoundWhereFragment("and", extras.ToArray());
+            }
 
+            return query;
         }
 
         private IEnumerable<IWhereFragment> extraFilters(IWhereFragment query)
