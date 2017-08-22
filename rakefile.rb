@@ -1,5 +1,7 @@
 require 'json'
 
+# bumping the CI
+
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
 BUILD_VERSION = '2.0.0'
