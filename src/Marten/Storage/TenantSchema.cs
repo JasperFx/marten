@@ -93,14 +93,14 @@ namespace Marten.Storage
         }
 
 
-        public void WritePatch(string filename, bool withSchemas = true)
+        public void WritePatch(string filename, bool withSchemas = true, bool doSchemaCheckWhenAutoCreateNone = true)
         {
             if (!Path.IsPathRooted(filename))
             {
                 filename = AppContext.BaseDirectory.AppendPath(filename);
             }
 
-            var patch = ToPatch(withSchemas);
+            var patch = ToPatch(withSchemas, doSchemaCheckWhenAutoCreateNone);
 
             patch.WriteUpdateFile(filename);
 
@@ -108,7 +108,7 @@ namespace Marten.Storage
             patch.WriteRollbackFile(dropFile);
         }
 
-        public SchemaPatch ToPatch(bool withSchemas = true)
+        public SchemaPatch ToPatch(bool withSchemas = true, bool doSchemaCheckWhenAutoCreateNone = false)
         {
             var patch = new SchemaPatch(StoreOptions.DdlRules);
 
@@ -124,7 +124,7 @@ namespace Marten.Storage
             {
                 conn.Open();
 
-                patch.Apply(conn, StoreOptions.AutoCreateSchemaObjects, @objects);
+                patch.Apply(conn, StoreOptions.AutoCreateSchemaObjects, @objects, doSchemaCheckWhenAutoCreateNone);
             }
 
             return patch;
