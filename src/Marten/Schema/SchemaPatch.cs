@@ -167,13 +167,13 @@ namespace Marten.Schema
         }
 
         
-        public void Apply(NpgsqlConnection conn, AutoCreate autoCreate, ISchemaObject[] schemaObjects)
+        public void Apply(NpgsqlConnection conn, AutoCreate autoCreate, ISchemaObject[] schemaObjects, bool doSchemaCheckWhenAutoCreateNone = false)
         {
             if (!schemaObjects.Any()) return;
 
             // Let folks just fail if anything is wrong.
             // Per https://github.com/JasperFx/marten/issues/711
-            if (autoCreate == AutoCreate.None) return;
+            if (autoCreate == AutoCreate.None && !doSchemaCheckWhenAutoCreateNone) return;
 
             var cmd = conn.CreateCommand();
             var builder = new CommandBuilder(cmd);
