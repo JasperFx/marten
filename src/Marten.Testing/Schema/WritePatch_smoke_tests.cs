@@ -40,7 +40,7 @@ namespace Marten.Testing.Schema
             store.Dispose();
         }
 
-        //[Fact] -- flakey on ci
+        //[Fact] //-- flakey on ci
         public void can_create_patch_for_a_single_document_type()
         {
             StoreOptions(_ =>
@@ -104,7 +104,7 @@ namespace Marten.Testing.Schema
             }
         }
 
-        //[Fact] -- flakey on ci
+        //[Fact] // -- flakey on ci
         public void writes_both_the_update_and_rollback_files()
         {
             StoreOptions(_ =>
@@ -115,6 +115,8 @@ namespace Marten.Testing.Schema
 
                 // Lets Marten know that the event store is active
                 _.Events.AddEventType(typeof(MembersJoined));
+
+                _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
             });
 
             var directory = AppContext.BaseDirectory.AppendPath("bin", "patches");
