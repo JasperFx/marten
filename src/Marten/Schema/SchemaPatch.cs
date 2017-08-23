@@ -163,17 +163,16 @@ namespace Marten.Schema
                     throw new InvalidOperationException($"Marten cannot apply updates in CreateOnly mode to existing items {updates.Select(x => x.SchemaObject.Identifier.QualifiedName).Join(", ")}");
                 }
             }
-            
         }
 
         
-        public void Apply(NpgsqlConnection conn, AutoCreate autoCreate, ISchemaObject[] schemaObjects, bool doSchemaCheckWhenAutoCreateNone = false)
+        public void Apply(NpgsqlConnection conn, AutoCreate autoCreate, ISchemaObject[] schemaObjects)
         {
             if (!schemaObjects.Any()) return;
 
             // Let folks just fail if anything is wrong.
             // Per https://github.com/JasperFx/marten/issues/711
-            if (autoCreate == AutoCreate.None && !doSchemaCheckWhenAutoCreateNone) return;
+            if (autoCreate == AutoCreate.None) return;
 
             var cmd = conn.CreateCommand();
             var builder = new CommandBuilder(cmd);
@@ -203,8 +202,6 @@ namespace Marten.Schema
             }
 
             AssertPatchingIsValid(autoCreate);
-
-
         }
 
         private void apply(ISchemaObject schemaObject, AutoCreate autoCreate, DbDataReader reader)

@@ -36,14 +36,14 @@ namespace Marten.Schema
         /// </summary>
         /// <param name="filename"></param>
         /// <param name="withSchemas"></param>
-        void WritePatch(string filename, bool withSchemas = true, bool doSchemaCheckWhenAutoCreateNone = true);
+        void WritePatch(string filename, bool withSchemas = true);
 
         /// <summary>
         ///     Tries to write a "patch" SQL text to upgrade the database
         ///     to the current Marten schema configuration
         /// </summary>
         /// <returns></returns>
-        SchemaPatch ToPatch(bool withSchemas = true, bool performSchemaCheckWhenNone = false);
+        SchemaPatch ToPatch(bool withSchemas = true, bool withAutoCreateAll = false);
 
         /// <summary>
         ///     Validates the Marten configuration of documents and transforms against
