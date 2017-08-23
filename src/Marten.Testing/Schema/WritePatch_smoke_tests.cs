@@ -104,6 +104,26 @@ namespace Marten.Testing.Schema
             }
         }
 
+        [Fact] // -- flakey on ci
+        public void can_do_schema_validation_with_no_detected_changes_on_event_store()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.AddEventType(typeof(MembersJoined));
+            });
+
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventType(typeof(MembersJoined));
+            }))
+            {
+                store.Schema.AssertDatabaseMatchesConfiguration();
+            }
+        }
+
         //[Fact] // -- flakey on ci
         public void writes_both_the_update_and_rollback_files()
         {
