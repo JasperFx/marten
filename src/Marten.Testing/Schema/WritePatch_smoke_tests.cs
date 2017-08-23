@@ -151,7 +151,7 @@ namespace Marten.Testing.Schema
 
             // SAMPLE: write-patch
             // Write the patch SQL file to the @"bin\patches" directory
-            theStore.Schema.WritePatch(directory.AppendPath("1.initial.sql"), doSchemaCheckWhenAutoCreateNone: true);
+            theStore.Schema.WritePatch(directory.AppendPath("1.initial.sql"));
             // ENDSAMPLE
 
             fileSystem.FileExists(directory.AppendPath("1.initial.sql"));
