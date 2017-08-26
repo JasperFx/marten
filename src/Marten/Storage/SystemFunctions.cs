@@ -15,8 +15,6 @@ namespace Marten.Storage
         public SystemFunctions(StoreOptions options)
         {
             _options = options;
-
-            AddSystemFunction(options, "mt_immutable_timestamp", "text");
         }
 
         public void AddSystemFunction(StoreOptions options, string name, string args)
