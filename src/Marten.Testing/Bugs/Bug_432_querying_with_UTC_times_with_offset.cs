@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Baseline;
 using Baseline.Dates;
@@ -18,11 +18,9 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void can_issue_queries_against_DateTime()
         {
-
-
             using (var session = theStore.LightweightSession())
             {
-                var now = DateTime.UtcNow.ToUniversalTime();
+                var now = GenerateTestDateTime();
                 _output.WriteLine("now: " + now.ToString("o"));
                 var testClass = new DateClass
                 {
@@ -78,7 +76,7 @@ namespace Marten.Testing.Bugs
 
             using (var session = theStore.LightweightSession())
             {
-                var now = DateTime.UtcNow.ToUniversalTime();
+                var now = GenerateTestDateTime();
                 _output.WriteLine("now: " + now.ToString("o"));
                 var testClass = new DateClass
                 {
@@ -134,7 +132,7 @@ namespace Marten.Testing.Bugs
 
             using (var session = theStore.LightweightSession())
             {
-                var now = DateTime.UtcNow.ToUniversalTime();
+                var now = GenerateTestDateTime();
                 _output.WriteLine("now: " + now.ToString("o"));
                 var testClass = new DateClass
                 {
@@ -190,7 +188,7 @@ namespace Marten.Testing.Bugs
 
             using (var session = theStore.LightweightSession())
             {
-                var now = DateTime.UtcNow;
+                var now = GenerateTestDateTime();
                 _output.WriteLine("now: " + now.ToString("o"));
                 var testClass = new DateClass
                 {
@@ -234,9 +232,9 @@ namespace Marten.Testing.Bugs
         {
             using (var session = theStore.LightweightSession())
             {
-                var now = DateTime.UtcNow;
+                var now = GenerateTestDateTime();
                 _output.WriteLine("now: " + now.ToString("o"));
-                var testClass = new DateOffsetClass()
+                var testClass = new DateOffsetClass
                 {
                     Id = Guid.NewGuid(),
                     DateTimeField = now
@@ -244,12 +242,12 @@ namespace Marten.Testing.Bugs
 
                 session.Store(testClass);
 
-                session.Store(new DateOffsetClass()
+                session.Store(new DateOffsetClass
                 {
                     DateTimeField = now.Add(5.Minutes())
                 });
 
-                session.Store(new DateOffsetClass()
+                session.Store(new DateOffsetClass
                 {
                     DateTimeField = now.Add(-5.Minutes())
                 });
@@ -280,9 +278,9 @@ namespace Marten.Testing.Bugs
 
             using (var session = theStore.LightweightSession())
             {
-                var now = DateTimeOffset.UtcNow;
+                var now = GenerateTestDateTime();
                 _output.WriteLine("now: " + now.ToString("o"));
-                var testClass = new DateOffsetClass()
+                var testClass = new DateOffsetClass
                 {
                     Id = Guid.NewGuid(),
                     DateTimeField = now
@@ -290,12 +288,12 @@ namespace Marten.Testing.Bugs
 
                 session.Store(testClass);
 
-                session.Store(new DateOffsetClass()
+                session.Store(new DateOffsetClass
                 {
                     DateTimeField = now.Add(5.Minutes())
                 });
 
-                session.Store(new DateOffsetClass()
+                session.Store(new DateOffsetClass
                 {
                     DateTimeField = now.Add(-5.Minutes())
                 });
@@ -319,7 +317,11 @@ namespace Marten.Testing.Bugs
             }
         }
 
-
+        private static DateTime GenerateTestDateTime()
+        {
+            var now = DateTime.UtcNow;
+            return now.AddTicks(-(now.Ticks % TimeSpan.TicksPerMillisecond));
+        }
     }
 
     public class DateClass
