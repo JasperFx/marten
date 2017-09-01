@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema
@@ -107,12 +110,30 @@ namespace Marten.Testing.Schema
         [Fact] // -- flakey on ci
         public void can_do_schema_validation_with_no_detected_changes_on_event_store()
         {
+            /*
+            var system = new FileSystem();
+
+            var expected = system.ReadStringFromFile("c:\\expected.sql").ReadLines().ToArray();
+            var actual = system.ReadStringFromFile("c:\\actual.sql").ReadLines().ToArray();
+
+
+            for (int i = 0; i < expected.Length; i++)
+            {
+                Console.WriteLine(i);
+                actual[i].ShouldBe(expected[i]);
+            }
+            */
+
+
+            
             StoreOptions(_ =>
             {
                 _.Events.AddEventType(typeof(MembersJoined));
             });
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            
 
             using (var store = DocumentStore.For(_ =>
             {
