@@ -82,9 +82,12 @@ namespace Marten.Util
                 .Replace("SECURITY INVOKER", "")
                 .Replace("  ", " ")
                 .Replace("LANGUAGE plpgsql AS $function$", "")
+                .Replace("$$ LANGUAGE plpgsql", "$function$")
+                .Replace("AS $$ DECLARE", "DECLARE")
                 .Replace("character varying", "varchar")
                 .Replace("Boolean", "boolean")
                 .Replace("bool,", "boolean,")
+                .Replace("int[]", "integer[]")
                 .Replace("numeric", "decimal").TrimEnd(';').TrimEnd();
 
             if (replaced.Contains("PLV8", StringComparison.OrdinalIgnoreCase))
