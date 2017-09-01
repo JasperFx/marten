@@ -76,12 +76,12 @@ end
 
 desc 'Compile the code'
 task :compile => [:clean, :restore] do
-  sh "dotnet build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp1.0 --configuration #{COMPILE_TARGET}"
+  sh "dotnet build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.0 --configuration #{COMPILE_TARGET}"
 end
 
 desc 'Run the unit tests'
 task :test => [:compile] do
-  sh 'dotnet test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp1.0'
+  sh 'dotnet test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.0'
 end
 
 
@@ -110,7 +110,7 @@ task :docs do
 	sh "dotnet stdocs run -v #{BUILD_VERSION}"
 end
 
-"Exports the documentation to structuremap.github.io - requires Git access to that repo though!"
+"Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!"
 task :publish do
 	FileUtils.remove_dir('doc-target') if Dir.exists?('doc-target')
 
@@ -141,7 +141,7 @@ end
 
 desc 'Restores nuget packages'
 task :restore do
-    sh 'dotnet restore src/Marten.sln --runtime netstandard1.3'
+    sh 'dotnet restore src/Marten.sln'
 	
 end
 
