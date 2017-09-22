@@ -60,6 +60,18 @@ namespace Marten.Testing.Linq.Compiled
             UserByUsername.Count.ShouldBe(1);
         }
 
+        [Fact]
+        public void a_single_item_compiled_query_with_fields()
+        {
+            UserByUsernameWithFields.Count = 0;
+
+            var user = theSession.Query(new UserByUsernameWithFields { UserName = "myusername" });
+            user.ShouldNotBeNull();
+            var differentUser = theSession.Query(new UserByUsernameWithFields { UserName = "jdm" });
+            differentUser.UserName.ShouldBe("jdm");
+            UserByUsernameWithFields.Count.ShouldBe(1);
+        }
+
 
         [Fact]
         public void a_single_item_compiled_query_SingleOrDefault()
@@ -150,6 +162,21 @@ namespace Marten.Testing.Linq.Compiled
             differentUsers.Count().ShouldBe(2);
             UsersByFirstName.Count.ShouldBe(1);
         }
+
+        [Fact]
+        public void a_list_query_with_fields_compiled()
+        {
+            UsersByFirstNameWithFields.Count = 0;
+
+            var users = theSession.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" }).ToList();
+            users.Count.ShouldBe(2);
+            users.ElementAt(0).UserName.ShouldBe("jdm");
+            users.ElementAt(1).UserName.ShouldBe("shadetreedev");
+            var differentUsers = theSession.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" });
+            differentUsers.Count().ShouldBe(2);
+            UsersByFirstNameWithFields.Count.ShouldBe(1);
+        }
+
 
         [Fact]
         public async Task a_list_query_compiled_async()
@@ -282,6 +309,19 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
+    public class UserByUsernameWithFields : ICompiledQuery<User>
+    {
+        public static int Count;
+        public string UserName;
+
+        public Expression<Func<IQueryable<User>, User>> QueryIs()
+        {
+            Count++;
+            return query => query.Where(x => x.UserName == UserName)
+                .FirstOrDefault();
+        }
+    }
+
     public class UserByUsernameSingleOrDefault : ICompiledQuery<User>
     {
         public static int Count;
@@ -310,6 +350,18 @@ namespace Marten.Testing.Linq.Compiled
     }
     // ENDSAMPLE
 
+    public class UsersByFirstNameWithFields : ICompiledListQuery<User>
+    {
+        public static int Count;
+        public string FirstName;
+
+        public Expression<Func<IQueryable<User>, IEnumerable<User>>> QueryIs()
+        {
+            // Ignore this line, it's from a unit test;)
+            Count++;
+            return query => query.Where(x => x.FirstName == FirstName);
+        }
+    }
 
     // SAMPLE: UserNamesForFirstName
     public class UserNamesForFirstName : ICompiledListQuery<User, string>
