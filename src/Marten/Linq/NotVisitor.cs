@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using Remotion.Linq.Parsing;
 
@@ -11,24 +14,48 @@ namespace Marten.Linq
         private readonly MartenExpressionParser.WhereClauseVisitor _parent;
         private readonly IQueryableDocument _mapping;
         private readonly Action<IWhereFragment> _callback;
+	    private static readonly IMethodCallParser[] _parsers = {
+			new SimpleNotEqualsParser(),
+			new StringNotEquals(),
+			new StringNotContains(),
+		    new StringNotStartsWith(),
+			new StringNotEndsWith(),		    
+		};
+	    private readonly ISerializer _serializer;
 
-        public NotVisitor(MartenExpressionParser.WhereClauseVisitor parent, IQueryableDocument mapping, Action<IWhereFragment> callback)
+	    public NotVisitor(MartenExpressionParser.WhereClauseVisitor parent, IQueryableDocument mapping, Action<IWhereFragment> callback, ISerializer serializer)
         {
             _parent = parent;
             _mapping = mapping;
-            _callback = callback;
+            _callback = callback;	        
+	        _serializer = serializer;
         }
 
-        protected override Expression VisitMember(MemberExpression expression)
+		protected override Expression VisitMethodCall(MethodCallExpression expression)
+		{
+			var parser = _parsers.FirstOrDefault(x => x.Matches(expression));
+
+			if (parser != null)
+			{
+				var where = parser.Parse(_mapping, _serializer, expression);
+				_callback(where);
+
+				return expression;
+			}
+	
+			return base.VisitMethodCall(expression);
+		}
+
+	    protected override Expression VisitMember(MemberExpression expression)
         {
             if (expression.Type == typeof (bool))
             {
                 var locator = _mapping.JsonLocator(expression);
-                var @where = new WhereFragment($"{locator} = False");
+                var @where = new WhereFragment($"{locator} != ?", true);
                 _callback(@where);
             }
-
-            return base.VisitMember(expression);
+			
+	        return base.VisitMember(expression);
         }
 
         protected override Expression VisitBinary(BinaryExpression expression)

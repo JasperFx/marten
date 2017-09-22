@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Marten.Linq.MatchesSql;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -179,6 +180,23 @@ namespace Marten.Testing
         }
         // ENDSAMPLE
 
+        // SAMPLE: query_with_matches_sql
+        [Fact]
+        public void query_with_matches_sql()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                var u = new User { FirstName = "Eric", LastName = "Smith" };
+                session.Store(u);
+                session.SaveChanges();
+
+                var user = session.Query<User>().Where(x => x.MatchesSql("data->> 'FirstName' = ?", "Eric")).Single();
+                user.LastName.ShouldBe("Smith");
+                user.Id.ShouldBe(u.Id);
+            }
+        }
+        // ENDSAMPLE
+
         [Fact]
         public void query_with_select_in_query()
         {
@@ -200,24 +218,25 @@ namespace Marten.Testing
 
         [Fact]
         public async Task query_with_select_in_query_async()
-        {
-            using (var session = theStore.OpenSession())
+        {	        
+			using (var session = theStore.OpenSession())
             {
                 var u = new User { FirstName = "Jeremy", LastName = "Miller" };
                 session.Store(u);
                 session.SaveChanges();
 
+                // SAMPLE: using-queryasync
                 var users =
                     await
                         session.QueryAsync<User>(
                                    "select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'")
                                .ConfigureAwait(false);
                 var user = users.Single();
+                // ENDSAMPLE
 
-                user.LastName.ShouldBe("Miller");
+				user.LastName.ShouldBe("Miller");
                 user.Id.ShouldBe(u.Id);
-            }
-            // ENDSAMPLE
+            }            
         }
     }
 }

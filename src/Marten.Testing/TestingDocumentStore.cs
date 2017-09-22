@@ -7,6 +7,7 @@ using Baseline;
 using Baseline.Dates;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Xunit.Abstractions;
 
 namespace Marten.Testing
 {
@@ -35,17 +36,26 @@ namespace Marten.Testing
         }
 
 
-        public static DocumentStore Basic()
+        public static DocumentStore Basic(ITestOutputHelper output = null)
         {
             return For(_ =>
             {
+                if (output != null)
+                    _.Logger(new TestOutputMartenLogger(output));
             }).As<DocumentStore>();
         }
 
-        public static DocumentStore DefaultSchema()
+        internal static IDisposable For(Func<object, object> p)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static DocumentStore DefaultSchema(ITestOutputHelper output = null)
         {
             var store = For(_ =>
             {
+                if (output != null)
+                    _.Logger(new TestOutputMartenLogger(output));
                 _.DatabaseSchemaName = StoreOptions.DefaultDatabaseSchemaName;
             });
             return store;

@@ -174,6 +174,12 @@ Linq queries against boolean properties can use shorthand mechanisms in `Where()
 
 <[sample:boolean_queries]>
 
+## Use MatchesSql(sql) to search using raw SQL
+
+Combine your Linq queries with raw SQL using the `MatchesSql(sql)` method like so:
+
+<[sample:query_with_matches_sql]>
+
 ## IsOneOf
 
 Marten v0.8 added a new extension method called `IsOneOf()` that can be used to query for documents having

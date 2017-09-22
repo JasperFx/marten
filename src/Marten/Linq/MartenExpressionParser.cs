@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
 using Marten.Linq.LastModified;
+using Marten.Linq.MatchesSql;
 using Marten.Linq.Parsing;
 using Marten.Linq.SoftDeletes;
 using Marten.Schema;
@@ -66,6 +67,7 @@ namespace Marten.Linq
             new StringEndsWith(),
             new StringStartsWith(),
             new StringEquals(),
+			new SimpleEqualsParser(),
 
             // Added
             new IsOneOf(),
@@ -86,6 +88,9 @@ namespace Marten.Linq
             // last modified
             new ModifiedSinceParser(),
             new ModifiedBeforeParser(),
+
+            // matches sql
+            new MatchesSqlParser(),
 
             // dictionaries
             new DictionaryExpressions()
@@ -139,12 +144,19 @@ namespace Marten.Linq
             }
             if (jsonLocatorExpression.NodeType == ExpressionType.Modulo)
             {
-                var moduloByValue = MartenExpressionParser.moduloByValue(binary);
-                return new WhereFragment("{0} % {1} {2} ?".ToFormat(jsonLocator, moduloByValue, op), value);
+                var byValue = moduloByValue((isValueExpressionOnRight ? binary.Left : binary.Right) as BinaryExpression);
+                var moduloFormat = isValueExpressionOnRight ? "{0} % {1} {2} ?" : "? {2} {0} % {1}";
+                return new WhereFragment(moduloFormat.ToFormat(jsonLocator, byValue, op), value);
             }
 
+			// ! == -> <>
+	        if (binary.Left.NodeType == ExpressionType.Not && binary.NodeType == ExpressionType.Equal)
+	        {
+		        op = _operators[ExpressionType.NotEqual];
+	        }
 
-            return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
+            var whereFormat = isValueExpressionOnRight ? "{0} {1} ?" : "? {1} {0}";
+            return new WhereFragment(whereFormat.ToFormat(jsonLocator, op), value);
         }
 
         private IWhereFragment buildChildCollectionQuery(IQueryableDocument mapping, QueryModel query, Expression valueExpression, string op)
@@ -164,8 +176,7 @@ namespace Marten.Linq
 
         private static object moduloByValue(BinaryExpression binary)
         {
-            var moduloExpression = binary.Left as BinaryExpression;
-            var moduloValueExpression = moduloExpression?.Right as ConstantExpression;
+            var moduloValueExpression = binary?.Right as ConstantExpression;
             return moduloValueExpression != null ? moduloValueExpression.Value : 1;
         }
     }

@@ -8,6 +8,7 @@ using Marten.Services;
 using Marten.Util;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Events
 {
@@ -40,6 +41,25 @@ namespace Marten.Testing.Events
 
         [Fact]
         public void can_query_against_event_type_with_camel_casing()
+        {
+            StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+
+            theSession.Events.StartStream<Quest>(joined1, departed1);
+            theSession.Events.StartStream<Quest>(joined2, departed2);
+
+            theSession.SaveChanges();
+
+            theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+            theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+                .OrderBy(x => x)
+                .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
+
+            theSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
+                .Single().Id.ShouldBe(departed2.Id);
+        }
+
+        [Fact]
+        public void can_query_against_event_type_with_snake_casing()
         {
             StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 

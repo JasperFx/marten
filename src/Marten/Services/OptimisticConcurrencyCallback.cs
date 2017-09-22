@@ -8,17 +8,21 @@ namespace Marten.Services
 {
     public class OptimisticConcurrencyCallback<T> : ICallback
     {
+        private readonly ConcurrencyChecks _mode;
         private readonly object _id;
         private readonly VersionTracker _versions;
         private readonly Guid _newVersion;
         private readonly Guid? _oldVersion;
+        private readonly Action<Guid> _setVersion;
 
-        public OptimisticConcurrencyCallback(object id, VersionTracker versions, Guid newVersion, Guid? oldVersion)
+        public OptimisticConcurrencyCallback(ConcurrencyChecks mode, object id, VersionTracker versions, Guid newVersion, Guid? oldVersion, Action<Guid> setVersion)
         {
+            _mode = mode;
             _id = id;
             _versions = versions;
             _newVersion = newVersion;
             _oldVersion = oldVersion;
+            _setVersion = setVersion;
         }
 
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
@@ -30,13 +34,28 @@ namespace Marten.Services
                 success = version == _newVersion;
             };
 
-            if (success)
+            checkAndStoreVersions(exceptions, success);
+        }
+
+        private void checkAndStoreVersions(IList<Exception> exceptions, bool success)
+        {
+            if (_mode == ConcurrencyChecks.Enabled)
             {
-                _versions.Store<T>(_id, _newVersion);                
+                if (success)
+                {
+                    _setVersion(_newVersion);
+                    _versions.Store<T>(_id, _newVersion);
+                }
+                else
+                {
+                    _setVersion(_oldVersion ?? Guid.Empty);
+
+                    exceptions.Add(new ConcurrencyException(typeof(T), _id));
+                }
             }
             else
             {
-                exceptions.Add(new ConcurrencyException(typeof(T), _id));
+                _setVersion(_newVersion);
             }
         }
 
@@ -49,14 +68,9 @@ namespace Marten.Services
                 success = version == _newVersion;
             }
 
-            if (success)
-            {
-                _versions.Store<T>(_id, _newVersion);
-            }
-            else
-            {
-                exceptions.Add(new ConcurrencyException(typeof(T), _id));
-            }
+            checkAndStoreVersions(exceptions, success);
+
+
         }
     }
 }

@@ -44,7 +44,7 @@ namespace Marten.Schema.BulkLoading
             var arguments = upsertFunction.OrderedArguments().Where(x => !(x is CurrentVersionArgument)).ToArray();
             var expressions =
                 arguments.Select(
-                    x => x.CompileBulkImporter(serializer.EnumStorage, writer, document, alias, serializerParam, textWriter, tenantId));
+                    x => x.CompileBulkImporter(mapping, serializer.EnumStorage, writer, document, alias, serializerParam, textWriter, tenantId));
 
             var columns = arguments.Select(x => $"\"{x.Column}\"").Join(", ");
             _baseSql = $"COPY %TABLE%({columns}) FROM STDIN BINARY";

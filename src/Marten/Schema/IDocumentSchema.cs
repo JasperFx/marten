@@ -43,7 +43,7 @@ namespace Marten.Schema
         ///     to the current Marten schema configuration
         /// </summary>
         /// <returns></returns>
-        SchemaPatch ToPatch(bool withSchemas = true);
+        SchemaPatch ToPatch(bool withSchemas = true, bool withAutoCreateAll = false);
 
         /// <summary>
         ///     Validates the Marten configuration of documents and transforms against

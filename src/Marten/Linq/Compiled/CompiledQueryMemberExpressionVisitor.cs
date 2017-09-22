@@ -60,11 +60,20 @@ namespace Marten.Linq.Compiled
                     ParameterSetters.Add(new ConstantDbParameterSetter(true));
                 }
             }
-
-            return base.VisitUnary(node);
+			// This evaluation is added to support parameterized !Boolean queries
+			else if (node.NodeType == ExpressionType.Not && node.Operand is MemberExpression)
+            {
+	            var operand = (MemberExpression) node.Operand;
+	            if (operand.Type == typeof(bool) && operand.NodeType == ExpressionType.MemberAccess)
+	            {
+		            // Parameterized to :column <> True, instead of :column = False.
+		            ParameterSetters.Add(new ConstantDbParameterSetter(true));
+	            }
+            }
+			return base.VisitUnary(node);
         }
 
-        protected override Expression VisitMember(MemberExpression node)
+	    protected override Expression VisitMember(MemberExpression node)
         {
             _lastMember = _mapping.FieldFor(new MemberInfo[] { node.Member });
 

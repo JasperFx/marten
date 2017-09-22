@@ -33,18 +33,8 @@ namespace Marten.Storage
             _options = options;
 
             SystemFunctions = new SystemFunctions(options);
-
-            store(SystemFunctions);
-            Transforms = options.Transforms.As<Transforms.Transforms>();
-            store(Transforms.As<IFeatureSchema>());
-
-            store(options.Events);
-            _features[typeof(StreamState)] = options.Events;
-            _features[typeof(EventStream)] = options.Events;
-            _features[typeof(IEvent)] = options.Events;
-
             
-           
+            Transforms = options.Transforms.As<Transforms.Transforms>();
         }
 
         public Transforms.Transforms Transforms { get; }
@@ -134,6 +124,17 @@ namespace Marten.Storage
 
         internal void PostProcessConfiguration()
         {
+            SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamp", "text");
+
+            store(SystemFunctions);
+
+            store(Transforms.As<IFeatureSchema>());
+
+            store(_options.Events);
+            _features[typeof(StreamState)] = _options.Events;
+            _features[typeof(EventStream)] = _options.Events;
+            _features[typeof(IEvent)] = _options.Events;
+
             _mappings[typeof(IEvent)] = new EventQueryMapping(_options);
 
             foreach (var mapping in _documentMappings.Values)

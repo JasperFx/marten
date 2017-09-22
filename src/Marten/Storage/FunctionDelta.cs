@@ -14,6 +14,14 @@ namespace Marten.Storage
         {
             Expected = expected;
             Actual = actual;
+
+            // TODO -- TEMP!!!!!
+            if (expected.Function.Name == "mt_append_event")
+            {
+                var system = new FileSystem();
+                system.WriteStringToFile("c:\\expected.sql", expected.Body.CanonicizeSql());
+                system.WriteStringToFile("c:\\actual.sql", actual.Body.CanonicizeSql());
+            }
         }
 
         public bool AllNew => Actual == null;

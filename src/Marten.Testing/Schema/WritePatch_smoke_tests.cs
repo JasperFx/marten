@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema
@@ -40,7 +43,7 @@ namespace Marten.Testing.Schema
             store.Dispose();
         }
 
-        //[Fact] -- flakey on ci
+        //[Fact] //-- flakey on ci
         public void can_create_patch_for_a_single_document_type()
         {
             StoreOptions(_ =>
@@ -65,7 +68,7 @@ namespace Marten.Testing.Schema
             text.ShouldContain("$tran$;");
         }
 
-        //[Fact] -- flakey on ci
+        //[Fact] //-- flakey on ci
         public void can_do_schema_validation_negative_case_with_detected_changes()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
@@ -85,7 +88,7 @@ namespace Marten.Testing.Schema
             }
         }
 
-        //[Fact] -- flakey on ci
+        //[Fact] //-- flakey on ci
         public void can_do_schema_validation_with_no_detected_changes()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
@@ -104,7 +107,45 @@ namespace Marten.Testing.Schema
             }
         }
 
-        //[Fact] -- flakey on ci
+        [Fact] // -- flakey on ci
+        public void can_do_schema_validation_with_no_detected_changes_on_event_store()
+        {
+            /*
+            var system = new FileSystem();
+
+            var expected = system.ReadStringFromFile("c:\\expected.sql").ReadLines().ToArray();
+            var actual = system.ReadStringFromFile("c:\\actual.sql").ReadLines().ToArray();
+
+
+            for (int i = 0; i < expected.Length; i++)
+            {
+                Console.WriteLine(i);
+                actual[i].ShouldBe(expected[i]);
+            }
+            */
+
+
+            
+            StoreOptions(_ =>
+            {
+                _.Events.AddEventType(typeof(MembersJoined));
+            });
+
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventType(typeof(MembersJoined));
+            }))
+            {
+                store.Schema.AssertDatabaseMatchesConfiguration();
+            }
+        }
+
+        //[Fact] // -- flakey on ci
         public void writes_both_the_update_and_rollback_files()
         {
             StoreOptions(_ =>
@@ -115,6 +156,8 @@ namespace Marten.Testing.Schema
 
                 // Lets Marten know that the event store is active
                 _.Events.AddEventType(typeof(MembersJoined));
+
+                _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
             });
 
             var directory = AppContext.BaseDirectory.AppendPath("bin", "patches");
@@ -130,6 +173,34 @@ namespace Marten.Testing.Schema
 
             fileSystem.FileExists(directory.AppendPath("1.initial.sql"));
             fileSystem.FileExists(directory.AppendPath("1.initial.drop.sql"));
+        }
+
+        //[Fact] // -- flakey on ci
+        public void writepatch_writes_patch_schema_when_autocreate_none()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<User>();
+                _.AutoCreateSchemaObjects = AutoCreate.None;
+            });
+
+            var directory = AppContext.BaseDirectory.AppendPath("bin", "patches");
+
+            var fileSystem = new FileSystem();
+            fileSystem.DeleteDirectory(directory);
+            fileSystem.CreateDirectory(directory);
+
+            // SAMPLE: write-patch
+            // Write the patch SQL file to the @"bin\patches" directory
+            theStore.Schema.WritePatch(directory.AppendPath("1.initial.sql"));
+            // ENDSAMPLE
+
+            fileSystem.FileExists(directory.AppendPath("1.initial.sql"));
+            fileSystem.FileExists(directory.AppendPath("1.initial.drop.sql"));
+
+            var patchSql = fileSystem.ReadStringFromFile(directory.AppendPath("1.initial.sql"));
+
+            patchSql.ShouldContain("CREATE TABLE public.mt_doc_user");
         }
     }
 }
