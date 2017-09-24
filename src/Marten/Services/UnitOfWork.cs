@@ -241,7 +241,20 @@ namespace Marten.Services
             if (documentMapping == null)
                 return Enumerable.Empty<Type>();
 
-            return documentMapping.ForeignKeys.Where(x => x.ReferenceDocumentType != type).Select(keyDefinition => keyDefinition.ReferenceDocumentType);
+            return documentMapping.ForeignKeys.Where(x => x.ReferenceDocumentType != type)
+                .SelectMany(keyDefinition =>
+                {
+                    var results = new List<Type>();
+                    var referenceMappingType =
+                        _tenant.MappingFor(keyDefinition.ReferenceDocumentType) as DocumentMapping;
+                    // If the reference type has sub-classes, also need to insert/update them first too
+                    if (referenceMappingType != null && referenceMappingType.SubClasses.Any())
+                    {
+                        results.AddRange(referenceMappingType.SubClasses.Select(s => s.DocumentType));
+                    }
+                    results.Add(keyDefinition.ReferenceDocumentType);
+                    return results;
+                });
         }
 
         private DocumentChange[] detectTrackerChanges()
