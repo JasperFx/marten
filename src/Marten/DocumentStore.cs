@@ -68,10 +68,10 @@ namespace Marten
         /// </summary>
         /// <param name="options"></param>
         public DocumentStore(StoreOptions options)
-        {
+        {            
             options.ApplyConfiguration();
             options.CreatePatching();
-
+            options.Validate();
             Options = options;
 
             _logger = options.Logger();
