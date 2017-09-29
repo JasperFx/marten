@@ -288,6 +288,17 @@ namespace Marten
         }
 
         /// <summary>
+        /// Validate that minimal options to initialize a document store have been specified
+        /// </summary>
+        internal void Validate()
+        {
+            if (Tenancy == null)
+            {
+                throw new InvalidOperationException("Tenancy not specified - provide either connection string or connection factory through Connection(..)");
+            }
+        }
+
+        /// <summary>
         /// Apply conventional policies to how documents are mapped
         /// </summary>
         public PoliciesExpression Policies => new PoliciesExpression(this);
