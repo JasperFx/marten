@@ -16,17 +16,23 @@ You will also need to enable the PLV8 extension inside of Postgresql for running
 [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries for PLV8 running on Windows. Just drop the folder structure from that download into your main Postgresql installation folder (`c:\program files\postgresql\9.5` on my box). Once the binaries are copied in, run the command `CREATE EXTENSION PLV8;` in your Postgresql database. 
 If you have any trouble with PLV8, please feel free to ask for help in the Gitter room.
 
+Ensure you have installed [.Net Core SDK 2.0](https://www.microsoft.com/net/download/core) prior to building the solution.
 
-Once you have the codebase and the connection.txt file, either:
+Once you have the codebase and the connection string environment variable set:
 
-* Run the rake script
-* From a command line at the root of the codebase, run `paket restore` to fetch all the nuget dependencies
+* Run the rake script or use the dotnet CLI to restore and build the solution
+* Use Visual Studio 2017 or whatever editor you prefer and go to town.
 
-From there, open Visual Studio.Net or whatever editor you prefer and go to town.
+dotnet CLI commands are outlined below:
+```
+dotnet restore src\Marten.sln
+dotnet build src\Marten.sln
+dotnet test src\Marten.Testing\Marten.Testing.csproj --framework netcoreapp2.0
+```
 
 ## Tooling
 
-We're using [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly) for unit testing and [paket](https://fsprojects.github.io/Paket/) for improved Nuget workflow. We're using rake for build automation, but it's not mandatory for development.
+We're using [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly) for unit testing. We're using rake for build automation, but it's not mandatory for development. You can use the dotnet CLI if you are not familiar with rake.
 
 ## Mocha Specs
 
