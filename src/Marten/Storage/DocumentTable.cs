@@ -11,6 +11,9 @@ namespace Marten.Storage
     {
         public DocumentTable(DocumentMapping mapping) : base(mapping.Table)
         {
+            // validate to ensure document has an Identity field or property
+            mapping.Validate();
+
             var pgIdType = TypeMappings.GetPgType(mapping.IdMember.GetMemberType());
             var pgTextType = TypeMappings.GetPgType(string.Empty.GetType());
 
