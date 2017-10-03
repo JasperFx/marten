@@ -12,7 +12,7 @@ build_revision = tc_build_number || Time.new.strftime('5%H%M')
 build_number = "#{BUILD_VERSION}.#{build_revision}"
 BUILD_NUMBER = build_number
 
-task :ci => [:connection, :version, :default, :storyteller, 'pack']
+task :ci => [:connection, :default, :storyteller, 'pack']
 
 task :default => [:mocha, :test, :storyteller]
 
@@ -47,18 +47,6 @@ task :version do
 
   }
 
-  puts "Writing src/CommonAssemblyInfo.cs..."
-  File.open('src/CommonAssemblyInfo.cs', 'w') do |file|
-    file.write "using System.Reflection;\n"
-    file.write "using System.Runtime.InteropServices;\n"
-    file.write "[assembly: AssemblyDescription(\"#{options[:description]}\")]\n"
-    file.write "[assembly: AssemblyProduct(\"#{options[:product_name]}\")]\n"
-    file.write "[assembly: AssemblyCopyright(\"#{options[:copyright]}\")]\n"
-    file.write "[assembly: AssemblyTrademark(\"#{options[:trademark]}\")]\n"
-    file.write "[assembly: AssemblyVersion(\"#{build_number}\")]\n"
-    file.write "[assembly: AssemblyFileVersion(\"#{options[:file_version]}\")]\n"
-    file.write "[assembly: AssemblyInformationalVersion(\"#{options[:informational_version]}\")]\n"
-  end
 end
 
 desc 'Builds the connection string file'
