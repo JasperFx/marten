@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+    <Compile Include="" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
     <EmbeddedResource Include="Schema\SQL\mt_transforms.js" />
     <EmbeddedResource Include="Schema\SQL\mt_patching.js" />
     <EmbeddedResource Include="Schema\SQL\mt_mark_event_progression.sql" />
