@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
-  <VersionPrefix>2.3.1</VersionPrefix>
+  <VersionPrefix>2.3.2</VersionPrefix>
     <Authors>Jeremy D. Miller;Tim Cools;Jeff Doolittle;James Hopper</Authors>
     <TargetFrameworks>net46;netstandard1.3;netstandard2.0</TargetFrameworks>
     <AssemblyName>Marten</AssemblyName>
@@ -10,17 +10,17 @@
     <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
     <PackageProjectUrl>http://jasperfx.github.io/marten</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/JasperFX/marten/blob/master/LICENSE.txt</PackageLicenseUrl>
-    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyVersionAttribute>true</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\CommonAssemblyInfo.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+    <Compile Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
     <EmbeddedResource Include="Schema\SQL\mt_transforms.js" />
     <EmbeddedResource Include="Schema\SQL\mt_patching.js" />
     <EmbeddedResource Include="Schema\SQL\mt_mark_event_progression.sql" />
