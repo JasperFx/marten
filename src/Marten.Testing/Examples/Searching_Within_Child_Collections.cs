@@ -25,6 +25,8 @@ namespace Marten.Testing.Examples
         {
             using (var session = store.QuerySession())
             {
+                var searchNames = new string[] { "Ben", "Luke" };
+
                 session.Query<ClassWithChildCollections>()
                     // Where collections of deep objects
                     .Where(x => x.Companies.Any(_ => _.Name == "Jeremy"))
@@ -39,11 +41,15 @@ namespace Marten.Testing.Examples
                     .Where(x => x.NameList2.Contains("Jens"))
 
                     // Where for Any(element == value) on simple types
-                    .Where(x => x.Names.Any(_ => _ == "Phillip"));
+                    .Where(x => x.Names.Any(_ => _ == "Phillip"))
 
-
+                    // The Contains() operator on subqueries within Any() searches
+                    // only supports constant array of String or Guid expressions.
+                    // Both the property being searched (Names) and the values
+                    // being compared (searchNames) need to be arrays.
+                    .Where(x => x.Names.Any(_ => searchNames.Contains(_)));
             }
-        } 
+        }
         // ENDSAMPLE
     }
 }
