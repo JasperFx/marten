@@ -222,3 +222,4 @@ src/DinnerParty/public/*.map
 doc-target
 
 BenchmarkDotNet.Artifacts
+*.DS_Store
