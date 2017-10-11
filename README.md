@@ -1,5 +1,5 @@
 # Marten 
-## Polyglot Persistence Powered by .NET and Postresql
+## Polyglot Persistence Powered by .NET and PostgreSQL
 
 [![Join the chat at https://gitter.im/JasperFx/Marten](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JasperFx/Marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/jasperfx/marten?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten)
@@ -9,7 +9,7 @@
 ![marten logo](http://jasperfx.github.io/marten/content/images/banner.png)
 
 
-The Marten library provides .Net developers with the ability to use the proven [Postgresql database engine](http://www.postgresql.org/) and its [fantastic JSON support](https://www.compose.io/articles/is-postgresql-your-next-json-database/) as a fully fledged [document database](https://en.wikipedia.org/wiki/Document-oriented_database). The Marten team believes that a document database has far reaching benefits for developer productivity over relational databases with or without an ORM tool.
+The Marten library provides .NET developers with the ability to use the proven [PostgreSQL database engine](http://www.postgresql.org/) and its [fantastic JSON support](https://www.compose.io/articles/is-postgresql-your-next-json-database/) as a fully fledged [document database](https://en.wikipedia.org/wiki/Document-oriented_database). The Marten team believes that a document database has far reaching benefits for developer productivity over relational databases with or without an ORM tool.
 
 Marten also provides .NET developers with an ACID-compliant event store with user-defined projections against event streams.
 
@@ -17,11 +17,11 @@ Marten also provides .NET developers with an ACID-compliant event store with use
 
 Before getting started you will need the following in your environment:
 
-* Access to a Postgresql **9.5+** database.
-* An environment variable of `marten_testing_database` set to the connection string for the database you want to use as a testbed. (See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about postgresql connection strings )
-* You will also need to enable the PLV8 extension inside of Postgresql for running Javascript stored procedures for the nascent projection support. See
+* Access to a PostgreSQL **9.5+** database.
+* An environment variable of `marten_testing_database` set to the connection string for the database you want to use as a testbed. (See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about PostgreSQL connection strings )
+* You will also need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support. See
 [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries for PLV8 running on Windows
-* Ensure you have installed [.Net Core SDK 2.0](https://www.microsoft.com/net/download/core)
+* Ensure you have installed [.NET Core SDK 2.0](https://www.microsoft.com/net/download/core)
 * Once you have the codebase and the connection string file, run the rake script or use the dotnet CLI to restore and build the solution.
 
 You are now ready to contribute to Marten.
