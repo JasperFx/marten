@@ -24,6 +24,8 @@ You can download the appropriate binaries for PostgreSQL 9.5/PostgreSQL 9.6 from
 
 [PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit](http://www.postgresonline.com/journal/archives/367-PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit.html)
 
+[PLV8-binaries-for-PostgreSQL-10-windows-both-32-bit-and-64-bit](http://www.postgresonline.com/journal/archives/379-PLV8-binaries-for-PostgreSQL-10-windows-both-32-bit-and-64-bit.htmll)
+
 Download the version that corresponds to the version of PostgreSQL you installed (32 or 64 bit)
 
 ## Install
