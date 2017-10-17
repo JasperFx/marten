@@ -12,7 +12,7 @@ using Marten.Storage;
 
 namespace Marten.Events.Projections
 {
-    public class ViewProjection<TView, TId> : DocumentProjection<TView>, IDocumentProjection 
+    public class ViewProjection<TView, TId> : DocumentProjection<TView>, IDocumentProjection
         where TView : class, new()
     {
         private readonly Func<DocumentSession, TId[], IReadOnlyList<TView>> _sessionLoadMany;
@@ -134,7 +134,7 @@ namespace Marten.Events.Projections
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector, Action<TView, TEvent> handler) where TEvent : class
         {
             if (viewIdsSelector == null) throw new ArgumentNullException(nameof(viewIdsSelector));
-            return projectEvent(null, (session, @event, streamId) => viewIdsSelector(session, @event as TEvent), (TView view, TEvent  @event) => { handler(view, @event); return Task.CompletedTask; });
+            return projectEvent(null, (session, @event, streamId) => viewIdsSelector(session, @event as TEvent), (TView view, TEvent @event) => { handler(view, @event); return Task.CompletedTask; });
         }
 
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<TEvent, List<TId>> viewIdsSelector, Action<TView, TEvent> handler) where TEvent : class
@@ -182,7 +182,7 @@ namespace Marten.Events.Projections
             EventHandler eventHandler;
             if (type == ProjectionEventType.Modify)
             {
-                eventHandler = new EventHandler(viewIdSelector, viewIdsSelector, (view, @event) => { handler(view, @event as TEvent); return Task.CompletedTask; } , type);
+                eventHandler = new EventHandler(viewIdSelector, viewIdsSelector, (view, @event) => { handler(view, @event as TEvent); return Task.CompletedTask; }, type);
             }
             else
             {
@@ -324,7 +324,7 @@ namespace Marten.Events.Projections
                     var genericEventType = typeof(ProjectionEvent<>).MakeGenericType(eventType);
                     if (_handlers.TryGetValue(genericEventType, out handler))
                     {
-                        appendProjections(projections, handler, session, streamEvent, genericEventType, true);
+                        appendProjections(projections, handler, session, streamEvent, genericEventType, true /* Yeah, genericEventType would always be ProjectionEvent<>. */);
                     }
                 }
             }
@@ -344,6 +344,11 @@ namespace Marten.Events.Projections
                     // Inline projections don't have the timestamp set, set it manually
                     timestamp == default(DateTime) ? DateTime.UtcNow : timestamp,
                     streamEvent.Data);
+
+                // Load other properties of projectionEvent (OfType<ProjectionEvent>) from streamEvent (OfType<IEvent>)
+                var loadFromEvent = eventType.GetMethod("LoadFromEvent", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (loadFromEvent != null)
+                    loadFromEvent.Invoke(projectionEvent, new[] { streamEvent });
             }
 
             if (handler.IdSelector != null)
@@ -386,6 +391,19 @@ namespace Marten.Events.Projections
         public int Version { get; protected set; }
         public DateTime Timestamp { get; protected set; }
         public T Data { get; protected set; }
+        public long Sequence { get; protected set; }
+        public Guid StreamId { get; protected set; }
+        public string StreamKey { get; protected set; }
+        public string TenantId { get; protected set; }
+
+        protected void LoadFromEvent(IEvent @event)
+        {
+            Data = (T)@event.Data;
+            Sequence = @event.Sequence;
+            StreamId = @event.StreamId;
+            StreamKey = @event.StreamKey;
+            TenantId = @event.TenantId;
+        }
 
         public ProjectionEvent(Guid id, int version, DateTime timestamp, T data)
         {
