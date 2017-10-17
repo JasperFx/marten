@@ -32,10 +32,9 @@ namespace Marten.Testing.Events.Projections
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.ProjectView<PersistedView, Guid>()
-                    .ProjectEvent<QuestStarted>((view, @event) => view.Events.Add(@event))
-                    .ProjectEvent<ProjectionEvent<QuestStarted>>((view, @event) => { view.IdsFromEventHandlers.Add(@event.StreamId); })
+                    .ProjectEvent<ProjectionEvent<QuestStarted>>((view, @event) => { view.Events.Add(@event.Data);  view.StreamIdsForEvents.Add(@event.StreamId); })
                     .ProjectEvent<MembersJoined>(e => e.QuestId, (view, @event) => view.Events.Add(@event))
-                    .ProjectEvent<MonsterSlayed>(e => e.QuestId, (view, @event) => view.Events.Add(@event))
+                    .ProjectEvent<ProjectionEvent<MonsterSlayed>>(e => e.Data.QuestId, (view, @event) => { view.Events.Add(@event.Data); view.StreamIdsForEvents.Add(@event.StreamId); })
                     .DeleteEvent<QuestEnded>()
                     .DeleteEvent<MembersDeparted>(e => e.QuestId)
                     .DeleteEvent<MonsterDestroyed>((session, e) => session.Load<QuestParty>(e.QuestId).Id);
@@ -82,12 +81,15 @@ namespace Marten.Testing.Events.Projections
             nullDocument3.ShouldBeNull();
 
             // Add document back to see if we can project stream ids from event handlers (Applies to other IEvent properties)
-            theSession.Events.Append(streamId, started, slayed1);
+            theSession.Events.Append(streamId, started, joined);
+            var monsterId = Guid.NewGuid();
+            theSession.Events.StartStream(monsterId, slayed1);
             theSession.SaveChanges();
             var document4 = theSession.Load<PersistedView>(streamId);
-            document4.IdsFromEventHandlers.Count.ShouldBe(2);
+            document4.StreamIdsForEvents.Count.ShouldBe(2); // Ids of the two streams
+            document4.StreamIdsForEvents.ShouldHaveTheSameElementsAs(streamId, monsterId);
 
-            theSession.Events.Append(streamId, destroyed);
+            theSession.Events.Append(streamId, ended);
             theSession.SaveChanges();
             var nullDocument4 = theSession.Load<PersistedView>(streamId);
             nullDocument4.ShouldBeNull();
@@ -102,10 +104,9 @@ namespace Marten.Testing.Events.Projections
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.ProjectView<PersistedView, Guid>()
-                    .ProjectEvent<QuestStarted>((view, @event) => { view.Events.Add(@event); })
-                    .ProjectEvent<ProjectionEvent<QuestStarted>>((view, @event) => { view.IdsFromEventHandlers.Add(@event.StreamId); })
+                    .ProjectEvent<ProjectionEvent<QuestStarted>>((view, @event) => { view.Events.Add(@event.Data); view.StreamIdsForEvents.Add(@event.StreamId); })
                     .ProjectEvent<MembersJoined>(e => e.QuestId, (view, @event) => { view.Events.Add(@event); })
-                    .ProjectEvent<ProjectionEvent<MonsterSlayed>>(e => e.Data.QuestId, (view, @event) => { view.Events.Add(@event.Data); view.IdsFromEventHandlers.Add(@event.StreamId); })
+                    .ProjectEvent<ProjectionEvent<MonsterSlayed>>(e => e.Data.QuestId, (view, @event) => { view.Events.Add(@event.Data); view.StreamIdsForEvents.Add(@event.StreamId); })
                     .DeleteEvent<QuestEnded>()
                     .DeleteEvent<MembersDeparted>(e => e.QuestId)
                     .DeleteEvent<MonsterDestroyed>((session, e) => session.Load<QuestParty>(e.QuestId).Id);
@@ -153,12 +154,15 @@ namespace Marten.Testing.Events.Projections
             nullDocument3.ShouldBeNull();
 
             // Add document back to see if we can project stream ids from event handlers (Applies to other IEvent properties)
-            theSession.Events.Append(streamId, started, slayed1);
+            theSession.Events.Append(streamId, started, joined);
+            var monsterId = Guid.NewGuid();
+            theSession.Events.StartStream(monsterId, slayed1);
             await theSession.SaveChangesAsync();
             var document4 = theSession.Load<PersistedView>(streamId);
-            document4.IdsFromEventHandlers.Count.ShouldBe(2);
+            document4.StreamIdsForEvents.Count.ShouldBe(2); // Ids of the two streams
+            document4.StreamIdsForEvents.ShouldHaveTheSameElementsAs(streamId, monsterId);
 
-            theSession.Events.Append(streamId, destroyed);
+            theSession.Events.Append(streamId, ended);
             await theSession.SaveChangesAsync();
             var nullDocument4 = theSession.Load<PersistedView>(streamId);
             nullDocument4.ShouldBeNull();
@@ -345,7 +349,7 @@ namespace Marten.Testing.Events.Projections
     {
         public Guid Id { get; set; }
         public List<object> Events { get; } = new List<object>();
-        public List<Guid> IdsFromEventHandlers { get; set; } = new List<Guid>();
+        public List<Guid> StreamIdsForEvents { get; set; } = new List<Guid>();
     }
 
     // SAMPLE: viewprojection-from-class 
