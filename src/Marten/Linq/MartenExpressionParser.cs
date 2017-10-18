@@ -96,67 +96,39 @@ namespace Marten.Linq
             new DictionaryExpressions()
         };
 
-        // TODO -- pull this out somewhere else
+        private static readonly object[] _supplementalParsers = new[]
+        {
+            new SimpleBinaryComparisonExpressionParser(), 
+        };
+
         private IWhereFragment buildSimpleWhereClause(IQueryableDocument mapping, BinaryExpression binary)
         {
             var isValueExpressionOnRight = binary.Right.IsValueExpression();
-            var jsonLocatorExpression = isValueExpressionOnRight ? binary.Left : binary.Right;
-            var valueExpression = isValueExpressionOnRight ? binary.Right : binary.Left;
-
-            var op = _operators[binary.NodeType];
-
+            
             var isSubQuery = isValueExpressionOnRight
                 ? binary.Left is SubQueryExpression
                 : binary.Right is SubQueryExpression;
 
             if (isSubQuery)
             {
+                var jsonLocatorExpression = isValueExpressionOnRight ? binary.Left : binary.Right;
+                var valueExpression = isValueExpressionOnRight ? binary.Right : binary.Left;
+
+                var op = _operators[binary.NodeType];
+
                 return buildChildCollectionQuery(mapping, jsonLocatorExpression.As<SubQueryExpression>().QueryModel, valueExpression, op);
             }
 
-            var members = FindMembers.Determine(jsonLocatorExpression);
+            var parser = _supplementalParsers.OfType<IExpressionParser<BinaryExpression>>()?.FirstOrDefault(x => x.Matches(binary));
 
-            var field = mapping.FieldFor(members);
-
-
-            var value = field.GetValue(valueExpression);
-            var jsonLocator = field.SqlLocator;
-
-            var useContainment = mapping.PropertySearching == PropertySearching.ContainmentOperator || field.ShouldUseContainmentOperator();
-
-            var isDuplicated = (mapping.FieldFor(members) is DuplicatedField);
-
-            if (useContainment &&
-                binary.NodeType == ExpressionType.Equal && value != null && !isDuplicated)
+            if (parser != null)
             {
-                return new ContainmentWhereFragment(_serializer, binary);
+                var where = parser.Parse(mapping, _serializer, binary);
+                
+                return where;
             }
 
-            
-
-            if (value == null)
-            {
-                var sql = binary.NodeType == ExpressionType.NotEqual
-                    ? $"({jsonLocator}) is not null"
-                    : $"({jsonLocator}) is null";
-
-                return new WhereFragment(sql);
-            }
-            if (jsonLocatorExpression.NodeType == ExpressionType.Modulo)
-            {
-                var byValue = moduloByValue((isValueExpressionOnRight ? binary.Left : binary.Right) as BinaryExpression);
-                var moduloFormat = isValueExpressionOnRight ? "{0} % {1} {2} ?" : "? {2} {0} % {1}";
-                return new WhereFragment(moduloFormat.ToFormat(jsonLocator, byValue, op), value);
-            }
-
-			// ! == -> <>
-	        if (binary.Left.NodeType == ExpressionType.Not && binary.NodeType == ExpressionType.Equal)
-	        {
-		        op = _operators[ExpressionType.NotEqual];
-	        }
-
-            var whereFormat = isValueExpressionOnRight ? "{0} {1} ?" : "? {1} {0}";
-            return new WhereFragment(whereFormat.ToFormat(jsonLocator, op), value);
+            throw new NotSupportedException("Marten does not yet support this type of Linq query");
         }
 
         private IWhereFragment buildChildCollectionQuery(IQueryableDocument mapping, QueryModel query, Expression valueExpression, string op)
