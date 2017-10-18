@@ -343,12 +343,12 @@ namespace Marten.Events.Projections
                     streamEvent.Version,
                     // Inline projections don't have the timestamp set, set it manually
                     timestamp == default(DateTime) ? DateTime.UtcNow : timestamp,
-                    streamEvent.Data);
-
-                // Load other properties of projectionEvent (OfType<ProjectionEvent>) from streamEvent (OfType<IEvent>)
-                var loadFromEvent = eventType.GetMethod("LoadFromEvent", BindingFlags.Instance | BindingFlags.NonPublic);
-                if (loadFromEvent != null)
-                    loadFromEvent.Invoke(projectionEvent, new[] { streamEvent });
+                    streamEvent.Sequence, 
+                    streamEvent.StreamId, 
+                    streamEvent.StreamKey, 
+                    streamEvent.TenantId,
+                    streamEvent.Data
+                );
             }
 
             if (handler.IdSelector != null)
@@ -396,20 +396,15 @@ namespace Marten.Events.Projections
         public string StreamKey { get; protected set; }
         public string TenantId { get; protected set; }
 
-        protected void LoadFromEvent(IEvent @event)
-        {
-            Data = (T)@event.Data;
-            Sequence = @event.Sequence;
-            StreamId = @event.StreamId;
-            StreamKey = @event.StreamKey;
-            TenantId = @event.TenantId;
-        }
-
-        public ProjectionEvent(Guid id, int version, DateTime timestamp, T data)
+        public ProjectionEvent(Guid id, int version, DateTime timestamp, long sequence, Guid streamId, string streamKey, string tenantId, T data)
         {
             Id = id;
             Version = version;
             Timestamp = timestamp;
+            Sequence = sequence;
+            StreamId = streamId;
+            StreamKey = streamKey;
+            TenantId = tenantId;
             Data = data;
         }
     }

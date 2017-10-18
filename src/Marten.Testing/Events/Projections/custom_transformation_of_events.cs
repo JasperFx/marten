@@ -87,7 +87,8 @@ namespace Marten.Testing.Events.Projections
             theSession.SaveChanges();
             var document4 = theSession.Load<PersistedView>(streamId);
             document4.StreamIdsForEvents.Count.ShouldBe(2); // Ids of the two streams
-            document4.StreamIdsForEvents.ShouldHaveTheSameElementsAs(streamId, monsterId);
+            document4.StreamIdsForEvents.Contains(streamId).ShouldBeTrue();
+            document4.StreamIdsForEvents.Contains(monsterId).ShouldBeTrue();
 
             theSession.Events.Append(streamId, ended);
             theSession.SaveChanges();
@@ -160,7 +161,8 @@ namespace Marten.Testing.Events.Projections
             await theSession.SaveChangesAsync();
             var document4 = theSession.Load<PersistedView>(streamId);
             document4.StreamIdsForEvents.Count.ShouldBe(2); // Ids of the two streams
-            document4.StreamIdsForEvents.ShouldHaveTheSameElementsAs(streamId, monsterId);
+            document4.StreamIdsForEvents.Contains(streamId).ShouldBeTrue();
+            document4.StreamIdsForEvents.Contains(monsterId).ShouldBeTrue();
 
             theSession.Events.Append(streamId, ended);
             await theSession.SaveChangesAsync();
