@@ -24,11 +24,19 @@ namespace Marten.Services
 
         public void Open()
         {
+            if (IsOpen)
+            {
+                return;
+            }
             Connection.Open();
         }
 
         public Task OpenAsync(CancellationToken token)
         {
+            if (IsOpen)
+            {
+                return Task.CompletedTask;
+            }
             return Connection.OpenAsync(token);
         }
 
@@ -63,7 +71,7 @@ namespace Marten.Services
         public NpgsqlTransaction Transaction { get; private set; }
 
         public NpgsqlConnection Connection { get; }
-        
+
         public void Commit()
         {
             Transaction?.Commit();
