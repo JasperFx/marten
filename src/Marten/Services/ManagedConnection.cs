@@ -9,7 +9,7 @@ using Npgsql;
 namespace Marten.Services
 {
     public class ManagedConnection : IManagedConnection
-    {        
+    {
         private readonly IConnectionFactory _factory;
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;
@@ -39,13 +39,14 @@ namespace Marten.Services
             }
         }
 
-        private async Task buildConnectionAsync(CancellationToken token)
+        private Task buildConnectionAsync(CancellationToken token)
         {
             if (_connection == null)
             {
                 _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout);
-                await _connection.OpenAsync(token).ConfigureAwait(false);
+                return _connection.OpenAsync(token);
             }
+            return Task.CompletedTask;
         }
 
         public IMartenSessionLogger Logger { get; set; } = NulloMartenLogger.Flyweight;
