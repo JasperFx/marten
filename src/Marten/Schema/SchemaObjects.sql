@@ -1,4 +1,4 @@
-﻿select column_name, data_type, character_maximum_length 
+select column_name, data_type, character_maximum_length 
 from information_schema.columns where table_schema = :schema and table_name = :table_name 
 order by ordinal_position;
 
@@ -15,7 +15,7 @@ SELECT pg_get_functiondef(pg_proc.oid)
 FROM pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid WHERE ns.nspname = :schema and proname = :function;
 
 SELECT
-  U.usename                AS user_name,
+  R.rolname                AS role_name,
   ns.nspname               AS schema_name,
   pg_catalog.textin(pg_catalog.regclassout(idx.indrelid :: REGCLASS)) AS table_name,
   i.relname                AS index_name,
@@ -38,7 +38,7 @@ FROM pg_index AS idx
   JOIN pg_am AS am
     ON i.relam = am.oid
   JOIN pg_namespace AS NS ON i.relnamespace = NS.OID
-  JOIN pg_user AS U ON i.relowner = U.usesysid
+  JOIN pg_roles AS R ON i.relowner = R.oid
 WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%' AND pg_catalog.textin(pg_catalog.regclassout(idx.indrelid :: REGCLASS)) = :qualified_name; -- Excluding system table
 
 SELECT format('DROP FUNCTION %s.%s(%s);'
