@@ -35,11 +35,11 @@ namespace Marten.Linq.QueryHandlers
                 builder.Append("select data from ");
                 builder.Append(tableName);
 
-                if (_sql.StartsWith("where"))
+                if (_sql.StartsWith("where", StringComparison.OrdinalIgnoreCase))
                 {
                     builder.Append(" ");
                 }
-                else if (!_sql.Contains(" where "))
+                else if (!_sql.Contains(" where ", StringComparison.OrdinalIgnoreCase))
                 {
                     builder.Append(" where ");
                 }
