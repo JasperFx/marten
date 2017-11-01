@@ -35,6 +35,28 @@ namespace Marten.Testing
         }
 
         [Fact]
+        public void query_ignores_case_of_where_keyword()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
+                session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
+                session.Store(new User { FirstName = "Max", LastName = "Miller" });
+                session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                session.SaveChanges();
+
+                var firstnames =
+                    session.Query<User>("WHERE data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
+                           .Select(x => x.FirstName).ToArray();
+
+                firstnames.Length.ShouldBe(3);
+                firstnames[0].ShouldBe("Jeremy");
+                firstnames[1].ShouldBe("Lindsey");
+                firstnames[2].ShouldBe("Max");
+            }
+        }
+
+        [Fact]
         public void query_by_one_named_parameter()
         {
             using (var session = theStore.OpenSession())
