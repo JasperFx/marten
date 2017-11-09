@@ -19,8 +19,9 @@ namespace Marten.Linq
 			new StringNotEquals(),
 			new StringNotContains(),
 		    new StringNotStartsWith(),
-			new StringNotEndsWith(),		    
-		};
+			new StringNotEndsWith(),		 
+            new IsNotOneOf()
+        };
 	    
         private static readonly object[] _supplementalParsers =
         {
