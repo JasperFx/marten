@@ -25,7 +25,7 @@ namespace Marten.Linq
         {
             if (!typeof(T).IsSimple())
             {
-                var json = reader.As<NpgsqlDataReader>().GetTextReader(0);
+                var json = reader.As<DbDataReader>().GetTextReader(0);
                 return _serializer.FromJson<T>(json);
             }
 
