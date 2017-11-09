@@ -85,7 +85,7 @@ namespace Marten.Linq
                 switch (node.NodeType)
                 {
                     case ExpressionType.Not:
-                        if (node.Operand is SubQueryExpression || node.Operand is MethodCallExpression)
+                        if (node.Operand is SubQueryExpression)
                         {
                             var nested = new WhereClauseVisitor(_parent, _mapping);
                             nested.Visit(node.Operand);
