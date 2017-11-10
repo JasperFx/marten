@@ -11,9 +11,21 @@ namespace Marten.Services
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;
         private readonly int _commandTimeout;
+        private readonly bool _ownsConnection;
+
+        public TransactionState(CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout, NpgsqlConnection connection, NpgsqlTransaction transaction = null)
+        {
+            _ownsConnection = false;
+            _mode = mode;
+            _isolationLevel = isolationLevel;
+            _commandTimeout = commandTimeout;
+            Transaction = transaction;
+            Connection = connection;
+        }
 
         public TransactionState(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout)
         {
+            _ownsConnection = true;
             _mode = mode;
             _isolationLevel = isolationLevel;
             this._commandTimeout = commandTimeout;
@@ -28,6 +40,7 @@ namespace Marten.Services
             {
                 return;
             }
+
             Connection.Open();
         }
 
@@ -141,9 +154,11 @@ namespace Marten.Services
             Transaction?.Dispose();
             Transaction = null;
 
-
-            Connection.Close();
-            Connection.Dispose();
+            if (_ownsConnection)
+            {
+                Connection.Close();
+                Connection.Dispose();
+            }
         }
 
         public NpgsqlCommand CreateCommand()

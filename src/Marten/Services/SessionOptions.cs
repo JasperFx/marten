@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Data;
 using Marten.Storage;
+using Npgsql;
 
 namespace Marten.Services
 {
@@ -35,6 +36,17 @@ namespace Marten.Services
         /// Use to enable or disable optimistic concurrency for just this session
         /// </summary>
         public ConcurrencyChecks ConcurrencyChecks { get; set; } = ConcurrencyChecks.Enabled;
+
+        /// <summary>
+        /// Optional mechanism to open a session with an existing connection
+        /// </summary>
+        public NpgsqlConnection Connection { get; set; }
+
+        /// <summary>
+        /// Optional mechanism to open a session with an existing transaction
+        /// </summary>
+        public NpgsqlTransaction Transaction { get; set; }
+           
 
     }
 
