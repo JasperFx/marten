@@ -214,6 +214,12 @@ namespace Marten
         private static IManagedConnection buildManagedConnection(SessionOptions options, ITenant tenant,
             CommandRunnerMode commandRunnerMode)
         {
+            // Hate crap like this, but if we don't control the transation, use External to direct
+            // IManagedConnection not to call commit or rollback
+            if (!options.OwnsTransactionLifecycle && commandRunnerMode != CommandRunnerMode.ReadOnly)
+            {
+                commandRunnerMode = CommandRunnerMode.External;
+            }
 
             if (options.Transaction != null) options.Connection = options.Transaction.Connection;
 

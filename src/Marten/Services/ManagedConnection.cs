@@ -26,6 +26,8 @@ namespace Marten.Services
             _isolationLevel = isolationLevel;
             _commandTimeout = commandTimeout;
 
+
+
             _connection = new TransactionState(mode, isolationLevel, commandTimeout, connection, transaction);
         }
 
@@ -64,6 +66,8 @@ namespace Marten.Services
 
         public void Commit()
         {
+            if (_mode == CommandRunnerMode.External) return;
+
             buildConnection();
 
             _connection.Commit();
@@ -74,6 +78,8 @@ namespace Marten.Services
 
         public async Task CommitAsync(CancellationToken token)
         {
+            if (_mode == CommandRunnerMode.External) return;
+
             await buildConnectionAsync(token).ConfigureAwait(false);
 
             await _connection.CommitAsync(token).ConfigureAwait(false);
@@ -85,6 +91,7 @@ namespace Marten.Services
         public void Rollback()
         {
             if (_connection == null) return;
+            if (_mode == CommandRunnerMode.External) return;
 
             try
             {
@@ -108,6 +115,7 @@ namespace Marten.Services
         public async Task RollbackAsync(CancellationToken token)
         {
             if (_connection == null) return;
+            if (_mode == CommandRunnerMode.External) return;
 
             try
             {
@@ -349,6 +357,7 @@ namespace Marten.Services
 
         public void Dispose()
         {
+            if (_mode == CommandRunnerMode.External) return;
             _connection?.Dispose();
         }
     }

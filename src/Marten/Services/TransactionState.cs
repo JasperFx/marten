@@ -87,6 +87,8 @@ namespace Marten.Services
 
         public void Commit()
         {
+            if (_mode == CommandRunnerMode.External) return;
+
             Transaction?.Commit();
             Transaction?.Dispose();
             Transaction = null;
@@ -96,7 +98,7 @@ namespace Marten.Services
 
         public async Task CommitAsync(CancellationToken token)
         {
-            if (Transaction != null)
+            if (Transaction != null && _mode != CommandRunnerMode.External)
             {
                 await Transaction.CommitAsync(token).ConfigureAwait(false);
 
@@ -109,7 +111,7 @@ namespace Marten.Services
 
         public void Rollback()
         {
-            if (Transaction != null && !Transaction.IsCompleted)
+            if (Transaction != null && !Transaction.IsCompleted && _mode != CommandRunnerMode.External)
             {
                 try
                 {
@@ -130,7 +132,7 @@ namespace Marten.Services
 
         public async Task RollbackAsync(CancellationToken token)
         {
-            if (Transaction != null && !Transaction.IsCompleted)
+            if (Transaction != null && !Transaction.IsCompleted && _mode != CommandRunnerMode.External)
             {
                 try
                 {

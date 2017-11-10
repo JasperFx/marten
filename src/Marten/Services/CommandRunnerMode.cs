@@ -4,6 +4,11 @@ namespace Marten.Services
     {
         Transactional,
         AutoCommit,
-        ReadOnly
+        ReadOnly,
+
+        /// <summary>
+        /// Implies that some other process is controlling the transaction boundaries
+        /// </summary>
+        External
     }
 }

@@ -7,6 +7,7 @@ namespace Marten.Services
 {
     public sealed class SessionOptions
     {
+
         /// <summary>
         /// Default to DocumentTracking.IdentityOnly
         /// </summary>
@@ -46,8 +47,12 @@ namespace Marten.Services
         /// Optional mechanism to open a session with an existing transaction
         /// </summary>
         public NpgsqlTransaction Transaction { get; set; }
-           
 
+        /// <summary>
+        /// Default is true. If false, Marten will issue commands on IDocumentSession.SaveChanges/SaveChangesAsync,
+        /// but will **not** commit the transaction 
+        /// </summary>
+        public bool OwnsTransactionLifecycle { get; set; } = true;
     }
 
     public enum ConcurrencyChecks
