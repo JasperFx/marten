@@ -64,6 +64,48 @@ namespace Marten.Testing
             }
         }
 
+        /*
+        [Fact]
+        public void enlist_in_transaction_scope()
+        {
+            var newTargets = Target.GenerateRandomData(5).ToArray();
+
+            using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+            {   
+                conn.Open();
+                var tx = conn.BeginTransaction();
+
+
+                var cmd = conn.CreateCommand("delete from mt_doc_target");
+                cmd.Transaction = tx;
+                cmd.ExecuteNonQuery();
+
+
+                // To prove the isolation here
+                using (var query = theStore.QuerySession())
+                {
+                    query.Query<Target>().Count().ShouldBe(100);
+                }
+
+
+                using (var session = theStore.OpenSession(new SessionOptions
+                {
+                    Transaction = tx
+                }))
+                {
+                    session.Store(newTargets);
+                    session.SaveChanges();
+                }
+            }
+
+            // All the old should be gone, then the new put back on top
+            using (var query = theStore.QuerySession())
+            {
+                query.Query<Target>().Count().ShouldBe(5);
+            }
+        }
+        */
+
         [Fact]
         public async Task pass_in_current_connection_and_transaction_async()
         {

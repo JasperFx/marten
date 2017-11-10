@@ -53,6 +53,8 @@ namespace Marten.Services
         /// but will **not** commit the transaction 
         /// </summary>
         public bool OwnsTransactionLifecycle { get; set; } = true;
+
+
     }
 
     public enum ConcurrencyChecks

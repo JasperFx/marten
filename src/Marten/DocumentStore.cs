@@ -230,8 +230,7 @@ namespace Marten
             }
             else
             {
-                return new ManagedConnection(options.Connection, options.Transaction, commandRunnerMode,
-                    options.IsolationLevel, options.Timeout);
+                return new ManagedConnection(options, commandRunnerMode);
             }
 
         }

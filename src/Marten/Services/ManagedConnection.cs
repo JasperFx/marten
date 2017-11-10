@@ -20,16 +20,17 @@ namespace Marten.Services
         {
         }
 
-        public ManagedConnection(NpgsqlConnection connection, NpgsqlTransaction transaction, CommandRunnerMode mode, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int commandTimeout = 30)
+        public ManagedConnection(SessionOptions options, CommandRunnerMode mode)
         {
-            _mode = mode;
-            _isolationLevel = isolationLevel;
-            _commandTimeout = commandTimeout;
+            _mode = options.OwnsTransactionLifecycle ? mode : CommandRunnerMode.External;
+            _isolationLevel = options.IsolationLevel;
+            _commandTimeout = options.Timeout;
 
+            var conn = options.Connection ?? options.Transaction?.Connection;
 
-
-            _connection = new TransactionState(mode, isolationLevel, commandTimeout, connection, transaction);
+            _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, conn, options.Transaction);
         }
+
 
         // 30 is NpgsqlCommand.DefaultTimeout - ok to burn it to the call site?
         public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode,
