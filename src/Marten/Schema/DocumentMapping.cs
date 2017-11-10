@@ -492,7 +492,7 @@ namespace Marten.Schema
             var nameToAlias = documentType.Name;
             if (documentType.GetTypeInfo().IsGenericType)
             {
-                nameToAlias = _aliasSanitizer.Replace(documentType.GetPrettyName(), string.Empty);
+                nameToAlias = _aliasSanitizer.Replace(documentType.GetPrettyName(), string.Empty).Replace(",", "_");
             }
             var parts = new List<string> {nameToAlias.ToLower()};
             if (documentType.IsNested)

@@ -27,5 +27,15 @@ namespace Marten.Testing.Bugs
             theSession.Query<Target>().Take(4).Skip(4).Skip(8).ToList()
                 .Count.ShouldBe(4);
         }
+
+        [Fact]
+        public void one_more_try()
+        {
+            var targets = Target.GenerateRandomData(100);
+            theStore.BulkInsert(targets.ToArray());
+
+            var result = theSession.Query<Target>().Take(10).Take(4).ToList();
+            result.Count.ShouldBe(4);
+        }
     }
 }
