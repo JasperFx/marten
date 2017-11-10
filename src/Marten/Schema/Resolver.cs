@@ -79,6 +79,8 @@ namespace Marten.Schema
             }
         }
 
+        public Type TopLevelBaseType => DocumentType;
+
         public string DeleteByWhereSql { get; }
 
         public string DeleteByIdSql { get; }

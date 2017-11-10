@@ -27,6 +27,7 @@ namespace Marten.Schema.Hierarchies
 
         public TenancyStyle TenancyStyle => _parent.TenancyStyle;
         public Type DocumentType => typeof(T);
+        public Type TopLevelBaseType { get; } = typeof(TBase);
         public NpgsqlDbType IdType => _parent.IdType;
 
         public NpgsqlCommand LoaderCommand(object id)

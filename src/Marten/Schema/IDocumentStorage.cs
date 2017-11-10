@@ -25,6 +25,8 @@ namespace Marten.Schema
 
         Type DocumentType { get; }
 
+        Type TopLevelBaseType { get; }
+
         NpgsqlDbType IdType { get; }
         NpgsqlCommand LoaderCommand(object id);
 

@@ -117,6 +117,8 @@ namespace Marten.Events
             return this;
         }
 
+        public Type TopLevelBaseType => DocumentType;
+
         public NpgsqlCommand LoaderCommand(object id)
         {
             return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = :id and type = '{Alias}'").With("id", id);
