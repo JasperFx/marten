@@ -61,7 +61,7 @@ namespace Marten.Schema
         {
             var sql = @"
 SELECT
-  U.usename                AS user_name,
+  R.rolname                AS role_name,
   ns.nspname               AS schema_name,
   pg_catalog.textin(pg_catalog.regclassout(idx.indrelid :: REGCLASS)) AS table_name,
   i.relname                AS index_name,
@@ -84,7 +84,7 @@ FROM pg_index AS idx
   JOIN pg_am AS am
     ON i.relam = am.oid
   JOIN pg_namespace AS NS ON i.relnamespace = NS.OID
-  JOIN pg_user AS U ON i.relowner = U.usesysid
+  JOIN pg_roles AS R ON i.relowner = R.oid
 WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system table
 
 ";
