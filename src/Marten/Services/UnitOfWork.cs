@@ -314,6 +314,18 @@ namespace Marten.Services
         {
             return _events.Values.First(x => x.Key == stream);
         }
+
+        public void Eject<T>(T document)
+        {
+            var operations = operationsFor(typeof(T));
+            var matching = operations.OfType<DocumentStorageOperation>().Where(x => object.ReferenceEquals(document, x.Document)).ToArray();
+
+            foreach (var operation in matching)
+            {
+                operations.Remove(operation);
+            }
+           
+        }
     }
 
     public abstract class DocumentStorageOperation : IStorageOperation

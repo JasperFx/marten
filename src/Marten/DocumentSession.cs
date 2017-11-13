@@ -410,7 +410,17 @@ namespace Marten
             assertNotDisposed();
             _unitOfWork.Add(storageOperation);
         }
-        
+
+        public void Eject<T>(T document)
+        {
+            var id = Tenant.StorageFor<T>().Identity(document);
+            IdentityMap.Remove<T>(id);
+
+            _unitOfWork.Eject(document);
+
+            
+        }
+
         private void applyProjections()
         {
             var eventPage = new EventPage(PendingChanges.Streams().ToArray());

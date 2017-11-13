@@ -138,6 +138,9 @@ namespace Marten
         /// </summary>
         IEventStore Events { get; }
 
+        /// <summary>
+        /// Override whether or not this session honors optimistic concurrency checks
+        /// </summary>
         ConcurrencyChecks Concurrency { get; }
 
 
@@ -196,6 +199,14 @@ namespace Marten
         /// </summary>
         /// <param name="storageOperation"></param>
         void QueueOperation(IStorageOperation storageOperation);
+
+
+        /// <summary>
+        /// Completely remove the document from this session's unit of work tracking and identity map caching
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="document"></param>
+        void Eject<T>(T document);
     }
 
     public interface ILoadByKeys<TDoc>
