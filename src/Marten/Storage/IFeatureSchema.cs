@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Marten.Util;
 using Npgsql;
 
@@ -19,6 +20,41 @@ namespace Marten.Storage
         string Identifier { get; }
 
         void WritePermissions(DdlRules rules, StringWriter writer);
+    }
+
+    
+
+    public abstract class FeatureSchemaBase : IFeatureSchema
+    {
+        public string Identifier { get; }
+        public StoreOptions Options { get; }
+
+        protected FeatureSchemaBase(string identifier, StoreOptions options)
+        {
+            Identifier = identifier;
+            Options = options;
+        }
+
+        public virtual IEnumerable<Type> DependentTypes()
+        {
+            return new Type[0];
+        }
+
+        public virtual bool IsActive(StoreOptions options)
+        {
+            return true;
+        }
+
+        protected abstract IEnumerable<ISchemaObject> schemaObjects();
+
+        public ISchemaObject[] Objects => schemaObjects().ToArray();
+
+        public virtual Type StorageType => GetType();
+
+        public virtual void WritePermissions(DdlRules rules, StringWriter writer)
+        {
+            // Nothing
+        }
     }
 
     public static class FeatureSchemaExtensions

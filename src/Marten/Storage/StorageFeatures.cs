@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Baseline;
 using Marten.Events;
 using Marten.Schema;
@@ -39,12 +40,42 @@ namespace Marten.Storage
 
         public Transforms.Transforms Transforms { get; }
 
-        private void store(IFeatureSchema feature)
+        /// <summary>
+        /// Register custom storage features
+        /// </summary>
+        /// <param name="feature"></param>
+        public void Add(IFeatureSchema feature)
         {
             _features.Add(feature.StorageType, feature);
         }
 
-        
+        /// <summary>
+        /// Register custom storage features by type. Type must have either a no-arg, public
+        /// constructor or a constructor that takes in a single StoreOptions parameter
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public void Add<T>() where T : IFeatureSchema
+        {
+#if NETSTANDARD1_3
+            var ctor = typeof(T).GetConstructor(new Type[] { typeof(StoreOptions) });
+#else
+            var ctor = typeof(T).GetTypeInfo().GetConstructor(new Type[]{typeof(StoreOptions)});
+#endif
+
+            IFeatureSchema feature;
+            if (ctor != null)
+            {
+                feature = Activator.CreateInstance(typeof(T), _options)
+                    .As<IFeatureSchema>();
+
+            }
+            else
+            {
+                feature = Activator.CreateInstance(typeof(T)).As<IFeatureSchema>();
+            }
+
+            Add(feature);
+        }
 
         public SystemFunctions SystemFunctions { get; }
 
@@ -126,11 +157,11 @@ namespace Marten.Storage
         {
             SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamp", "text");
 
-            store(SystemFunctions);
+            Add(SystemFunctions);
 
-            store(Transforms.As<IFeatureSchema>());
+            Add(Transforms.As<IFeatureSchema>());
 
-            store(_options.Events);
+            Add(_options.Events);
             _features[typeof(StreamState)] = _options.Events;
             _features[typeof(EventStream)] = _options.Events;
             _features[typeof(IEvent)] = _options.Events;
@@ -195,6 +226,14 @@ namespace Marten.Storage
             if (_options.Events.IsActive(_options))
             {
                 yield return _options.Events;
+            }
+
+            var custom = _features.Values
+                .Where(x => x.GetType().GetTypeInfo().Assembly != GetType().GetTypeInfo().Assembly).ToArray();
+
+            foreach (var featureSchema in custom)
+            {
+                yield return featureSchema;
             }
         }
 
