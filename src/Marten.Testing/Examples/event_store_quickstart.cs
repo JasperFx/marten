@@ -24,7 +24,7 @@ var questId = Guid.NewGuid();
 using (var session = store.OpenSession())
 {
     var started = new QuestStarted {Name = "Destroy the One Ring"};
-    var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
+    var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
 
     // Start a brand new stream and commit the new events as 
     // part of a transaction
