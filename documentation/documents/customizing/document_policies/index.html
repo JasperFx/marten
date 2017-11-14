@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -93,8 +93,8 @@
 			      		<!--Title:Document Policies-->
 <p>Document Policies enable convention-based customizations to be applied across the Document Store. While Marten has some existing policies that can be enabled, any custom policy can be introduced  through implementing the <code>IDocumentPolicy</code> interface and applying it on <code>StoreOptions.Policies</code> or through using the <code>Policies.ForAllDocuments(Action&lt;DocumentMapping&gt; configure)</code> shorthand.</p>
 <p>The following sample demonstrates a policy that sets types implementing <code>IRequireMultiTenancy</code> marker-interface to be multi-tenanted (see <a href="/marten/documentation/documents/tenancy">Tenancy</a>.</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(storeOptions =&gt;&#xD;&#xA;{                &#xD;&#xA;    // Apply custom policy&#xD;&#xA;    storeOptions.Policies.OnDocuments&lt;TenancyPolicy&gt;();                &#xD;&#xA;</code></pre>
-<pre><code class="language-csharp">&#xD;&#xA;public interface IRequireMultiTenancy&#xD;&#xA;{&#xD;&#xA;}&#xD;&#xA;public class TenancyPolicy : IDocumentPolicy&#xD;&#xA;{&#xD;&#xA;    public void Apply(DocumentMapping mapping)&#xD;&#xA;    {&#xD;&#xA;        if (mapping.DocumentType.GetInterfaces().Any(x =&gt; x == typeof(IRequireMultiTenancy)))&#xD;&#xA;        {&#xD;&#xA;            mapping.TenancyStyle = TenancyStyle.Conjoined;&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(storeOptions =&gt;&#xA;{                &#xA;    // Apply custom policy&#xA;    storeOptions.Policies.OnDocuments&lt;TenancyPolicy&gt;();                &#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public interface IRequireMultiTenancy&#xA;{&#xA;}&#xA;public class TenancyPolicy : IDocumentPolicy&#xA;{&#xA;    public void Apply(DocumentMapping mapping)&#xA;    {&#xA;        if (mapping.DocumentType.GetInterfaces().Any(x =&gt; x == typeof(IRequireMultiTenancy)))&#xA;        {&#xA;            mapping.TenancyStyle = TenancyStyle.Conjoined;&#xA;        }&#xA;    }&#xA;}&#xA;</code></pre>
 <p>To set all types to be multi-tenanted, the prebaked <code>Policies.AllDocumentsAreMultiTenanted</code> could also have been used.</p>
 <p>Remarks: Given the sample, you might not want to let tenancy concerns propagate to your types in a real data model.</p>
 

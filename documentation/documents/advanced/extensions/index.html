@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+        <meta charset="utf-8">
+        <meta name="generator" content="Bootply" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<title>Marten - Schema Feature Extensions</title>
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+        
+
+        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+
+        <!-- CSS code from Bootply.com editor -->
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    </head>
+    
+    <!-- HTML code from Bootply.com editor -->
+    
+    <body  >
+
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+        
+        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
+		    </div>
+		    <nav class="collapse navbar-collapse" role="navigation">
+		      <ul class="nav navbar-nav pull-right">
+            <li>
+              <a href="/marten/getting_started">Getting Started</a>
+            </li>
+		        <li>
+		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+		        </li>
+		      	<li><a href="/marten/documentation/documents/advanced/optimistic_concurrency" title="Optimistic Concurrency">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/advanced/soft_deletes" title="Soft Deletes">Next</a></li>
+		      </ul>
+      <div class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input id="search" type="search" class="form-control" placeholder="Search">
+        </div>
+      </div>
+
+		    </nav>
+
+		  </div>
+		</nav>
+
+		  <div class="container">
+		  	<nav class="navbar-inverse">
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/advanced">Advanced Topics</a></li><li class="active">Schema Feature Extensions</li></ol>
+		  	</nav>
+		  </div>
+
+		<!--main-->
+		<div class="container">
+			<div class="row">
+		      <!--left-->
+		      
+		      <div class="col-md-3" id="leftCol">
+			  
+				<img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle"/>
+		      	<br />
+
+				<ul class="nav nav-stacked affix" id="sidebar">
+
+		        </ul>
+
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/advanced/soft_deletes">Soft Deletes</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced/optimistic_concurrency">Optimistic Concurrency</a></p>
+
+		        </ul>
+		      </div><!--/left-->
+		      
+		      <!--right-->
+		      <div class="col-md-9">
+			      	<h1>Schema Feature Extensions <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/advanced/extensions.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      
+			      	<hr />
+
+			      	<div id="main-pane">
+			      		<!--title:Schema Feature Extensions-->
+<p>New in Marten 2.4.0 is the ability to add additional features with custom database schema objects that simply plug into Marten's
+<a href="/marten/documentation/schema/migrations">schema management facilities</a>. The key abstraction is the <code>IFeatureSchema</code> interface shown below:</p>
+<pre><code class="language-csharp">&#xA;/// &lt;summary&gt;&#xA;/// Defines the database objects for a named feature within your&#xA;/// Marten application&#xA;/// &lt;/summary&gt;&#xA;public interface IFeatureSchema&#xA;{&#xA;    /// &lt;summary&gt;&#xA;    /// Any document or feature types that this feature depends on. Used&#xA;    /// to intelligently order the creation and scripting of database&#xA;    /// schema objects&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;returns&gt;&lt;/returns&gt;&#xA;    IEnumerable&lt;Type&gt; DependentTypes();&#xA;    &#xA;    /// &lt;summary&gt;&#xA;    /// Should this feature be active based on the current options? &#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;options&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;returns&gt;&lt;/returns&gt;&#xA;    bool IsActive(StoreOptions options);&#xA;    &#xA;    /// &lt;summary&gt;&#xA;    /// All the schema objects in this feature&#xA;    /// &lt;/summary&gt;&#xA;    ISchemaObject[] Objects { get; }&#xA;    &#xA;    /// &lt;summary&gt;&#xA;    /// Identifier by type for this feature. Used along with the DependentTypes()&#xA;    /// collection to control the proper ordering of object creation or scripting&#xA;    /// &lt;/summary&gt;&#xA;    Type StorageType { get; }&#xA;&#xA;    /// &lt;summary&gt;&#xA;    /// Really just the filename when the SQL is exported&#xA;    /// &lt;/summary&gt;&#xA;    string Identifier { get; }&#xA;&#xA;    /// &lt;summary&gt;&#xA;    /// Write any permission SQL when this feature is exported to a SQL&#xA;    /// file &#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;rules&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;param name=&quot;writer&quot;&gt;&lt;/param&gt;&#xA;    void WritePermissions(DdlRules rules, StringWriter writer);&#xA;}&#xA;</code></pre>
+<p>Not to worry though, Marten comes with a base class that makes it a bit simpler to build out new features. Here's a very simple
+example that defines a custom table with one column:</p>
+<pre><code class="language-csharp">&#xA;public class FakeStorage : FeatureSchemaBase&#xA;{&#xA;    public FakeStorage(StoreOptions options) : base(&quot;fake&quot;, options)&#xA;    {&#xA;    }&#xA;&#xA;    protected override IEnumerable&lt;ISchemaObject&gt; schemaObjects()&#xA;    {&#xA;        var table = new Table(new DbObjectName(Options.DatabaseSchemaName,&quot;mt_fake_table&quot;));&#xA;        table.AddColumn(&quot;name&quot;, &quot;varchar&quot;);&#xA;&#xA;        yield return table;&#xA;    }&#xA;}&#xA;</code></pre>
+<p>Now, to actually apply this feature to your Marten applications, use this syntax:</p>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    // Creates a new instance of FakeStorage and&#xA;    // passes along the current StoreOptions&#xA;    _.Storage.Add&lt;FakeStorage&gt;();&#xA;    &#xA;    // or&#xA;    &#xA;    _.Storage.Add(new FakeStorage(_));&#xA;});&#xA;</code></pre>
+<p>Do note that when you use the <code>Add&lt;T&gt;()</code> syntax, Marten will pass along the current <code>StoreOptions</code> to the constructor function if there is a constructor with that signature. Otherwise, it uses the no-arg constructor.</p>
+<p>While you <em>can</em> directly implement the <code>ISchemaObject</code> interface for something Marten doesn't already support, it's probably far easier to just configure one of the existing implementations shown in the following sections.</p>
+<ul>
+<li><code>Table</code></li>
+<li><code>Function</code></li>
+<li><code>Sequence</code></li>
+</ul>
+<h2 id="table">Table</h2>
+<p>Postgresql tables can be modeled with the <code>Table</code> class as shown in this example from the event store inside of Marten:</p>
+<pre><code class="language-csharp">&#xA;public class EventsTable : Table&#xA;{&#xA;    public EventsTable(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, &quot;mt_events&quot;))&#xA;    {&#xA;        var stringIdType = events.GetStreamIdType();&#xA;&#xA;        AddPrimaryKey(new TableColumn(&quot;seq_id&quot;, &quot;bigint&quot;));&#xA;        AddColumn(&quot;id&quot;, &quot;uuid&quot;, &quot;NOT NULL&quot;);&#xA;        AddColumn(&quot;stream_id&quot;, stringIdType, $&quot;REFERENCES {events.DatabaseSchemaName}.mt_streams ON DELETE CASCADE&quot;);&#xA;        AddColumn(&quot;version&quot;, &quot;integer&quot;, &quot;NOT NULL&quot;);&#xA;        AddColumn(&quot;data&quot;, &quot;jsonb&quot;, &quot;NOT NULL&quot;);&#xA;        AddColumn(&quot;type&quot;, &quot;varchar(100)&quot;, &quot;NOT NULL&quot;);&#xA;        AddColumn(&quot;timestamp&quot;, &quot;timestamptz&quot;, &quot;default (now()) NOT NULL&quot;);&#xA;        AddColumn&lt;TenantIdColumn&gt;();&#xA;        AddColumn(new DotNetTypeColumn {Directive = &quot;NULL&quot;});&#xA;&#xA;        Constraints.Add(&quot;CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version)&quot;);&#xA;        Constraints.Add(&quot;CONSTRAINT pk_mt_events_id_unique UNIQUE(id)&quot;);&#xA;    }&#xA;}&#xA;</code></pre>
+<h2 id="function">Function</h2>
+<p>Postgresql functions can be managed by creating a subclass of the <code>Function</code> base class as shown below from the big &quot;append event&quot; function in the event store:</p>
+<pre><code class="language-csharp">&#xA;    public class AppendEventFunction : Function&#xA;    {&#xA;        private readonly EventGraph _events;&#xA;&#xA;        public AppendEventFunction(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, &quot;mt_append_event&quot;))&#xA;        {&#xA;            _events = events;&#xA;        }&#xA;&#xA;        public override void Write(DdlRules rules, StringWriter writer)&#xA;        {&#xA;            var streamIdType = _events.GetStreamIdType();&#xA;            var databaseSchema = _events.DatabaseSchemaName;&#xA;&#xA;            writer.WriteLine($@&quot;&#xA;CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]) RETURNS int[] AS $$&#xA;DECLARE&#xA;&#x9;event_version int;&#xA;&#x9;event_type varchar;&#xA;&#x9;event_id uuid;&#xA;&#x9;body jsonb;&#xA;&#x9;index int;&#xA;&#x9;seq int;&#xA;    actual_tenant varchar;&#xA;&#x9;return_value int[];&#xA;BEGIN&#xA;&#x9;select version into event_version from {databaseSchema}.mt_streams where id = stream;&#xA;&#x9;if event_version IS NULL then&#xA;&#x9;&#x9;event_version = 0;&#xA;&#x9;&#x9;insert into {databaseSchema}.mt_streams (id, type, version, timestamp, tenant_id) values (stream, stream_type, 0, now(), tenantid);&#xA;    else&#xA;        if tenantid IS NOT NULL then&#xA;            select tenant_id into actual_tenant from {databaseSchema}.mt_streams where id = stream;&#xA;            if actual_tenant != tenantid then&#xA;                RAISE EXCEPTION &#x27;The tenantid does not match the existing stream&#x27;;&#xA;            end if;&#xA;        end if;&#xA;&#x9;end if;&#xA;&#xA;&#xA;&#x9;index := 1;&#xA;&#x9;return_value := ARRAY[event_version &#x2B; array_length(event_ids, 1)];&#xA;&#xA;&#x9;foreach event_id in ARRAY event_ids&#xA;&#x9;loop&#xA;&#x9;    seq := nextval(&#x27;{databaseSchema}.mt_events_sequence&#x27;);&#xA;&#x9;&#x9;return_value := array_append(return_value, seq);&#xA;&#xA;&#x9;    event_version := event_version &#x2B; 1;&#xA;&#x9;&#x9;event_type = event_types[index];&#xA;&#x9;&#x9;body = bodies[index];&#xA;&#xA;&#x9;&#x9;insert into {databaseSchema}.mt_events &#xA;&#x9;&#x9;&#x9;(seq_id, id, stream_id, version, data, type, tenant_id, {DocumentMapping.DotNetTypeColumn}) &#xA;&#x9;&#x9;values &#xA;&#x9;&#x9;&#x9;(seq, event_id, stream, event_version, body, event_type, tenantid, dotnet_types[index]);&#xA;&#xA;&#x9;&#x9;&#xA;&#x9;&#x9;index := index &#x2B; 1;&#xA;&#x9;end loop;&#xA;&#xA;&#x9;update {databaseSchema}.mt_streams set version = event_version, timestamp = now() where id = stream;&#xA;&#xA;&#x9;return return_value;&#xA;END&#xA;$$ LANGUAGE plpgsql;&#xA;&quot;);&#xA;        }&#xA;&#xA;        protected override string toDropSql()&#xA;        {&#xA;            var streamIdType = _events.GetStreamIdType();&#xA;            return $&quot;drop function if exists {Identifier} ({streamIdType}, varchar, varchar, uuid[], varchar[], jsonb[])&quot;;&#xA;        }&#xA;    }&#xA;</code></pre>
+<h2 id="sequence">Sequence</h2>
+<p><a href="https://www.postgresql.org/docs/10/static/sql-createsequence.html">Postgresql sequences</a> can be managed with this usage:</p>
+<pre><code class="language-csharp">&#xA;var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, &quot;mt_events_sequence&quot;))&#xA;{&#xA;    Owner = eventsTable.Identifier,&#xA;    OwnerColumn = &quot;seq_id&quot;&#xA;};&#xA;</code></pre>
+
+			      	</div>
+
+			      	<hr />
+
+			      	<nav>
+				        <span>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/advanced/optimistic_concurrency">Optimistic Concurrency</a>
+
+				        </span>
+				        <span class="pull-right">
+
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/advanced/soft_deletes">Soft Deletes</a>
+
+				        </span>
+			      	</nav>
+
+		      </div><!--/right-->
+		  	</div><!--/row-->
+		</div><!--/container-->
+
+
+    </body>
+
+
+    <foot>
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+    </foot>
+</html>
+

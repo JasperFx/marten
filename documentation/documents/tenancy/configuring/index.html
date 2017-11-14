@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -100,10 +100,10 @@
 <p>Tenancy can be configured at the store level, applying to all documents or, at most fine-graned level, on individual documents.</p>
 <h2 id="tenancy-through-policies">Tenancy Through Policies</h2>
 <p>Tenancy can be configured through Document Policies, accesible via <code>StoreOptions.Policies</code>. The following sample demonstrates setting the default tenancy to <code>TenancyStyle.Conjoined</code> for all documents.</p>
-<pre><code class="language-csharp">&#xD;&#xA;storeOptions.Policies.AllDocumentsAreMultiTenanted();&#xD;&#xA;// Shorthand for&#xD;&#xA;// storeOptions.Policies.ForAllDocuments(_ =&gt; _.TenancyStyle = TenancyStyle.Conjoined);&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;storeOptions.Policies.AllDocumentsAreMultiTenanted();&#xA;// Shorthand for&#xA;// storeOptions.Policies.ForAllDocuments(_ =&gt; _.TenancyStyle = TenancyStyle.Conjoined);&#xA;</code></pre>
 <h2 id="tenancy-at-document-level-policy-overrides">Tenancy At Document Level &amp; Policy Overrides</h2>
 <p>Tenancy can be configured at a document level through document mappings. This also enables overriding store-level configurations applied through Document Policies. The following sample demonstrates setting, through <code>StoreOptions</code> the tenancy for <code>Target</code> to <code>TenancyStyle.Conjoined</code>, making it deviate from the configured default policy of <code>TenancyStyle.Single</code>.</p>
-<pre><code class="language-csharp">&#xD;&#xA;storeOptions.Policies.ForAllDocuments(x =&gt; x.TenancyStyle = TenancyStyle.Single);  &#xD;&#xA;storeOptions.Schema.For&lt;Target&gt;().MultiTenanted();&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;storeOptions.Policies.ForAllDocuments(x =&gt; x.TenancyStyle = TenancyStyle.Single);  &#xA;storeOptions.Schema.For&lt;Target&gt;().MultiTenanted();&#xA;</code></pre>
 
 			      	</div>
 

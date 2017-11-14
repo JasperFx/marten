@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -94,9 +94,9 @@
 <p>Marten will create a new database table and <em>upsert</em> function for each document type. By default, the table name is
 <code>mt_doc_[alias]</code> and the function is <code>mt_upsert_[alias]</code>, where &quot;alias&quot; is the document type name in all lower case letters, or &quot;parent type name + inner type name&quot; for nested types.</p>
 <p>In the not unlikely case that you need to disambiguate table storage for two or more documents with the same type name, you can override the type alias either programmatically with <code>MartenRegistry</code>:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    _.Schema.For&lt;User&gt;().DocumentAlias(&quot;folks&quot;);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    _.Schema.For&lt;User&gt;().DocumentAlias(&quot;folks&quot;);&#xA;});&#xA;</code></pre>
 <p>or by decorating the actual document class with an attribute:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[DocumentAlias(&quot;johndeere&quot;)]&#xD;&#xA;public class Tractor&#xD;&#xA;{&#xD;&#xA;    public string id;&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;[DocumentAlias(&quot;johndeere&quot;)]&#xA;public class Tractor&#xA;{&#xA;    public string id;&#xA;}&#xA;</code></pre>
 
 			      	</div>
 

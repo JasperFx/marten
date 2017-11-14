@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -97,9 +97,9 @@ generate, this makes inserts into the underlying document tables more efficient.
 </div>
 <h2 id="combguid">CombGuid</h2>
 <p>To use <em>CombGuid</em> generation you should enabled it when configuring the document store. This defines that the <em>CombGuid</em> generation strategy will be used for all the documents types.</p>
-<pre><code class="language-csharp">&#xD;&#xA;options.DefaultIdStrategy = (mapping, storeOptions) =&gt; new CombGuidIdGeneration();&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;options.DefaultIdStrategy = (mapping, storeOptions) =&gt; new CombGuidIdGeneration();&#xA;</code></pre>
 <p>It is also possible use the SequentialGuid id generation algorithm for a specific document type.</p>
-<pre><code class="language-csharp">&#xD;&#xA;options.Schema.For&lt;UserWithGuid&gt;().IdStrategy(new CombGuidIdGeneration());&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;options.Schema.For&lt;UserWithGuid&gt;().IdStrategy(new CombGuidIdGeneration());&#xA;</code></pre>
 
 			      	</div>
 

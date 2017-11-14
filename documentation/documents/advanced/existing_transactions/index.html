@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Gin or Gist Indexes</title>
+		<title>Marten - Enlisting in Existing Transactions</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -43,8 +43,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/customizing/foreign_keys" title="Foreign Keys">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/customizing/metadata_index" title="Metadata Indexes">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/advanced/eject" title="Ejecting Documents from a Session">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/advanced/customizing_linq" title="Extending Marten's Linq Support">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -59,7 +59,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Gin or Gist Indexes</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/advanced">Advanced Topics</a></li><li class="active">Enlisting in Existing Transactions</li></ol>
 		  	</nav>
 		  </div>
 
@@ -77,25 +77,27 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/advanced/customizing_linq">Extending Marten's Linq Support</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced/eject">Ejecting Documents from a Session</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Gin or Gist Indexes <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/configuration/gin_or_gist_index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Enlisting in Existing Transactions <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/advanced/existing_transactions.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--title: Gin or Gist Indexes-->
-<p>See <a href="https://hashrocket.com/blog/posts/exploring-postgres-gin-index">Exploring the Postgres Gin index</a> for more information on the Gin index strategy within Postgresqsl.</p>
-<p>To optimize a wider range of adhoc queries against the document JSONB, you can apply a <a href="http://www.postgresql.org/docs/9.4/static/gin.html">Gin index</a> to
-the JSON field in the database:</p>
-<pre><code class="language-csharp">&#xA;public class IndexExamples : MartenRegistry&#xA;{&#xA;    public IndexExamples()&#xA;    {&#xA;        // Add a gin index to the User document type&#xA;        For&lt;User&gt;().GinIndexJsonData();&#xA;&#xA;        // Adds a basic btree index to the duplicated&#xA;        // field for this property that also overrides&#xA;        // the Postgresql database type for the column&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);&#xA;&#xA;        // Customize the index on the duplicated field&#xA;        // for FirstName &#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, configure:idx =&gt;&#xA;        {&#xA;            idx.IndexName = &quot;idx_special&quot;;&#xA;            idx.Method = IndexMethod.hash;&#xA;        });&#xA;&#xA;    }&#xA;}&#xA;</code></pre>
-<p><strong>Marten may be changed to make the Gin index on the data field be automatic in the future.</strong></p>
+			      		<!--title:Enlisting in Existing Transactions-->
+<p>Before Marten 2.4.0, a Marten <code>IDocumentSession</code> always controlled the lifecycle of its underlying database
+connection and transaction boundaries. With the 2.4.0+ release, you can pass in an existing transaction or connection, direct
+Marten to enlist in an ambient transaction scope, and even direct Marten on whether or not it owns the transaction boundaries
+to override whether or not <code>SaveChanges/SaveChangesAsync</code> will commit the underlying transaction.</p>
+<p>Do note that the transaction scope enlisting is only available in either the full .Net framework (&gt; .Net 4.6) or applications targeting
+Netstandard 2.0.</p>
+<pre><code class="language-csharp">&#xA;public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTransaction transaction)&#xA;{&#xA;    // Use an existing connection, but Marten still controls the transaction lifecycle&#xA;    var session1 = store.OpenSession(new SessionOptions&#xA;    {&#xA;        Connection = connection&#xA;    });&#xA;&#xA;    // Enlist in an existing Npgsql transaction, but&#xA;    // choose not to allow the session to own the transaction&#xA;    // boundaries&#xA;    var session2 = store.OpenSession(new SessionOptions&#xA;    {&#xA;        Transaction = transaction,&#xA;        OwnsTransactionLifecycle = false&#xA;    });&#xA;&#xA;    // This is syntactical sugar for the sample above&#xA;    var session3 = store.OpenSession(SessionOptions.ForTransaction(transaction));&#xA;&#xA;&#xA;    // Enlist in the current, ambient transaction scope&#xA;    using (var scope = new TransactionScope())&#xA;    {&#xA;        var session4 = store.OpenSession(SessionOptions.ForCurrentTransaction());&#xA;    }&#xA;    &#xA;    // or this is the long hand way of doing the options above&#xA;    using (var scope = new TransactionScope())&#xA;    {&#xA;        var session5 = store.OpenSession(new SessionOptions&#xA;        {&#xA;            EnlistInAmbientTransactionScope = true,&#xA;            OwnsTransactionLifecycle = false&#xA;        });&#xA;    }&#xA;}&#xA;</code></pre>
 
 			      	</div>
 
@@ -103,12 +105,12 @@ the JSON field in the database:</p>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/advanced/eject">Ejecting Documents from a Session</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/advanced/customizing_linq">Extending Marten's Linq Support</a>
 
 				        </span>
 			      	</nav>

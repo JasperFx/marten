@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+        <meta charset="utf-8">
+        <meta name="generator" content="Bootply" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<title>Marten - Aggregates, Events, Repositories</title>
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+        
+
+        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+
+        <!-- CSS code from Bootply.com editor -->
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    </head>
+    
+    <!-- HTML code from Bootply.com editor -->
+    
+    <body  >
+
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+        
+        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
+		    </div>
+		    <nav class="collapse navbar-collapse" role="navigation">
+		      <ul class="nav navbar-nav pull-right">
+            <li>
+              <a href="/marten/getting_started">Getting Started</a>
+            </li>
+		        <li>
+		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+		        </li>
+		      	<li><a href="/marten/documentation/scenarios" title="Scenarios">Previous</a></li>
+		      	<li><a href="/marten/documentation/scenarios/immutable_projections_readmodel" title="Immutable projections as read model">Next</a></li>
+		      </ul>
+      <div class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input id="search" type="search" class="form-control" placeholder="Search">
+        </div>
+      </div>
+
+		    </nav>
+
+		  </div>
+		</nav>
+
+		  <div class="container">
+		  	<nav class="navbar-inverse">
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/scenarios">Scenarios</a></li><li class="active">Aggregates, Events, Repositories</li></ol>
+		  	</nav>
+		  </div>
+
+		<!--main-->
+		<div class="container">
+			<div class="row">
+		      <!--left-->
+		      
+		      <div class="col-md-3" id="leftCol">
+			  
+				<img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle"/>
+		      	<br />
+
+				<ul class="nav nav-stacked affix" id="sidebar">
+
+		        </ul>
+
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/scenarios/immutable_projections_readmodel">Immutable projections as read model</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/scenarios">Scenarios</a></p>
+
+		        </ul>
+		      </div><!--/left-->
+		      
+		      <!--right-->
+		      <div class="col-md-9">
+			      	<h1>Aggregates, Events, Repositories <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/scenarios/aggregates_events_repositories.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      
+			      	<hr />
+
+			      	<div id="main-pane">
+			      		<!--Title: Aggregates, Events, Repositories-->
+<p>This use case demonstrates how to capture state changes in events and then replaying that state from the database. This is done by first introducing some supporting infrastructure, then implementing a model of invoice, together with invoice lines, on top of that.</p>
+<h2 id="scenario">Scenario</h2>
+<p>To model, capture and replay the state of an object through events, some infrastructure is established to dispatch events to their respective handlers. This is demonstrated in the <code>AggregateBase</code> class below - it serves as the basis for objects whose state is to be modeled.</p>
+<pre><code class="language-csharp">&#xA;// Infrastructure to capture modifications to state in events&#xA;public abstract class AggregateBase&#xA;{&#xA;    // For indexing our event streams&#xA;    public string Id { get; protected set; }&#xA;    // For protecting the state, i.e. conflict prevention&#xA;    public int Version { get; protected set; }&#xA;&#xA;    private readonly List&lt;object&gt; uncommittedEvents = new List&lt;object&gt;();&#xA;    private readonly Dictionary&lt;Type, Action&lt;object&gt;&gt; handlers = new Dictionary&lt;Type, Action&lt;object&gt;&gt;();&#xA;    &#xA;    // Get the deltas, i.e. events that make up the state, not yet persisted&#xA;    public IEnumerable&lt;object&gt; GetUncommittedEvents()&#xA;    {&#xA;        return uncommittedEvents;&#xA;    }&#xA;&#xA;    // Mark the deltas as persisted.&#xA;    public void ClearUncommittedEvents()&#xA;    {&#xA;        uncommittedEvents.Clear();            &#xA;    }&#xA;&#xA;    // Infrastructure for raising events &amp; registering handlers&#xA;&#xA;    protected void Register&lt;T&gt;(Action&lt;T&gt; handle)&#xA;    {&#xA;        handlers[typeof(T)] = e =&gt; handle((T)e);&#xA;    } &#xA;&#xA;    protected void RaiseEvent(object @event)&#xA;    {&#xA;        ApplyEvent(@event);&#xA;        uncommittedEvents.Add(@event);&#xA;    }&#xA;&#xA;    private void ApplyEvent(object @event)&#xA;    {&#xA;        handlers[@event.GetType()](@event);&#xA;        // Each event bumps our version&#xA;        Version&#x2B;&#x2B;;&#xA;    }&#xA;}&#xA;</code></pre>
+<p>With the first piece of infrastructure implemented, two events to capture state changes of an invoice are introduced. Namely, creation of an invoice, accompanied by an invoice number, and addition of lines to an invoice:</p>
+<pre><code class="language-csharp">&#xA;public sealed class InvoiceCreated&#xA;{&#xA;    public readonly int InvoiceNumber;&#xA;&#xA;    public InvoiceCreated(int invoiceNumber)&#xA;    {&#xA;        InvoiceNumber = invoiceNumber;&#xA;    }&#xA;}&#xA;&#xA;public sealed class LineItemAdded&#xA;{&#xA;    public readonly decimal Price;&#xA;    public readonly decimal Vat;&#xA;    public readonly string Description;&#xA;&#xA;    public LineItemAdded(decimal price, decimal vat, string description)&#xA;    {&#xA;        Price = price;&#xA;        Vat = vat;&#xA;        Description = description;&#xA;    }&#xA;}&#xA;</code></pre>
+<p>With the events in place to present the deltas of an invoice, an aggregate is implemented, using the infrastructure presented above, to create and replay state from the described events.</p>
+<pre><code class="language-csharp">&#xA;public sealed class Invoice : AggregateBase&#xA;{&#xA;    public Invoice(int invoiceNumber) : this()&#xA;    {&#xA;        if (invoiceNumber &lt;= 0)&#xA;        {&#xA;            throw new ArgumentException(&quot;Invoice number needs to be positive&quot;, nameof(invoiceNumber));&#xA;        }&#xA;&#xA;        // Instantiation creates our initial event, capturing the invoice number&#xA;        RaiseEvent(new InvoiceCreated(invoiceNumber));&#xA;    }&#xA;&#xA;    // Enforce any contracts on input, then raise event caputring the data&#xA;    public void AddLine(decimal price, decimal vat, string description)&#xA;    {&#xA;        if (string.IsNullOrEmpty(description))&#xA;        {&#xA;            throw new ArgumentException(&quot;Description cannot be empty&quot;, nameof(description));&#xA;        }&#xA;&#xA;        RaiseEvent(new LineItemAdded(price, vat, description));&#xA;    }&#xA;&#xA;    public override string ToString()&#xA;    {&#xA;        var lineItems = string.Join(Environment.NewLine, lines.Select(x =&gt; $&quot;{x.Item1}: {x.Item2} ({x.Item3}% VAT)&quot;));&#xA;        return $&quot;{lineItems}{Environment.NewLine}Total: {Total}&quot;;&#xA;    }&#xA;&#xA;    public decimal Total { get; private set; }&#xA;    private readonly List&lt;Tuple&lt;string, decimal, decimal&gt;&gt; lines = new List&lt;Tuple&lt;string, decimal, decimal&gt;&gt;();&#xA;&#xA;    private Invoice()&#xA;    {&#xA;        // Register the event types that make up our aggregate , together with their respective handlers&#xA;        Register&lt;InvoiceCreated&gt;(Apply);&#xA;        Register&lt;LineItemAdded&gt;(Apply);            &#xA;    }&#xA;&#xA;    // Apply the deltas to mutate our state&#xA;    private void Apply(InvoiceCreated @event)&#xA;    {&#xA;        Id = @event.InvoiceNumber.ToString(CultureInfo.InvariantCulture);&#xA;    }&#xA;&#xA;    // Apply the deltas to mutate our state&#xA;    private void Apply(LineItemAdded @event)&#xA;    {&#xA;        var price = @event.Price * (1 &#x2B; @event.Vat / 100);&#xA;        Total &#x2B;= price;&#xA;        lines.Add(Tuple.Create(@event.Description, price, @event.Vat));&#xA;    }&#xA;}&#xA;</code></pre>
+<p>The implemented invoice protects its state by not exposing mutable data, while enforcing its contracts through argument validation. Once an applicable state modification is introduced, either through the constructor (which numbers our invoice and captures that in an event) or the <code>Invoice.AddLine</code> method, a respective event capturing that data is recorded.</p>
+<p>Lastly, to persist the deltas described above and to replay the state of an object from such persisted data, a repository is implemented. The said repository pushes the deltas of an object to event stream, indexed by the ID of the object.</p>
+<pre><code class="language-csharp">&#xA;public sealed class AggregateRepository&#xA;{&#xA;    private readonly IDocumentStore store;&#xA;&#xA;    public AggregateRepository(IDocumentStore store)&#xA;    {&#xA;        this.store = store;&#xA;    }&#xA;&#xA;    public void Store(AggregateBase aggregate)&#xA;    {&#xA;        using (var session = store.OpenSession())&#xA;        {&#xA;            // Take non-persisted events, push them to the event stream, indexed by the aggregate ID&#xA;            var events = aggregate.GetUncommittedEvents().ToArray();&#xA;            session.Events.Append(aggregate.Id, aggregate.Version, events);&#xA;            session.SaveChanges();&#xA;        }&#xA;        // Once succesfully persisted, clear events from list of uncommitted events&#xA;        aggregate.ClearUncommittedEvents();            &#xA;    }        &#xA;&#xA;    private static readonly MethodInfo ApplyEvent = typeof(AggregateBase).GetMethod(&quot;ApplyEvent&quot;, BindingFlags.Instance | BindingFlags.NonPublic);&#xA;&#xA;    public T Load&lt;T&gt;(string id, int? version = null) where T : AggregateBase&#xA;    {&#xA;        IReadOnlyList&lt;IEvent&gt; events;&#xA;        using (var session = store.LightweightSession())&#xA;        {&#xA;            events = session.Events.FetchStream(id, version ?? 0);                &#xA;        }&#xA;&#xA;        if (events != null &amp;&amp; events.Any())&#xA;        {                                &#xA;            var instance = Activator.CreateInstance(typeof(T), true);                &#xA;            // Replay our aggregate state from the event stream&#xA;            events.Aggregate(instance, (o, @event) =&gt; ApplyEvent.Invoke(instance, new [] { @event.Data }));&#xA;            return (T)instance;&#xA;        }&#xA;&#xA;        throw new InvalidOperationException($&quot;No aggregate by id {id}.&quot;);&#xA;    }&#xA;}&#xA;</code></pre>
+<p>With the last infrastructure component in place, versioned invoices can now be created, persisted and hydrated through Marten. For this purpose, first an invoice is created:</p>
+<pre><code class="language-csharp">&#xA;var invoice = new Invoice(42);&#xA;&#xA;invoice.AddLine(100, 24, &quot;Joo Janta 200 Super-Chromatic Peril Sensitive Sunglasses&quot;);&#xA;invoice.AddLine(200, 16, &quot;Happy Vertical People Transporter&quot;);&#xA;</code></pre>
+<p>Then, with an instantiated &amp; configured Document Store (in this case with string as event stream identity) a repository is bootstrapped. The newly created invoice is then passed to the repository, which pushes the deltas to the database and clears them from the to-be-committed list of changes. Once persisted, the invoice data is replayed from the database and verified to match the data of the original item.</p>
+<pre><code class="language-csharp">&#xA;var repository = new AggregateRepository(theStore);&#xA;&#xA;repository.Store(invoice);&#xA;&#xA;var invoiceFromRepository = repository.Load&lt;Invoice&gt;(invoice.Id);&#xA;&#xA;Assert.Equal(invoice.ToString(), invoiceFromRepository.ToString());           &#xA;Assert.Equal(invoice.Total, invoiceFromRepository.Total);&#xA;</code></pre>
+<p>With this infrastructure in place and the ability to model change as events, it is also possible to replay back any previous state of the object. For example, it is possible to see what the invoice looked with only the first line added:</p>
+<pre><code class="language-csharp">&#xA;var invoiceFromRepository = repository.Load&lt;Invoice&gt;(invoice.Id, 2);&#xA;&#xA;Assert.Equal(124, invoiceFromRepository.Total);&#xA;</code></pre>
+<p>Lastly, to prevent our invoice from getting into a conflited state, the version attribute of the item is used to assert that the state of the object has not changed between replaying its state and introducing new deltas:</p>
+<pre><code class="language-csharp">&#xA;var invoice = CreateInvoice();&#xA;var invoiceWithSameIdentity = CreateInvoice();&#xA;&#xA;repository.Store(invoice);&#xA;&#xA;Assert.Throws&lt;EventStreamUnexpectedMaxEventIdException&gt;(() =&gt;&#xA;{&#xA;    repository.Store(invoiceWithSameIdentity);&#xA;});&#xA;</code></pre>
+
+			      	</div>
+
+			      	<hr />
+
+			      	<nav>
+				        <span>
+				        	<strong>Previous: </strong><a href="/marten/documentation/scenarios">Scenarios</a>
+
+				        </span>
+				        <span class="pull-right">
+
+				        	<strong>Next: </strong><a href="/marten/documentation/scenarios/immutable_projections_readmodel">Immutable projections as read model</a>
+
+				        </span>
+			      	</nav>
+
+		      </div><!--/right-->
+		  	</div><!--/row-->
+		</div><!--/container-->
+
+
+    </body>
+
+
+    <foot>
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+    </foot>
+</html>
+

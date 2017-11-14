@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -95,9 +95,9 @@
 because of its flexibility and ability to handle polymorphism within child collections. Marten also uses Newtonsoft.Json internally to do JSON diff's for
 the automatic dirty checking option.</p>
 <p>Out of the box, Marten uses this configuration for Newtonsoft.Json:</p>
-<pre><code class="language-csharp">&#xD;&#xA;private readonly JsonSerializer _serializer = new JsonSerializer&#xD;&#xA;{&#xD;&#xA;    TypeNameHandling = TypeNameHandling.Auto,&#xD;&#xA;&#xD;&#xA;    // ISO 8601 formatting of DateTime&#x27;s is mandatory&#xD;&#xA;    DateFormatHandling = DateFormatHandling.IsoDateFormat,&#xD;&#xA;    MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead&#xD;&#xA;};&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;private readonly JsonSerializer _serializer = new JsonSerializer&#xA;{&#xA;    TypeNameHandling = TypeNameHandling.Auto,&#xA;&#xA;    // ISO 8601 formatting of DateTime&#x27;s is mandatory&#xA;    DateFormatHandling = DateFormatHandling.IsoDateFormat,&#xA;    MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead&#xA;};&#xA;</code></pre>
 <p>To customize the Newtonsoft.Json serialization, you need to explicitly supply an instance of Marten's <code>JsonNetSerializer</code> as shown below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var serializer = new Marten.Services.JsonNetSerializer();&#xD;&#xA;        &#xD;&#xA;// To change the enum storage policy to store Enum&#x27;s as strings:&#xD;&#xA;serializer.EnumStorage = EnumStorage.AsString;&#xD;&#xA;&#xD;&#xA;// All other customizations:&#xD;&#xA;serializer.Customize(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Code directly against a Newtonsoft.Json JsonSerializer&#xD;&#xA;    _.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;&#xD;&#xA;    _.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;&#xD;&#xA;});&#xD;&#xA;&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;some connection string&quot;);&#xD;&#xA;&#xD;&#xA;    // Replace the default JsonNetSerializer with the one we configured&#xD;&#xA;    // above&#xD;&#xA;    _.Serializer(serializer);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var serializer = new Marten.Services.JsonNetSerializer();&#xA;        &#xA;// To change the enum storage policy to store Enum&#x27;s as strings:&#xA;serializer.EnumStorage = EnumStorage.AsString;&#xA;&#xA;// All other customizations:&#xA;serializer.Customize(_ =&gt;&#xA;{&#xA;    // Code directly against a Newtonsoft.Json JsonSerializer&#xA;    _.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;&#xA;    _.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;&#xA;});&#xA;&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(&quot;some connection string&quot;);&#xA;&#xA;    // Replace the default JsonNetSerializer with the one we configured&#xA;    // above&#xA;    _.Serializer(serializer);&#xA;});&#xA;</code></pre>
 <div class="alert alert-info">
 You should not override the Newtonsoft.Json <code>ContractResolver</code> with <code>CamelCasePropertyNamesContractResolver</code> for Json Serialization. Newtonsoft.Json by default respects the casing used in property / field names which is typically PascalCase.
 This can be overriden to serialize the names to camelCase and Marten will store the JSON in the database as specified by the Newtonsoft.Json settings. However, Marten uses the property / field names casing for its SQL queries and queries are case sensitive and as such, querying will not work correctly. 

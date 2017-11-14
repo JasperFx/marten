@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -119,19 +119,19 @@ Postgresql database by <a href="https://www.postgresql.org/docs/current/static/s
 <p>This can unfortunately have a negative impact on Marten's ability to detect changes to the schema configuration when Postgresql quietly
 truncates the name of database objects. To guard against this, Marten will now warn you if a schema name exceeds the <code>NAMEDATALEN</code> value,
 but you do need to tell Marten about any non-default length limit like so:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // If you have overridden NAMEDATALEN in your&#xD;&#xA;    // Postgresql database to 100&#xD;&#xA;    _.NameDataLength = 100;&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    // If you have overridden NAMEDATALEN in your&#xA;    // Postgresql database to 100&#xA;    _.NameDataLength = 100;&#xA;});&#xA;</code></pre>
 <h2 id="custom-storeoptions">Custom StoreOptions</h2>
 <p>It's perfectly valid to create your own subclass of <code>StoreOptions</code> that configures itself, as shown below.</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class MyStoreOptions : StoreOptions&#xD;&#xA;{&#xD;&#xA;    public static IDocumentStore ToStore()&#xD;&#xA;    {&#xD;&#xA;        return new DocumentStore(new MyStoreOptions());&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public MyStoreOptions()&#xD;&#xA;    {&#xD;&#xA;        Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;        Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsString});&#xD;&#xA;&#xD;&#xA;        Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public class MyStoreOptions : StoreOptions&#xA;{&#xA;    public static IDocumentStore ToStore()&#xA;    {&#xA;        return new DocumentStore(new MyStoreOptions());&#xA;    }&#xA;&#xA;    public MyStoreOptions()&#xA;    {&#xA;        Connection(ConnectionSource.ConnectionString);&#xA;&#xA;        Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsString});&#xA;&#xA;        Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);&#xA;    }&#xA;}&#xA;</code></pre>
 <p>This strategy might be beneficial if you need to share Marten configuration across different applications
 or testing harnesses or custom migration tooling.</p>
 <h2 id="martenregistry">MartenRegistry</h2>
 <p>While there are some limited abilities to configure storage with attributes, the most complete option right now
 is a fluent interface implemented by the <code>MartenRegistry</code>. To configure a Marten document store, first write
 your own subclass of <code>MartenRegistry</code> and place declarations in the constructor function like this example:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class MyMartenRegistry : MartenRegistry&#xD;&#xA;{&#xD;&#xA;    public MyMartenRegistry()&#xD;&#xA;    {&#xD;&#xA;        // I&#x27;m going to search for user by UserName&#xD;&#xA;        // pretty frequently, so I want that to be &#xD;&#xA;        // a duplicated, searchable field&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName);&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;        // Add a gin index to Company&#x27;s json data storage&#xD;&#xA;        For&lt;Company&gt;().GinIndexJsonData();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public class MyMartenRegistry : MartenRegistry&#xA;{&#xA;    public MyMartenRegistry()&#xA;    {&#xA;        // I&#x27;m going to search for user by UserName&#xA;        // pretty frequently, so I want that to be &#xA;        // a duplicated, searchable field&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName);&#xA;&#xA;&#xA;        // Add a gin index to Company&#x27;s json data storage&#xA;        For&lt;Company&gt;().GinIndexJsonData();&#xA;    }&#xA;}&#xA;</code></pre>
 <p>To apply your new <code>MartenRegistry</code>, just include it when you bootstrap the <code>IDocumentStore</code> as in this example:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;your connection string&quot;);&#xD;&#xA;    _.Schema.Include&lt;MyMartenRegistry&gt;();&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(&quot;your connection string&quot;);&#xA;    _.Schema.Include&lt;MyMartenRegistry&gt;();&#xA;});&#xA;</code></pre>
 <p>Do note that you could happily use multiple <code>MartenRegistry</code> classes in larger applications if that is advantageous.</p>
 <p>If you dislike using infrastructure attributes in your application code, you will probably prefer to use MartenRegistry.</p>
 <h2 id="custom-indexes">Custom Indexes</h2>
@@ -140,24 +140,24 @@ that Marten will ignore your manual indexes when calculating schema differences.
 <h2 id="custom-attributes">Custom Attributes</h2>
 <p>If there's some kind of customization you'd like to use attributes for that isn't already supported by Marten,
 you're still in luck. If you write a subclass of the <code>MartenAttribute</code> shown below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public abstract class MartenAttribute : Attribute&#xD;&#xA;{&#xD;&#xA;    /// &lt;summary&gt;&#xD;&#xA;    /// Customize Document storage at the document level&#xD;&#xA;    /// &lt;/summary&gt;&#xD;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xD;&#xA;    public virtual void Modify(DocumentMapping mapping) { }&#xD;&#xA;&#xD;&#xA;    /// &lt;summary&gt;&#xD;&#xA;    /// Customize the Document storage for a single member&#xD;&#xA;    /// &lt;/summary&gt;&#xD;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xD;&#xA;    /// &lt;param name=&quot;member&quot;&gt;&lt;/param&gt;&#xD;&#xA;    public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public abstract class MartenAttribute : Attribute&#xA;{&#xA;    /// &lt;summary&gt;&#xA;    /// Customize Document storage at the document level&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xA;    public virtual void Modify(DocumentMapping mapping) { }&#xA;&#xA;    /// &lt;summary&gt;&#xA;    /// Customize the Document storage for a single member&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;param name=&quot;member&quot;&gt;&lt;/param&gt;&#xA;    public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }&#xA;}&#xA;</code></pre>
 <p>And decorate either classes or individual field or properties on a document type, your custom attribute will be
 picked up and used by Marten to configure the underlying <code>DocumentMapping</code> model for that document type. The
 <code>MartenRegistry</code> is just a fluent interface over the top of this same <code>DocumentMapping</code> model.</p>
 <p>As an example, an attribute to add a gin index to the JSONB storage for more efficient adhoc querying of a document
 would look like this:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class GinIndexedAttribute : MartenAttribute&#xD;&#xA;{&#xD;&#xA;    public override void Modify(DocumentMapping mapping, MemberInfo member)&#xD;&#xA;    {&#xD;&#xA;        mapping.AddGinIndexToData();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public class GinIndexedAttribute : MartenAttribute&#xA;{&#xA;    public override void Modify(DocumentMapping mapping, MemberInfo member)&#xA;    {&#xA;        mapping.AddGinIndexToData();&#xA;    }&#xA;}&#xA;</code></pre>
 <h2 id="embedding-configuration-in-document-types">Embedding Configuration in Document Types</h2>
 <p>Lastly, Marten can examine the document types themselves for a <code>public static ConfigureMarten()</code> method
 and invoke that to let the document type make its own customizations for its storage. Here's an example from
 the unit tests:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItself&#xD;&#xA;{&#xD;&#xA;    public Guid Id;&#xD;&#xA;&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Alias = &quot;different&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public class ConfiguresItself&#xA;{&#xA;    public Guid Id;&#xA;&#xA;    public static void ConfigureMarten(DocumentMapping mapping)&#xA;    {&#xA;        mapping.Alias = &quot;different&quot;;&#xA;    }&#xA;}&#xA;</code></pre>
 <p>The <code>DocumentMapping</code> type is the core configuration class representing how a document type is persisted or
 queried from within a Marten application. All the other configuration options end up writing to a
 <code>DocumentMapping</code> object.</p>
 <p>You can optionally take in the more specific <code>DocumentMapping&lt;T&gt;</code> for your document type to get at
 some convenience methods for indexing or duplicating fields that depend on .Net Expression's:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItselfSpecifically&#xD;&#xA;{&#xD;&#xA;    public Guid Id;&#xD;&#xA;    public string Name;&#xD;&#xA;&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping&lt;ConfiguresItselfSpecifically&gt; mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Duplicate(x =&gt; x.Name);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public class ConfiguresItselfSpecifically&#xA;{&#xA;    public Guid Id;&#xA;    public string Name;&#xA;&#xA;    public static void ConfigureMarten(DocumentMapping&lt;ConfiguresItselfSpecifically&gt; mapping)&#xA;    {&#xA;        mapping.Duplicate(x =&gt; x.Name);&#xA;    }&#xA;}&#xA;</code></pre>
 
 			      	</div>
 

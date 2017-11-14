@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -43,7 +43,7 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/scenarios" title="Scenarios">Previous</a></li>
+		      	<li><a href="/marten/documentation/scenarios/aggregates_events_repositories" title="Aggregates, Events, Repositories">Previous</a></li>
 		      	<li><a href="/marten/documentation/admin" title="Managing PostgreSQL Instance">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
@@ -78,7 +78,7 @@
 		        </ul>
 
 		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/admin">Managing PostgreSQL Instance</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/scenarios">Scenarios</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/scenarios/aggregates_events_repositories">Aggregates, Events, Repositories</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -94,15 +94,15 @@
 <p>This use case demonstrates how to create immutable projections from event streams.</p>
 <h2 id="scenario">Scenario</h2>
 <p>To make projections immutable, the event application methods invoked by aggregators need to be made private, as well as any property setters.</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class AggregateWithPrivateEventApply&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; private set; }&#xD;&#xA;    &#xD;&#xA;    private void Apply(QuestStarted started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(QuestEnded ended)&#xD;&#xA;    {&#xD;&#xA;        Name = ended.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Name { get; private set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public class AggregateWithPrivateEventApply&#xA;{&#xA;    public Guid Id { get; private set; }&#xA;    &#xA;    private void Apply(QuestStarted started)&#xA;    {&#xA;        Name = started.Name;&#xA;    }&#xA;&#xA;    public void Apply(QuestEnded ended)&#xA;    {&#xA;        Name = ended.Name;&#xA;    }&#xA;&#xA;    public string Name { get; private set; }&#xA;}&#xA;</code></pre>
 <p>To run aggregators against such projections, aggregator lookup strategy is configured to use aggregators that look for private <code>Apply([Event Type])</code> methods. Furthermore, document deserialization is configured to look for private property setters, allowing hydration of the projected objects from the database.</p>
 <p>This can be done in the store configuration as follows:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var serializer = new JsonNetSerializer();&#xD;&#xA;serializer.Customize(c =&gt; c.ContractResolver = new ResolvePrivateSetters());&#xD;&#xA;options.Serializer(serializer);&#xD;&#xA;options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);&#xD;&#xA;options.Events.InlineProjections.AggregateStreamsWith&lt;AggregateWithPrivateEventApply&gt;();&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var serializer = new JsonNetSerializer();&#xA;serializer.Customize(c =&gt; c.ContractResolver = new ResolvePrivateSetters());&#xA;options.Serializer(serializer);&#xA;options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);&#xA;options.Events.InlineProjections.AggregateStreamsWith&lt;AggregateWithPrivateEventApply&gt;();&#xA;</code></pre>
 <p>The serializer contract applied customises the default behaviour of the Json.NET serializer:</p>
-<pre><code class="language-csharp">&#xD;&#xA;internal class ResolvePrivateSetters : DefaultContractResolver&#xD;&#xA;{&#xD;&#xA;    protected override JsonProperty CreateProperty(&#xD;&#xA;        MemberInfo member,&#xD;&#xA;        MemberSerialization memberSerialization)&#xD;&#xA;    {            &#xD;&#xA;        var prop = base.CreateProperty(member, memberSerialization);&#xD;&#xA;&#xD;&#xA;        if (!prop.Writable)&#xD;&#xA;        {&#xD;&#xA;            var property = member as PropertyInfo;&#xD;&#xA;            if (property != null)&#xD;&#xA;            {&#xD;&#xA;                var hasPrivateSetter = property.GetSetMethod(true) != null;&#xD;&#xA;                prop.Writable = hasPrivateSetter;&#xD;&#xA;            }&#xD;&#xA;        }&#xD;&#xA;&#xD;&#xA;        return prop;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;internal class ResolvePrivateSetters : DefaultContractResolver&#xA;{&#xA;    protected override JsonProperty CreateProperty(&#xA;        MemberInfo member,&#xA;        MemberSerialization memberSerialization)&#xA;    {            &#xA;        var prop = base.CreateProperty(member, memberSerialization);&#xA;&#xA;        if (!prop.Writable)&#xA;        {&#xA;            var property = member as PropertyInfo;&#xA;            if (property != null)&#xA;            {&#xA;                var hasPrivateSetter = property.GetSetMethod(true) != null;&#xA;                prop.Writable = hasPrivateSetter;&#xA;            }&#xA;        }&#xA;&#xA;        return prop;&#xA;    }&#xA;}&#xA;</code></pre>
  
 Given the setup, a stream can now be projected using `AggregateWithPrivateEventApply` shown above. Furthermore, the created projection can be hydrated from the document store:
-<pre><code class="language-csharp">&#xD;&#xA;var quest = new QuestStarted {Name = &quot;Destroy the Ring&quot;};&#xD;&#xA;var questId = Guid.NewGuid();&#xD;&#xA;theSession.Events.StartStream&lt;QuestParty&gt;(questId, quest);&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;var projection = theSession.Load&lt;AggregateWithPrivateEventApply&gt;(questId);&#xD;&#xA;projection.Name.ShouldBe(&quot;Destroy the Ring&quot;);&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var quest = new QuestStarted {Name = &quot;Destroy the Ring&quot;};&#xA;var questId = Guid.NewGuid();&#xA;theSession.Events.StartStream&lt;QuestParty&gt;(questId, quest);&#xA;theSession.SaveChanges();&#xA;&#xA;var projection = theSession.Load&lt;AggregateWithPrivateEventApply&gt;(questId);&#xA;projection.Name.ShouldBe(&quot;Destroy the Ring&quot;);&#xA;</code></pre>
 
 			      	</div>
 
@@ -110,7 +110,7 @@ Given the setup, a stream can now be projected using `AggregateWithPrivateEventA
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/scenarios">Scenarios</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/scenarios/aggregates_events_repositories">Aggregates, Events, Repositories</a>
 
 				        </span>
 				        <span class="pull-right">

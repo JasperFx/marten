@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -97,15 +97,15 @@ Marten provides some predefined indexes you may optionally enable</p>
 <h2 id="last-modified">Last Modified</h2>
 <p>Should you be using the <code>ModifiedSince(DateTimeOffset)</code> or <code>ModifiedBefore(DateTimeOffset)</code> you can ask Marten to create
 an index on the document's <code>mt_last_modified</code> metadata column either using <code>IndexedLastModifiedAttribute</code>:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[IndexedLastModified]&#xD;&#xA;public class Customer&#xD;&#xA;{&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;[IndexedLastModified]&#xA;public class Customer&#xA;{&#xA;}&#xA;</code></pre>
 <p>Or by using the fluent interface:</p>
-<pre><code class="language-csharp">&#xD;&#xA;DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Schema.For&lt;User&gt;().IndexLastModified();&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Schema.For&lt;User&gt;().IndexLastModified();&#xA;});&#xA;</code></pre>
 <h2 id="soft-delete">Soft Delete</h2>
 <p>If using the <a href="/marten/documentation/documents/advanced/soft_deletes">Soft Deletes</a> functionality you can ask Marten
 to create a partial index on the deleted documents either using <code>SoftDeletedAttribute</code>:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[SoftDeleted(Indexed = true)]&#xD;&#xA;public class IndexedSoftDeletedDoc&#xD;&#xA;{&#xD;&#xA;    public Guid Id;&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;[SoftDeleted(Indexed = true)]&#xA;public class IndexedSoftDeletedDoc&#xA;{&#xA;    public Guid Id;&#xA;}&#xA;</code></pre>
 <p>Or by using the fluent interface:</p>
-<pre><code class="language-csharp">&#xD;&#xA;DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Schema.For&lt;User&gt;().SoftDeletedWithIndex();&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Schema.For&lt;User&gt;().SoftDeletedWithIndex();&#xA;});&#xA;</code></pre>
 <p>This will help Postgres answer queries using <code>IsDeleted()</code>, <code>DeletedSince(DateTimeOffset)</code> and <code>DeletedBefore(DateTimeOffset)</code>
 much more efficiently, Postgres will only index documents when they are deleted, <code>mt_deleted = true</code>, which also means that the index
 does not need to be updated for any insert or update where <code>mt_deleted = false</code></p>

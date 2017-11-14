@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -43,7 +43,7 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/advanced/hierarchies" title="Document Hierarchies">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/advanced/existing_transactions" title="Enlisting in Existing Transactions">Previous</a></li>
 		      	<li><a href="/marten/documentation/documents/advanced/identitymap" title="Identity Map Mechanics">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
@@ -78,7 +78,7 @@
 		        </ul>
 
 		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/advanced/identitymap">Identity Map Mechanics</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced/hierarchies">Document Hierarchies</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced/existing_transactions">Enlisting in Existing Transactions</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -98,7 +98,7 @@ Gitter room linked above if there's any Linq customization or extension that you
 <p>Marten allows you to add Linq parsing and querying support for your own custom methods.
 Using the (admittedly contrived) example from Marten's tests, say that you want to reuse a small part of a <code>Where()</code> clause across
 different queries for &quot;IsBlue().&quot; First, write the method you want to be recognized by Marten's Linq support:</p>
- <pre><code class="language-csharp">&#xD;&#xA;public class IsBlue : IMethodCallParser&#xD;&#xA;{&#xD;&#xA;    private static readonly PropertyInfo _property = ReflectionHelper.GetProperty&lt;ColorTarget&gt;(x =&gt; x.Color);&#xD;&#xA;&#xD;&#xA;    public bool Matches(MethodCallExpression expression)&#xD;&#xA;    {&#xD;&#xA;        return expression.Method.Name == nameof(CustomExtensions.IsBlue);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)&#xD;&#xA;    {&#xD;&#xA;        var locator = mapping.FieldFor(new MemberInfo[] {_property}).SqlLocator;&#xD;&#xA;&#xD;&#xA;        return new WhereFragment($&quot;{locator} = &#x27;Blue&#x27;&quot;);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+ <pre><code class="language-csharp">&#xA;public class IsBlue : IMethodCallParser&#xA;{&#xA;    private static readonly PropertyInfo _property = ReflectionHelper.GetProperty&lt;ColorTarget&gt;(x =&gt; x.Color);&#xA;&#xA;    public bool Matches(MethodCallExpression expression)&#xA;    {&#xA;        return expression.Method.Name == nameof(CustomExtensions.IsBlue);&#xA;    }&#xA;&#xA;    public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)&#xA;    {&#xA;        var locator = mapping.FieldFor(new MemberInfo[] {_property}).SqlLocator;&#xA;&#xA;        return new WhereFragment($&quot;{locator} = &#x27;Blue&#x27;&quot;);&#xA;    }&#xA;}&#xA;</code></pre>
 <p>Note a couple things here:</p>
 <ol>
 <li>If you're only using the method for Linq queries, it technically doesn't have to be implemented and never actually runs</li>
@@ -106,12 +106,12 @@ different queries for &quot;IsBlue().&quot; First, write the method you want to 
 </ol>
 <p>Now, to create a custom Linq parser for the <code>IsBlue()</code> method, you need to create a custom implementation of the <code>IMethodCallParser</code>
 interface shown below:</p>
- <pre><code class="language-csharp">&#xD;&#xA;/// &lt;summary&gt;&#xD;&#xA;/// Models the Sql generation for a method call&#xD;&#xA;/// in a Linq query. For example, map an expression like Where(x =&gt; x.Property.StartsWith(&quot;prefix&quot;))&#xD;&#xA;/// to part of a Sql WHERE clause&#xD;&#xA;/// &lt;/summary&gt;&#xD;&#xA;public interface IMethodCallParser&#xD;&#xA;{&#xD;&#xA;    /// &lt;summary&gt;&#xD;&#xA;    /// Can this parser create a Sql where clause&#xD;&#xA;    /// from part of a Linq expression that calls&#xD;&#xA;    /// a method&#xD;&#xA;    /// &lt;/summary&gt;&#xD;&#xA;    /// &lt;param name=&quot;expression&quot;&gt;&lt;/param&gt;&#xD;&#xA;    /// &lt;returns&gt;&lt;/returns&gt;&#xD;&#xA;    bool Matches(MethodCallExpression expression);&#xD;&#xA;&#xD;&#xA;    /// &lt;summary&gt;&#xD;&#xA;    /// Creates an IWhereFragment object that Marten&#xD;&#xA;    /// uses to help construct the underlying Sql&#xD;&#xA;    /// command&#xD;&#xA;    /// &lt;/summary&gt;&#xD;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xD;&#xA;    /// &lt;param name=&quot;serializer&quot;&gt;&lt;/param&gt;&#xD;&#xA;    /// &lt;param name=&quot;expression&quot;&gt;&lt;/param&gt;&#xD;&#xA;    /// &lt;returns&gt;&lt;/returns&gt;&#xD;&#xA;    IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+ <pre><code class="language-csharp">&#xA;/// &lt;summary&gt;&#xA;/// Models the Sql generation for a method call&#xA;/// in a Linq query. For example, map an expression like Where(x =&gt; x.Property.StartsWith(&quot;prefix&quot;))&#xA;/// to part of a Sql WHERE clause&#xA;/// &lt;/summary&gt;&#xA;public interface IMethodCallParser&#xA;{&#xA;    /// &lt;summary&gt;&#xA;    /// Can this parser create a Sql where clause&#xA;    /// from part of a Linq expression that calls&#xA;    /// a method&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;expression&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;returns&gt;&lt;/returns&gt;&#xA;    bool Matches(MethodCallExpression expression);&#xA;&#xA;    /// &lt;summary&gt;&#xA;    /// Creates an IWhereFragment object that Marten&#xA;    /// uses to help construct the underlying Sql&#xA;    /// command&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;param name=&quot;serializer&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;param name=&quot;expression&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;returns&gt;&lt;/returns&gt;&#xA;    IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression);&#xA;}&#xA;</code></pre>
 <p>The <code>IMethodCallParser</code> interface needs to match on method expressions that it could parse, and be able to turn the Linq expression into
 part of a Postgresql &quot;where&quot; clause. The custom Linq parser for <code>IsBlue()</code> is shown below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public static bool IsBlue(this ColorTarget target)&#xD;&#xA;{&#xD;&#xA;    return target.Color == &quot;Blue&quot;;&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public static bool IsBlue(this ColorTarget target)&#xA;{&#xA;    return target.Color == &quot;Blue&quot;;&#xA;}&#xA;</code></pre>
 <p>Lastly, to plug in our new parser, we can add that to the <code>StoreOptions</code> object that we use to bootstrap a new <code>DocumentStore</code> as shown below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_with_custom_parser()&#xD;&#xA;{&#xD;&#xA;    using (var store = DocumentStore.For(_ =&gt;&#xD;&#xA;    {&#xD;&#xA;        _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;        // IsBlue is a custom parser I used for testing this&#xD;&#xA;        _.Linq.MethodCallParsers.Add(new IsBlue());&#xD;&#xA;        _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;    }))&#xD;&#xA;    {&#xD;&#xA;&#xD;&#xA;        store.Advanced.Clean.CompletelyRemoveAll();&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;        var targets = new List&lt;ColorTarget&gt;();&#xD;&#xA;        for (var i = 0; i &lt; 25; i&#x2B;&#x2B;)&#xD;&#xA;        {&#xD;&#xA;            targets.Add(new ColorTarget {Color = &quot;Blue&quot;});&#xD;&#xA;            targets.Add(new ColorTarget {Color = &quot;Green&quot;});&#xD;&#xA;            targets.Add(new ColorTarget {Color = &quot;Red&quot;});&#xD;&#xA;        }&#xD;&#xA;&#xD;&#xA;        var count = targets.Where(x =&gt; x.IsBlue()).Count();&#xD;&#xA;&#xD;&#xA;        targets.Each(x =&gt; x.Id = Guid.NewGuid());&#xD;&#xA;&#xD;&#xA;        store.BulkInsert(targets.ToArray());&#xD;&#xA;&#xD;&#xA;        using (var session = store.QuerySession())&#xD;&#xA;        {&#xD;&#xA;            session.Query&lt;ColorTarget&gt;().Where(x =&gt; x.IsBlue()).Count()&#xD;&#xA;                .ShouldBe(count);&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;[Fact]&#xA;public void query_with_custom_parser()&#xA;{&#xA;    using (var store = DocumentStore.For(_ =&gt;&#xA;    {&#xA;        _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;        // IsBlue is a custom parser I used for testing this&#xA;        _.Linq.MethodCallParsers.Add(new IsBlue());&#xA;        _.AutoCreateSchemaObjects = AutoCreate.All;&#xA;    }))&#xA;    {&#xA;&#xA;        store.Advanced.Clean.CompletelyRemoveAll();&#xA;&#xA;&#xA;        var targets = new List&lt;ColorTarget&gt;();&#xA;        for (var i = 0; i &lt; 25; i&#x2B;&#x2B;)&#xA;        {&#xA;            targets.Add(new ColorTarget {Color = &quot;Blue&quot;});&#xA;            targets.Add(new ColorTarget {Color = &quot;Green&quot;});&#xA;            targets.Add(new ColorTarget {Color = &quot;Red&quot;});&#xA;        }&#xA;&#xA;        var count = targets.Where(x =&gt; x.IsBlue()).Count();&#xA;&#xA;        targets.Each(x =&gt; x.Id = Guid.NewGuid());&#xA;&#xA;        store.BulkInsert(targets.ToArray());&#xA;&#xA;        using (var session = store.QuerySession())&#xA;        {&#xA;            session.Query&lt;ColorTarget&gt;().Where(x =&gt; x.IsBlue()).Count()&#xA;                .ShouldBe(count);&#xA;        }&#xA;    }&#xA;}&#xA;</code></pre>
 
 			      	</div>
 
@@ -119,7 +119,7 @@ part of a Postgresql &quot;where&quot; clause. The custom Linq parser for <code>
 
 			      	<nav>
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/advanced/hierarchies">Document Hierarchies</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/advanced/existing_transactions">Enlisting in Existing Transactions</a>
 
 				        </span>
 				        <span class="pull-right">

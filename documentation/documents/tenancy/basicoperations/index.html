@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -94,14 +94,14 @@
 <p>Once configured for multi-tenancy, Marten exposes it via sessions (<code>IQuerySession</code>, <code>IDocumentSession</code>) scoped to specific tenants, as well as various overloads to saving operations that accept a tenant identifier.</p>
 <h2 id="scoping-sessions-to-tenancy">Scoping Sessions to Tenancy</h2>
 <p>The following sample demonstrates scoping a document session to tenancy idenfitied as <em>tenant1</em>. With multi-tenancy enabled, the persisted <code>User</code> objects are then associated with the tenancy of the session.</p>
-<pre><code class="language-csharp">&#xD;&#xA;// Write some User documents to tenant &quot;tenant1&quot;&#xD;&#xA;using (var session = store.OpenSession(&quot;tenant1&quot;))&#xD;&#xA;{&#xD;&#xA;    session.Store(new User{UserName = &quot;Bill&quot;});&#xD;&#xA;    session.Store(new User{UserName = &quot;Lindsey&quot;});&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;// Write some User documents to tenant &quot;tenant1&quot;&#xA;using (var session = store.OpenSession(&quot;tenant1&quot;))&#xA;{&#xA;    session.Store(new User{UserName = &quot;Bill&quot;});&#xA;    session.Store(new User{UserName = &quot;Lindsey&quot;});&#xA;    session.SaveChanges();&#xA;}&#xA;</code></pre>
 <p>As with storing, the load operations respect tenancy of the session.</p>
-<pre><code class="language-csharp">&#xD;&#xA;// When you query for data from the &quot;tenant1&quot; tenant,&#xD;&#xA;// you only get data for that tenant&#xD;&#xA;using (var query = store.QuerySession(&quot;tenant1&quot;))&#xD;&#xA;{&#xD;&#xA;    query.Query&lt;User&gt;()&#xD;&#xA;        .Select(x =&gt; x.UserName)&#xD;&#xA;        .ToList()&#xD;&#xA;        .ShouldHaveTheSameElementsAs(&quot;Bill&quot;, &quot;Lindsey&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;// When you query for data from the &quot;tenant1&quot; tenant,&#xA;// you only get data for that tenant&#xA;using (var query = store.QuerySession(&quot;tenant1&quot;))&#xA;{&#xA;    query.Query&lt;User&gt;()&#xA;        .Select(x =&gt; x.UserName)&#xA;        .ToList()&#xA;        .ShouldHaveTheSameElementsAs(&quot;Bill&quot;, &quot;Lindsey&quot;);&#xA;}&#xA;</code></pre>
 <p>Lastly, unlike reading operations, <code>IDocumentSession.Store</code> offers an overload to explicitly pass in a tenant identifier, bypassing any tenancy associated with the session. Similar overload for tenancy exists for <code>IDocumentStore.BulkInsert</code>.</p>
 <h2 id="default-tenancy">Default Tenancy</h2>
 <p>With multi-tenancy enabled, Marten associates each record with a tenancy. If no explicit tenancy is specified, either via policies, mappings, scoped sessions or overloads, Marten will default to <code>Tenancy.DefaultTenantId</code> with a constant value of <em>*DEFAULT*</em>.</p>
 <p>The following sample demonstrates peristing two <code>User</code> objects under default tenancy, then querying them back in a session scoped to <em>Green</em> and <em>Red</em> tenancies.</p>
-<pre><code class="language-csharp">&#xD;&#xA;var greens = Target.GenerateRandomData(10).ToArray();&#xD;&#xA;var reds = Target.GenerateRandomData(11).ToArray();&#xD;&#xA;&#xD;&#xA;theStore.BulkInsert(&quot;Green&quot;, greens);&#xD;&#xA;theStore.BulkInsert(&quot;Red&quot;, reds);&#xD;&#xA;&#xD;&#xA;var user1 = new User {UserName = &quot;Frank&quot;};&#xD;&#xA;var user2 = new User {UserName = &quot;Bill&quot;};&#xD;&#xA;&#xD;&#xA;theStore.BulkInsert(new User[]{user1, user2});&#xD;&#xA;&#xD;&#xA;using (var green = theStore.QuerySession(&quot;Green&quot;))&#xD;&#xA;{&#xD;&#xA;    green.Query&lt;User&gt;().Count().ShouldBe(2);&#xD;&#xA;    green.Query&lt;Target&gt;().Count().ShouldBe(10);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;using (var red = theStore.QuerySession(&quot;Red&quot;))&#xD;&#xA;{&#xD;&#xA;    red.Query&lt;User&gt;().Count().ShouldBe(2);&#xD;&#xA;    red.Query&lt;Target&gt;().Count().ShouldBe(11);&#xD;&#xA;}&#xD;&#xA;</code></pre> 
+<pre><code class="language-csharp">&#xA;var greens = Target.GenerateRandomData(10).ToArray();&#xA;var reds = Target.GenerateRandomData(11).ToArray();&#xA;&#xA;theStore.BulkInsert(&quot;Green&quot;, greens);&#xA;theStore.BulkInsert(&quot;Red&quot;, reds);&#xA;&#xA;var user1 = new User {UserName = &quot;Frank&quot;};&#xA;var user2 = new User {UserName = &quot;Bill&quot;};&#xA;&#xA;theStore.BulkInsert(new User[]{user1, user2});&#xA;&#xA;using (var green = theStore.QuerySession(&quot;Green&quot;))&#xA;{&#xA;    green.Query&lt;User&gt;().Count().ShouldBe(2);&#xA;    green.Query&lt;Target&gt;().Count().ShouldBe(10);&#xA;}&#xA;&#xA;using (var red = theStore.QuerySession(&quot;Red&quot;))&#xA;{&#xA;    red.Query&lt;User&gt;().Count().ShouldBe(2);&#xA;    red.Query&lt;Target&gt;().Count().ShouldBe(11);&#xA;}&#xA;</code></pre> 
 
 			      	</div>
 

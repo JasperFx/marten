@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -97,10 +97,10 @@
 a document from the database just to turn around and delete it. Deletions are executed within the single database transaction when you call
 <code>IDocumentSession.SaveChanges()</code>.</p>
 <p>The usage is shown below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public void delete_documents(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    var user = new User();&#xD;&#xA;&#xD;&#xA;    session.Delete(user);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;&#xD;&#xA;    // OR&#xD;&#xA;&#xD;&#xA;    session.Delete(user.Id);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;} &#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public void delete_documents(IDocumentSession session)&#xA;{&#xA;    var user = new User();&#xA;&#xA;    session.Delete(user);&#xA;    session.SaveChanges();&#xA;&#xA;    // OR&#xA;&#xA;    session.Delete(user.Id);&#xA;    session.SaveChanges();&#xA;} &#xA;</code></pre>
 <h2 id="delete-by-linq-queries">Delete by Linq Queries</h2>
 <p>New for Marten v0.8 is the ability to delete any documents of a certain type meeting a Linq expression using the new <code>IDocumentSession.DeleteWhere&lt;T&gt;()</code> method:</p>
-<pre><code class="language-csharp">&#xD;&#xA;theSession.DeleteWhere&lt;Target&gt;(x =&gt; x.Double == 578);&#xD;&#xA;&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;theSession.DeleteWhere&lt;Target&gt;(x =&gt; x.Double == 578);&#xA;&#xA;theSession.SaveChanges();&#xA;</code></pre>
 <p>A couple things to note:</p>
 <ol>
 <li>The actual Sql command to delete documents by a query is not executed until <code>IDocumentSession.SaveChanges()</code> is called</li>

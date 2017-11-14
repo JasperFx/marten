@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -93,7 +93,7 @@
 			      		<!--title:Command Timeouts-->
 <p>By default, Marten just uses the underlying timeout configuration from the <a href="http://www.npgsql.org/doc/connection-string-parameters.html">Npgsql connection string</a>.
 You can though, opt to set a different command timeout per session with this syntax:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public void ConfigureCommandTimeout(IDocumentStore store)&#xD;&#xA;{&#xD;&#xA;    // Sets the command timeout for this session to 60 seconds&#xD;&#xA;    // The default is 30&#xD;&#xA;    using (var session = store.OpenSession(new SessionOptions {Timeout = 60}))&#xD;&#xA;    {&#xD;&#xA;                &#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public void ConfigureCommandTimeout(IDocumentStore store)&#xA;{&#xA;    // Sets the command timeout for this session to 60 seconds&#xA;    // The default is 30&#xA;    using (var session = store.OpenSession(new SessionOptions {Timeout = 60}))&#xA;    {&#xA;                &#xA;    }&#xA;}&#xA;</code></pre>
 
 			      	</div>
 

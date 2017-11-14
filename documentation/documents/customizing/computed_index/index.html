@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -102,13 +102,13 @@ to resort to a duplicated field for these types.
 <p>If you want to optimize a document type for searches on a certain field within the JSON body without
 incurring the potential cost of the duplicated field, you can take advantage of Postgresql's
 <a href="https://www.postgresql.org/docs/9.5/static/indexes-expressional.html">computed index feature</a> within Marten with this syntax:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates &#xD;&#xA;    _.Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);&#xD;&#xA;});&#xD;&#xA;&#xD;&#xA;        &#xD;&#xA;&#xD;&#xA;using (var session = store.QuerySession())&#xD;&#xA;{&#xD;&#xA;    // Postgresql will be able to use the computed&#xD;&#xA;    // index generated from above&#xD;&#xA;    var somebody = session.Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.UserName == &quot;somebody&quot;)&#xD;&#xA;        .FirstOrDefault();&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // This creates &#xA;    _.Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);&#xA;});&#xA;&#xA;        &#xA;&#xA;using (var session = store.QuerySession())&#xA;{&#xA;    // Postgresql will be able to use the computed&#xA;    // index generated from above&#xA;    var somebody = session.Query&lt;User&gt;()&#xA;        .Where(x =&gt; x.UserName == &quot;somebody&quot;)&#xA;        .FirstOrDefault();&#xA;}&#xA;</code></pre>
 <p>In the configuration shown above, Marten generates a database index in Postgresql:</p>
 <pre>
 CREATE INDEX mt_doc_user_idx_user_name ON public.mt_doc_user ((data ->> 'UserName'));
 </pre>
 <p>You can also create calculated indexes for deep or nested properties like this:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Inner.Color);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Inner.Color);&#xA;});&#xA;</code></pre>
 <p>The configuration above creates an index like this:</p>
 <pre>
 CREATE INDEX mt_doc_target_idx_inner_color ON public.mt_doc_target (((data -> 'Inner' ->> 'Color')::int));
@@ -116,7 +116,7 @@ CREATE INDEX mt_doc_target_idx_inner_color ON public.mt_doc_target (((data -> 'I
 <h2 id="customizing-a-calculated-index">Customizing a Calculated Index</h2>
 <p>You have some ability to customize the calculated index by passing a second Lambda <code>Action</code> into
 the <code>Index()</code> method as shown below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // The second, optional argument to Index()&#xD;&#xA;    // allows you to customize the calculated index&#xD;&#xA;    _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Number, x =&gt;&#xD;&#xA;    {&#xD;&#xA;        // Change the index method to &quot;brin&quot;&#xD;&#xA;        x.Method = IndexMethod.brin;&#xD;&#xA;&#xD;&#xA;        // Force the index to be generated with casing rules&#xD;&#xA;        x.Casing = ComputedIndex.Casings.Lower;&#xD;&#xA;&#xD;&#xA;        // Override the index name if you want&#xD;&#xA;        x.IndexName = &quot;mt_my_name&quot;;&#xD;&#xA;&#xD;&#xA;        // Toggle whether or not the index is concurrent&#xD;&#xA;        // Default is false&#xD;&#xA;        x.IsConcurrent = true;&#xD;&#xA;&#xD;&#xA;        // Toggle whether or not the index is a UNIQUE&#xD;&#xA;        // index&#xD;&#xA;        x.IsUnique = true;&#xD;&#xA;&#xD;&#xA;        // Partial index by supplying a condition&#xD;&#xA;        x.Where = &quot;(data -&gt;&gt; &#x27;Number&#x27;)::int &gt; 10&quot;;&#xD;&#xA;    });&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // The second, optional argument to Index()&#xA;    // allows you to customize the calculated index&#xA;    _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Number, x =&gt;&#xA;    {&#xA;        // Change the index method to &quot;brin&quot;&#xA;        x.Method = IndexMethod.brin;&#xA;&#xA;        // Force the index to be generated with casing rules&#xA;        x.Casing = ComputedIndex.Casings.Lower;&#xA;&#xA;        // Override the index name if you want&#xA;        x.IndexName = &quot;mt_my_name&quot;;&#xA;&#xA;        // Toggle whether or not the index is concurrent&#xA;        // Default is false&#xA;        x.IsConcurrent = true;&#xA;&#xA;        // Toggle whether or not the index is a UNIQUE&#xA;        // index&#xA;        x.IsUnique = true;&#xA;&#xA;        // Partial index by supplying a condition&#xA;        x.Where = &quot;(data -&gt;&gt; &#x27;Number&#x27;)::int &gt; 10&quot;;&#xA;    });&#xA;});&#xA;</code></pre>
 
 			      	</div>
 

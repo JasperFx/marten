@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -95,7 +95,7 @@
 <p>For the purpose of automated testing where you need to carefully control the state of the document storage, Marten supplies the
 <code>IDocumentCleaner</code> service to quickly remove persisted document state or even to completely tear down the entire document storage.</p>
 <p>This service is exposed as the <code>IDocumentStore.Advanced.Clean</code> property. You can see the usages of the document cleaner below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public void clean_out_documents(IDocumentStore store)&#xD;&#xA;{&#xD;&#xA;    // Completely remove all the database schema objects related&#xD;&#xA;    // to the User document type&#xD;&#xA;    store.Advanced.Clean.CompletelyRemove(typeof(User));&#xD;&#xA;&#xD;&#xA;    // Tear down and remove all Marten related database schema objects&#xD;&#xA;    store.Advanced.Clean.CompletelyRemoveAll();&#xD;&#xA;&#xD;&#xA;    // Deletes all the documents stored in a Marten database&#xD;&#xA;    store.Advanced.Clean.DeleteAllDocuments();&#xD;&#xA;&#xD;&#xA;    // Deletes all of the persisted User documents&#xD;&#xA;    store.Advanced.Clean.DeleteDocumentsFor(typeof(User));&#xD;&#xA;&#xD;&#xA;    // For cases where you may want to keep some document types,&#xD;&#xA;    // but eliminate everything else. This is here specifically to support&#xD;&#xA;    // automated testing scenarios where you have some static data that can&#xD;&#xA;    // be safely reused across tests&#xD;&#xA;    store.Advanced.Clean.DeleteDocumentsExcept(typeof(Company), typeof(User));&#xD;&#xA;} &#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public void clean_out_documents(IDocumentStore store)&#xA;{&#xA;    // Completely remove all the database schema objects related&#xA;    // to the User document type&#xA;    store.Advanced.Clean.CompletelyRemove(typeof(User));&#xA;&#xA;    // Tear down and remove all Marten related database schema objects&#xA;    store.Advanced.Clean.CompletelyRemoveAll();&#xA;&#xA;    // Deletes all the documents stored in a Marten database&#xA;    store.Advanced.Clean.DeleteAllDocuments();&#xA;&#xA;    // Deletes all of the persisted User documents&#xA;    store.Advanced.Clean.DeleteDocumentsFor(typeof(User));&#xA;&#xA;    // For cases where you may want to keep some document types,&#xA;    // but eliminate everything else. This is here specifically to support&#xA;    // automated testing scenarios where you have some static data that can&#xA;    // be safely reused across tests&#xA;    store.Advanced.Clean.DeleteDocumentsExcept(typeof(Company), typeof(User));&#xA;} &#xA;</code></pre>
 
 			      	</div>
 
