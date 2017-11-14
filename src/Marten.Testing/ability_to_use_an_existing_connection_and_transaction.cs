@@ -21,6 +21,7 @@ namespace Marten.Testing
             theStore.BulkInsertDocuments(targets);
         }
 
+#if NET46
         // SAMPLE: passing-in-existing-connections-and-transactions
         public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTransaction transaction)
         {
@@ -59,7 +60,8 @@ namespace Marten.Testing
                 });
             }
         }
-        // ENDSAMPLE
+        // ENDSAMPLE 
+#endif
 
 
 #if NET46 || NETCOREAPP2_0
