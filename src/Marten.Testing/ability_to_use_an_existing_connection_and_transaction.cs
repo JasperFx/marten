@@ -1,5 +1,8 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+#if NET46 || NETCOREAPP2_0
+using System.Transactions;
+#endif
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
@@ -18,11 +21,71 @@ namespace Marten.Testing
             theStore.BulkInsertDocuments(targets);
         }
 
+
+#if NET46 || NETCOREAPP2_0
         [Fact]
         public void enlist_in_transaction_scope()
         {
-                        
+
+            using (var scope = new TransactionScope())
+            {
+                using (var session = theStore.OpenSession(SessionOptions.ForCurrentTransaction()))
+                {
+                    session.Store(Target.Random(), Target.Random());
+                    session.SaveChanges();
+                }
+
+                // should not yet be committed
+                using (var session = theStore.QuerySession())
+                {
+                    session.Query<Target>().Count().ShouldBe(100);
+                }
+
+                scope.Complete();
+
+            }
+
+            // should be 2 additional targets
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<Target>().Count().ShouldBe(102);
+            }
         }
+
+        [Fact]
+        public void enlist_in_transaction_scope_by_transaction()
+        {
+
+            using (var scope = new TransactionScope())
+            {
+                using (var session = theStore.OpenSession(new SessionOptions
+                {
+                    DotNetTransaction = Transaction.Current
+                }))
+                {
+                    session.Store(Target.Random(), Target.Random());
+                    session.SaveChanges();
+                }
+
+                // should not yet be committed
+                using (var session = theStore.QuerySession())
+                {
+                    session.Query<Target>().Count().ShouldBe(100);
+                }
+
+                scope.Complete();
+
+            }
+
+            // should be 2 additional targets
+            using (var session = theStore.QuerySession())
+            {
+                session.Query<Target>().Count().ShouldBe(102);
+            }
+        }
+
+
+#endif
 
         [Fact]
         public void pass_in_current_connection_and_transaction()
@@ -64,47 +127,7 @@ namespace Marten.Testing
             }
         }
 
-        /*
-        [Fact]
-        public void enlist_in_transaction_scope()
-        {
-            var newTargets = Target.GenerateRandomData(5).ToArray();
-
-            using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
-            {   
-                conn.Open();
-                var tx = conn.BeginTransaction();
-
-
-                var cmd = conn.CreateCommand("delete from mt_doc_target");
-                cmd.Transaction = tx;
-                cmd.ExecuteNonQuery();
-
-
-                // To prove the isolation here
-                using (var query = theStore.QuerySession())
-                {
-                    query.Query<Target>().Count().ShouldBe(100);
-                }
-
-
-                using (var session = theStore.OpenSession(new SessionOptions
-                {
-                    Transaction = tx
-                }))
-                {
-                    session.Store(newTargets);
-                    session.SaveChanges();
-                }
-            }
-
-            // All the old should be gone, then the new put back on top
-            using (var query = theStore.QuerySession())
-            {
-                query.Query<Target>().Count().ShouldBe(5);
-            }
-        }
-        */
+        
 
         [Fact]
         public async Task pass_in_current_connection_and_transaction_async()

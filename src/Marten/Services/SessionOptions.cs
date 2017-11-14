@@ -21,12 +21,14 @@ namespace Marten.Services
         /// <summary>
         /// Default to IsolationLevel.ReadCommitted
         /// </summary>
-        public IsolationLevel IsolationLevel { get; set; } = IsolationLevel.ReadCommitted;
+        public System.Data.IsolationLevel IsolationLevel { get; set; } = System.Data.IsolationLevel.ReadCommitted;
 
         /// <summary>
         ///     Add, remove, or reorder local session listeners
         /// </summary>
         public readonly IList<IDocumentSessionListener> Listeners = new List<IDocumentSessionListener>();
+
+        
 
         /// <summary>
         /// Override the tenant id for the requested session
@@ -53,6 +55,63 @@ namespace Marten.Services
         /// but will **not** commit the transaction 
         /// </summary>
         public bool OwnsTransactionLifecycle { get; set; } = true;
+
+        /// <summary>
+        /// Enlist in the native Npgsql transaction and direct the session
+        /// *not* to own the transactional lifecycle
+        /// </summary>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
+        public static SessionOptions ForTransaction(NpgsqlTransaction transaction)
+        {
+            return new SessionOptions
+            {
+                Transaction = transaction,
+                OwnsTransactionLifecycle = false
+            };
+        }
+
+#if NET46 || NETSTANDARD2_0
+        private bool _enlistInAmbientTransactionScope = false;
+
+        /// <summary>
+        /// Enlist the session in the current, ambient transaction scope
+        /// </summary>
+        public bool EnlistInAmbientTransactionScope
+        {
+            get => _enlistInAmbientTransactionScope;
+            set
+            {
+                if (value)
+                {
+                    OwnsTransactionLifecycle = false;
+                    DotNetTransaction = System.Transactions.Transaction.Current;
+                }
+
+                _enlistInAmbientTransactionScope = value;
+            }
+        }
+
+        /// <summary>
+        /// Enlist the session in this transaction
+        /// </summary>
+        public System.Transactions.Transaction DotNetTransaction { get; set; }
+
+
+        /// <summary>
+        /// Open a session that enlists in the current, ambient TransactionScope
+        /// </summary>
+        /// <returns></returns>
+        public static SessionOptions ForCurrentTransaction()
+        {
+            return new SessionOptions
+            {
+                EnlistInAmbientTransactionScope = true,
+                OwnsTransactionLifecycle = false
+            };
+        }
+
+#endif
 
 
     }

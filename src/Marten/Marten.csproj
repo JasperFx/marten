@@ -43,5 +43,10 @@
     <Reference Include="System.Threading.Tasks" />
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Transactions" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <Reference Include="System.Transactions" />
   </ItemGroup>
 </Project>

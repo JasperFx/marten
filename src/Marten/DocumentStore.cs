@@ -13,6 +13,7 @@ using Marten.Services;
 using Marten.Storage;
 using Marten.Transforms;
 using Remotion.Linq.Parsing.Structure;
+using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten
 {
@@ -223,6 +224,24 @@ namespace Marten
 
             if (options.Transaction != null) options.Connection = options.Transaction.Connection;
 
+
+
+#if NET46 || NETSTANDARD2_0
+            if (options.Connection == null && options.DotNetTransaction != null)
+            {
+                var connection = tenant.CreateConnection();
+                connection.Open();
+                
+
+                options.Connection = connection;
+            }
+
+            if (options.DotNetTransaction != null)
+            {
+                options.Connection.EnlistTransaction(options.DotNetTransaction);
+                options.OwnsTransactionLifecycle = false;
+            }
+#endif
 
             if (options.Connection == null)
             {

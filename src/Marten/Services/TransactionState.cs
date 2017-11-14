@@ -57,7 +57,7 @@ namespace Marten.Services
 
         public void BeginTransaction()
         {
-            if (Transaction != null) return;
+            if (Transaction != null || _mode == CommandRunnerMode.External) return;
 
             if (_mode == CommandRunnerMode.Transactional || _mode == CommandRunnerMode.ReadOnly)
             {
