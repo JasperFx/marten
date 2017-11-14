@@ -21,6 +21,46 @@ namespace Marten.Testing
             theStore.BulkInsertDocuments(targets);
         }
 
+        // SAMPLE: passing-in-existing-connections-and-transactions
+        public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTransaction transaction)
+        {
+            // Use an existing connection, but Marten still controls the transaction lifecycle
+            var session1 = store.OpenSession(new SessionOptions
+            {
+                Connection = connection
+            });
+
+            // Enlist in an existing Npgsql transaction, but
+            // choose not to allow the session to own the transaction
+            // boundaries
+            var session2 = store.OpenSession(new SessionOptions
+            {
+                Transaction = transaction,
+                OwnsTransactionLifecycle = false
+            });
+
+            // This is syntactical sugar for the sample above
+            var session3 = store.OpenSession(SessionOptions.ForTransaction(transaction));
+
+
+            // Enlist in the current, ambient transaction scope
+            using (var scope = new TransactionScope())
+            {
+                var session4 = store.OpenSession(SessionOptions.ForCurrentTransaction());
+            }
+            
+            // or this is the long hand way of doing the options above
+            using (var scope = new TransactionScope())
+            {
+                var session5 = store.OpenSession(new SessionOptions
+                {
+                    EnlistInAmbientTransactionScope = true,
+                    OwnsTransactionLifecycle = false
+                });
+            }
+        }
+        // ENDSAMPLE
+
 
 #if NET46 || NETCOREAPP2_0
         [Fact]

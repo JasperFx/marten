@@ -22,8 +22,25 @@ namespace Marten.Testing
             theStore.Tenancy.Default.DbObjects.SchemaTables().Any(x => x.Name == "mt_fake_table")
                 .ShouldBeTrue();
         }
+
+        public void using_custom_feature_schema()
+        {
+            // SAMPLE: adding-schema-feature
+            var store = DocumentStore.For(_ =>
+            {
+                // Creates a new instance of FakeStorage and
+                // passes along the current StoreOptions
+                _.Storage.Add<FakeStorage>();
+                
+                // or
+                
+                _.Storage.Add(new FakeStorage(_));
+            });
+            // ENDSAMPLE
+        }
     }
 
+    // SAMPLE: creating-a-fake-schema-feature
     public class FakeStorage : FeatureSchemaBase
     {
         public FakeStorage(StoreOptions options) : base("fake", options)
@@ -38,4 +55,5 @@ namespace Marten.Testing
             yield return table;
         }
     }
+    // ENDSAMPLE
 }

@@ -11,6 +11,9 @@ using Npgsql;
 
 namespace Marten.Storage
 {
+    /// <summary>
+    /// Model a database table in Postgresql
+    /// </summary>
     public class Table : ISchemaObject, IEnumerable<TableColumn>
     {
         public readonly List<TableColumn> _columns = new List<TableColumn>();
