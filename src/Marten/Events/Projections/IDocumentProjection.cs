@@ -1,4 +1,7 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Marten.Events.Projections.Async;
 using Marten.Storage;
 
 namespace Marten.Events.Projections
@@ -13,10 +16,9 @@ namespace Marten.Events.Projections
 
     public abstract class DocumentProjection<T>
     {
-        public Type Produces => typeof(T);
-
+        public Type Produces => typeof(T);        
         public void EnsureStorageExists(ITenant tenant)
-        {
+        {            
             tenant.EnsureStorageExists(Produces);
         }
     }
