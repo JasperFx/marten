@@ -212,6 +212,13 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="document"></param>
         void Eject<T>(T document);
+
+        /// <summary>
+        /// Completely remove all the documents of given type from this session's unit of work tracking and identity map caching
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="type"></param>
+        void EjectAllOfType(Type type);
     }
 
     public interface ILoadByKeys<TDoc>
