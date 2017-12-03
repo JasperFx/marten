@@ -177,10 +177,7 @@ namespace Marten.Events.Projections.Async
 
         private void ensureStorageExists()
         {
-            if (_projection is IDocumentProjection)
-            {
-                _tenant.EnsureStorageExists(_projection.ProjectedType());
-            }
+            _projection.EnsureStorageExists(_tenant);            
         }
 
         public async Task Rebuild(CancellationToken token = new CancellationToken())
@@ -294,22 +291,25 @@ namespace Marten.Events.Projections.Async
         private async Task clearExistingState(CancellationToken token)
         {
             _logger.ClearingExistingState(this);
-
-            var tableName = _tenant.MappingFor(_projection.ProjectedType()).Table;
-            var sql =
-                $"delete from {_store.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
-
+            var types = _projection.ProjectedTypes();
+            
             using (var conn = _tenant.OpenConnection())
             {
-                await conn.ExecuteAsync(async (cmd, tkn) =>
+                foreach (var type in types)
                 {
-                    await cmd.Sql(sql)
-                        .With("name", _projection.ProjectedType().FullName)
-                        .ExecuteNonQueryAsync(tkn)
-                        .ConfigureAwait(false);
-                }, token).ConfigureAwait(false);
-            }
+                    var tableName = _tenant.MappingFor(type).Table;
+                    var sql =
+                        $"delete from {_store.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
 
+                    await conn.ExecuteAsync(async (cmd, tkn) =>
+                    {
+                        await cmd.Sql(sql)
+                            .With("name", type.FullName)
+                            .ExecuteNonQueryAsync(tkn)
+                            .ConfigureAwait(false);
+                    }, token);
+                }                
+            }
             LastEncountered = 0;
         }
     }
