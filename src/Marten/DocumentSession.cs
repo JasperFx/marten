@@ -298,10 +298,11 @@ namespace Marten
 
             var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency);
             var changes = _unitOfWork.ApplyChanges(batch);
+            EjectPatchedTypes(changes);
 
             try
             {
-                _connection.Commit();
+                _connection.Commit();                
                 IdentityMap.ClearChanges();
             }           
             catch (Exception)
@@ -335,12 +336,12 @@ namespace Marten
 
             var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency);
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
-
+            EjectPatchedTypes(changes);
 
             try
             {
                 await _connection.CommitAsync(token).ConfigureAwait(false);
-                IdentityMap.ClearChanges();
+                IdentityMap.ClearChanges();                
             }
             catch (Exception)
             {
@@ -356,6 +357,15 @@ namespace Marten
             foreach (var listener in _sessionListeners)
             {
                 await listener.AfterCommitAsync(this, changes, token).ConfigureAwait(false);
+            }
+        }
+
+        private void EjectPatchedTypes(ChangeSet changes)
+        {
+            var patchedTypes = changes.Operations.OfType<PatchOperation>().Select(x => x.DocumentType).Distinct().ToArray();
+            foreach (var type in patchedTypes)
+            {
+                EjectAllOfType(type);
             }
         }
 
@@ -416,9 +426,12 @@ namespace Marten
             var id = Tenant.StorageFor<T>().Identity(document);
             IdentityMap.Remove<T>(id);
 
-            _unitOfWork.Eject(document);
+            _unitOfWork.Eject(document);            
+        }
 
-            
+        public void EjectAllOfType(Type type)
+        {
+            IdentityMap.RemoveAllOfType(type);
         }
 
         private void applyProjections()

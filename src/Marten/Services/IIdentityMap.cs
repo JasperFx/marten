@@ -13,6 +13,7 @@ namespace Marten.Services
         T Get<T>(object id, Type concreteType, TextReader json, Guid? version);
 
         void Remove<T>(object id);
+        void RemoveAllOfType(Type type);
 
         void Store<T>(object id, T entity, Guid? version = null);
 

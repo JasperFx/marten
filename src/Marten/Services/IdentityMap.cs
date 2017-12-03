@@ -56,6 +56,12 @@ namespace Marten.Services
             Cache[typeof(T)].TryRemove(id, out value);
         }
 
+        public void RemoveAllOfType(Type type)
+        {
+            if (Cache.Has(type))
+                Cache[type].Clear();
+        }
+
         public void Store<T>(object id, T entity, Guid? version = null)
         {
             if (version.HasValue)

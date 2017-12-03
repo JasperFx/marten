@@ -180,7 +180,7 @@ namespace Marten.Services
         {
             var changes = buildChangeSet(batch);
 
-            await batch.ExecuteAsync(token).ConfigureAwait(false);
+            await batch.ExecuteAsync(token).ConfigureAwait(false);            
 
             ClearChanges(changes.Changes);
 

@@ -35,6 +35,11 @@ namespace Marten.Services
             // nothing
         }
 
+        public void RemoveAllOfType(Type type)
+        {
+            // nothing
+        }
+
         public void Store<T>(object id, T entity, Guid? version = null)
         {
             if (version.HasValue)
