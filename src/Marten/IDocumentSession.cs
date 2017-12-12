@@ -143,6 +143,11 @@ namespace Marten
         /// </summary>
         ConcurrencyChecks Concurrency { get; }
 
+        /// <summary>
+        /// Writeable list of the listeners for this session
+        /// </summary>
+        IList<IDocumentSessionListener> Listeners { get; }
+
 
         /// <summary>
         /// Patch a single document of type T with the given id

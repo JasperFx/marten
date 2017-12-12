@@ -19,14 +19,13 @@ namespace Marten
     {
         private readonly IManagedConnection _connection;
         private readonly UnitOfWork _unitOfWork;
-        private readonly IList<IDocumentSessionListener> _sessionListeners;
 
         public DocumentSession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, ITenant tenant, ConcurrencyChecks concurrency, IList<IDocumentSessionListener> localListeners)
             : base(store, connection, parser, identityMap, tenant)
 
         {
             _connection = connection;
-            _sessionListeners = _store.Options.Listeners.Concat(localListeners).ToList();
+            Listeners = _store.Options.Listeners.Concat(localListeners).ToList();
 
             IdentityMap = identityMap;
             Concurrency = concurrency;
@@ -40,6 +39,8 @@ namespace Marten
 
             Events = new EventStore(this, _store, _connection, _unitOfWork, tenant);
         }
+
+        public IList<IDocumentSessionListener> Listeners { get; }
 
         // This is here for testing purposes, not part of IDocumentSession
         public IIdentityMap IdentityMap { get; }
@@ -294,8 +295,11 @@ namespace Marten
 
             applyProjections();
 
-            _sessionListeners.Each(x => x.BeforeSaveChanges(this));
-
+            foreach (var listener in Listeners)
+            {
+                listener.BeforeSaveChanges(this);
+            }
+            
             var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency);
             var changes = _unitOfWork.ApplyChanges(batch);
 
@@ -315,7 +319,10 @@ namespace Marten
 
             Logger.RecordSavedChanges(this, changes);
 
-            _sessionListeners.Each(x => x.AfterCommit(this, changes));
+            foreach (var listener in Listeners)
+            {
+                listener.AfterCommit(this, changes);
+            }
         }
 
         public async Task SaveChangesAsync(CancellationToken token)
@@ -328,7 +335,7 @@ namespace Marten
 
             await applyProjectionsAsync(token).ConfigureAwait(false);
 
-            foreach (var listener in _sessionListeners)
+            foreach (var listener in Listeners)
             {
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
             }
@@ -353,7 +360,7 @@ namespace Marten
 
             Logger.RecordSavedChanges(this, changes);
 
-            foreach (var listener in _sessionListeners)
+            foreach (var listener in Listeners)
             {
                 await listener.AfterCommitAsync(this, changes, token).ConfigureAwait(false);
             }
