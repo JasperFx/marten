@@ -84,12 +84,21 @@ namespace Marten.Schema
             documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
 
             documentType.GetProperties()
-                .Where(x => TypeMappings.HasTypeMapping(x.PropertyType))
+                .Where(x => !x.HasAttribute<DuplicateFieldAttribute>() && TypeMappings.HasTypeMapping(x.PropertyType))
                 .Each(prop => { prop.ForAttribute<MartenAttribute>(att => att.Modify(this, prop)); });
 
             documentType.GetFields()
-                .Where(x => TypeMappings.HasTypeMapping(x.FieldType))
+                .Where(x => !x.HasAttribute<DuplicateFieldAttribute>() && TypeMappings.HasTypeMapping(x.FieldType))
                 .Each(fieldInfo => { fieldInfo.ForAttribute<MartenAttribute>(att => att.Modify(this, fieldInfo)); });
+
+            // DuplicateFieldAttribute does not require TypeMappings check
+            documentType.GetProperties()
+                .Where(x => x.HasAttribute<DuplicateFieldAttribute>())
+                .Each(prop => { prop.ForAttribute<DuplicateFieldAttribute>(att => att.Modify(this, prop)); });
+
+            documentType.GetFields()
+                .Where(x => x.HasAttribute<DuplicateFieldAttribute>())
+                .Each(fieldInfo => { fieldInfo.ForAttribute<DuplicateFieldAttribute>(att => att.Modify(this, fieldInfo)); });
         }
 
         public bool UseOptimisticConcurrency { get; set; } = false;
