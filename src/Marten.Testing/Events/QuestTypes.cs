@@ -91,6 +91,22 @@ namespace Marten.Testing.Events
             return $"Members {Members.Join(", ")} departed at {Location} on Day {Day}";
         }
     }
+
+    public class MembersEscaped
+    {
+        public Guid Id { get; set; }
+
+        public Guid QuestId { get; set; }
+
+        public string Location { get; set; }
+
+        public string[] Members { get; set; }
+
+        public override string ToString()
+        {
+            return $"Members {Members.Join(", ")} escaped from {Location}";
+        }
+    }
     // ENDSAMPLE
 
     public class Issue

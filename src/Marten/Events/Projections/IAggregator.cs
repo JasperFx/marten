@@ -14,6 +14,7 @@ namespace Marten.Events.Projections
     {
         IAggregation<T, TEvent> AggregatorFor<TEvent>();
         T Build(IEnumerable<IEvent> events, IDocumentSession session);
+        T Build(IEnumerable<IEvent> events, IDocumentSession session, T state);
 
         Type[] EventTypes { get; }
     }

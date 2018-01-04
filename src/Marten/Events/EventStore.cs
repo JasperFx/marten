@@ -204,13 +204,13 @@ namespace Marten.Events
             return _connection.FetchAsync(handler, null, null, _tenant, token);
         }
 
-        public T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new()
+        public T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null, T state = null) where T : class, new()
         {
             ensureAsGuidStorage();
 
             var inner = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp);
             var aggregator = _store.Events.AggregateFor<T>();
-            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
+            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
             var aggregate = _connection.Fetch(handler, null, null, _tenant);
 
@@ -222,13 +222,13 @@ namespace Marten.Events
         }
 
         public async Task<T> AggregateStreamAsync<T>(Guid streamId, int version = 0, DateTime? timestamp = null,
-            CancellationToken token = new CancellationToken()) where T : class, new()
+            T state = null, CancellationToken token = new CancellationToken()) where T : class, new()
         {
             ensureAsGuidStorage();
 
             var inner = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp);
             var aggregator = _store.Events.AggregateFor<T>();
-            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
+            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
             var aggregate = await _connection.FetchAsync(handler, null, null, _tenant, token).ConfigureAwait(false);
 
@@ -239,13 +239,13 @@ namespace Marten.Events
             return aggregate;
         }
 
-        public T AggregateStream<T>(string streamKey, int version = 0, DateTime? timestamp = null) where T : class, new()
+        public T AggregateStream<T>(string streamKey, int version = 0, DateTime? timestamp = null, T state = null) where T : class, new()
         {
             ensureAsStringStorage();
 
             var inner = new EventQueryHandler<string>(_selector, streamKey, version, timestamp);
             var aggregator = _store.Events.AggregateFor<T>();
-            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
+            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
             var aggregate = _connection.Fetch(handler, null, null, _tenant);
 
@@ -257,13 +257,13 @@ namespace Marten.Events
         }
 
         public async Task<T> AggregateStreamAsync<T>(string streamKey, int version = 0, DateTime? timestamp = null,
-            CancellationToken token = new CancellationToken()) where T : class, new()
+            T state = null, CancellationToken token = new CancellationToken()) where T : class, new()
         {
             ensureAsStringStorage();
 
             var inner = new EventQueryHandler<string>(_selector, streamKey, version, timestamp);
             var aggregator = _store.Events.AggregateFor<T>();
-            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session);
+            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
             var aggregate = await _connection.FetchAsync(handler, null, null, _tenant, token).ConfigureAwait(false);
 
