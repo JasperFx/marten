@@ -79,7 +79,7 @@ namespace Marten.Testing.Events.Projections
             theSession.SaveChanges();
 
             var document2 = theSession.Load<PersistedView>(streamId);
-            document.Events.Count.ShouldBe(3);
+            document2.Events.Count.ShouldBe(3);
 
             logger.Logs.Count.ShouldBe(1);
         }
