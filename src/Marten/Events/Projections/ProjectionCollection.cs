@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+using System.Reflection;
+
 namespace Marten.Events.Projections
 {
     public class ProjectionCollection : IEnumerable<IProjection>
@@ -66,7 +68,7 @@ namespace Marten.Events.Projections
 
             if (lazyLoadedProjection == null) throw new ArgumentNullException(nameof(lazyLoadedProjection));
 
-            if (typeof(T).IsAssignableFrom(typeof(IDocumentProjection)))
+            if (typeof(T).GetTypeInfo().IsAssignableFrom(typeof(IDocumentProjection).GetTypeInfo()))
             {
                 _options.Storage.MappingFor(lazyLoadedProjection.ProjectedType());
             }

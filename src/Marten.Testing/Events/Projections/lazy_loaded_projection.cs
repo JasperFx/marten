@@ -38,7 +38,7 @@ namespace Marten.Testing.Events.Projections
                 ProjectEvent<QuestPaused>(@event => @event.QuestId, LogAndPersist);
             }
 
-            public PersistViewProjectionWithInjection(Logger logger)
+            public PersistViewProjectionWithInjection(Logger logger) : this()
             {
                 this.logger = logger;
             }
