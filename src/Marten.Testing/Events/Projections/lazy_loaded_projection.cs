@@ -57,7 +57,7 @@ namespace Marten.Testing.Events.Projections
         private QuestPaused paused = new QuestPaused { QuestId = streamId, Name = "Find the Orb" };
 
         [Fact]
-        public async void from_projection()
+        public void from_projection()
         {
             var logger = new Logger();
 
