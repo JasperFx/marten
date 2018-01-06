@@ -40,6 +40,7 @@ namespace Marten.Testing.Events.Projections
 
             public PersistViewProjectionWithInjection(Logger logger)
             {
+                this.logger = logger;
             }
 
             private void LogAndPersist<T>(PersistedView view, T @event)
