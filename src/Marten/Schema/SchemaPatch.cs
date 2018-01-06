@@ -163,7 +163,6 @@ namespace Marten.Schema
                     throw new InvalidOperationException($"Marten cannot apply updates in CreateOnly mode to existing items {updates.Select(x => x.SchemaObject.Identifier.QualifiedName).Join(", ")}");
                 }
             }
-            
         }
 
         
@@ -203,8 +202,6 @@ namespace Marten.Schema
             }
 
             AssertPatchingIsValid(autoCreate);
-
-
         }
 
         private void apply(ISchemaObject schemaObject, AutoCreate autoCreate, DbDataReader reader)

@@ -2,6 +2,7 @@ using System;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -26,6 +27,8 @@ namespace Marten.Schema
         private readonly DocumentMapping _mapping;
         private readonly DbObjectName _upsertName;
         private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string> _sprocWriter;
+        private readonly Action<T, Guid> _setVersion = (x, v) => { };
+
 
         public DocumentStorage(ISerializer serializer, DocumentMapping mapping)
         {
@@ -64,7 +67,19 @@ namespace Marten.Schema
                 DeleteByIdSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where id = ?";
                 DeleteByWhereSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where ?";
             }
+
+            if (mapping.VersionMember is FieldInfo)
+            {
+                _setVersion = LambdaBuilder.SetField<T, Guid>(mapping.VersionMember.As<FieldInfo>());
+            }
+
+            if (mapping.VersionMember is PropertyInfo)
+            {
+                _setVersion = LambdaBuilder.SetProperty<T, Guid>(mapping.VersionMember.As<PropertyInfo>());
+            }
         }
+
+        public Type TopLevelBaseType => DocumentType;
 
         public string DeleteByWhereSql { get; }
 
@@ -234,17 +249,24 @@ namespace Marten.Schema
             var newVersion = CombGuidIdGeneration.NewGuid();
             var currentVersion = batch.Versions.Version<T>(Identity(entity));
 
+            // Set the current version
+            _setVersion(entity.As<T>(), newVersion);
+
             ICallback callback = null;
             IExceptionTransform exceptionTransform = null;
             var sprocName = determineDbObjectName(updateStyle, batch);
 
             var tenantId = tenantIdOverride ?? batch.TenantId;
 
-            if (_mapping.UseOptimisticConcurrency && batch.Concurrency == ConcurrencyChecks.Enabled)
+            if (_mapping.UseOptimisticConcurrency)
             {
-                callback = new OptimisticConcurrencyCallback<T>(Identity(entity), batch.Versions, newVersion,
-                    currentVersion);
+                Action<Guid> setVersion = version => _setVersion(entity.As<T>(), version);
+
+                callback = new OptimisticConcurrencyCallback<T>(batch.Concurrency, Identity(entity), batch.Versions, newVersion,
+                    currentVersion, setVersion);
             }
+
+            
 
             if (!_mapping.UseOptimisticConcurrency && updateStyle == UpdateStyle.Update)
             {                

@@ -4,6 +4,7 @@ using Marten.Storage;
 
 namespace Marten.Events
 {
+	// SAMPLE: AppendEventFunction
     public class AppendEventFunction : Function
     {
         private readonly EventGraph _events;
@@ -79,4 +80,5 @@ $$ LANGUAGE plpgsql;
             return $"drop function if exists {Identifier} ({streamIdType}, varchar, varchar, uuid[], varchar[], jsonb[])";
         }
     }
+	// ENDSAMPLE
 }

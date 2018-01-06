@@ -4,6 +4,7 @@ GEM
     rake (10.0.0)
 
 PLATFORMS
+  ruby
   x86-mingw32
 
 DEPENDENCIES
@@ -11,4 +12,4 @@ DEPENDENCIES
   rake (= 10.0.0)
 
 BUNDLED WITH
-   1.12.5
+   1.14.6

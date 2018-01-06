@@ -8,6 +8,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Transforms;
+using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten
 {

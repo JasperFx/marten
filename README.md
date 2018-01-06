@@ -1,55 +1,90 @@
-# Marten _Postgresql as a Document Database and Event Store for .Net Applications_
+# Marten 
+## Polyglot Persistence Powered by .NET and PostgreSQL
 
 [![Join the chat at https://gitter.im/JasperFx/Marten](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JasperFx/Marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/jasperfx/marten?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten)
 [![Linux Build status](https://api.travis-ci.org/JasperFx/marten.svg)](https://travis-ci.org/JasperFx/marten)
 [![Nuget Package](https://img.shields.io/nuget/v/Marten.svg?style=flat)](https://www.nuget.org/packages/Marten/)
 
-Hey, we're just getting started, but there'll be stuff here soon. Check the issue list as quasi-roadmap and feel free to jump into the Gitter room linked above.
-See this blog post http://jeremydmiller.com/2015/10/21/postgresql-as-a-document-db-for-net-development/ for more information
+![marten logo](http://jasperfx.github.io/marten/content/images/banner.png)
+
+
+The Marten library provides .NET developers with the ability to use the proven [PostgreSQL database engine](http://www.postgresql.org/) and its [fantastic JSON support](https://www.compose.io/articles/is-postgresql-your-next-json-database/) as a fully fledged [document database](https://en.wikipedia.org/wiki/Document-oriented_database). The Marten team believes that a document database has far reaching benefits for developer productivity over relational databases with or without an ORM tool.
+
+Marten also provides .NET developers with an ACID-compliant event store with user-defined projections against event streams.
 
 ## Working with the Code
 
-Like I said, it's way, way early and this should get smoother later. For now, you'll need to have access to a Postgresql **9.5** server and a database. After cloning the code, set the environment variable `marten-testing-database` to the connection string for the Postgresql database you want to use as a testbed. See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about postgresql connection strings.
+Before getting started you will need the following in your environment:
 
-You will also need to enable the PLV8 extension inside of Postgresql for running Javascript stored procedures for the nascent projection support. See
-[this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries for PLV8 running on Windows. Just drop the folder structure from that download into your main Postgresql installation folder (`c:\program files\postgresql\9.5` on my box). Once the binaries are copied in, run the command `CREATE EXTENSION PLV8;` in your Postgresql database. 
-If you have any trouble with PLV8, please feel free to ask for help in the Gitter room.
+* Access to a PostgreSQL **9.5+** database.
+* An environment variable of `marten_testing_database` set to the connection string for the database you want to use as a testbed. (See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about PostgreSQL connection strings )
+* You will also need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support. See
+[this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries for PLV8 running on Windows
+* Ensure you have installed [.NET Core SDK 2.0](https://www.microsoft.com/net/download/core)
+* Once you have the codebase and the connection string file, run the rake script or use the dotnet CLI to restore and build the solution.
 
+You are now ready to contribute to Marten.
 
-Once you have the codebase and the connection.txt file, either:
+### Tooling
 
-* Run the rake script
-* From a command line at the root of the codebase, run `paket restore` to fetch all the nuget dependencies
+* Unit Tests rely on [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly)
+* Rake is used for build automation. _It is not mandatory for development_.
+* [Node.js](https://nodejs.org/en/) runs our Mocha specs.
+* [Storyteller](http://storyteller.github.io) for some of the data intensive automated tests
 
-From there, open Visual Studio.Net or whatever editor you prefer and go to town.
+### Mocha Specs
 
-## Tooling
-
-We're using [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly) for unit testing and [paket](https://fsprojects.github.io/Paket/) for improved Nuget workflow. We're using rake for build automation, but it's not mandatory for development.
-
-## Mocha Specs
-
-To run the mocha tests on the little bit of custom Javascript for Marten, you will also need some version of Node.js that at least supports arrow function
-syntax (I'm using Node.js 4.*). Use `rake mocha` or `npm install` once, then `npm run test`. There is also `npm run tdd` to run the mocha specifications
+To run mocha tests use `rake mocha` or `npm run test`. There is also `npm run tdd` to run the mocha specifications
 in a watched mode with growl turned on. 
 
-## Storyteller Specs
+> Note: remember to run `npm install`
 
-We're also using [Storyteller](http://storyteller.github.io) for some of the very data intensive automated tests. To open the Storyteller editor, use the command `rake open_st` from the command line or `rake storyeller` to run the Storyteller specs. If you don't want to use rake, you can launch the
+### Storyteller Specs
+
+To open the Storyteller editor, use the command `rake open_st` from the command line or `rake storyeller` to run the Storyteller specs. If you don't want to use rake, you can launch the
 Storyteller editor *after compiling the solution* by the command `packages\storyteller\tools\st.exe open src/Marten.Testing`.
 
-## Documentation
+### Documentation
 
-The documentation website for Marten is authored with [Storyteller's documentation generation feature](http://storyteller.github.io/documentation/docs/). The actual content is the markdown files in the `/documentation` directory directly under the project root. To quickly run the documentation website locally with auto-refresh (it's not perfect since it does rely on .Net's FileSystemWatcher), either use the rake task `rake docs` or there is a new batch script named `run-docs.cmd`. 
+The documentation content is the markdown files in the `/documentation` directory directly under the project root. To run the documentation website locally with auto-refresh, either use the rake task `rake docs` or the batch script named `run-docs.cmd`. 
 
-If you wish to insert code samples to a documentation page from the tests,
-you'll need to wrap the code you wish to insert with
+If you wish to insert code samples to a documentation page from the tests, wrap the code you wish to insert with
 `// SAMPLE: name-of-sample` and `// ENDSAMPLE`.
 Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
 
-The content is kept in the main Marten GitHub repository, but the published documentation is done by running the `publish-docs.cmd` command and pushing the generated static HTML to the gh-pages branch of Marten.  
+> Note: content is published to the `gh-pages` branch of this repository by running the `publish-docs.cmd` command.
 
+### Rake Commands
 
+```
+# run restore, build and test
+rake
 
+# run all tests including mocha tests
+rake test
 
+# running documentation website locally
+rake docs
+```
+
+### DotNet CLI Commands
+
+```
+# restore nuget libraries
+dotnet restore src\Marten.sln
+
+# build solution
+dotnet build src\Marten.sln
+
+# running tests for a specific target framework
+dotnet test src\Marten.Testing\Marten.Testing.csproj --framework netcoreapp2.0
+
+# mocha tests
+npm install
+npm run test
+
+# running documentation website locally
+dotnet restore docs.csproj
+dotnet stdocs run
+```

@@ -23,7 +23,14 @@ namespace Marten.Linq
 
         public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            return _serializer.FromJson<T>(reader.GetTextReader(0));
+            if (!typeof(T).IsSimple())
+            {
+                var json = reader.As<DbDataReader>().GetTextReader(0);
+                return _serializer.FromJson<T>(json);
+            }
+
+
+            return reader.GetFieldValue<T>(0);
         }
 
         public async Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)

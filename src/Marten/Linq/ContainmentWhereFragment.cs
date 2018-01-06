@@ -13,17 +13,19 @@ namespace Marten.Linq
     public class ContainmentWhereFragment : IWhereFragment
     {
         private readonly IDictionary<string, object> _dictionary;
+        private readonly string _wherePrefix;
         private readonly ISerializer _serializer;
 
 
-        public ContainmentWhereFragment(ISerializer serializer, IDictionary<string, object> dictionary)
+        public ContainmentWhereFragment(ISerializer serializer, IDictionary<string, object> dictionary, string wherePrefix = null)
         {
             _serializer = serializer;
             _dictionary = dictionary;
+            _wherePrefix = wherePrefix;
         }
 
-        public ContainmentWhereFragment(ISerializer serializer, BinaryExpression binary)
-            : this(serializer, new Dictionary<string, object>())
+        public ContainmentWhereFragment(ISerializer serializer, BinaryExpression binary, string wherePrefix = null)
+            : this(serializer, new Dictionary<string, object>(), wherePrefix)
         {
             CreateDictionaryForSearch(binary, _dictionary);
         }
@@ -34,7 +36,7 @@ namespace Marten.Linq
             var param = builder.AddParameter(json);
             param.NpgsqlDbType = NpgsqlDbType.Jsonb;
 
-            builder.Append("d.data @> :");
+            builder.Append($"{_wherePrefix}d.data @> :");
             builder.Append(param.ParameterName);
         }
 

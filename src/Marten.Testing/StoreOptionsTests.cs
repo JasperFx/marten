@@ -16,6 +16,14 @@ namespace Marten.Testing
     public class StoreOptionsTests
     {
         [Fact]
+        public void CannotBuildStoreWithoutConnection()
+        {
+            var e = Assert.Throws<InvalidOperationException>(() => DocumentStore.For(_ => { }));
+
+            Assert.Contains("Tenancy not specified", e.Message);
+        }
+
+        [Fact]
         public void PLV8Enabled_is_true_by_default()
         {
             new StoreOptions().PLV8Enabled.ShouldBeTrue();
@@ -100,6 +108,7 @@ namespace Marten.Testing
         {
             public TenancyStyle TenancyStyle { get; }
             public Type DocumentType { get; } = typeof (User);
+            public Type TopLevelBaseType => DocumentType;
             public NpgsqlDbType IdType { get; }
             public NpgsqlCommand LoaderCommand(object id)
             {
@@ -171,6 +180,7 @@ namespace Marten.Testing
         {
             public TenancyStyle TenancyStyle { get; }
             public Type DocumentType { get; } = typeof (Company);
+            public Type TopLevelBaseType { get; } = typeof(Company);
             public NpgsqlDbType IdType { get; }
             public NpgsqlCommand LoaderCommand(object id)
             {

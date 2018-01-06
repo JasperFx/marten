@@ -27,7 +27,7 @@ namespace Marten.CommandLine.Commands.Patch
             }
             catch (SchemaValidationException)
             {
-                var patch = store.Schema.ToPatch(input.SchemaFlag);
+                var patch = store.Schema.ToPatch(input.SchemaFlag, withAutoCreateAll: true);
 
                 input.WriteLine(ConsoleColor.Green, "Wrote a patch file to " + input.FileName);
                 patch.WriteUpdateFile(input.FileName);

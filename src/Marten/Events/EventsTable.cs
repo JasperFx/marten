@@ -3,6 +3,7 @@ using Marten.Storage;
 
 namespace Marten.Events
 {
+    // SAMPLE: EventsTable
     public class EventsTable : Table
     {
         public EventsTable(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, "mt_events"))
@@ -23,4 +24,5 @@ namespace Marten.Events
             Constraints.Add("CONSTRAINT pk_mt_events_id_unique UNIQUE(id)");
         }
     }
+    // ENDSAMPLE
 }

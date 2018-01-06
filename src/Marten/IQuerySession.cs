@@ -250,5 +250,14 @@ namespace Marten
 
         ITenant Tenant { get; }
         ISerializer Serializer { get; }
+
+        /// <summary>
+        /// Retrieve the current known version of the given document
+        /// according to this session. Will return null if the document is
+        /// not part of this session
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        Guid? VersionFor<TDoc>(TDoc entity);
     }
 }

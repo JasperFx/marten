@@ -52,7 +52,7 @@ namespace Marten.Schema.Arguments
             }
         }
 
-        public override Expression CompileBulkImporter(EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, ParameterExpression tenantId)
+        public override Expression CompileBulkImporter(DocumentMapping mapping, EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, ParameterExpression tenantId)
         {
             var method = writeMethod.MakeGenericMethod(typeof(ArraySegment<char>));
             var dbType = Expression.Constant(DbType);

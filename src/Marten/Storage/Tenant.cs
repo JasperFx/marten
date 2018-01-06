@@ -133,18 +133,27 @@ namespace Marten.Storage
                         {
                             cmd.ExecuteNonQuery();
                             _options.Logger().SchemaChange(ddl);
-                            _checks[featureType] = true;
-                            if (feature.StorageType != featureType)
-                            {
-                                _checks[feature.StorageType] = true;
-                            }
+                            RegisterCheck(featureType, feature);
                         }
                         catch (Exception e)
                         {
                             throw new MartenCommandException(cmd, e);
                         }
                     }
+                    else if (patch.Difference == SchemaPatchDifference.None)
+                    {
+                        RegisterCheck(featureType, feature);
+                    }
                 }
+            }
+        }
+
+        private void RegisterCheck(Type featureType, IFeatureSchema feature)
+        {
+            _checks[featureType] = true;
+            if (feature.StorageType != featureType)
+            {
+                _checks[feature.StorageType] = true;
             }
         }
 

@@ -16,7 +16,7 @@ namespace Marten.Linq
             IEnumerable<WhereClause> wheres)
         {
             _separator = separator;
-            _children = wheres.Select(x => parser.ParseWhereFragment(mapping, x.Predicate)).ToArray();
+            _children = wheres.Select(x => parser.ParseWhereFragment(mapping, x.Predicate)).ToList();
         }
 
         public CompoundWhereFragment(string separator, params IWhereFragment[] children)

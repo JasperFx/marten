@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Marten.Services;
 using Xunit;
 
@@ -28,7 +28,7 @@ namespace Marten.Testing.Linq
 
             theSession.SaveChanges();
 
-            theSession.Query<Target>().Where(x => 1 > x.Number).ToArray()
+            theSession.Query<Target>().Where(x => 1 < x.Number).ToArray()
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(2);
         }

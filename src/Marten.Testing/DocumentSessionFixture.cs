@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using Marten.Services;
+using Xunit.Abstractions;
 
 namespace Marten.Testing
 {
@@ -25,6 +26,11 @@ namespace Marten.Testing
 
                 return theStore.DirtyTrackedSession();
             });          
+        }
+
+        protected DocumentSessionFixture(ITestOutputHelper output) : this()
+        {
+            _output = output;
         }
 
         protected IDocumentSession theSession => _session.Value;

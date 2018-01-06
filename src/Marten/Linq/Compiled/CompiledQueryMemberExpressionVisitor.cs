@@ -60,22 +60,42 @@ namespace Marten.Linq.Compiled
                     ParameterSetters.Add(new ConstantDbParameterSetter(true));
                 }
             }
-
-            return base.VisitUnary(node);
+			// This evaluation is added to support parameterized !Boolean queries
+			else if (node.NodeType == ExpressionType.Not && node.Operand is MemberExpression)
+            {
+	            var operand = (MemberExpression) node.Operand;
+	            if (operand.Type == typeof(bool) && operand.NodeType == ExpressionType.MemberAccess)
+	            {
+		            // Parameterized to :column <> True, instead of :column = False.
+		            ParameterSetters.Add(new ConstantDbParameterSetter(true));
+	            }
+            }
+			return base.VisitUnary(node);
         }
 
-        protected override Expression VisitMember(MemberExpression node)
+	    protected override Expression VisitMember(MemberExpression node)
         {
-            _lastMember = _mapping.FieldFor(new MemberInfo[] { node.Member });
+            _lastMember = _mapping.FieldFor(new[] { node.Member });
 
-            if (node.NodeType == ExpressionType.MemberAccess && node.Member.DeclaringType == _queryType)
+            if (node.NodeType != ExpressionType.MemberAccess || node.Member.DeclaringType != _queryType)
+                return base.VisitMember(node);
+
+            string methodName;
+            switch (node.Member)
             {
-                var property = (PropertyInfo)node.Member;
-
-                var method = GetType().GetMethod(nameof(CreateParameterSetter), BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(_queryType, property.PropertyType);
-                var result = (IDbParameterSetter)method.Invoke(this, new[] { property });
-                ParameterSetters.Add(result);
+                case PropertyInfo _:
+                    methodName = nameof(CreatePropertyParameterSetter);
+                    break;
+                case FieldInfo _:
+                    methodName = nameof(CreateFieldParameterSetter);
+                    break;
+                default:
+                    throw new NotSupportedException("Only Property or Field is supported for query parameter");
             }
+            var method = GetType()
+                .GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)
+                .MakeGenericMethod(_queryType);
+            ParameterSetters.Add((IDbParameterSetter) method.Invoke(this, new[] {node.Member}));
 
             return base.VisitMember(node);
         }
@@ -118,15 +138,24 @@ namespace Marten.Linq.Compiled
             }
         }
 
-        private IDbParameterSetter CreateParameterSetter<TObject, TProperty>(PropertyInfo property)
+        private IDbParameterSetter CreatePropertyParameterSetter<TObject>(PropertyInfo property)
         {
-            var getter = LambdaBuilder.GetProperty<TObject, object>(property);
-            if (property.PropertyType.GetTypeInfo().IsEnum && _serializer.EnumStorage == EnumStorage.AsString)
+            return CreateParameterSetter(property.PropertyType, LambdaBuilder.GetProperty<TObject, object>(property));
+        }
+
+        private IDbParameterSetter CreateFieldParameterSetter<TObject>(FieldInfo field)
+        {
+            return CreateParameterSetter(field.FieldType, LambdaBuilder.GetField<TObject, object>(field));
+        }
+
+        private IDbParameterSetter CreateParameterSetter<TObject>(Type type, Func<TObject, object> getter)
+        {
+            if (type.GetTypeInfo().IsEnum && _serializer.EnumStorage == EnumStorage.AsString)
             {
                 getter = o =>
                 {
                     var number = getter(o);
-                    return Enum.GetName(property.PropertyType, number);
+                    return Enum.GetName(type, number);
                 };
             }
 

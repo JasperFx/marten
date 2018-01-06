@@ -60,6 +60,25 @@ namespace Marten.Schema
 
         public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
+
+        public MemberInfo VersionMember
+        {
+            get => _versionMember;
+            set
+            {
+                if (value == null)
+                {
+                    UseOptimisticConcurrency = false;
+                }
+                else
+                {
+                    if (value.GetMemberType() != typeof(Guid)) throw new ArgumentOutOfRangeException(nameof(value), "The Version member has to be of type Guid");
+                    UseOptimisticConcurrency = true;
+                    _versionMember = value;
+                }
+            }
+        }
+
         private void applyAnyMartenAttributes(Type documentType)
         {
             documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
@@ -109,10 +128,15 @@ namespace Marten.Schema
 
         public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
         {
-            var extras = extraFilters(query).ToArray();
+            var extras = extraFilters(query).ToList();
 
-            return query.Append(extras);
+            if (extras.Count > 0)
+            {
+                extras.Add(query);
+                return new CompoundWhereFragment("and", extras.ToArray());
+            }
 
+            return query;
         }
 
         private IEnumerable<IWhereFragment> extraFilters(IWhereFragment query)
@@ -437,6 +461,7 @@ namespace Marten.Schema
         }
 
         private HiloSettings _hiloSettings;
+        private MemberInfo _versionMember;
 
         public HiloSettings HiloSettings
         {
@@ -467,7 +492,7 @@ namespace Marten.Schema
             var nameToAlias = documentType.Name;
             if (documentType.GetTypeInfo().IsGenericType)
             {
-                nameToAlias = _aliasSanitizer.Replace(documentType.GetPrettyName(), string.Empty);
+                nameToAlias = _aliasSanitizer.Replace(documentType.GetPrettyName(), string.Empty).Replace(",", "_");
             }
             var parts = new List<string> {nameToAlias.ToLower()};
             if (documentType.IsNested)

@@ -179,11 +179,14 @@ namespace Marten.Events
             get
             {
                 var eventsTable = new EventsTable(this);
+                
+                // SAMPLE: using-sequence
                 var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
                 {
                     Owner = eventsTable.Identifier,
                     OwnerColumn = "seq_id"
                 };
+                // ENDSAMPLE
 
                 return new ISchemaObject[]
                 {

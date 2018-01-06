@@ -356,5 +356,16 @@ namespace Marten.Testing.Storage
             ddl.ShouldContain("DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
             ddl.ShouldContain("CREATE TABLE public.mt_doc_user");
         }
+
+        [Fact]
+        public void invalid_document_should_throw_exception()
+        {
+            var docs = DocumentMapping.For<InvalidDocument>();
+
+            var ex =
+                Exception<InvalidDocumentException>.ShouldBeThrownBy(
+                    () => new DocumentTable(docs));
+            ex.Message.ShouldContain($"Could not determine an 'id/Id' field or property for requested document type {typeof(InvalidDocument).FullName}");
+        }
     }
 }

@@ -19,14 +19,13 @@ namespace Marten
     {
         private readonly IManagedConnection _connection;
         private readonly UnitOfWork _unitOfWork;
-        private readonly IList<IDocumentSessionListener> _sessionListeners;
 
         public DocumentSession(DocumentStore store, IManagedConnection connection, IQueryParser parser, IIdentityMap identityMap, ITenant tenant, ConcurrencyChecks concurrency, IList<IDocumentSessionListener> localListeners)
             : base(store, connection, parser, identityMap, tenant)
 
         {
             _connection = connection;
-            _sessionListeners = _store.Options.Listeners.Concat(localListeners).ToList();
+            Listeners = _store.Options.Listeners.Concat(localListeners).ToList();
 
             IdentityMap = identityMap;
             Concurrency = concurrency;
@@ -40,6 +39,8 @@ namespace Marten
 
             Events = new EventStore(this, _store, _connection, _unitOfWork, tenant);
         }
+
+        public IList<IDocumentSessionListener> Listeners { get; }
 
         // This is here for testing purposes, not part of IDocumentSession
         public IIdentityMap IdentityMap { get; }
@@ -294,14 +295,18 @@ namespace Marten
 
             applyProjections();
 
-            _sessionListeners.Each(x => x.BeforeSaveChanges(this));
-
+            foreach (var listener in Listeners)
+            {
+                listener.BeforeSaveChanges(this);
+            }
+            
             var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency);
             var changes = _unitOfWork.ApplyChanges(batch);
+            EjectPatchedTypes(changes);
 
             try
             {
-                _connection.Commit();
+                _connection.Commit();                
                 IdentityMap.ClearChanges();
             }           
             catch (Exception)
@@ -315,7 +320,10 @@ namespace Marten
 
             Logger.RecordSavedChanges(this, changes);
 
-            _sessionListeners.Each(x => x.AfterCommit(this, changes));
+            foreach (var listener in Listeners)
+            {
+                listener.AfterCommit(this, changes);
+            }
         }
 
         public async Task SaveChangesAsync(CancellationToken token)
@@ -328,19 +336,19 @@ namespace Marten
 
             await applyProjectionsAsync(token).ConfigureAwait(false);
 
-            foreach (var listener in _sessionListeners)
+            foreach (var listener in Listeners)
             {
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
             }
 
             var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency);
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
-
+            EjectPatchedTypes(changes);
 
             try
             {
                 await _connection.CommitAsync(token).ConfigureAwait(false);
-                IdentityMap.ClearChanges();
+                IdentityMap.ClearChanges();                
             }
             catch (Exception)
             {
@@ -353,9 +361,18 @@ namespace Marten
 
             Logger.RecordSavedChanges(this, changes);
 
-            foreach (var listener in _sessionListeners)
+            foreach (var listener in Listeners)
             {
                 await listener.AfterCommitAsync(this, changes, token).ConfigureAwait(false);
+            }
+        }
+
+        private void EjectPatchedTypes(ChangeSet changes)
+        {
+            var patchedTypes = changes.Operations.OfType<PatchOperation>().Select(x => x.DocumentType).Distinct().ToArray();
+            foreach (var type in patchedTypes)
+            {
+                EjectAllOfType(type);
             }
         }
 
@@ -410,7 +427,20 @@ namespace Marten
             assertNotDisposed();
             _unitOfWork.Add(storageOperation);
         }
-        
+
+        public void Eject<T>(T document)
+        {
+            var id = Tenant.StorageFor<T>().Identity(document);
+            IdentityMap.Remove<T>(id);
+
+            _unitOfWork.Eject(document);            
+        }
+
+        public void EjectAllOfType(Type type)
+        {
+            IdentityMap.RemoveAllOfType(type);
+        }
+
         private void applyProjections()
         {
             var eventPage = new EventPage(PendingChanges.Streams().ToArray());

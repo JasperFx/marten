@@ -22,5 +22,14 @@ namespace Marten.Events.Projections
         {
             return (projection as IDocumentProjection)?.Produces ?? projection.GetType();
         }
+
+        public static Type[] ProjectedTypes(this IProjection projection)
+        {
+            switch (projection)
+            {
+                case IDocumentsProjection documentsProjection: return documentsProjection.Produces;
+                default: return new[] {projection.ProjectedType()};
+            }
+        }
     }
 }

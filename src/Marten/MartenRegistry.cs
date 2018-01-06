@@ -358,6 +358,13 @@ namespace Marten
                 alter = m => m.IdStrategy = new IdentityKeyGeneration(m, m.HiloSettings);
                 return this;
             }
+
+
+            public DocumentMappingExpression<T> VersionedWith(Expression<Func<T, Guid>> memberExpression)
+            {
+                alter = m => m.VersionMember = FindMembers.Determine(memberExpression).Single();
+                return this;
+            }
         }
     }
 

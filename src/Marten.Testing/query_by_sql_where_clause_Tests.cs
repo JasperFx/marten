@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Marten.Linq.MatchesSql;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -24,6 +25,28 @@ namespace Marten.Testing
 
                 var firstnames =
                     session.Query<User>("where data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
+                           .Select(x => x.FirstName).ToArray();
+
+                firstnames.Length.ShouldBe(3);
+                firstnames[0].ShouldBe("Jeremy");
+                firstnames[1].ShouldBe("Lindsey");
+                firstnames[2].ShouldBe("Max");
+            }
+        }
+
+        [Fact]
+        public void query_ignores_case_of_where_keyword()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
+                session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
+                session.Store(new User { FirstName = "Max", LastName = "Miller" });
+                session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                session.SaveChanges();
+
+                var firstnames =
+                    session.Query<User>("WHERE data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
                            .Select(x => x.FirstName).ToArray();
 
                 firstnames.Length.ShouldBe(3);
@@ -179,6 +202,23 @@ namespace Marten.Testing
         }
         // ENDSAMPLE
 
+        // SAMPLE: query_with_matches_sql
+        [Fact]
+        public void query_with_matches_sql()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                var u = new User { FirstName = "Eric", LastName = "Smith" };
+                session.Store(u);
+                session.SaveChanges();
+
+                var user = session.Query<User>().Where(x => x.MatchesSql("data->> 'FirstName' = ?", "Eric")).Single();
+                user.LastName.ShouldBe("Smith");
+                user.Id.ShouldBe(u.Id);
+            }
+        }
+        // ENDSAMPLE
+
         [Fact]
         public void query_with_select_in_query()
         {
@@ -200,24 +240,25 @@ namespace Marten.Testing
 
         [Fact]
         public async Task query_with_select_in_query_async()
-        {
-            using (var session = theStore.OpenSession())
+        {	        
+			using (var session = theStore.OpenSession())
             {
                 var u = new User { FirstName = "Jeremy", LastName = "Miller" };
                 session.Store(u);
                 session.SaveChanges();
 
+                // SAMPLE: using-queryasync
                 var users =
                     await
                         session.QueryAsync<User>(
                                    "select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'")
                                .ConfigureAwait(false);
                 var user = users.Single();
+                // ENDSAMPLE
 
-                user.LastName.ShouldBe("Miller");
+				user.LastName.ShouldBe("Miller");
                 user.Id.ShouldBe(u.Id);
-            }
-            // ENDSAMPLE
+            }            
         }
     }
 }

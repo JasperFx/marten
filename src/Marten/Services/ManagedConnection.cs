@@ -9,7 +9,7 @@ using Npgsql;
 namespace Marten.Services
 {
     public class ManagedConnection : IManagedConnection
-    {        
+    {
         private readonly IConnectionFactory _factory;
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;
@@ -19,6 +19,18 @@ namespace Marten.Services
         public ManagedConnection(IConnectionFactory factory) : this(factory, CommandRunnerMode.AutoCommit)
         {
         }
+
+        public ManagedConnection(SessionOptions options, CommandRunnerMode mode)
+        {
+            _mode = options.OwnsTransactionLifecycle ? mode : CommandRunnerMode.External;
+            _isolationLevel = options.IsolationLevel;
+            _commandTimeout = options.Timeout;
+
+            var conn = options.Connection ?? options.Transaction?.Connection;
+
+            _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, conn, options.Transaction);
+        }
+
 
         // 30 is NpgsqlCommand.DefaultTimeout - ok to burn it to the call site?
         public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode,
@@ -39,13 +51,14 @@ namespace Marten.Services
             }
         }
 
-        private async Task buildConnectionAsync(CancellationToken token)
+        private Task buildConnectionAsync(CancellationToken token)
         {
             if (_connection == null)
             {
                 _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout);
-                await _connection.OpenAsync(token).ConfigureAwait(false);
+                return _connection.OpenAsync(token);
             }
+            return Task.CompletedTask;
         }
 
         public IMartenSessionLogger Logger { get; set; } = NulloMartenLogger.Flyweight;
@@ -54,6 +67,8 @@ namespace Marten.Services
 
         public void Commit()
         {
+            if (_mode == CommandRunnerMode.External) return;
+
             buildConnection();
 
             _connection.Commit();
@@ -64,6 +79,8 @@ namespace Marten.Services
 
         public async Task CommitAsync(CancellationToken token)
         {
+            if (_mode == CommandRunnerMode.External) return;
+
             await buildConnectionAsync(token).ConfigureAwait(false);
 
             await _connection.CommitAsync(token).ConfigureAwait(false);
@@ -75,6 +92,7 @@ namespace Marten.Services
         public void Rollback()
         {
             if (_connection == null) return;
+            if (_mode == CommandRunnerMode.External) return;
 
             try
             {
@@ -98,6 +116,7 @@ namespace Marten.Services
         public async Task RollbackAsync(CancellationToken token)
         {
             if (_connection == null) return;
+            if (_mode == CommandRunnerMode.External) return;
 
             try
             {
@@ -339,6 +358,7 @@ namespace Marten.Services
 
         public void Dispose()
         {
+            if (_mode == CommandRunnerMode.External) return;
             _connection?.Dispose();
         }
     }

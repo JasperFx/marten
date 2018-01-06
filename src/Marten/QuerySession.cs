@@ -39,6 +39,11 @@ namespace Marten
         }
 
         public ISerializer Serializer { get; }
+        public Guid? VersionFor<TDoc>(TDoc entity)
+        {
+            var id = _store.Storage.StorageFor(typeof(TDoc)).Identity(entity);
+            return _identityMap.Versions.Version<TDoc>(id);
+        }
 
         public IDocumentStore DocumentStore => _store;
 

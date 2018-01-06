@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
 using Marten.Linq.LastModified;
+using Marten.Linq.MatchesSql;
 using Marten.Linq.Parsing;
 using Marten.Linq.SoftDeletes;
 using Marten.Schema;
@@ -66,6 +67,7 @@ namespace Marten.Linq
             new StringEndsWith(),
             new StringStartsWith(),
             new StringEquals(),
+			new SimpleEqualsParser(),
 
             // Added
             new IsOneOf(),
@@ -87,64 +89,46 @@ namespace Marten.Linq
             new ModifiedSinceParser(),
             new ModifiedBeforeParser(),
 
+            // matches sql
+            new MatchesSqlParser(),
+
             // dictionaries
             new DictionaryExpressions()
         };
 
-        // TODO -- pull this out somewhere else
+        private static readonly object[] _supplementalParsers = new[]
+        {
+            new SimpleBinaryComparisonExpressionParser(), 
+        };
+
         private IWhereFragment buildSimpleWhereClause(IQueryableDocument mapping, BinaryExpression binary)
         {
             var isValueExpressionOnRight = binary.Right.IsValueExpression();
-            var jsonLocatorExpression = isValueExpressionOnRight ? binary.Left : binary.Right;
-            var valueExpression = isValueExpressionOnRight ? binary.Right : binary.Left;
-
-            var op = _operators[binary.NodeType];
-
+            
             var isSubQuery = isValueExpressionOnRight
                 ? binary.Left is SubQueryExpression
                 : binary.Right is SubQueryExpression;
 
             if (isSubQuery)
             {
+                var jsonLocatorExpression = isValueExpressionOnRight ? binary.Left : binary.Right;
+                var valueExpression = isValueExpressionOnRight ? binary.Right : binary.Left;
+
+                var op = _operators[binary.NodeType];
+
                 return buildChildCollectionQuery(mapping, jsonLocatorExpression.As<SubQueryExpression>().QueryModel, valueExpression, op);
             }
 
-            var members = FindMembers.Determine(jsonLocatorExpression);
+            var parser = _supplementalParsers.OfType<IExpressionParser<BinaryExpression>>()?.FirstOrDefault(x => x.Matches(binary));
 
-            var field = mapping.FieldFor(members);
-
-
-            var value = field.GetValue(valueExpression);
-            var jsonLocator = field.SqlLocator;
-
-            var useContainment = mapping.PropertySearching == PropertySearching.ContainmentOperator || field.ShouldUseContainmentOperator();
-
-            var isDuplicated = (mapping.FieldFor(members) is DuplicatedField);
-
-            if (useContainment &&
-                binary.NodeType == ExpressionType.Equal && value != null && !isDuplicated)
+            if (parser != null)
             {
-                return new ContainmentWhereFragment(_serializer, binary);
+                var where = parser.Parse(mapping, _serializer, binary);
+                
+                return where;
             }
 
-            
-
-            if (value == null)
-            {
-                var sql = binary.NodeType == ExpressionType.NotEqual
-                    ? $"({jsonLocator}) is not null"
-                    : $"({jsonLocator}) is null";
-
-                return new WhereFragment(sql);
-            }
-            if (jsonLocatorExpression.NodeType == ExpressionType.Modulo)
-            {
-                var moduloByValue = MartenExpressionParser.moduloByValue(binary);
-                return new WhereFragment("{0} % {1} {2} ?".ToFormat(jsonLocator, moduloByValue, op), value);
-            }
-
-
-            return new WhereFragment("{0} {1} ?".ToFormat(jsonLocator, op), value);
+            throw new NotSupportedException("Marten does not yet support this type of Linq query");
         }
 
         private IWhereFragment buildChildCollectionQuery(IQueryableDocument mapping, QueryModel query, Expression valueExpression, string op)
@@ -164,8 +148,7 @@ namespace Marten.Linq
 
         private static object moduloByValue(BinaryExpression binary)
         {
-            var moduloExpression = binary.Left as BinaryExpression;
-            var moduloValueExpression = moduloExpression?.Right as ConstantExpression;
+            var moduloValueExpression = binary?.Right as ConstantExpression;
             return moduloValueExpression != null ? moduloValueExpression.Value : 1;
         }
     }
