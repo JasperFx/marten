@@ -21,7 +21,7 @@ namespace Marten.Testing.Events.Projections
         public class QuestPaused
         {
             public string Name { get; set; }
-            public Guid Id { get; set; }
+            public Guid QuestId { get; set; }
 
             public override string ToString()
             {
@@ -35,7 +35,7 @@ namespace Marten.Testing.Events.Projections
 
             public PersistViewProjectionWithInjection() : base()
             {
-                ProjectEvent<QuestPaused>(@event => @event.Id, LogAndPersist);
+                ProjectEvent<QuestPaused>(@event => @event.QuestId, LogAndPersist);
             }
 
             public PersistViewProjectionWithInjection(Logger logger)
@@ -53,7 +53,7 @@ namespace Marten.Testing.Events.Projections
 
         private QuestStarted started = new QuestStarted { Id = streamId, Name = "Find the Orb" };
         private MembersJoined joined = new MembersJoined { QuestId = streamId, Day = 2, Location = "Faldor's Farm", Members = new[] { "Garion", "Polgara", "Belgarath" } };
-        private QuestPaused paused = new QuestPaused { Id = streamId, Name = "Find the Orb" };
+        private QuestPaused paused = new QuestPaused { QuestId = streamId, Name = "Find the Orb" };
 
         [Fact]
         public async void from_projection()
