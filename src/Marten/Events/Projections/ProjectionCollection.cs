@@ -66,7 +66,7 @@ namespace Marten.Events.Projections
 
             if (lazyLoadedProjection == null) throw new ArgumentNullException(nameof(lazyLoadedProjection));
 
-            if (typeof(T) is IDocumentProjection)
+            if (typeof(T).IsAssignableFrom(typeof(IDocumentProjection)))
             {
                 _options.Storage.MappingFor(lazyLoadedProjection.ProjectedType());
             }
