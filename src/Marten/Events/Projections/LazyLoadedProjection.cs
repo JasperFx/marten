@@ -29,9 +29,9 @@ namespace Marten.Events.Projections
             factory().Apply(session, page);
         }
 
-        public async Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
+        public Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
         {
-            await factory().ApplyAsync(session, page, token);
+            return factory().ApplyAsync(session, page, token);
         }
 
         public void EnsureStorageExists(ITenant tenant)
