@@ -423,7 +423,7 @@ namespace Marten.Schema
         /// </summary>
         /// <param name="config">The regconfig to used by the 'to_tsvector' function</param>
         /// <remarks>
-        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
         /// </remarks>
         public FullTextIndex AddFullTextIndex(string config)
         {

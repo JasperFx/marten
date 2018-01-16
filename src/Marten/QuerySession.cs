@@ -397,5 +397,15 @@ namespace Marten
         {
             return loadAsync<T>(id, token);
         }
+
+        public IReadOnlyList<TDoc> Search<TDoc>(string searchTerm, string config = "english")
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string searchTerm, string config = "english", CancellationToken token = default(CancellationToken))
+        {
+            throw new NotImplementedException();
+        }
     }
 }
