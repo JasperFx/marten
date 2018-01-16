@@ -400,12 +400,20 @@ namespace Marten
 
         public IReadOnlyList<TDoc> Search<TDoc>(string searchTerm, string config = "english")
         {
-            throw new NotImplementedException();
+            assertNotDisposed();
+
+            var sql = $"where to_tsvector('{config}', data) @@ to_tsquery('{searchTerm}')";
+            var handler = new UserSuppliedQueryHandler<TDoc>(_store, sql, new object[0]);
+            return _connection.Fetch(handler, _identityMap.ForQuery(), null, Tenant);
         }
 
         public Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string searchTerm, string config = "english", CancellationToken token = default(CancellationToken))
         {
-            throw new NotImplementedException();
+            assertNotDisposed();
+
+            var sql = $"where to_tsvector('{config}', data) @@ to_tsquery('{searchTerm}')";
+            var handler = new UserSuppliedQueryHandler<TDoc>(_store, sql, new object[0]);
+            return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, Tenant, token);
         }
     }
 }
