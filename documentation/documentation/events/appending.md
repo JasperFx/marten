@@ -20,7 +20,7 @@ but for production usage when you may be querying event data before you append a
 
 ## Stream or Aggregate Types
 
-At this point there is no specific requirements about stream aggregate types as they are purely marker types for now. In the future we will probably support
+At this point there are no specific requirements about stream aggregate types as they are purely marker types for now. In the future we will probably support
 aggregating events via snapshot caching using the aggregate type.
 
 
