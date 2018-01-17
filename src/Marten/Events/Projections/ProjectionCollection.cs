@@ -62,6 +62,11 @@ namespace Marten.Events.Projections
             _projections.Add(projection);
         }
 
+        public void Add<T>() where T : IProjection, new()
+        {
+            Add(new T());
+        }
+
         public void Add<T>(Func<T> projectionFactory) where T : IProjection, new()
         {
             var lazyLoadedProjection = new LazyLoadedProjection<T>(projectionFactory);
