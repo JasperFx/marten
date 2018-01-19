@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async;
@@ -39,13 +38,13 @@ namespace Marten.Events.Projections
         {
             public Func<IDocumentSession, object, Guid, TId> IdSelector { get; }
             public Func<IDocumentSession, object, Guid, List<TId>> IdsSelector { get; }
-            public Func<TView, object, Task> Handler { get; }
+            public Func<IDocumentSession, TView, object, Task> Handler { get; }
             public ProjectionEventType Type { get; set; }
 
             public EventHandler(
                 Func<IDocumentSession, object, Guid, TId> idSelector,
                 Func<IDocumentSession, object, Guid, List<TId>> idsSelector,
-                Func<TView, object, Task> handler,
+                Func<IDocumentSession, TView, object, Task> handler,
                 ProjectionEventType type)
             {
                 IdSelector = idSelector;
@@ -58,7 +57,7 @@ namespace Marten.Events.Projections
         private class EventProjection
         {
             public TId ViewId { get; }
-            public Func<TView, Task> ProjectTo { get; }
+            public Func<IDocumentSession, TView, Task> ProjectTo { get; }
             public ProjectionEventType Type { get; set; }
 
             public EventProjection(EventHandler eventHandler, TId viewId, IEvent @event, object projectionEvent)
@@ -69,11 +68,11 @@ namespace Marten.Events.Projections
                 if (projectionEvent != null)
                 {
                     // Event handler uses ProjectionEvent generic
-                    ProjectTo = view => eventHandler.Handler(view, projectionEvent);
+                    ProjectTo = (session, view) => eventHandler.Handler(session, view, projectionEvent);
                 }
                 else
                 {
-                    ProjectTo = view => eventHandler.Handler(view, @event.Data);
+                    ProjectTo = (session, view) => eventHandler.Handler(session, view, @event.Data);
                 }
             }
         }
@@ -117,72 +116,220 @@ namespace Marten.Events.Projections
         }
 
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Action<TView, TEvent> handler) where TEvent : class
-            => projectEvent((session, @event, streamId) => convertToTId(streamId), null, (TView view, TEvent @event) => { handler(view, @event); return Task.CompletedTask; });
+            => projectEvent(
+                (session, @event, streamId) => convertToTId(streamId), 
+                null,
+                (IDocumentSession _, TView view, TEvent @event) =>
+                {
+                    handler(view, @event); 
+                    return Task.CompletedTask;
+                });
+
+        public ViewProjection<TView, TId> ProjectEvent<TEvent>(Action<IDocumentSession, TView, TEvent> handler) where TEvent : class
+            => projectEvent(
+                (session, @event, streamId) => convertToTId(streamId), 
+                null,
+                (IDocumentSession session, TView view, TEvent @event) =>
+                {
+                    handler(session, view, @event); 
+                    return Task.CompletedTask;
+                });
 
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<IDocumentSession, TEvent, TId> viewIdSelector, Action<TView, TEvent> handler) where TEvent : class
         {
             if (viewIdSelector == null) throw new ArgumentNullException(nameof(viewIdSelector));
-            return projectEvent((session, @event, streamId) => viewIdSelector(session, @event as TEvent), null, (TView view, TEvent @event) => { handler(view, @event); return Task.CompletedTask; });
+            return projectEvent(
+                (session, @event, streamId) => viewIdSelector(session, @event as TEvent), 
+                null,
+                (IDocumentSession _, TView view, TEvent @event) =>
+                {
+                    handler(view, @event); 
+                    return Task.CompletedTask;
+                });
+        }
+
+        public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<IDocumentSession, TEvent, TId> viewIdSelector, Action<IDocumentSession, TView, TEvent> handler) where TEvent : class
+        {
+            if (viewIdSelector == null) throw new ArgumentNullException(nameof(viewIdSelector));
+            return projectEvent(
+                (session, @event, streamId) => viewIdSelector(session, @event as TEvent), 
+                null,
+                (IDocumentSession session, TView view, TEvent @event) =>
+                {
+                    handler(session, view, @event); 
+                    return Task.CompletedTask;
+                });
         }
 
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<TEvent, TId> viewIdSelector, Action<TView, TEvent> handler) where TEvent : class
         {
             if (viewIdSelector == null) throw new ArgumentNullException(nameof(viewIdSelector));
-            return projectEvent((session, @event, streamId) => viewIdSelector(@event as TEvent), null, (TView view, TEvent @event) => { handler(view, @event); return Task.CompletedTask; });
+            return projectEvent(
+                (session, @event, streamId) => viewIdSelector(@event as TEvent), 
+                null,
+                (IDocumentSession _, TView view, TEvent @event) =>
+                {
+                    handler(view, @event); 
+                    return Task.CompletedTask;
+                });
+        }
+
+        public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<TEvent, TId> viewIdSelector, Action<IDocumentSession, TView, TEvent> handler) where TEvent : class
+        {
+            if (viewIdSelector == null) throw new ArgumentNullException(nameof(viewIdSelector));
+            return projectEvent(
+                (session, @event, streamId) => viewIdSelector(@event as TEvent), 
+                null,
+                (IDocumentSession session, TView view, TEvent @event) =>
+                {
+                    handler(session, view, @event); 
+                    return Task.CompletedTask;
+                });
         }
 
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector, Action<TView, TEvent> handler) where TEvent : class
         {
             if (viewIdsSelector == null) throw new ArgumentNullException(nameof(viewIdsSelector));
-            return projectEvent(null, (session, @event, streamId) => viewIdsSelector(session, @event as TEvent), (TView view, TEvent  @event) => { handler(view, @event); return Task.CompletedTask; });
+            return projectEvent(
+                null, 
+                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
+                (IDocumentSession _, TView view, TEvent @event) =>
+                {
+                    handler(view, @event); 
+                    return Task.CompletedTask;
+                });
+        }
+
+        public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector, Action<IDocumentSession, TView, TEvent> handler) where TEvent : class
+        {
+            if (viewIdsSelector == null) throw new ArgumentNullException(nameof(viewIdsSelector));
+            return projectEvent(
+                null, 
+                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
+                (IDocumentSession session, TView view, TEvent @event) =>
+                {
+                    handler(session, view, @event); 
+                    return Task.CompletedTask;
+                });
         }
 
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<TEvent, List<TId>> viewIdsSelector, Action<TView, TEvent> handler) where TEvent : class
         {
             if (viewIdsSelector == null) throw new ArgumentNullException(nameof(viewIdsSelector));
-            return projectEvent(null, (session, @event, streamId) => viewIdsSelector(@event as TEvent), (TView view, TEvent @event) => { handler(view, @event); return Task.CompletedTask; });
+            return projectEvent(
+                null, 
+                (session, @event, streamId) => viewIdsSelector(@event as TEvent),
+                (IDocumentSession _, TView view, TEvent @event) =>
+                {
+                    handler(view, @event); 
+                    return Task.CompletedTask;
+                });
+        }
+
+        public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<TEvent, List<TId>> viewIdsSelector, Action<IDocumentSession, TView, TEvent> handler) where TEvent : class
+        {
+            if (viewIdsSelector == null) throw new ArgumentNullException(nameof(viewIdsSelector));
+            return projectEvent(
+                null, 
+                (session, @event, streamId) => viewIdsSelector(@event as TEvent),
+                (IDocumentSession session, TView view, TEvent @event) =>
+                {
+                    handler(session, view, @event); 
+                    return Task.CompletedTask;
+                });
         }
 
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<TView, TEvent, Task> handler) where TEvent : class
-            => projectEvent((session, @event, streamId) => convertToTId(streamId), null, handler);
+            => projectEvent(
+                (session, @event, streamId) => convertToTId(streamId), 
+                null, 
+                (IDocumentSession _, TView view, TEvent @event) => handler(view, @event));
 
+        public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TView, TEvent, Task> handler) where TEvent : class
+            => projectEvent((session, @event, streamId) => convertToTId(streamId), null, handler);
+        
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TEvent, TId> viewIdSelector, Func<TView, TEvent, Task> handler) where TEvent : class
+        {
+            if (viewIdSelector == null) throw new ArgumentNullException(nameof(viewIdSelector));
+            return projectEvent(
+                (session, @event, streamId) => viewIdSelector(session, @event as TEvent), 
+                null,  
+                (IDocumentSession _, TView view, TEvent @event) => handler(view, @event));
+        }
+
+        public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TEvent, TId> viewIdSelector, Func<IDocumentSession, TView, TEvent, Task> handler) where TEvent : class
         {
             if (viewIdSelector == null) throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent((session, @event, streamId) => viewIdSelector(session, @event as TEvent), null, handler);
         }
-
+        
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<TEvent, TId> viewIdSelector, Func<TView, TEvent, Task> handler) where TEvent : class
+        {
+            if (viewIdSelector == null) throw new ArgumentNullException(nameof(viewIdSelector));
+            return projectEvent(
+                (session, @event, streamId) => viewIdSelector(@event as TEvent), 
+                null, 
+                (IDocumentSession _, TView view, TEvent @event) => handler(view, @event));
+        }
+
+        public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<TEvent, TId> viewIdSelector, Func<IDocumentSession, TView, TEvent, Task> handler) where TEvent : class
         {
             if (viewIdSelector == null) throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent((session, @event, streamId) => viewIdSelector(@event as TEvent), null, handler);
         }
-
+        
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector, Func<TView, TEvent, Task> handler) where TEvent : class
+        {
+            if (viewIdsSelector == null) throw new ArgumentNullException(nameof(viewIdsSelector));
+            return projectEvent(
+                null, 
+                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent), 
+                (IDocumentSession _, TView view, TEvent @event) => handler(view, @event));
+        }
+        
+        public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector, Func<IDocumentSession, TView, TEvent, Task> handler) where TEvent : class
         {
             if (viewIdsSelector == null) throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent(null, (session, @event, streamId) => viewIdsSelector(session, @event as TEvent), handler);
         }
-
+        
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<TEvent, List<TId>> viewIdsSelector, Func<TView, TEvent, Task> handler) where TEvent : class
+        {
+            if (viewIdsSelector == null) throw new ArgumentNullException(nameof(viewIdsSelector));
+            return projectEvent(
+                null, 
+                (session, @event, streamId) => viewIdsSelector(@event as TEvent), 
+                (IDocumentSession _, TView view, TEvent @event) => handler(view, @event));
+        }
+
+        public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<TEvent, List<TId>> viewIdsSelector, Func<IDocumentSession, TView, TEvent, Task> handler) where TEvent : class
         {
             if (viewIdsSelector == null) throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent(null, (session, @event, streamId) => viewIdsSelector(@event as TEvent), handler);
         }
-
+        
         private ViewProjection<TView, TId> projectEvent<TEvent>(
             Func<IDocumentSession, object, Guid, TId> viewIdSelector,
             Func<IDocumentSession, object, Guid, List<TId>> viewIdsSelector,
-            Func<TView, TEvent, Task> handler,
+            Func<IDocumentSession, TView, TEvent, Task> handler,
             ProjectionEventType type = ProjectionEventType.Modify) where TEvent : class
         {
-            if (viewIdSelector == null && viewIdsSelector == null) throw new ArgumentException($"{nameof(viewIdSelector)} or {nameof(viewIdsSelector)} must be provided.");
-            if (handler == null && type == ProjectionEventType.Modify) throw new ArgumentNullException(nameof(handler));
+            if (viewIdSelector == null && viewIdsSelector == null) 
+                throw new ArgumentException($"{nameof(viewIdSelector)} or {nameof(viewIdsSelector)} must be provided.");
+            if (handler == null && type == ProjectionEventType.Modify) 
+                throw new ArgumentNullException(nameof(handler));
 
             EventHandler eventHandler;
             if (type == ProjectionEventType.Modify)
             {
-                eventHandler = new EventHandler(viewIdSelector, viewIdsSelector, (view, @event) => { handler(view, @event as TEvent); return Task.CompletedTask; } , type);
+                eventHandler = new EventHandler(
+                    viewIdSelector, 
+                    viewIdsSelector,
+                    (session, view, @event) =>
+                    {
+                        handler(session, view, @event as TEvent); 
+                        return Task.CompletedTask;
+                    } , type);
             }
             else
             {
@@ -250,7 +397,7 @@ namespace Marten.Events.Projections
                 {
                     using (Util.NoSynchronizationContextScope.Enter())
                     {
-                        eventProjection.ProjectTo(view).Wait();
+                        eventProjection.ProjectTo(session, view).Wait();
                     }
                 }
             }
@@ -270,7 +417,7 @@ namespace Marten.Events.Projections
                 }
                 else
                 {
-                    await eventProjection.ProjectTo(view);
+                    await eventProjection.ProjectTo(session, view);
                 }
             }
         }
