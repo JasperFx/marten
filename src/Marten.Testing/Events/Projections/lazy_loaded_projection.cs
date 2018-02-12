@@ -29,6 +29,7 @@ namespace Marten.Testing.Events.Projections
             }
         }
 
+        // SAMPLE: viewprojection-from-class-with-injection
         public class PersistViewProjectionWithInjection : PersistViewProjection
         {
             private readonly Logger logger;
@@ -49,6 +50,7 @@ namespace Marten.Testing.Events.Projections
                 view.Events.Add(@event);
             }
         }
+        // ENDSAMPLE
 
         private static readonly Guid streamId = Guid.NewGuid();
 
@@ -61,12 +63,14 @@ namespace Marten.Testing.Events.Projections
         {
             var logger = new Logger();
 
+            // SAMPLE: viewprojection-from-class-with-injection-configuration
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.InlineProjections.Add(() => new PersistViewProjectionWithInjection(logger));
             });
+            // ENDSAMPLE
 
             theSession.Events.StartStream<QuestParty>(streamId, started, joined);
             theSession.SaveChanges();
