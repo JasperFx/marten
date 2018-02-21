@@ -25,6 +25,7 @@ For more information on using the `IDocumentStore` and configuring document stor
 * <[linkto:documentation/documents/configuration]>
 * <[linkto:documentation/documents/json]>
 * <[linkto:documentation/documents/basics/bulk_insert]>
+* <[linkto:documentation/documents/basics/initial_data]>
 * <[linkto:documentation/documents/advanced/optimistic_concurrency]>
 * <[linkto:documentation/documents/diagnostics]>
 * <[linkto:documentation/documents/advanced/cleaning]>
