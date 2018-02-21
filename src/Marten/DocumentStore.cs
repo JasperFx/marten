@@ -76,9 +76,6 @@ namespace Marten
 
             Options = options;
             _logger = options.Logger();
-            Events = options.Events;
-            Tenancy = options.Tenancy;
-            Storage = options.Storage;
             Serializer = options.Serializer();
 
             if (options.CreateDatabases != null)
@@ -111,9 +108,9 @@ namespace Marten
             HandlerFactory = new QueryHandlerFactory(this);
         }
 
-        public ITenancy Tenancy { get; }
+        public ITenancy Tenancy => Options.Tenancy;
 
-        public EventGraph Events { get; }
+        public EventGraph Events => Options.Events;
 
         internal IQueryHandlerFactory HandlerFactory { get; }
 
@@ -122,7 +119,8 @@ namespace Marten
         private readonly IMartenLogger _logger;
         private readonly CharArrayTextWriter.IPool _writerPool;
 
-        public StorageFeatures Storage { get; }
+        public StorageFeatures Storage => Options.Storage;
+
         public ISerializer Serializer { get; }
 
         public virtual void Dispose()
