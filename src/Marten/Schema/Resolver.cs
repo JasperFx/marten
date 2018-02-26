@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using FastExpressionCompiler;
 using Marten.Linq;
 using Marten.Schema.Identity;
 using Marten.Services;
