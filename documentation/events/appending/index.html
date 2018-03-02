@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.6.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -105,7 +105,7 @@ keep metadata describing the state of an individual stream. Appending events to 
 but for production usage when you may be querying event data before you append anything, you just need to register the event types upfront like this:</p>
 <pre><code class="language-csharp">&#xA;var store2 = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;    _.AutoCreateSchemaObjects = AutoCreate.None;&#xA;&#xA;    _.Events.AddEventType(typeof(QuestStarted));&#xA;    _.Events.AddEventType(typeof(MonsterSlayed));&#xA;});&#xA;</code></pre>
 <h2 id="stream-or-aggregate-types">Stream or Aggregate Types</h2>
-<p>At this point there is no specific requirements about stream aggregate types as they are purely marker types for now. In the future we will probably support
+<p>At this point there are no specific requirements about stream aggregate types as they are purely marker types for now. In the future we will probably support
 aggregating events via snapshot caching using the aggregate type.</p>
 <h2 id="starting-a-new-stream">Starting a new Stream</h2>
 <p>As of Marten v0.9, you can <strong>optionally</strong> start a new event stream against some kind of .Net type that theoretically marks the type of stream your capturing.
@@ -116,7 +116,7 @@ you could just supply either a string to mark the &quot;stream type&quot; or wor
 id for the stream:</p>
 <pre><code class="language-csharp">&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xA;&#xA;var id = &quot;Fourth&quot;;&#xA;session.Events.StartStream&lt;Quest&gt;(id, joined, departed);&#xA;session.SaveChanges();&#xA;</code></pre>
 <p>Or have Marten use a Guid value that you provide yourself:</p>
-<pre><code class="language-csharp">&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xA;&#xA;var id = Guid.NewGuid();&#xA;session.Events.StartStream&lt;Quest&gt;(id, joined, departed);&#xA;session.SaveChanges();&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xA;&#xA;var id = Guid.NewGuid();&#xA;session.Events.StartStream(id, joined, departed);&#xA;session.SaveChanges();&#xA;</code></pre>
 <p>For stream identity (strings vs. Guids), see <a href="/marten/documentation/events/identity">Stream Identity</a>.</p>
 <p>Note that <code>StartStream</code> checks for existing stream and throws <code>ExistingStreamIdCollisionException</code> in case stream already exists.</p>
 <h2 id="appending-events">Appending Events</h2>
@@ -126,7 +126,7 @@ id for the stream:</p>
 <p><code>IEventStore.Append()</code> supports an overload taking in a parameter <code>int expectedVersion</code> that can be used to assert that events are inserted into the
 event stream if and only if the maximum event id for the stream matches the expected version after event insertions. Otherwise the transaction is aborted
 and a <code>EventStreamUnexpectedMaxEventIdException</code> exception is thrown.</p>
-<pre><code class="language-csharp">&#xA;session.Events.StartStream&lt;Quest&gt;(id, started);&#xA;session.SaveChanges();&#xA;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xA;&#xA;// Events are appended into the stream only if the maximum event id for the stream&#xA;// would be 3 after the append operation.&#xA;session.Events.Append(id, 3, joined, departed);&#xA;&#xA;session.SaveChanges();&#xA;</code></pre> 
+<pre><code class="language-csharp">&#xA;session.Events.StartStream(id, started);&#xA;session.SaveChanges();&#xA;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xA;&#xA;// Events are appended into the stream only if the maximum event id for the stream&#xA;// would be 3 after the append operation.&#xA;session.Events.Append(id, 3, joined, departed);&#xA;&#xA;session.SaveChanges();&#xA;</code></pre> 
 <h3 id="createstream-vs.append">CreateStream vs. Append</h3>
 <p>Both, <code>CreateStream</code> and <code>Append</code> can be used to start a new event stream. The difference with the methods is that <code>CreateStream</code> always checks for existing stream and throws <code>ExistingStreamIdCollisionException</code> in case stream already exists.</p>
 

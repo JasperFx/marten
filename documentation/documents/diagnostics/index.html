@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.6.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -99,7 +99,7 @@
 <p>Marten has a facility for listening and even intercepting document persistence events with the <code>IDocumentSessionListener</code> interface:</p>
 <pre><code class="language-csharp">&#xA;public interface IDocumentSessionListener&#xA;{&#xA;    /// &lt;summary&gt;&#xA;    /// Called just after IDocumentSession.SaveChanges() is called, but before&#xA;    /// any database calls are made&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;session&quot;&gt;&lt;/param&gt;&#xA;    void BeforeSaveChanges(IDocumentSession session);&#xA;&#xA;    /// &lt;summary&gt;&#xA;    /// Called just after IDocumentSession.SaveChanges() is called,&#xA;    /// but before any database calls are made&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;session&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;param name=&quot;token&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;returns&gt;&lt;/returns&gt;&#xA;    Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token);&#xA;&#xA;&#xA;    /// &lt;summary&gt;&#xA;    /// After an IDocumentSession is committed&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;session&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;param name=&quot;commit&quot;&gt;&lt;/param&gt;&#xA;    void AfterCommit(IDocumentSession session, IChangeSet commit);&#xA;&#xA;    /// &lt;summary&gt;&#xA;    /// After an IDocumentSession is committed&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;session&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;param name=&quot;commit&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;param name=&quot;token&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;returns&gt;&lt;/returns&gt;&#xA;    Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);&#xA;&#xA;&#xA;    /// &lt;summary&gt;&#xA;    /// Called after a document is loaded&#xA;    /// &lt;/summary&gt;&#xA;    void DocumentLoaded(object id, object document);&#xA;&#xA;    /// &lt;summary&gt;&#xA;    /// Called after a document is explicitly added to a session&#xA;    /// as a staged insert or update&#xA;    /// &lt;/summary&gt;&#xA;    void DocumentAddedForStorage(object id, object document);&#xA;}&#xA;</code></pre>
 <p>You can build and inject your own listeners by adding them to the <code>StoreOptions</code> object you use to configure a <code>DocumentStore</code>:</p>
-<pre><code class="language-csharp">&#xA;var stub1 = new StubDocumentSessionListener();&#xA;var stub2 = new StubDocumentSessionListener();&#xA;&#xA;using (var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xA;&#xA;    _.Listeners.Add(stub1);&#xA;    _.Listeners.Add(stub2);&#xA;}))&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var stub1 = new StubDocumentSessionListener();&#xA;var stub2 = new StubDocumentSessionListener();&#xA;&#xA;using (var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xA;}))&#xA;</code></pre>
 <p>The listeners can be used to modify an <code>IDocumentSession</code> and its related unit of work just before persisting. Marten itself will be using this mechanism
 internally to perform projections in the future.</p>
 <p>The following fake, sample listener demonstrates how you can query into the pending changes before making a transactional commit, and also how to
@@ -121,7 +121,7 @@ query what was done after a commit is made:</p>
 <h2 id="previewing-linq-queries">Previewing Linq Queries</h2>
 <p>Let's say that we have a small document type called <code>Trade</code>:</p>
 <pre><code class="language-csharp">&#xA;public class Trade&#xA;{&#xA;    public int Id { get; set; }&#xA;&#xA;    [DuplicateField]&#xA;    public double Value { get; set; }&#xA;}&#xA;&#xA;</code></pre>
-<p>The <code>[Searchable]</code> attribute directs Marten to duplicate the value of <code>Value</code> into a separate database field for more efficient querying. Now, let's say that we want to search for every <code>Trade</code> document with a value of over 2,000, but we want to see the SQL query that Marten will build for that query first:</p>
+<p>The <code>[DuplicateField]</code> attribute directs Marten to duplicate the value of <code>Value</code> into a separate database field for more efficient querying. Now, let's say that we want to search for every <code>Trade</code> document with a value of over 2,000, but we want to see the SQL query that Marten will build for that query first:</p>
 <pre><code class="language-csharp">&#xA;// store is the active IDocumentStore&#xA;var queryable = theStore.QuerySession().Query&lt;Trade&gt;().Where(x =&gt; x.Value &gt; 2000);&#xA;var cmd = queryable.ToCommand(FetchType.FetchMany);&#xA;&#xA;Debug.WriteLine(cmd.CommandText);&#xA;</code></pre>
 <p>The sql string in our debug window for the code above is:</p>
 <pre>
