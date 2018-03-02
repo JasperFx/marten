@@ -8,13 +8,22 @@ namespace Marten.Services
         private readonly IDictionary<Type, IDictionary<object, Guid>> _versions = new Dictionary<Type, IDictionary<object, Guid>>();
         
         
+
         public void Store<T>(object id, Guid version)
         {
+            var documentType = typeof(T);
+
+            Store(documentType, id, version);
+        }
+
+        public void Store(Type documentType, object id, Guid version)
+        {
             IDictionary<object, Guid> dict;
-            if (!_versions.TryGetValue(typeof(T), out dict))
+
+            if (!_versions.TryGetValue(documentType, out dict))
             {
                 dict = new Dictionary<object, Guid>();
-                _versions.Add(typeof(T), dict);
+                _versions.Add(documentType, dict);
             }
 
             if (dict.ContainsKey(id))
