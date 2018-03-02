@@ -209,6 +209,9 @@ namespace Marten
         private static IManagedConnection buildManagedConnection(SessionOptions options, ITenant tenant,
             CommandRunnerMode commandRunnerMode)
         {
+            // TODO -- this is all spaghetti code. Make this some kind of more intelligent state machine
+            // w/ the logic encapsulated into SessionOptions
+
             // Hate crap like this, but if we don't control the transation, use External to direct
             // IManagedConnection not to call commit or rollback
             if (!options.OwnsTransactionLifecycle && commandRunnerMode != CommandRunnerMode.ReadOnly)
@@ -216,6 +219,11 @@ namespace Marten
                 commandRunnerMode = CommandRunnerMode.External;
             }
 
+
+            if (options.Connection != null || options.Transaction != null)
+            {
+                options.OwnsConnection = false;
+            }
             if (options.Transaction != null) options.Connection = options.Transaction.Connection;
 
 
@@ -226,7 +234,7 @@ namespace Marten
                 var connection = tenant.CreateConnection();
                 connection.Open();
 
-
+                options.OwnsConnection = true;
                 options.Connection = connection;
             }
 

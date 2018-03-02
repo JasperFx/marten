@@ -15,6 +15,7 @@ namespace Marten.Services
         private readonly IsolationLevel _isolationLevel;
         private readonly int _commandTimeout;
         private TransactionState _connection;
+        private bool _ownsConnection;
 
         public ManagedConnection(IConnectionFactory factory) : this(factory, CommandRunnerMode.AutoCommit)
         {
@@ -22,13 +23,15 @@ namespace Marten.Services
 
         public ManagedConnection(SessionOptions options, CommandRunnerMode mode)
         {
+            _ownsConnection = options.OwnsConnection;
             _mode = options.OwnsTransactionLifecycle ? mode : CommandRunnerMode.External;
             _isolationLevel = options.IsolationLevel;
             _commandTimeout = options.Timeout;
 
             var conn = options.Connection ?? options.Transaction?.Connection;
 
-            _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, conn, options.Transaction);
+            _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, conn, options.OwnsConnection, options.Transaction);
+
         }
 
 
@@ -40,13 +43,15 @@ namespace Marten.Services
             _mode = mode;
             _isolationLevel = isolationLevel;
             _commandTimeout = commandTimeout;
+            _ownsConnection = true;
+
         }
 
         private void buildConnection()
         {
             if (_connection == null)
             {
-                _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout);
+                _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout, _ownsConnection);
                 _connection.Open();
             }
         }
@@ -55,7 +60,7 @@ namespace Marten.Services
         {
             if (_connection == null)
             {
-                _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout);
+                _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout, _ownsConnection);
                 return _connection.OpenAsync(token);
             }
             return Task.CompletedTask;
@@ -358,7 +363,6 @@ namespace Marten.Services
 
         public void Dispose()
         {
-            if (_mode == CommandRunnerMode.External) return;
             _connection?.Dispose();
         }
     }
