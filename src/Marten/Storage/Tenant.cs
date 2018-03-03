@@ -211,9 +211,14 @@ namespace Marten.Storage
 
                 var mapping = MappingFor(typeof(T));
 
-                if (mapping is DocumentMapping)
+                if (mapping is SubClassMapping subClassMapping)
                 {
-                    return new BulkLoader<T>(_options.Serializer(), mapping.As<DocumentMapping>(), assignment);
+                    return new BulkLoader<T>(_options.Serializer(), subClassMapping.Parent, assignment);
+                }
+
+                if (mapping is DocumentMapping docMapping)
+                {
+                    return new BulkLoader<T>(_options.Serializer(), docMapping, assignment);
                 }
 
                 throw new ArgumentOutOfRangeException("T", "Marten cannot do bulk inserts of " + typeof(T).FullName);
