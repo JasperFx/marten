@@ -85,6 +85,9 @@ namespace Marten.Storage
 
             // TODO -- ensure the system type here too?
             var feature = _features.FindFeature(featureType);
+
+            feature.AssertValidNames(_options);
+
             if (feature == null)
                 throw new ArgumentOutOfRangeException(nameof(featureType),
                     $"Unknown feature type {featureType.FullName}");

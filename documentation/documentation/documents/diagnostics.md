@@ -59,7 +59,7 @@ Let's say that we have a small document type called `Trade`:
 
 <[sample:trade_document_type]>
 
-The `[Searchable]` attribute directs Marten to duplicate the value of `Value` into a separate database field for more efficient querying. Now, let's say that we want to search for every `Trade` document with a value of over 2,000, but we want to see the SQL query that Marten will build for that query first:
+The `[DuplicateField]` attribute directs Marten to duplicate the value of `Value` into a separate database field for more efficient querying. Now, let's say that we want to search for every `Trade` document with a value of over 2,000, but we want to see the SQL query that Marten will build for that query first:
 
 <[sample:preview_linq_command]>
 

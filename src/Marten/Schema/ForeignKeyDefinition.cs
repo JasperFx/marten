@@ -5,25 +5,24 @@ namespace Marten.Schema
 {
     public class ForeignKeyDefinition
     {
-        private readonly string _columnName;
         private readonly DocumentMapping _parent;
         private readonly DocumentMapping _reference;
         private string _keyName;
 
         public ForeignKeyDefinition(string columnName, DocumentMapping parent, DocumentMapping reference)
         {
-            _columnName = columnName;
+            ColumnName = columnName;
             _parent = parent;
             _reference = reference;
         }
 
         public string KeyName
         {
-            get { return _keyName ?? $"{_parent.Table.Name}_{_columnName}_fkey"; }
-            set { _keyName = value; }
+            get => _keyName ?? $"{_parent.Table.Name}_{ColumnName}_fkey";
+            set => _keyName = value;
         }
 
-        public string ColumnName => _columnName;
+        public string ColumnName { get; }
 
         public Type ReferenceDocumentType => _reference.DocumentType;
 
@@ -32,8 +31,8 @@ namespace Marten.Schema
             var sb = new StringBuilder();
 
             sb.AppendLine($"ALTER TABLE {_parent.Table.QualifiedName}");
-            sb.AppendLine($"ADD CONSTRAINT {KeyName} FOREIGN KEY ({_columnName})");
-            sb.Append($"REFERENCES {_reference.Table.QualifiedName} ({_reference.IdMember.Name.ToLower()});");
+            sb.AppendLine($"ADD CONSTRAINT {KeyName} FOREIGN KEY ({ColumnName})");
+            sb.Append($"REFERENCES {_reference.Table.QualifiedName} (id);");
 
             return sb.ToString();
         }

@@ -3,8 +3,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using FastExpressionCompiler;
 using Marten.Schema;
+using Marten.Util;
 
 namespace Marten.Events.Projections
 {

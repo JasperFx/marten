@@ -69,31 +69,26 @@ namespace Marten
         /// </summary>
         /// <param name="options"></param>
         public DocumentStore(StoreOptions options)
-        {            
+        {
             options.ApplyConfiguration();
             options.CreatePatching();
             options.Validate();
+
             Options = options;
-
             _logger = options.Logger();
-
-            Tenancy = options.Tenancy;
+            Serializer = options.Serializer();
 
             if (options.CreateDatabases != null)
             {
-                IDatabaseGenerator databaseGenerator = new DatabaseGenerator();                
+                IDatabaseGenerator databaseGenerator = new DatabaseGenerator();
                 databaseGenerator.CreateDatabases(Tenancy, options.CreateDatabases);
             }
 
-            Tenancy.Initialize();            
+            Tenancy.Initialize();
 
             Schema = Tenancy.Schema;
 
-            Storage = options.Storage;
-
             Storage.PostProcessConfiguration();
-
-            Serializer = options.Serializer();
 
             if (options.UseCharBufferPooling)
             {
@@ -111,13 +106,11 @@ namespace Marten
             Parser = new MartenExpressionParser(Serializer, options);
 
             HandlerFactory = new QueryHandlerFactory(this);
-
-            Events = options.Events;
         }
 
-        public ITenancy Tenancy { get; }
+        public ITenancy Tenancy => Options.Tenancy;
 
-        public EventGraph Events { get; }
+        public EventGraph Events => Options.Events;
 
         internal IQueryHandlerFactory HandlerFactory { get; }
 
@@ -126,7 +119,8 @@ namespace Marten
         private readonly IMartenLogger _logger;
         private readonly CharArrayTextWriter.IPool _writerPool;
 
-        public StorageFeatures Storage { get; }
+        public StorageFeatures Storage => Options.Storage;
+
         public ISerializer Serializer { get; }
 
         public virtual void Dispose()
@@ -215,6 +209,9 @@ namespace Marten
         private static IManagedConnection buildManagedConnection(SessionOptions options, ITenant tenant,
             CommandRunnerMode commandRunnerMode)
         {
+            // TODO -- this is all spaghetti code. Make this some kind of more intelligent state machine
+            // w/ the logic encapsulated into SessionOptions
+
             // Hate crap like this, but if we don't control the transation, use External to direct
             // IManagedConnection not to call commit or rollback
             if (!options.OwnsTransactionLifecycle && commandRunnerMode != CommandRunnerMode.ReadOnly)
@@ -222,6 +219,11 @@ namespace Marten
                 commandRunnerMode = CommandRunnerMode.External;
             }
 
+
+            if (options.Connection != null || options.Transaction != null)
+            {
+                options.OwnsConnection = false;
+            }
             if (options.Transaction != null) options.Connection = options.Transaction.Connection;
 
 
@@ -231,8 +233,8 @@ namespace Marten
             {
                 var connection = tenant.CreateConnection();
                 connection.Open();
-                
 
+                options.OwnsConnection = true;
                 options.Connection = connection;
             }
 
@@ -309,9 +311,9 @@ namespace Marten
                 connection, parser,
                 new NulloIdentityMap(Serializer), tenant);
 
-	        connection.BeginSession();
+            connection.BeginSession();
 
-			session.Logger = _logger.StartSession(session);
+            session.Logger = _logger.StartSession(session);
 
             return session;
         }
@@ -332,7 +334,7 @@ namespace Marten
                 connection, parser,
                 new NulloIdentityMap(Serializer), tenant);
 
-			connection.BeginSession();
+            connection.BeginSession();
 
             session.Logger = _logger.StartSession(session);
 

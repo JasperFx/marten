@@ -97,6 +97,8 @@ namespace Marten.Services
         /// </summary>
         public System.Transactions.Transaction DotNetTransaction { get; set; }
 
+        
+
 
         /// <summary>
         /// Open a session that enlists in the current, ambient TransactionScope
@@ -113,7 +115,7 @@ namespace Marten.Services
 
 #endif
 
-
+        internal bool OwnsConnection { get; set; } = true;
     }
 
     public enum ConcurrencyChecks

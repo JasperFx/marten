@@ -46,8 +46,11 @@ namespace Marten.Events.Projections
 
         public T Build(IEnumerable<IEvent> events, IDocumentSession session)
         {
-            var state = new T();
+            return Build(events, session, new T());
+        }
 
+        public T Build(IEnumerable<IEvent> events, IDocumentSession session, T state)
+        {
             events.Each(x => x.Apply(state, this));
 
             return state;

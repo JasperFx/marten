@@ -75,6 +75,11 @@ AND    n.nspname = :{schemaParam};
             return SchemaPatchDifference.None;
         }
 
+        public IEnumerable<DbObjectName> AllNames()
+        {
+            yield return Identifier;
+        }
+
         protected FunctionDelta fetchDelta(DbDataReader reader, DdlRules rules)
         {
             if (!reader.Read())

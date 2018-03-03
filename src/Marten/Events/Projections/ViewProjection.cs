@@ -4,22 +4,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Reflection;
 using Marten.Events.Projections.Async;
 using Marten.Schema.Identity;
+using System.Reflection;
 using System.Linq.Expressions;
 using Marten.Storage;
+using Marten.Util;
 
 namespace Marten.Events.Projections
 {
     public class ViewProjection<TView, TId> : DocumentProjection<TView>, IDocumentProjection 
         where TView : class, new()
     {
-        private readonly Func<DocumentSession, TId[], IReadOnlyList<TView>> _sessionLoadMany;
+        private readonly Func<IQuerySession, TId[], IReadOnlyList<TView>> _sessionLoadMany;
 
         public ViewProjection()
         {
-            var loadManyMethod = typeof(DocumentSession).GetMethods()
+            var loadManyMethod = typeof(IQuerySession).GetMethods()
                 .FirstOrDefault(x => x.Name == "LoadMany" && x.GetParameters().Any(y => y.ParameterType == typeof(TId[])));
 
             if (loadManyMethod == null)
@@ -27,11 +28,11 @@ namespace Marten.Events.Projections
                 throw new ArgumentException($"{typeof(TId)} is not supported.");
             }
 
-            var sessionParameter = Expression.Parameter(typeof(DocumentSession), "a");
+            var sessionParameter = Expression.Parameter(typeof(IQuerySession), "a");
             var idParameter = Expression.Parameter(typeof(TId[]), "e");
             var body = Expression.Call(sessionParameter, loadManyMethod.MakeGenericMethod(typeof(TView)), idParameter);
-            var lambda = Expression.Lambda<Func<DocumentSession, TId[], IReadOnlyList<TView>>>(body, sessionParameter, idParameter);
-            _sessionLoadMany = lambda.Compile();
+            var lambda = Expression.Lambda<Func<IQuerySession, TId[], IReadOnlyList<TView>>>(body, sessionParameter, idParameter);
+            _sessionLoadMany = ExpressionCompiler.Compile<Func<IQuerySession, TId[], IReadOnlyList<TView>>>(lambda);
         }
 
         private class EventHandler
@@ -638,7 +639,7 @@ namespace Marten.Events.Projections
 
             if (viewIds.Length > 0)
             {
-                var views = _sessionLoadMany((DocumentSession)session, viewIds);
+                var views = _sessionLoadMany(session, viewIds);
 
                 applyProjections(session, projections, views);
             }
@@ -652,7 +653,7 @@ namespace Marten.Events.Projections
 
             if (viewIds.Length > 0)
             {
-                var views = _sessionLoadMany((DocumentSession)session, viewIds);
+                var views = _sessionLoadMany(session, viewIds);
 
                 await applyProjectionsAsync(session, projections, views);
             }

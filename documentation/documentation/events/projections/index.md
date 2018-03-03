@@ -18,7 +18,7 @@ First, some terminology that we're going to use throughout this section:
 ## Event Metadata in Projections
 
 First off, please be aware that **event metadata like stream version and sequence number are not available duing the execution of
-inline projections.** If you need to use event metadata in your projections, please use asynchronous or inline projections.
+inline projections.** If you need to use event metadata in your projections, please use asynchronous or live projections.
 
 ## Projecting from One Event to One Document    
 

@@ -364,7 +364,7 @@ namespace Marten
             if (_disposed) return;
 
             _disposed = true;
-            _connection.Dispose();
+            _connection?.Dispose();
             WriterPool?.Dispose();
         }
 
