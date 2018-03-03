@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 
 namespace Marten.Testing.Session
 {
-    class get_raw_json_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class get_raw_json_Tests : DocumentSessionFixture<NulloIdentityMap>
     {
         // SAMPLE: get-raw-json
-        [Fact]
+        //[Fact]
         public void when_get_json_then_raw_json_should_be_returned()
         {
             var issue = new Issue { Title = "Issue 1" };
@@ -30,7 +30,7 @@ namespace Marten.Testing.Session
         // ENDSAMPLE
 
         // SAMPLE: get-raw-json-async
-        [Fact]
+        //[Fact]
         public async Task when_get_json_then_raw_json_should_be_returned_async()
         {
             var issue = new Issue { Title = "Issue 1" };

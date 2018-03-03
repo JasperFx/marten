@@ -1,7 +1,7 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
-using FastExpressionCompiler;
+using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers.CompiledInclude
 {

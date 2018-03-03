@@ -55,6 +55,7 @@ namespace Marten.Storage
     }
     // ENDSAMPLE
 
+
     
     /// <summary>
     /// Base class for easier creation of custom IFeatureSchema objects
@@ -94,6 +95,14 @@ namespace Marten.Storage
 
     public static class FeatureSchemaExtensions
     {
+        public static void AssertValidNames(this IFeatureSchema schema, StoreOptions options)
+        {
+            foreach (var objectName in schema.Objects.SelectMany(x => x.AllNames()))
+            {
+                options.AssertValidIdentifier(objectName.Name);
+            }
+        }
+
         public static string ToDDL(this ISchemaObject @object, DdlRules rules)
         {
             var writer = new StringWriter();

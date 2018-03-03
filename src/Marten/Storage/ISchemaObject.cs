@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
 using Marten.Schema;
@@ -14,5 +15,7 @@ namespace Marten.Storage
         void ConfigureQueryCommand(CommandBuilder builder);
 
         SchemaPatchDifference CreatePatch(DbDataReader reader, SchemaPatch patch, AutoCreate autoCreate);
+
+        IEnumerable<DbObjectName> AllNames();
     }
 }

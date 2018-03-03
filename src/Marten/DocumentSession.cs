@@ -254,7 +254,10 @@ namespace Marten
             var storage = Tenant.StorageFor(typeof(T));
             var id = storage.Identity(entity);
 
-            IdentityMap.Versions.Store<T>(id, version);
+            // This is important for subclassing to use the document type
+            // from the storage rather than the T that might be a
+            // subclass type
+            IdentityMap.Versions.Store(storage.TopLevelBaseType, id, version);
 
             Store(entity);
         }

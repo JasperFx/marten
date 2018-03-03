@@ -13,22 +13,22 @@ namespace Marten.Services
         private readonly int _commandTimeout;
         private readonly bool _ownsConnection;
 
-        public TransactionState(CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout, NpgsqlConnection connection, NpgsqlTransaction transaction = null)
+        public TransactionState(CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout, NpgsqlConnection connection, bool ownsConnection, NpgsqlTransaction transaction = null)
         {
-            _ownsConnection = false;
             _mode = mode;
             _isolationLevel = isolationLevel;
             _commandTimeout = commandTimeout;
+            _ownsConnection = ownsConnection;
             Transaction = transaction;
             Connection = connection;
         }
 
-        public TransactionState(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout)
+        public TransactionState(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout, bool ownsConnection)
         {
-            _ownsConnection = true;
             _mode = mode;
             _isolationLevel = isolationLevel;
             this._commandTimeout = commandTimeout;
+            _ownsConnection = ownsConnection;
             Connection = factory.Create();
         }
 
@@ -87,13 +87,17 @@ namespace Marten.Services
 
         public void Commit()
         {
-            if (_mode == CommandRunnerMode.External) return;
+            if (_mode != CommandRunnerMode.External)
+            {
+                Transaction?.Commit();
+                Transaction?.Dispose();
+                Transaction = null;
+            }
 
-            Transaction?.Commit();
-            Transaction?.Dispose();
-            Transaction = null;
-
-            Connection.Close();
+            if (_ownsConnection)
+            {
+                Connection.Close();
+            }
         }
 
         public async Task CommitAsync(CancellationToken token)
@@ -104,7 +108,10 @@ namespace Marten.Services
 
                 Transaction.Dispose();
                 Transaction = null;
+            }
 
+            if (_ownsConnection)
+            {
                 Connection.Close();
             }
         }
@@ -153,8 +160,11 @@ namespace Marten.Services
 
         public void Dispose()
         {
-            Transaction?.Dispose();
-            Transaction = null;
+            if (_mode != CommandRunnerMode.External)
+            {
+                Transaction?.Dispose();
+                Transaction = null;
+            }
 
             if (_ownsConnection)
             {

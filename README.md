@@ -21,6 +21,7 @@ Before getting started you will need the following in your environment:
 * An environment variable of `marten_testing_database` set to the connection string for the database you want to use as a testbed. (See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about PostgreSQL connection strings )
 * You will also need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support. See
 [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries for PLV8 running on Windows
+* You will also need to make sure that the login you are using to connect to your databasee is a member of the `postgres` role
 * Ensure you have installed [.NET Core SDK 2.0](https://www.microsoft.com/net/download/core)
 * Once you have the codebase and the connection string file, run the rake script or use the dotnet CLI to restore and build the solution.
 
