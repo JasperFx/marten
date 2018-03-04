@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Shouldly;
 using Xunit;
 using Marten.Testing.Documents;
@@ -18,14 +17,14 @@ namespace Marten.Testing.Bugs
                     .AddSubClass<SuperUser>();
             });
 
-            var users = new List<User>
+            var users = new User[]
             {
                 new AdminUser { UserName = "foo" },
                 new SuperUser { UserName = "bar" },
                 new SuperUser { UserName = "myergen" }
             };
 
-            Should.NotThrow(() => theStore.BulkInsertDocuments(users));
+            theStore.BulkInsert(users);
 
             using (var query = theStore.LightweightSession())
             {
