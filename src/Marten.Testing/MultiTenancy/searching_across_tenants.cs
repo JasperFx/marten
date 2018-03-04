@@ -29,8 +29,11 @@ namespace Marten.Testing.MultiTenancy
 
             using (var query = theStore.QuerySession())
             {
+                // SAMPLE: any_tenant
+                // query data across all tenants
                 var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
                                   .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+                // ENDSAMPLE
 
                 actual.ShouldHaveTheSameElementsAs(expected);
             }
@@ -44,8 +47,11 @@ namespace Marten.Testing.MultiTenancy
 
             using (var query = theStore.QuerySession())
             {
+                // SAMPLE: tenant_is_one_of
+                // query data for a selected list of tenants
                 var actual = query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
                                   .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+                // ENDSAMPLE
 
                 actual.ShouldHaveTheSameElementsAs(expected);
             }
