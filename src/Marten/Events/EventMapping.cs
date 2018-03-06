@@ -37,6 +37,7 @@ namespace Marten.Events
             _inner = new DocumentMapping(eventType, parent.Options);
         }
 
+        public IDocumentMapping Root => this;
         public Type DocumentType { get; }
         public string EventTypeName { get; set; }
         public string Alias { get; }

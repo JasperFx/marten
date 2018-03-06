@@ -8,6 +8,8 @@ namespace Marten.Schema
 {
     public interface IDocumentMapping
     {
+        IDocumentMapping Root { get; }
+
         Type DocumentType { get; }
 
         IDocumentStorage BuildStorage(StoreOptions options);

@@ -237,6 +237,7 @@ namespace Marten.Schema
 
         public IIdGeneration IdStrategy { get; set; }
 
+        public IDocumentMapping Root => this;
         public Type DocumentType { get; }
 
         public virtual DbObjectName Table => new DbObjectName(DatabaseSchemaName, $"{TablePrefix}{_alias}");

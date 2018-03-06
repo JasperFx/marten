@@ -63,6 +63,7 @@ namespace Marten.Schema
         public IEnumerable<DuplicatedField> DuplicatedFields => Parent.DuplicatedFields;
         public DeleteStyle DeleteStyle => Parent.DeleteStyle;
 
+        public IDocumentMapping Root => Parent;
         public Type DocumentType { get; }
 
         public DbObjectName Table => Parent.Table;
