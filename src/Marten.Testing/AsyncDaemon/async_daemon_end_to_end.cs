@@ -63,6 +63,39 @@ namespace Marten.Testing.AsyncDaemon
             
         }
 
+        [Fact]
+        public async Task start_and_stop_a_projection()
+        {
+            _testHelper.LoadSingleProject();
+
+            StoreOptions(_ =>
+            {
+                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
+                _.Events.DatabaseSchemaName = "events";
+            });
+
+            _testHelper.PublishAllProjectEvents(theStore, true);
+
+
+
+            // Really just kind of a smoke test here
+            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
+            {
+                LeadingEdgeBuffer = 0.Seconds()
+            }))
+            {
+                daemon.Start<ActiveProject>(DaemonLifecycle.Continuous);
+                await Task.Delay(200);
+                await daemon.Stop<ActiveProject>().ConfigureAwait(false);
+
+                daemon.Start<ActiveProject>(DaemonLifecycle.StopAtEndOfEventData);
+
+            }
+
+
+
+        }
+
 
         //[Fact] Not super duper reliable when running back to back
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_twice_on_other_schema()

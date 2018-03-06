@@ -77,8 +77,12 @@ namespace Marten.Events.Projections.Async
                 throw new ArgumentOutOfRangeException(nameof(viewType));
             }
 
+            findCurrentEventLogPosition(viewType);
+
             _tracks[viewType].Start(lifecycle);
         }
+
+
 
         public void Dispose()
         {
@@ -132,6 +136,31 @@ namespace Marten.Events.Projections.Async
                             {
                                 track.LastEncountered = lastEncountered;
                             }
+                        }
+                    }
+                });
+            }
+
+            foreach (var track in _tracks.Values)
+            {
+                Logger.DeterminedStartingPosition(track);
+            }
+        }
+
+        private void findCurrentEventLogPosition(Type viewType)
+        {
+            using (var conn = _tenant.OpenConnection())
+            {
+                conn.Execute(cmd =>
+                {
+                    cmd.Sql($"select last_seq_id from {_store.Events.ProgressionTable} where name = :name").With("name", viewType.FullName);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            var lastEncountered = reader.GetFieldValue<long>(0);
+                            _tracks[viewType].LastEncountered = lastEncountered;
                         }
                     }
                 });
