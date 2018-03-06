@@ -3,6 +3,7 @@ using System.Linq;
 using Baseline;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Util;
 
 namespace Marten.Schema
 {
@@ -103,6 +104,32 @@ AND    n.nspname = '{1}';";
                 connection.Execute($"truncate table {_options.Events.DatabaseSchemaName}.mt_events cascade;" +
                                    $"truncate table {_options.Events.DatabaseSchemaName}.mt_streams cascade");
                 connection.Commit();
+            }
+        }
+
+        public void DeleteSingleEventStream(Guid streamId)
+        {
+            using (var conn = _tenant.CreateConnection())
+            {
+                var cmd = conn.CreateCommand().WithText($"delete from {_options.Events.DatabaseSchemaName}.mt_events where stream_id = :id;delete from {_options.Events.DatabaseSchemaName}.mt_streams where id = :id");
+                cmd.AddNamedParameter("id", streamId);
+
+                conn.Open();
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public void DeleteSingleEventStream(string streamId)
+        {
+            using (var conn = _tenant.CreateConnection())
+            {
+                var cmd = conn.CreateCommand().WithText($"delete from {_options.Events.DatabaseSchemaName}.mt_events where stream_id = :id;delete from {_options.Events.DatabaseSchemaName}.mt_streams where id = :id");
+                cmd.AddNamedParameter("id", streamId);
+
+                conn.Open();
+
+                cmd.ExecuteNonQuery();
             }
         }
     }

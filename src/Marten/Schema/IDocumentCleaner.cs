@@ -37,5 +37,19 @@ namespace Marten.Schema
         /// Completely deletes all the event and stream data
         /// </summary>
         void DeleteAllEventData();
+
+        /// <summary>
+        /// Deletes all stream and event data for the designated streamId. Will
+        /// not impact projected documents. USE WITH CAUTION!
+        /// </summary>
+        /// <param name="streamId"></param>
+        void DeleteSingleEventStream(Guid streamId);
+
+        /// <summary>
+        /// Deletes all stream and event data for the designated streamId. Will
+        /// not impact projected documents. USE WITH CAUTION!
+        /// </summary>
+        /// <param name="streamId"></param>
+        void DeleteSingleEventStream(string streamId);
     }
 }
