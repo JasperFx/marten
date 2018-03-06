@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.6.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.7.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -193,6 +193,12 @@ a field or property matching one of many supplied values:</p>
 <h2 id="modulo-queries">Modulo Queries</h2>
 <p>Marten v0.8 added the ability to use the modulo operator in Linq queries:</p>
 <pre><code class="language-csharp">&#xA;[Fact]&#xA;public void use_modulo()&#xA;{&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 1});&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 2});&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 3});&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 4});&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 5});&#xA;    theSession.Store(new Target{Color = Colors.Green, Number = 6});&#xA;&#xA;    theSession.SaveChanges();&#xA;&#xA;    theSession.Query&lt;Target&gt;().Where(x =&gt; x.Number % 2 == 0 &amp;&amp; x.Color &lt; Colors.Green).ToArray()&#xA;        .Select(x =&gt; x.Number)&#xA;        .ShouldHaveTheSameElementsAs(2, 4);&#xA;}&#xA;</code></pre>
+<h2 id="anytenant">AnyTenant</h2>
+<p>Query data from all tenants using <code>AnyTenant</code> method.</p>
+<pre><code class="language-csharp">&#xA;// query data across all tenants&#xA;var actual = query.Query&lt;Target&gt;().Where(x =&gt; x.AnyTenant() &amp;&amp; x.Flag)&#xA;                  .OrderBy(x =&gt; x.Id).Select(x =&gt; x.Id).ToArray();&#xA;</code></pre>
+<h2 id="tenantisoneof">TenantIsOneOf</h2>
+<p>Use <code>TenantIsOneOf</code> to query on a selected list of tenants.</p>
+<pre><code class="language-csharp">&#xA;// query data for a selected list of tenants&#xA;var actual = query.Query&lt;Target&gt;().Where(x =&gt; x.TenantIsOneOf(&quot;Green&quot;, &quot;Red&quot;) &amp;&amp; x.Flag)&#xA;                  .OrderBy(x =&gt; x.Id).Select(x =&gt; x.Id).ToArray();&#xA;</code></pre>
 <h2 id="supported-types">Supported Types</h2>
 <p>At this point, Marten's Linq support has been tested against these .Net types:</p>
 <ol>
