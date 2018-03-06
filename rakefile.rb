@@ -4,7 +4,7 @@ require 'json'
 
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '2.6.0'
+BUILD_VERSION = '2.7.0'
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
