@@ -72,4 +72,9 @@ namespace Marten.Testing.Documents
         Guid Id { get; set; }
         string UserName { get; set; }
     }
+
+    public class UserWithNicknames
+    {
+        public string[] Nicknames { get; set; }
+    }
 }
