@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <DotNetCliToolReference Include="dotnet-stdocs" Version="1.0.0-alpha-442" />
+    <DotNetCliToolReference Include="dotnet-stdocs" Version="1.1.0" />
   </ItemGroup>
 
 </Project>
