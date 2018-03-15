@@ -50,10 +50,24 @@ namespace Marten.Testing.Util
                 await session.SaveChangesAsync().ConfigureAwait(false);
 
                 var t = await session.Query<Target>().CountAsync().ConfigureAwait(false);
-                t.ShouldBe(100);
+                t.ShouldBe(10);
             }
         }
 
+        [Fact]
+        public void can_delete_and_make_updates_with_more_than_one_batch_()
+        {
+            var targets = Target.GenerateRandomData(100).ToArray();
+            StoreOptions(_ => _.UpdateBatchSize = 10);
 
+            using (var session = theStore.LightweightSession())
+            {
+                session.DeleteWhere<Target>(t => t.Id != null);
+                targets.Each(x => session.Store(x));
+                session.SaveChanges();
+
+                session.Query<Target>().Count().ShouldBe(100);
+            }
+        }
     }
 }
