@@ -50,7 +50,7 @@ namespace Marten.Testing.Util
                 await session.SaveChangesAsync().ConfigureAwait(false);
 
                 var t = await session.Query<Target>().CountAsync().ConfigureAwait(false);
-                t.ShouldBe(10);
+                t.ShouldBe(100);
             }
         }
 
