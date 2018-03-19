@@ -55,7 +55,7 @@ namespace Marten.Testing.Util
         }
 
         [Fact]
-        public void can_delete_and_make_updates_with_more_than_one_batch_()
+        public void can_delete_and_make_updates_with_more_than_one_batch_GH_987()
         {
             var targets = Target.GenerateRandomData(100).ToArray();
             StoreOptions(_ => _.UpdateBatchSize = 10);
@@ -63,6 +63,8 @@ namespace Marten.Testing.Util
             using (var session = theStore.LightweightSession())
             {
                 session.DeleteWhere<Target>(t => t.Id != null);
+
+                
                 targets.Each(x => session.Store(x));
                 session.SaveChanges();
 

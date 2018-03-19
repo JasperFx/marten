@@ -81,7 +81,8 @@ namespace Marten.Services
 
             try
             {
-                foreach (var batch in _commands.ToArray())
+                // Gotta do the reverse to run these in the right order
+                foreach (var batch in _commands.Reverse().ToArray())
                 {                    
                     var cmd = batch.BuildCommand();
                     try
