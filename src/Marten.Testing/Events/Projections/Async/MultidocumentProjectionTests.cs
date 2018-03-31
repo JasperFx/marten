@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
+using Marten.Storage;
 using Shouldly;
 using Xunit;
 
@@ -24,7 +25,7 @@ namespace Marten.Testing.Events.Projections.Async
         public class CompanyNameChanged
         {
             public Guid Id { get; set; }
-            public string NewName { get; set; }            
+            public string NewName { get; set; }
         }
 
         public class OrderPlaced
@@ -33,7 +34,7 @@ namespace Marten.Testing.Events.Projections.Async
             public Guid CompanyId { get; set; }
             public decimal TotalAmount { get; set; }
             public string[] Items { get; set; }
-        }        
+        }
     }
 
     public static class ReadModels
@@ -51,7 +52,7 @@ namespace Marten.Testing.Events.Projections.Async
     public static class Projections
     {
         /// <summary>
-        /// A projection which uses multiple streams and manages several document types: main Read Model it's builiding and 
+        /// A projection which uses multiple streams and manages several document types: main Read Model it's builiding and
         /// a side-readmodel used as a kind of helper
         /// </summary>
         public class OrderProjection : DocumentsProjection
@@ -77,7 +78,7 @@ namespace Marten.Testing.Events.Projections.Async
             }
 
             private void When(IDocumentSession session, Events.CompanyCreated created)
-            {                
+            {
                 session.Store(new CompanySideReadModel()
                 {
                     Id = created.Id,
@@ -93,18 +94,16 @@ namespace Marten.Testing.Events.Projections.Async
                 session.Store(company);
 
                 session.Patch<ReadModels.Order>(x => x.CompanyId == changed.Id)
-                    .Set(x => x.CompanyName, changed.NewName);
-
-                session.Patch<ReadModels.Order>(x => x.CompanyId == changed.Id)
                     .Set(x => x.DateProcessed, DateTime.UtcNow);
             }
 
-            #region Infrastructure and dispatching                       
-            public override Type[] Consumes => new[] {typeof(Events.CompanyCreated), typeof(Events.OrderPlaced), typeof(Events.CompanyNameChanged)};
+            #region Infrastructure and dispatching
+
+            public override Type[] Consumes => new[] { typeof(Events.CompanyCreated), typeof(Events.OrderPlaced), typeof(Events.CompanyNameChanged) };
 
             public override Type[] Produces => new[] { typeof(ReadModels.Order), typeof(CompanySideReadModel) };
 
-            public override AsyncOptions AsyncOptions { get; } = new AsyncOptions();          
+            public override AsyncOptions AsyncOptions { get; } = new AsyncOptions();
 
             public override void Apply(IDocumentSession session, EventPage page)
             {
@@ -120,21 +119,24 @@ namespace Marten.Testing.Events.Projections.Async
                         case Events.CompanyCreated created:
                             When(session, created);
                             break;
+
                         case Events.OrderPlaced placed:
                             When(session, placed);
                             break;
+
                         case Events.CompanyNameChanged changed:
                             When(session, changed);
                             break;
                     }
                     await session.SaveChangesAsync(token).ConfigureAwait(false);
-                }                
+                }
             }
-            #endregion
-        }
-    }   
 
-    public class MultidocumentProjectionTests: IntegratedFixture
+            #endregion Infrastructure and dispatching
+        }
+    }
+
+    public class MultidocumentProjectionTests : IntegratedFixture
     {
         private static readonly Guid Company1Id = new Guid("5713D147-8D8E-499A-8CDF-ECEFF867D810");
         private static readonly Guid Company2Id = new Guid("18F5DE28-6027-4638-9D4F-496A5F29FB22");
@@ -142,13 +144,16 @@ namespace Marten.Testing.Events.Projections.Async
         private static readonly Guid Order1Id = new Guid("C7F3F4B6-EDA9-4C5B-A0CF-6AE15EB83DEA");
         private static readonly Guid Order2Id = new Guid("367C1343-3A03-4888-A706-CA237B3CA020");
         private static readonly Guid Order3Id = new Guid("C3B5A850-92A1-449C-8653-B51BB56C84A3");
-        
-        [Fact]
-        public async Task Build_Projection_From_Stream()
+
+        [Theory]
+        [InlineData(TenancyStyle.Single)]
+        [InlineData(TenancyStyle.Conjoined)]
+        public async Task Build_Projection_From_Stream(TenancyStyle tenancyStyle)
         {
-            StoreOptions(cfg =>
+            StoreOptions(_ =>
             {
-                cfg.Events.AsyncProjections.Add(new Projections.OrderProjection());
+                _.Events.AsyncProjections.Add(new Projections.OrderProjection());
+                _.Events.TenancyStyle = tenancyStyle;
             });
 
             var daemon = theStore.BuildProjectionDaemon(logger: new DebugDaemonLogger());
@@ -159,13 +164,13 @@ namespace Marten.Testing.Events.Projections.Async
 
             using (var session = theStore.OpenSession())
             {
-                var order1 = session.Load<ReadModels.Order>(Order1Id);                
+                var order1 = session.Load<ReadModels.Order>(Order1Id);
                 var order2 = session.Load<ReadModels.Order>(Order2Id);
-                var order3 = session.Load<ReadModels.Order>(Order3Id);                
+                var order3 = session.Load<ReadModels.Order>(Order3Id);
 
-                order1.CompanyName.ShouldBe("Mexico Railways");                
+                order1.CompanyName.ShouldBe("Mexico Railways");
                 order2.CompanyName.ShouldBe("Mexico Railways");
-                
+
                 order3.CompanyName.ShouldBe("Microsoft");
             }
         }
@@ -240,7 +245,7 @@ namespace Marten.Testing.Events.Projections.Async
             await daemon.WaitForNonStaleResults();
             using (var session = theStore.OpenSession())
             {
-                var order2 = session.Load<ReadModels.Order>(Order1Id);                
+                var order2 = session.Load<ReadModels.Order>(Order1Id);
                 order2.CompanyName.ShouldBe("Mexico Railways");
                 order2.ShouldNotBeTheSameAs(order1);
             }
@@ -252,7 +257,7 @@ namespace Marten.Testing.Events.Projections.Async
             {
                 foreach (var @event in GetEvents())
                 {
-                    var id = (Guid) @event.GetType() .GetTypeInfo().GetProperty("Id").GetValue(@event);
+                    var id = (Guid)@event.GetType().GetTypeInfo().GetProperty("Id").GetValue(@event);
                     sess.Events.Append(id, @event);
                     await sess.SaveChangesAsync();
                 }

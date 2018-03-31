@@ -1,36 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Services;
+using Marten.Storage;
 using Shouldly;
 using Xunit;
-using System.Threading.Tasks;
 
 namespace Marten.Testing.Events.Projections
 {
     public class project_events_async_from_multiple_streams_into_view : DocumentSessionFixture<IdentityMap>
     {
-        static readonly Guid streamId = Guid.NewGuid();
-        static readonly Guid streamId2 = Guid.NewGuid();
+        private static readonly Guid streamId = Guid.NewGuid();
+        private static readonly Guid streamId2 = Guid.NewGuid();
 
-        QuestStarted started = new QuestStarted { Id = streamId, Name = "Find the Orb" };
-        QuestStarted started2 = new QuestStarted { Id = streamId2, Name = "Find the Orb 2.0" };
-        MonsterQuestsAdded monsterQuestsAdded = new MonsterQuestsAdded { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
-        MonsterQuestsRemoved monsterQuestsRemoved = new MonsterQuestsRemoved { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
-        QuestEnded ended = new QuestEnded { Id = streamId, Name = "Find the Orb" };
-        MembersJoined joined = new MembersJoined { QuestId = streamId, Day = 2, Location = "Faldor's Farm", Members = new[] { "Garion", "Polgara", "Belgarath" } };
-        MonsterSlayed slayed1 = new MonsterSlayed { QuestId = streamId, Name = "Troll" };
-        MonsterSlayed slayed2 = new MonsterSlayed { QuestId = streamId, Name = "Dragon" };
-        MonsterDestroyed destroyed = new MonsterDestroyed { QuestId = streamId, Name = "Troll" };
-        MembersDeparted departed = new MembersDeparted { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
-        MembersJoined joined2 = new MembersJoined { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
+        private QuestStarted started = new QuestStarted { Id = streamId, Name = "Find the Orb" };
+        private QuestStarted started2 = new QuestStarted { Id = streamId2, Name = "Find the Orb 2.0" };
+        private MonsterQuestsAdded monsterQuestsAdded = new MonsterQuestsAdded { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
+        private MonsterQuestsRemoved monsterQuestsRemoved = new MonsterQuestsRemoved { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
+        private QuestEnded ended = new QuestEnded { Id = streamId, Name = "Find the Orb" };
+        private MembersJoined joined = new MembersJoined { QuestId = streamId, Day = 2, Location = "Faldor's Farm", Members = new[] { "Garion", "Polgara", "Belgarath" } };
+        private MonsterSlayed slayed1 = new MonsterSlayed { QuestId = streamId, Name = "Troll" };
+        private MonsterSlayed slayed2 = new MonsterSlayed { QuestId = streamId, Name = "Dragon" };
+        private MonsterDestroyed destroyed = new MonsterDestroyed { QuestId = streamId, Name = "Troll" };
+        private MembersDeparted departed = new MembersDeparted { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
+        private MembersJoined joined2 = new MembersJoined { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
 
-        [Fact]
-        public void from_configuration()
+        [Theory]
+        [InlineData(TenancyStyle.Single)]
+        [InlineData(TenancyStyle.Conjoined)]
+        public void from_configuration(TenancyStyle tenancyStyle)
         {
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.TenancyStyle = tenancyStyle;
                 _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.ProjectView<PersistedView, Guid>()
                     .ProjectEventAsync<QuestStarted>((view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
@@ -82,13 +86,16 @@ namespace Marten.Testing.Events.Projections
             nullDocument3.ShouldBeNull();
         }
 
-        [Fact]
-        public async void from_configuration_async()
+        [Theory]
+        [InlineData(TenancyStyle.Single)]
+        [InlineData(TenancyStyle.Conjoined)]
+        public async void from_configuration_async(TenancyStyle tenancyStyle)
         {
-            // SAMPLE: viewprojection-from-configuration 
+            // SAMPLE: viewprojection-from-configuration
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.TenancyStyle = tenancyStyle;
                 _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.ProjectView<PersistedView, Guid>()
                     .ProjectEventAsync<QuestStarted>((view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
@@ -98,7 +105,7 @@ namespace Marten.Testing.Events.Projections
                     .DeleteEvent<MembersDeparted>(e => e.QuestId)
                     .DeleteEvent<MonsterDestroyed>((session, e) => session.Load<QuestParty>(e.QuestId).Id);
             });
-            // ENDSAMPLE 
+            // ENDSAMPLE
 
             theSession.Events.StartStream<QuestParty>(streamId, started, joined);
             await theSession.SaveChangesAsync();
@@ -285,7 +292,7 @@ namespace Marten.Testing.Events.Projections
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.ProjectView<QuestView, Guid>()
-                    .ProjectEventAsync<QuestStarted>((view, @event) => { view.Name = @event.Name; return Task.CompletedTask; } )
+                    .ProjectEventAsync<QuestStarted>((view, @event) => { view.Name = @event.Name; return Task.CompletedTask; })
                     .ProjectEventAsync<MonsterQuestsAdded>(e => e.QuestIds, (view, @event) => { view.Name = view.Name.Insert(0, $"{@event.Name}: "); return Task.CompletedTask; })
                     .DeleteEvent<MonsterQuestsRemoved>(e => e.QuestIds);
             });
@@ -311,8 +318,8 @@ namespace Marten.Testing.Events.Projections
             nullDocument2.ShouldBeNull();
         }
     }
-    
-    // SAMPLE: viewprojection-from-class 
+
+    // SAMPLE: viewprojection-from-class
     public class PersistAsyncViewProjection : ViewProjection<PersistedView, Guid>
     {
         public PersistAsyncViewProjection()
@@ -331,5 +338,6 @@ namespace Marten.Testing.Events.Projections
             return Task.CompletedTask;
         }
     }
-    // ENDSAMPLE 
+
+    // ENDSAMPLE
 }
