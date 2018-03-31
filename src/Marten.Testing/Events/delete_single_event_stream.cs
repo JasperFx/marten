@@ -1,15 +1,20 @@
 ﻿using System;
 using System.Linq;
 using Marten.Events;
+using Marten.Storage;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
     public class delete_single_event_stream : IntegratedFixture
     {
-        [Fact]
-        public void delete_stream_by_guid_id()
+        [Theory]
+        [InlineData(TenancyStyle.Single)]
+        [InlineData(TenancyStyle.Conjoined)]
+        public void delete_stream_by_guid_id(TenancyStyle tenancyStyle)
         {
+            StoreOptions(_ => _.Events.TenancyStyle = tenancyStyle);
+
             var stream1 = Guid.NewGuid();
             var stream2 = Guid.NewGuid();
 
@@ -30,7 +35,6 @@ namespace Marten.Testing.Events
 
             theStore.Advanced.Clean.DeleteSingleEventStream(stream1);
 
-
             using (var session = theStore.LightweightSession())
             {
                 session.Events.QueryAllRawEvents().ToList().All(x => x.StreamId == stream2)
@@ -38,10 +42,16 @@ namespace Marten.Testing.Events
             }
         }
 
-        [Fact]
-        public void delete_stream_by_string_key()
+        [Theory]
+        [InlineData(TenancyStyle.Single)]
+        [InlineData(TenancyStyle.Conjoined)]
+        public void delete_stream_by_string_key(TenancyStyle tenancyStyle)
         {
-            StoreOptions(_ => _.Events.StreamIdentity = StreamIdentity.AsString);
+            StoreOptions(_ =>
+            {
+                _.Events.StreamIdentity = StreamIdentity.AsString;
+                _.Events.TenancyStyle = tenancyStyle;
+            });
 
             var stream1 = "one";
             var stream2 = "two";
@@ -62,7 +72,6 @@ namespace Marten.Testing.Events
             }
 
             theStore.Advanced.Clean.DeleteSingleEventStream(stream1);
-
 
             using (var session = theStore.LightweightSession())
             {

@@ -15,7 +15,7 @@ SELECT format('DROP FUNCTION %s.%s(%s);'
              ,p.proname
              ,pg_get_function_identity_arguments(p.oid))
 FROM   pg_proc p
-LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
 WHERE  p.proname like 'mt_%' and n.nspname = ANY(?)";
 
         public static readonly string DropFunctionSql = @"
@@ -24,7 +24,7 @@ SELECT format('DROP FUNCTION %s.%s(%s);'
              ,p.proname
              ,pg_get_function_identity_arguments(p.oid))
 FROM   pg_proc p
-LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
 WHERE  p.proname = '{0}'
 AND    n.nspname = '{1}';";
 
@@ -109,23 +109,40 @@ AND    n.nspname = '{1}';";
 
         public void DeleteSingleEventStream(Guid streamId)
         {
-            using (var conn = _tenant.CreateConnection())
-            {
-                var cmd = conn.CreateCommand().WithText($"delete from {_options.Events.DatabaseSchemaName}.mt_events where stream_id = :id;delete from {_options.Events.DatabaseSchemaName}.mt_streams where id = :id");
-                cmd.AddNamedParameter("id", streamId);
-
-                conn.Open();
-
-                cmd.ExecuteNonQuery();
-            }
+            DeleteSingleEventStream<Guid>(streamId);
         }
 
         public void DeleteSingleEventStream(string streamId)
         {
+            DeleteSingleEventStream<string>(streamId);
+        }
+
+        private void DeleteSingleEventStream<T>(T streamId)
+        {
+            if (typeof(T) != _options.Events.GetStreamIdType())
+            {
+                throw new ArgumentException($"{nameof(streamId)} should  be of type {_options.Events.GetStreamIdType()}", nameof(streamId));
+            }
+
             using (var conn = _tenant.CreateConnection())
             {
-                var cmd = conn.CreateCommand().WithText($"delete from {_options.Events.DatabaseSchemaName}.mt_events where stream_id = :id;delete from {_options.Events.DatabaseSchemaName}.mt_streams where id = :id");
+                var streamsWhere = "id = :id";
+                var eventsWhere = "stream_id = :id";
+
+                if (_options.Events.TenancyStyle == TenancyStyle.Conjoined)
+                {
+                    var tenantPart = $" AND tenant_id = :tenantId";
+                    streamsWhere += tenantPart;
+                    eventsWhere += tenantPart;
+                }
+
+                var cmd = conn.CreateCommand().WithText($"delete from {_options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {_options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
                 cmd.AddNamedParameter("id", streamId);
+
+                if (_options.Events.TenancyStyle == TenancyStyle.Conjoined)
+                {
+                    cmd.AddNamedParameter("tenantId", _tenant.TenantId);
+                }
 
                 conn.Open();
 
