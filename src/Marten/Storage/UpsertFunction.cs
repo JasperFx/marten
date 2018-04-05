@@ -14,6 +14,8 @@ namespace Marten.Storage
         private readonly bool _disableConcurrency;
         protected readonly string _primaryKeyConstraintName;
         protected readonly DbObjectName _tableName;
+        protected readonly string _tenantWhereClause;
+        protected readonly string _andTenantWhereClause;
 
         public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
 
@@ -35,8 +37,8 @@ namespace Marten.Storage
                 _primaryKeyConstraintName = "pk_" + mapping.Table.Name;
             }
 
-            
-                
+
+
             var idType = mapping.IdMember.GetMemberType();
             var pgIdType = TypeMappings.GetPgType(idType);
 
@@ -69,7 +71,9 @@ namespace Marten.Storage
             if (mapping.TenancyStyle == TenancyStyle.Conjoined)
             {
                 Arguments.Add(new TenantIdArgument());
-            }
+                _tenantWhereClause = $"{_tableName.QualifiedName}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}";
+                _andTenantWhereClause = $" and {_tenantWhereClause}";
+            }            
 
         }
 
@@ -95,7 +99,7 @@ namespace Marten.Storage
 
             if (Arguments.Any(x => x is TenantIdArgument))
             {
-                whereClauses.Add($"{_tableName.QualifiedName}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}");
+                whereClauses.Add(_tenantWhereClause);
             }
 
             if (whereClauses.Any())
@@ -107,7 +111,7 @@ namespace Marten.Storage
                 ? "SECURITY INVOKER"
                 : "SECURITY DEFINER";
 
-            
+
 
             writeFunction(writer, argList, securityDeclaration, inserts, valueList, updates);
 
@@ -128,7 +132,7 @@ INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
   ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}
   DO UPDATE SET {updates};
 
-  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId;
+  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId {_andTenantWhereClause};
   RETURN final_version;
 END;
 $function$;
