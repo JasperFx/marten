@@ -89,7 +89,8 @@ namespace Marten.Schema
         {
             var extras = extraFilters(query).ToArray();
 
-            return query.Append(extras);
+			var extraCoumpound = new CompoundWhereFragment("and", extras);
+			return new CompoundWhereFragment("and", query, extraCoumpound);
         }
 
         private IEnumerable<IWhereFragment> extraFilters(IWhereFragment query)
