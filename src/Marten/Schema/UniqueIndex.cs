@@ -6,16 +6,18 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class UniqueIndexDefinition : IIndexDefinition
+    public class UniqueIndex : IIndexDefinition
     {
-        private readonly MemberInfo[][] _members;
+        private readonly MemberInfo[] _members;
         private readonly string _locator = string.Empty;
         private readonly DbObjectName _table;
         private string _indexName;
 
-        public UniqueIndexDefinition(DocumentMapping mapping, MemberInfo[][] members)
+        public UniqueIndex(DocumentMapping mapping, MemberInfo[] members, string indexName = null)
         {
             _members = members;
+
+            _indexName = indexName;
 
             _locator = members
                 .Select(m =>
@@ -114,7 +116,7 @@ namespace Marten.Schema
 
             name += IsUnique ? "_uidx_" : "_idx_";
 
-            name += _members.First().ToTableAlias();
+            name += _members.ToTableAlias();
 
             return name;
         }

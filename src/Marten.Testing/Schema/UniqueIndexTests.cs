@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class UniqueIndexDefinitionTests
+    public class UniqueIndexTests
     {
         private class UserCreated
         {
@@ -95,8 +95,8 @@ namespace Marten.Testing.Schema
         {
             //1. Create Events
             const string email = "john.smith@mail.com";
-            var firstDocument = new UserCreated { UserId = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
-            var secondDocument = new UserCreated { UserId = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
+            var firstDocument = new UserView { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
+            var secondDocument = new UserView { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
 
             using (var store = InitStore())
             {
