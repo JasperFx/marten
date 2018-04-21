@@ -22,7 +22,7 @@ namespace Marten.Schema
         {
             _members = members;
 
-            _locator = members
+            var mebersLocator = members
                     .Select(m =>
                     {
                         var sql = mapping.FieldFor(m).SqlLocator.Replace("d.", "");
@@ -40,7 +40,7 @@ namespace Marten.Schema
                     })
                     .Join(",");
 
-            _locator = $" ({_locator})";
+            _locator = $" {mebersLocator}";
 
             _table = mapping.Table;
         }
@@ -114,7 +114,7 @@ namespace Marten.Schema
                     break;
 
                 default:
-                    index += $" (({_locator}))";
+                    index += $" ({_locator})";
                     break;
             }
 
