@@ -23,7 +23,7 @@ namespace Marten.Testing.Schema
 
             public string UserName { get; set; }
 
-            [UniqueIndex()]
+            [UniqueIndex(IsComputed = false)]
             public string Email { get; set; }
 
             [UniqueIndex(IndexName = "fullname")]
