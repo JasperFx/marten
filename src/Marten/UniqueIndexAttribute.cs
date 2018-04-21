@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using Baseline;
 
 namespace Marten.Schema
 {
@@ -21,27 +20,17 @@ namespace Marten.Schema
                 .Where(mg => mg.Any(m => m.Member == member))
                 .Single();
 
-            var indexDefinition = new UniqueIndex(
-                mapping,
-                membersGroupedByIndexName.SelectMany(m => new[] { m.Member }).ToArray(),
-                IndexName)
-            {
-                Method = IndexMethod
-            };
-
-            if (IndexName.IsNotEmpty())
-                indexDefinition.IndexName = IndexName;
-
-            indexDefinition.IsUnique = true;
-
-            if (!mapping.Indexes.Any(ind => ind.IndexName == indexDefinition.IndexName))
-                mapping.Indexes.Add(indexDefinition);
+            mapping.AddUniqueIndex(
+                membersGroupedByIndexName.Select(mg => new[] { mg.Member }).ToArray(),
+                IsComputed,
+                IndexName,
+                IndexMethod);
         }
 
         /// <summary>
-        /// Use to override the Postgresql database column type of this searchable field
+        /// Specifies the index should be created in the background and not block/lock
         /// </summary>
-        public string PgType { get; set; } = null;
+        public bool IsConcurrent { get; set; }
 
         /// <summary>
         /// Specifies the type of index to create
@@ -52,5 +41,10 @@ namespace Marten.Schema
         /// Specify the name of the index explicity
         /// </summary>
         public string IndexName { get; set; } = null;
+
+        /// <summary>
+        /// Specify if Index is computed
+        /// </summary>
+        public bool IsComputed = true;
     }
 }
