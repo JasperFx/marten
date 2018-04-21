@@ -17,30 +17,30 @@ namespace Marten.Testing.Schema
             public string Surname { get; set; }
         }
 
-        private class UserView
+        private class User
         {
             public Guid Id { get; set; }
 
             public string UserName { get; set; }
 
-            [UniqueIndex]
+            [UniqueIndex()]
             public string Email { get; set; }
 
-            [UniqueIndex(IndexName = "FullName")]
+            [UniqueIndex(IndexName = "fullname")]
             public string FirstName { get; set; }
 
-            [UniqueIndex(IndexName = "FullName")]
+            [UniqueIndex(IndexName = "fullname")]
             public string Surname { get; set; }
         }
 
-        private class UserViewProjection : ViewProjection<UserView, Guid>
+        private class UserViewProjection : ViewProjection<User, Guid>
         {
             public UserViewProjection()
             {
                 ProjectEvent<UserCreated>(Apply);
             }
 
-            private void Apply(UserView view, UserCreated @event)
+            private void Apply(User view, UserCreated @event)
             {
                 view.Id = @event.UserId;
                 view.Email = @event.Email;
@@ -56,6 +56,7 @@ namespace Marten.Testing.Schema
             options.Connection(ConnectionSource.ConnectionString);
             options.Events.AddEventTypes(new[] { typeof(UserCreated) });
             options.Events.InlineProjections.Add(new UserViewProjection());
+            options.RegisterDocumentType<User>();
 
             return DocumentStore.For(ConnectionSource.ConnectionString);
         }
@@ -66,8 +67,8 @@ namespace Marten.Testing.Schema
         public void given_two_documents_with_the_same_value_for_unique_field_with_multiple_properties_when_created_then_throws_exception()
         {
             //1. Create Events
-            var firstDocument = new UserView { Id = Guid.NewGuid(), Email = "john.doe@gmail.com", FirstName = "John", Surname = "Doe" };
-            var secondDocument = new UserView { Id = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe" };
+            var firstDocument = new User { Id = Guid.NewGuid(), Email = "john.doe@gmail.com", FirstName = "John", Surname = "Doe" };
+            var secondDocument = new User { Id = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe" };
 
             using (var store = InitStore())
             {
@@ -95,8 +96,8 @@ namespace Marten.Testing.Schema
         {
             //1. Create Events
             const string email = "john.smith@mail.com";
-            var firstDocument = new UserView { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
-            var secondDocument = new UserView { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
+            var firstDocument = new User { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
+            var secondDocument = new User { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
 
             using (var store = InitStore())
             {

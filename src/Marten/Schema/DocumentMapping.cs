@@ -399,17 +399,39 @@ namespace Marten.Schema
             return index;
         }
 
-        public UniqueIndex AddUniqueIndex(MemberInfo[] members, string indexName = null, IndexMethod IndexMethod = IndexMethod.btree)
+        public IIndexDefinition AddUniqueIndex(MemberInfo[][] members, bool isComputed = true, string indexName = null, IndexMethod indexMethod = IndexMethod.btree)
         {
-            var indexDefinition = new UniqueIndex(this, members, indexName)
+            if (!isComputed)
             {
-                Method = IndexMethod
-            };
+                var fields = members.Select(memberPath => DuplicateField(memberPath)).ToList();
 
-            if (!Indexes.OfType<UniqueIndex>().Any(ind => ind.IndexName == indexDefinition.IndexName))
-                Indexes.Add(indexDefinition);
+                var index = AddIndex(fields.Select(m => m.ColumnName).ToArray());
+                index.IndexName = indexName;
+                index.Method = indexMethod;
+                index.IsUnique = true;
 
-            return Indexes.OfType<UniqueIndex>().First(ind => ind.IndexName == indexDefinition.IndexName);
+                return index;
+            }
+            else
+            {
+                var index = new ComputedIndex(
+                    this,
+                    members)
+                {
+                    Method = indexMethod,
+                    IndexName = indexName,
+                    IsUnique = true
+                };
+
+                var existing = Indexes.OfType<ComputedIndex>().FirstOrDefault(x => x.IndexName == index.IndexName);
+                if (existing != null)
+                {
+                    return existing;
+                }
+                Indexes.Add(index);
+
+                return index;
+            }
         }
 
         public ForeignKeyDefinition AddForeignKey(string memberName, Type referenceType)
@@ -689,17 +711,21 @@ namespace Marten.Schema
 
         public void UniqueIndex(params Expression<Func<T, object>>[] expressions)
         {
-            UniqueIndex(null, expressions);
+            UniqueIndex(true, expressions);
         }
 
-        public void UniqueIndex(Action<UniqueIndex> configure, params Expression<Func<T, object>>[] expressions)
+        public void UniqueIndex(bool isComputed, params Expression<Func<T, object>>[] expressions)
         {
-            var visitor = new FindMembers();
-            visitor.Visit(new System.Collections.ObjectModel.ReadOnlyCollection<Expression>(expressions));
-
-            var index = new UniqueIndex(this, visitor.Members.ToArray());
-            configure?.Invoke(index);
-            Indexes.Add(index);
+            AddUniqueIndex(
+                expressions
+                .Select(e =>
+                {
+                    var visitor = new FindMembers();
+                    visitor.Visit(e);
+                    return visitor.Members.ToArray();
+                })
+                .ToArray(),
+                isComputed);
         }
 
         public void ForeignKey<TReference>(
