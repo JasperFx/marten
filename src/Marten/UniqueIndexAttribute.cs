@@ -21,8 +21,10 @@ namespace Marten.Schema
                 .Where(mg => mg.Any(m => m.Member == member))
                 .Single();
 
-            //var indexDefinition = new ComputedIndex(mapping, new[] { member })
-            var indexDefinition = new UniqueIndexDefinition(mapping, membersGroupedByIndexName.Select(m => new[] { m.Member }).ToArray())
+            var indexDefinition = new UniqueIndex(
+                mapping,
+                membersGroupedByIndexName.SelectMany(m => new[] { m.Member }).ToArray(),
+                IndexName)
             {
                 Method = IndexMethod
             };
