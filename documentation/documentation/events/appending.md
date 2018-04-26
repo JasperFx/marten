@@ -60,4 +60,4 @@ and a `EventStreamUnexpectedMaxEventIdException` exception is thrown.
 
 ### CreateStream vs. Append
 
-Both, `CreateStream` and `Append` can be used to start a new event stream. The difference with the methods is that `CreateStream` always checks for existing stream and throws `ExistingStreamIdCollisionException` in case stream already exists.
+Both, `StartStream` and `Append` can be used to start a new event stream. The difference with the methods is that `StartStream` always checks for existing stream and throws `ExistingStreamIdCollisionException` in case stream already exists.
