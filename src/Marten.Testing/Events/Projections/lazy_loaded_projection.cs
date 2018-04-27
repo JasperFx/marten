@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Marten.Services;
+using Marten.Storage;
 using Shouldly;
 using Xunit;
 
@@ -50,6 +51,7 @@ namespace Marten.Testing.Events.Projections
                 view.Events.Add(@event);
             }
         }
+
         // ENDSAMPLE
 
         private static readonly Guid streamId = Guid.NewGuid();
@@ -58,8 +60,10 @@ namespace Marten.Testing.Events.Projections
         private MembersJoined joined = new MembersJoined { QuestId = streamId, Day = 2, Location = "Faldor's Farm", Members = new[] { "Garion", "Polgara", "Belgarath" } };
         private QuestPaused paused = new QuestPaused { QuestId = streamId, Name = "Find the Orb" };
 
-        [Fact]
-        public void from_projection()
+        [Theory]
+        [InlineData(TenancyStyle.Single)]
+        [InlineData(TenancyStyle.Conjoined)]
+        public void from_projection(TenancyStyle tenancyStyle)
         {
             var logger = new Logger();
 
@@ -67,6 +71,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.TenancyStyle = tenancyStyle;
                 _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.InlineProjections.Add(() => new PersistViewProjectionWithInjection(logger));
             });

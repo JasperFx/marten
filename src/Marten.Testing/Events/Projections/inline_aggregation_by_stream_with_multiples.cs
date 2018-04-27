@@ -4,31 +4,34 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
+using Marten.Storage;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
     public class inline_aggregation_by_stream_with_multiples : DocumentSessionFixture<NulloIdentityMap>
     {
-        QuestStarted started = new QuestStarted {Name = "Find the Orb"};
-        MembersJoined joined = new MembersJoined {Day = 2, Location = "Faldor's Farm", Members = new string[] {"Garion", "Polgara", "Belgarath"}};
-        MonsterSlayed slayed1 = new MonsterSlayed {Name = "Troll"};        
-        MonsterSlayed slayed2 = new MonsterSlayed {Name = "Dragon"};  
-        
-        MembersJoined joined2 = new MembersJoined {Day = 5, Location = "Sendaria", Members = new string[] {"Silk", "Barak"}};
+        private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
+        private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
+        private MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
+        private MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
+
+        private MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
 
         public inline_aggregation_by_stream_with_multiples()
         {
-
         }
 
-        [Fact]
-        public void run_multiple_aggregates_sync()
+        [Theory]
+        [InlineData(TenancyStyle.Single)]
+        [InlineData(TenancyStyle.Conjoined)]
+        public void run_multiple_aggregates_sync(TenancyStyle tenancyStyle)
         {
             // SAMPLE: registering-quest-party
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
+                _.Events.TenancyStyle = tenancyStyle;
 
                 // This is all you need to create the QuestParty projected
                 // view

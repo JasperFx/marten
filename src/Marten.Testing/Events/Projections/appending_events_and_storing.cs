@@ -1,26 +1,27 @@
-using Shouldly;
-using Marten.Services;
-using Npgsql;
-using Xunit;
 using System;
-using Marten.Events.Projections;
-using Marten.Events;
-using System.Threading;
 using System.Linq;
-using Marten.Events.Projections.Async;
+using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Projections;
+using Marten.Events.Projections.Async;
+using Marten.Services;
 using Marten.Storage;
+using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Events
 {
     public class appending_events_and_storing : DocumentSessionFixture<IdentityMap>
-    {    
-        [Fact]
-        public void patch_inside_inline_projection_does_not_error_during_savechanges()
+    {
+        [Theory]
+        [InlineData(TenancyStyle.Single)]
+        [InlineData(TenancyStyle.Conjoined)]
+        public void patch_inside_inline_projection_does_not_error_during_savechanges(TenancyStyle tenancyStyle)
         {
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.TenancyStyle = tenancyStyle;
                 _.Events.InlineProjections.Add(new QuestPatchTestProjection());
             });
 

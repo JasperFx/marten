@@ -19,12 +19,11 @@ namespace Marten.Events
         private readonly ISelector<IEvent> _selector;
         private readonly DocumentStore _store;
 
-
         public EventStore(IDocumentSession session, DocumentStore store, IManagedConnection connection, UnitOfWork unitOfWork, ITenant tenant)
         {
             _session = session;
             _store = store;
-            
+
             _connection = connection;
             _unitOfWork = unitOfWork;
             _tenant = tenant;
@@ -39,7 +38,6 @@ namespace Marten.Events
             {
                 _selector = new StringIdentifiedEventSelector(_store.Events, _store.Serializer);
             }
-
         }
 
         private void ensureAsStringStorage()
@@ -118,7 +116,7 @@ namespace Marten.Events
 
             var stream = new EventStream(id, events.Select(EventStream.ToEvent).ToArray(), true)
             {
-                AggregateType = typeof (T)
+                AggregateType = typeof(T)
             };
 
             _unitOfWork.StoreStream(stream);
@@ -176,7 +174,7 @@ namespace Marten.Events
         {
             ensureAsGuidStorage();
 
-            var handler = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp);
+            var handler = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             return _connection.Fetch(handler, null, null, _tenant);
         }
 
@@ -184,7 +182,7 @@ namespace Marten.Events
         {
             ensureAsGuidStorage();
 
-            var handler = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp);
+            var handler = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             return _connection.FetchAsync(handler, null, null, _tenant, token);
         }
 
@@ -192,7 +190,7 @@ namespace Marten.Events
         {
             ensureAsStringStorage();
 
-            var handler = new EventQueryHandler<string>(_selector, streamKey, version, timestamp);
+            var handler = new EventQueryHandler<string>(_selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             return _connection.Fetch(handler, null, null, _tenant);
         }
 
@@ -200,7 +198,7 @@ namespace Marten.Events
         {
             ensureAsStringStorage();
 
-            var handler = new EventQueryHandler<string>(_selector, streamKey, version, timestamp);
+            var handler = new EventQueryHandler<string>(_selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             return _connection.FetchAsync(handler, null, null, _tenant, token);
         }
 
@@ -208,7 +206,7 @@ namespace Marten.Events
         {
             ensureAsGuidStorage();
 
-            var inner = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp);
+            var inner = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
@@ -216,7 +214,6 @@ namespace Marten.Events
 
             var assignment = _tenant.IdAssignmentFor<T>();
             assignment.Assign(_tenant, aggregate, streamId);
-
 
             return aggregate;
         }
@@ -226,7 +223,7 @@ namespace Marten.Events
         {
             ensureAsGuidStorage();
 
-            var inner = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp);
+            var inner = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
@@ -235,7 +232,6 @@ namespace Marten.Events
             var assignment = _tenant.IdAssignmentFor<T>();
             assignment.Assign(_tenant, aggregate, streamId);
 
-
             return aggregate;
         }
 
@@ -243,7 +239,7 @@ namespace Marten.Events
         {
             ensureAsStringStorage();
 
-            var inner = new EventQueryHandler<string>(_selector, streamKey, version, timestamp);
+            var inner = new EventQueryHandler<string>(_selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
@@ -251,7 +247,6 @@ namespace Marten.Events
 
             var assignment = _tenant.IdAssignmentFor<T>();
             assignment.Assign(_tenant, aggregate, streamKey);
-
 
             return aggregate;
         }
@@ -261,7 +256,7 @@ namespace Marten.Events
         {
             ensureAsStringStorage();
 
-            var inner = new EventQueryHandler<string>(_selector, streamKey, version, timestamp);
+            var inner = new EventQueryHandler<string>(_selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
@@ -270,10 +265,8 @@ namespace Marten.Events
             var assignment = _tenant.IdAssignmentFor<T>();
             assignment.Assign(_tenant, aggregate, streamKey);
 
-
             return aggregate;
         }
-
 
         public IMartenQueryable<T> QueryRawEventDataOnly<T>()
         {
@@ -285,7 +278,6 @@ namespace Marten.Events
             }
 
             _store.Events.AddEventType(typeof(T));
-
 
             return _session.Query<T>();
         }
@@ -301,8 +293,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            _store.Events.AddEventType(typeof (T));
-
+            _store.Events.AddEventType(typeof(T));
 
             return Load(id).As<Event<T>>();
         }
@@ -311,7 +302,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            _store.Events.AddEventType(typeof (T));
+            _store.Events.AddEventType(typeof(T));
 
             return (await LoadAsync(id, token).ConfigureAwait(false)).As<Event<T>>();
         }
@@ -336,7 +327,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            var handler = new StreamStateByGuidHandler(_store.Events, streamId);
+            var handler = new StreamStateByGuidHandler(_store.Events, streamId, _tenant.TenantId);
             return _connection.Fetch(handler, null, null, _tenant);
         }
 
@@ -344,7 +335,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            var handler = new StreamStateByGuidHandler(_store.Events, streamId);
+            var handler = new StreamStateByGuidHandler(_store.Events, streamId, _tenant.TenantId);
             return _connection.FetchAsync(handler, null, null, _tenant, token);
         }
 
@@ -352,7 +343,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            var handler = new StreamStateByStringHandler(_store.Events, streamKey);
+            var handler = new StreamStateByStringHandler(_store.Events, streamKey, _tenant.TenantId);
             return _connection.Fetch(handler, null, null, _tenant);
         }
 
@@ -360,7 +351,7 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(EventStream));
 
-            var handler = new StreamStateByStringHandler(_store.Events, streamKey);
+            var handler = new StreamStateByStringHandler(_store.Events, streamKey, _tenant.TenantId);
             return _connection.FetchAsync(handler, null, null, _tenant, token);
         }
     }
