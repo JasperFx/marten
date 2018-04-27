@@ -77,6 +77,7 @@ namespace Marten.Testing.MultiTenancy
         {
             var store = DocumentStore.For(_ =>
             {
+                _.DatabaseSchemaName = "multitenancy";
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Policies.AllDocumentsAreMultiTenanted();
             });
