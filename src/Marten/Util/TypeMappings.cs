@@ -52,6 +52,9 @@ namespace Marten.Util
                 case "integer":
                     return "int";
 
+                case "integer[]":
+                    return "int[]";
+
                 case "decimal":
                 case "numeric":
                     return "decimal";
@@ -117,6 +120,11 @@ namespace Marten.Util
         public static string GetPgType(Type memberType)
         {
             if (memberType.GetTypeInfo().IsEnum) return "integer";
+
+            if (memberType.IsArray)
+            {
+                return GetPgType(memberType.GetElementType()) + "[]";
+            }
 
             if (memberType.IsNullable())
             {
