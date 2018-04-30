@@ -81,8 +81,15 @@ namespace Marten.Events
                 {
                     throw new UnknownEventTypeException(eventTypeName);
                 }
-
-                var type = Events.TypeForDotNetName(dotnetTypeName);
+                Type type;
+                try 
+                {
+                    type = Events.TypeForDotNetName(dotnetTypeName);
+                }
+                catch (ArgumentNullException)
+                {
+                    throw new UnknownEventTypeException(dotnetTypeName);
+                }
                 mapping = Events.EventMappingFor(type);
             }
 
