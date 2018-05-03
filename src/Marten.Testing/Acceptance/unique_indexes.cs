@@ -15,7 +15,6 @@ namespace Marten.Testing.Acceptance
             [UniqueIndex(IndexType = UniqueIndexType.Computed)]
             public string Number { get; set; }
         }
-
         // ENDSAMPLE
 
         // SAMPLE: using_a_single_property_duplicate_field_unique_index_through_store_attribute
@@ -26,7 +25,6 @@ namespace Marten.Testing.Acceptance
             [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField)]
             public string Name { get; set; }
         }
-
         // ENDSAMPLE
 
         // SAMPLE: using_a_multiple_properties_computed_unique_index_through_store_attribute
@@ -42,7 +40,6 @@ namespace Marten.Testing.Acceptance
             [UniqueIndex(IndexType = UniqueIndexType.Computed, IndexName = UniqueIndexName)]
             public string Number { get; set; }
         }
-
         // ENDSAMPLE
 
         // SAMPLE: using_a_multiple_properties_duplicate_field_unique_index_through_attribute
@@ -58,7 +55,6 @@ namespace Marten.Testing.Acceptance
             [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = UniqueIndexName)]
             public string SecondName { get; set; }
         }
-
         // ENDSAMPLE
 
         [Fact]
