@@ -399,9 +399,9 @@ namespace Marten.Schema
             return index;
         }
 
-        public IIndexDefinition AddUniqueIndex(MemberInfo[][] members, bool isComputed = true, string indexName = null, IndexMethod indexMethod = IndexMethod.btree)
+        public IIndexDefinition AddUniqueIndex(MemberInfo[][] members, UniqueIndexType indexType = UniqueIndexType.Computed, string indexName = null, IndexMethod indexMethod = IndexMethod.btree)
         {
-            if (!isComputed)
+            if (indexType == UniqueIndexType.DuplicatedField)
             {
                 var fields = members.Select(memberPath => DuplicateField(memberPath)).ToList();
 
@@ -711,10 +711,10 @@ namespace Marten.Schema
 
         public void UniqueIndex(params Expression<Func<T, object>>[] expressions)
         {
-            UniqueIndex(true, expressions);
+            UniqueIndex(UniqueIndexType.Computed, expressions);
         }
 
-        public void UniqueIndex(bool isComputed, params Expression<Func<T, object>>[] expressions)
+        public void UniqueIndex(UniqueIndexType indexType, params Expression<Func<T, object>>[] expressions)
         {
             AddUniqueIndex(
                 expressions
@@ -725,7 +725,7 @@ namespace Marten.Schema
                     return visitor.Members.ToArray();
                 })
                 .ToArray(),
-                isComputed);
+                indexType);
         }
 
         public void ForeignKey<TReference>(
