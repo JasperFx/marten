@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using Baseline;
-using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
@@ -88,7 +85,7 @@ namespace Marten
             {
                 _parent = parent;
 
-                _parent.alter = options => options.Storage.MappingFor(typeof (T));
+                _parent.alter = options => options.Storage.MappingFor(typeof(T));
             }
 
             /// <summary>
@@ -99,7 +96,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> PropertySearching(PropertySearching searching)
             {
-                alter = m => m.PropertySearching = searching; 
+                alter = m => m.PropertySearching = searching;
                 return this;
             }
 
@@ -114,10 +111,10 @@ namespace Marten
             {
                 alter = m => m.Alias = alias;
                 return this;
-            }  
+            }
 
             /// <summary>
-            /// Marks a property or field on this document type as a searchable field that is also duplicated in the 
+            /// Marks a property or field on this document type as a searchable field that is also duplicated in the
             /// database document table
             /// </summary>
             /// <param name="expression"></param>
@@ -131,7 +128,7 @@ namespace Marten
             }
 
             /// <summary>
-            /// Marks a property or field on this document type as a searchable field that is also duplicated in the 
+            /// Marks a property or field on this document type as a searchable field that is also duplicated in the
             /// database document table
             /// </summary>
             /// <param name="expression"></param>
@@ -153,6 +150,31 @@ namespace Marten
             public DocumentMappingExpression<T> Index(Expression<Func<T, object>> expression, Action<ComputedIndex> configure = null)
             {
                 alter = m => m.Index(expression, configure);
+
+                return this;
+            }
+
+            /// <summary>
+            /// Creates a unique index on this data member within the JSON data storage
+            /// </summary>
+            /// <param name="expressions"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> UniqueIndex(params Expression<Func<T, object>>[] expressions)
+            {
+                alter = m => m.UniqueIndex(expressions);
+
+                return this;
+            }
+
+            /// <summary>
+            /// Creates a unique index on this data member within the JSON data storage
+            /// </summary>
+            /// <param name="isComputed"></param>
+            /// <param name="expressions"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> UniqueIndex(UniqueIndexType indexType, params Expression<Func<T, object>>[] expressions)
+            {
+                alter = m => m.UniqueIndex(indexType, expressions);
 
                 return this;
             }
@@ -231,12 +253,10 @@ namespace Marten
                 {
                     Action<StoreOptions> alteration = o =>
                     {
-                        value((DocumentMapping<T>) o.Storage.MappingFor(typeof (T)));
+                        value((DocumentMapping<T>)o.Storage.MappingFor(typeof(T)));
                     };
 
-
                     _parent.alter = alteration;
-                   
                 }
             }
 
@@ -273,7 +293,7 @@ namespace Marten
             /// <summary>
             /// Programmatically directs Marten to map all the subclasses of <cref name="T"/> to a hierarchy of types
             /// </summary>
-            /// <param name="allSubclassTypes">All the subclass types of <cref name="T"/> that you wish to map. 
+            /// <param name="allSubclassTypes">All the subclass types of <cref name="T"/> that you wish to map.
             /// You can use either params of <see cref="Type"/> or <see cref="MappedType"/> or a mix, since Type can implicitly convert to MappedType (without an alias)</param>
             /// <returns></returns>
             public DocumentMappingExpression<T> AddSubClassHierarchy(params MappedType[] allSubclassTypes)
@@ -292,7 +312,6 @@ namespace Marten
 
                 return this;
             }
-
 
             public DocumentMappingExpression<T> AddSubClass<TSubclass>(string alias = null) where TSubclass : T
             {
@@ -359,7 +378,6 @@ namespace Marten
                 return this;
             }
 
-
             public DocumentMappingExpression<T> VersionedWith(Expression<Func<T, Guid>> memberExpression)
             {
                 alter = m => m.VersionMember = FindMembers.Determine(memberExpression).Single();
@@ -375,10 +393,11 @@ namespace Marten
             Type = type;
             Alias = alias;
         }
+
         public Type Type { get; set; }
         public string Alias { get; set; }
 
-        public static implicit operator MappedType (Type type)
+        public static implicit operator MappedType(Type type)
         {
             return new MappedType(type);
         }

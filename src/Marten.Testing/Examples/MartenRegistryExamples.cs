@@ -30,15 +30,15 @@ namespace Marten.Testing.Examples
         public MyMartenRegistry()
         {
             // I'm going to search for user by UserName
-            // pretty frequently, so I want that to be 
+            // pretty frequently, so I want that to be
             // a duplicated, searchable field
             For<User>().Duplicate(x => x.UserName);
-
 
             // Add a gin index to Company's json data storage
             For<Company>().GinIndexJsonData();
         }
     }
+
     // ENDSAMPLE
 
     // SAMPLE: using_attributes_on_document
@@ -53,6 +53,7 @@ namespace Marten.Testing.Examples
         [DuplicateField(PgType = "text")]
         public string Category;
     }
+
     // ENDSAMPLE
 
     // SAMPLE: IndexExamples
@@ -69,14 +70,21 @@ namespace Marten.Testing.Examples
             For<User>().Duplicate(x => x.FirstName, pgType: "varchar(50)");
 
             // Customize the index on the duplicated field
-            // for FirstName 
-            For<User>().Duplicate(x => x.FirstName, configure:idx =>
+            // for FirstName
+            For<User>().Duplicate(x => x.FirstName, configure: idx =>
             {
                 idx.IndexName = "idx_special";
                 idx.Method = IndexMethod.hash;
             });
 
+            // Customize the index on the duplicated field
+            // for UserName to be unique
+            For<User>().Duplicate(x => x.UserName, configure: idx =>
+            {
+                idx.IsUnique = true;
+            });
         }
     }
+
     // ENDSAMPLE
 }

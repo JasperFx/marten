@@ -22,7 +22,7 @@ namespace Marten.Schema
 
             mapping.AddUniqueIndex(
                 membersGroupedByIndexName.Select(mg => new[] { mg.Member }).ToArray(),
-                IsComputed,
+                IndexType,
                 IndexName,
                 IndexMethod);
         }
@@ -43,8 +43,8 @@ namespace Marten.Schema
         public string IndexName { get; set; } = null;
 
         /// <summary>
-        /// Specify if Index is computed
+        /// Specify Index type
         /// </summary>
-        public bool IsComputed = true;
+        public UniqueIndexType IndexType = UniqueIndexType.Computed;
     }
 }
