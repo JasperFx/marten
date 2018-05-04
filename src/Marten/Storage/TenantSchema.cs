@@ -132,7 +132,7 @@ namespace Marten.Storage
 
         public void AssertDatabaseMatchesConfiguration()
         {
-            var patch = ToPatch(false);
+            var patch = ToPatch(false, withAutoCreateAll:true);
 
             if (patch.UpdateDDL.Trim().IsNotEmpty())
             {
