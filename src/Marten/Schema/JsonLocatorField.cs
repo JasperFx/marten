@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Baseline;
 using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Util;
@@ -26,7 +25,7 @@ namespace Marten.Schema
             var memberName = member.Name.FormatCase(casing);
 
             var isStringEnum = memberType.GetTypeInfo().IsEnum && enumStyle == EnumStorage.AsString;
-            if (memberType == typeof (string) || isStringEnum)
+            if (memberType == typeof(string) || isStringEnum)
             {
                 SqlLocator = $"{dataLocator} ->> '{memberName}'";
             }
@@ -39,6 +38,10 @@ namespace Marten.Schema
             {
                 SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{memberName}')";
                 SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
+            }
+            else if (memberType.IsArray)
+            {
+                SqlLocator = $"CAST({dataLocator} ->> '{memberName}' as jsonb)";
             }
             else
             {
@@ -71,7 +74,7 @@ namespace Marten.Schema
 
             locator += $" ->> '{members.Last().Name.FormatCase(casing)}'";
 
-            SqlLocator = MemberType == typeof (string) ? locator : locator.ApplyCastToLocator(enumStyle, MemberType);
+            SqlLocator = MemberType == typeof(string) ? locator : locator.ApplyCastToLocator(enumStyle, MemberType);
 
             var isStringEnum = MemberType.GetTypeInfo().IsEnum && enumStyle == EnumStorage.AsString;
             if (isStringEnum)
@@ -92,6 +95,7 @@ namespace Marten.Schema
         public string SqlLocator { get; }
         public string SelectionLocator { get; }
         public string ColumnName => String.Empty;
+
         public void WritePatch(DocumentMapping mapping, SchemaPatch patch)
         {
             throw new NotSupportedException();
@@ -110,10 +114,8 @@ namespace Marten.Schema
 
         public string LocatorFor(string rootTableAlias)
         {
-            // Super hokey. 
+            // Super hokey.
             return SqlLocator.Replace("d.", rootTableAlias + ".");
         }
     }
-
-    
 }
