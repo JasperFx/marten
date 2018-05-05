@@ -60,7 +60,7 @@ namespace Marten.Testing.Events.Projections.Async
             internal class CompanySideReadModel
             {
                 public Guid Id { get; set; }
-                public string Name { get; set; }                
+                public string Name { get; set; }
             }
 
             private void When(IDocumentSession session, Events.OrderPlaced created)
@@ -74,7 +74,7 @@ namespace Marten.Testing.Events.Projections.Async
                     TotalAmount = created.TotalAmount,
                     CompanyId = created.CompanyId,
                     DateProcessed = DateTime.UtcNow
-                });             
+                });
             }
 
             private void When(IDocumentSession session, Events.CompanyCreated created)
@@ -82,7 +82,7 @@ namespace Marten.Testing.Events.Projections.Async
                 session.Store(new CompanySideReadModel()
                 {
                     Id = created.Id,
-                    Name = created.Name                   
+                    Name = created.Name
                 });
             }
 
@@ -90,8 +90,11 @@ namespace Marten.Testing.Events.Projections.Async
             {
                 // replace with Patch once https://github.com/JasperFx/marten/pull/926 is in
                 var company = session.Load<CompanySideReadModel>(changed.Id);
-                company.Name = changed.NewName;                
+                company.Name = changed.NewName;
                 session.Store(company);
+
+                session.Patch<ReadModels.Order>(x => x.CompanyId == changed.Id)
+                    .Set(x => x.CompanyName, changed.NewName);
 
                 session.Patch<ReadModels.Order>(x => x.CompanyId == changed.Id)
                     .Set(x => x.DateProcessed, DateTime.UtcNow);
@@ -189,7 +192,7 @@ namespace Marten.Testing.Events.Projections.Async
             using (var daemon = theStore.BuildProjectionDaemon(logger: new DebugDaemonLogger()))
             {
                 daemon.StartAll();
-            
+
                 await daemon.WaitForNonStaleResults();
                 await daemon.StopAll();
             }
@@ -199,16 +202,16 @@ namespace Marten.Testing.Events.Projections.Async
 
             using (var daemon2 = theStore.BuildProjectionDaemon(logger: new DebugDaemonLogger(), projections: theStore.Events.AsyncProjections.ToArray()))
             {
-                await daemon2.RebuildAll(new CancellationTokenSource(10*1000).Token);
+                await daemon2.RebuildAll(new CancellationTokenSource(10 * 1000).Token);
                 await daemon2.WaitForNonStaleResults(new CancellationTokenSource(10 * 1000).Token);
             }
 
             using (var session = theStore.OpenSession())
             {
                 var order1 = session.Load<ReadModels.Order>(Order1Id);
-                
-                order1.CompanyName.ShouldBe("Mexico Railways");                
-                
+
+                order1.CompanyName.ShouldBe("Mexico Railways");
+
                 order1.DateProcessed.ShouldBeGreaterThanOrEqualTo(dt);
             }
         }
