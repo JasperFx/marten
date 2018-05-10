@@ -2,7 +2,7 @@
 
 [Unique Indexes](https://www.postgresql.org/docs/current/static/indexes-unique.html) are used to enforce uniqueness of property value. They can be combined to handle also uniqueness of multiple properties.
 
-Marten supports both <[linkto:documentation/documents/configuration/duplicated_fields]> and <[linkto:documentation/documents/configuration/computed_indexes]> uniqueness. Using Duplicated Field brings benefits to queries but brings additional complexity, while Computed Index reuses current JSON structure without adding additional db column.
+Marten supports both <[linkto:documentation/documents/configuration/duplicated_fields]> and <[linkto:documentation/documents/customizing/computed_index]> uniqueness. Using Duplicated Field brings benefits to queries but brings additional complexity, while Computed Index reuses current JSON structure without adding additional db column.
 
 ## Definining Unique Index through Store options
 
@@ -41,7 +41,7 @@ Unique Indexes can be created using the `[UniqueIndex]` attribute like this:
 
 * multiple properties
 
-<[sample:using_a_multiple_properties_computed_unique_inde_through_attributex]>
+<[sample:using_a_multiple_properties_computed_unique_index_through_store_attribute]>
 
 
 <div class="alert alert-info">
@@ -52,7 +52,7 @@ If you don't specify IndexType parameter - by default it will be created as comp
 2. **Duplicated field**:
 * single property
 
-<[sample:using_a_single_property_duplicate_field_unique_index_through_attribute]>
+<[sample:using_a_single_property_duplicate_field_unique_index_through_store_attribute]>
 
 * multiple properties
 

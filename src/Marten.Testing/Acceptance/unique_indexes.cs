@@ -68,6 +68,7 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.Computed, x => x.UserName);
             });
+            // ENDSAMPLE
         }
 
         [Fact]
@@ -81,6 +82,7 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.DuplicatedField, x => x.UserName);
             });
+            // ENDSAMPLE
         }
 
         [Fact]
@@ -94,6 +96,7 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.Computed, x => x.FirstName, x => x.FullName);
             });
+            // ENDSAMPLE
         }
 
         [Fact]
@@ -107,6 +110,7 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.DuplicatedField, x => x.FirstName, x => x.FullName);
             });
+            // ENDSAMPLE
         }
     }
 }

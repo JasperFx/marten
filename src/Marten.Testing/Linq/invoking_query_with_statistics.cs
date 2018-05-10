@@ -36,6 +36,7 @@ namespace Marten.Testing.Linq
                     .Where(x => x.Number > 10).Skip(PageNumber).Take(PageSize);
             }
         }
+        // ENDSAMPLE
 
         [Fact]
         public void can_get_the_total_from_a_compiled_query()
