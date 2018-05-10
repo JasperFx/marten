@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.7.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -91,8 +91,8 @@
 
 			      	<div id="main-pane">
 			      		<!--title:Command Line Tooling for Marten Management-->
-<p>There is a separate Nuget package called <em>Marten.CommandLine</em> that can be used to quickly generate your own command line tooling to
-use for managing Marten schemas at development time. In usage, you would create a new .Net console application in your system's
+<p>There is a separate NuGet package called <em>Marten.CommandLine</em> that can be used to quickly generate your own command-line tooling to
+use for managing Marten schemas at development time. In usage, you would create a new .NET console application in your system's
 solution that would reference the <em>Marten.CommandLine</em> nuget and all of the relevant libraries from your own system.</p>
 <p>Once you have the project and dependencies set up, setting up your command line tool is just this:</p>
 <pre><code class="language-csharp">&#xA;public class Program&#xA;{&#xA;    public static int Main(string[] args)&#xA;    {&#xA;        var options = configureStoreOptions();&#xA;&#xA;        // MartenCommands is from the Marten.CommandLine nuget&#xA;        return MartenCommands.Execute(options, args);&#xA;    }&#xA;&#xA;    // build out the StoreOptions that you need for your application&#xA;    private static StoreOptions configureStoreOptions()&#xA;    {&#xA;        var options = new StoreOptions();&#xA;&#xA;        options.Schema.For&lt;User&gt;();&#xA;        options.Schema.For&lt;Issue&gt;();&#xA;        options.Schema.For&lt;Target&gt;();&#xA;&#xA;        options.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;        return options;&#xA;    }&#xA;}&#xA;</code></pre>
@@ -111,52 +111,44 @@ application &quot;marten.exe&quot;, the commands supported in 1.0 are these:</p>
    patch -> Evaluates the current configuration against the database and writes a patch and drop file if there are any differences
 ------------------------------------------------------------------------------------------------------------------------------------
 </pre>
-<p>If you're not using the dotnet CLI yet, you'd just need to compile your new console application like you've always done and call the exe directly. If you're familiar with the *nix style of command line interfaces ala Git, you should feel right at home with the command line usage in Marten.</p>
+<p>If you're not using the dotnet CLI yet, you'd just need to compile your new console application like you've always done and call the exe directly. If you're familiar with the *nix style of command-line interfaces ala Git, you should feel right at home with the command line usage in Marten.</p>
 <p>For the sake of usability, let's say that you stick a file named &quot;marten.cmd&quot; (or the *nix shell file equivalent) at the root of your codebase like so:</p>
 <pre>
 dotnet run --project src/MyConsoleApp %*
 </pre>
 <p>All the example above does is delegate any arguments to your console application. Once you have that file, some sample usages are shown below:</p>
-<p>Assert that the database matches the current database. This
-command will fail if there are differences</p>
-<pre>
-marten assert --log log.txt
-</pre>
+<p>Assert that the database matches the current database. This command will fail if there are differences</p>
+<pre><code>marten assert --log log.txt
+</code></pre>
 <p>This command tries to update the database to reflect the application configuration</p>
-<pre>
-marten apply --log log.txt
-</pre>
-<p>This dumps a single file named &quot;database.sql&quot; with
-all the DDL necessary to build the database to
+<pre><code>marten apply --log log.txt
+</code></pre>
+<p>This dumps a single file named &quot;database.sql&quot; with all the DDL necessary to build the database to
 match the application configuration</p>
-<pre>
-marten dump database.sql
-</pre>
+<pre><code>marten dump database.sql
+</code></pre>
 <p>This dumps the DDL to separate files per document
 type to a folder named &quot;scripts&quot;</p>
-<pre>
-marten dump scripts --by-type
-</pre>
+<pre><code>marten dump scripts --by-type
+</code></pre>
 <p>Create a patch file called &quot;patch1.sql&quot; and
 the corresponding rollback file &quot;patch.drop.sql&quot; if any
 differences are found between the application configuration
 and the database</p>
-<pre>
-marten patch patch1.sql --drop patch1.drop.sql
-</pre>
+<pre><code>marten patch patch1.sql --drop patch1.drop.sql
+</code></pre>
 <p>In all cases, the commands expose usage help through &quot;marten help [command].&quot; Each of the commands also exposes a &quot;--conn&quot; (or &quot;-c&quot; if you prefer) flag to override the database connection string and a &quot;--log&quot; flag to record all the command output to a file.</p>
-<p> 
-<h3>Current Thinking about Marten + Sqitch</h3>
-Our team doing the RavenDb to Marten transition work has turned us on to using <a href="http://sqitch.org/">Sqitch</a> for database migrations. From my point of view, I like this choice because Sqitch just uses script files in whatever the underlying database's SQL dialect is. That means that Marten can use our <a href="http://jasperfx.github.io/marten/documentation/schema/migrations/">existing &quot;WritePatch()&quot; schema management</a> to tie into Sqitch's migration scheme.</p>
+<h3 id="current-thinking-about-marten-sqitch">Current Thinking about Marten + Sqitch</h3>
+<p>Our team doing the RavenDB-to-Marten transition work has turned us on to using <a href="http://sqitch.org/">Sqitch</a> for database migrations. From my point of view, I like this choice because Sqitch just uses script files in whatever the underlying database's SQL dialect is. That means that Marten can use our <a href="http://jasperfx.github.io/marten/documentation/schema/migrations/">existing <code>WritePatch()</code> schema management</a> to tie into Sqitch's migration scheme.</p>
 <p>The way that I think this could work for us is first to have a Sqitch project established in our codebase with its folders for updates, rollbacks, and verify's. In our build script that runs in our master continuous integration (CI) build, we would:</p>
 <ol>
-	<li>Call sqitch to update the CI database (or whatever database we declare to be the source of truth) with the latest known migrations</li>
-	<li>Call the "marten assert" command shown above to detect if there are outstanding differences between the application configuration and the database by examining the exit code from that command</li>
-	<li>If there are any differences detected, figure out what the next migration name would be based on our naming convention and use sqitch to start a new migration with that name</li>
-	<li>Run the "marten patch" command to write the update and rollback scripts to the file locations previously determined in steps 2 &amp; 3</li>
-	<li>Commit the new migration file back to the underlying git repository</li>
+<li>Call sqitch to update the CI database (or whatever database we declare to be the source of truth) with the latest known migrations</li>
+<li>Call the <code>marten assert</code> command shown above to detect if there are outstanding differences between the application configuration and the database by examining the exit code from that command</li>
+<li>If there are any differences detected, figure out what the next migration name would be based on our naming convention and use sqitch to start a new migration with that name</li>
+<li>Run the <code>marten patch</code> command to write the update and rollback scripts to the file locations previously determined in steps 2 &amp; 3</li>
+<li>Commit the new migration file back to the underlying Git repository</li>
 </ol>
-I'm insisting on doing this on our CI server instead of making developers do it locally because I think it'll lead to less duplicated work and fewer problems from these migrations being created against work in progress feature branches.
+<p>I'm insisting on doing this on our CI server instead of making developers do it locally because I think it'll lead to less duplicated work and fewer problems from these migrations being created against work in progress feature branches.</p>
 <p>For production (and staging/QA) deployments, we'd just use sqitch out of the box to bring the databases up to date.</p>
 <p>I like this approach because it keeps the monotony of repetitive database change tracking out of our developer's hair, while also allowing them to integrate database changes from outside of Marten objects into the database versioning.</p>
 

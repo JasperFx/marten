@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.7.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -113,7 +113,7 @@ inline projections.</strong> If you need to use event metadata in your projectio
 <pre><code class="language-csharp">&#xA;public interface ITransform&lt;TEvent, TView&gt;&#xA;{&#xA;    TView Transform(EventStream stream, Event&lt;TEvent&gt; input);&#xA;}&#xA;</code></pre>
 <p>As a sample problem, let's say that we're constantly capturing <code>MonsterSlayed</code> events and our system needs to query just this data. You could query directly against the big ol' <code>mt_events</code> table with
 <code>IEventStore.Query&lt;MonsterSlayed&gt;()</code>, but it would be more efficient to keep a separate &quot;read side&quot; copy of this data in a new data collection. We could build a new transform class and readside document like this:</p>
-<pre><code class="language-csharp">&#xA;public class MonsterDefeatedTransform : ITransform&lt;MonsterSlayed, MonsterDefeated&gt;&#xA;{&#xA;    public MonsterDefeated Transform(EventStream stream, Event&lt;MonsterSlayed&gt; input)&#xA;    {&#xA;        return new MonsterDefeated&#xA;        {&#xA;            Id = input.Id,&#xA;            Monster = input.Data.Name&#xA;        };&#xA;    }&#xA;}&#xA;&#xA;public class MonsterDefeated&#xA;{&#xA;    public Guid Id { get; set; }&#xA;    public string Monster { get; set; }&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public class MonsterDefeatedTransform : ITransform&lt;MonsterSlayed, MonsterDefeated&gt;&#xA;{&#xA;    public MonsterDefeated Transform(EventStream stream, Event&lt;MonsterSlayed&gt; input)&#xA;    {&#xA;        return new MonsterDefeated&#xA;        {&#xA;            Id = input.Id,&#xA;            Monster = input.Data.Name&#xA;        };&#xA;    }&#xA;}&#xA;&#xA;public class MonsterDefeated&#xA;{&#xA;    public Guid Id { get; set; }&#xA;    public string Monster { get; set; }&#xA;}&#xA;&#xA;</code></pre>
 <p>Now, we can plug our new transform type above as a projection when we configure our document store like this:</p>
 <pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());&#xA;});&#xA;</code></pre>
 <pre><code class="language-csharp">&#xA;public void using_live_transformed_events(IDocumentSession session)&#xA;{&#xA;    var started = new QuestStarted { Name = &quot;Find the Orb&quot; };&#xA;    var joined = new MembersJoined { Day = 2, Location = &quot;Faldor&#x27;s Farm&quot;, Members = new string[] { &quot;Garion&quot;, &quot;Polgara&quot;, &quot;Belgarath&quot; } };&#xA;    var slayed1 = new MonsterSlayed { Name = &quot;Troll&quot; };&#xA;    var slayed2 = new MonsterSlayed { Name = &quot;Dragon&quot; };&#xA;&#xA;    MembersJoined joined2 = new MembersJoined { Day = 5, Location = &quot;Sendaria&quot;, Members = new string[] { &quot;Silk&quot;, &quot;Barak&quot; } };&#xA;&#xA;&#xA;    session.Events.StartStream&lt;Quest&gt;(started, joined, slayed1, slayed2);&#xA;    session.SaveChanges();&#xA;&#xA;    // Our MonsterDefeated documents are created inline&#xA;    // with the SaveChanges() call above and are available&#xA;    // for querying&#xA;    session.Query&lt;MonsterDefeated&gt;().Count()&#xA;        .ShouldBe(2);&#xA;}&#xA;</code></pre>
@@ -138,7 +138,7 @@ custom <code>IAggregateFinder&lt;T&gt;</code>, where &quot;T&quot; is the projec
 <h2 id="inline-aggregation">Inline Aggregation</h2>
 <p>If you would prefer that the projected aggregate document be updated <em>inline</em> with the events being appended, you simply need to register
 the aggregation type in the <code>StoreOptions</code> upfront when you build up your document store like this:</p>
-<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // This is all you need to create the QuestParty projected&#xA;    // view&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xA;});&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;    _.Events.TenancyStyle = tenancyStyle;&#xA;&#xA;    // This is all you need to create the QuestParty projected&#xA;    // view&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xA;});&#xA;</code></pre>
 <p>At this point, you would be able to query against <code>QuestParty</code> as just another document type.</p>
 <h2 id="aggregator-lookup">Aggregator Lookup</h2>
 <p><code>EventGraph.UseAggregatorLookup(IAggregatorLookup aggregatorLookup)</code> can be used to register an <code>IAggregatorLookup</code> that is used to look up <code>IAggregator&lt;T&gt;</code> for aggregations. This allows e.g. for generic aggregation strategy to be used, rathen than registering aggregators

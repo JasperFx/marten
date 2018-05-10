@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.7.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -106,7 +106,7 @@ different queries for &quot;IsBlue().&quot; First, write the method you want to 
 </ol>
 <p>Now, to create a custom Linq parser for the <code>IsBlue()</code> method, you need to create a custom implementation of the <code>IMethodCallParser</code>
 interface shown below:</p>
- <pre><code class="language-csharp">&#xA;/// &lt;summary&gt;&#xA;/// Models the Sql generation for a method call&#xA;/// in a Linq query. For example, map an expression like Where(x =&gt; x.Property.StartsWith(&quot;prefix&quot;))&#xA;/// to part of a Sql WHERE clause&#xA;/// &lt;/summary&gt;&#xA;public interface IMethodCallParser&#xA;{&#xA;    /// &lt;summary&gt;&#xA;    /// Can this parser create a Sql where clause&#xA;    /// from part of a Linq expression that calls&#xA;    /// a method&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;expression&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;returns&gt;&lt;/returns&gt;&#xA;    bool Matches(MethodCallExpression expression);&#xA;&#xA;    /// &lt;summary&gt;&#xA;    /// Creates an IWhereFragment object that Marten&#xA;    /// uses to help construct the underlying Sql&#xA;    /// command&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;param name=&quot;serializer&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;param name=&quot;expression&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;returns&gt;&lt;/returns&gt;&#xA;    IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression);&#xA;}&#xA;</code></pre>
+ <pre><code class="language-csharp">&#xA;public interface IMethodCallParser&#xA;{&#xA;    bool Matches(MethodCallExpression expression);&#xA;&#xA;    IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression);&#xA;}&#xA;</code></pre>
 <p>The <code>IMethodCallParser</code> interface needs to match on method expressions that it could parse, and be able to turn the Linq expression into
 part of a Postgresql &quot;where&quot; clause. The custom Linq parser for <code>IsBlue()</code> is shown below:</p>
 <pre><code class="language-csharp">&#xA;public static bool IsBlue(this ColorTarget target)&#xA;{&#xA;    return target.Color == &quot;Blue&quot;;&#xA;}&#xA;</code></pre>

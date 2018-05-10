@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.7.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -112,7 +112,7 @@ will prefer to use either attributes or the new embedded configuration option wi
 better to keep the persistence configuration on the document type itself for easier traceability. Either way,
 Marten has you covered with the various configuration options shown here.</p>
 <p>The configuration options you'll most likely use are:</p>
-<ul class="table-of-contents"><li><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></li><li><a href="/marten/documentation/documents/customizing/document_policies">Document Policies</a></li><li><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></li><li><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a></li><li><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></li><li><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a></li></ul>
+<ul class="table-of-contents"><li><a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a></li><li><a href="/marten/documentation/documents/customizing/document_policies">Document Policies</a></li><li><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></li><li><a href="/marten/documentation/documents/customizing/foreign_keys">Foreign Keys</a></li><li><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></li><li><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a></li><li><a href="/marten/documentation/documents/customizing/unique">Unique Indexes</a></li></ul>
 <h2 id="postgresql-limits-on-naming">Postgresql Limits on Naming</h2>
 <p>Postgresql out of the box has a limitation on the length of database object names to 64. This can be overridden in a
 Postgresql database by <a href="https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS">setting the <code>NAMEDATALEN</code> property</a>.</p>
@@ -129,7 +129,7 @@ or testing harnesses or custom migration tooling.</p>
 <p>While there are some limited abilities to configure storage with attributes, the most complete option right now
 is a fluent interface implemented by the <code>MartenRegistry</code>. To configure a Marten document store, first write
 your own subclass of <code>MartenRegistry</code> and place declarations in the constructor function like this example:</p>
-<pre><code class="language-csharp">&#xA;public class MyMartenRegistry : MartenRegistry&#xA;{&#xA;    public MyMartenRegistry()&#xA;    {&#xA;        // I&#x27;m going to search for user by UserName&#xA;        // pretty frequently, so I want that to be &#xA;        // a duplicated, searchable field&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName);&#xA;&#xA;&#xA;        // Add a gin index to Company&#x27;s json data storage&#xA;        For&lt;Company&gt;().GinIndexJsonData();&#xA;    }&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public class MyMartenRegistry : MartenRegistry&#xA;{&#xA;    public MyMartenRegistry()&#xA;    {&#xA;        // I&#x27;m going to search for user by UserName&#xA;        // pretty frequently, so I want that to be&#xA;        // a duplicated, searchable field&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName);&#xA;&#xA;        // Add a gin index to Company&#x27;s json data storage&#xA;        For&lt;Company&gt;().GinIndexJsonData();&#xA;    }&#xA;}&#xA;&#xA;</code></pre>
 <p>To apply your new <code>MartenRegistry</code>, just include it when you bootstrap the <code>IDocumentStore</code> as in this example:</p>
 <pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(&quot;your connection string&quot;);&#xA;    _.Schema.Include&lt;MyMartenRegistry&gt;();&#xA;});&#xA;</code></pre>
 <p>Do note that you could happily use multiple <code>MartenRegistry</code> classes in larger applications if that is advantageous.</p>
@@ -140,7 +140,7 @@ that Marten will ignore your manual indexes when calculating schema differences.
 <h2 id="custom-attributes">Custom Attributes</h2>
 <p>If there's some kind of customization you'd like to use attributes for that isn't already supported by Marten,
 you're still in luck. If you write a subclass of the <code>MartenAttribute</code> shown below:</p>
-<pre><code class="language-csharp">&#xA;public abstract class MartenAttribute : Attribute&#xA;{&#xA;    /// &lt;summary&gt;&#xA;    /// Customize Document storage at the document level&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xA;    public virtual void Modify(DocumentMapping mapping) { }&#xA;&#xA;    /// &lt;summary&gt;&#xA;    /// Customize the Document storage for a single member&#xA;    /// &lt;/summary&gt;&#xA;    /// &lt;param name=&quot;mapping&quot;&gt;&lt;/param&gt;&#xA;    /// &lt;param name=&quot;member&quot;&gt;&lt;/param&gt;&#xA;    public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public abstract class MartenAttribute : Attribute&#xA;{&#xA;    public virtual void Modify(DocumentMapping mapping) { }&#xA;&#xA;    public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }&#xA;}&#xA;</code></pre>
 <p>And decorate either classes or individual field or properties on a document type, your custom attribute will be
 picked up and used by Marten to configure the underlying <code>DocumentMapping</code> model for that document type. The
 <code>MartenRegistry</code> is just a fluent interface over the top of this same <code>DocumentMapping</code> model.</p>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+        <meta charset="utf-8">
+        <meta name="generator" content="Bootply" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<title>Marten - Unique Indexes</title>
+		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+        
+
+        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+
+        <!-- CSS code from Bootply.com editor -->
+        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    </head>
+    
+    <!-- HTML code from Bootply.com editor -->
+    
+    <body  >
+
+<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+        
+        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
+		    </div>
+		    <nav class="collapse navbar-collapse" role="navigation">
+		      <ul class="nav navbar-nav pull-right">
+            <li>
+              <a href="/marten/getting_started">Getting Started</a>
+            </li>
+		        <li>
+		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+		        </li>
+		      	<li><a href="/marten/documentation/documents/customizing/metadata_index" title="Metadata Indexes">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/json" title="Json Serialization">Next</a></li>
+		      </ul>
+      <div class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input id="search" type="search" class="form-control" placeholder="Search">
+        </div>
+      </div>
+
+		    </nav>
+
+		  </div>
+		</nav>
+
+		  <div class="container">
+		  	<nav class="navbar-inverse">
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Unique Indexes</li></ol>
+		  	</nav>
+		  </div>
+
+		<!--main-->
+		<div class="container">
+			<div class="row">
+		      <!--left-->
+		      
+		      <div class="col-md-3" id="leftCol">
+			  
+				<img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle"/>
+		      	<br />
+
+				<ul class="nav nav-stacked affix" id="sidebar">
+
+		        </ul>
+
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/json">Json Serialization</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a></p>
+
+		        </ul>
+		      </div><!--/left-->
+		      
+		      <!--right-->
+		      <div class="col-md-9">
+			      	<h1>Unique Indexes <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/configuration/unique.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      
+			      	<hr />
+
+			      	<div id="main-pane">
+			      		<!--title:Unique Indexes-->
+<p><a href="https://www.postgresql.org/docs/current/static/indexes-unique.html">Unique Indexes</a> are used to enforce uniqueness of property value. They can be combined to handle also uniqueness of multiple properties.</p>
+<p>Marten supports both <a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a> and <p class="bg-warning" style="padding:5px"><b>Unknown topic key 'documentation/documents/customizing/computed_index'</b><small> -- CTRL+SHIFT+R to force refresh the topic tree</small></p> uniqueness. Using Duplicated Field brings benefits to queries but brings additional complexity, while Computed Index reuses current JSON structure without adding additional db column.</p>
+<h2 id="definining-unique-index-through-store-options">Definining Unique Index through Store options</h2>
+<p>Unique Indexes can be created using the fluent interface off of <code>StoreOptions</code> like this:</p>
+<ol>
+<li><strong>Computed</strong>:</li>
+</ol>
+<ul>
+<li>single property</li>
+</ul>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // This creates&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.Computed, x =&gt; x.UserName);&#xA;});&#xA;</code></pre>
+<ul>
+<li>multiple properties</li>
+</ul>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // This creates&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.Computed, x =&gt; x.FirstName, x =&gt; x.FullName);&#xA;});&#xA;</code></pre>
+<div class="alert alert-info">
+If you don't specify first parameter (index type) - by default it will be created as computed index.
+</div>
+<ol start="2">
+<li><strong>Duplicated field</strong>:</li>
+</ol>
+<ul>
+<li>single property</li>
+</ul>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // This creates&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.DuplicatedField, x =&gt; x.UserName);&#xA;});&#xA;</code></pre>
+<ul>
+<li>multiple properties</li>
+</ul>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // This creates&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.DuplicatedField, x =&gt; x.FirstName, x =&gt; x.FullName);&#xA;});&#xA;</code></pre>
+<h2 id="defining-unique-index-through-attribute">Defining Unique Index through Attribute</h2>
+<p>Unique Indexes can be created using the <code>[UniqueIndex]</code> attribute like this:</p>
+<ol>
+<li><strong>Computed</strong>:</li>
+</ol>
+<ul>
+<li>single property</li>
+</ul>
+<pre><code class="language-csharp">&#xA;public class Account&#xA;{&#xA;    public Guid Id { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed)]&#xA;    public string Number { get; set; }&#xA;}&#xA;</code></pre>
+<ul>
+<li>multiple properties</li>
+</ul>
+<pre><code class="language-csharp">&#xA;public class Address&#xA;{&#xA;    private const string UniqueIndexName = &quot;sample_uidx_person&quot;;&#xA;&#xA;    public Guid Id { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed, IndexName = UniqueIndexName)]&#xA;    public string Street { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed, IndexName = UniqueIndexName)]&#xA;    public string Number { get; set; }&#xA;}&#xA;</code></pre>
+<div class="alert alert-info">
+If you don't specify IndexType parameter - by default it will be created as computed index.
+</div>
+<ol start="2">
+<li><strong>Duplicated field</strong>:</li>
+</ol>
+<ul>
+<li>single property</li>
+</ul>
+<pre><code class="language-csharp">&#xA;public class Client&#xA;{&#xA;    public Guid Id { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField)]&#xA;    public string Name { get; set; }&#xA;}&#xA;</code></pre>
+<ul>
+<li>multiple properties</li>
+</ul>
+<pre><code class="language-csharp">&#xA;public class Person&#xA;{&#xA;    private const string UniqueIndexName = &quot;sample_uidx_person&quot;;&#xA;&#xA;    public Guid Id { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = UniqueIndexName)]&#xA;    public string FirstName { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = UniqueIndexName)]&#xA;    public string SecondName { get; set; }&#xA;}&#xA;</code></pre>
+<div class="alert alert-info">
+To group multiple properties into single index you need to specify the same values in `IndexName` parameters.
+</div>
+<h2 id="defining-unique-index-through-index-customization">Defining Unique Index through Index customization</h2>
+<p>You have some ability to extend to Computed Index definition to be unique index  by passing a second Lambda <code>Action</code> into
+the <code>Index()</code> method and definining <code>IsUnique</code> property as <code>true</code> as shown below:</p>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // The second, optional argument to Index()&#xA;    // allows you to customize the calculated index&#xA;    _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Number, x =&gt;&#xA;    {&#xA;        // Change the index method to &quot;brin&quot;&#xA;        x.Method = IndexMethod.brin;&#xA;&#xA;        // Force the index to be generated with casing rules&#xA;        x.Casing = ComputedIndex.Casings.Lower;&#xA;&#xA;        // Override the index name if you want&#xA;        x.IndexName = &quot;mt_my_name&quot;;&#xA;&#xA;        // Toggle whether or not the index is concurrent&#xA;        // Default is false&#xA;        x.IsConcurrent = true;&#xA;&#xA;        // Toggle whether or not the index is a UNIQUE&#xA;        // index&#xA;        x.IsUnique = true;&#xA;&#xA;        // Partial index by supplying a condition&#xA;        x.Where = &quot;(data -&gt;&gt; &#x27;Number&#x27;)::int &gt; 10&quot;;&#xA;    });&#xA;});&#xA;</code></pre>
+<p>Same can be configured for Duplicated Field:</p>
+<pre><code class="language-csharp">&#xA;public class IndexExamples : MartenRegistry&#xA;{&#xA;    public IndexExamples()&#xA;    {&#xA;        // Add a gin index to the User document type&#xA;        For&lt;User&gt;().GinIndexJsonData();&#xA;&#xA;        // Adds a basic btree index to the duplicated&#xA;        // field for this property that also overrides&#xA;        // the Postgresql database type for the column&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);&#xA;&#xA;        // Customize the index on the duplicated field&#xA;        // for FirstName&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, configure: idx =&gt;&#xA;        {&#xA;            idx.IndexName = &quot;idx_special&quot;;&#xA;            idx.Method = IndexMethod.hash;&#xA;        });&#xA;&#xA;        // Customize the index on the duplicated field&#xA;        // for UserName to be unique&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName, configure: idx =&gt;&#xA;        {&#xA;            idx.IsUnique = true;&#xA;        });&#xA;    }&#xA;}&#xA;&#xA;</code></pre>
+
+			      	</div>
+
+			      	<hr />
+
+			      	<nav>
+				        <span>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a>
+
+				        </span>
+				        <span class="pull-right">
+
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/json">Json Serialization</a>
+
+				        </span>
+			      	</nav>
+
+		      </div><!--/right-->
+		  	</div><!--/row-->
+		</div><!--/container-->
+
+
+    </body>
+
+
+    <foot>
+        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript" src="/marten/content/prism.js"></script>
+        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+        <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+<script>
+$('#search').keyup(function(e){
+  if(e.keyCode == 13) {
+    var search = $('#search').val();
+
+    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+    url = encodeURI(url);
+
+    //alert(url);
+
+    window.location.href = url;
+
+    e.stopPropagation();
+    if (e.cancelBubble!=null) e.cancelBubble = true;
+    return false;
+  }
+
+
+
+}); 
+
+</script>
+    </foot>
+</html>
+

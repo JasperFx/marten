@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.7.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -97,9 +97,9 @@ table. When you issue a Linq query using this duplicated property or field, Mart
 query to run against the duplicated field instead of using JSONB operators. This of course only helps for
 queries using the duplicated field.</p>
 <p>To create a duplicated field, you can use the <code>[DuplicateField]</code> attribute like this:</p>
-<pre><code class="language-csharp">&#xA;[PropertySearching(PropertySearching.ContainmentOperator)]&#xA;public class Employee&#xA;{&#xA;    public int Id;&#xA;&#xA;    // You can optionally override the Postgresql&#xA;    // type for the duplicated column in the document&#xA;    // storage table&#xA;    [DuplicateField(PgType = &quot;text&quot;)]&#xA;    public string Category;&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;[PropertySearching(PropertySearching.ContainmentOperator)]&#xA;public class Employee&#xA;{&#xA;    public int Id;&#xA;&#xA;    // You can optionally override the Postgresql&#xA;    // type for the duplicated column in the document&#xA;    // storage table&#xA;    [DuplicateField(PgType = &quot;text&quot;)]&#xA;    public string Category;&#xA;}&#xA;&#xA;</code></pre>
 <p>Or by using the fluent interface off of <code>StoreOptions</code>:</p>
-<pre><code class="language-csharp">&#xA;public class IndexExamples : MartenRegistry&#xA;{&#xA;    public IndexExamples()&#xA;    {&#xA;        // Add a gin index to the User document type&#xA;        For&lt;User&gt;().GinIndexJsonData();&#xA;&#xA;        // Adds a basic btree index to the duplicated&#xA;        // field for this property that also overrides&#xA;        // the Postgresql database type for the column&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);&#xA;&#xA;        // Customize the index on the duplicated field&#xA;        // for FirstName &#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, configure:idx =&gt;&#xA;        {&#xA;            idx.IndexName = &quot;idx_special&quot;;&#xA;            idx.Method = IndexMethod.hash;&#xA;        });&#xA;&#xA;    }&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;public class IndexExamples : MartenRegistry&#xA;{&#xA;    public IndexExamples()&#xA;    {&#xA;        // Add a gin index to the User document type&#xA;        For&lt;User&gt;().GinIndexJsonData();&#xA;&#xA;        // Adds a basic btree index to the duplicated&#xA;        // field for this property that also overrides&#xA;        // the Postgresql database type for the column&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);&#xA;&#xA;        // Customize the index on the duplicated field&#xA;        // for FirstName&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, configure: idx =&gt;&#xA;        {&#xA;            idx.IndexName = &quot;idx_special&quot;;&#xA;            idx.Method = IndexMethod.hash;&#xA;        });&#xA;&#xA;        // Customize the index on the duplicated field&#xA;        // for UserName to be unique&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName, configure: idx =&gt;&#xA;        {&#xA;            idx.IsUnique = true;&#xA;        });&#xA;    }&#xA;}&#xA;&#xA;</code></pre>
 <p>By default, Marten adds a <a href="http://www.postgresql.org/docs/9.4/static/indexes-types.html">btree index</a> (the Postgresql default) to a searchable index, but you can also
 customize the generated index with the syntax shown above: The second <a href="http://martinfowler.com/dslCatalog/nestedClosure.html">nested closure</a> argument is an optional
 mechanism to customize the database index generated for the duplicated field.</p>

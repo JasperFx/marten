@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.7.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -92,10 +92,9 @@
 			      	<div id="main-pane">
 			      		<!--Title:Querying Documents with Linq-->
 <!--Url:linq-->
-<p>TODO(Split this topic up, and use ST specs)</p>
 <p>Marten uses the <a href="https://github.com/re-motion/Relinq">Relinq library</a> to support a subset of the normal Linq operators. Linq queries are done with
 Marten using the <code>IQuerySession.Query&lt;T&gt;()</code> or <code>IDocumentSession.Query&lt;T&gt;()</code> method to return an <a href="https://msdn.microsoft.com/en-us/library/system.linq.iqueryable(v=vs.100).aspx">IQueryable</a> for the document type <code>T</code>.</p>
-<pre><code class="language-csharp">&#xA;/// &lt;summary&gt;&#xA;/// Use Linq operators to query the documents&#xA;/// stored in Postgresql&#xA;/// &lt;/summary&gt;&#xA;/// &lt;typeparam name=&quot;T&quot;&gt;&lt;/typeparam&gt;&#xA;/// &lt;returns&gt;&lt;/returns&gt;&#xA;IMartenQueryable&lt;T&gt; Query&lt;T&gt;();&#xA;</code></pre>
+<pre><code class="language-csharp">&#xA;IMartenQueryable&lt;T&gt; Query&lt;T&gt;();&#xA;</code></pre>
 <p>To query for all documents of a type - not that you would do this very often outside of testing - use the <code>Query&lt;T&gt;()</code> method like this:</p>
 <pre><code class="language-csharp">&#xA;public void get_all_documents_of_a_type(IDocumentSession session)&#xA;{&#xA;    // Calling ToArray() just forces the query to be executed&#xA;    var targets = session.Query&lt;Target&gt;().ToArray();&#xA;}&#xA;</code></pre>
 <h2 id="basic-operators">Basic Operators</h2>
@@ -190,6 +189,8 @@ rather than the parent document regardless of the order in which the operators a
 <p>Marten v0.8 added a new extension method called <code>IsOneOf()</code> that can be used to query for documents having
 a field or property matching one of many supplied values:</p>
 <pre><code class="language-csharp">&#xA;// Finds all SuperUser&#x27;s whose role is either&#xA;// Admin, Supervisor, or Director&#xA;var users = theSession.Query&lt;SuperUser&gt;()&#xA;    .Where(x =&gt; x.Role.IsOneOf(&quot;Admin&quot;, &quot;Supervisor&quot;, &quot;Director&quot;));&#xA;&#xA;</code></pre>
+<p>To find one of for an array you can use this strategy:</p>
+<pre><code class="language-csharp">&#xA;// Finds all UserWithNicknames&#x27;s whose nicknames matches either &quot;Melinder&quot; or &quot;Norrland&quot;&#xA;&#xA;var nickNames = new[] {&quot;Melinder&quot;, &quot;Norrland&quot;};&#xA;&#xA;var users = session.Query&lt;UserWithNicknames&gt;()&#xA;    .Where(x =&gt; x.Nicknames.Any(n =&gt; nickNames.Contains(n)));&#xA;&#xA;</code></pre>
 <h2 id="modulo-queries">Modulo Queries</h2>
 <p>Marten v0.8 added the ability to use the modulo operator in Linq queries:</p>
 <pre><code class="language-csharp">&#xA;[Fact]&#xA;public void use_modulo()&#xA;{&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 1});&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 2});&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 3});&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 4});&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 5});&#xA;    theSession.Store(new Target{Color = Colors.Green, Number = 6});&#xA;&#xA;    theSession.SaveChanges();&#xA;&#xA;    theSession.Query&lt;Target&gt;().Where(x =&gt; x.Number % 2 == 0 &amp;&amp; x.Color &lt; Colors.Green).ToArray()&#xA;        .Select(x =&gt; x.Number)&#xA;        .ShouldHaveTheSameElementsAs(2, 4);&#xA;}&#xA;</code></pre>
