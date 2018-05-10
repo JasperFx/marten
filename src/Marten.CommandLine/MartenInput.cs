@@ -13,10 +13,15 @@ namespace Marten.CommandLine
         [Description("Option to store all output into a log file")]
         public string LogFlag { get; set; }
 
+        [IgnoreOnCommandLine]
+        public IDocumentStore Store { get; set; }
+
         internal StoreOptions Options { get; set; }
 
         internal IDocumentStore CreateStore()
         {
+            if (Store != null) return Store;
+
             if (ConnFlag.IsNotEmpty())
             {
                 WriteLine($"Connecting to '{ConnFlag}'");
