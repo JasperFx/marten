@@ -237,7 +237,7 @@ namespace Marten.Events
                 var runtimeType = Type.GetType(assemblyQualifiedName);
                 if(runtimeType == null)
                 {
-                    throw new Exception($"Unable to load event type '{assemblyQualifiedName}'.");
+                    throw new UnknownEventTypeException($"Unable to load event type '{assemblyQualifiedName}'.");
                 }
                 _nameToType[assemblyQualifiedName] = runtimeType;
             }
