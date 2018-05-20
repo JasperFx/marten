@@ -38,7 +38,7 @@ namespace Marten.Events
             _events.OnMissing = eventType =>
             {
                 var mapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
-                Options.Storage.AddMapping(mapping);
+                Options.Storage.AddDocumentMapping(mapping);
 
                 return mapping;
             };

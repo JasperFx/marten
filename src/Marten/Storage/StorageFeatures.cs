@@ -16,17 +16,7 @@ namespace Marten.Storage
     public class StorageFeatures
     {
         private readonly StoreOptions _options;
-
-        private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
-            new ConcurrentDictionary<Type, DocumentMapping>();
-
-        private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
-            new ConcurrentDictionary<Type, IDocumentMapping>();
-
-        private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
-            new ConcurrentDictionary<Type, IDocumentStorage>();
-
-
+        private readonly DocumentStorageFeatures _documentStorageFeatures = new DocumentStorageFeatures();
         private readonly Dictionary<Type, IFeatureSchema> _features = new Dictionary<Type, IFeatureSchema>();
 
         public StorageFeatures(StoreOptions options)
@@ -79,64 +69,18 @@ namespace Marten.Storage
 
         public SystemFunctions SystemFunctions { get; }
 
-        public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Values;
+        public IEnumerable<DocumentMapping> AllDocumentMappings => _documentStorageFeatures.AllDocumentMappings;
 
-        public IEnumerable<IDocumentMapping> AllMappings => _documentMappings.Values.Union(_mappings.Values);
+        public IEnumerable<IDocumentMapping> AllMappings => _documentStorageFeatures.AllMappings;
 
-        public DocumentMapping MappingFor(Type documentType)
-        {
-            return _documentMappings.GetOrAdd(documentType, type => typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType));
-        }
+        public DocumentMapping MappingFor(Type documentType) => _documentStorageFeatures.MappingFor(documentType, _options);
 
+        internal IDocumentMapping FindDocumentMapping(Type documentType) => _documentStorageFeatures.FindMapping(documentType, _options);
 
+        internal void AddDocumentMapping(IDocumentMapping mapping) => _documentStorageFeatures.AddMapping(mapping);
 
-        internal IDocumentMapping FindMapping(Type documentType)
-        {
-            return _mappings.GetOrAdd(documentType, type =>
-            {
-                var subclass =  AllDocumentMappings.SelectMany(x => x.SubClasses)
-                    .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping;
-
-                return subclass ?? MappingFor(documentType);
-            });
-        }
-
-        internal void AddMapping(IDocumentMapping mapping)
-        {
-            _mappings[mapping.DocumentType] = mapping;
-        }
-
-        public IDocumentStorage StorageFor(Type documentType)
-        {
-            return _documentTypes.GetOrAdd(documentType, type =>
-            {
-                var mapping = FindMapping(documentType);
-
-                assertNoDuplicateDocumentAliases();
-
-                return mapping.BuildStorage(_options);
-            });
-        }
-
-        private void assertNoDuplicateDocumentAliases()
-        {
-            var duplicates =
-                AllDocumentMappings.Where(x => !x.StructuralTyped)
-                    .GroupBy(x => x.Alias)
-                    .Where(x => x.Count() > 1)
-                    .ToArray();
-            if (duplicates.Any())
-            {
-                var message = duplicates.Select(group =>
-                {
-                    return
-                        $"Document types {group.Select(x => x.DocumentType.Name).Join(", ")} all have the same document alias '{group.Key}'. You must explicitly make document type aliases to disambiguate the database schema objects";
-                }).Join("\n");
-
-                throw new AmbiguousDocumentTypeAliasesException(message);
-            }
-        }
-
+        public IDocumentStorage StorageFor(Type documentType) => _documentStorageFeatures.StorageFor(documentType, _options);
+        
         public IFeatureSchema FindFeature(Type featureType)
         {
             if (_features.ContainsKey(featureType))
@@ -166,14 +110,14 @@ namespace Marten.Storage
             _features[typeof(EventStream)] = _options.Events;
             _features[typeof(IEvent)] = _options.Events;
 
-            _mappings[typeof(IEvent)] = new EventQueryMapping(_options);
-
-            foreach (var mapping in _documentMappings.Values)
+            _documentStorageFeatures.HoldEventQueryMapping(_options);
+            
+            foreach (var mapping in AllDocumentMappings)
             {
                 foreach (var subClass in mapping.SubClasses)
                 {
-                    _mappings[subClass.DocumentType] = subClass;
-                    _features[subClass.DocumentType] = subClass.Parent;
+                    _documentStorageFeatures.HoldSubClassMapping(subClass.DocumentType, subClass);
+                  _features[subClass.DocumentType] = subClass.Parent;
                 }
             }
         }
@@ -195,8 +139,7 @@ namespace Marten.Storage
         {
             yield return SystemFunctions;
 
-            var mappings = _documentMappings
-                .Values
+            var mappings = AllDocumentMappings
                 .OrderBy(x => x.DocumentType.Name)
                 .TopologicalSort(m =>
                 {
@@ -211,7 +154,7 @@ namespace Marten.Storage
                 yield return mapping;
             }
 
-            if (SequenceIsRequired())
+            if (_documentStorageFeatures.SequenceIsRequired())
             {
                 yield return tenant.Sequences;
             }
@@ -237,9 +180,6 @@ namespace Marten.Storage
             }
         }
 
-        internal bool SequenceIsRequired()
-        {
-            return _documentMappings.Values.Any(x => x.IdStrategy.RequiresSequences);
-        }
     }
+
 }
