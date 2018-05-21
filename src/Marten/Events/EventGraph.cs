@@ -37,9 +37,10 @@ namespace Marten.Events
             _aggregatorLookup = new AggregatorLookup();
             _events.OnMissing = eventType =>
             {
-                var mapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
-                Options.Storage.AddDocumentMapping(mapping);
+                var mapping = options.Storage.EventMappingFor(eventType);
 
+                Options.Storage.AddDocumentMapping(mapping);
+                _byEventName.Fill(mapping.EventTypeName, mapping);
                 return mapping;
             };
 

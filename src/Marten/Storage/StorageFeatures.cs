@@ -17,6 +17,7 @@ namespace Marten.Storage
     {
         private readonly StoreOptions _options;
         private readonly DocumentStorageFeatures _documentStorageFeatures = new DocumentStorageFeatures();
+        private readonly EventStorageFeatures _eventStorageFeatures = new EventStorageFeatures();
         private readonly Dictionary<Type, IFeatureSchema> _features = new Dictionary<Type, IFeatureSchema>();
 
         public StorageFeatures(StoreOptions options)
@@ -96,6 +97,7 @@ namespace Marten.Storage
             return MappingFor(featureType);
         }
 
+        public EventMapping EventMappingFor(Type eventType) => _eventStorageFeatures.MappingFor(eventType, _options);
 
         internal void PostProcessConfiguration()
         {
