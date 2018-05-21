@@ -44,19 +44,18 @@ where
         public void eventmapping_for_type_can_be_obtiained_via_event_type_name()
         {
             var customEventTypeName = "foo";
-            var eventType = typeof(Bug1019.Product);
             StoreOptions(options =>
             {
-                var eventMapping = options.Storage.EventMappingFor(eventType);
+                var eventMapping = options.Storage.EventMappingFor<Bug1019.Product>();
                 eventMapping.EventTypeName = customEventTypeName;
             });
             using (var session = theStore.OpenSession())
             {
                 var eventGraph = session.DocumentStore.Events;
-                eventGraph.EventMappingFor(eventType).ShouldBeTheSameAs(eventGraph.EventMappingFor(customEventTypeName));
+                eventGraph.EventMappingFor<Bug1019.Product>().ShouldBeTheSameAs(eventGraph.EventMappingFor(customEventTypeName));
 
                 // note doing the following first would not work
-                eventGraph.EventMappingFor(customEventTypeName).ShouldBeTheSameAs(eventGraph.EventMappingFor(eventType));
+                eventGraph.EventMappingFor(customEventTypeName).ShouldBeTheSameAs(eventGraph.EventMappingFor<Bug1019.Product>());
             }
 
         }

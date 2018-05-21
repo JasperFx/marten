@@ -98,6 +98,7 @@ namespace Marten.Storage
         }
 
         public EventMapping EventMappingFor(Type eventType) => _eventStorageFeatures.MappingFor(eventType, _options);
+        public EventMapping EventMappingFor<T>() => EventMappingFor(typeof(T));
 
         internal void PostProcessConfiguration()
         {
