@@ -21,17 +21,15 @@ namespace Marten.Events
 {
     public abstract class EventMapping : IDocumentMapping, IQueryableDocument
     {
-        private readonly StoreOptions _options;
         private readonly EventGraph _parent;
         protected readonly DocumentMapping _inner;
 
         protected EventMapping(EventGraph parent, Type eventType)
         {
-            _options = parent.Options;
             _parent = parent;
             DocumentType = eventType;
 
-            EventTypeName = Alias = DocumentType.Name.ToTableAlias();
+            EventTypeName = DocumentType.Name.ToTableAlias();
             IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
 
             _inner = new DocumentMapping(eventType, parent.Options);
@@ -40,22 +38,16 @@ namespace Marten.Events
         public IDocumentMapping Root => this;
         public Type DocumentType { get; }
         public string EventTypeName { get; set; }
-        public string Alias { get; }
+        public string Alias => EventTypeName;
         public MemberInfo IdMember { get; }
         public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
         public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
 
         Type IDocumentMapping.IdType => typeof(Guid);
 
-        public DbObjectName Table =>  new DbObjectName(_options.Events.DatabaseSchemaName, "mt_events");
+        public DbObjectName Table =>  new DbObjectName(_parent.DatabaseSchemaName, "mt_events");
         public DuplicatedField[] DuplicatedFields { get; }
         public DeleteStyle DeleteStyle { get; }
-
-        public string DatabaseSchemaName
-        {
-            get { return _options.Events.DatabaseSchemaName; }
-            set { throw new NotSupportedException("The DatabaseSchemaName of Event can't be set."); }
-        }
 
         public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
 
