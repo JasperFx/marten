@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net46;netcoreapp1.0;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net46;netcoreapp1.0;netcoreapp2.0;netcoreapp2.1</TargetFrameworks>
     <AssemblyName>Marten.Testing</AssemblyName>
     <PackageId>Marten.Testing</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
@@ -33,11 +33,11 @@
     <PackageReference Include="structuremap" Version="4.5.2" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' or '$(TargetFramework)' == 'netcoreapp2.0'">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netcoreapp2.1'">
     <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' or '$(TargetFramework)' == 'netcoreapp2.0'">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netcoreapp2.1'">
     <Compile Remove="**\Fixtures\**\*.cs;**\Github\**\*.cs;StorytellerHarness.cs" />
   </ItemGroup>
 
