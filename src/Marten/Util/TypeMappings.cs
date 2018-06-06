@@ -58,7 +58,9 @@ namespace Marten.Util
                 case "decimal":
                 case "numeric":
                     return "decimal";
-
+			    
+		case "timestamp without time zone":
+                    return "timestamp";
 
                 case "timestamp with time zone":
                     return "timestamptz";
