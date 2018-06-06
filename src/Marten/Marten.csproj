@@ -3,7 +3,7 @@
     <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
     <VersionPrefix>2.8.2</VersionPrefix>
     <Authors>Jeremy D. Miller;Tim Cools;Jeff Doolittle;James Hopper</Authors>
-    <TargetFrameworks>net46;netstandard1.3;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
     <AssemblyName>Marten</AssemblyName>
     <PackageId>Marten</PackageId>
     <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
@@ -29,7 +29,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
     <PackageReference Include="Remotion.Linq" Version="2.1.1" />
-    <PackageReference Include="Npgsql" Version="3.2.5" />
+    <PackageReference Include="Npgsql" Version="4.0.0" />
     <PackageReference Include="Baseline" Version="1.3.0" />
     <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.7.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
