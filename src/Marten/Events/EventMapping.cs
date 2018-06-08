@@ -25,22 +25,26 @@ namespace Marten.Events
         private readonly EventGraph _parent;
         protected readonly DocumentMapping _inner;
 
-        protected EventMapping(EventGraph parent, Type eventType)
+        protected EventMapping(EventGraph parent, Type eventType, string eventName)
         {
             _options = parent.Options;
             _parent = parent;
             DocumentType = eventType;
 
-            EventTypeName = Alias = DocumentType.Name.ToTableAlias();
+            EventTypeName = eventName;
             IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
 
             _inner = new DocumentMapping(eventType, parent.Options);
         }
 
+        protected EventMapping(EventGraph parent, Type eventType) : this(parent, eventType, eventType.Name.ToTableAlias())
+        {
+        }
+
         public IDocumentMapping Root => this;
         public Type DocumentType { get; }
         public string EventTypeName { get; set; }
-        public string Alias { get; }
+        public string Alias => EventTypeName;
         public MemberInfo IdMember { get; }
         public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
         public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
@@ -107,10 +111,14 @@ namespace Marten.Events
     {
         private readonly string _tableName;
 
-        public EventMapping(EventGraph parent) : base(parent, typeof(T))
+        public EventMapping(EventGraph parent, string eventName) : base(parent, typeof(T), eventName)
         {
             var schemaName = parent.DatabaseSchemaName;
             _tableName = schemaName == StoreOptions.DefaultDatabaseSchemaName ? "mt_events" : $"{schemaName}.mt_events";
+        }
+
+        public EventMapping(EventGraph parent) : this(parent, typeof(T).Name.ToTableAlias())
+        {
         }
 
         public override IDocumentStorage BuildStorage(StoreOptions options)
@@ -231,7 +239,5 @@ namespace Marten.Events
                 return doc;
             }
         }
-
-
     }
 }

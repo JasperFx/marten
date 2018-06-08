@@ -54,7 +54,7 @@ AND    n.nspname = '{1}';";
 
         public void DeleteDocumentsFor(Type documentType)
         {
-            var mapping = _options.Storage.FindMapping(documentType);
+            var mapping = _options.Storage.FindDocumentMapping(documentType);
             mapping.DeleteAllDocuments(_tenant);
         }
 

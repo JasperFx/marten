@@ -37,9 +37,10 @@ namespace Marten.Events
             _aggregatorLookup = new AggregatorLookup();
             _events.OnMissing = eventType =>
             {
-                var mapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
-                Options.Storage.AddMapping(mapping);
+                var mapping = options.Storage.EventMappingFor(eventType);
 
+                Options.Storage.AddDocumentMapping(mapping);
+                _byEventName.Fill(mapping.EventTypeName, mapping);
                 return mapping;
             };
 
@@ -234,7 +235,12 @@ namespace Marten.Events
         {
             if (!_nameToType.ContainsKey(assemblyQualifiedName))
             {
-                _nameToType[assemblyQualifiedName] = Type.GetType(assemblyQualifiedName);
+                var runtimeType = Type.GetType(assemblyQualifiedName);
+                if(runtimeType == null)
+                {
+                    throw new UnknownEventTypeException($"Unable to load event type '{assemblyQualifiedName}'.");
+                }
+                _nameToType[assemblyQualifiedName] = runtimeType;
             }
 
             return _nameToType[assemblyQualifiedName];
