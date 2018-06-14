@@ -22,7 +22,7 @@ namespace Marten.Storage
 
         public ISerializer Serializer { get;}
 
-        public void BulkInsert<T>(T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
+        public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
             if (typeof(T) == typeof(object))
             {
@@ -101,7 +101,7 @@ namespace Marten.Storage
             }
         }
 
-        private void bulkInsertDocuments<T>(T[] documents, int batchSize, NpgsqlConnection conn, BulkInsertMode mode)
+        private void bulkInsertDocuments<T>(IReadOnlyCollection<T> documents, int batchSize, NpgsqlConnection conn, BulkInsertMode mode)
         {
             var loader = _tenant.BulkLoaderFor<T>();
 
@@ -114,7 +114,7 @@ namespace Marten.Storage
             var writer = _writerPool.Lease();
             try
             {
-                if (documents.Length <= batchSize)
+                if (documents.Count <= batchSize)
                 {
                     if (mode == BulkInsertMode.InsertsOnly)
                     {
@@ -131,7 +131,7 @@ namespace Marten.Storage
                     var total = 0;
                     var page = 0;
 
-                    while (total < documents.Length)
+                    while (total < documents.Count)
                     {
                         var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
 

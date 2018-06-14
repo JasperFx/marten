@@ -37,7 +37,7 @@ namespace Marten
         /// <param name="documents"></param>
         /// <param name="mode"></param>
         /// <param name="batchSize"></param>
-        void BulkInsert<T>(T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000);
+        void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000);
 
         /// <summary>
         ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -48,7 +48,7 @@ namespace Marten
         /// <param name="documents"></param>
         /// <param name="mode"></param>
         /// <param name="batchSize"></param>
-        void BulkInsert<T>(string tenantId, T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000);
+        void BulkInsert<T>(string tenantId, IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000);
 
 
         /// <summary>
