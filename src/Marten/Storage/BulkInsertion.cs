@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Schema.BulkLoading;
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
@@ -116,38 +117,26 @@ namespace Marten.Storage
             {
                 if (documents.Count <= batchSize)
                 {
-                    if (mode == BulkInsertMode.InsertsOnly)
-                    {
-                        loader.Load(_tenant, Serializer, conn, documents, writer);
-                    }
-                    else
-                    {
-                        loader.LoadIntoTempTable(_tenant, Serializer, conn, documents, writer);
-                    }
-
+                    loadDocuments(documents, loader, mode, conn, writer);
                 }
                 else
                 {
-                    var total = 0;
-                    var page = 0;
+                    var batch = new List<T>(batchSize);
 
-                    while (total < documents.Count)
+                    foreach (var document in documents)
                     {
-                        var batch = documents.Skip(page * batchSize).Take(batchSize).ToArray();
+                        batch.Add(document);
 
-                        if (mode == BulkInsertMode.InsertsOnly)
+                        if (batch.Count < batchSize)
                         {
-                            loader.Load(_tenant, Serializer, conn, batch, writer);
-                        }
-                        else
-                        {
-                            loader.LoadIntoTempTable(_tenant, Serializer, conn, batch, writer);
+                            continue;
                         }
 
-
-                        page++;
-                        total += batch.Length;
+                        loadDocuments(batch, loader, mode, conn, writer);
+                        batch.Clear();
                     }
+
+                    loadDocuments(batch, loader, mode, conn, writer);
                 }
             }
             finally
@@ -170,6 +159,18 @@ namespace Marten.Storage
                 var copy = loader.CopyNewDocumentsFromTempTable();
 
                 conn.RunSql(overwrite, copy);
+            }
+        }
+
+        private void loadDocuments<T>(IEnumerable<T> documents, IBulkLoader<T> loader, BulkInsertMode mode, NpgsqlConnection conn, CharArrayTextWriter writer)
+        {
+            if (mode == BulkInsertMode.InsertsOnly)
+            {
+                loader.Load(_tenant, Serializer, conn, documents, writer);
+            }
+            else
+            {
+                loader.LoadIntoTempTable(_tenant, Serializer, conn, documents, writer);
             }
         }
 
