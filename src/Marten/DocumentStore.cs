@@ -134,7 +134,7 @@ namespace Marten
         public IDocumentSchema Schema { get; }
         public AdvancedOptions Advanced { get; }
 
-        public void BulkInsert<T>(T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
+        public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
             var bulkInsertion = new BulkInsertion(Tenancy.Default, Options, _writerPool);
             bulkInsertion.BulkInsert(documents, mode, batchSize);
@@ -146,7 +146,7 @@ namespace Marten
             bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
         }
 
-        public void BulkInsert<T>(string tenantId, T[] documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+        public void BulkInsert<T>(string tenantId, IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000)
         {
             var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options, _writerPool);
