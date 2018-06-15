@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Services;
 using Shouldly;
@@ -309,6 +310,41 @@ namespace Marten.Testing.Events.Projections
             nullDocument.ShouldBeNull();
             var nullDocument2 = theSession.Load<QuestView>(streamId2);
             nullDocument2.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task updateonly_event_should_not_create_new_document()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
+                _.Events.ProjectView<PersistedView, Guid>()
+                    .ProjectEvent<QuestStarted>((view, @event) => view.Events.Add(@event))
+                    .ProjectEvent<MembersJoined>(e => e.QuestId, (view, @event) => view.Events.Add(@event))
+                    .ProjectEvent<MonsterSlayed>(e =>
+                    {
+                        return Guid.NewGuid();
+                    }, (view, @event) => view.Events.Add(@event), onlyUpdate: true);
+            });
+
+            theSession.Events.StartStream<QuestParty>(streamId, started);
+            theSession.SaveChanges();
+
+            var docoument = await theSession.LoadAsync<PersistedView>(streamId);
+            docoument.Events.Count.ShouldBe(1);
+
+            theSession.Events.StartStream<Monster>(slayed1);
+            theSession.SaveChanges();
+
+            var docoument2 = await theSession.LoadAsync<PersistedView>(streamId);
+            docoument2.Events.Count.ShouldBe(1);
+
+            theSession.Events.StartStream<QuestParty>(joined);
+            theSession.SaveChanges();
+
+            var docoument3 = await theSession.LoadAsync<PersistedView>(streamId);
+            docoument3.Events.Count.ShouldBe(2);
         }
     }
 
