@@ -27,6 +27,8 @@ namespace Marten.Events.Projections.Async
 
         public void Store(EventPage page)
         {
+            if (page.Count == 0) return;
+            
             if (First == null)
             {
                 First = page;

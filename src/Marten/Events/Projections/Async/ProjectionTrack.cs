@@ -224,6 +224,9 @@ namespace Marten.Events.Projections.Async
 
                 await session.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
+                // Just making sure nothing bad is happening to GC
+                page.Next = null;
+                
                 _logger.PageExecuted(page, this);
 
                 // This is a change to accomodate the big gap problem
