@@ -321,8 +321,7 @@ namespace Marten
         {
             assertNotDisposed();
 
-            QueryStatistics stats;
-            var handler = _store.HandlerFactory.HandlerFor(query, out stats);
+            var handler = _store.HandlerFactory.HandlerFor(query, out var stats);
             return _connection.Fetch(handler, _identityMap.ForQuery(), stats, Tenant);
         }
 
