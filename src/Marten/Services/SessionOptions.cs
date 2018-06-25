@@ -71,7 +71,6 @@ namespace Marten.Services
             };
         }
 
-#if NET46 || NETSTANDARD2_0
         private bool _enlistInAmbientTransactionScope = false;
 
         /// <summary>
@@ -112,8 +111,6 @@ namespace Marten.Services
                 OwnsTransactionLifecycle = false
             };
         }
-
-#endif
 
         internal bool OwnsConnection { get; set; } = true;
     }

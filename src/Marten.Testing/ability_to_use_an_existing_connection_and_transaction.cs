@@ -1,8 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-#if NET46 || NETCOREAPP2_0
 using System.Transactions;
-#endif
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
@@ -63,8 +61,6 @@ namespace Marten.Testing
         // ENDSAMPLE 
 #endif
 
-
-#if NET46 || NETCOREAPP2_0
         [Fact]
         public void enlist_in_transaction_scope()
         {
@@ -80,7 +76,8 @@ namespace Marten.Testing
                 // should not yet be committed
                 using (var session = theStore.QuerySession())
                 {
-                    session.Query<Target>().Count().ShouldBe(100);
+                    var martenQueryable = session.Query<Target>().ToList();
+                    martenQueryable.Count().ShouldBe(100);
                 }
 
                 scope.Complete();
@@ -98,7 +95,7 @@ namespace Marten.Testing
         public void enlist_in_transaction_scope_by_transaction()
         {
 
-            using (var scope = new TransactionScope())
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 using (var session = theStore.OpenSession(new SessionOptions
                 {
@@ -125,9 +122,6 @@ namespace Marten.Testing
                 session.Query<Target>().Count().ShouldBe(102);
             }
         }
-
-
-#endif
 
         [Fact]
         public void pass_in_current_connection_and_transaction()
