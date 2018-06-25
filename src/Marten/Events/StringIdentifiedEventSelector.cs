@@ -28,8 +28,6 @@ namespace Marten.Events
             var id = reader.GetGuid(0);
             var eventTypeName = reader.GetString(1);
             var version = reader.GetInt32(2);
-            var dataJson = reader.GetTextReader(3);
-
 
             var mapping = Events.EventMappingFor(eventTypeName);
 
@@ -44,7 +42,8 @@ namespace Marten.Events
                 var type = Events.TypeForDotNetName(dotnetTypeName);
                 mapping = Events.EventMappingFor(type);
             }
-
+            
+            var dataJson = reader.GetTextReader(3);
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
 
             var sequence = reader.GetFieldValue<long>(4);
@@ -69,8 +68,7 @@ namespace Marten.Events
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var eventTypeName = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(2, token).ConfigureAwait(false);
-            var dataJson = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(3).ConfigureAwait(false);
-
+          
             var mapping = Events.EventMappingFor(eventTypeName);
 
             if (mapping == null)
@@ -85,6 +83,7 @@ namespace Marten.Events
                 mapping = Events.EventMappingFor(type);
             }
 
+            var dataJson = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(3).ConfigureAwait(false);
             var data = TypeExtensions.As<object>(_serializer.FromJson(mapping.DocumentType, dataJson));
 
             var sequence = await reader.GetFieldValueAsync<long>(4, token).ConfigureAwait(false);

@@ -223,11 +223,12 @@ namespace Marten
             {
                 options.OwnsConnection = false;
             }
-            if (options.Transaction != null) options.Connection = options.Transaction.Connection;
 
+            if (options.Transaction != null)
+            {
+                options.Connection = options.Transaction.Connection;
+            }
 
-
-#if NET46 || NETSTANDARD2_0
             if (options.Connection == null && options.DotNetTransaction != null)
             {
                 var connection = tenant.CreateConnection();
@@ -242,7 +243,6 @@ namespace Marten
                 options.Connection.EnlistTransaction(options.DotNetTransaction);
                 options.OwnsTransactionLifecycle = false;
             }
-#endif
 
             if (options.Connection == null)
             {

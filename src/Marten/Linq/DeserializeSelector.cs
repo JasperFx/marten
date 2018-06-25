@@ -29,7 +29,6 @@ namespace Marten.Linq
                 return _serializer.FromJson<T>(json);
             }
 
-
             return reader.GetFieldValue<T>(0);
         }
 

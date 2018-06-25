@@ -24,7 +24,7 @@ namespace Marten.Linq.Parsing
             var locator = mapping.FieldFor(members).SqlLocator;
             var values = expression.Arguments.Last().Value();
 
-            if (members.Last().GetMemberType().GetTypeInfo().IsEnum)
+            if (members.Last().GetMemberType().IsEnum)
             {
                 return new EnumIsNotOneOfWhereFragment(values, serializer.EnumStorage, locator);
             }
