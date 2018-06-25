@@ -56,11 +56,7 @@ namespace Marten.Storage
         /// <typeparam name="T"></typeparam>
         public void Add<T>() where T : IFeatureSchema
         {
-#if NETSTANDARD1_3
-            var ctor = typeof(T).GetConstructor(new Type[] { typeof(StoreOptions) });
-#else
             var ctor = typeof(T).GetTypeInfo().GetConstructor(new Type[]{typeof(StoreOptions)});
-#endif
 
             IFeatureSchema feature;
             if (ctor != null)

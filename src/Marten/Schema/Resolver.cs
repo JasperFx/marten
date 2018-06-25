@@ -121,12 +121,14 @@ namespace Marten.Schema
         {
             if (reader.IsDBNull(startingIndex)) return null;
 
-            var json = reader.GetTextReader(startingIndex);
             var id = reader[startingIndex + 1];
 
             var version = reader.GetFieldValue<Guid>(startingIndex + 2);
 
-            return map.Get<T>(id, json, version);
+            using (var json = reader.GetTextReader(startingIndex))
+            {
+                return map.Get<T>(id, json, version);
+            }
         }
 
         public virtual async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map,
@@ -134,14 +136,14 @@ namespace Marten.Schema
         {
             if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false)) return null;
 
-
-            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
-
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
             var version = await reader.GetFieldValueAsync<Guid>(startingIndex + 2, token).ConfigureAwait(false);
 
-            return map.Get<T>(id, json, version);
+            using (var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false))
+            {
+                return map.Get<T>(id, json, version);
+            }
         }
 
         public T Resolve(IIdentityMap map, IQuerySession session, object id)
@@ -178,9 +180,9 @@ namespace Marten.Schema
             var found = reader.Read();
             if (!found) return null;
 
-            var json = reader.GetTextReader(0);
-
             var version = reader.GetFieldValue<Guid>(2);
+            
+            var json = reader.GetTextReader(0);
 
             return map.Get<T>(id, json, version);
         }
@@ -190,9 +192,9 @@ namespace Marten.Schema
             var found = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!found) return null;
 
-            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
-
             var version = await reader.GetFieldValueAsync<Guid>(2, token).ConfigureAwait(false);
+            
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
 
             return map.Get<T>(id, json, version);
         }

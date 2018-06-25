@@ -121,6 +121,8 @@ namespace Marten.Schema.BulkLoading
                     _transferData(document, _mapping.AliasFor(document.GetType()), serializer, writer, textWriter, tenant.TenantId);
                     textWriter.Clear();
                 }
+                
+                writer.Complete();
             }
         }
     }
