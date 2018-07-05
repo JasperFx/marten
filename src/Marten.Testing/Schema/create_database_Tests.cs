@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Linq;
-using Marten.Testing.Bugs;
 using Xunit;
 using Marten.Testing.Documents;
 using Npgsql;
-using Shouldly;
+using Xunit.Sdk;
 
 namespace Marten.Testing.Schema
 {
@@ -88,6 +86,45 @@ namespace Marten.Testing.Schema
 
                 Assert.False(dbCreated);
             }
+        }
+
+        [Fact]
+        public void can_create_new_database_when_one_does_not_exist_with_plv8_extension()
+        {
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(dbToCreateConnectionString);
+                _.CreateDatabasesForTenants(c =>
+                {
+                    c.MaintenanceDatabase(ConnectionSource.ConnectionString);
+                    c.ForTenant()
+                        .CheckAgainstPgDatabase()
+                        .CreatePLV8()
+                        .WithOwner("postgres");
+                });
+
+            }))
+            {
+                using (var connection = store.Tenancy.Default.CreateConnection())
+                using (var command = connection.CreateCommand())
+                {
+                    connection.Open();
+                    command.CommandText = "SELECT extname FROM pg_extension";
+                    NpgsqlDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        if (reader["extname"].ToString().ToLowerInvariant() == "plv8")
+                        {
+                            return;
+                        }
+                    }
+                    connection.Close();
+                }
+                
+            }
+
+            throw new XunitException("Expected plv8 extension created");
         }
 
         private readonly string dbToCreateConnectionString;
