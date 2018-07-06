@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -89,10 +90,7 @@ namespace Marten
 
             Storage.PostProcessConfiguration();
 
-            if (options.UseCharBufferPooling)
-            {
-                _writerPool = new CharArrayTextWriter.Pool();
-            }
+            _writerPool = options.UseCharBufferPooling ? MemoryPool<char>.Shared : new AllocatingMemoryPool<char>();
 
             Advanced = new AdvancedOptions(this);
 
@@ -116,7 +114,7 @@ namespace Marten
         internal MartenExpressionParser Parser { get; }
 
         private readonly IMartenLogger _logger;
-        private readonly CharArrayTextWriter.IPool _writerPool;
+        private readonly MemoryPool<char> _writerPool;
 
         public StorageFeatures Storage => Options.Storage;
 
@@ -124,9 +122,7 @@ namespace Marten
 
         public virtual void Dispose()
         {
-            _writerPool.Dispose();
         }
-
 
         public StoreOptions Options { get; }
 
@@ -255,12 +251,12 @@ namespace Marten
 
         }
 
-        internal CharArrayTextWriter.Pool CreateWriterPool()
+        internal MemoryPool<char> CreateWriterPool()
         {
-            return Options.UseCharBufferPooling ? new CharArrayTextWriter.Pool(_writerPool) : null;
+            return Options.UseCharBufferPooling ? MemoryPool<char>.Shared : new AllocatingMemoryPool<char>();
         }
 
-        private IIdentityMap createMap(DocumentTracking tracking, CharArrayTextWriter.IPool sessionPool, IEnumerable<IDocumentSessionListener> localListeners)
+        private IIdentityMap createMap(DocumentTracking tracking, MemoryPool<char> sessionPool, IEnumerable<IDocumentSessionListener> localListeners)
         {
             switch (tracking)
             {
@@ -271,7 +267,7 @@ namespace Marten
                     return new IdentityMap(Serializer, Options.Listeners.Concat(localListeners));
 
                 case DocumentTracking.DirtyTracking:
-                    return new DirtyTrackingIdentityMap(Serializer, Options.Listeners.Concat(localListeners), sessionPool);
+                    return new DirtyTrackingIdentityMap(Serializer, Options.Listeners.Concat(localListeners));
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(tracking));

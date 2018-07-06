@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -22,7 +23,7 @@ namespace Marten
         private readonly IManagedConnection _connection;
         private readonly IQueryParser _parser;
         private readonly IIdentityMap _identityMap;
-        protected readonly CharArrayTextWriter.Pool WriterPool;
+        protected readonly MemoryPool<char> WriterPool;
         private bool _disposed;
         protected readonly DocumentStore _store;
 
