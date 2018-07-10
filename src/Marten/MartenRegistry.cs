@@ -155,6 +155,19 @@ namespace Marten
             }
 
             /// <summary>
+            /// Creates a computed index on this data member within the JSON data storage
+            /// </summary>
+            /// <param name="expressions"></param>
+            /// <param name="configure"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> Index(IReadOnlyCollection<Expression<Func<T, object>>> expressions, Action<ComputedIndex> configure = null)
+            {
+                alter = m => m.Index(expressions, configure);
+
+                return this;
+            }
+
+            /// <summary>
             /// Creates a unique index on this data member within the JSON data storage
             /// </summary>
             /// <param name="expressions"></param>
