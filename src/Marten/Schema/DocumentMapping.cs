@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -701,10 +701,26 @@ namespace Marten.Schema
         /// <param name="configure"></param>
         public void Index(Expression<Func<T, object>> expression, Action<ComputedIndex> configure = null)
         {
-            var visitor = new FindMembers();
-            visitor.Visit(expression);
+            Index(new[] {expression}, configure);
+        }
 
-            var index = new ComputedIndex(this, visitor.Members.ToArray());
+        /// <summary>
+        /// Adds a computed index
+        /// </summary>
+        /// <param name="expressions"></param>
+        /// <param name="configure"></param>
+        public void Index(IReadOnlyCollection<Expression<Func<T, object>>> expressions, Action<ComputedIndex> configure = null)
+        {
+            MemberInfo[][] members = expressions
+                .Select(e =>
+                {
+                    var visitor = new FindMembers();
+                    visitor.Visit(e);
+                    return visitor.Members.ToArray();
+                }).ToArray();
+
+
+            var index = new ComputedIndex(this, members);
             configure?.Invoke(index);
             Indexes.Add(index);
         }
