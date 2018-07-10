@@ -33,7 +33,7 @@ namespace Marten.Testing.AsyncDaemon
         private readonly IDaemonLogger _logger;
 
 
-
+        
 
         [Fact]
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_on_other_schema_single_event()
