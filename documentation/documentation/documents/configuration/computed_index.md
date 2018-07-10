@@ -32,6 +32,16 @@ The configuration above creates an index like this:
 CREATE INDEX mt_doc_target_idx_inner_color ON public.mt_doc_target (((data -> 'Inner' ->> 'Color')::int));
 </pre>
 
+Or create calculated multi-property indexes like this:
+
+<[sample:multi-property-calculated-index]>
+
+The configuration above creates an index like this:
+
+<pre>
+CREATE INDEX mt_doc_user_idx_first_namelast_name ON public.mt_doc_user USING btree (((data ->> 'FirstName'::text)), ((data ->> 'LastName'::text)))
+</pre>
+
 ## Customizing a Calculated Index
 
 You have some ability to customize the calculated index by passing a second Lambda `Action` into
