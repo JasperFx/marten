@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Baseline;
+using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Util
@@ -25,16 +26,20 @@ namespace Marten.Util
             {typeof (IDictionary<,>), "jsonb" },
         };
 
-        private static readonly MethodInfo _getNgpsqlDbTypeMethod;
+        private static readonly Func<Type, NpgsqlDbType> _getNpgsqlDbType;
 
         static TypeMappings()
         {
-            var type = Type.GetType("Npgsql.TypeHandlerRegistry, Npgsql");
-            _getNgpsqlDbTypeMethod = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
+            var type = Type.GetType("Npgsql.TypeMapping.GlobalTypeMapper, Npgsql");
+            var getNgpsqlDbTypeMethod = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
                 .FirstOrDefault(
                     x =>
                         x.Name == "ToNpgsqlDbType" && x.GetParameters().Count() == 1 &&
-                        x.GetParameters().Single().ParameterType == typeof(Type));
+                        x.GetParameters().Single().ParameterType == typeof (Type));
+
+            _getNpgsqlDbType = (Type clrType) => (NpgsqlDbType) getNgpsqlDbTypeMethod.Invoke(
+                NpgsqlConnection.GlobalTypeMapper,
+                new object[] {clrType});
         }
 
         public static string ConvertSynonyms(string type)
@@ -115,12 +120,16 @@ namespace Marten.Util
         {
             if (type.IsNullable()) return ToDbType(type.GetInnerTypeFromNullable());
 
-            return (NpgsqlDbType)_getNgpsqlDbTypeMethod.Invoke(null, new object[] { type });
+            var npgsqlDbType = _getNpgsqlDbType(type);
+            return npgsqlDbType;
         }
 
         public static string GetPgType(Type memberType)
         {
-            if (memberType.GetTypeInfo().IsEnum) return "integer";
+            if (memberType.IsEnum)
+            {
+                return "integer";
+            }
 
             if (memberType.IsArray)
             {
@@ -152,12 +161,12 @@ namespace Marten.Util
             }
 
             // more complicated later
-            return PgTypes.ContainsKey(memberType) || memberType.GetTypeInfo().IsEnum;
+            return PgTypes.ContainsKey(memberType) || memberType.IsEnum;
         }
 
         public static string ApplyCastToLocator(this string locator, EnumStorage enumStyle, Type memberType)
         {
-            if (memberType.GetTypeInfo().IsEnum)
+            if (memberType.IsEnum)
             {
                 return enumStyle == EnumStorage.AsInteger ? "({0})::int".ToFormat(locator) : locator;
             }

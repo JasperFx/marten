@@ -20,11 +20,12 @@ namespace Marten.Schema
 
         public override T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
-            var json = reader.GetTextReader(startingIndex);
             var id = reader[startingIndex + 1];
             var typeAlias = reader.GetString(startingIndex + 2);
 
             var version = reader.GetFieldValue<Guid>(3);
+            
+            var json = reader.GetTextReader(startingIndex);
 
             return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json, version);
         }
@@ -33,13 +34,13 @@ namespace Marten.Schema
         {
             if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false)) return null;
 
-            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
-
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
             var typeAlias = await reader.GetFieldValueAsync<string>(startingIndex + 2, token).ConfigureAwait(false);
 
             var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
+            
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
 
             return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json, version);
         }
@@ -49,12 +50,13 @@ namespace Marten.Schema
         {
             if (!reader.Read()) return null;
 
-            var json = reader.GetTextReader(0);
             var typeAlias = reader.GetString(2);
 
             var actualType = _hierarchy.TypeFor(typeAlias);
 
             var version = reader.GetFieldValue<Guid>(3);
+            
+            var json = reader.GetTextReader(0);
 
             return map.Get<T>(id, actualType, json, version);
         }
@@ -65,12 +67,13 @@ namespace Marten.Schema
 
             if (!found) return null;
 
-            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
             var typeAlias = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
 
             var actualType = _hierarchy.TypeFor(typeAlias);
 
             var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
+            
+            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
 
             return map.Get<T>(id, actualType, json, version);
         }
