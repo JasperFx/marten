@@ -88,9 +88,6 @@ namespace Marten.Services
 
         public SprocCall Param(string argName, object value, NpgsqlDbType dbType)
         {
-            //if (!(value is string) && dbType == NpgsqlDbType.Varchar)
-            //    value = value?.ToString();
-
             _parameters.Add(new ParameterArg(argName, value, dbType));
 
             return this;
