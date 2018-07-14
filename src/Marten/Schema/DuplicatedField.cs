@@ -23,7 +23,6 @@ namespace Marten.Schema
             _enumStorage = enumStorage;
             _dbType = TypeMappings.ToDbType(MemberType);
 
-
             ColumnName = MemberName.ToTableAlias();
 
             if (MemberType.IsEnum)
@@ -40,7 +39,7 @@ namespace Marten.Schema
             else if (MemberType.IsDateTime())
             {
                 PgType = "timestamp with time zone";
-                _dbType = NpgsqlDbType.TimestampTZ;
+                _dbType = NpgsqlDbType.TimestampTz;
             }
         }
 
@@ -54,7 +53,6 @@ namespace Marten.Schema
             Members = Members,
             DbType = _dbType
         };
-
 
         public string SelectionLocator => SqlLocator;
 
@@ -100,7 +98,6 @@ namespace Marten.Schema
             return $"{rootTableAlias}.{_columnName}";
         }
 
-
         public string SqlLocator { get; set; }
 
         public static DuplicatedField For<T>(EnumStorage enumStorage, Expression<Func<T, object>> expression)
@@ -113,11 +110,10 @@ namespace Marten.Schema
                 throw new NotSupportedException("Not yet supporting deep properties yet. Soon.");
             }
 
-
-            return new DuplicatedField(enumStorage, new MemberInfo[] {accessor.InnerProperty});
+            return new DuplicatedField(enumStorage, new MemberInfo[] { accessor.InnerProperty });
         }
 
-        // I say you don't need a ForeignKey 
+        // I say you don't need a ForeignKey
         public virtual TableColumn ToColumn()
         {
             return new TableColumn(ColumnName, PgType);
