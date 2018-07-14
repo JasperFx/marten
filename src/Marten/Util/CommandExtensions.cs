@@ -81,10 +81,6 @@ namespace Marten.Util
             {
                 parameter.NpgsqlDbType = dbType.Value;
             }
-            else if (value is DateTime || value is DateTime?)
-            {
-                parameter.NpgsqlDbType = NpgsqlDbType.Timestamp;
-            }
 
             command.Parameters.Add(parameter);
 
