@@ -1,5 +1,4 @@
-﻿using System;
-using Marten.Schema;
+﻿using Marten.Schema;
 using Marten.Storage;
 using Marten.Util;
 using Xunit;
@@ -14,20 +13,18 @@ namespace Marten.Testing.Schema
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
                 conn.Execute(
-                    cmd => cmd.Sql("drop function if exists public.mt_immutable_timestamp(text)").ExecuteNonQuery());
+                    cmd => cmd.Sql("drop function if exists public.mt_immutable_timestamptz(text)").ExecuteNonQuery());
             }
 
-            theStore.Tenancy.Default.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamp"))
+            theStore.Tenancy.Default.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamtzp"))
                 .ShouldBeNull();
 
             theStore.Tenancy.Default.ResetSchemaExistenceChecks();
 
             theStore.Tenancy.Default.EnsureStorageExists(typeof(SystemFunctions));
 
-            theStore.Tenancy.Default.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamp"))
+            theStore.Tenancy.Default.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamptz"))
                 .ShouldNotBeNull();
         }
-
-
     }
 }

@@ -31,12 +31,12 @@ namespace Marten.Schema
             }
             else if (memberType == typeof(DateTime) || memberType == typeof(DateTime?))
             {
-                SqlLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
+                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{memberName}')";
                 SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
             }
             else if (memberType == typeof(DateTimeOffset) || memberType == typeof(DateTimeOffset?))
             {
-                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{memberName}')";
+                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamptz({dataLocator} ->> '{memberName}')";
                 SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
             }
             else if (memberType.IsArray)
