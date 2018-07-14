@@ -22,6 +22,10 @@
     <RestoreAdditionalProjectSources>https://dotnet.myget.org/F/dotnet-core/api/v3/index.json</RestoreAdditionalProjectSources>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Schema\SQL\mt_immutable_timestamptz.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Schema\SQL\mt_immutable_timestamptz.sql" />
     <EmbeddedResource Include="Schema\SQL\mt_transforms.js" />
     <EmbeddedResource Include="Schema\SQL\mt_patching.js" />
     <EmbeddedResource Include="Schema\SQL\mt_mark_event_progression.sql" />
