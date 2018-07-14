@@ -1,10 +1,8 @@
 using System;
 using System.Data.Common;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq.Compiled;
-using Marten.Schema.Arguments;
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
@@ -27,12 +25,19 @@ namespace Marten.Linq.QueryHandlers
         }
 
         public Type SourceType => _handler.SourceType;
+
         public void ConfigureCommand(CommandBuilder builder)
         {
             var sql = _template.CommandText;
             for (var i = 0; i < _setters.Length && i < _template.Parameters.Count; i++)
             {
                 var param = _setters[i].AddParameter(_model, builder);
+
+                if (param.Value is Enum)
+                {
+                    param.Value = (int)param.Value;
+                }
+
                 param.NpgsqlDbType = _template.Parameters[i].NpgsqlDbType;
 
                 sql = sql.Replace(":" + _template.Parameters[i].ParameterName, ":" + param.ParameterName);
