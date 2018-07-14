@@ -37,7 +37,6 @@ namespace Marten.Testing
             }
         }
 
-
         [Fact]
         public void load_with_multiple_batches()
         {
@@ -101,7 +100,6 @@ namespace Marten.Testing
             theSession.Query<Target>().Count().ShouldBe(data.Length);
             // ENDSAMPLE
 
-
             theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
         }
 
@@ -118,6 +116,8 @@ namespace Marten.Testing
             theStore.BulkInsert(data);
 
             theSession.Query<Target>().Count().ShouldBe(data.Length);
+
+            var cmd = theSession.Query<Target>().Where(x => x.Date == data[0].Date).ToCommand();
 
             theSession.Query<Target>().Where(x => x.Date == data[0].Date).Any()
                 .ShouldBeTrue();
@@ -142,13 +142,12 @@ namespace Marten.Testing
         public void load_with_small_batch_and_ignore_duplicates_smoke_test()
         {
             // SAMPLE: bulk_insert_with_IgnoreDuplicates
-    var data = Target.GenerateRandomData(100).ToArray();
+            var data = Target.GenerateRandomData(100).ToArray();
 
-    theStore.BulkInsert(data, BulkInsertMode.IgnoreDuplicates);
+            theStore.BulkInsert(data, BulkInsertMode.IgnoreDuplicates);
             // ENDSAMPLE
 
             theSession.Query<Target>().Count().ShouldBe(data.Length);
-
 
             theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
 
@@ -163,13 +162,12 @@ namespace Marten.Testing
         public void load_with_small_batch_and_overwrites_smoke_test()
         {
             // SAMPLE: bulk_insert_with_OverwriteExisting
-    var data = Target.GenerateRandomData(100).ToArray();
+            var data = Target.GenerateRandomData(100).ToArray();
 
-    theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting);
+            theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting);
             // ENDSAMPLE
 
             theSession.Query<Target>().Count().ShouldBe(data.Length);
-
 
             theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
         }
