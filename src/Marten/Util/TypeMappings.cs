@@ -37,9 +37,20 @@ namespace Marten.Util
                         x.Name == "ToNpgsqlDbType" && x.GetParameters().Count() == 1 &&
                         x.GetParameters().Single().ParameterType == typeof(Type));
 
-            _getNpgsqlDbType = (Type clrType) => (NpgsqlDbType) getNgpsqlDbTypeMethod.Invoke(
-                NpgsqlConnection.GlobalTypeMapper,
-                new object[] {clrType});
+            
+            _getNpgsqlDbType = (Type clrType) =>
+            {
+                try
+                {
+                    return (NpgsqlDbType)getNgpsqlDbTypeMethod.Invoke(
+                        NpgsqlConnection.GlobalTypeMapper,
+                        new object[] { clrType });
+                }
+                catch (Exception)
+                {
+                    return NpgsqlDbType.Integer;
+                }
+            };
         }
 
         public static string ConvertSynonyms(string type)
