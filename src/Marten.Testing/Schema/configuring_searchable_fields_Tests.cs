@@ -16,7 +16,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<Organization>();
             var duplicate = mapping.DuplicatedFields.Single(x => x.MemberName == "Time2");
 
-            duplicate.PgType.ShouldBe("timestamp with time zone");
+            duplicate.PgType.ShouldBe("timestamp without time zone");
         }
 
         [Fact]
@@ -53,7 +53,6 @@ namespace Marten.Testing.Schema
             {
                 _.Schema.For<Organization>().Duplicate(x => x.Time2, pgType: "timestamp");
             });
-
 
             store.Storage.MappingFor(typeof(Organization)).As<DocumentMapping>().DuplicatedFields.Single(x => x.MemberName == "Time2")
                 .PgType.ShouldBe("timestamp");
