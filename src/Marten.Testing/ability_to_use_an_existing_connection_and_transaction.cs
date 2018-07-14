@@ -12,7 +12,7 @@ namespace Marten.Testing
 {
     public class ability_to_use_an_existing_connection_and_transaction : IntegratedFixture
     {
-        readonly Target[] targets = Target.GenerateRandomData(100).ToArray();
+        private readonly Target[] targets = Target.GenerateRandomData(100).ToArray();
 
         public ability_to_use_an_existing_connection_and_transaction(ITestOutputHelper output = null) : base(output)
         {
@@ -20,6 +20,7 @@ namespace Marten.Testing
         }
 
 #if NET46
+
         // SAMPLE: passing-in-existing-connections-and-transactions
         public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTransaction transaction)
         {
@@ -41,13 +42,12 @@ namespace Marten.Testing
             // This is syntactical sugar for the sample above
             var session3 = store.OpenSession(SessionOptions.ForTransaction(transaction));
 
-
             // Enlist in the current, ambient transaction scope
             using (var scope = new TransactionScope())
             {
                 var session4 = store.OpenSession(SessionOptions.ForCurrentTransaction());
             }
-            
+
             // or this is the long hand way of doing the options above
             using (var scope = new TransactionScope())
             {
@@ -58,13 +58,13 @@ namespace Marten.Testing
                 });
             }
         }
-        // ENDSAMPLE 
+
+        // ENDSAMPLE
 #endif
 
         [Fact]
         public void enlist_in_transaction_scope()
         {
-
             using (var scope = new TransactionScope())
             {
                 using (var session = theStore.OpenSession(SessionOptions.ForCurrentTransaction()))
@@ -76,12 +76,11 @@ namespace Marten.Testing
                 // should not yet be committed
                 using (var session = theStore.QuerySession())
                 {
-                    var martenQueryable = session.Query<Target>().ToList();
-                    martenQueryable.Count().ShouldBe(100);
+                    //See https://github.com/npgsql/npgsql/issues/1483 - Npgsql by default is enlisting
+                    session.Query<Target>().Count().ShouldBe(102);
                 }
 
                 scope.Complete();
-
             }
 
             // should be 2 additional targets
@@ -94,8 +93,7 @@ namespace Marten.Testing
         [Fact]
         public void enlist_in_transaction_scope_by_transaction()
         {
-
-            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            using (var scope = new TransactionScope())
             {
                 using (var session = theStore.OpenSession(new SessionOptions
                 {
@@ -109,11 +107,11 @@ namespace Marten.Testing
                 // should not yet be committed
                 using (var session = theStore.QuerySession())
                 {
-                    session.Query<Target>().Count().ShouldBe(100);
+                    //See https://github.com/npgsql/npgsql/issues/1483 - Npgsql by default is enlisting
+                    session.Query<Target>().Count().ShouldBe(102);
                 }
 
                 scope.Complete();
-
             }
 
             // should be 2 additional targets
@@ -133,18 +131,15 @@ namespace Marten.Testing
                 conn.Open();
                 var tx = conn.BeginTransaction();
 
-
                 var cmd = conn.CreateCommand("delete from mt_doc_target");
                 cmd.Transaction = tx;
                 cmd.ExecuteNonQuery();
-
 
                 // To prove the isolation here
                 using (var query = theStore.QuerySession())
                 {
                     query.Query<Target>().Count().ShouldBe(100);
                 }
-
 
                 using (var session = theStore.OpenSession(new SessionOptions
                 {
@@ -163,8 +158,6 @@ namespace Marten.Testing
             }
         }
 
-        
-
         [Fact]
         public async Task pass_in_current_connection_and_transaction_async()
         {
@@ -175,18 +168,15 @@ namespace Marten.Testing
                 await conn.OpenAsync();
                 var tx = conn.BeginTransaction();
 
-
                 var cmd = conn.CreateCommand("delete from mt_doc_target");
                 cmd.Transaction = tx;
                 await cmd.ExecuteNonQueryAsync();
-
 
                 // To prove the isolation here
                 using (var query = theStore.QuerySession())
                 {
                     (await query.Query<Target>().CountAsync()).ShouldBe(100);
                 }
-
 
                 using (var session = theStore.OpenSession(new SessionOptions
                 {
@@ -215,14 +205,9 @@ namespace Marten.Testing
                 conn.Open();
                 var tx = conn.BeginTransaction();
 
-
                 var cmd = conn.CreateCommand("delete from mt_doc_target");
                 cmd.Transaction = tx;
                 cmd.ExecuteNonQuery();
-
-
-
-
 
                 using (var session = theStore.OpenSession(new SessionOptions
                 {
@@ -250,7 +235,6 @@ namespace Marten.Testing
             }
         }
 
-
         [Fact]
         public async Task pass_in_current_connection_and_transaction_with_externally_controlled_tx_boundaries_async()
         {
@@ -261,14 +245,9 @@ namespace Marten.Testing
                 await conn.OpenAsync();
                 var tx = conn.BeginTransaction();
 
-
                 var cmd = conn.CreateCommand("delete from mt_doc_target");
                 cmd.Transaction = tx;
                 await cmd.ExecuteNonQueryAsync();
-
-
-
-
 
                 using (var session = theStore.OpenSession(new SessionOptions
                 {
