@@ -31,7 +31,7 @@ namespace Marten.Schema
             }
             else if (memberType == typeof(DateTime) || memberType == typeof(DateTime?))
             {
-                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{memberName}')";
+                SqlLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
                 SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
             }
             else if (memberType == typeof(DateTimeOffset) || memberType == typeof(DateTimeOffset?))
