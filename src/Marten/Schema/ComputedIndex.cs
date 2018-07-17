@@ -64,7 +64,7 @@ namespace Marten.Schema
             {
                 if (_indexName.IsNotEmpty())
                 {
-                    return DocumentMapping.MartenPrefix + _indexName;
+                    return DocumentMapping.MartenPrefix + _indexName.ToLowerInvariant();
                 }
 
                 return GenerateIndexName();
