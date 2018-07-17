@@ -105,7 +105,7 @@ namespace Marten.Schema
                 var columns = match.Groups["columns"].Value;
                 _columns.Each(col =>
                 {
-                    columns = Regex.Replace(columns, $"({col})\\s?([\\w_]+)?", "\"$1\" $2");
+                    columns = Regex.Replace(columns, $"({col})\\s?([\\w_]+)?", "\"$1\"$2");
                 });
 
                 var replacement = Expression.IsEmpty() ?
