@@ -128,6 +128,7 @@ namespace Marten.Testing.Acceptance
             
             ddl.ShouldContain("mt_doc_target_idx_number on");
             ddl.ShouldContain("mt_doc_target using brin");
+
         }
 
         [Fact]
@@ -151,7 +152,11 @@ namespace Marten.Testing.Acceptance
                 .DDL
                 .ToLower();
 
+<<<<<<< HEAD
             ddl.ShouldContain("index mt_doc_target_idx_user_idflag on");
+=======
+            ddl.ShouldContain("index mt_doc_target_idx_user_idflag on public.mt_doc_target");
+>>>>>>> Fixed some broken tests. Not sure how AppVeyor was passing.
             ddl.ShouldContain("((((data ->> 'userid'::text))::uuid), (((data ->> 'flag'::text))::boolean))");
         }
 
@@ -170,7 +175,11 @@ namespace Marten.Testing.Acceptance
                 .Where(x => x.Name == "mt_doc_target_idx_date")
                 .Select(x => x.DDL.ToLower())
                 .First()
+<<<<<<< HEAD
                 .ShouldContain("mt_doc_target_idx_date on");
+=======
+                .ShouldContain("mt_doc_target_idx_date on public.mt_doc_target");
+>>>>>>> Fixed some broken tests. Not sure how AppVeyor was passing.
         }
 
         [Fact]
