@@ -12,7 +12,7 @@ namespace Marten.Testing.Bugs
     public class Bug_432_querying_with_UTC_times_with_offset : IntegratedFixture
     {
         public Bug_432_querying_with_UTC_times_with_offset(ITestOutputHelper output) : base(output)
-        {    
+        {
         }
 
         [Fact]
@@ -57,7 +57,6 @@ namespace Marten.Testing.Bugs
                     }
                 }
 
-
                 session.Query<DateClass>().ToList().Each(x =>
                 {
                     _output.WriteLine(x.DateTimeField.ToString("o"));
@@ -65,14 +64,13 @@ namespace Marten.Testing.Bugs
 
                 session.Query<DateClass>()
                     .Count(x => now >= x.DateTimeField).ShouldBe(2);
-
             }
         }
 
         [Fact]
         public void can_issue_queries_against_DateTime_with_camel_casing()
         {
-            StoreOptions(_ => _.UseDefaultSerialization(casing:Casing.CamelCase));
+            StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
             using (var session = theStore.LightweightSession())
             {
@@ -113,7 +111,6 @@ namespace Marten.Testing.Bugs
                     }
                 }
 
-
                 session.Query<DateClass>().ToList().Each(x =>
                 {
                     _output.WriteLine(x.DateTimeField.ToString("o"));
@@ -121,7 +118,6 @@ namespace Marten.Testing.Bugs
 
                 session.Query<DateClass>()
                     .Count(x => now >= x.DateTimeField).ShouldBe(2);
-
             }
         }
 
@@ -169,7 +165,6 @@ namespace Marten.Testing.Bugs
                     }
                 }
 
-
                 session.Query<DateClass>().ToList().Each(x =>
                 {
                     _output.WriteLine(x.DateTimeField.ToString("o"));
@@ -177,7 +172,6 @@ namespace Marten.Testing.Bugs
 
                 session.Query<DateClass>()
                     .Count(x => now >= x.DateTimeField).ShouldBe(2);
-
             }
         }
 
@@ -215,7 +209,6 @@ namespace Marten.Testing.Bugs
 
                 _output.WriteLine(cmd.CommandText);
 
-
                 session.Query<DateClass>().ToList().Each(x =>
                 {
                     _output.WriteLine(x.DateTimeField.ToString("o"));
@@ -223,7 +216,6 @@ namespace Marten.Testing.Bugs
 
                 session.Query<DateClass>()
                     .Count(x => now >= x.DateTimeField).ShouldBe(2);
-
             }
         }
 
@@ -259,7 +251,6 @@ namespace Marten.Testing.Bugs
 
                 _output.WriteLine(cmd.CommandText);
 
-
                 session.Query<DateOffsetClass>().ToList().Each(x =>
                 {
                     _output.WriteLine(x.DateTimeField.ToString("o"));
@@ -267,7 +258,6 @@ namespace Marten.Testing.Bugs
 
                 session.Query<DateOffsetClass>()
                     .Count(x => now >= x.DateTimeField).ShouldBe(2);
-
             }
         }
 
@@ -305,7 +295,6 @@ namespace Marten.Testing.Bugs
 
                 _output.WriteLine(cmd.CommandText);
 
-
                 session.Query<DateOffsetClass>().ToList().Each(x =>
                 {
                     _output.WriteLine(x.DateTimeField.ToString("o"));
@@ -313,7 +302,6 @@ namespace Marten.Testing.Bugs
 
                 session.Query<DateOffsetClass>()
                     .Count(x => now >= x.DateTimeField).ShouldBe(2);
-
             }
         }
 

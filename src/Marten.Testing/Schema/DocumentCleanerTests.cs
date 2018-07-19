@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using Baseline;
-using Marten.Events;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -64,7 +63,6 @@ namespace Marten.Testing.Schema
                 session.Query<Issue>().Count().ShouldBe(0);
                 session.Query<Company>().Count().ShouldBe(0);
             }
-
         }
 
         [Fact]
@@ -124,7 +122,7 @@ namespace Marten.Testing.Schema
             var dbObjects = theStore.Tenancy.Default.DbObjects;
 
             ShouldBeEmpty(dbObjects.DocumentTables());
-            ShouldBeEmpty(dbObjects.Functions().Where(x => x.Name != "mt_immutable_timestamp").ToArray());
+            ShouldBeEmpty(dbObjects.Functions().Where(x => x.Name != "mt_immutable_timestamp" || x.Name != "mt_immutable_timestamptz").ToArray());
         }
 
         [Fact]
@@ -139,7 +137,6 @@ namespace Marten.Testing.Schema
 
             theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
             theSession.Events.FetchStream(streamId).ShouldBeEmpty();
-
         }
 
         [Fact]
@@ -182,10 +179,7 @@ namespace Marten.Testing.Schema
             theSession.SaveChanges();
             theSession.Dispose();
 
-
-
             theCleaner.DeleteDocumentsExcept(typeof(Target), typeof(User));
-
 
             using (var session = theStore.OpenSession())
             {

@@ -24,7 +24,7 @@ namespace Marten.Schema
             var memberType = member.GetMemberType();
             var memberName = member.Name.FormatCase(casing);
 
-            var isStringEnum = memberType.GetTypeInfo().IsEnum && enumStyle == EnumStorage.AsString;
+            var isStringEnum = memberType.IsEnum && enumStyle == EnumStorage.AsString;
             if (memberType == typeof(string) || isStringEnum)
             {
                 SqlLocator = $"{dataLocator} ->> '{memberName}'";
@@ -36,7 +36,7 @@ namespace Marten.Schema
             }
             else if (memberType == typeof(DateTimeOffset) || memberType == typeof(DateTimeOffset?))
             {
-                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{memberName}')";
+                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamptz({dataLocator} ->> '{memberName}')";
                 SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
             }
             else if (memberType.IsArray)
@@ -76,7 +76,7 @@ namespace Marten.Schema
 
             SqlLocator = MemberType == typeof(string) ? locator : locator.ApplyCastToLocator(enumStyle, MemberType);
 
-            var isStringEnum = MemberType.GetTypeInfo().IsEnum && enumStyle == EnumStorage.AsString;
+            var isStringEnum = MemberType.IsEnum && enumStyle == EnumStorage.AsString;
             if (isStringEnum)
             {
                 _parseObject = expression =>

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using System.Reflection;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.Arguments;
@@ -26,14 +25,11 @@ namespace Marten.Util
             }
         }
 
-
-
         public static int RunSql(this NpgsqlConnection conn, params string[] sqls)
         {
             var sql = sqls.Join(";");
             return conn.CreateCommand().Sql(sql).ExecuteNonQuery();
         }
-
 
         public static IEnumerable<T> Fetch<T>(this NpgsqlCommand cmd, string sql, Func<DbDataReader, T> transform, params object[] parameters)
         {
@@ -43,8 +39,6 @@ namespace Marten.Util
                 var param = cmd.AddParameter(x);
                 cmd.CommandText = cmd.CommandText.UseParameter(param);
             });
-
-             
 
             var list = new List<T>();
 
@@ -58,7 +52,6 @@ namespace Marten.Util
 
             return list;
         }
-
 
         public static void AddParameters(this NpgsqlCommand command, object parameters)
         {
@@ -177,6 +170,5 @@ namespace Marten.Util
 
             return cmd;
         }
-
     }
 }

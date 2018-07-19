@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Schema;
 using Marten.Util;
-using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Services
@@ -13,7 +12,6 @@ namespace Marten.Services
         private readonly DbObjectName _function;
         private readonly IList<ParameterArg> _parameters = new List<ParameterArg>();
         private readonly BatchCommand _parent;
-
 
         public SprocCall(BatchCommand parent, DbObjectName function)
         {
@@ -90,6 +88,9 @@ namespace Marten.Services
 
         public SprocCall Param(string argName, object value, NpgsqlDbType dbType)
         {
+            if ((value is Enum || value is Guid) && dbType == NpgsqlDbType.Varchar)
+                value = value.ToString();
+
             _parameters.Add(new ParameterArg(argName, value, dbType));
 
             return this;

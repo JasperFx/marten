@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using Baseline;
 using Marten.Events;
@@ -17,7 +16,6 @@ using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten
 {
-
     /// <summary>
     /// The main entry way to using Marten
     /// </summary>
@@ -128,7 +126,6 @@ namespace Marten
             _writerPool.Dispose();
         }
 
-
         public StoreOptions Options { get; }
 
         public IDocumentSchema Schema { get; }
@@ -197,7 +194,6 @@ namespace Marten
 
             var connection = buildManagedConnection(options, tenant, CommandRunnerMode.Transactional);
 
-
             var session = new DocumentSession(this, connection, _parser, map, tenant, options.ConcurrencyChecks, options.Listeners);
             connection.BeginSession();
 
@@ -219,16 +215,16 @@ namespace Marten
                 commandRunnerMode = CommandRunnerMode.External;
             }
 
-
             if (options.Connection != null || options.Transaction != null)
             {
                 options.OwnsConnection = false;
             }
-            if (options.Transaction != null) options.Connection = options.Transaction.Connection;
 
+            if (options.Transaction != null)
+            {
+                options.Connection = options.Transaction.Connection;
+            }
 
-
-#if NET46 || NETSTANDARD2_0
             if (options.Connection == null && options.DotNetTransaction != null)
             {
                 var connection = tenant.CreateConnection();
@@ -243,7 +239,6 @@ namespace Marten
                 options.Connection.EnlistTransaction(options.DotNetTransaction);
                 options.OwnsTransactionLifecycle = false;
             }
-#endif
 
             if (options.Connection == null)
             {
@@ -253,7 +248,6 @@ namespace Marten
             {
                 return new ManagedConnection(options, commandRunnerMode);
             }
-
         }
 
         internal CharArrayTextWriter.Pool CreateWriterPool()
