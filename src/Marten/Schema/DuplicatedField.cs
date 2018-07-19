@@ -41,11 +41,6 @@ namespace Marten.Schema
                 PgType = "timestamp without time zone";
                 _dbType = NpgsqlDbType.Timestamp;
             }
-            else if (MemberType.IsDateTime())
-            {
-                PgType = "timestamp without time zone";
-                _dbType = NpgsqlDbType.Timestamp;
-            }
             else if (MemberType == typeof(DateTimeOffset) || MemberType == typeof(DateTimeOffset?))
             {
                 PgType = "timestamp with time zone";
