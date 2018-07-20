@@ -21,7 +21,6 @@ namespace Marten.Schema
         public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath) : base(memberPath)
         {
             _enumStorage = enumStorage;
-            _dbType = TypeMappings.ToDbType(MemberType);
 
             ColumnName = MemberName.ToTableAlias();
 
@@ -50,6 +49,10 @@ namespace Marten.Schema
             {
                 PgType = "timestamp with time zone";
                 _dbType = NpgsqlDbType.TimestampTz;
+            }
+            else
+            {
+                _dbType = TypeMappings.ToDbType(MemberType);
             }
         }
 

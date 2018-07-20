@@ -15,11 +15,8 @@ namespace Marten.Services
 
         public SprocCall(BatchCommand parent, DbObjectName function)
         {
-            if (parent == null) throw new ArgumentNullException(nameof(parent));
-            if (function == null) throw new ArgumentNullException(nameof(function));
-
-            _parent = parent;
-            _function = function;
+            _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+            _function = function ?? throw new ArgumentNullException(nameof(function));
         }
 
         // TODO -- merge this into the upsert's

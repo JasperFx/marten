@@ -131,6 +131,8 @@ namespace Marten.Util
         {
             if (type.IsNullable()) return ToDbType(type.GetInnerTypeFromNullable());
 
+            if (type.IsEnum) return NpgsqlDbType.Integer;
+            
             var npgsqlDbType = _getNpgsqlDbType(type);
             return npgsqlDbType;
         }
