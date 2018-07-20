@@ -36,6 +36,35 @@ namespace Marten.Testing.Bugs
                     .ShouldHaveTheSameElementsAs(expected.Select(x => x.Id));
             }
         }
+        
+        [Fact]
+        public void with_flag_as_true_with_enum_as_string()
+        {
+            StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
+            
+            var targets = Target.GenerateRandomData(1000).ToArray();
+            theStore.BulkInsert(targets);
+
+            using (var query = theStore.QuerySession())
+            {
+                var results = query.Query(new FlaggedTrueTargets());
+
+                var expected = query.Query<Target>()
+                    .SelectMany(x => x.Children)
+                    .Where(x => x.Color == Colors.Green)
+                    .Where(x => x.Flag)
+                    .OrderBy(x => x.Id)
+                    .Skip(20)
+                    .Take(15)
+                    .ToList();
+
+                results.Count().ShouldBe(15);
+
+
+                results.Select(x => x.Id)
+                    .ShouldHaveTheSameElementsAs(expected.Select(x => x.Id));
+            }
+        }
 
         [Fact]
         public void with_flag_as_false()

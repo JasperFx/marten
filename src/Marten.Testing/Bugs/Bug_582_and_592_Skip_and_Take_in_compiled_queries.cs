@@ -33,6 +33,33 @@ namespace Marten.Testing.Bugs
         }
 
         [Fact]
+        public void can_get_separate_pages_with_enum_strings()
+        {
+            StoreOptions(_ =>
+            {
+                _.UseDefaultSerialization(EnumStorage.AsString);
+            });
+            
+            var targets = Target.GenerateRandomData(1000).ToArray();
+
+            theStore.BulkInsert(targets);
+
+            using (var query = theStore.QuerySession())
+            {
+                var page1 = query.Query(new PageOfTargets { Start = 10, Take = 17 }).ToList();
+                var page2 = query.Query(new PageOfTargets { Start = 50, Take = 11 }).ToList();
+
+                page1.Count().ShouldBe(17);
+                page2.Count().ShouldBe(11);
+
+                foreach (var target in page1)
+                {
+                    page2.Any(x => x.Id == target.Id).ShouldBeFalse();
+                }
+            }
+        }
+        
+        [Fact]
         public void warn_if_skip_and_take_are_ordered_wrong()
         {
             using (var query = theStore.QuerySession())

@@ -1,8 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using Baseline;
 using Marten.Util;
 using NpgsqlTypes;
@@ -155,8 +157,10 @@ namespace Marten.Linq
                 throwNotSupportedContains();
             }
 
+            //TODO: this won't work for enumeration types. Only works with strings, so we have
+            // to exactly map the ToString() like the underlying serializer would. Blech.
             var values = new List<string>();
-            //TODO: this should be done better, but currently for Guid there is a type mismatch
+            
             var enumerable = ((System.Collections.IEnumerable)from.Value);
 
             foreach (var obj in enumerable)
