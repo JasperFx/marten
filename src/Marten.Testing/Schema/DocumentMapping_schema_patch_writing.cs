@@ -115,6 +115,7 @@ namespace Marten.Testing.Schema
                 patch.RollbackDDL.ShouldContain("CREATE INDEX mt_doc_user_idx_user_name ON");
                 patch.RollbackDDL.ShouldContain("mt_doc_user USING btree (user_name);");
 
+
             }
         }
         
