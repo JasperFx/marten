@@ -4,7 +4,8 @@ require 'json'
 
 COMPILE_TARGET = ENV['config'].nil? ? "debug" : ENV['config']
 RESULTS_DIR = "results"
-BUILD_VERSION = '2.10.0'
+BUILD_VERSION = '3.0.0'
+
 CONNECTION = ENV['connection']
 
 tc_build_number = ENV["BUILD_NUMBER"]
@@ -64,12 +65,12 @@ end
 
 desc 'Compile the code'
 task :compile => [:clean, :restore] do
-  sh "dotnet build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.0 --configuration #{COMPILE_TARGET}"
+  sh "dotnet build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration #{COMPILE_TARGET}"
 end
 
 desc 'Run the unit tests'
 task :test => [:compile] do
-  sh 'dotnet test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.0'
+  sh 'dotnet test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1'
 end
 
 

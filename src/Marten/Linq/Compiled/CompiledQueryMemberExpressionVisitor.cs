@@ -152,9 +152,11 @@ namespace Marten.Linq.Compiled
         {
             if (type.GetTypeInfo().IsEnum && _serializer.EnumStorage == EnumStorage.AsString)
             {
+                var original = getter;
+                
                 getter = o =>
                 {
-                    var number = getter(o);
+                    var number = original(o);
                     return Enum.GetName(type, number);
                 };
             }
