@@ -110,10 +110,9 @@ namespace Marten.Testing.Schema
             {
                 var patch = store.Schema.ToPatch();
 
-                patch.RollbackDDL.ShouldContain("drop index public.mt_doc_user_idx_user_name;");
-
-                patch.RollbackDDL.ShouldContain("CREATE INDEX mt_doc_user_idx_user_name ON");
-                patch.RollbackDDL.ShouldContain("mt_doc_user USING btree (user_name);");
+                patch.RollbackDDL.ShouldContain("drop index");
+                
+                patch.RollbackDDL.ShouldContain("CREATE INDEX mt_doc_user_idx_user_name");
 
 
             }
