@@ -185,7 +185,7 @@ namespace Marten.Storage
 
         public override string AddColumnSql(Table table)
         {
-            return $"{base.AddColumnSql(table)};update {table.Identifier} set {_field.UpdateSqlFragment()};";
+            return $"{base.AddColumnSql(table)}update {table.Identifier} set {_field.UpdateSqlFragment()};";
         }
     }
 }
