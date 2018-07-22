@@ -70,6 +70,8 @@ namespace Marten.Events.Projections.Async
 
         public long LastEncountered { get; set; }
 
+        public string ProgressionName => _projection.GetEventProgressionName();
+
         public void Dispose()
         {
             if (_isDisposed) return;
@@ -80,7 +82,6 @@ namespace Marten.Events.Projections.Async
             stopConsumers();
 
             _waiters.Clear();
-            
         }
 
         private void stopConsumers()
@@ -110,8 +111,6 @@ namespace Marten.Events.Projections.Async
                     _rebuildCompletion.SetResult(t.Result);
                 });
             }
-
-
         }
 
         public void EnsureStorageExists(ITenant tenant)
@@ -169,7 +168,6 @@ namespace Marten.Events.Projections.Async
         {
             ensureStorageExists();
             
-
             Start(DaemonLifecycle.StopAtEndOfEventData);
 
             return _rebuildCompletion.Task;
@@ -187,8 +185,6 @@ namespace Marten.Events.Projections.Async
             ensureStorageExists();
 
             await _fetcher.Stop().ConfigureAwait(false);
-
-            
 
             await _errorHandler.TryAction(async () =>
             {
@@ -220,7 +216,7 @@ namespace Marten.Events.Projections.Async
             {
                 await _projection.ApplyAsync(session, page, cancellation).ConfigureAwait(false);
 
-                session.QueueOperation(new EventProgressWrite(_events, _projection.ProjectedType().FullName, page.To));
+                session.QueueOperation(new EventProgressWrite(_events, _projection.GetEventProgressionName(), page.To));
 
                 await session.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
@@ -246,7 +242,7 @@ namespace Marten.Events.Projections.Async
                 waiter.Completion.SetResult(LastEncountered);
                 _waiters.Remove(waiter);
             }
-        }
+        }  
 
         public async Task CachePage(EventPage page)
         {
@@ -307,7 +303,7 @@ namespace Marten.Events.Projections.Async
                     await conn.ExecuteAsync(async (cmd, tkn) =>
                     {
                         await cmd.Sql(sql)
-                            .With("name", type.FullName)
+                            .With("name", _projection.GetEventProgressionName(type))
                             .ExecuteNonQueryAsync(tkn)
                             .ConfigureAwait(false);
                     }, token);
