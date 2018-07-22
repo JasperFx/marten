@@ -23,6 +23,16 @@ namespace Marten.Events.Projections
             return (projection as IDocumentProjection)?.Produces ?? projection.GetType();
         }
 
+        public static string GetEventProgressionName(this IProjection projection)
+        {
+            return (projection as IHasCustomEventProgressionName)?.Name ?? projection.ProjectedType().FullName;
+        }
+
+        public static string GetEventProgressionName(this IProjection projection, Type type)
+        {
+            return (projection as IHasCustomEventProgressionName)?.Name ?? type.FullName;
+        }
+
         public static Type[] ProjectedTypes(this IProjection projection)
         {
             switch (projection)
