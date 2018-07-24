@@ -210,7 +210,8 @@ FROM pg_index AS idx
     ON i.relam = am.oid
   JOIN pg_namespace AS NS ON i.relnamespace = NS.OID
   JOIN pg_user AS U ON i.relowner = U.usesysid
-WHERE 
+WHERE
+  nspname = :{schemaParam} AND
   NOT nspname LIKE 'pg%' AND 
   i.relname like 'mt_%';
 
