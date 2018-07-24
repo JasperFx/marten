@@ -35,8 +35,7 @@ namespace Marten
         public static DocumentStore For(string connectionString)
         {
             return For(_ =>
-            {
-                _.AutoCreateSchemaObjects = AutoCreate.All;
+            {                
                 _.Connection(connectionString);
             });
         }

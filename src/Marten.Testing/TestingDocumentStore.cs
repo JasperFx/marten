@@ -22,8 +22,8 @@ namespace Marten.Testing
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
             options.Serializer<TestsSerializer>();
-
-            options.NameDataLength = 100;
+	        options.AutoCreateSchemaObjects = AutoCreate.All;
+			options.NameDataLength = 100;
 
             configure(options);
 
