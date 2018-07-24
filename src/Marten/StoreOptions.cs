@@ -55,7 +55,7 @@ namespace Marten
         ///     Whether or Marten should attempt to create any missing database schema objects at runtime. This
         ///     property is "All" by default for more efficient development, but can be set to lower values for production usage.
         /// </summary>
-        public AutoCreate AutoCreateSchemaObjects = AutoCreate.All;
+        public AutoCreate AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
         
         /// <summary>
         /// Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created

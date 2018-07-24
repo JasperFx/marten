@@ -64,6 +64,7 @@ namespace Marten.Testing.Schema
             var dbCreated = false;
             using (var store = DocumentStore.For(_ =>
             {
+	            _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Connection(ConnectionSource.ConnectionString);
                 _.CreateDatabasesForTenants(c =>
                 {
