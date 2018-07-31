@@ -82,11 +82,14 @@ namespace Marten.Schema
             }
         }
 
-        public void WriteTransactionalScript(TextWriter writer, Action<TextWriter> writeStep)
+        public void WriteScript(TextWriter writer, Action<TextWriter> writeStep, bool transactionalScript=true)
         {
-            writer.WriteLine("DO LANGUAGE plpgsql $tran$");
-            writer.WriteLine("BEGIN");
-            writer.WriteLine("");
+            if (transactionalScript)
+            {
+                writer.WriteLine("DO LANGUAGE plpgsql $tran$");
+                writer.WriteLine("BEGIN");
+                writer.WriteLine("");
+            }
 
             if (Rules.Role.IsNotEmpty())
             {
@@ -102,34 +105,35 @@ namespace Marten.Schema
                 writer.WriteLine("");
             }
 
-            writer.WriteLine("");
-            writer.WriteLine("END;");
-            writer.WriteLine("$tran$;");
+            if (transactionalScript)
+            {
+                writer.WriteLine("");
+                writer.WriteLine("END;");
+                writer.WriteLine("$tran$;");
+            }
         }
 
-        public void WriteTransactionalFile(string file, string sql)
+        public void WriteFile(string file, string sql, bool transactionalScript)
         {
             using (var stream = new FileStream(file, FileMode.Create))
             {
                 var writer = new StreamWriter(stream) {AutoFlush = true};
 
-                WriteTransactionalScript(writer, w => w.WriteLine(sql));
-
+                WriteScript(writer, w => w.WriteLine(sql), transactionalScript);
                 
-
                 stream.Flush(true);
             }
         }
 
-        public void WriteUpdateFile(string file)
+        public void WriteUpdateFile(string file, bool transactionalScript = true)
         {
-            WriteTransactionalFile(file, UpdateDDL);
+            WriteFile(file, UpdateDDL, transactionalScript);
         }
 
 
-        public void WriteRollbackFile(string file)
+        public void WriteRollbackFile(string file, bool transactionalScript = true)
         {
-            WriteTransactionalFile(file, RollbackDDL);
+            WriteFile(file, RollbackDDL, transactionalScript);
         }
 
         public readonly IList<ObjectMigration> Migrations = new List<ObjectMigration>();

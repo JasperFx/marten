@@ -27,7 +27,7 @@ namespace Marten.Testing.Schema
 
             var writer = new StringWriter();
 
-            patch.WriteTransactionalScript(writer, w =>
+            patch.WriteScript(writer, w =>
             {
                 w.WriteLine("Hello.");
             });
@@ -46,7 +46,7 @@ namespace Marten.Testing.Schema
 
             var writer = new StringWriter();
 
-            patch.WriteTransactionalScript(writer, w =>
+            patch.WriteScript(writer, w =>
             {
                 w.WriteLine("Hello.");
             });
