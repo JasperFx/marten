@@ -30,13 +30,13 @@ namespace Marten.CommandLine.Commands.Patch
                 var patch = store.Schema.ToPatch(input.SchemaFlag, withAutoCreateAll: true);
 
                 input.WriteLine(ConsoleColor.Green, "Wrote a patch file to " + input.FileName);
-                patch.WriteUpdateFile(input.FileName);
+                patch.WriteUpdateFile(input.FileName, input.TransactionalScriptFlag);
 
 
                 var dropFile = input.DropFlag ?? SchemaPatch.ToDropFileName(input.FileName);
 
                 input.WriteLine(ConsoleColor.Green, "Wrote the drop file to " + dropFile);
-                patch.WriteRollbackFile(dropFile);
+                patch.WriteRollbackFile(dropFile, input.TransactionalScriptFlag);
 
                 return true;
             }
