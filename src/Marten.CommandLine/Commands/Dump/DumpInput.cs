@@ -11,7 +11,7 @@ namespace Marten.CommandLine.Commands.Dump
         [FlagAlias("by-type")]
         public bool ByTypeFlag { get; set; }
 
-        [Description("Option to create patch and rollup scripts as transactional script")]
+        [Description("Option to create scripts as transactional script")]
         [FlagAlias("transactional-script")]
         public bool TransactionalScriptFlag { get; set; }
     }
