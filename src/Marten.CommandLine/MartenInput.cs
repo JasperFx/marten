@@ -15,7 +15,7 @@ namespace Marten.CommandLine
 
         [Description("Option to create patch and rollup scripts as transactional or not")]
         [FlagAlias("transactional-script")]
-        public bool TransactionalScriptFlag { get; set; } = true;
+        public bool TransactionalScriptFlag { get; set; }
 
         [IgnoreOnCommandLine]
         public IDocumentStore Store { get; set; }
