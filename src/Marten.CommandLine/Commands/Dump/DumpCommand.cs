@@ -18,7 +18,7 @@ namespace Marten.CommandLine.Commands.Dump
             if (input.ByTypeFlag)
             {
                 input.WriteLine("Writing DDL files to " + input.FileName);
-                store.Schema.WriteDDLByType(input.FileName);
+                store.Schema.WriteDDLByType(input.FileName, input.TransactionalScriptFlag);
             }
             else
             {
@@ -35,7 +35,7 @@ namespace Marten.CommandLine.Commands.Dump
                     input.WriteLine(ConsoleColor.Yellow, $"Unable to clean the directory at {input.FileName} before writing new files");
                 }
 
-                store.Schema.WriteDDL(input.FileName);
+                store.Schema.WriteDDL(input.FileName, input.TransactionalScriptFlag);
             }
 
             return true;
