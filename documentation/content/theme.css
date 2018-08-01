@@ -47,3 +47,7 @@ i.command-description {
 .navbar-inverse {
      background-color: transparent;
 }
+
+nav.related-links {
+    margin-bottom: 21px;
+}
