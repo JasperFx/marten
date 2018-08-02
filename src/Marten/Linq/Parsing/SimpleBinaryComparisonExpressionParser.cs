@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Reflection;
 using Baseline;
 using Marten.Schema;
 
@@ -48,9 +49,10 @@ namespace Marten.Linq.Parsing
             var useContainment = mapping.PropertySearching == PropertySearching.ContainmentOperator || field.ShouldUseContainmentOperator();
 
             var isDuplicated = (mapping.FieldFor(members) is DuplicatedField);
+            var isEnumString = field.MemberType.GetTypeInfo().IsEnum && serializer.EnumStorage == EnumStorage.AsString;
 
             if (useContainment &&
-                expression.NodeType == ExpressionType.Equal && value != null && !isDuplicated)
+                expression.NodeType == ExpressionType.Equal && value != null && !isDuplicated && !isEnumString)
             {
                 return new ContainmentWhereFragment(serializer, expression, _wherePrefix);
             }
