@@ -85,7 +85,7 @@ namespace Marten.Linq.Parsing
             return new WhereFragment($"{_wherePrefix}{whereFormat.ToFormat(jsonLocator, op)}", value);
 
            
-            return value == null ? new WhereFragment($"({jsonLocator}) {_isOperator} null") : new WhereFragment($"{_wherePrefix}({jsonLocator}) {op} ?", value);
+            //return value == null ? new WhereFragment($"({jsonLocator}) {_isOperator} null") : new WhereFragment($"{_wherePrefix}({jsonLocator}) {op} ?", value);
         }
         private static object moduloByValue(BinaryExpression binary)
         {
