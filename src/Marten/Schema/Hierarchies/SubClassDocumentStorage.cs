@@ -90,7 +90,7 @@ namespace Marten.Schema.Hierarchies
             var json = reader.GetTextReader(startingIndex);
             var id = reader[startingIndex + 1];
 
-            var version = reader.GetFieldValue<Guid>(3);
+            var version = reader.GetFieldValue<Guid>(startingIndex + 3);
             var typeAlias = reader.GetString(startingIndex + 2);
 
             var actualType = _mapping.TypeFor(typeAlias);
