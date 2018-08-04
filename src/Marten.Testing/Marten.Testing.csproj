@@ -14,8 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
-      <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6"
-                        Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
+      <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,7 +52,7 @@
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
     <PackageReference Include="HtmlTags" Version="3.0.0.186" />
-    <PackageReference Include="Microsoft.NETCore.Platforms" Version="1.0.2" />
+    <PackageReference Include="Microsoft.NETCore.Platforms" Version="1.1.0" />
     <Reference Include="System.Web" />
     <Reference Include="System" />
     <Reference Include="System.Runtime" />

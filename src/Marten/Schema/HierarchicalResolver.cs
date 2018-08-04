@@ -24,7 +24,7 @@ namespace Marten.Schema
             var id = reader[startingIndex + 1];
             var typeAlias = reader.GetString(startingIndex + 2);
 
-            var version = reader.GetFieldValue<Guid>(3);
+            var version = reader.GetFieldValue<Guid>(startingIndex + 3);
 
             return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json, version);
         }
