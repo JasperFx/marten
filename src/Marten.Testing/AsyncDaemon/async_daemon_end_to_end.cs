@@ -48,9 +48,7 @@ namespace Marten.Testing.AsyncDaemon
 
             _testHelper.PublishAllProjectEvents(theStore, true);
 
-
-            
-
+            // SAMPLE: rebuild-single-projection
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
             {
                 LeadingEdgeBuffer = 0.Seconds()
@@ -58,6 +56,7 @@ namespace Marten.Testing.AsyncDaemon
             {
                 await daemon.Rebuild<ActiveProject>().ConfigureAwait(false);
             }
+            // ENDSAMPLE
 
             _testHelper.CompareActiveProjects(theStore);
             
