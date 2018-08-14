@@ -27,33 +27,33 @@ namespace Marten.Testing.Events.Projections
         public IList<string> Slayed { get; } = new List<string>();
 
 
-    public void Apply(MembersJoined joined)
-    {
-        _members.Fill(joined.Members);
+        public void Apply(MembersJoined joined)
+        {
+            _members.Fill(joined.Members);
+        }
+
+        public void Apply(MembersDeparted departed)
+        {
+            _members.RemoveAll(x => departed.Members.Contains(x));
+        }
+
+        public void Apply(QuestStarted started)
+        {
+            Name = started.Name;
+        }
+
+
+        public string Key { get; set; }
+
+        public string Name { get; set; }
+
+        public Guid Id { get; set; }
+
+        public override string ToString()
+        {
+            return $"Quest party '{Name}' is {Members.Join(", ")}";
+        }
     }
-
-    public void Apply(MembersDeparted departed)
-    {
-        _members.RemoveAll(x => departed.Members.Contains(x));
-    }
-
-    public void Apply(QuestStarted started)
-    {
-        Name = started.Name;
-    }
-
-
-    public string Key { get; set; }
-
-    public string Name { get; set; }
-
-    public Guid Id { get; set; }
-
-    public override string ToString()
-    {
-        return $"Quest party '{Name}' is {Members.Join(", ")}";
-    }
-}
 
     public class QuestFinishingParty : QuestParty
     {
