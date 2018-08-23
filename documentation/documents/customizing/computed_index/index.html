@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.10.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -113,6 +113,12 @@ CREATE INDEX mt_doc_user_idx_user_name ON public.mt_doc_user ((data ->> 'UserNam
 <pre>
 CREATE INDEX mt_doc_target_idx_inner_color ON public.mt_doc_target (((data -> 'Inner' ->> 'Color')::int));
 </pre>
+<p>Or create calculated multi-property indexes like this:</p>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    var columns = new Expression&lt;Func&lt;User, object&gt;&gt;[]&#xA;    {&#xA;        x =&gt; x.FirstName,&#xA;        x =&gt; x.LastName&#xA;    };&#xA;    _.Schema.For&lt;User&gt;().Index(columns);&#xA;});&#xA;</code></pre>
+<p>The configuration above creates an index like this:</p>
+<pre>
+CREATE INDEX mt_doc_user_idx_first_namelast_name ON public.mt_doc_user USING btree (((data ->> 'FirstName'::text)), ((data ->> 'LastName'::text)))
+</pre>
 <h2 id="customizing-a-calculated-index">Customizing a Calculated Index</h2>
 <p>You have some ability to customize the calculated index by passing a second Lambda <code>Action</code> into
 the <code>Index()</code> method as shown below:</p>
@@ -122,7 +128,7 @@ the <code>Index()</code> method as shown below:</p>
 
 			      	<hr />
 
-			      	<nav>
+			      	<nav class="related-links">
 				        <span>
 				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a>
 

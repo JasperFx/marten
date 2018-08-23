@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.10.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -100,12 +100,13 @@
 <pre><code class="language-csharp">&#xA;public sealed class CandleProjection : ViewProjection&lt;Candle, string&gt;&#xA;{&#xA;    public CandleProjection(int transactions)&#xA;    {&#xA;        // We project from the event Tick&#xA;        ProjectEvent&lt;Tick&gt;(&#xA;            (session, tick) =&gt;&#xA;            {&#xA;                // We check the number of events from our stream and assume it as the transaction count&#xA;                var version = session.Events.FetchStreamState(tick.Symbol)?.Version ?? 0;&#xA;                // We use the transaction count to ensure our candle holds at most data for specified number of transactions&#xA;                return tick.Symbol &#x2B; (version / transactions).ToString();&#xA;            },&#xA;            OnTick);&#xA;    }&#xA;&#xA;    public CandleProjection(TimeSpan window)&#xA;    {&#xA;        // We project from the event Tick&#xA;        // We use the specified time window to ensure our candle holds at most data for window length of ticks&#xA;        ProjectEvent&lt;Tick&gt;(tick =&gt; tick.Symbol &#x2B; tick.Time.Ticks / window.Ticks, OnTick);&#xA;    }&#xA;&#xA;    // Update our candle with the tick data&#xA;    private void OnTick(Candle candle, Tick tick)&#xA;    {&#xA;        candle.Symbol = tick.Symbol;&#xA;&#xA;        if (!candle.From.HasValue)&#xA;        {&#xA;            candle.From = tick.Time;&#xA;            candle.Open = candle.Low = candle.High = tick.Price;&#xA;        }&#xA;&#xA;        if (tick.Price &lt; candle.Low)&#xA;        {&#xA;            candle.Low = tick.Price;&#xA;        }&#xA;&#xA;        if (tick.Price &gt; candle.High)&#xA;        {&#xA;            candle.High = tick.Price;&#xA;        }&#xA;&#xA;        candle.To = tick.Time;&#xA;        candle.Close = tick.Price;&#xA;    }&#xA;}&#xA;</code></pre>
 <p>Lastly, we configure the Event Store to use the newly introduced projection:</p>
 <pre><code class="language-csharp">&#xA;StoreOptions(storeOptions =&gt;&#xA;{&#xA;    // We index our streams by strings&#xA;    storeOptions.Events.StreamIdentity = StreamIdentity.AsString;                &#xA;&#xA;    // Build candles in 1 second windows&#xA;    storeOptions.Events.InlineProjections.Add(new CandleProjection(TimeSpan.FromSeconds(1)));&#xA;    // Build candles for 5 transactions&#xA;    storeOptions.Events.InlineProjections.Add(new CandleProjection(5));&#xA;});&#xA;&#xA;var random = new Random();&#xA;var symbols = new[] { &quot;AAPL&quot;, &quot;GOOG&quot;, &quot;MSFT&quot; };&#xA;&#xA;var ticks = Enumerable.Range(1, 15)&#xA;    .Select(i =&gt; new Tick(DateTime.UtcNow.AddMinutes(i), symbols[random.Next(symbols.Length)], random.Next(100 * i)))&#xA;    .ToList();&#xA;&#xA;using (var s = theStore.OpenSession())&#xA;{&#xA;    foreach (var tick in ticks)&#xA;    {&#xA;        // We index the streams by the name of the symbol&#xA;        s.Events.Append(tick.Symbol, tick);&#xA;    }&#xA;    s.SaveChanges();&#xA;}&#xA;&#xA;var maxPrice = ticks.Max(x =&gt; x.Price);&#xA;var maxTick = ticks.First(x =&gt; x.Price == maxPrice);&#xA;&#xA;using (var s = theStore.QuerySession())&#xA;{&#xA;    // We should have a candle with the maximum from our maxTick&#xA;    var candle = s.Query&lt;Candle&gt;().Where(x =&gt; x.Symbol == maxTick.Symbol).OrderByDescending(x =&gt; x.High).First();&#xA;    var count = s.Query&lt;Candle&gt;().Count();&#xA;&#xA;    Assert.Equal(maxTick.Price, candle.High);&#xA;    // 15*1 second windows &#x2B; 3*5 transactions&#xA;    Assert.Equal(18, count);&#xA;}&#xA;</code></pre> 
+ 
 
 			      	</div>
 
 			      	<hr />
 
-			      	<nav>
+			      	<nav class="related-links">
 				        <span>
 				        	<strong>Previous: </strong><a href="/marten/documentation/events/projections/custom">Custom Projections</a>
 

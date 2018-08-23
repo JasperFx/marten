@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.10.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -91,7 +91,7 @@
 
 			      	<div id="main-pane">
 			      		<!--Title:Stream Identity-->
-<p>The Event Store in Marten can identify and index streams either as GUIDs (<code>System.Guid</code>) or strings (<code>System.String</code>). This is reflected in the overloads of <code>IEventStore</code> such as <code>IEventStore.StartStream</code>, <code>IEventStore.Append</code> and <code>IEventStore.AggregateStream</code> that accept either <code>string</code> or <code>Guid</code> as the stream identifier.</p>
+<p>The Event Store in Marten can identify and index streams either as Guids (<code>System.Guid</code>) or strings (<code>System.String</code>). This is reflected in the overloads of <code>IEventStore</code> such as <code>IEventStore.StartStream</code>, <code>IEventStore.Append</code> and <code>IEventStore.AggregateStream</code> that accept either <code>string</code> or <code>Guid</code> as the stream identifier.</p>
 <h2 id="configuring-event-stream-identity">Configuring Event Stream Identity</h2>
 <p>Configuration of the stream identity is done through <code>StoreOptions.Events.StreamIdentity</code>. If not set, Marten defaults to <code>StreamIdentity.AsGuid</code>. The identity is configured once per store, whereby different stream identity types cannot be mixed. The following sample demonstrates configuring streams to be identified as strings.</p>
 <pre><code class="language-csharp">&#xA;storeOptions.Events.StreamIdentity = StreamIdentity.AsString;&#xA;storeOptions.Events.AsyncProjections.AggregateStreamsWith&lt;QuestPartyWithStringIdentifier&gt;();&#xA;</code></pre>
@@ -102,7 +102,7 @@
 
 			      	<hr />
 
-			      	<nav>
+			      	<nav class="related-links">
 				        <span>
 				        	<strong>Previous: </strong><a href="/marten/documentation/events/schema">Event Store Schema Objects</a>
 

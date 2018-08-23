@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.10.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -129,13 +129,13 @@ bus applications.</li>
 <p>Marten can be configured to create (or drop &amp; create) databases in case they do not exist. This is done via store options, through <code>StoreOptions.CreateDatabasesForTenants</code>.</p>
 <pre><code class="language-csharp">&#xA;storeOptions.CreateDatabasesForTenants(c =&gt;&#xA;{&#xA;    // Specify a db to which to connect in case database needs to be created.&#xA;    // If not specified, defaults to &#x27;postgres&#x27; on the connection for a tenant.&#xA;    c.MaintenanceDatabase(cstring);&#xA;    c.ForTenant()&#xA;        .CheckAgainstPgDatabase()&#xA;        .WithOwner(&quot;postgres&quot;)&#xA;        .WithEncoding(&quot;UTF-8&quot;)&#xA;        .ConnectionLimit(-1)&#xA;        .OnDatabaseCreated(_ =&gt;&#xA;        {&#xA;            dbCreated = true;&#xA;        });&#xA;});&#xA;</code></pre>
 <p>Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. <code>ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase</code> can be used to alter this behaviour to check for database existence from <code>pg_database</code>.</p>
-<p>Note that database cretion requires the CREATEDB privilege. See PostgreSQL <a href="https://www.postgresql.org/docs/current/static/sql-createdatabase.html">CREATE DATABASE</a> documentation for more.</p>
+<p>Note that database creation requires the CREATEDB privilege. See PostgreSQL <a href="https://www.postgresql.org/docs/current/static/sql-createdatabase.html">CREATE DATABASE</a> documentation for more.</p>
 
 			      	</div>
 
 			      	<hr />
 
-			      	<nav>
+			      	<nav class="related-links">
 				        <span>
 				        	<strong>Previous: </strong><a href="/marten/">Marten</a>
 

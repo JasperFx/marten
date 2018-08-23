@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.10.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -93,56 +93,41 @@
 			      		<!--Title:Projections-->
 <!--Url:projections-->
 <div class="alert alert-info">
-The Marten community is working to create more samples of event store projections. Check this page again soon. In the meantime,
-don't forget to just look through the code and our unit tests.
+The Marten community is working to create more samples of event store projections. Check this page again soon. In the meantime, don't forget to just look through the code and our unit tests.
 </div>
 <p>First, some terminology that we're going to use throughout this section:</p>
 <ul>
 <li><em>Projection</em> - any strategy for generating &quot;read side&quot; views from the raw event streams</li>
 <li><em>Transformation</em> - a type of projection that generates or updates a single read side view for a single event</li>
 <li><em>Aggregate</em> - a type of projection that &quot;aggregates&quot; data from multiple events to create a single readside view document</li>
-<li><em>Inline Projections</em> - projection's that are executed as part of any event capture transaction</li>
-<li><em>Async Projections</em> - projection's that run in some kind of background process using an <a href="https://en.wikipedia.org/wiki/Eventual_consistency">eventual consistency</a> strategy</li>
-<li><em>Live Projections</em> - evaluating a projected view from the raw event data on demand within Marten</li>
+<li><em>Inline Projections</em> - a type of projection that executes as part of any event capture transaction and is stored as a document</li>
+<li><em>Async Projections</em> - a type of projection that runs in a background process using an <a href="https://en.wikipedia.org/wiki/Eventual_consistency">eventual consistency</a> strategy, and is stored as a document</li>
+<li><em>Live Projections</em> - evaluates a projected view from the raw event data on demand within Marten</li>
 </ul>
-<h2 id="event-metadata-in-projections">Event Metadata in Projections</h2>
-<p>First off, please be aware that <strong>event metadata like stream version and sequence number are not available duing the execution of
-inline projections.</strong> If you need to use event metadata in your projections, please use asynchronous or live projections.</p>
-<h2 id="projecting-from-one-event-to-one-document">Projecting from One Event to One Document</h2>
-<p>If you want to have certain events projected to a readside document and the relationship is one to one, Marten supports this pattern today with the .Net <code>ITransform</code> interface:</p>
+<h2 id="transformations">Transformations</h2>
+<p>Transformations project from one event type to one document. If you want to have certain events projected to a readside document and the relationship is one to one, Marten supports this pattern today with the .Net <code>ITransform</code> interface:</p>
 <pre><code class="language-csharp">&#xA;public interface ITransform&lt;TEvent, TView&gt;&#xA;{&#xA;    TView Transform(EventStream stream, Event&lt;TEvent&gt; input);&#xA;}&#xA;</code></pre>
-<p>As a sample problem, let's say that we're constantly capturing <code>MonsterSlayed</code> events and our system needs to query just this data. You could query directly against the big ol' <code>mt_events</code> table with
+<p>As a sample problem, let's say that we're constantly capturing <code>MonsterSlayed</code> events and our system needs to query just this data. You could query directly against the large <code>mt_events</code> table with
 <code>IEventStore.Query&lt;MonsterSlayed&gt;()</code>, but it would be more efficient to keep a separate &quot;read side&quot; copy of this data in a new data collection. We could build a new transform class and readside document like this:</p>
 <pre><code class="language-csharp">&#xA;public class MonsterDefeatedTransform : ITransform&lt;MonsterSlayed, MonsterDefeated&gt;&#xA;{&#xA;    public MonsterDefeated Transform(EventStream stream, Event&lt;MonsterSlayed&gt; input)&#xA;    {&#xA;        return new MonsterDefeated&#xA;        {&#xA;            Id = input.Id,&#xA;            Monster = input.Data.Name&#xA;        };&#xA;    }&#xA;}&#xA;&#xA;public class MonsterDefeated&#xA;{&#xA;    public Guid Id { get; set; }&#xA;    public string Monster { get; set; }&#xA;}&#xA;&#xA;</code></pre>
 <p>Now, we can plug our new transform type above as a projection when we configure our document store like this:</p>
 <pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());&#xA;});&#xA;</code></pre>
 <pre><code class="language-csharp">&#xA;public void using_live_transformed_events(IDocumentSession session)&#xA;{&#xA;    var started = new QuestStarted { Name = &quot;Find the Orb&quot; };&#xA;    var joined = new MembersJoined { Day = 2, Location = &quot;Faldor&#x27;s Farm&quot;, Members = new string[] { &quot;Garion&quot;, &quot;Polgara&quot;, &quot;Belgarath&quot; } };&#xA;    var slayed1 = new MonsterSlayed { Name = &quot;Troll&quot; };&#xA;    var slayed2 = new MonsterSlayed { Name = &quot;Dragon&quot; };&#xA;&#xA;    MembersJoined joined2 = new MembersJoined { Day = 5, Location = &quot;Sendaria&quot;, Members = new string[] { &quot;Silk&quot;, &quot;Barak&quot; } };&#xA;&#xA;&#xA;    session.Events.StartStream&lt;Quest&gt;(started, joined, slayed1, slayed2);&#xA;    session.SaveChanges();&#xA;&#xA;    // Our MonsterDefeated documents are created inline&#xA;    // with the SaveChanges() call above and are available&#xA;    // for querying&#xA;    session.Query&lt;MonsterDefeated&gt;().Count()&#xA;        .ShouldBe(2);&#xA;}&#xA;</code></pre>
-<h2 id="aggregated-views-across-a-single-stream">Aggregated Views Across a Single Stream</h2>
-<p>As of now (v1.0), Marten is only supporting aggregation via .Net classes. The out of the box convention is to expose <code>public Apply([Event Type])</code> methods
-on your aggregate class to do all incremental updates to an aggregate object.  This can be customised using <a href="#aggregator-lookup">AggregatorLookup</a>.</p>
+<h2 id="aggregates">Aggregates</h2>
+<p>Aggregates condense data described by a single stream. As of v1.0, Marten only supports aggregation via .Net classes. Aggregates are calculated upon every request by running the event stream through them, as compared to inline projections, which are computed at event commit time and stored as documents.</p>
+<p>The out-of-the box convention is to expose <code>public Apply([Event Type])</code> methods on your aggregate class to do all incremental updates to an aggregate object. This can be customised using <a href="#aggregator-lookup">AggregatorLookup</a>.</p>
 <p>Sticking with the fantasy theme, the <code>QuestParty</code> class shown below could be used to aggregate streams of quest data:</p>
-<pre><code class="language-csharp">&#xA;    public class QuestParty&#xA;    {&#xA;        protected readonly IList&lt;string&gt; _members = new List&lt;string&gt;();&#xA;&#xA;        public string[] Members&#xA;        {&#xA;            get&#xA;            {&#xA;                return _members.ToArray();&#xA;            }&#xA;            set&#xA;            {&#xA;                _members.Clear();&#xA;                _members.AddRange(value);&#xA;            }&#xA;        }&#xA;&#xA;        public IList&lt;string&gt; Slayed { get; } = new List&lt;string&gt;();&#xA;&#xA;&#xA;    public void Apply(MembersJoined joined)&#xA;    {&#xA;        _members.Fill(joined.Members);&#xA;    }&#xA;&#xA;    public void Apply(MembersDeparted departed)&#xA;    {&#xA;        _members.RemoveAll(x =&gt; departed.Members.Contains(x));&#xA;    }&#xA;&#xA;    public void Apply(QuestStarted started)&#xA;    {&#xA;        Name = started.Name;&#xA;    }&#xA;&#xA;&#xA;    public string Key { get; set; }&#xA;&#xA;    public string Name { get; set; }&#xA;&#xA;    public Guid Id { get; set; }&#xA;&#xA;    public override string ToString()&#xA;    {&#xA;        return $&quot;Quest party &#x27;{Name}&#x27; is {Members.Join(&quot;, &quot;)}&quot;;&#xA;    }&#xA;}&#xA;&#xA;    public class QuestFinishingParty : QuestParty&#xA;    {&#xA;        private readonly string _exMachina;&#xA;&#xA;        public QuestFinishingParty() { }&#xA;&#xA;        public QuestFinishingParty(string exMachina)&#xA;        {&#xA;            _exMachina = exMachina;&#xA;        }&#xA;        &#xA;        public void Apply(MembersEscaped escaped)&#xA;        {&#xA;            if (_exMachina == null)&#xA;            {&#xA;                throw new NullReferenceException(&quot;Can&#x27;t escape w/o an Ex Machina&quot;);&#xA;            }&#xA;&#xA;            _members.RemoveAll(x =&gt; escaped.Members.Contains(x));&#xA;        }&#xA;    }&#xA;</code></pre>
-<p>New in Marten 1.2 is the ability to use <code>Event&lt;T&gt;</code> metadata within your projections -- assuming that you're not trying to run the aggregations inline.</p>
+<pre><code class="language-csharp">&#xA;public class QuestParty&#xA;{&#xA;    protected readonly IList&lt;string&gt; _members = new List&lt;string&gt;();&#xA;&#xA;    public string[] Members&#xA;    {&#xA;        get&#xA;        {&#xA;            return _members.ToArray();&#xA;        }&#xA;        set&#xA;        {&#xA;            _members.Clear();&#xA;            _members.AddRange(value);&#xA;        }&#xA;    }&#xA;&#xA;    public IList&lt;string&gt; Slayed { get; } = new List&lt;string&gt;();&#xA;&#xA;&#xA;    public void Apply(MembersJoined joined)&#xA;    {&#xA;        _members.Fill(joined.Members);&#xA;    }&#xA;&#xA;    public void Apply(MembersDeparted departed)&#xA;    {&#xA;        _members.RemoveAll(x =&gt; departed.Members.Contains(x));&#xA;    }&#xA;&#xA;    public void Apply(QuestStarted started)&#xA;    {&#xA;        Name = started.Name;&#xA;    }&#xA;&#xA;&#xA;    public string Key { get; set; }&#xA;&#xA;    public string Name { get; set; }&#xA;&#xA;    public Guid Id { get; set; }&#xA;&#xA;    public override string ToString()&#xA;    {&#xA;        return $&quot;Quest party &#x27;{Name}&#x27; is {Members.Join(&quot;, &quot;)}&quot;;&#xA;    }&#xA;}&#xA;&#xA;public class QuestFinishingParty : QuestParty&#xA;{&#xA;    private readonly string _exMachina;&#xA;&#xA;    public QuestFinishingParty() { }&#xA;&#xA;    public QuestFinishingParty(string exMachina)&#xA;    {&#xA;        _exMachina = exMachina;&#xA;    }&#xA;    &#xA;    public void Apply(MembersEscaped escaped)&#xA;    {&#xA;        if (_exMachina == null)&#xA;        {&#xA;            throw new NullReferenceException(&quot;Can&#x27;t escape w/o an Ex Machina&quot;);&#xA;        }&#xA;&#xA;        _members.RemoveAll(x =&gt; escaped.Members.Contains(x));&#xA;    }&#xA;}&#xA;</code></pre>
+<p>New in Marten 1.2 is the ability to use <code>Event&lt;T&gt;</code> metadata within your projections, assuming that you're not trying to run the aggregations inline.</p>
 <p>The syntax using the built in aggregation technique is to take in <code>Event&lt;T&gt;</code> as the argument to your <code>Apply(event)</code> methods,
-where &quot;T&quot; is the event type you're interested in:</p>
+where <code>T</code> is the event type you're interested in:</p>
 <pre><code class="language-csharp">&#xA;public class QuestPartyWithEvents&#xA;{&#xA;    private readonly IList&lt;string&gt; _members = new List&lt;string&gt;();&#xA;&#xA;    public string[] Members&#xA;    {&#xA;        get&#xA;        {&#xA;            return _members.ToArray();&#xA;        }&#xA;        set&#xA;        {&#xA;            _members.Clear();&#xA;            _members.AddRange(value);&#xA;        }&#xA;    }&#xA;&#xA;    public IList&lt;string&gt; Slayed { get; } = new List&lt;string&gt;();&#xA;&#xA;    public void Apply(Event&lt;MembersJoined&gt; joined)&#xA;    {&#xA;        _members.Fill(joined.Data.Members);&#xA;    }&#xA;&#xA;    public void Apply(Event&lt;MembersDeparted&gt; departed)&#xA;    {&#xA;        _members.RemoveAll(x =&gt; departed.Data.Members.Contains(x));&#xA;    }&#xA;&#xA;    public void Apply(Event&lt;QuestStarted&gt; started)&#xA;    {&#xA;        Name = started.Data.Name;&#xA;    }&#xA;&#xA;    public string Name { get; set; }&#xA;&#xA;    public Guid Id { get; set; }&#xA;&#xA;    public override string ToString()&#xA;    {&#xA;        return $&quot;Quest party &#x27;{Name}&#x27; is {Members.Join(&quot;, &quot;)}&quot;;&#xA;    }&#xA;}&#xA;</code></pre>
-<h2 id="aggregated-views-across-multiple-streams">Aggregated Views Across Multiple Streams</h2>
+<h3 id="aggregates-across-multiple-streams">Aggregates Across Multiple Streams</h3>
 <p>Example coming soon, and check <a href="http://jeremydmiller.com">Jeremy's blog</a> for a sample soon.</p>
-<p>It's possible today by using either a custom <code>IProjection</code> or using the existing aggregation capabilities with a
-custom <code>IAggregateFinder&lt;T&gt;</code>, where &quot;T&quot; is the projected view document type.</p>
-<h2 id="live-aggregation-via.net">Live Aggregation via .Net</h2>
-<p>You can always fetch a stream of events and build an aggregate completely live from the current event data by using this syntax:</p>
-<pre><code class="language-csharp">&#xA;using (var session = store.OpenSession())&#xA;{&#xA;    // questId is the id of the stream&#xA;    var party = session.Events.AggregateStream&lt;QuestParty&gt;(questId);&#xA;    Console.WriteLine(party);&#xA;&#xA;    var party_at_version_3 = session.Events&#xA;        .AggregateStream&lt;QuestParty&gt;(questId, 3);&#xA;&#xA;&#xA;    var party_yesterday = session.Events&#xA;        .AggregateStream&lt;QuestParty&gt;(questId, timestamp: DateTime.UtcNow.AddDays(-1));&#xA;}&#xA;</code></pre>
-<p>There is also a matching asynchronous <code>AggregateStreamAsync()</code> mechanism as well. Additionally, you can do stream aggregations in batch queries with
-<code>IBatchQuery.Events.AggregateStream&lt;T&gt;(streamId)</code>.</p>
-<h2 id="inline-aggregation">Inline Aggregation</h2>
-<p>If you would prefer that the projected aggregate document be updated <em>inline</em> with the events being appended, you simply need to register
-the aggregation type in the <code>StoreOptions</code> upfront when you build up your document store like this:</p>
-<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;    _.Events.TenancyStyle = tenancyStyle;&#xA;&#xA;    // This is all you need to create the QuestParty projected&#xA;    // view&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xA;});&#xA;</code></pre>
-<p>At this point, you would be able to query against <code>QuestParty</code> as just another document type.</p>
-<h2 id="aggregator-lookup">Aggregator Lookup</h2>
-<p><code>EventGraph.UseAggregatorLookup(IAggregatorLookup aggregatorLookup)</code> can be used to register an <code>IAggregatorLookup</code> that is used to look up <code>IAggregator&lt;T&gt;</code> for aggregations. This allows e.g. for generic aggregation strategy to be used, rathen than registering aggregators
-case-by-case through <code>EventGraphAddAggregator&lt;T&gt;(IAggregator&lt;T&gt; aggregator)</code>.</p>
+<p>It's possible currently by using either a custom <code>IProjection</code> or using the existing aggregation capabilities with a
+custom <code>IAggregateFinder&lt;T&gt;</code>, where <code>T</code> is the projected view document type.</p>
+<h3 id="aggregator-lookup">Aggregator Lookup</h3>
+<p><code>EventGraph.UseAggregatorLookup(IAggregatorLookup aggregatorLookup)</code> can be used to register an <code>IAggregatorLookup</code> that is used to look up <code>IAggregator&lt;T&gt;</code> for aggregations. This allows a generic aggregation strategy to be used, rather than registering aggregators case-by-case through <code>EventGraphAddAggregator&lt;T&gt;(IAggregator&lt;T&gt; aggregator)</code>.</p>
 <p>A shorthand extension method <code>EventGraph.UseAggregatorLookup(this EventGraph eventGraph, AggregationLookupStrategy strategy)</code> can be used to set default aggregation lookup, whereby</p>
 <ul>
 <li><code>AggregationLookupStrategy.UsePublicApply</code> resolves aggregators that use public Apply</li>
@@ -151,12 +136,25 @@ case-by-case through <code>EventGraphAddAggregator&lt;T&gt;(IAggregator&lt;T&gt;
 </ul>
 <p>The aggregation lookup can also be set in the <code>StoreOptions.Events.UserAggregatorLookup</code></p>
 <pre><code class="language-csharp">&#xA;// Registering an aggregator lookup that provides aggregator supporting private Apply([Event Type]) methods&#xA;theGraph.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);&#xA;</code></pre>
+<h3 id="live-aggregation-via.net">Live Aggregation via .Net</h3>
+<p>You can always fetch a stream of events and build an aggregate completely live from the current event data by using this syntax:</p>
+<pre><code class="language-csharp">&#xA;using (var session = store.OpenSession())&#xA;{&#xA;    // questId is the id of the stream&#xA;    var party = session.Events.AggregateStream&lt;QuestParty&gt;(questId);&#xA;    Console.WriteLine(party);&#xA;&#xA;    var party_at_version_3 = session.Events&#xA;        .AggregateStream&lt;QuestParty&gt;(questId, 3);&#xA;&#xA;&#xA;    var party_yesterday = session.Events&#xA;        .AggregateStream&lt;QuestParty&gt;(questId, timestamp: DateTime.UtcNow.AddDays(-1));&#xA;}&#xA;</code></pre>
+<p>There is also a matching asynchronous <code>AggregateStreamAsync()</code> mechanism as well. Additionally, you can do stream aggregations in batch queries with
+<code>IBatchQuery.Events.AggregateStream&lt;T&gt;(streamId)</code>.</p>
+<h2 id="inline-projections">Inline Projections</h2>
+<p><em>First off, be aware that event metadata (e.g. stream version and sequence number) are not available duing the execution of inline projections. If you need to use event metadata in your projections, please use asynchronous or live projections.</em></p>
+<p>If you would prefer that the projected aggregate document be updated <em>inline</em> with the events being appended, you simply need to register the aggregation type in the <code>StoreOptions</code> upfront when you build up your document store like this:</p>
+<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;    _.Events.TenancyStyle = tenancyStyle;&#xA;&#xA;    // This is all you need to create the QuestParty projected&#xA;    // view&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xA;});&#xA;</code></pre>
+<p>At this point, you would be able to query against <code>QuestParty</code> as just another document type.</p>
+<h2 id="rebuilding-projections">Rebuilding Projections</h2>
+<p>Projections need to be rebuilt when the code that defines them changes in a way that requires events to be reapplied in order to maintain correct state. Using an <code>IDaemon</code> this is easy to execute on-demand:</p>
+<pre><code class="language-csharp">&#xA;using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings&#xA;{&#xA;    LeadingEdgeBuffer = 0.Seconds()&#xA;}))&#xA;{&#xA;    await daemon.Rebuild&lt;ActiveProject&gt;().ConfigureAwait(false);&#xA;}&#xA;</code></pre>
 
 			      	</div>
 
 			      	<hr />
 
-			      	<nav>
+			      	<nav class="related-links">
 				        <span>
 				        	<strong>Previous: </strong><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a>
 

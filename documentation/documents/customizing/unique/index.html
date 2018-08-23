@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.8.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 2.10.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -92,7 +92,7 @@
 			      	<div id="main-pane">
 			      		<!--title:Unique Indexes-->
 <p><a href="https://www.postgresql.org/docs/current/static/indexes-unique.html">Unique Indexes</a> are used to enforce uniqueness of property value. They can be combined to handle also uniqueness of multiple properties.</p>
-<p>Marten supports both <a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a> and <p class="bg-warning" style="padding:5px"><b>Unknown topic key 'documentation/documents/customizing/computed_index'</b><small> -- CTRL+SHIFT+R to force refresh the topic tree</small></p> uniqueness. Using Duplicated Field brings benefits to queries but brings additional complexity, while Computed Index reuses current JSON structure without adding additional db column.</p>
+<p>Marten supports both <a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a> and <a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a> uniqueness. Using Duplicated Field brings benefits to queries but brings additional complexity, while Computed Index reuses current JSON structure without adding additional db column.</p>
 <h2 id="definining-unique-index-through-store-options">Definining Unique Index through Store options</h2>
 <p>Unique Indexes can be created using the fluent interface off of <code>StoreOptions</code> like this:</p>
 <ol>
@@ -161,7 +161,7 @@ the <code>Index()</code> method and definining <code>IsUnique</code> property as
 
 			      	<hr />
 
-			      	<nav>
+			      	<nav class="related-links">
 				        <span>
 				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a>
 
