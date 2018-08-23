@@ -121,11 +121,13 @@ namespace Marten.Testing.Acceptance
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data.ToArray());
 
-            theStore.Tenancy.Default.DbObjects.AllIndexes()
+            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
                 .Where(x => x.Name == "mt_doc_target_idx_number")
                 .Select(x => x.DDL.ToLower())
-                .First()
-                .ShouldContain("mt_doc_target_idx_number on mt_doc_target using brin");
+                .First();
+            
+            ddl.ShouldContain("mt_doc_target_idx_number on");
+            ddl.ShouldContain("mt_doc_target using brin");
         }
 
         [Fact]
@@ -149,7 +151,7 @@ namespace Marten.Testing.Acceptance
                 .DDL
                 .ToLower();
 
-            ddl.ShouldContain("index mt_doc_target_idx_user_idflag on mt_doc_target");
+            ddl.ShouldContain("index mt_doc_target_idx_user_idflag on");
             ddl.ShouldContain("((((data ->> 'userid'::text))::uuid), (((data ->> 'flag'::text))::boolean))");
         }
 
@@ -168,7 +170,7 @@ namespace Marten.Testing.Acceptance
                 .Where(x => x.Name == "mt_doc_target_idx_date")
                 .Select(x => x.DDL.ToLower())
                 .First()
-                .ShouldContain("mt_doc_target_idx_date on mt_doc_target");
+                .ShouldContain("mt_doc_target_idx_date on");
         }
 
         [Fact]

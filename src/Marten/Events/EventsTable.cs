@@ -15,7 +15,7 @@ namespace Marten.Events
             AddColumn("stream_id", stringIdType, (events.TenancyStyle != TenancyStyle.Conjoined) ? $"REFERENCES {events.DatabaseSchemaName}.mt_streams ON DELETE CASCADE" : null);
             AddColumn("version", "integer", "NOT NULL");
             AddColumn("data", "jsonb", "NOT NULL");
-            AddColumn("type", "varchar(100)", "NOT NULL");
+            AddColumn("type", "varchar(500)", "NOT NULL");
             AddColumn("timestamp", "timestamptz", "default (now()) NOT NULL");
             AddColumn<TenantIdColumn>();
             AddColumn(new DotNetTypeColumn { Directive = "NULL" });

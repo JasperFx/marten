@@ -4,7 +4,7 @@
     <Description>Command line tooling for managing Marten development</Description>
     <VersionPrefix>2.9.0</VersionPrefix>
     <Authors>Jeremy D. Miller;Tim Cools;Jeff Doolittle</Authors>
-    <TargetFrameworks>net46;netstandard1.3;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
     <AssemblyName>Marten.CommandLine</AssemblyName>
     <PackageId>Marten.CommandLine</PackageId>
     <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>

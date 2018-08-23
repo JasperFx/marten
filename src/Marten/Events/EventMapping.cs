@@ -29,7 +29,9 @@ namespace Marten.Events
             _parent = parent;
             DocumentType = eventType;
 
-            EventTypeName = DocumentType.Name.ToTableAlias();
+            
+            
+            EventTypeName = eventType.IsGenericType ? eventType.ShortNameInCode() : DocumentType.Name.ToTableAlias();
             IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
 
             _inner = new DocumentMapping(eventType, parent.Options);
