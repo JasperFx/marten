@@ -201,13 +201,13 @@ namespace Marten.Schema
                     cmdText =
                         $"SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '{catalog}' AND pid <> pg_backend_pid();";
                 }
-                cmdText += $"DROP DATABASE IF EXISTS {catalog};";
+                cmdText += $"DROP DATABASE IF EXISTS \"{catalog}\";";
             }
 
             using (var connection = new NpgsqlConnection(maintenanceDb))
             using (var cmd = connection.CreateCommand(cmdText))
             {
-                cmd.CommandText += $"CREATE DATABASE {catalog} WITH" + config;
+                cmd.CommandText += $"CREATE DATABASE \"{catalog}\" WITH" + config;
                 connection.Open();
                 try
                 {
