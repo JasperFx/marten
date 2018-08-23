@@ -173,7 +173,7 @@ namespace Marten.Testing.Acceptance
             var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
                 .Where(x => x.Name == "mt_doc_target_idx_date")
                 .Select(x => x.DDL.ToLower())
-                .First()
+                .First();
 
                 ddl.ShouldContain("mt_doc_target_idx_date on");
                 ddl.ShouldContain("mt_doc_target_idx_date");
