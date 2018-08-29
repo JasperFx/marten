@@ -42,7 +42,6 @@ namespace Marten.Events
 
         public EventStream(string stream, IEvent[] events, bool isNew)
         {
-            Id = Guid.NewGuid();
             Key = stream;
             AddEvents(events);
             IsNew = isNew;
@@ -59,7 +58,10 @@ namespace Marten.Events
             _events.AddRange(events);
             _events.Where(x => x.Id == Guid.Empty).Each(x => x.Id = CombGuidIdGeneration.NewGuid());
 
-            _events.Each(x => x.StreamId = Id);
+            if (string.IsNullOrEmpty(Key))
+                _events.Each(x => x.StreamId = Id);
+            else
+                _events.Each(x => x.StreamKey = Key);
 
             return this;
         }
