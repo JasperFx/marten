@@ -4,7 +4,7 @@ using Xunit;
 using Shouldly;
 using Marten.Services;
 using Marten.Pagination;
-
+using System.Threading.Tasks;
 
 namespace Marten.Testing.Pagination
 {
@@ -53,6 +53,17 @@ namespace Marten.Testing.Pagination
         }
 
         [Fact]
+        public async Task can_return_paged_result_async()
+        {
+            var pageNumber = 2;
+            var pageSize = 10;
+
+            var pagedList = await theSession.Query<Target>().AsPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+
+            pagedList.Count.ShouldBe(pageSize);
+        }
+
+        [Fact]
         public void invalid_pagenumber_should_throw_exception()
         {
             // invalid page number
@@ -78,20 +89,6 @@ namespace Marten.Testing.Pagination
                 Exception<ArgumentOutOfRangeException>.ShouldBeThrownBy(
                     () => theSession.Query<Target>().AsPagedList(pageNumber, pageSize));
             ex.Message.ShouldContain($"pageSize = 0. PageSize cannot be below 1.");
-        }
-
-        [Fact]
-        public void pagesize_outside_page_range_should_throw_exception()
-        {
-            // page number ouside the page range, page range is between 1 and 10 for the sample 
-            var pageNumber = 11;
-
-            var pageSize = 10;
-
-            var ex =
-                Exception<ArgumentOutOfRangeException>.ShouldBeThrownBy(
-                    () => theSession.Query<Target>().AsPagedList(pageNumber, pageSize));
-            ex.Message.ShouldContain($"pageNumber = 11. PageNumber is the outside the valid range.");
         }
 
         [Fact]
@@ -269,6 +266,8 @@ namespace Marten.Testing.Pagination
             pagedList.HasNextPage.ShouldBe(false);
             pagedList.FirstItemOnPage.ShouldBe(0);
             pagedList.LastItemOnPage.ShouldBe(0);
+            pagedList.PageNumber.ShouldBe(pageNumber);
+            pagedList.PageSize.ShouldBe(pageSize);
         }
     }
 }
