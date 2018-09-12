@@ -202,6 +202,22 @@ namespace Marten.Testing
         }
         // ENDSAMPLE
 
+        [Fact]
+        public void query_for_single_document_where_clause_trimmed()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                var u = new User { FirstName = "Jeremy", LastName = "Miller" };
+                session.Store(u);
+                session.SaveChanges();
+
+                var user = session.Query<User>(@"
+where data ->> 'FirstName' = 'Jeremy'").Single();
+                user.LastName.ShouldBe("Miller");
+                user.Id.ShouldBe(u.Id);
+            }
+        }
+
         // SAMPLE: query_with_matches_sql
         [Fact]
         public void query_with_matches_sql()
