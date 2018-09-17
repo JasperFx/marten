@@ -1,4 +1,5 @@
-﻿using Marten.Linq;
+﻿using Baseline;
+using Marten.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -112,7 +113,7 @@ namespace Marten.Pagination
         /// <param name="pageNumber"></param>
         /// <param name="pageSize"></param>
         /// <returns></returns>
-        public static async Task<PagedList<T>> CreateAsync(IMartenQueryable<T> queryable, int pageNumber, int pageSize)
+        public static async Task<PagedList<T>> CreateAsync(IQueryable<T> queryable, int pageNumber, int pageSize)
         {
             var pagedList = new PagedList<T>();
             await pagedList.InitAsync(queryable, pageNumber, pageSize).ConfigureAwait(false);
@@ -125,7 +126,7 @@ namespace Marten.Pagination
         /// <param name="queryable">Query for which data has to be fetched</param>
         /// <param name="pageSize">Page size</param>
         /// <param name="totalItemCount">Total count of all records</param>
-        public async Task InitAsync(IMartenQueryable<T> queryable, int pageNumber, int pageSize)
+        public async Task InitAsync(IQueryable<T> queryable, int pageNumber, int pageSize)
         {
             // throw an argument exception if page number is less than one
             if (pageNumber < 1)
@@ -146,12 +147,12 @@ namespace Marten.Pagination
 
             if (pageNumber == 1)
             {
-                _items.AddRange(await queryable.Stats(out queryStats).Take<T>(pageSize).ToListAsync<T>().ConfigureAwait(false));
+                _items.AddRange(await queryable.As<IMartenQueryable<T>>().Stats(out queryStats).Take<T>(pageSize).ToListAsync<T>().ConfigureAwait(false));
             }
             else
             {
                 var skipCount = (pageNumber - 1) * pageSize;
-                _items.AddRange(await queryable.Stats(out queryStats).Skip(skipCount).Take<T>(pageSize).ToListAsync<T>().ConfigureAwait(false));
+                _items.AddRange(await queryable.As<IMartenQueryable<T>>().Stats(out queryStats).Skip(skipCount).Take<T>(pageSize).ToListAsync<T>().ConfigureAwait(false));
             }
 
             // fetch the total record count

@@ -269,5 +269,14 @@ namespace Marten.Testing.Pagination
             pagedList.PageNumber.ShouldBe(pageNumber);
             pagedList.PageSize.ShouldBe(pageSize);
         }
+
+        [Fact]
+        public void check_query_with_where_clause_followed_by_to_pagedlist()
+        {
+            var pageNumber = 2;
+            var pageSize = 10;
+
+            var pagedList = theSession.Query<Target>().Where(x=>x.Flag).ToPagedList(pageNumber, pageSize);
+        }
     }
 }
