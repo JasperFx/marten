@@ -15,13 +15,15 @@ namespace Marten.Linq.QueryHandlers
         private readonly NpgsqlCommand _template;
         private readonly IQueryHandler<T> _handler;
         private readonly IDbParameterSetter[] _setters;
+        private readonly ISerializer _serializer;
 
-        public CachedQueryHandler(object model, NpgsqlCommand template, IQueryHandler<T> handler, IDbParameterSetter[] setters)
+        public CachedQueryHandler(object model, NpgsqlCommand template, IQueryHandler<T> handler, IDbParameterSetter[] setters, ISerializer serializer)
         {
             _model = model;
             _template = template;
             _handler = handler;
             _setters = setters;
+            _serializer = serializer;
         }
 
         public Type SourceType => _handler.SourceType;
@@ -35,7 +37,10 @@ namespace Marten.Linq.QueryHandlers
 
                 if (param.Value is Enum)
                 {
-                    param.Value = (int)param.Value;
+                    if (_serializer.EnumStorage == EnumStorage.AsInteger)
+                        param.Value = (int)param.Value;
+                    else
+                        param.Value = param.Value;
                 }
 
                 param.NpgsqlDbType = _template.Parameters[i].NpgsqlDbType;
