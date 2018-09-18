@@ -95,8 +95,8 @@ namespace Marten.Util
             return ExpressionCompiler.Compile<Func<TTarget, TValue>>(lambda);
         }
 
-        private static readonly MethodInfo _getName = typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public);
-        private static readonly MethodInfo _getName2 = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public).Single(mi => mi.Name == nameof(Convert.ToInt32) && mi.GetParameters().Count() == 1 && mi.GetParameters().Single().ParameterType == typeof(object));
+        private static readonly MethodInfo _getEnumStringValue = typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public);
+        private static readonly MethodInfo _getEnumIntValue = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public).Single(mi => mi.Name == nameof(Convert.ToInt32) && mi.GetParameters().Count() == 1 && mi.GetParameters().Single().ParameterType == typeof(object));
 
         public static Expression ToExpression(EnumStorage enumStorage, MemberInfo[] members, ParameterExpression target)
         {
@@ -121,11 +121,11 @@ namespace Marten.Util
                 {
                     if (enumStorage == EnumStorage.AsString)
                     {
-                        body = Expression.Call(_getName, Expression.Constant(memberType), Expression.Convert(body, typeof(object)));
+                        body = Expression.Call(_getEnumStringValue, Expression.Constant(memberType), Expression.Convert(body, typeof(object)));
                     }
                     else
                     {
-                        body = Expression.Call(_getName2, Expression.Convert(body, typeof(object)));
+                        body = Expression.Call(_getEnumIntValue, Expression.Convert(body, typeof(object)));
                     }
                 }
             }
