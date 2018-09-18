@@ -85,8 +85,23 @@ namespace Marten.Services
 
         public SprocCall Param(string argName, object value, NpgsqlDbType dbType)
         {
-            if ((value is Enum || value is Guid) && dbType == NpgsqlDbType.Varchar)
-                value = value.ToString();
+            if (value is Enum)
+            {
+                if (_parent.Serializer.EnumStorage == EnumStorage.AsInteger)
+                {
+                    value = (int)value;
+                    dbType = NpgsqlDbType.Integer;
+                }
+                else
+                {
+                    value = value.ToString();
+                    dbType = NpgsqlDbType.Varchar;
+                }
+            }
+            else if (value is Guid)
+            {
+                dbType = NpgsqlDbType.Uuid;
+            }
 
             _parameters.Add(new ParameterArg(argName, value, dbType));
 
