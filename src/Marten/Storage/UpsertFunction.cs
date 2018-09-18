@@ -26,28 +26,25 @@ namespace Marten.Storage
 
             _tableName = mapping.Table;
 
-
             var table = new DocumentTable(mapping);
             if (table.PrimaryKeys.Count > 1)
             {
-                _primaryKeyConstraintName =  mapping.Table.Name + "_pkey";
+                _primaryKeyConstraintName = mapping.Table.Name + "_pkey";
             }
             else
             {
                 _primaryKeyConstraintName = "pk_" + mapping.Table.Name;
             }
 
-
-
             var idType = mapping.IdMember.GetMemberType();
-            var pgIdType = TypeMappings.GetPgType(idType);
+            var pgIdType = TypeMappings.GetPgType(idType, mapping.EnumStorage);
 
             Arguments.Add(new UpsertArgument
             {
                 Arg = "docId",
                 PostgresType = pgIdType,
                 Column = "id",
-                Members = new[] {mapping.IdMember}
+                Members = new[] { mapping.IdMember }
             });
 
             Arguments.Add(new DocJsonBodyArgument());
@@ -73,8 +70,7 @@ namespace Marten.Storage
                 Arguments.Add(new TenantIdArgument());
                 _tenantWhereClause = $"{_tableName.QualifiedName}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}";
                 _andTenantWhereClause = $" and {_tenantWhereClause}";
-            }            
-
+            }
         }
 
         public override void Write(DdlRules rules, StringWriter writer)
@@ -83,12 +79,12 @@ namespace Marten.Storage
 
             var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");
 
-            var systemUpdates = new string[] {$"{DocumentMapping.LastModifiedColumn} = transaction_timestamp()" };
+            var systemUpdates = new string[] { $"{DocumentMapping.LastModifiedColumn} = transaction_timestamp()" };
             var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
                 .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
-            var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new [] {DocumentMapping.LastModifiedColumn}).Join(", ");
-            var valueList = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).Concat(new [] { "transaction_timestamp()" }).Join(", ");
+            var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new[] { DocumentMapping.LastModifiedColumn }).Join(", ");
+            var valueList = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).Concat(new[] { "transaction_timestamp()" }).Join(", ");
 
             var whereClauses = new List<string>();
 
@@ -111,11 +107,7 @@ namespace Marten.Storage
                 ? "SECURITY INVOKER"
                 : "SECURITY DEFINER";
 
-
-
             writeFunction(writer, argList, securityDeclaration, inserts, valueList, updates);
-
-
         }
 
         protected virtual void writeFunction(StringWriter writer, string argList, string securityDeclaration, string inserts,
@@ -143,7 +135,6 @@ $function$;
         {
             return Arguments.OrderBy(x => x.Arg).ToArray();
         }
-
 
         protected override string toDropSql()
         {

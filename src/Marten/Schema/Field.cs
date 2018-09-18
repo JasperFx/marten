@@ -9,18 +9,18 @@ namespace Marten.Schema
 {
     public abstract class Field
     {
-        protected Field(MemberInfo member) : this(new[] {member})
+        protected Field(EnumStorage enumStorage, MemberInfo member) : this(enumStorage, new[] { member })
         {
         }
 
-        protected Field(MemberInfo[] members)
+        protected Field(EnumStorage enumStorage, MemberInfo[] members)
         {
             Members = members;
             MemberName = members.Select(x => x.Name).Join("");
 
             MemberType = members.Last().GetMemberType();
 
-            PgType = TypeMappings.GetPgType(MemberType);
+            PgType = TypeMappings.GetPgType(MemberType, enumStorage);
         }
 
         public Type MemberType { get; }
@@ -30,5 +30,7 @@ namespace Marten.Schema
         public string MemberName { get; }
 
         public NpgsqlDbType NpgsqlDbType => TypeMappings.ToDbType(MemberType);
+
+        protected readonly EnumStorage _enumStorage;
     }
 }
