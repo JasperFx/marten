@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using Baseline;
+using NpgsqlTypes;
 
 namespace Marten.Schema
 {
@@ -14,6 +15,12 @@ namespace Marten.Schema
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
             var field = mapping.DuplicateField(member.Name, PgType);
+
+            if (DbType != default(NpgsqlDbType))
+            {
+                field.DbType = DbType;
+            }
+            
             var indexDefinition = mapping.AddIndex(field.ColumnName);
             indexDefinition.Method = IndexMethod;
             if (IndexName.IsNotEmpty())
@@ -24,6 +31,12 @@ namespace Marten.Schema
         /// Use to override the Postgresql database column type of this searchable field
         /// </summary>
         public string PgType { get; set; } = null;
+
+        /// <summary>
+        /// Use to override the NpgsqlDbType used when querying with a parameter
+        /// against the property
+        /// </summary>
+        public NpgsqlDbType DbType { get; set; } 
 
         /// <summary>
         /// Specifies the type of index to create

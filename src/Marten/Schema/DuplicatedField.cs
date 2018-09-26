@@ -13,7 +13,6 @@ namespace Marten.Schema
 {
     public class DuplicatedField : Field, IField
     {
-        private readonly NpgsqlDbType _dbType;
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
         private string _columnName;
 
@@ -25,7 +24,7 @@ namespace Marten.Schema
             {
                 if (enumStorage == EnumStorage.AsString)
                 {
-                    _dbType = NpgsqlDbType.Varchar;
+                    DbType = NpgsqlDbType.Varchar;
                     PgType = "varchar";
 
                     _parseObject = expression =>
@@ -36,30 +35,36 @@ namespace Marten.Schema
                 }
                 else
                 {
-                    _dbType = NpgsqlDbType.Integer;
+                    DbType = NpgsqlDbType.Integer;
                     PgType = "integer";
                 }
             }
             else if (MemberType.IsDateTime())
             {
                 PgType = "timestamp without time zone";
-                _dbType = NpgsqlDbType.Timestamp;
+                DbType = NpgsqlDbType.Timestamp;
             }
             else if (MemberType.IsDateTime())
             {
                 PgType = "timestamp without time zone";
-                _dbType = NpgsqlDbType.Timestamp;
+                DbType = NpgsqlDbType.Timestamp;
             }
             else if (MemberType == typeof(DateTimeOffset) || MemberType == typeof(DateTimeOffset?))
             {
                 PgType = "timestamp with time zone";
-                _dbType = NpgsqlDbType.TimestampTz;
+                DbType = NpgsqlDbType.TimestampTz;
             }
             else
             {
-                _dbType = TypeMappings.ToDbType(MemberType);
+                DbType = TypeMappings.ToDbType(MemberType);
             }
         }
+
+        /// <summary>
+        /// Used to override the assigned DbType used by Npgsql when a parameter
+        /// is used in a query against this column
+        /// </summary>
+        public NpgsqlDbType DbType { get; set; }
 
         public DuplicatedFieldRole Role { get; set; } = DuplicatedFieldRole.Search;
 
@@ -69,7 +74,7 @@ namespace Marten.Schema
             Column = ColumnName.ToLower(),
             PostgresType = PgType,
             Members = Members,
-            DbType = _dbType
+            DbType = DbType
         };
 
         public string SelectionLocator => SqlLocator;

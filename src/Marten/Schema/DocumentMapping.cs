@@ -13,6 +13,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services.Includes;
 using Marten.Storage;
 using Marten.Util;
+using NpgsqlTypes;
 using Remotion.Linq;
 
 namespace Marten.Schema
@@ -652,12 +653,16 @@ namespace Marten.Schema
         /// <param name="pgType">Optional, overrides the Postgresql column type for the duplicated field</param>
         /// <param name="configure">Optional, allows you to customize the Postgresql database index configured for the duplicated field</param>
         /// <returns></returns>
-        public void Duplicate(Expression<Func<T, object>> expression, string pgType = null, Action<IndexDefinition> configure = null)
+        public void Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null)
         {
             var visitor = new FindMembers();
             visitor.Visit(expression);
 
             var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType);
+
+            if (dbType.HasValue) duplicateField.DbType = dbType.Value;
+            
+            
             var indexDefinition = AddIndex(duplicateField.ColumnName);
             configure?.Invoke(indexDefinition);
         }
