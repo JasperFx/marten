@@ -48,7 +48,7 @@ BEGIN
         if tenantid IS NOT NULL then
             select tenant_id into actual_tenant from {databaseSchema}.mt_streams where {streamsWhere};
             if actual_tenant != tenantid then
-                RAISE EXCEPTION 'The tenantid does not match the existing stream';
+                RAISE EXCEPTION 'Marten: The tenantid does not match the existing stream';
             end if;
         end if;
 	end if;
