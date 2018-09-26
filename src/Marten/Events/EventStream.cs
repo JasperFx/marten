@@ -64,6 +64,8 @@ namespace Marten.Events
             return this;
         }
 
+        public object Identifier => (object) Key ?? Id;
+
         public IEnumerable<IEvent> Events => _events;
         internal int ExpectedVersionOnServer { get; set; }
 
@@ -90,12 +92,12 @@ namespace Marten.Events
 
             if (ExpectedVersionOnServer > 0 && version != ExpectedVersionOnServer)
             {
-                throw new EventStreamUnexpectedMaxEventIdException(ExpectedVersionOnServer, version);
+                throw new EventStreamUnexpectedMaxEventIdException(Identifier, ExpectedVersionOnServer, version);
             }
 
             if (IsNew && version > _events.Count)
             {
-                throw new ExistingStreamIdCollisionException(Key ?? Id.ToString());
+                throw new ExistingStreamIdCollisionException(Identifier);
             }
         }
     }
