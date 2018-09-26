@@ -30,21 +30,9 @@ namespace Marten.Events
             var eventTypeName = reader.GetString(1);
             var version = reader.GetInt32(2);
             var dataJson = reader.GetTextReader(3);
+            var dotnetTypeName = reader.GetFieldValue<string>(8);
 
-
-            var mapping = Events.EventMappingFor(eventTypeName);
-
-            if (mapping == null)
-            {
-                var dotnetTypeName = reader.GetFieldValue<string>(8);
-                if (dotnetTypeName.IsEmpty())
-                {
-                    throw new UnknownEventTypeException(eventTypeName);
-                }
-
-                var type = Events.TypeForDotNetName(dotnetTypeName);
-                mapping = Events.EventMappingFor(type);
-            }
+            var mapping = Events.EventMappingFor(eventTypeName, dotnetTypeName);
 
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
 
@@ -71,27 +59,9 @@ namespace Marten.Events
             var eventTypeName = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(2, token).ConfigureAwait(false);
             var dataJson = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(3).ConfigureAwait(false);
+            var dotnetTypeName = await reader.GetFieldValueAsync<string>(8, token).ConfigureAwait(false);
 
-            var mapping = Events.EventMappingFor(eventTypeName);
-
-            if (mapping == null)
-            {
-                var dotnetTypeName = await reader.GetFieldValueAsync<string>(8, token).ConfigureAwait(false);
-                if (dotnetTypeName.IsEmpty())
-                {
-                    throw new UnknownEventTypeException(eventTypeName);
-                }
-                Type type;
-                try 
-                {
-                    type = Events.TypeForDotNetName(dotnetTypeName);
-                }
-                catch (ArgumentNullException)
-                {
-                    throw new UnknownEventTypeException(dotnetTypeName);
-                }
-                mapping = Events.EventMappingFor(type);
-            }
+            var mapping = Events.EventMappingFor(eventTypeName, dotnetTypeName);
 
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
 

@@ -67,6 +67,29 @@ namespace Marten.Events
             return EventMappingFor(typeof(T));
         }
 
+        public EventMapping EventMappingFor(string eventType)
+        {
+            return _byEventName[eventType];
+        }
+
+        public EventMapping EventMappingFor(string eventTypeName, string dotnetTypeName)
+        {
+            var mapping = EventMappingFor(eventTypeName);
+
+            if (mapping == null)
+            {
+                if (dotnetTypeName.IsEmpty())
+                {
+                    throw new UnknownEventTypeException(eventTypeName);
+                }
+
+                var type = TypeForDotNetName(dotnetTypeName);
+                mapping = EventMappingFor(type);
+            }
+
+            return mapping;
+        }
+
         public IEnumerable<EventMapping> AllEvents()
         {
             return _events;
@@ -75,11 +98,6 @@ namespace Marten.Events
         public IEnumerable<IAggregator> AllAggregates()
         {
             return _aggregates.Values;
-        }
-
-        public EventMapping EventMappingFor(string eventType)
-        {
-            return _byEventName[eventType];
         }
 
         public void AddEventType(Type eventType)
