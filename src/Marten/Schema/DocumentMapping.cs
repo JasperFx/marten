@@ -117,6 +117,11 @@ namespace Marten.Schema
             set { _databaseSchemaName = value; }
         }
 
+        public EnumStorage EnumStorage
+        {
+            get { return _storeOptions.Serializer().EnumStorage; }
+        }
+
         public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
 
         public string Alias
@@ -701,7 +706,7 @@ namespace Marten.Schema
         /// <param name="configure"></param>
         public void Index(Expression<Func<T, object>> expression, Action<ComputedIndex> configure = null)
         {
-            Index(new[] {expression}, configure);
+            Index(new[] { expression }, configure);
         }
 
         /// <summary>
@@ -718,7 +723,6 @@ namespace Marten.Schema
                     visitor.Visit(e);
                     return visitor.Members.ToArray();
                 }).ToArray();
-
 
             var index = new ComputedIndex(this, members);
             configure?.Invoke(index);

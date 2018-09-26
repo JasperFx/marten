@@ -19,7 +19,7 @@ namespace Marten.Schema
 
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
 
-        public JsonLocatorField(string dataLocator, StoreOptions options, EnumStorage enumStyle, Casing casing, MemberInfo member) : base(member)
+        public JsonLocatorField(string dataLocator, StoreOptions options, EnumStorage enumStyle, Casing casing, MemberInfo member) : base(enumStyle, member)
         {
             var memberType = member.GetMemberType();
             var memberName = member.Name.FormatCase(casing);
@@ -63,7 +63,7 @@ namespace Marten.Schema
             }
         }
 
-        public JsonLocatorField(string dataLocator, EnumStorage enumStyle, Casing casing, MemberInfo[] members) : base(members)
+        public JsonLocatorField(string dataLocator, EnumStorage enumStyle, Casing casing, MemberInfo[] members) : base(enumStyle, members)
         {
             var locator = dataLocator;
 

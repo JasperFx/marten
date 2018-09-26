@@ -2,7 +2,7 @@ language: csharp
 sudo: required
 dist: trusty
 mono: none
-dotnet: 2.0.0
+dotnet: 2.1.400
 
 env:
   global:
@@ -14,6 +14,7 @@ addons:
 before_install:
   - sudo apt-get install postgresql-9.5-plv8
   - nvm install 6.0.0
+  - rvm default
 
 install:
   - export DOTNET_CLI_TELEMETRY_OPTOUT=1
@@ -23,7 +24,6 @@ install:
 before_script:
   - psql -c 'create database marten_test;' -U postgres
   - psql -d marten_test -c 'create extension if not exists plv8;'
-  - chmod a+x ./build.sh
 
 script:
-  - ./build.sh
+  - rake ci

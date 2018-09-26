@@ -37,7 +37,6 @@ namespace Marten.Util
                         x.Name == "ToNpgsqlDbType" && x.GetParameters().Count() == 1 &&
                         x.GetParameters().Single().ParameterType == typeof(Type));
 
-            
             _getNpgsqlDbType = (Type clrType) =>
             {
                 try
@@ -132,26 +131,26 @@ namespace Marten.Util
             if (type.IsNullable()) return ToDbType(type.GetInnerTypeFromNullable());
 
             if (type.IsEnum) return NpgsqlDbType.Integer;
-            
+
             var npgsqlDbType = _getNpgsqlDbType(type);
             return npgsqlDbType;
         }
 
-        public static string GetPgType(Type memberType)
+        public static string GetPgType(Type memberType, EnumStorage enumStyle)
         {
             if (memberType.IsEnum)
             {
-                return "integer";
+                return enumStyle == EnumStorage.AsInteger ? "integer" : "varchar";
             }
 
             if (memberType.IsArray)
             {
-                return GetPgType(memberType.GetElementType()) + "[]";
+                return GetPgType(memberType.GetElementType(), enumStyle) + "[]";
             }
 
             if (memberType.IsNullable())
             {
-                return GetPgType(memberType.GetInnerTypeFromNullable());
+                return GetPgType(memberType.GetInnerTypeFromNullable(), enumStyle);
             }
 
             if (memberType.IsConstructedGenericType)
@@ -162,7 +161,6 @@ namespace Marten.Util
 
                 return "jsonb";
             }
-
 
             return PgTypes.ContainsKey(memberType) ? PgTypes[memberType] : "jsonb";
         }
@@ -186,7 +184,7 @@ namespace Marten.Util
             }
 
             // Treat "unknown" PgTypes as jsonb (this way null checks of arbitary depth won't fail on cast).
-            return "CAST({0} as {1})".ToFormat(locator, GetPgType(memberType));
+            return "CAST({0} as {1})".ToFormat(locator, GetPgType(memberType, enumStyle));
         }
 
         public static bool IsDate(this object value)

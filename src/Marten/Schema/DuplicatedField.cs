@@ -14,26 +14,31 @@ namespace Marten.Schema
     public class DuplicatedField : Field, IField
     {
         private readonly NpgsqlDbType _dbType;
-        private readonly EnumStorage _enumStorage;
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
         private string _columnName;
 
-        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath) : base(memberPath)
+        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath) : base(enumStorage, memberPath)
         {
-            _enumStorage = enumStorage;
-
             ColumnName = MemberName.ToTableAlias();
 
             if (MemberType.IsEnum)
             {
-                _parseObject = expression =>
+                if (enumStorage == EnumStorage.AsString)
                 {
-                    var raw = expression.Value();
-                    return Enum.GetName(MemberType, raw);
-                };
+                    _dbType = NpgsqlDbType.Varchar;
+                    PgType = "varchar";
 
-                _dbType = NpgsqlDbType.Varchar;
-                PgType = "varchar";
+                    _parseObject = expression =>
+                    {
+                        var raw = expression.Value();
+                        return Enum.GetName(MemberType, raw);
+                    };
+                }
+                else
+                {
+                    _dbType = NpgsqlDbType.Integer;
+                    PgType = "integer";
+                }
             }
             else if (MemberType.IsDateTime())
             {
