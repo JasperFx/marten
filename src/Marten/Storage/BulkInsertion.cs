@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
@@ -12,9 +13,9 @@ namespace Marten.Storage
     public class BulkInsertion : IDisposable
     {
         private readonly ITenant _tenant;
-        private readonly CharArrayTextWriter.IPool _writerPool;
+        private readonly MemoryPool<char> _writerPool;
 
-        public BulkInsertion(ITenant tenant, StoreOptions options, CharArrayTextWriter.IPool writerPool)
+        public BulkInsertion(ITenant tenant, StoreOptions options, MemoryPool<char> writerPool)
         {
             _tenant = tenant;
             _writerPool = writerPool;
@@ -112,8 +113,7 @@ namespace Marten.Storage
                 conn.RunSql(sql);
             }
 
-            var writer = _writerPool.Lease();
-            try
+            using (var writer = new CharArrayTextWriter(_writerPool))
             {
                 if (documents.Count <= batchSize)
                 {
@@ -137,13 +137,6 @@ namespace Marten.Storage
                     }
 
                     loadDocuments(batch, loader, mode, conn, writer);
-                }
-            }
-            finally
-            {
-                if (writer != null)
-                {
-                    _writerPool.Release(writer);
                 }
             }
 

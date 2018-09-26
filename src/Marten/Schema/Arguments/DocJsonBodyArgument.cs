@@ -15,8 +15,7 @@ namespace Marten.Schema.Arguments
         private static readonly MethodInfo _tojson = typeof(ISerializer).GetMethod(nameof(ISerializer.ToJson), new[] { typeof(object) });
         private static readonly MethodInfo _tojsonWithWriter = typeof(ISerializer).GetMethod(nameof(ISerializer.ToJson), new[] { typeof(object), typeof(CharArrayTextWriter) });
 
-        static readonly MethodInfo _writerBuffer = ReflectionHelper.GetProperty<CharArrayTextWriter>(x => x.Buffer).GetMethod;
-        static readonly MethodInfo _writerSize = ReflectionHelper.GetProperty<CharArrayTextWriter>(x => x.Size).GetMethod;
+        static readonly MethodInfo _writerToSegment = ReflectionHelper.GetMethod<CharArrayTextWriter>(x => x.ToCharSegment());
 
         public DocJsonBodyArgument()
         {
@@ -40,14 +39,13 @@ namespace Marten.Schema.Arguments
             else
             {
                 var writer = Expression.Variable(typeof(CharArrayTextWriter), "writer");
+                var segment = Expression.Variable(typeof(ArraySegment<char>), "segment");
 
-                var buffer = Expression.Call(writer, _writerBuffer);
-                var size = Expression.Call(writer, _writerSize);
-
-                return Expression.Block(new[] { writer },
+                return Expression.Block(new[] { writer, segment },
                     Expression.Assign(writer, Expression.Call(updateBatch, _getWriter)),
                     Expression.Call(serializer, _tojsonWithWriter, doc, writer),
-                    Expression.Call(call, _paramWithSizeMethod, argName, buffer, jsonb, size)
+                    Expression.Assign(segment, Expression.Call(writer,_writerToSegment)),
+                    Expression.Call(call, _paramWithJsonBody, argName, segment)
                 );
             }
         }

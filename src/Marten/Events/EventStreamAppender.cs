@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
@@ -84,12 +83,7 @@ namespace Marten.Events
         {
             var writer = batch.GetWriter();
             serializer.ToJson(data, writer);
-            return new ArraySegment<char>(writer.Buffer, 0, writer.Size);
-        }
-
-        public void RegisterUpdate(UpdateBatch batch, object entity, string json)
-        {
-            throw new NotSupportedException();
+            return writer.ToCharSegment();
         }
     }
 }

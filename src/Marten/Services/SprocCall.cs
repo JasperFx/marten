@@ -83,6 +83,11 @@ namespace Marten.Services
             return Param(argName, bodies, NpgsqlDbType.Jsonb | NpgsqlDbType.Array);
         }
 
+        public SprocCall JsonBody(string argName, ArraySegment<char> body)
+        {
+            return Param(argName, body, NpgsqlDbType.Jsonb);
+        }
+
         public SprocCall Param(string argName, object value, NpgsqlDbType dbType)
         {
             if (value is Enum)

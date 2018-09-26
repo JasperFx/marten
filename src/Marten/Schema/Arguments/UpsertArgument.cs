@@ -17,8 +17,8 @@ namespace Marten.Schema.Arguments
         protected static readonly MethodInfo _paramMethod = typeof(SprocCall)
             .GetMethod("Param", new[] { typeof(string), typeof(object), typeof(NpgsqlDbType) });
 
-        protected static readonly MethodInfo _paramWithSizeMethod = typeof(SprocCall)
-            .GetMethod("Param", new[] { typeof(string), typeof(object), typeof(NpgsqlDbType), typeof(int) });
+        protected static readonly MethodInfo _paramWithJsonBody = typeof(SprocCall)
+            .GetMethod("JsonBody", new[] { typeof(string), typeof(ArraySegment<char>)});
 
         private MemberInfo[] _members;
         private string _postgresType;
