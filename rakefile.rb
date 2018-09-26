@@ -82,7 +82,7 @@ end
 desc "Run the storyteller specifications"
 task :storyteller => [:compile] do
 	Dir.chdir("src/Marten.Storyteller") do
-	  syetem "dotnet run --framework netcoreapp2.1 --culture en-US"
+	  system "dotnet run --framework netcoreapp2.1 --culture en-US"
 	end
 end
 
