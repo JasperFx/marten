@@ -15,11 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Storyteller" Version="4.2.0-alpha-526" />
+    <PackageReference Include="Storyteller" Version="5.2.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <DotNetCliToolReference Include="dotnet-storyteller" Version="1.1.1" />
+    <DotNetCliToolReference Include="dotnet-storyteller" Version="5.2.0" />
   </ItemGroup>
 
 </Project>

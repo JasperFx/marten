@@ -82,21 +82,23 @@ end
 desc "Run the storyteller specifications"
 task :storyteller => [:compile] do
 	Dir.chdir("src/Marten.Storyteller") do
-	  system "dotnet storyteller run -r artifacts --culture en-US"
+	  syetem "dotnet run --framework netcoreapp2.1 --culture en-US"
 	end
 end
 
 desc "Run the storyteller specifications"
 task :open_st => [:compile] do
 	Dir.chdir("src/Marten.Storyteller") do
-	  system "dotnet storyteller open --culture en-US"
+	  system "dotnet storyteller open --framework netcoreapp2.1"
 	end
 end
 
 "Launches the documentation project in editable mode"
 task :docs do
-	sh "dotnet restore"
-	sh "dotnet stdocs run -v #{BUILD_VERSION}"
+	Dir.chdir("tools/stdocs") do
+	  sh "dotnet restore"
+	  sh "dotnet stdocs run -d ../../documentation -v #{BUILD_VERSION}"
+	end
 end
 
 "Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!"
