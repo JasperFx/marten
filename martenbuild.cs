@@ -97,7 +97,7 @@ namespace martenbuild
 
                 Directory.CreateDirectory(docTargetDir);
                 
-                Run("git", "clone -b gh-pages https://github.com/jasperfx/marten.git doc-target");
+                Run("git", $"clone -b gh-pages https://github.com/jasperfx/marten.git {docTargetDir}");
                 
                 Run("dotnet", "restore", "tools/stdocs");
                 Run("dotnet", $"stdocs export ../../{docTargetDir} ProjectWebsite -d ../../documentation -c ../../src -v {BUILD_VERSION} --project marten", "tools/stdocs");
