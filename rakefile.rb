@@ -95,8 +95,10 @@ end
 
 "Launches the documentation project in editable mode"
 task :docs do
-	sh "dotnet restore"
-	sh "dotnet stdocs run -v #{BUILD_VERSION}"
+	Dir.chdir("tools/stdocs") do
+	  sh "dotnet restore"
+	  sh "dotnet stdocs run -d ../../documentation -c ../../src -v #{BUILD_VERSION}"
+	end  
 end
 
 "Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!"
@@ -114,9 +116,11 @@ task :publish do
 		end
 	end
 	
-	sh "dotnet restore"
-	sh "dotnet stdocs export doc-target ProjectWebsite --version #{BUILD_VERSION} --project marten"
-	
+	Dir.chdir("tools/stdocs") do
+	  sh "dotnet restore"
+	  sh "dotnet stdocs export ../../doc-target ProjectWebsite -d ../../documentation -c ../../src --version #{BUILD_VERSION} --project marten"
+	end
+
 	Dir.chdir "doc-target" do
 		sh "git add --all"
 		sh "git commit -a -m \"Documentation Update for #{BUILD_VERSION}\" --allow-empty"
