@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 2.10.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 3.0.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -100,8 +100,8 @@ with Marten can be as simple as opening a <code>DocumentStore</code> to your new
 <pre><code class="language-csharp">&#xA;var store = DocumentStore&#xA;    .For(&quot;host=localhost;database=marten_test;password=mypassword;username=someuser&quot;);&#xA;</code></pre>
 <p>The code sample above sets up document storage against the Postgresql at the connection string you supplied. In this &quot;quickstart&quot; configuration,
 Marten will build new database tables and functions for each new document type as needed <strong>if those database schema objects do not already exist</strong>.</p>
-<div class="alert alert-info">As of Marten v0.6, document storage tables will also be dropped and rebuilt if the actual database table does not match up with the document storage configuration. So if you add a searchable field or change the id type of a document type, Marten will regenerate the database schema objects when running with AutoCreateSchemaObjects = true.</div>
-<p>While the default &quot;auto-create&quot; database schema objects is fantastic for a development time experience, you may not want Marten to be building out new database schema objects at production time. You might also want to override the default JSON serialization, tweak the document storage for performance, or opt into Postgresql 9.5's fancy new &quot;upsert&quot; capability. For customization, you have a different syntax for bootstrapping a <code>DocumentStore</code>:</p>
+<div class="alert alert-info">As of Marten v3.0, document storage tables, by default, are created and updated, but never dropped (destroyed). To let Marten perform any destructive operations, such as adding a searchable field or changing the document id type, change the store configuration to <i>StoreOptions.AutoCreateSchemaObjects = AutoCreate.All</i>.</div>
+<p>While the default &quot;auto-create or update&quot; (<code>AutoCreate.CreateOrUpdate</code>) database schema management is fantastic for a development time experience, you may not want Marten to be building out new database schema objects at production time. You might also want to override the default JSON serialization, tweak the document storage for performance, or opt into Postgresql 9.5's fancy new &quot;upsert&quot; capability. For customization, you have a different syntax for bootstrapping a <code>DocumentStore</code>:</p>
 <pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    // Turn this off in production &#xA;    _.AutoCreateSchemaObjects = AutoCreate.None;&#xA;&#xA;    // This is still mandatory&#xA;    _.Connection(&quot;some connection string&quot;);&#xA;&#xA;    // Override the JSON Serialization&#xA;    _.Serializer&lt;TestsSerializer&gt;();&#xA;});&#xA;</code></pre>
 <p>For more information on using the <code>IDocumentStore</code> and configuring document storage, see:</p>
 <ul>
