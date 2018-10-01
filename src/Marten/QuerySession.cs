@@ -397,5 +397,51 @@ namespace Marten
         {
             return loadAsync<T>(id, token);
         }
+
+        public IReadOnlyList<TDoc> Search<TDoc>(string searchTerm, string config = "english")
+        {
+            return DoFullTextSearch<TDoc>(searchTerm, config, "to_tsquery");
+        }
+
+        public Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string searchTerm, string config = "english", CancellationToken token = default)
+        {
+            return DoFullTextSearchAsync<TDoc>(searchTerm, config, "to_tsquery", token);
+        }
+
+        public IReadOnlyList<TDoc> PlainTextSearch<TDoc>(string searchTerm, string config = "english")
+        {
+            return DoFullTextSearch<TDoc>(searchTerm, config, "plainto_tsquery");
+        }
+
+        public Task<IReadOnlyList<TDoc>> PlainTextSearchAsync<TDoc>(string searchTerm, string config = "english", CancellationToken token = default)
+        {
+            return DoFullTextSearchAsync<TDoc>(searchTerm, config, "plainto_tsquery", token);
+        }
+
+        public IReadOnlyList<TDoc> PhraseSearch<TDoc>(string searchTerm, string config = "english")
+        {
+            return DoFullTextSearch<TDoc>(searchTerm, config, "phraseto_tsquery");
+        }
+
+        public Task<IReadOnlyList<TDoc>> PhraseSearchAsync<TDoc>(string searchTerm, string config = "english", CancellationToken token = default)
+        {
+            return DoFullTextSearchAsync<TDoc>(searchTerm, config, "phraseto_tsquery", token);
+        }
+
+        private IReadOnlyList<TDoc> DoFullTextSearch<TDoc>(string searchTerm, string config, string searchFunction)
+        {
+            assertNotDisposed();
+            var sql = $"where to_tsvector('{config}', data) @@ {searchFunction}('{config}', '{searchTerm}')";
+            var handler = new UserSuppliedQueryHandler<TDoc>(_store, sql, new object[0]);
+            return _connection.Fetch(handler, _identityMap.ForQuery(), null, Tenant);
+        }
+
+        private Task<IReadOnlyList<TDoc>> DoFullTextSearchAsync<TDoc>(string searchTerm, string config, string searchFunction, CancellationToken token)
+        {
+            assertNotDisposed();
+            var sql = $"where to_tsvector('{config}', data) @@ {searchFunction}('{config}', '{searchTerm}')";
+            var handler = new UserSuppliedQueryHandler<TDoc>(_store, sql, new object[0]);
+            return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, Tenant, token);
+        }
     }
 }
