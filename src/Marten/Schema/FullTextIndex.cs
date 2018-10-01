@@ -14,22 +14,22 @@ namespace Marten.Schema
         {
             _table = parent.Table;
             _config = config;
+            _indexName = $"{_table.Name}_idx_fts";
         }
 
         public string IndexName
         {
-            get
+            get => _indexName;
+            set
             {
-                if(_indexName.IsNotEmpty())
-                {
-                    return _indexName.StartsWith(DocumentMapping.MartenPrefix)
-                        ? _indexName
-                        : DocumentMapping.MartenPrefix + _indexName;
-                }
-
-                return $"mt_{_table.Name}_idx_fts";
+                var lowerValue = value.ToLowerInvariant();
+                if(value.IsNotEmpty() && lowerValue.StartsWith(DocumentMapping.MartenPrefix))
+                    _indexName = lowerValue.ToLowerInvariant();
+                else if(lowerValue.IsNotEmpty())
+                    _indexName = DocumentMapping.MartenPrefix + lowerValue.ToLowerInvariant();
+                else
+                    _indexName = $"{_table.Name}_idx_fts";
             }
-            set => _indexName = value;
         }        
         public string ToDDL()
         {
