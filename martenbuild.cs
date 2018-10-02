@@ -45,16 +45,26 @@ namespace martenbuild
                 File.WriteAllText("src/Marten.Testing/connection.txt", connection);
             });
 
-            Target("mocha", () =>
+            Target("install", () =>
             {
                 if (pid == PlatformID.Unix || pid == PlatformID.MacOSX)
                 {
                     Run("npm", "install");
-                    Run("npm", "run test");
                 }
                 else
                 {
                     Run("cmd.exe", "/c npm install");
+                }
+            });
+
+            Target("mocha", DependsOn("install"), () =>
+            {
+                if (pid == PlatformID.Unix || pid == PlatformID.MacOSX)
+                {
+                    Run("npm", "run test");
+                }
+                else
+                {
                     Run("cmd.exe", "/c npm run test");
                 }
             });
@@ -79,9 +89,13 @@ namespace martenbuild
                 Run("dotnet", $"storyteller open --framework netcoreapp2.1 --culture en-US", "src/Marten.Storyteller");
             });
 
-            Target("docs", () =>
+            Target("docs-restore", () =>
             {
                 Run("dotnet", "restore", "tools/stdocs");
+            });
+
+            Target("docs", DependsOn("docs-restore"), () =>
+            {
                 Run("dotnet", $"stdocs run -d ../../documentation -c ../../src -v {BUILD_VERSION}", "tools/stdocs");
             });
 
@@ -138,10 +152,9 @@ namespace martenbuild
                 CopyDirectory("BenchmarkDotNet.Artifacts/results", dir);
             });
             
-            Target("pack", DependsOn("compile"), () =>
+            Target("pack", DependsOn("compile"), ForEach("./src/Marten", "./src/Marten.CommandLine"), project =>
             {
-                Run("dotnet", "pack ./src/Marten -o ./../../artifacts --configuration Release");
-                Run("dotnet", "pack ./src/Marten.CommandLine -o ./../../artifacts --configuration Release");
+                Run("dotnet", $"pack {project} -o ./../../artifacts --configuration Release");
             });
 
             RunTargets(args);
