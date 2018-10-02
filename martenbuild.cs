@@ -8,46 +8,33 @@ namespace martenbuild
 {
     class MartenBuild
     {
-        private const string RESULTS_DIR = "results";
         private const string BUILD_VERSION = "3.0.0";
 
         static void Main(string[] args)
         {
-            OperatingSystem os = Environment.OSVersion;
+            var platformID = Environment.OSVersion.Platform;
 
-            PlatformID pid = os.Platform;
-
-            var compileTarget = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("config")) 
-                ? "debug" 
-                : Environment.GetEnvironmentVariable("config");
-
-            var connection = Environment.GetEnvironmentVariable("connection");
+            var configuration = Environment.GetEnvironmentVariable("config");
+            configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
 
             Target("ci", DependsOn("connection", "default", "pack"));
-            
+
             Target("default", DependsOn("mocha", "test", "storyteller"));
 
             Target("clean", () =>
             {
-                if (Directory.Exists(RESULTS_DIR))
-                {
-                    Directory.Delete(RESULTS_DIR, true);
-                }
-                
-                if (Directory.Exists("artifacts"))
-                {
-                    Directory.Delete("artifacts", true);
-                }
+                EnsureDirectoryDeleted("results");
+                EnsureDirectoryDeleted("artifacts");
             });
 
             Target("connection", () =>
             {
-                File.WriteAllText("src/Marten.Testing/connection.txt", connection);
+                File.WriteAllText("src/Marten.Testing/connection.txt", Environment.GetEnvironmentVariable("connection"));
             });
 
             Target("install", () =>
             {
-                if (pid == PlatformID.Unix || pid == PlatformID.MacOSX)
+                if (platformID == PlatformID.Unix || platformID == PlatformID.MacOSX)
                 {
                     Run("npm", "install");
                 }
@@ -59,7 +46,7 @@ namespace martenbuild
 
             Target("mocha", DependsOn("install"), () =>
             {
-                if (pid == PlatformID.Unix || pid == PlatformID.MacOSX)
+                if (platformID == PlatformID.Unix || platformID == PlatformID.MacOSX)
                 {
                     Run("npm", "run test");
                 }
@@ -68,15 +55,15 @@ namespace martenbuild
                     Run("cmd.exe", "/c npm run test");
                 }
             });
-            
+
             Target("compile", DependsOn("clean", "restore"), () =>
             {
-                Run("dotnet", $"build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {compileTarget}");
+                Run("dotnet", $"build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration}");
             });
 
             Target("test", DependsOn("compile"), () =>
             {
-                Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {compileTarget}");
+                Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration}");
             });
 
             Target("storyteller", DependsOn("compile"), () =>
@@ -102,20 +89,13 @@ namespace martenbuild
             // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
             Target("publish", () =>
             {
-                string docTargetDir = "doc-target";
-                
-                if (Directory.Exists(docTargetDir))
-                {
-                    Directory.Delete(docTargetDir, true);      
-                }
+                var docTargetDir = InitializeDirectory("doc-target");
 
-                Directory.CreateDirectory(docTargetDir);
-                
                 Run("git", $"clone -b gh-pages https://github.com/jasperfx/marten.git {docTargetDir}");
-                
+
                 Run("dotnet", "restore", "tools/stdocs");
                 Run("dotnet", $"stdocs export ../../{docTargetDir} ProjectWebsite -d ../../documentation -c ../../src -v {BUILD_VERSION} --project marten", "tools/stdocs");
-                
+
                 Run("git", "add --all", docTargetDir);
                 Run("git", $"commit -a -m \"Documentation Update for {BUILD_VERSION}\" --allow-empty", docTargetDir);
                 Run("git", "git push origin gh-pages", docTargetDir);
@@ -135,29 +115,33 @@ namespace martenbuild
             {
                 var profile = Environment.GetEnvironmentVariable("profile");
 
-                if (string.IsNullOrEmpty(profile))
+                if (!string.IsNullOrEmpty(profile))
                 {
-                    return;
+                    CopyDirectory("BenchmarkDotNet.Artifacts/results", InitializeDirectory($"benchmarks/{profile}"));
                 }
-
-                var dir = $"benchmarks/{profile}";
-
-                if (Directory.Exists(dir))
-                {
-                    Directory.Delete(dir, true);
-                }
-
-                Directory.CreateDirectory(dir);
-                
-                CopyDirectory("BenchmarkDotNet.Artifacts/results", dir);
             });
-            
+
             Target("pack", DependsOn("compile"), ForEach("./src/Marten", "./src/Marten.CommandLine"), project =>
             {
                 Run("dotnet", $"pack {project} -o ./../../artifacts --configuration Release");
             });
 
             RunTargets(args);
+        }
+
+        private static string InitializeDirectory(string path)
+        {
+            EnsureDirectoryDeleted(path);
+            Directory.CreateDirectory(path);
+            return path;
+        }
+
+        private static void EnsureDirectoryDeleted(string path)
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, true);
+            }
         }
     }
 }
