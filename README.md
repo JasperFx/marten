@@ -13,8 +13,6 @@ The Marten library provides .NET developers with the ability to use the proven [
 
 Marten also provides .NET developers with an ACID-compliant event store with user-defined projections against event streams.
 
-> Note that current stable version of Marten 2.x is compatible with Npgsql 3.x. If you are looking for a Marten version compatible with Npgsql 4.x, you can use the Marten 3.x alpha version available in NuGet and also you can checkout the [dev branch](https://github.com/JasperFx/marten/tree/3.0).
-
 ## Working with the Code
 
 Before getting started you will need the following in your environment:
