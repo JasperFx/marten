@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="martenbuild.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bullseye" Version="1.2.0" />
+    <PackageReference Include="SimpleExec" Version="2.3.0" />
+    <PackageReference Include="Westwind.Utilities" Version="3.0.20.4" />
+  </ItemGroup>
+
+</Project>

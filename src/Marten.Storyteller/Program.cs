@@ -47,7 +47,7 @@ namespace Marten.Storyteller
 
         public override void Dispose()
         {
-            _daemonHelper.Dispose();
+            _daemonHelper?.Dispose();
         }
 
         public override void BeforeEach(SimpleExecutionContext execution, ISpecContext context)

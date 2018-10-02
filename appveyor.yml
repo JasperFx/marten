@@ -39,7 +39,7 @@ before_build:
 
 build_script:
 - cmd: >-
-    rake ci
+    dotnet run -p martenbuild.csproj -- ci
 test: off
 
 artifacts:
