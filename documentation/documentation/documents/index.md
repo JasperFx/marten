@@ -38,20 +38,7 @@ Now that we've got a document store, we can use that to create a new `IQuerySess
 
 <[sample:start_a_query_session]>
 
-For more information on the query support within Marten, see:
-
-* <[linkto:documentation/documents/querying/linq]>
-* <[linkto:documentation/documents/basics/loading]>
-* <[linkto:documentation/documents/querying/async]>
-* <[linkto:documentation/documents/querying/sql]>
-* <[linkto:documentation/documents/querying/projections]>
-* <[linkto:documentation/documents/querying/batched_queries]>
-* <[linkto:documentation/documents/querying/query_json]>
-* <[linkto:documentation/documents/querying/include]>
-* <[linkto:documentation/documents/querying/compiled_queries]>
-* <[linkto:documentation/documents/querying/metadata_queries]>
-* <[linkto:documentation/documents/querying/paging]>
-
+For more information on the query support within Marten, check <[linkto:documentation/documents/querying]>
 
 ## Persisting Documents
 
