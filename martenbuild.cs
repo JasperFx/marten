@@ -63,7 +63,7 @@ namespace martenbuild
 
             Target("test", DependsOn("compile"), () =>
             {
-                Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration}");
+                Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration} --no-build");
             });
 
             Target("storyteller", DependsOn("compile"), () =>
