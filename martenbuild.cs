@@ -56,7 +56,7 @@ namespace martenbuild
                 }
             });
 
-            Target("compile", DependsOn("clean", "restore"), () =>
+            Target("compile", DependsOn("clean"), () =>
             {
                 Run("dotnet", $"build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration}");
             });
@@ -101,12 +101,7 @@ namespace martenbuild
                 Run("git", "git push origin gh-pages", docTargetDir);
             });
 
-            Target("restore", () =>
-            {
-                Run("dotnet", "restore src/Marten.sln");
-            });
-
-            Target("benchmarks", DependsOn("restore"), () =>
+            Target("benchmarks", () =>
             {
                 Run("dotnet", "run --project src/MartenBenchmarks --configuration Release");
             });
