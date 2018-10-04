@@ -43,10 +43,22 @@ namespace Marten.Testing.Pagination
         [Fact]
         public void can_return_paged_result()
         {
+            // SAMPLE: to_paged_list
             var pageNumber = 2;
             var pageSize = 10;
 
             var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+
+            // paged list also provides a list of helper properties to deal with pagination aspects
+            var totalItems = pagedList.TotalItemCount; // get total number records
+            var pageCount = pagedList.PageCount; // get number of pages
+            var isFirstPage = pagedList.IsFirstPage; // check if current page is first page
+            var isLastPages = pagedList.IsLastPage; // check if current page is last page
+            var hasNextPage = pagedList.HasNextPage; // check if there is next page
+            var hasPrevPage = pagedList.HasPreviousPage; // check if there is previous page
+            var firstItemOnPage = pagedList.FirstItemOnPage; // one-based index of first item in current page
+            var lastItemOnPage = pagedList.LastItemOnPage; // one-based index of last item in current page
+            // ENDSAMPLE
 
             pagedList.Count.ShouldBe(pageSize);
             
@@ -55,10 +67,13 @@ namespace Marten.Testing.Pagination
         [Fact]
         public async Task can_return_paged_result_async()
         {
+            // SAMPLE: to_paged_list_async
             var pageNumber = 2;
             var pageSize = 10;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize).ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize)
+                .ConfigureAwait(false);
+            // ENDSAMPLE
 
             pagedList.Count.ShouldBe(pageSize);
         }
