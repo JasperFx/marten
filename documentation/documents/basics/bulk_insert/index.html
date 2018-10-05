@@ -93,18 +93,18 @@
 			      		<!--Title:Bulk Insert-->
 <!--Url:bulk_insert-->
 <p>Marten supports <a href="http://www.postgresql.org/docs/9.4/static/sql-copy.html">Postgresql's COPY</a> functionality for very efficient insertion of documents like you might need for test data set up or data migrations. Marten calls this feature &quot;Bulk Insert,&quot; and it's exposed off the <code>IDocumentStore</code> interface as shown below:</p>
-<pre><code class="language-csharp">&#xA;// This is just creating some randomized&#xA;// document data&#xA;var data = Target.GenerateRandomData(100).ToArray();&#xA;&#xA;// Load all of these into a Marten-ized database&#xA;theStore.BulkInsert(data, batchSize: 500);&#xA;&#xA;// And just checking that the data is actually there;)&#xA;theSession.Query&lt;Target&gt;().Count().ShouldBe(data.Length);&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;// This is just creating some randomized&#xD;&#xA;// document data&#xD;&#xA;var data = Target.GenerateRandomData(100).ToArray();&#xD;&#xA;&#xD;&#xA;// Load all of these into a Marten-ized database&#xD;&#xA;theStore.BulkInsert(data, batchSize: 500);&#xD;&#xA;&#xD;&#xA;// And just checking that the data is actually there;)&#xD;&#xA;theSession.Query&lt;Target&gt;().Count().ShouldBe(data.Length);&#xD;&#xA;</code></pre>
 <p>The bulk insert is done with a single transaction. For really large document collections, you may need to page the calls to <code>IDocumentStore.BulkInsert()</code>.</p>
 <p><strong>By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and the existing database data.</strong></p>
 <p>If you want to use the bulk insert feature, but you know that you could have duplicate documents, you can use one of the two following optional modes:</p>
 <h2 id="ignore-duplicate-values">Ignore Duplicate Values</h2>
 <p>In this case, you only want to insert brand new documents and just throwaway any potential changes to existing documents.</p>
-<pre><code class="language-csharp">&#xA;var data = Target.GenerateRandomData(100).ToArray();&#xA;&#xA;theStore.BulkInsert(data, BulkInsertMode.IgnoreDuplicates);&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var data = Target.GenerateRandomData(100).ToArray();&#xD;&#xA;&#xD;&#xA;theStore.BulkInsert(data, BulkInsertMode.IgnoreDuplicates);&#xD;&#xA;</code></pre>
 <p>Internally, Marten creates a temporary table matching the targeted document table and inserts the new values into that table. After writing those documents, Marten issues
 an INSERT command to copy rows from the temporary table to the real table, filtering out any matches in existing id's.</p>
 <h2 id="overwrite-duplicates">Overwrite Duplicates</h2>
 <p>In the second case, you want to use the bulk insert to write a batch of documents and overwrite any existing data with matching id's:</p>
-<pre><code class="language-csharp">&#xA;var data = Target.GenerateRandomData(100).ToArray();&#xA;&#xA;theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting);&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var data = Target.GenerateRandomData(100).ToArray();&#xD;&#xA;&#xD;&#xA;theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting);&#xD;&#xA;</code></pre>
 <p>Internally, Marten creates a temporary table matching the targeted document table and inserts the new values into that table. After writing those documents, Marten issues
 an INSERT command to copy rows from the temporary table to the real table, filtering out any matches in existing id's, then a second UPDATE command to overwrite data from
 the matching id's.</p>

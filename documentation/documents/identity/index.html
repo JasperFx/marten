@@ -109,14 +109,14 @@ Marten may support Postgresql sequences or star-based algorithms as later altern
 <p>See these topics for more information about specific Id types:</p>
 <ul class="table-of-contents"><li><a href="/marten/documentation/documents/identity/custom">Custom Identity Strategies</a></li><li><a href="/marten/documentation/documents/identity/guid">Guid Identifiers</a></li><li><a href="/marten/documentation/documents/identity/sequential">Sequential Identifiers with Hilo</a></li></ul>
 <p>You can see some example id usages below:</p>
-<pre><code class="language-csharp">&#xA;public class Division&#xA;{&#xA;    // String property as Id&#xA;    public string Id { get; set; }&#xA;}&#xA;&#xA;public class Category&#xA;{&#xA;    // Guid&#x27;s work, fields too&#xA;    public Guid Id;&#xA;}&#xA;&#xA;public class Invoide&#xA;{&#xA;    // int&#x27;s and long&#x27;s can be the Id&#xA;    // &quot;id&quot; is accepted&#xA;    public int id { get; set; }&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Division&#xD;&#xA;{&#xD;&#xA;    // String property as Id&#xD;&#xA;    public string Id { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class Category&#xD;&#xA;{&#xD;&#xA;    // Guid&#x27;s work, fields too&#xD;&#xA;    public Guid Id;&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class Invoide&#xD;&#xA;{&#xD;&#xA;    // int&#x27;s and long&#x27;s can be the Id&#xD;&#xA;    // &quot;id&quot; is accepted&#xD;&#xA;    public int id { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="overriding-the-choice-of-id-propertyfield">Overriding the Choice of Id Property/Field</h2>
 <p>If you really want to -- or you're migrating existing document types from another document database -- Marten provides
 the <code>[Identity]</code> attribute to force Marten to use a property or field as the identifier that doesn't match
 the &quot;id&quot; or &quot;Id&quot; or &quot;ID&quot; convention:</p>
-<pre><code class="language-csharp">&#xA;public class NonStandardDoc&#xA;{&#xA;    [Identity]&#xA;    public string Name;&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class NonStandardDoc&#xD;&#xA;{&#xD;&#xA;    [Identity]&#xD;&#xA;    public string Name;&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>The identity property or field can also be configured through <code>StoreOptions</code> by using the <code>Schema</code> to obtain a document mapping:</p>
-<pre><code class="language-csharp">&#xA;storeOptions.Schema.For&lt;OverriddenIdDoc&gt;().Identity(x =&gt; x.Name);&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;storeOptions.Schema.For&lt;OverriddenIdDoc&gt;().Identity(x =&gt; x.Name);&#xD;&#xA;</code></pre>
 
 			      	</div>
 

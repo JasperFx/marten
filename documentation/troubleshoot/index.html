@@ -125,7 +125,7 @@
 </table>
 <p><strong>How do I serialize to Camel case?</strong></p>
 <p>While it's possible to accommodate any serialization schemes by implementing a custom <code>ISerializer</code>, Marten's built-in serializer (Json.Net) can be set to serialize to Camel case through <code>StoreOptions.UseDefaultSerialization</code>:</p>
-<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(storeOptions =&gt;&#xA;{&#xA;    // Change default casing to CamelCase&#xA;    storeOptions.UseDefaultSerialization(casing: Casing.CamelCase);&#xA;</code></pre> 	
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(storeOptions =&gt;&#xD;&#xA;{&#xD;&#xA;    // Change default casing to CamelCase&#xD;&#xA;    storeOptions.UseDefaultSerialization(casing: Casing.CamelCase);&#xD;&#xA;</code></pre> 	
 <p><strong>How do I disable PLV8?</strong></p>
 <p>If you don't want PLV8 (required for Javascript transformations) related items in your database schema, you can disable PLV8 alltogether by setting <code>StoreOptions.PLV8Enabled</code> to false.</p>
 

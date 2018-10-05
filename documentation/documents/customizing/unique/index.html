@@ -101,11 +101,11 @@
 <ul>
 <li>single property</li>
 </ul>
-<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // This creates&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.Computed, x =&gt; x.UserName);&#xA;});&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.Computed, x =&gt; x.UserName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <ul>
 <li>multiple properties</li>
 </ul>
-<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // This creates&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.Computed, x =&gt; x.FirstName, x =&gt; x.FullName);&#xA;});&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.Computed, x =&gt; x.FirstName, x =&gt; x.FullName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <div class="alert alert-info">
 If you don't specify first parameter (index type) - by default it will be created as computed index.
 </div>
@@ -115,11 +115,11 @@ If you don't specify first parameter (index type) - by default it will be create
 <ul>
 <li>single property</li>
 </ul>
-<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // This creates&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.DuplicatedField, x =&gt; x.UserName);&#xA;});&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.DuplicatedField, x =&gt; x.UserName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <ul>
 <li>multiple properties</li>
 </ul>
-<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // This creates&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.DuplicatedField, x =&gt; x.FirstName, x =&gt; x.FullName);&#xA;});&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.DuplicatedField, x =&gt; x.FirstName, x =&gt; x.FullName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <h2 id="defining-unique-index-through-attribute">Defining Unique Index through Attribute</h2>
 <p>Unique Indexes can be created using the <code>[UniqueIndex]</code> attribute like this:</p>
 <ol>
@@ -128,11 +128,11 @@ If you don't specify first parameter (index type) - by default it will be create
 <ul>
 <li>single property</li>
 </ul>
-<pre><code class="language-csharp">&#xA;public class Account&#xA;{&#xA;    public Guid Id { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed)]&#xA;    public string Number { get; set; }&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Account&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed)]&#xD;&#xA;    public string Number { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <ul>
 <li>multiple properties</li>
 </ul>
-<pre><code class="language-csharp">&#xA;public class Address&#xA;{&#xA;    private const string UniqueIndexName = &quot;sample_uidx_person&quot;;&#xA;&#xA;    public Guid Id { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed, IndexName = UniqueIndexName)]&#xA;    public string Street { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed, IndexName = UniqueIndexName)]&#xA;    public string Number { get; set; }&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Address&#xD;&#xA;{&#xD;&#xA;    private const string UniqueIndexName = &quot;sample_uidx_person&quot;;&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed, IndexName = UniqueIndexName)]&#xD;&#xA;    public string Street { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed, IndexName = UniqueIndexName)]&#xD;&#xA;    public string Number { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <div class="alert alert-info">
 If you don't specify IndexType parameter - by default it will be created as computed index.
 </div>
@@ -142,20 +142,20 @@ If you don't specify IndexType parameter - by default it will be created as comp
 <ul>
 <li>single property</li>
 </ul>
-<pre><code class="language-csharp">&#xA;public class Client&#xA;{&#xA;    public Guid Id { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField)]&#xA;    public string Name { get; set; }&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Client&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField)]&#xD;&#xA;    public string Name { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <ul>
 <li>multiple properties</li>
 </ul>
-<pre><code class="language-csharp">&#xA;public class Person&#xA;{&#xA;    private const string UniqueIndexName = &quot;sample_uidx_person&quot;;&#xA;&#xA;    public Guid Id { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = UniqueIndexName)]&#xA;    public string FirstName { get; set; }&#xA;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = UniqueIndexName)]&#xA;    public string SecondName { get; set; }&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Person&#xD;&#xA;{&#xD;&#xA;    private const string UniqueIndexName = &quot;sample_uidx_person&quot;;&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = UniqueIndexName)]&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = UniqueIndexName)]&#xD;&#xA;    public string SecondName { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <div class="alert alert-info">
 To group multiple properties into single index you need to specify the same values in `IndexName` parameters.
 </div>
 <h2 id="defining-unique-index-through-index-customization">Defining Unique Index through Index customization</h2>
 <p>You have some ability to extend to Computed Index definition to be unique index  by passing a second Lambda <code>Action</code> into
 the <code>Index()</code> method and definining <code>IsUnique</code> property as <code>true</code> as shown below:</p>
-<pre><code class="language-csharp">&#xA;var store = DocumentStore.For(_ =&gt;&#xA;{&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xA;&#xA;    // The second, optional argument to Index()&#xA;    // allows you to customize the calculated index&#xA;    _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Number, x =&gt;&#xA;    {&#xA;        // Change the index method to &quot;brin&quot;&#xA;        x.Method = IndexMethod.brin;&#xA;&#xA;        // Force the index to be generated with casing rules&#xA;        x.Casing = ComputedIndex.Casings.Lower;&#xA;&#xA;        // Override the index name if you want&#xA;        x.IndexName = &quot;mt_my_name&quot;;&#xA;&#xA;        // Toggle whether or not the index is concurrent&#xA;        // Default is false&#xA;        x.IsConcurrent = true;&#xA;&#xA;        // Toggle whether or not the index is a UNIQUE&#xA;        // index&#xA;        x.IsUnique = true;&#xA;&#xA;        // Partial index by supplying a condition&#xA;        x.Where = &quot;(data -&gt;&gt; &#x27;Number&#x27;)::int &gt; 10&quot;;&#xA;    });&#xA;});&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // The second, optional argument to Index()&#xD;&#xA;    // allows you to customize the calculated index&#xD;&#xA;    _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Number, x =&gt;&#xD;&#xA;    {&#xD;&#xA;        // Change the index method to &quot;brin&quot;&#xD;&#xA;        x.Method = IndexMethod.brin;&#xD;&#xA;&#xD;&#xA;        // Force the index to be generated with casing rules&#xD;&#xA;        x.Casing = ComputedIndex.Casings.Lower;&#xD;&#xA;&#xD;&#xA;        // Override the index name if you want&#xD;&#xA;        x.IndexName = &quot;mt_my_name&quot;;&#xD;&#xA;&#xD;&#xA;        // Toggle whether or not the index is concurrent&#xD;&#xA;        // Default is false&#xD;&#xA;        x.IsConcurrent = true;&#xD;&#xA;&#xD;&#xA;        // Toggle whether or not the index is a UNIQUE&#xD;&#xA;        // index&#xD;&#xA;        x.IsUnique = true;&#xD;&#xA;&#xD;&#xA;        // Partial index by supplying a condition&#xD;&#xA;        x.Where = &quot;(data -&gt;&gt; &#x27;Number&#x27;)::int &gt; 10&quot;;&#xD;&#xA;    });&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>Same can be configured for Duplicated Field:</p>
-<pre><code class="language-csharp">&#xA;public class IndexExamples : MartenRegistry&#xA;{&#xA;    public IndexExamples()&#xA;    {&#xA;        // Add a gin index to the User document type&#xA;        For&lt;User&gt;().GinIndexJsonData();&#xA;&#xA;        // Adds a basic btree index to the duplicated&#xA;        // field for this property that also overrides&#xA;        // the Postgresql database type for the column&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);&#xA;&#xA;        // Customize the index on the duplicated field&#xA;        // for FirstName&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, configure: idx =&gt;&#xA;        {&#xA;            idx.IndexName = &quot;idx_special&quot;;&#xA;            idx.Method = IndexMethod.hash;&#xA;        });&#xA;&#xA;        // Customize the index on the duplicated field&#xA;        // for UserName to be unique&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName, configure: idx =&gt;&#xA;        {&#xA;            idx.IsUnique = true;&#xA;        });&#xA;    }&#xA;}&#xA;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class IndexExamples : MartenRegistry&#xD;&#xA;{&#xD;&#xA;    public IndexExamples()&#xD;&#xA;    {&#xD;&#xA;        // Add a gin index to the User document type&#xD;&#xA;        For&lt;User&gt;().GinIndexJsonData();&#xD;&#xA;&#xD;&#xA;        // Adds a basic btree index to the duplicated&#xD;&#xA;        // field for this property that also overrides&#xD;&#xA;        // the Postgresql database type for the column&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for FirstName&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.IndexName = &quot;idx_special&quot;;&#xD;&#xA;            idx.Method = IndexMethod.hash;&#xD;&#xA;        });&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for UserName to be unique&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.IsUnique = true;&#xD;&#xA;        });&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 
 			      	</div>
 

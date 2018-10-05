@@ -94,7 +94,7 @@
 <p>The Event Store in Marten can identify and index streams either as Guids (<code>System.Guid</code>) or strings (<code>System.String</code>). This is reflected in the overloads of <code>IEventStore</code> such as <code>IEventStore.StartStream</code>, <code>IEventStore.Append</code> and <code>IEventStore.AggregateStream</code> that accept either <code>string</code> or <code>Guid</code> as the stream identifier.</p>
 <h2 id="configuring-event-stream-identity">Configuring Event Stream Identity</h2>
 <p>Configuration of the stream identity is done through <code>StoreOptions.Events.StreamIdentity</code>. If not set, Marten defaults to <code>StreamIdentity.AsGuid</code>. The identity is configured once per store, whereby different stream identity types cannot be mixed. The following sample demonstrates configuring streams to be identified as strings.</p>
-<pre><code class="language-csharp">&#xA;storeOptions.Events.StreamIdentity = StreamIdentity.AsString;&#xA;storeOptions.Events.AsyncProjections.AggregateStreamsWith&lt;QuestPartyWithStringIdentifier&gt;();&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;storeOptions.Events.StreamIdentity = StreamIdentity.AsString;&#xD;&#xA;storeOptions.Events.AsyncProjections.AggregateStreamsWith&lt;QuestPartyWithStringIdentifier&gt;();&#xD;&#xA;</code></pre>
 <h1 id="practical-implications">Practical Implications</h1>
 <p>Stream identity effects the underlying database schema of the Event Store related tables. Namely, using string identities configures <code>stream_id</code> in the <code>mt_events</code> table to be <code>varchar</code>, whereas <code>uuid</code> would be used for GUIDs. The same applies to the <code>id</code> column in <code>mt_streams</code> table.</p>
 

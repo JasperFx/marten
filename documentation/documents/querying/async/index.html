@@ -107,10 +107,10 @@
 <li><code>ToListAsync()</code></li>
 </ul>
 <p>An example usage of <code>ToListAsync()</code> is shown below:</p>
-<pre><code class="language-csharp">&#xA;[Fact]&#xA;public async Task use_to_list_async_in_query()&#xA;{&#xA;    theSession.Store(new User { FirstName = &quot;Hank&quot; });&#xA;    theSession.Store(new User { FirstName = &quot;Bill&quot; });&#xA;    theSession.Store(new User { FirstName = &quot;Sam&quot; });&#xA;    theSession.Store(new User { FirstName = &quot;Tom&quot; });&#xA;&#xA;    await theSession.SaveChangesAsync().ConfigureAwait(false);&#xA;&#xA;    var users = await theSession&#xA;        .Query&lt;User&gt;()&#xA;        .Where(x =&gt; x.FirstName == &quot;Sam&quot;)&#xA;        .ToListAsync().ConfigureAwait(false);&#xA;&#xA;    users.Single().FirstName.ShouldBe(&quot;Sam&quot;);&#xA;}&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public async Task use_to_list_async_in_query()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Hank&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Bill&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Sam&quot; });&#xD;&#xA;    theSession.Store(new User { FirstName = &quot;Tom&quot; });&#xD;&#xA;&#xD;&#xA;    await theSession.SaveChangesAsync().ConfigureAwait(false);&#xD;&#xA;&#xD;&#xA;    var users = await theSession&#xD;&#xA;        .Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.FirstName == &quot;Sam&quot;)&#xD;&#xA;        .ToListAsync().ConfigureAwait(false);&#xD;&#xA;&#xD;&#xA;    users.Single().FirstName.ShouldBe(&quot;Sam&quot;);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="querying-by-sql">Querying by SQL</h2>
 <p>To query for results with user-supplied SQL, use:</p>
-<pre><code class="language-csharp">&#xA;var users =&#xA;    await&#xA;        session.QueryAsync&lt;User&gt;(&#xA;                   &quot;select data from mt_doc_user where data -&gt;&gt; &#x27;FirstName&#x27; = &#x27;Jeremy&#x27;&quot;)&#xA;               .ConfigureAwait(false);&#xA;var user = users.Single();&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var users =&#xD;&#xA;    await&#xD;&#xA;        session.QueryAsync&lt;User&gt;(&#xD;&#xA;                   &quot;select data from mt_doc_user where data -&gt;&gt; &#x27;FirstName&#x27; = &#x27;Jeremy&#x27;&quot;)&#xD;&#xA;               .ConfigureAwait(false);&#xD;&#xA;var user = users.Single();&#xD;&#xA;</code></pre>
 
 			      	</div>
 
