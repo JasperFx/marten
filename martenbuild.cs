@@ -12,8 +12,6 @@ namespace martenbuild
 
         static void Main(string[] args)
         {
-            var platformID = Environment.OSVersion.Platform;
-
             var configuration = Environment.GetEnvironmentVariable("config");
             configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
 
@@ -34,26 +32,12 @@ namespace martenbuild
 
             Target("install", () =>
             {
-                if (platformID == PlatformID.Unix || platformID == PlatformID.MacOSX)
-                {
-                    Run("npm", "install");
-                }
-                else
-                {
-                    Run("cmd.exe", "/c npm install");
-                }
+                RunNpm("install");
             });
 
             Target("mocha", DependsOn("install"), () =>
             {
-                if (platformID == PlatformID.Unix || platformID == PlatformID.MacOSX)
-                {
-                    Run("npm", "run test");
-                }
-                else
-                {
-                    Run("cmd.exe", "/c npm run test");
-                }
+                RunNpm("run test");
             });
 
             Target("compile", DependsOn("clean"), () =>
@@ -83,22 +67,36 @@ namespace martenbuild
 
             Target("docs", DependsOn("docs-restore"), () =>
             {
-                Run("dotnet", $"stdocs run -d ../../documentation -c ../../src -v {BUILD_VERSION}", "tools/stdocs");
+                RunStoryTellerDocs($"run -d ../../documentation -c ../../src -v {BUILD_VERSION}");
             });
 
             // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
             Target("publish", () =>
             {
-                var docTargetDir = InitializeDirectory("doc-target");
+                const string docTargetDir = "doc-target";
 
-                Run("git", $"clone -b gh-pages https://github.com/jasperfx/marten.git {docTargetDir}");
+                if (!Directory.Exists(docTargetDir))
+                {
+                    InitializeDirectory(docTargetDir);
+                    Run("git", $"clone -b gh-pages https://github.com/jasperfx/marten.git {docTargetDir}");
 
-                Run("dotnet", "restore", "tools/stdocs");
-                Run("dotnet", $"stdocs export ../../{docTargetDir} ProjectWebsite -d ../../documentation -c ../../src -v {BUILD_VERSION} --project marten", "tools/stdocs");
+                    // if you are not using git --global config, uncomment the block below, update and use it
+                    // Run("git", "config user.email email_address");
+                    // Run("git", "config user.name your_name");
+                }
+                else
+                {
+                    Run("git", "checkout --force", docTargetDir);
+                    Run("git", "clean -xfd", docTargetDir);
+                    Run("git", "pull origin master", docTargetDir);
+                }
+
+                RunStoryTellerDocs(
+                    $"export ../../{docTargetDir} ProjectWebsite -d ../../documentation -c ../../src -v {BUILD_VERSION} --project marten");
 
                 Run("git", "add --all", docTargetDir);
                 Run("git", $"commit -a -m \"Documentation Update for {BUILD_VERSION}\" --allow-empty", docTargetDir);
-                Run("git", "git push origin gh-pages", docTargetDir);
+                Run("git", "push origin gh-pages", docTargetDir);
             });
 
             Target("benchmarks", () =>
@@ -137,6 +135,30 @@ namespace martenbuild
             {
                 Directory.Delete(path, true);
             }
+        }
+
+        private static bool IsWindowsPlatform()
+        {
+            var platformId = Environment.OSVersion.Platform;
+            return platformId != PlatformID.Unix && platformId != PlatformID.MacOSX;
+        }
+
+        private static void RunNpm(string args)
+        {
+            if (IsWindowsPlatform())
+            {
+                Run("cmd.exe", $"/c npm {args}");
+            }
+            else
+            {
+                Run("npm", args);
+            }
+        }
+
+        private static void RunStoryTellerDocs(string args)
+        {
+            Run("dotnet", "restore", "tools/stdocs");
+            Run("dotnet", $"stdocs {args}", "tools/stdocs");
         }
     }
 }
