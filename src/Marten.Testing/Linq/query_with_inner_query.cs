@@ -71,7 +71,6 @@ namespace Marten.Testing.Linq
         [Theory]
         [MemberData(nameof(Predicates))]
         public async Task can_query_against_array_of_string(Expression<Func<TypeWithInnerCollections, bool>> predicate)
-
         {
             StoreOptions(options => options.UseDefaultSerialization());
 
