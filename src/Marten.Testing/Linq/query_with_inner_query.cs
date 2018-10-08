@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Marten.Services;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
@@ -13,6 +15,7 @@ namespace Marten.Testing.Linq
         public class TypeWithInnerCollections
         {
             public Guid Id { get; set; }
+            public string Flatten { get; set; }
             public string[] Array { get; set; }
             public IEnumerable<string> Enumerable { get; set; }
             public IEnumerable<string> IEnumerableFromArray { get; set; }
@@ -28,12 +31,28 @@ namespace Marten.Testing.Linq
                 {
                     Id = Guid.NewGuid(),
                     Array = array,
+                    Flatten = array.Aggregate((i, j) => i + j),
                     Enumerable = array.AsEnumerable(),
                     IEnumerableFromArray = array,
                     IEnumerbaleFromList = array.ToList(),
                     List = array.ToList(),
                     IList = array.ToList(),
-                    IReadonlyCollection = array.ToList()
+                    IReadonlyCollection = array.ToList(),
+                    IReadonlyCollectionOfInnerClasses = new List<TypeWithInnerCollections>
+                    {
+                        new TypeWithInnerCollections()
+                        {
+                            Id = Guid.NewGuid(),
+                            Array = array,
+                            Flatten = array.Aggregate((i, j) => i + j),
+                            Enumerable = array.AsEnumerable(),
+                            IEnumerableFromArray = array,
+                            IEnumerbaleFromList = array.ToList(),
+                            List = array.ToList(),
+                            IList = array.ToList(),
+                            IReadonlyCollection = array.ToList(),
+                        }
+                    }
                 };
             }
         }
@@ -56,23 +75,16 @@ namespace Marten.Testing.Linq
             x => x.List.Contains(SearchPhrase),
             x => x.IList.Contains(SearchPhrase),
             x => x.IReadonlyCollection.Contains(SearchPhrase),
-            x => x.IReadonlyCollection.Where(e => e == SearchPhrase).Any()
+            x => x.IReadonlyCollection.Where(e => e == SearchPhrase).Any(),
+            x => x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "onetwo").Any() || x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "twothree").Any()
         };
-
-        public query_with_inner_query()
-        {
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(TestData);
-                session.SaveChanges();
-            }
-        }
 
         [Theory]
         [MemberData(nameof(Predicates))]
         public async Task can_query_against_array_of_string(Expression<Func<TypeWithInnerCollections, bool>> predicate)
         {
-            StoreOptions(options => options.UseDefaultSerialization());
+            ConfigureStoreToHaveJsonTypeNameHandlingNone();
+            SetupTestData();
 
             using (var query = theStore.QuerySession())
             {
@@ -80,7 +92,27 @@ namespace Marten.Testing.Linq
                     .Where(predicate)
                     .ToListAsync();
 
+                results.Count.ShouldBe(2);
                 results.All(e => e.Enumerable.Contains(SearchPhrase)).ShouldBeTrue();
+            }
+        }
+
+        private void ConfigureStoreToHaveJsonTypeNameHandlingNone()
+        {
+            var serializer = new JsonNetSerializer();
+            serializer.Customize(s =>
+            {
+                s.TypeNameHandling = Newtonsoft.Json.TypeNameHandling.None;
+            });
+            StoreOptions(options => options.Serializer(serializer));
+        }
+
+        private void SetupTestData()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(TestData);
+                session.SaveChanges();
             }
         }
     }
