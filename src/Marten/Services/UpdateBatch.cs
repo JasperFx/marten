@@ -149,7 +149,9 @@ namespace Marten.Services
             try
             {
                 var list = new List<Exception>();
-                foreach (var batch in _commands.ToArray())
+
+                var commandsFifo = _commands.Reverse().ToArray();
+                foreach (var batch in commandsFifo)
                 {
                     var cmd = batch.BuildCommand();
                     await Connection.ExecuteAsync(cmd, async (c, tkn) =>
