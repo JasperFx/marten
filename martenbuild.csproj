@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Bullseye" Version="1.2.0" />
-    <PackageReference Include="SimpleExec" Version="2.3.0" />
+    <PackageReference Include="Bullseye" Version="2.1.0" />
+    <PackageReference Include="SimpleExec" Version="3.0.0" />
     <PackageReference Include="Westwind.Utilities" Version="3.0.20.4" />
   </ItemGroup>
 
