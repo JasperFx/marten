@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Services;
 using Shouldly;
@@ -9,20 +10,20 @@ namespace Marten.Testing.Events.Projections
 {
     public class project_events_from_multiple_streams_into_view : DocumentSessionFixture<IdentityMap>
     {
-        static readonly Guid streamId = Guid.NewGuid();
-        static readonly Guid streamId2 = Guid.NewGuid();
+        private static readonly Guid streamId = Guid.NewGuid();
+        private static readonly Guid streamId2 = Guid.NewGuid();
 
-        QuestStarted started = new QuestStarted { Id = streamId, Name = "Find the Orb" };
-        QuestStarted started2 = new QuestStarted { Id = streamId2, Name = "Find the Orb 2.0" };
-        MonsterQuestsAdded monsterQuestsAdded = new MonsterQuestsAdded { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
-        MonsterQuestsRemoved monsterQuestsRemoved = new MonsterQuestsRemoved { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
-        QuestEnded ended = new QuestEnded { Id = streamId, Name = "Find the Orb" };
-        MembersJoined joined = new MembersJoined { QuestId = streamId, Day = 2, Location = "Faldor's Farm", Members = new[] { "Garion", "Polgara", "Belgarath" } };
-        MonsterSlayed slayed1 = new MonsterSlayed { QuestId = streamId, Name = "Troll" };
-        MonsterSlayed slayed2 = new MonsterSlayed { QuestId = streamId, Name = "Dragon" };
-        MonsterDestroyed destroyed = new MonsterDestroyed { QuestId = streamId, Name = "Troll" };
-        MembersDeparted departed = new MembersDeparted { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
-        MembersJoined joined2 = new MembersJoined { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
+        private QuestStarted started = new QuestStarted { Id = streamId, Name = "Find the Orb" };
+        private QuestStarted started2 = new QuestStarted { Id = streamId2, Name = "Find the Orb 2.0" };
+        private MonsterQuestsAdded monsterQuestsAdded = new MonsterQuestsAdded { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
+        private MonsterQuestsRemoved monsterQuestsRemoved = new MonsterQuestsRemoved { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
+        private QuestEnded ended = new QuestEnded { Id = streamId, Name = "Find the Orb" };
+        private MembersJoined joined = new MembersJoined { QuestId = streamId, Day = 2, Location = "Faldor's Farm", Members = new[] { "Garion", "Polgara", "Belgarath" } };
+        private MonsterSlayed slayed1 = new MonsterSlayed { QuestId = streamId, Name = "Troll" };
+        private MonsterSlayed slayed2 = new MonsterSlayed { QuestId = streamId, Name = "Dragon" };
+        private MonsterDestroyed destroyed = new MonsterDestroyed { QuestId = streamId, Name = "Troll" };
+        private MembersDeparted departed = new MembersDeparted { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
+        private MembersJoined joined2 = new MembersJoined { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
 
         [Fact]
         public void from_configuration()
@@ -30,6 +31,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
                 _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.ProjectView<PersistedView, Guid>()
                     .ProjectEvent<ProjectionEvent<QuestStarted>>((view, @event) => { view.Events.Add(@event.Data);  view.StreamIdsForEvents.Add(@event.StreamId); })
@@ -99,7 +101,7 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public async void from_configuration_async()
         {
-            // SAMPLE: viewprojection-from-configuration 
+            // SAMPLE: viewprojection-from-configuration
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -112,7 +114,7 @@ namespace Marten.Testing.Events.Projections
                     .DeleteEvent<MembersDeparted>(e => e.QuestId)
                     .DeleteEvent<MonsterDestroyed>((session, e) => session.Load<QuestParty>(e.QuestId).Id);
             });
-            // ENDSAMPLE 
+            // ENDSAMPLE
 
             theSession.Events.StartStream<QuestParty>(streamId, started, joined);
             await theSession.SaveChangesAsync();
@@ -339,6 +341,41 @@ namespace Marten.Testing.Events.Projections
             var nullDocument2 = theSession.Load<QuestView>(streamId2);
             nullDocument2.ShouldBeNull();
         }
+
+        [Fact]
+        public async Task updateonly_event_should_not_create_new_document()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
+                _.Events.ProjectView<PersistedView, Guid>()
+                    .ProjectEvent<QuestStarted>((view, @event) => view.Events.Add(@event))
+                    .ProjectEvent<MembersJoined>(e => e.QuestId, (view, @event) => view.Events.Add(@event))
+                    .ProjectEvent<MonsterSlayed>(e =>
+                    {
+                        return Guid.NewGuid();
+                    }, (view, @event) => view.Events.Add(@event), onlyUpdate: true);
+            });
+
+            theSession.Events.StartStream<QuestParty>(streamId, started);
+            theSession.SaveChanges();
+
+            var docoument = await theSession.LoadAsync<PersistedView>(streamId);
+            docoument.Events.Count.ShouldBe(1);
+
+            theSession.Events.StartStream<Monster>(slayed1);
+            theSession.SaveChanges();
+
+            var docoument2 = await theSession.LoadAsync<PersistedView>(streamId);
+            docoument2.Events.Count.ShouldBe(1);
+
+            theSession.Events.StartStream<QuestParty>(joined);
+            theSession.SaveChanges();
+
+            var docoument3 = await theSession.LoadAsync<PersistedView>(streamId);
+            docoument3.Events.Count.ShouldBe(2);
+        }
     }
 
     public class QuestView
@@ -354,7 +391,7 @@ namespace Marten.Testing.Events.Projections
         public List<Guid> StreamIdsForEvents { get; set; } = new List<Guid>();
     }
 
-    // SAMPLE: viewprojection-from-class 
+    // SAMPLE: viewprojection-from-class
     public class PersistViewProjection : ViewProjection<PersistedView, Guid>
     {
         public PersistViewProjection()
@@ -372,5 +409,6 @@ namespace Marten.Testing.Events.Projections
             view.Events.Add(@event);
         }
     }
-    // ENDSAMPLE 
+
+    // ENDSAMPLE
 }

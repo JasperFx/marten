@@ -19,9 +19,15 @@ namespace Marten.Linq
 			new StringNotEquals(),
 			new StringNotContains(),
 		    new StringNotStartsWith(),
-			new StringNotEndsWith(),		    
-		};
-	    private readonly ISerializer _serializer;
+			new StringNotEndsWith(),		 
+            new IsNotOneOf()
+        };
+	    
+        private static readonly object[] _supplementalParsers =
+        {
+            new SimpleBinaryNotNodeComparisonExpressionParser(),
+        };
+        private readonly ISerializer _serializer;
 
 	    public NotVisitor(MartenExpressionParser.WhereClauseVisitor parent, IQueryableDocument mapping, Action<IWhereFragment> callback, ISerializer serializer)
         {
@@ -69,7 +75,18 @@ namespace Marten.Linq
                 {
                     var @where = new WhereFragment($"({locator}) IS NULL");
                     _callback(@where);
+                    return base.VisitBinary(expression);
                 }
+            }
+
+            var parser = _supplementalParsers.OfType<IExpressionParser<BinaryExpression>>()?.FirstOrDefault(x => x.Matches(expression));
+
+            if (parser != null)
+            {
+                var where = parser.Parse(_mapping, _serializer, expression);
+                _callback(where);
+
+                return expression;
             }
 
             return base.VisitBinary(expression);

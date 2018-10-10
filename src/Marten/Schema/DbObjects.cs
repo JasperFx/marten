@@ -85,14 +85,17 @@ FROM pg_index AS idx
     ON i.relam = am.oid
   JOIN pg_namespace AS NS ON i.relnamespace = NS.OID
   JOIN pg_user AS U ON i.relowner = U.usesysid
-WHERE NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system table
-
+WHERE 
+ns.nspname = ANY(?) AND
+NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system table
 ";
 
             Func<DbDataReader, ActualIndex> transform =
                 r => new ActualIndex(DbObjectName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
 
-            return _tenant.Fetch(sql, transform);
+	        var schemaNames = _features.AllSchemaNames();
+
+			return _tenant.Fetch(sql, transform, (object)schemaNames);
         }
 
         public IEnumerable<ActualIndex> IndexesFor(DbObjectName table)

@@ -15,7 +15,7 @@ using Jil;
 namespace Marten.Testing
 {
 #if NET46
-    // SAMPLE: TestsSerializer
+    // SAMPLE: JilSerializer
     public class JilSerializer : ISerializer
     {
         private readonly Options _options 

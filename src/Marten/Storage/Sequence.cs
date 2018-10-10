@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using Marten.Schema;
 using Marten.Util;
@@ -16,6 +17,11 @@ namespace Marten.Storage
 
         public DbObjectName Owner { get; set; }
         public string OwnerColumn { get; set; }
+
+        public IEnumerable<DbObjectName> AllNames()
+        {
+            yield return Identifier;
+        }
 
         public void Write(DdlRules rules, StringWriter writer)
         {

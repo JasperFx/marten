@@ -70,6 +70,8 @@ namespace Marten.Events.Projections.Async
 
         public long LastEncountered { get; set; }
 
+        public string ProgressionName => _projection.GetEventProgressionName();
+
         public void Dispose()
         {
             if (_isDisposed) return;
@@ -80,7 +82,6 @@ namespace Marten.Events.Projections.Async
             stopConsumers();
 
             _waiters.Clear();
-            
         }
 
         private void stopConsumers()
@@ -110,8 +111,6 @@ namespace Marten.Events.Projections.Async
                     _rebuildCompletion.SetResult(t.Result);
                 });
             }
-
-
         }
 
         public void EnsureStorageExists(ITenant tenant)
@@ -169,7 +168,6 @@ namespace Marten.Events.Projections.Async
         {
             ensureStorageExists();
             
-
             Start(DaemonLifecycle.StopAtEndOfEventData);
 
             return _rebuildCompletion.Task;
@@ -177,10 +175,7 @@ namespace Marten.Events.Projections.Async
 
         private void ensureStorageExists()
         {
-            if (_projection is IDocumentProjection)
-            {
-                _tenant.EnsureStorageExists(_projection.ProjectedType());
-            }
+            _projection.EnsureStorageExists(_tenant);            
         }
 
         public async Task Rebuild(CancellationToken token = new CancellationToken())
@@ -190,8 +185,6 @@ namespace Marten.Events.Projections.Async
             ensureStorageExists();
 
             await _fetcher.Stop().ConfigureAwait(false);
-
-            
 
             await _errorHandler.TryAction(async () =>
             {
@@ -223,10 +216,13 @@ namespace Marten.Events.Projections.Async
             {
                 await _projection.ApplyAsync(session, page, cancellation).ConfigureAwait(false);
 
-                session.QueueOperation(new EventProgressWrite(_events, _projection.ProjectedType().FullName, page.To));
+                session.QueueOperation(new EventProgressWrite(_events, _projection.GetEventProgressionName(), page.To));
 
                 await session.SaveChangesAsync(cancellation).ConfigureAwait(false);
 
+                // Just making sure nothing bad is happening to GC
+                page.Next = null;
+                
                 _logger.PageExecuted(page, this);
 
                 // This is a change to accomodate the big gap problem
@@ -246,7 +242,7 @@ namespace Marten.Events.Projections.Async
                 waiter.Completion.SetResult(LastEncountered);
                 _waiters.Remove(waiter);
             }
-        }
+        }  
 
         public async Task CachePage(EventPage page)
         {
@@ -294,22 +290,25 @@ namespace Marten.Events.Projections.Async
         private async Task clearExistingState(CancellationToken token)
         {
             _logger.ClearingExistingState(this);
-
-            var tableName = _tenant.MappingFor(_projection.ProjectedType()).Table;
-            var sql =
-                $"delete from {_store.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
-
+            var types = _projection.ProjectedTypes();
+            
             using (var conn = _tenant.OpenConnection())
             {
-                await conn.ExecuteAsync(async (cmd, tkn) =>
+                foreach (var type in types)
                 {
-                    await cmd.Sql(sql)
-                        .With("name", _projection.ProjectedType().FullName)
-                        .ExecuteNonQueryAsync(tkn)
-                        .ConfigureAwait(false);
-                }, token).ConfigureAwait(false);
-            }
+                    var tableName = _tenant.MappingFor(type).Table;
+                    var sql =
+                        $"delete from {_store.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
 
+                    await conn.ExecuteAsync(async (cmd, tkn) =>
+                    {
+                        await cmd.Sql(sql)
+                            .With("name", _projection.GetEventProgressionName(type))
+                            .ExecuteNonQueryAsync(tkn)
+                            .ConfigureAwait(false);
+                    }, token);
+                }                
+            }
             LastEncountered = 0;
         }
     }

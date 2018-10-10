@@ -82,27 +82,32 @@ namespace Marten.Events.Projections.Async.ErrorHandling
             }
         }
 
-        private async Task pause(IMonitoredActivity activity)
+        private Task pause(IMonitoredActivity activity)
         {
             try
             {
-                await activity.Stop().ConfigureAwait(false);
+                activity.Stop().ConfigureAwait(false);
             }
             catch (Exception e)
             {
                 _logger.Error(e);
             }
 
-            await Task.Delay(_handling.Cooldown).ConfigureAwait(false);
-
-            try
+            Task.Run(async () =>
             {
-                await activity.Start().ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e);
-            }
+                await Task.Delay(_handling.Cooldown);
+                try
+                {
+                    await activity.Start().ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    _logger.Error(e);
+                }
+            });
+	
+            return Task.CompletedTask;
         }
+
     }
 }

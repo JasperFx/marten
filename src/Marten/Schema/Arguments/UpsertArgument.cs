@@ -15,10 +15,10 @@ namespace Marten.Schema.Arguments
             typeof(NpgsqlBinaryImporter).GetMethods().FirstOrDefault(x => x.GetParameters().Length == 2);
 
         protected static readonly MethodInfo _paramMethod = typeof(SprocCall)
-            .GetMethod("Param", new[] {typeof(string), typeof(object), typeof(NpgsqlDbType)});
+            .GetMethod("Param", new[] { typeof(string), typeof(object), typeof(NpgsqlDbType) });
 
-        protected static readonly MethodInfo _paramWithSizeMethod = typeof(SprocCall)
-            .GetMethod("Param", new[] { typeof(string), typeof(object), typeof(NpgsqlDbType), typeof(int) });
+        protected static readonly MethodInfo _paramWithJsonBody = typeof(SprocCall)
+            .GetMethod("JsonBody", new[] { typeof(string), typeof(ArraySegment<char>)});
 
         private MemberInfo[] _members;
         private string _postgresType;
@@ -31,8 +31,8 @@ namespace Marten.Schema.Arguments
             {
                 if (value == null) throw new ArgumentNullException();
 
-                _postgresType = value.Contains("(") 
-                    ? value.Split('(')[0].Trim() 
+                _postgresType = value.Contains("(")
+                    ? value.Split('(')[0].Trim()
                     : value;
             }
         }
@@ -63,13 +63,12 @@ namespace Marten.Schema.Arguments
         {
             var memberType = Members.Last().GetMemberType();
 
-
             var value = LambdaBuilder.ToExpression(enumStorage, Members, document);
 
-            if (memberType.GetTypeInfo().IsEnum)
+            if (memberType.IsEnum)
             {
-                memberType = typeof(string);
-                value = LambdaBuilder.ToExpression(EnumStorage.AsString, Members, document);
+                memberType = mapping.EnumStorage == EnumStorage.AsString ? typeof(string) : typeof(int);
+                value = LambdaBuilder.ToExpression(mapping.EnumStorage, Members, document);
             }
 
             var method = writeMethod.MakeGenericMethod(memberType);
@@ -78,7 +77,6 @@ namespace Marten.Schema.Arguments
 
             return Expression.Call(writer, method, value, dbType);
         }
-
 
         public virtual Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion, ParameterExpression tenantId, bool useCharBufferPooling)
         {
@@ -90,7 +88,6 @@ namespace Marten.Schema.Arguments
             {
                 body = Expression.Convert(body, typeof(object));
             }
-
 
             return Expression.Call(call, _paramMethod, argName, body, Expression.Constant(DbType));
         }

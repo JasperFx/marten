@@ -2,12 +2,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Baseline;
 using Marten.Events;
 using Marten.Schema;
-using Marten.Schema.BulkLoading;
-using Marten.Schema.Identity;
-using Marten.Schema.Identity.Sequences;
 using Marten.Util;
 
 namespace Marten.Storage
@@ -25,7 +23,6 @@ namespace Marten.Storage
         private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
             new ConcurrentDictionary<Type, IDocumentStorage>();
 
-
         private readonly Dictionary<Type, IFeatureSchema> _features = new Dictionary<Type, IFeatureSchema>();
 
         public StorageFeatures(StoreOptions options)
@@ -33,18 +30,43 @@ namespace Marten.Storage
             _options = options;
 
             SystemFunctions = new SystemFunctions(options);
-            
+
             Transforms = options.Transforms.As<Transforms.Transforms>();
         }
 
         public Transforms.Transforms Transforms { get; }
 
-        private void store(IFeatureSchema feature)
+        /// <summary>
+        /// Register custom storage features
+        /// </summary>
+        /// <param name="feature"></param>
+        public void Add(IFeatureSchema feature)
         {
             _features.Add(feature.StorageType, feature);
         }
 
-        
+        /// <summary>
+        /// Register custom storage features by type. Type must have either a no-arg, public
+        /// constructor or a constructor that takes in a single StoreOptions parameter
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public void Add<T>() where T : IFeatureSchema
+        {
+            var ctor = typeof(T).GetTypeInfo().GetConstructor(new Type[] { typeof(StoreOptions) });
+
+            IFeatureSchema feature;
+            if (ctor != null)
+            {
+                feature = Activator.CreateInstance(typeof(T), _options)
+                    .As<IFeatureSchema>();
+            }
+            else
+            {
+                feature = Activator.CreateInstance(typeof(T)).As<IFeatureSchema>();
+            }
+
+            Add(feature);
+        }
 
         public SystemFunctions SystemFunctions { get; }
 
@@ -57,13 +79,11 @@ namespace Marten.Storage
             return _documentMappings.GetOrAdd(documentType, type => typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType));
         }
 
-
-
         internal IDocumentMapping FindMapping(Type documentType)
         {
             return _mappings.GetOrAdd(documentType, type =>
             {
-                var subclass =  AllDocumentMappings.SelectMany(x => x.SubClasses)
+                var subclass = AllDocumentMappings.SelectMany(x => x.SubClasses)
                     .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping;
 
                 return subclass ?? MappingFor(documentType);
@@ -121,16 +141,16 @@ namespace Marten.Storage
             return MappingFor(featureType);
         }
 
-
         internal void PostProcessConfiguration()
         {
             SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamp", "text");
+            SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamptz", "text");
 
-            store(SystemFunctions);
+            Add(SystemFunctions);
 
-            store(Transforms.As<IFeatureSchema>());
+            Add(Transforms.As<IFeatureSchema>());
 
-            store(_options.Events);
+            Add(_options.Events);
             _features[typeof(StreamState)] = _options.Events;
             _features[typeof(EventStream)] = _options.Events;
             _features[typeof(IEvent)] = _options.Events;
@@ -185,8 +205,6 @@ namespace Marten.Storage
                 yield return tenant.Sequences;
             }
 
-
-
             if (Transforms.IsActive(_options))
             {
                 yield return Transforms;
@@ -195,6 +213,14 @@ namespace Marten.Storage
             if (_options.Events.IsActive(_options))
             {
                 yield return _options.Events;
+            }
+
+            var custom = _features.Values
+                .Where(x => x.GetType().GetTypeInfo().Assembly != GetType().GetTypeInfo().Assembly).ToArray();
+
+            foreach (var featureSchema in custom)
+            {
+                yield return featureSchema;
             }
         }
 

@@ -23,13 +23,13 @@ namespace Marten.Storage
 
         public DdlRules DdlRules { get; }
 
-        public void WriteDDL(string filename)
+        public void WriteDDL(string filename, bool transactionalScript = true)
         {
-            var sql = ToDDL();
+            var sql = ToDDL(transactionalScript);
             new FileSystem().WriteStringToFile(filename, sql);
         }
 
-        public void WriteDDLByType(string directory)
+        public void WriteDDLByType(string directory, bool transactionalScript=true)
         {
             var system = new FileSystem();
 
@@ -47,7 +47,7 @@ namespace Marten.Storage
 
                 var file = directory.AppendPath(feature.Identifier + ".sql");
 
-                new SchemaPatch(StoreOptions.DdlRules).WriteTransactionalFile(file, writer.ToString());
+                new SchemaPatch(StoreOptions.DdlRules).WriteFile(file, writer.ToString(), transactionalScript);
             }
         }
 
@@ -74,11 +74,11 @@ namespace Marten.Storage
             system.WriteStringToFile(filename, writer.ToString());
         }
 
-        public string ToDDL()
+        public string ToDDL(bool transactionalScript = true)
         {
             var writer = new StringWriter();
 
-            new SchemaPatch(StoreOptions.DdlRules).WriteTransactionalScript(writer, w =>
+            new SchemaPatch(StoreOptions.DdlRules).WriteScript(writer, w =>
             {
                 var allSchemaNames = StoreOptions.Storage.AllSchemaNames();
                 DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, w);
@@ -87,13 +87,13 @@ namespace Marten.Storage
                 {
                     feature.Write(StoreOptions.DdlRules, writer);
                 }
-            });
+            }, transactionalScript);
 
             return writer.ToString();
         }
 
 
-        public void WritePatch(string filename, bool withSchemas = true)
+        public void WritePatch(string filename, bool withSchemas = true, bool transactionalScript = true)
         {
             if (!Path.IsPathRooted(filename))
             {
@@ -102,10 +102,10 @@ namespace Marten.Storage
 
             var patch = ToPatch(withSchemas, withAutoCreateAll: true);
 
-            patch.WriteUpdateFile(filename);
+            patch.WriteUpdateFile(filename, transactionalScript);
 
             var dropFile = SchemaPatch.ToDropFileName(filename);
-            patch.WriteRollbackFile(dropFile);
+            patch.WriteRollbackFile(dropFile, transactionalScript);
         }
 
         public SchemaPatch ToPatch(bool withSchemas = true, bool withAutoCreateAll = false)
@@ -132,7 +132,7 @@ namespace Marten.Storage
 
         public void AssertDatabaseMatchesConfiguration()
         {
-            var patch = ToPatch(false);
+            var patch = ToPatch(false, withAutoCreateAll:true);
 
             if (patch.UpdateDDL.Trim().IsNotEmpty())
             {
@@ -176,7 +176,7 @@ namespace Marten.Storage
             return patch;
         }
 
-        public void WritePatchByType(string directory)
+        public void WritePatchByType(string directory, bool transactionalScript = true)
         {
             var system = new FileSystem();
 
@@ -198,7 +198,7 @@ namespace Marten.Storage
                     if (patch.UpdateDDL.IsNotEmpty())
                     {
                         var file = directory.AppendPath(feature.Identifier + ".sql");
-                        patch.WriteUpdateFile(file);
+                        patch.WriteUpdateFile(file, transactionalScript);
                     }
                 }
 

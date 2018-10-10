@@ -1,8 +1,6 @@
 <!--Title:Querying Documents with Linq-->
 <!--Url:linq-->
 
-TODO(Split this topic up, and use ST specs)
-
 Marten uses the [Relinq library](https://github.com/re-motion/Relinq) to support a subset of the normal Linq operators. Linq queries are done with
 Marten using the `IQuerySession.Query<T>()` or `IDocumentSession.Query<T>()` method to return an [IQueryable](https://msdn.microsoft.com/en-us/library/system.linq.iqueryable(v=vs.100).aspx) for the document type `T`.
 
@@ -187,12 +185,23 @@ a field or property matching one of many supplied values:
 
 <[sample:is_one_of]>
 
+To find one of for an array you can use this strategy:
+
+<[sample:is_one_of_array]>
+
 ## Modulo Queries
 
 Marten v0.8 added the ability to use the modulo operator in Linq queries:
 
 <[sample:querying-with-modulo]>
 
+## AnyTenant
+Query data from all tenants using `AnyTenant` method.
+<[sample:any_tenant]>
+
+## TenantIsOneOf
+Use `TenantIsOneOf` to query on a selected list of tenants.
+<[sample:tenant_is_one_of]>
 
 ## Supported Types
 

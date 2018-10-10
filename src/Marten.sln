@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -11,8 +11,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.CommandLine", "Marten.CommandLine\Marten.CommandLine.csproj", "{8478E6CB-FE2E-4476-B4B5-60F61DA16D74}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleConsoleApp", "SampleConsoleApp\SampleConsoleApp.csproj", "{ADB6540A-9ED5-4084-8AB0-DECF3D276AB4}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MartenBenchmarks", "MartenBenchmarks\MartenBenchmarks.csproj", "{B52871D7-1CCD-4667-81D4-4B0F5D72FC63}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.Storyteller", "Marten.Storyteller\Marten.Storyteller.csproj", "{7B2B6445-F88B-4DF8-8990-6ADE43C2C523}"
 EndProject
@@ -42,10 +40,6 @@ Global
 		{ADB6540A-9ED5-4084-8AB0-DECF3D276AB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ADB6540A-9ED5-4084-8AB0-DECF3D276AB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ADB6540A-9ED5-4084-8AB0-DECF3D276AB4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B52871D7-1CCD-4667-81D4-4B0F5D72FC63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B52871D7-1CCD-4667-81D4-4B0F5D72FC63}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B52871D7-1CCD-4667-81D4-4B0F5D72FC63}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B52871D7-1CCD-4667-81D4-4B0F5D72FC63}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7B2B6445-F88B-4DF8-8990-6ADE43C2C523}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7B2B6445-F88B-4DF8-8990-6ADE43C2C523}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B2B6445-F88B-4DF8-8990-6ADE43C2C523}.Release|Any CPU.ActiveCfg = Release|Any CPU

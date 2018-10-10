@@ -17,22 +17,15 @@ but for production usage when you may be querying event data before you append a
 
 <[sample:registering-event-types]>
 
-
 ## Stream or Aggregate Types
 
-At this point there is no specific requirements about stream aggregate types as they are purely marker types for now. In the future we will probably support
-aggregating events via snapshot caching using the aggregate type.
-
+At this point there are no specific requirements about stream aggregate types as they are purely marker types. In the future we will probably support aggregating events via snapshot caching using the aggregate type.
 
 ## Starting a new Stream
 
-As of Marten v0.9, you can **optionally** start a new event stream against some kind of .Net type that theoretically marks the type of stream your capturing. 
-Marten does not yet use this type as anything more than metadata, but our thought is that some projections would key off this information and that in a 
-future version use that aggregate type to perform versioned snapshots of the entire stream. We may also make the aggregate type optional so that
-you could just supply either a string to mark the "stream type" or work without a stream type.
+As of Marten v0.9, you can **optionally** start a new event stream against some kind of .Net type that theoretically marks the type of stream you're capturing. Marten does not yet use this type as anything more than metadata, but our thought is that some projections would key off this information and in a future version use that aggregate type to perform versioned snapshots of the entire stream. We may also make the aggregate type optional so that you could just supply either a string to mark the "stream type" or work without a stream type.
 
-As usual, our sample problem domain is the Lord of the Rings style "Quest." For now, you can either start a new stream and let Marten assign the Guid
-id for the stream:
+As usual, our sample problem domain is the Lord of the Rings style "Quest." For now, you can either start a new stream and let Marten assign the Guid id for the stream:
 
 <[sample:start-stream-with-aggregate-type]>
 
@@ -42,7 +35,7 @@ Or have Marten use a Guid value that you provide yourself:
 
 For stream identity (strings vs. Guids), see <[linkto:documentation/events/identity]>.
 
-Note that `StartStream` checks for existing stream and throws `ExistingStreamIdCollisionException` in case stream already exists.
+Note that `StartStream` checks for and existing stream and throws `ExistingStreamIdCollisionException` if a matching stream already exists.
 
 ## Appending Events
 
@@ -52,12 +45,10 @@ If you have an existing stream, you can later append additional events with `IEv
 
 ### Appending & Assertions ###
 
-`IEventStore.Append()` supports an overload taking in a parameter `int expectedVersion` that can be used to assert that events are inserted into the
-event stream if and only if the maximum event id for the stream matches the expected version after event insertions. Otherwise the transaction is aborted
-and a `EventStreamUnexpectedMaxEventIdException` exception is thrown.
+`IEventStore.Append()` supports an overload taking in a parameter `int expectedVersion` that can be used to assert that events are inserted into the event stream if and only if the maximum event id for the stream matches the expected version after event insertions. Otherwise the transaction is aborted and an `EventStreamUnexpectedMaxEventIdException` exception is thrown.
 
 <[sample:append-events-assert-on-eventid]> 
 
 ### CreateStream vs. Append
 
-Both, `CreateStream` and `Append` can be used to start a new event stream. The difference with the methods is that `CreateStream` always checks for existing stream and throws `ExistingStreamIdCollisionException` in case stream already exists.
+Both `StartStream` and `Append` can be used to start a new event stream. The difference with the methods is that `StartStream` always checks for existing stream and throws `ExistingStreamIdCollisionException` in case the stream already exists.

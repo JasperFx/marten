@@ -25,7 +25,7 @@ namespace Marten.Testing.Bugs
             StoreOptions(_ =>
             {
                 _.Schema.For<Company>()
-                    .Duplicate(c => c.Name, "jsonb", id =>
+                    .Duplicate(c => c.Name, pgType:"jsonb", configure:id =>
                     {
                         id.Method = IndexMethod.gin;
                         id.Expression = "? jsonb_path_ops";

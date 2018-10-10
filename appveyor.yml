@@ -21,7 +21,7 @@ services:
 install:
   - set PATH=C:\Ruby%RUBY_VERSION%\bin;%PATH%
   - ruby --version
-  - gem install bundler
+  - gem install bundler --conservative
   - bundle config --local path vendor/bundle
   - bundle install
   - SET PATH=%POSTGRES_PATH%\bin;%PATH%
@@ -39,7 +39,7 @@ before_build:
 
 build_script:
 - cmd: >-
-    rake ci
+    dotnet run -p martenbuild.csproj -- ci
 test: off
 
 artifacts:

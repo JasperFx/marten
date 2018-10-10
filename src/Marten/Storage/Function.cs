@@ -7,6 +7,9 @@ using Npgsql;
 
 namespace Marten.Storage
 {
+    /// <summary>
+    /// Base class for an ISchemaObject manager for a Postgresql function
+    /// </summary>
     public abstract class Function : ISchemaObject
     {
         public DbObjectName Identifier { get; }
@@ -16,6 +19,11 @@ namespace Marten.Storage
             Identifier = identifier;
         }
 
+        /// <summary>
+        /// Override to write the actual DDL code
+        /// </summary>
+        /// <param name="rules"></param>
+        /// <param name="writer"></param>
         public abstract void Write(DdlRules rules, StringWriter writer);
 
         public void ConfigureQueryCommand(CommandBuilder builder)
@@ -67,6 +75,11 @@ AND    n.nspname = :{schemaParam};
             return SchemaPatchDifference.None;
         }
 
+        public IEnumerable<DbObjectName> AllNames()
+        {
+            yield return Identifier;
+        }
+
         protected FunctionDelta fetchDelta(DbDataReader reader, DdlRules rules)
         {
             if (!reader.Read())
@@ -103,6 +116,10 @@ AND    n.nspname = :{schemaParam};
             return new FunctionBody(Identifier, new string[] {dropSql}, writer.ToString());
         }
 
+        /// <summary>
+        /// Override to customize the DROP statements for this function
+        /// </summary>
+        /// <returns></returns>
         protected abstract string toDropSql();
 
         public void WriteDropStatement(DdlRules rules, StringWriter writer)

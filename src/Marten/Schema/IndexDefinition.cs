@@ -31,8 +31,8 @@ namespace Marten.Schema
                 if (_indexName.IsNotEmpty())
                 {
                     return _indexName.StartsWith(DocumentMapping.MartenPrefix)
-                        ? _indexName
-                        : DocumentMapping.MartenPrefix + _indexName;
+                        ? _indexName.ToLowerInvariant()
+                        : DocumentMapping.MartenPrefix + _indexName.ToLowerInvariant();
                 }
                 return $"{_parent.Table.Name}_idx_{_columns.Join("_")}";
             }
@@ -105,7 +105,7 @@ namespace Marten.Schema
                 var columns = match.Groups["columns"].Value;
                 _columns.Each(col =>
                 {
-                    columns = Regex.Replace(columns, $"({col})\\s?([\\w_]+)?", "\"$1\" $2");
+                    columns = Regex.Replace(columns, $"({col})\\s?([\\w_]+)?", "\"$1\"$2");
                 });
 
                 var replacement = Expression.IsEmpty() ?

@@ -110,8 +110,39 @@ namespace Marten.Testing.Schema
             {
                 var patch = store.Schema.ToPatch();
 
-                patch.RollbackDDL.ShouldContain("drop index public.mt_doc_user_idx_user_name;");
-                patch.RollbackDDL.ShouldContain("CREATE INDEX mt_doc_user_idx_user_name ON mt_doc_user USING btree (user_name);");
+                patch.RollbackDDL.ShouldContain("drop index");
+                
+                patch.RollbackDDL.ShouldContain("CREATE INDEX mt_doc_user_idx_user_name");
+
+
+            }
+        }
+        
+        [Fact]
+        public void can_revert_indexes_that_changed_in_non_public_schema()
+        {
+            StoreOptions(_ =>
+            {
+                _.DatabaseSchemaName = "other";
+                _.Schema.For<User>()
+                    .Duplicate(x => x.UserName, configure: i => i.Method = IndexMethod.btree);
+            });
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.DatabaseSchemaName = "other";
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<User>()
+                    .Duplicate(x => x.UserName, configure: i => i.Method = IndexMethod.hash);
+            }))
+            {
+                var patch = store.Schema.ToPatch();
+
+                patch.RollbackDDL.ShouldContain("drop index other.mt_doc_user_idx_user_name;");
+                
+                patch.RollbackDDL.ShouldContain("CREATE INDEX mt_doc_user_idx_user_name ON other.mt_doc_user USING btree (user_name);");
+
 
             }
         }

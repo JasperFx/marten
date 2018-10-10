@@ -11,7 +11,6 @@ using Marten.Storage;
 
 namespace Marten.Events
 {
-
     public enum StreamIdentity
     {
         AsGuid,
@@ -47,15 +46,16 @@ namespace Marten.Events
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 
             InlineProjections = new ProjectionCollection(options);
-            AsyncProjections = new ProjectionCollection(options);            
+            AsyncProjections = new ProjectionCollection(options);
         }
 
         public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
 
+        public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
+
         internal StoreOptions Options { get; }
 
         internal DbObjectName Table => new DbObjectName(DatabaseSchemaName, "mt_events");
-
 
         public EventMapping EventMappingFor(Type eventType)
         {
@@ -92,7 +92,6 @@ namespace Marten.Events
             types.Each(AddEventType);
         }
 
-
         public bool IsActive(StoreOptions options) => _events.Any() || _aggregates.Any();
 
         public string DatabaseSchemaName
@@ -100,7 +99,6 @@ namespace Marten.Events
             get { return _databaseSchemaName ?? Options.DatabaseSchemaName; }
             set { _databaseSchemaName = value; }
         }
-
 
         public void AddAggregator<T>(IAggregator<T> aggregator) where T : class, new()
         {
@@ -118,7 +116,6 @@ namespace Marten.Events
                 })
                 .As<IAggregator<T>>();
         }
-
 
         public Type AggregateTypeFor(string aggregateTypeName)
         {
@@ -161,7 +158,7 @@ namespace Marten.Events
         }
 
         /// <summary>
-        /// Set default strategy to lookup IAggregator when no explicit IAggregator registration exists. 
+        /// Set default strategy to lookup IAggregator when no explicit IAggregator registration exists.
         /// </summary>
         /// <remarks>Unless called, <see cref="AggregatorLookup"/> is used</remarks>
         public void UseAggregatorLookup(IAggregatorLookup aggregatorLookup)
@@ -179,35 +176,44 @@ namespace Marten.Events
             get
             {
                 var eventsTable = new EventsTable(this);
+
+                // SAMPLE: using-sequence
                 var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
                 {
                     Owner = eventsTable.Identifier,
                     OwnerColumn = "seq_id"
                 };
+                // ENDSAMPLE
 
                 return new ISchemaObject[]
                 {
                     new StreamsTable(this),
                     eventsTable,
-                    new EventProgressionTable(DatabaseSchemaName), 
-                    sequence,  
-                    
-                    new AppendEventFunction(this), 
-                    new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"), 
+                    new EventProgressionTable(DatabaseSchemaName),
+                    sequence,
+
+                    new AppendEventFunction(this),
+                    new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
                 };
             }
         }
 
         Type IFeatureSchema.StorageType => typeof(EventGraph);
         public string Identifier { get; } = "eventstore";
+
         public void WritePermissions(DdlRules rules, StringWriter writer)
         {
             // Nothing
         }
 
-        internal string GetStreamIdType()
+        internal string GetStreamIdDBType()
         {
             return StreamIdentity == StreamIdentity.AsGuid ? "uuid" : "varchar";
+        }
+
+        internal Type GetStreamIdType()
+        {
+            return StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
         }
 
         private readonly ConcurrentDictionary<Type, string> _dotnetTypeNames = new ConcurrentDictionary<Type, string>();
@@ -228,7 +234,12 @@ namespace Marten.Events
         {
             if (!_nameToType.ContainsKey(assemblyQualifiedName))
             {
-                _nameToType[assemblyQualifiedName] = Type.GetType(assemblyQualifiedName);
+                var runtimeType = Type.GetType(assemblyQualifiedName);
+                if(runtimeType == null)
+                {
+                    throw new UnknownEventTypeException($"Unable to load event type '{assemblyQualifiedName}'.");
+                }
+                _nameToType[assemblyQualifiedName] = runtimeType;
             }
 
             return _nameToType[assemblyQualifiedName];

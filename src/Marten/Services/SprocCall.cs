@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Schema;
 using Marten.Util;
-using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Services
@@ -14,14 +13,10 @@ namespace Marten.Services
         private readonly IList<ParameterArg> _parameters = new List<ParameterArg>();
         private readonly BatchCommand _parent;
 
-
         public SprocCall(BatchCommand parent, DbObjectName function)
         {
-            if (parent == null) throw new ArgumentNullException(nameof(parent));
-            if (function == null) throw new ArgumentNullException(nameof(function));
-
-            _parent = parent;
-            _function = function;
+            _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+            _function = function ?? throw new ArgumentNullException(nameof(function));
         }
 
         // TODO -- merge this into the upsert's
@@ -88,8 +83,31 @@ namespace Marten.Services
             return Param(argName, bodies, NpgsqlDbType.Jsonb | NpgsqlDbType.Array);
         }
 
+        public SprocCall JsonBody(string argName, ArraySegment<char> body)
+        {
+            return Param(argName, body, NpgsqlDbType.Jsonb);
+        }
+
         public SprocCall Param(string argName, object value, NpgsqlDbType dbType)
         {
+            if (value is Enum)
+            {
+                if (_parent.Serializer.EnumStorage == EnumStorage.AsInteger)
+                {
+                    value = (int)value;
+                    dbType = NpgsqlDbType.Integer;
+                }
+                else
+                {
+                    value = value.ToString();
+                    dbType = NpgsqlDbType.Varchar;
+                }
+            }
+            else if (value is Guid)
+            {
+                dbType = NpgsqlDbType.Uuid;
+            }
+
             _parameters.Add(new ParameterArg(argName, value, dbType));
 
             return this;

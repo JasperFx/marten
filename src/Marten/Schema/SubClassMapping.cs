@@ -63,6 +63,7 @@ namespace Marten.Schema
         public IEnumerable<DuplicatedField> DuplicatedFields => Parent.DuplicatedFields;
         public DeleteStyle DeleteStyle => Parent.DeleteStyle;
 
+        public IDocumentMapping Root => Parent;
         public Type DocumentType { get; }
 
         public DbObjectName Table => Parent.Table;
@@ -88,7 +89,8 @@ namespace Marten.Schema
         {
             var extras = extraFilters(query).ToArray();
 
-            return query.Append(extras);
+			var extraCoumpound = new CompoundWhereFragment("and", extras);
+			return new CompoundWhereFragment("and", query, extraCoumpound);
         }
 
         private IEnumerable<IWhereFragment> extraFilters(IWhereFragment query)

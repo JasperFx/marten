@@ -32,6 +32,21 @@ namespace Marten.Storage
 
             var schemaName = expected.Identifier.Schema;
 
+            var obsoleteIndexes = actual.ActualIndices.Values.Where(x => expected.Indexes.All(_ => _.IndexName != x.Name));
+            foreach (var index in obsoleteIndexes)
+            {
+                IndexRollbacks.Add(index.DDL);
+
+                if (!index.Name.EndsWith("pkey"))
+                {
+                    IndexChanges.Add($"drop index concurrently if exists {schemaName}.{index.Name};");
+                }
+                /*                else
+                                {
+                                    IndexChanges.Add($"alter table {_tableName} drop constraint if exists {schemaName}.{index.Name};");
+                                }*/
+            }
+
             foreach (var index in expected.Indexes)
             {
                 if (actual.ActualIndices.ContainsKey(index.IndexName))
@@ -49,27 +64,10 @@ namespace Marten.Storage
                     IndexRollbacks.Add($"drop index concurrently if exists {schemaName}.{index.IndexName};");
                 }
             }
-
-
-            var obsoleteIndexes = actual.ActualIndices.Values.Where(x => expected.Indexes.All(_ => _.IndexName != x.Name));
-            foreach (var index in obsoleteIndexes)
-            {
-                IndexRollbacks.Add(index.DDL);
-
-                if (!index.Name.EndsWith("pkey"))
-                {
-                    IndexChanges.Add($"drop index concurrently if exists {schemaName}.{index.Name};");
-                }
-/*                else
-                {
-                    IndexChanges.Add($"alter table {_tableName} drop constraint if exists {schemaName}.{index.Name};");
-                }*/
-            }
         }
 
         public readonly IList<string> IndexChanges = new List<string>();
         public readonly IList<string> IndexRollbacks = new List<string>();
-
 
         public TableColumn[] Different { get; set; }
 
@@ -80,7 +78,6 @@ namespace Marten.Storage
         public TableColumn[] Missing { get; set; }
 
         public IList<ForeignKeyDefinition> MissingForeignKeys { get; } = new List<ForeignKeyDefinition>();
-
 
         public bool Matches
         {

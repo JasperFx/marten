@@ -30,5 +30,9 @@ namespace Marten.Schema
         /// Callback to be invoked after database creation
         /// </summary>
         ITenantDatabaseCreationExpressions OnDatabaseCreated(Action<NpgsqlConnection> onDbCreated);
+        /// <summary>
+        /// Create PLV8 extension for database
+        /// </summary>
+        ITenantDatabaseCreationExpressions CreatePLV8();
     }
 }

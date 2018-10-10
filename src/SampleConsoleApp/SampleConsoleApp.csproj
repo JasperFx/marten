@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net46;netcoreapp1.0;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
     <AssemblyName>SampleConsoleApp</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>SampleConsoleApp</PackageId>
@@ -13,11 +13,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Marten.CommandLine\Marten.CommandLine.csproj" />
     <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
 </Project>

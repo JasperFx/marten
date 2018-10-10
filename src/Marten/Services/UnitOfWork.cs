@@ -42,16 +42,12 @@ namespace Marten.Services
 
         public IEnumerable<IDeletion> DeletionsFor<T>()
         {
-            return _operations.ContainsKey(typeof(T)) 
-                ? _operations[typeof(T)].OfType<IDeletion>() 
-                : Enumerable.Empty<IDeletion>();
+            return operationsFor(typeof(T)).OfType<IDeletion>();
         }
 
         public IEnumerable<IDeletion> DeletionsFor(Type documentType)
         {
-            return _operations.ContainsKey(documentType) 
-                ? _operations[documentType].OfType<IDeletion>() 
-                : Enumerable.Empty<IDeletion>();
+            return operationsFor(documentType).OfType<IDeletion>();
         }
 
         public IEnumerable<object> Updates()
@@ -116,16 +112,22 @@ namespace Marten.Services
             return _events[id];
         }
 
+        private IList<IStorageOperation> operationsFor(Type documentType)
+        {
+            var storageType = _tenant.StorageFor(documentType).TopLevelBaseType;
+            return _operations.GetOrAdd(storageType, type => new List<IStorageOperation>());
+        }
+
         public void Patch(PatchOperation patch)
         {
-            var list = _operations.GetOrAdd(patch.DocumentType, type => new List<IStorageOperation>());
+            var list = operationsFor(patch.DocumentType);
 
             list.Add(patch);
         }
 
         public void StoreUpserts<T>(params T[] documents)
         {
-            var list = _operations.GetOrAdd(typeof(T), type => new List<IStorageOperation>());
+            var list = operationsFor(typeof(T));
 
             list.AddRange(documents.Select(x => new UpsertDocument(x)));
 
@@ -133,7 +135,7 @@ namespace Marten.Services
 
         public void StoreUpdates<T>(params T[] documents)
         {
-            var list = _operations.GetOrAdd(typeof(T), type => new List<IStorageOperation>());
+            var list = operationsFor(typeof(T));
 
             list.AddRange(documents.Select(x => new UpdateDocument(x)));
 
@@ -141,7 +143,7 @@ namespace Marten.Services
 
         public void StoreInserts<T>(params T[] documents)
         {
-            var list = _operations.GetOrAdd(typeof(T), type => new List<IStorageOperation>());
+            var list = operationsFor(typeof(T));
 
             list.AddRange(documents.Select(x => new InsertDocument(x)));
         }
@@ -178,7 +180,7 @@ namespace Marten.Services
         {
             var changes = buildChangeSet(batch);
 
-            await batch.ExecuteAsync(token).ConfigureAwait(false);
+            await batch.ExecuteAsync(token).ConfigureAwait(false);            
 
             ClearChanges(changes.Changes);
 
@@ -271,7 +273,7 @@ namespace Marten.Services
             }
             else
             {
-                var list = _operations.GetOrAdd(operation.DocumentType, type => new List<IStorageOperation>());
+                var list = operationsFor(operation.DocumentType);
                 list.Add(operation);
             }
 
@@ -292,12 +294,7 @@ namespace Marten.Services
 
         public bool Contains<T>(T entity)
         {
-            if (_operations.ContainsKey(typeof(T)))
-            {
-                return _operations[typeof(T)].OfType<DocumentStorageOperation>().Any(x => object.ReferenceEquals(entity, x.Document));
-            }
-
-            return false;
+            return _operations.Values.SelectMany(x => x.OfType<DocumentStorageOperation>()).Any(x => object.ReferenceEquals(entity, x.Document));
         }
 
 
@@ -316,6 +313,18 @@ namespace Marten.Services
         public EventStream StreamFor(string stream)
         {
             return _events.Values.First(x => x.Key == stream);
+        }
+
+        public void Eject<T>(T document)
+        {
+            var operations = operationsFor(typeof(T));
+            var matching = operations.OfType<DocumentStorageOperation>().Where(x => object.ReferenceEquals(document, x.Document)).ToArray();
+
+            foreach (var operation in matching)
+            {
+                operations.Remove(operation);
+            }
+           
         }
     }
 

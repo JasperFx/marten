@@ -90,6 +90,12 @@ namespace Marten.Storyteller.Fixtures
             expression(x => x.Date >= today, "x.Date >= Today");
             expression(x => x.Date <= today, "x.Date <= Today");
 
+            expression(x => !(x.Number == 1));
+            expression(x => !(x.Number > 3));
+            expression(x => !(x.Number < 3));
+            expression(x => !(x.Number <= 3));
+            expression(x => !(x.Number >= 3));
+            expression(x => !(x.Number != 3));
 
             AddSelectionValues("Expressions", _wheres.Keys.ToArray());
 
@@ -102,7 +108,7 @@ namespace Marten.Storyteller.Fixtures
         {
             if (key.IsEmpty())
             {
-                key = @where.As<LambdaExpression>().Body.ToString().TrimStart('(').TrimEnd(')').Replace(") AndAlso (", " && ").Replace(") OrElse (", " || ");
+                key = @where.As<LambdaExpression>().Body.ToString().TrimStart('(').TrimEnd(')').Replace("Not((", "Not ").Replace(") AndAlso (", " && ").Replace(") OrElse (", " || ");
             }
             _wheres.Add(key, where);
         }

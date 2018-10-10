@@ -33,6 +33,7 @@ namespace Marten.Schema
             public bool CheckAgainstCatalog { get; private set; }
             public bool KillConnections { get; private set; }
             public Action<NpgsqlConnection> OnDbCreated { get; private set; }
+            public bool CreatePLV8Extension { get; private set; }
 
             public ITenantDatabaseCreationExpressions DropExisting(bool killConnections = false)
             {
@@ -87,7 +88,13 @@ namespace Marten.Schema
             {
                 OnDbCreated = onDbCreated;
                 return this;
-            }            
+            }
+
+            public ITenantDatabaseCreationExpressions CreatePLV8()
+            {
+                CreatePLV8Extension = true;
+                return this;
+            }
 
             public override string ToString()
             {
@@ -105,8 +112,12 @@ namespace Marten.Schema
                 var config = tenantConfig.Value;
 
                 CreateDb(tenant, config);
+
+                if (config.CreatePLV8Extension)
+                {
+                    CreatePlv8Extension(tenant);
+                }
             }
-            
         }
 
         private void CreateDb(ITenant tenant, TenantDatabaseCreationExpressions config)
@@ -190,13 +201,13 @@ namespace Marten.Schema
                     cmdText =
                         $"SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '{catalog}' AND pid <> pg_backend_pid();";
                 }
-                cmdText += $"DROP DATABASE IF EXISTS {catalog};";
+                cmdText += $"DROP DATABASE IF EXISTS \"{catalog}\";";
             }
 
             using (var connection = new NpgsqlConnection(maintenanceDb))
             using (var cmd = connection.CreateCommand(cmdText))
             {
-                cmd.CommandText += $"CREATE DATABASE {catalog} WITH" + config;
+                cmd.CommandText += $"CREATE DATABASE \"{catalog}\" WITH" + config;
                 connection.Open();
                 try
                 {
@@ -208,6 +219,17 @@ namespace Marten.Schema
                     connection.Close();
                     connection.Dispose();
                 }
+            }
+        }
+
+        private static void CreatePlv8Extension(ITenant tenant)
+        {
+            using (var connection = tenant.CreateConnection())
+            using (var cmd = connection.CreateCommand("CREATE EXTENSION IF NOT EXISTS plv8"))
+            {
+                connection.Open();
+                cmd.ExecuteNonQuery();
+                connection.Close();
             }
         }
     }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Buffers;
+using System.Collections.Generic;
 using System.Linq;
 using Marten.Services;
 using Shouldly;
@@ -8,6 +10,8 @@ namespace Marten.Testing.Services
 {
     public class CharArrayTextWriterTests
     {
+        const int BigEnoughSize = 2048;
+
         [Fact]
         public void writes_single_char()
         {
@@ -53,7 +57,7 @@ namespace Marten.Testing.Services
         {
             var writer = new CharArrayTextWriter();
 
-            var s = new string('a', CharArrayTextWriter.InitialSize) + "b";
+            var s = new string('a', BigEnoughSize) + "b";
 
             writer.Write(s);
 
@@ -68,7 +72,7 @@ namespace Marten.Testing.Services
         {
             var writer = new CharArrayTextWriter();
 
-            var s = new string('a', CharArrayTextWriter.InitialSize * 8);
+            var s = new string('a', BigEnoughSize * 8);
 
             writer.Write(s);
 
@@ -78,46 +82,51 @@ namespace Marten.Testing.Services
         }
 
         [Fact]
-        public void has_offset_reset_when_returned_to_pool_via_single_release()
+        public void returns_memory_to_pool()
         {
-            var pool = new CharArrayTextWriter.Pool();
-            var writer = pool.Lease();
-            writer.Write('a');
-            pool.Release(writer);
+            using (var pool = new Pool())
+            {
+                using (var writer = new CharArrayTextWriter(pool))
+                {
+                    writer.Write("s");
+                    writer.Write("s");
+                    writer.Write("ssss");
+                    writer.Write("ssssssssss");
 
-            writer.Size.ShouldBe(0);
+                    pool.Disposed.Count.ShouldBe(3); // last one is still used
+                }
+
+                pool.Disposed.Count.ShouldBe(4);
+            }
         }
 
-        [Fact]
-        public void has_offset_reset_when_returned_to_pool_via_collection_release()
+        class Pool : MemoryPool<char>
         {
-            var pool = new CharArrayTextWriter.Pool();
-            var writer = pool.Lease();
-            writer.Write('a');
-            pool.Release(new[] { writer });
+            public List<char[]> Disposed = new List<char[]>();
+            public override IMemoryOwner<char> Rent(int minBufferSize = -1) => new Owner(this, minBufferSize);
+            public override int MaxBufferSize => int.MaxValue;
+            protected override void Dispose(bool disposing) { }
 
-            writer.Size.ShouldBe(0);
-        }
+            void Return(char[] buffer) => Disposed.Add(buffer);
 
-        [Fact]
-        public void respects_pool_hierarchy()
-        {
-            var root = new CharArrayTextWriter.Pool();
-            CharArrayTextWriter writer1, writer2;
-
-            using (var pool = new CharArrayTextWriter.Pool(root))
+            class Owner : IMemoryOwner<char>
             {
-                writer1 = pool.Lease();
-                pool.Release(writer1);
-            }
+                readonly Pool _pool;
+                readonly char[] _buffer;
 
-            using (var pool = new CharArrayTextWriter.Pool(root))
-            {
-                writer2 = pool.Lease();
-                pool.Release(writer2);
-            }
+                public Owner(Pool pool, int minBufferSize)
+                {
+                    _pool = pool;
+                    _buffer = new char[minBufferSize];
+                }
 
-            writer2.ShouldBe(writer1);
+                public void Dispose()
+                {
+                    _pool.Return(_buffer);
+                }
+
+                public Memory<char> Memory => new Memory<char>(_buffer);
+            }
         }
     }
 }

@@ -8,7 +8,6 @@ namespace Marten.Pagination
     /// <typeparam name="T"></typeparam>
     public interface IPagedList<out T>: IEnumerable<T>
     {
-
         /// <summary>
         /// Return the paged query result
         /// </summary>
@@ -19,27 +18,27 @@ namespace Marten.Pagination
         /// <summary>
         /// Return the number of records in the paged query result
         /// </summary>
-        int Count { get; }
+        long Count { get; }
 
         /// <summary>
         /// Gets current page number
         /// </summary>
-        int PageNumber { get; }
+        long PageNumber { get; }
 
         /// <summary>
         /// Gets page size
         /// </summary>
-        int PageSize { get; }
 
+        long PageSize { get; }
         /// <summary>
         /// Gets number of pages
         /// </summary>
-        int PageCount { get; }
+        long PageCount { get; }
 
         /// <summary>
         /// Gets the total number records
         /// </summary>
-        int TotalItemCount { get; }
+        long TotalItemCount { get; }
 
         /// <summary>
         /// Gets a value indicating whether there is a previous page
@@ -64,11 +63,11 @@ namespace Marten.Pagination
         /// <summary>
         /// Gets one-based index of first item in current page
         /// </summary>
-        int FirstItemOnPage { get; }
+        long FirstItemOnPage { get; }
 
         /// <summary>
         /// Gets one-based index of last item in current page
         /// </summary>
-        int LastItemOnPage { get; }
+        long LastItemOnPage { get; }
     }
 }

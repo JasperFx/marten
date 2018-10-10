@@ -13,5 +13,9 @@ namespace Marten.CommandLine.Commands.Patch
 
         [Description("Override the location of the drop file")]
         public string DropFlag { get; set; }
+
+        [Description("Option to create scripts as transactional script")]
+        [FlagAlias("transactional-script")]
+        public bool TransactionalScriptFlag { get; set; }
     }
 }

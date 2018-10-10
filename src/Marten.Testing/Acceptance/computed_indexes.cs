@@ -1,4 +1,7 @@
-﻿using System.Linq;
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Linq.Expressions;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Npgsql;
@@ -118,13 +121,44 @@ namespace Marten.Testing.Acceptance
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data.ToArray());
 
-            theStore.Tenancy.Default.DbObjects.AllIndexes()
+            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
                 .Where(x => x.Name == "mt_doc_target_idx_number")
                 .Select(x => x.DDL.ToLower())
-                .First()
-                .ShouldContain("mt_doc_target_idx_number on mt_doc_target using brin");
+                .First();
+            
+            ddl.ShouldContain("mt_doc_target_idx_number on");
+            ddl.ShouldContain("mt_doc_target using brin");
+
+
         }
-        
+
+        [Fact]
+        public void create_multi_property_index()
+        {
+            StoreOptions(_ =>
+            {
+                var columns = new Expression<Func<Target, object>>[]
+                {
+                    x => x.UserId,
+                    x => x.Flag
+                };
+                _.Schema.For<Target>().Index(columns);
+            });
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data.ToArray());
+
+            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
+                .Single(x => x.Name == "mt_doc_target_idx_user_idflag")
+                .DDL
+                .ToLower();
+
+
+            ddl.ShouldContain("index mt_doc_target_idx_user_idflag");
+
+            ddl.ShouldContain("((((data ->> 'userid'::text))::uuid), (((data ->> 'flag'::text))::boolean))");
+        }
+
         [Fact]
         public void creating_index_using_date_should_work()
         {
@@ -136,11 +170,13 @@ namespace Marten.Testing.Acceptance
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data.ToArray());
 
-            theStore.Tenancy.Default.DbObjects.AllIndexes()
+            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
                 .Where(x => x.Name == "mt_doc_target_idx_date")
                 .Select(x => x.DDL.ToLower())
-                .First()
-                .ShouldContain("mt_doc_target_idx_date on mt_doc_target");
+                .First();
+
+                ddl.ShouldContain("mt_doc_target_idx_date on");
+                ddl.ShouldContain("mt_doc_target_idx_date");
         }
 
         [Fact]

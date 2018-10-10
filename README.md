@@ -4,7 +4,7 @@
 [![Join the chat at https://gitter.im/JasperFx/Marten](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JasperFx/Marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/jasperfx/marten?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten)
 [![Linux Build status](https://api.travis-ci.org/JasperFx/marten.svg)](https://travis-ci.org/JasperFx/marten)
-[![Nuget Package](https://img.shields.io/nuget/v/Marten.svg?style=flat)](https://www.nuget.org/packages/Marten/)
+[![Nuget Package](https://badgen.net/nuget/v/marten)](https://www.nuget.org/packages/Marten/)
 
 ![marten logo](http://jasperfx.github.io/marten/content/images/banner.png)
 
@@ -21,6 +21,7 @@ Before getting started you will need the following in your environment:
 * An environment variable of `marten_testing_database` set to the connection string for the database you want to use as a testbed. (See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about PostgreSQL connection strings )
 * You will also need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support. See
 [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries for PLV8 running on Windows
+* You will also need to make sure that the login you are using to connect to your databasee is a member of the `postgres` role
 * Ensure you have installed [.NET Core SDK 2.0](https://www.microsoft.com/net/download/core)
 * Once you have the codebase and the connection string file, run the rake script or use the dotnet CLI to restore and build the solution.
 

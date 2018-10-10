@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using FastExpressionCompiler;
+using Marten.Util;
 
 namespace Marten.Events.Projections
 {
@@ -14,7 +14,7 @@ namespace Marten.Events.Projections
         {
             if (method.GetParameters().Length != 1 
                 || method.GetParameters().Single().ParameterType != typeof (TEvent) 
-                || method.DeclaringType != typeof (T))
+                || !method.DeclaringType.IsAssignableFrom(typeof(T)))
             {
                 throw new ArgumentOutOfRangeException($"Method {method.Name} on {method.DeclaringType} cannot be used as an aggregation method");
             }

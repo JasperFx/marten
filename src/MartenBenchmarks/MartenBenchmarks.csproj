@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <AssemblyName>MartenBenchmarks</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>MartenBenchmarks</PackageId>
@@ -13,14 +12,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.10.9" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.10.14" />
   </ItemGroup>
 
 </Project>

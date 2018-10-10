@@ -37,6 +37,22 @@ var store = DocumentStore.For(_ =>
             // ENDSAMPLE
         }
 
+	    [Fact]
+	    public void DefaultAutoCreateShouldBeCreateOrUpdate()
+	    {
+		    var settings = new StoreOptions();			
+
+			Assert.Equal(AutoCreate.CreateOrUpdate, settings.AutoCreateSchemaObjects);
+	    }
+
+		[Fact]
+	    public void DefaultAutoCreateShouldBeCreateOrUpdateWhenProvidingNoConfig()
+		{
+			var store = DocumentStore.For("");
+
+			Assert.Equal(AutoCreate.CreateOrUpdate, store.Options.AutoCreateSchemaObjects);
+	    }
+
         [Fact]
         public void cannot_add_fields_if_mode_is_create_only()
         {

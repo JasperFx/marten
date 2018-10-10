@@ -42,7 +42,6 @@ namespace Marten.Services.BatchQuerying
             return load<T>(id);
         }
 
-
         public IBatchLoadByKeys<TDoc> LoadMany<TDoc>() where TDoc : class
         {
             return new BatchLoadByKeys<TDoc>(this);
@@ -130,13 +129,12 @@ namespace Marten.Services.BatchQuerying
             where T : class, new()
         {
             var inner = new EventQueryHandler<Guid>(new EventSelector(_store.Events, _store.Serializer), streamId, version,
-                timestamp);
+                timestamp, _store.Events.TenancyStyle, _parent.Tenant.TenantId);
             var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner);
 
             return AddItem(handler, null);
         }
-
 
         public Task<IEvent> Load(Guid id)
         {
@@ -146,14 +144,14 @@ namespace Marten.Services.BatchQuerying
 
         public Task<StreamState> FetchStreamState(Guid streamId)
         {
-            var handler = new StreamStateByGuidHandler(_store.Events, streamId);
+            var handler = new StreamStateByGuidHandler(_store.Events, streamId, _parent.Tenant.TenantId);
             return AddItem(handler, null);
         }
 
         public Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
         {
             var selector = new EventSelector(_store.Events, _store.Serializer);
-            var handler = new EventQueryHandler<Guid>(selector, streamId, version, timestamp);
+            var handler = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _store.Events.TenancyStyle, _parent.Tenant.TenantId);
 
             return AddItem(handler, null);
         }
@@ -193,7 +191,6 @@ namespace Marten.Services.BatchQuerying
             var expression = queryable.Expression;
 
             var query = QueryParser.GetParsedQuery(expression);
-
 
             return AddItem(new LinqQuery<T>(_store, query, queryable.Includes.ToArray(), queryable.Statistics).ToList(), queryable.Statistics);
         }

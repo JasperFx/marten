@@ -11,12 +11,24 @@ namespace Marten.Services
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;
         private readonly int _commandTimeout;
+        private readonly bool _ownsConnection;
 
-        public TransactionState(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout)
+        public TransactionState(CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout, NpgsqlConnection connection, bool ownsConnection, NpgsqlTransaction transaction = null)
+        {
+            _mode = mode;
+            _isolationLevel = isolationLevel;
+            _commandTimeout = commandTimeout;
+            _ownsConnection = ownsConnection;
+            Transaction = transaction;
+            Connection = connection;
+        }
+
+        public TransactionState(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout, bool ownsConnection)
         {
             _mode = mode;
             _isolationLevel = isolationLevel;
             this._commandTimeout = commandTimeout;
+            _ownsConnection = ownsConnection;
             Connection = factory.Create();
         }
 
@@ -24,11 +36,20 @@ namespace Marten.Services
 
         public void Open()
         {
+            if (IsOpen)
+            {
+                return;
+            }
+
             Connection.Open();
         }
 
         public Task OpenAsync(CancellationToken token)
         {
+            if (IsOpen)
+            {
+                return Task.CompletedTask;
+            }
             return Connection.OpenAsync(token);
         }
 
@@ -36,7 +57,7 @@ namespace Marten.Services
 
         public void BeginTransaction()
         {
-            if (Transaction != null) return;
+            if (Transaction != null || _mode == CommandRunnerMode.External) return;
 
             if (_mode == CommandRunnerMode.Transactional || _mode == CommandRunnerMode.ReadOnly)
             {
@@ -63,32 +84,41 @@ namespace Marten.Services
         public NpgsqlTransaction Transaction { get; private set; }
 
         public NpgsqlConnection Connection { get; }
-        
+
         public void Commit()
         {
-            Transaction?.Commit();
-            Transaction?.Dispose();
-            Transaction = null;
+            if (_mode != CommandRunnerMode.External)
+            {
+                Transaction?.Commit();
+                Transaction?.Dispose();
+                Transaction = null;
+            }
 
-            Connection.Close();
+            if (_ownsConnection)
+            {
+                Connection.Close();
+            }
         }
 
         public async Task CommitAsync(CancellationToken token)
         {
-            if (Transaction != null)
+            if (Transaction != null && _mode != CommandRunnerMode.External)
             {
                 await Transaction.CommitAsync(token).ConfigureAwait(false);
 
                 Transaction.Dispose();
                 Transaction = null;
+            }
 
+            if (_ownsConnection)
+            {
                 Connection.Close();
             }
         }
 
         public void Rollback()
         {
-            if (Transaction != null && !Transaction.IsCompleted)
+            if (Transaction != null && !Transaction.IsCompleted && _mode != CommandRunnerMode.External)
             {
                 try
                 {
@@ -109,7 +139,7 @@ namespace Marten.Services
 
         public async Task RollbackAsync(CancellationToken token)
         {
-            if (Transaction != null && !Transaction.IsCompleted)
+            if (Transaction != null && !Transaction.IsCompleted && _mode != CommandRunnerMode.External)
             {
                 try
                 {
@@ -130,12 +160,17 @@ namespace Marten.Services
 
         public void Dispose()
         {
-            Transaction?.Dispose();
-            Transaction = null;
+            if (_mode != CommandRunnerMode.External)
+            {
+                Transaction?.Dispose();
+                Transaction = null;
+            }
 
-
-            Connection.Close();
-            Connection.Dispose();
+            if (_ownsConnection)
+            {
+                Connection.Close();
+                Connection.Dispose();
+            }
         }
 
         public NpgsqlCommand CreateCommand()

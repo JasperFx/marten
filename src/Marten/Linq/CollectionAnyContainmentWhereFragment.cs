@@ -1,15 +1,16 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using Baseline;
 using Marten.Util;
-using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
-using System.Reflection;
 
 namespace Marten.Linq
 {
@@ -20,7 +21,6 @@ namespace Marten.Linq
         private readonly MemberInfo[] _members;
         private readonly ISerializer _serializer;
         private readonly SubQueryExpression _expression;
-
 
         public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression)
         {
@@ -93,7 +93,6 @@ namespace Marten.Linq
                 var search = new Dictionary<string, object>();
                 binaryExpressions.Each(x => gatherSearch(x, search));
 
-
                 if (_members.Length == 1)
                 {
                     dictionary.Add(_members.Single().Name, new[] { search });
@@ -110,17 +109,13 @@ namespace Marten.Linq
                         current = dict;
                     }
 
-                    current.Add(_members.Last().Name, new [] {search});
+                    current.Add(_members.Last().Name, new[] { search });
                 }
             }
-
-
-
 
             var json = _serializer.ToCleanJson(dictionary);
             var param = command.AddParameter(json);
             param.NpgsqlDbType = NpgsqlDbType.Jsonb;
-
 
             yield return $"d.data @> :{param.ParameterName}";
         }
@@ -161,7 +156,19 @@ namespace Marten.Linq
             {
                 throwNotSupportedContains();
             }
-            var fromParam = command.AddParameter(from.Value);
+
+            //TODO: this won't work for enumeration types. Only works with strings, so we have
+            // to exactly map the ToString() like the underlying serializer would. Blech.
+            var values = new List<string>();
+            
+            var enumerable = ((System.Collections.IEnumerable)from.Value);
+
+            foreach (var obj in enumerable)
+            {
+                values.Add(obj.ToString());
+            }
+
+            var fromParam = command.AddParameter(values.ToArray());
             fromParam.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Text;
 
             // check/build lhs of ?|
@@ -210,6 +217,5 @@ namespace Marten.Linq
             }
             return false;
         }
-
     }
 }

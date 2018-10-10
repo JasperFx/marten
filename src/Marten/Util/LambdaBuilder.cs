@@ -2,9 +2,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Baseline;
-using FastExpressionCompiler;
 
 namespace Marten.Util
 {
@@ -41,7 +39,6 @@ namespace Marten.Util
             return ExpressionCompiler.Compile<Action<TTarget, TProperty>>(lambda);
         }
 
-
         public static Func<TTarget, TField> GetField<TTarget, TField>(FieldInfo field)
         {
             var target = Expression.Parameter(typeof(TTarget), "target");
@@ -62,7 +59,6 @@ namespace Marten.Util
                 : GetField<TTarget, TMember>(member.As<FieldInfo>());
         }
 
-
         public static Action<TTarget, TField> SetField<TTarget, TField>(FieldInfo field)
         {
             var target = Expression.Parameter(typeof(TTarget), "target");
@@ -75,7 +71,6 @@ namespace Marten.Util
 
             return ExpressionCompiler.Compile<Action<TTarget, TField>>(lambda);
         }
-
 
         public static Action<TTarget, TMember> Setter<TTarget, TMember>(MemberInfo member)
         {
@@ -100,9 +95,8 @@ namespace Marten.Util
             return ExpressionCompiler.Compile<Func<TTarget, TValue>>(lambda);
         }
 
-
-
-        private static readonly MethodInfo _getName = typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public);
+        private static readonly MethodInfo _getEnumStringValue = typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public);
+        private static readonly MethodInfo _getEnumIntValue = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public).Single(mi => mi.Name == nameof(Convert.ToInt32) && mi.GetParameters().Count() == 1 && mi.GetParameters().Single().ParameterType == typeof(object));
 
         public static Expression ToExpression(EnumStorage enumStorage, MemberInfo[] members, ParameterExpression target)
         {
@@ -123,9 +117,16 @@ namespace Marten.Util
                 }
 
                 var memberType = members.Last().GetMemberType();
-                if (memberType.GetTypeInfo().IsEnum && enumStorage == EnumStorage.AsString)
+                if (memberType.GetTypeInfo().IsEnum)
                 {
-                    body = Expression.Call(_getName, Expression.Constant(memberType), Expression.Convert(body, typeof(object)));
+                    if (enumStorage == EnumStorage.AsString)
+                    {
+                        body = Expression.Call(_getEnumStringValue, Expression.Constant(memberType), Expression.Convert(body, typeof(object)));
+                    }
+                    else
+                    {
+                        body = Expression.Call(_getEnumIntValue, Expression.Convert(body, typeof(object)));
+                    }
                 }
             }
 
