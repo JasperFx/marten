@@ -256,8 +256,7 @@ namespace Marten
             switch (tracking)
             {
                 case DocumentTracking.None:
-                    return new NulloIdentityMap(Serializer);
-
+                    return new NulloIdentityMap(Serializer, Options.Listeners.Concat(localListeners));
                 case DocumentTracking.IdentityOnly:
                     return new IdentityMap(Serializer, Options.Listeners.Concat(localListeners));
 
@@ -299,7 +298,7 @@ namespace Marten
 
             var session = new QuerySession(this,
                 connection, parser,
-                new NulloIdentityMap(Serializer), tenant);
+                new NulloIdentityMap(Serializer, Options.Listeners), tenant);
 
             connection.BeginSession();
 
@@ -322,7 +321,7 @@ namespace Marten
 
             var session = new QuerySession(this,
                 connection, parser,
-                new NulloIdentityMap(Serializer), tenant);
+                new NulloIdentityMap(Serializer, Options.Listeners), tenant);
 
             connection.BeginSession();
 

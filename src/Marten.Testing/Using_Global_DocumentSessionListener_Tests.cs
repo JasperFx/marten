@@ -362,6 +362,42 @@ namespace Marten.Testing
             }
         }
 
+        [Fact]
+        public void call_listener_events_on_document_load_with_lightweightsession()
+        {
+            var stub1 = new StubDocumentSessionListener();
+            var stub2 = new StubDocumentSessionListener();
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+
+                _.Listeners.Add(stub1);
+                _.Listeners.Add(stub2);
+            }))
+            {
+                store.Advanced.Clean.CompletelyRemoveAll();
+
+                var user1 = new User { Id = Guid.NewGuid() };
+                var user2 = new User { Id = Guid.NewGuid() };
+
+                using (var session = store.OpenSession())
+                {
+                    session.StoreObjects(new[] { user1, user2 });
+                    session.SaveChanges();
+                }
+
+                // DocumentLoaded event should work fine with LightWeightSession
+                using (var session = store.LightweightSession())
+                {
+                    var user = session.Load<User>(user1.Id);
+
+                    stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, user);
+                    stub2.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, user);
+                }
+            }
+        }
     }
 
     public class StubDocumentSessionListener : DocumentSessionListenerBase
