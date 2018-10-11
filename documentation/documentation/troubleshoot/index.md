@@ -19,3 +19,8 @@ While it's possible to accommodate any serialization schemes by implementing a c
 
 If you don't want PLV8 (required for Javascript transformations) related items in your database schema, you can disable PLV8 alltogether by setting `StoreOptions.PLV8Enabled` to false.
 
+**Marten isn't giving me the diagnostic data that I need**
+
+If you cannot obtain the desired diagnostic data through Marten's <[linkto:documentation/documents/diagnostics;title=diagnostics]>, consider using the [Npgsql logging facilities](https://www.npgsql.org/doc/logging.html), by hooking into `NpgsqlLogManager.Provider`, or by using the [performance counters exposed by Npgsql](https://www.npgsql.org/doc/performance.html).
+
+Lastly, if you feel that exposing the data should be the responsibility of Marten, consider [filing a feature requset](https://github.com/JasperFx/marten/issues/new).
