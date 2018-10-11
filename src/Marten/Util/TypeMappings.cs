@@ -30,11 +30,11 @@ namespace Marten.Util
             }
 
             // Update or add the following PgTypes mappings to be inline with what we had earlier
-            // This not available in Npgsql mappings
+            // This is not available in Npgsql mappings
             PgTypes[typeof(long)] = "bigint";
-            // This not available in Npgsql mappings
+            // This is not available in Npgsql mappings
             PgTypes[typeof(string)] = "varchar";
-            // This not available in Npgsql mappings
+            // This is not available in Npgsql mappings
             PgTypes[typeof(float)] = "decimal";
 
             // Default Npgsql mapping is 'numeric' but we are using 'decimal'
