@@ -11,45 +11,36 @@ namespace Marten.Util
 {
     public static class TypeMappings
     {
-        private static readonly Dictionary<Type, string> PgTypes = new Dictionary<Type, string>
-        {
-            {typeof (int), "integer"},
-            {typeof (long), "bigint"},
-            {typeof (Guid), "uuid"},
-            {typeof (string), "varchar"},
-            {typeof (Boolean), "boolean"},
-            {typeof (double), "double precision"},
-            {typeof (decimal), "decimal"},
-            {typeof (float), "decimal" },
-            {typeof (DateTime), "timestamp without time zone" },
-            {typeof (DateTimeOffset), "timestamp with time zone"},
-            {typeof (IDictionary<,>), "jsonb" },
-        };
-
-        private static readonly Func<Type, NpgsqlDbType> _getNpgsqlDbType;
+        private static readonly Dictionary<Type, string> PgTypes;
+        private static readonly Dictionary<Type, NpgsqlDbType?> TypeToNpgsqlDbType;
 
         static TypeMappings()
         {
-            var type = Type.GetType("Npgsql.TypeMapping.GlobalTypeMapper, Npgsql");
-            var getNgpsqlDbTypeMethod = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
-                .FirstOrDefault(
-                    x =>
-                        x.Name == "ToNpgsqlDbType" && x.GetParameters().Count() == 1 &&
-                        x.GetParameters().Single().ParameterType == typeof(Type));
+            // Create the CLR type type to NpgsqlDbType and PgTypeName mapping from exposed INpgsqlTypeMapper.Mappings
+            PgTypes = new Dictionary<Type, string>();
+            TypeToNpgsqlDbType = new Dictionary<Type, NpgsqlDbType?>();
 
-            _getNpgsqlDbType = (Type clrType) =>
+            foreach (var mapping in NpgsqlConnection.GlobalTypeMapper.Mappings)
             {
-                try
+                foreach (var t in mapping.ClrTypes)
                 {
-                    return (NpgsqlDbType)getNgpsqlDbTypeMethod.Invoke(
-                        NpgsqlConnection.GlobalTypeMapper,
-                        new object[] { clrType });
+                    TypeToNpgsqlDbType[t] = mapping.NpgsqlDbType;
+                    PgTypes[t] = mapping.PgTypeName;
                 }
-                catch (Exception)
-                {
-                    return NpgsqlDbType.Integer;
-                }
-            };
+            }
+
+            // Update or add the following PgTypes mappings to be inline with what we had earlier
+            // This not available in Npgsql mappings
+            PgTypes[typeof(long)] = "bigint";
+            // This not available in Npgsql mappings
+            PgTypes[typeof(string)] = "varchar";
+            // This not available in Npgsql mappings
+            PgTypes[typeof(float)] = "decimal";
+
+            // Default Npgsql mapping is 'numeric' but we are using 'decimal'
+            PgTypes[typeof(decimal)] = "decimal";
+            // Default Npgsql mappings is 'timestamp' but we are using 'timestamp without time zone'
+            PgTypes[typeof (DateTime)] = "timestamp without time zone";
         }
 
         public static string ConvertSynonyms(string type)
@@ -126,14 +117,42 @@ namespace Marten.Util
                 .Replace("  ", " ").TrimEnd().TrimEnd(';');
         }
 
+        /// <summary>
+        /// Some portion of implementation adapted from Npgsql GlobalTypeMapper.ToNpgsqlDbType(Type type)
+        /// https://github.com/npgsql/npgsql/blob/dev/src/Npgsql/TypeMapping/GlobalTypeMapper.cs
+        /// Possibly this method can be trimmed down when Npgsql eventually exposes ToNpgsqlDbType
+        /// </summary>
         public static NpgsqlDbType ToDbType(Type type)
         {
+            if (TypeToNpgsqlDbType.TryGetValue(type, out NpgsqlDbType? npgsqlDbType))
+            {
+                return npgsqlDbType.Value;
+            }
+
             if (type.IsNullable()) return ToDbType(type.GetInnerTypeFromNullable());
 
             if (type.IsEnum) return NpgsqlDbType.Integer;
 
-            var npgsqlDbType = _getNpgsqlDbType(type);
-            return npgsqlDbType;
+            if (type.IsArray)
+            {
+                if (type == typeof(byte[]))
+                    return NpgsqlDbType.Bytea;
+                return NpgsqlDbType.Array | ToDbType(type.GetElementType());
+            }
+
+            var typeInfo = type.GetTypeInfo();
+
+            var ilist = typeInfo.ImplementedInterfaces.FirstOrDefault(x => x.GetTypeInfo().IsGenericType && x.GetGenericTypeDefinition() == typeof(IList<>));
+            if (ilist != null)
+                return NpgsqlDbType.Array | ToDbType(ilist.GetGenericArguments()[0]);
+
+            if (typeInfo.IsGenericType && type.GetGenericTypeDefinition() == typeof(NpgsqlRange<>))
+                return NpgsqlDbType.Range | ToDbType(type.GetGenericArguments()[0]);
+
+            if (type == typeof(DBNull))
+                return NpgsqlDbType.Unknown;
+
+            throw new NotSupportedException("Can't infer NpgsqlDbType for type " + type);
         }
 
         public static string GetPgType(Type memberType, EnumStorage enumStyle)
