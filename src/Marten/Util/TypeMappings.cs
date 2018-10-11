@@ -16,7 +16,7 @@ namespace Marten.Util
 
         static TypeMappings()
         {
-            // Create the CLR type type to NpgsqlDbType and PgTypeName mapping from exposed INpgsqlTypeMapper.Mappings
+            // Create the CLR type to NpgsqlDbType and PgTypeName mapping from exposed INpgsqlTypeMapper.Mappings
             PgTypes = new Dictionary<Type, string>();
             TypeToNpgsqlDbType = new Dictionary<Type, NpgsqlDbType?>();
 
