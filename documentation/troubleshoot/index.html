@@ -128,6 +128,9 @@
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(storeOptions =&gt;&#xD;&#xA;{&#xD;&#xA;    // Change default casing to CamelCase&#xD;&#xA;    storeOptions.UseDefaultSerialization(casing: Casing.CamelCase);&#xD;&#xA;</code></pre> 	
 <p><strong>How do I disable PLV8?</strong></p>
 <p>If you don't want PLV8 (required for Javascript transformations) related items in your database schema, you can disable PLV8 alltogether by setting <code>StoreOptions.PLV8Enabled</code> to false.</p>
+<p><strong>Marten isn't giving me the diagnostic data that I need</strong></p>
+<p>If you cannot obtain the desired diagnostic data through Marten's <a href="/marten/documentation/documents/diagnostics">diagnostics</a>, consider using the <a href="https://www.npgsql.org/doc/logging.html">Npgsql logging facilities</a>, by hooking into <code>NpgsqlLogManager.Provider</code>, or by using the <a href="https://www.npgsql.org/doc/performance.html">performance counters exposed by Npgsql</a>.</p>
+<p>Lastly, if you feel that exposing the data should be the responsibility of Marten, consider <a href="https://github.com/JasperFx/marten/issues/new">filing a feature requset</a>.</p>
 
 			      	</div>
 
