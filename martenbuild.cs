@@ -81,8 +81,8 @@ namespace martenbuild
                     Run("git", $"clone -b gh-pages https://github.com/jasperfx/marten.git {docTargetDir}");
 
                     // if you are not using git --global config, uncomment the block below, update and use it
-                    // Run("git", "config user.email email_address");
-                    // Run("git", "config user.name your_name");
+                    // Run("git", "config user.email email_address", docTargetDir);
+                    // Run("git", "config user.name your_name", docTargetDir);
                 }
                 else
                 {
