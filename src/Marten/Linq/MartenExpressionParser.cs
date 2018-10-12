@@ -74,6 +74,7 @@ namespace Marten.Linq
             new EqualsIgnoreCaseParser(),
             new IsInGenericEnumerable(),
             new IsEmpty(),
+            new IsSupersetOf(),
 
             // multi-tenancy
             new AnyTenant(),

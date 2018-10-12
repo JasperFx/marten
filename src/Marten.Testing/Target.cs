@@ -124,6 +124,7 @@ namespace Marten.Testing
 
         public int[] NumberArray { get; set; }
 
+        public string[] Tags { get; set; }
 
         public Target[] Children { get; set; }
 

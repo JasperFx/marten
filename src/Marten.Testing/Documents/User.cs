@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Baseline;
 
 namespace Marten.Testing.Documents
@@ -76,5 +76,11 @@ namespace Marten.Testing.Documents
     public class UserWithNicknames
     {
         public string[] Nicknames { get; set; }
+    }
+
+    public class Post
+    {
+        public Guid Id { get; set; }
+        public string[] Tags { get; set; }
     }
 }
