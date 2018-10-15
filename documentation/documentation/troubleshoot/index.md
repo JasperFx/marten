@@ -9,6 +9,11 @@
 | `DirtyTrackedSession` | Track all changes to objects, `DocumentTracking.DirtyTracking`, with the default isolation level of *Read Committed*. | Reading & writing data. Tracks all changes to objects loaded through a session. Upon save (`IDocumentSession.SaveChanges`), Marten updates the changed objects without requiring explicit calls to `IDocumentSession.Update` or `IDocumentSession.Store`. Incurs the largest overhead of tracked sessions.  |
 | `QuerySession`        | No identity mapping with the default isolation level of *Read Committed*.   | Reading data, i.e. no insert or update operations are exposed. |
 
+**My query throws a `NotSupportedException` exception. Why? What to do?**
+
+Marten needs to translate LINQ queries to SQL in order to execute them against the database. This translation requires explicit support for all the query operators that are used. If your query operation is not covered, Marten will throw a `NotSupportedException`. In such a case, consider [filing a feature requset](https://github.com/JasperFx/marten/issues/new). Lastly, as a mitigation, consider 
+<[linkto:documentation/documents/querying/sql;title=hand-crafting the required query]>.
+
 **How do I serialize to Camel case?**
 
 While it's possible to accommodate any serialization schemes by implementing a custom `ISerializer`, Marten's built-in serializer (Json.Net) can be set to serialize to Camel case through `StoreOptions.UseDefaultSerialization`:
