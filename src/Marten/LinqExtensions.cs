@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 
@@ -18,6 +18,31 @@ namespace Marten
             return matches.Contains(variable);
         }
 
+        /// <summary>
+        /// Used for Linq queries to determines whether an element is a superset of the specified collection
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumerable"></param>
+        /// <param name="items"></param>
+        /// <returns></returns>
+        public static bool IsSupersetOf<T>(this IEnumerable<T> enumerable, params T[] items)
+        {
+            var hashSet = new HashSet<T>(enumerable);
+            return hashSet.IsSupersetOf(items);
+        }
+
+        /// <summary>
+        /// Used for Linq queries to determines whether an element is a superset of the specified collection
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumerable"></param>
+        /// <param name="items"></param>
+        /// <returns></returns>
+        public static bool IsSupersetOf<T>(this IEnumerable<T> enumerable, IEnumerable<T> items)
+        {
+            var hashSet = new HashSet<T>(enumerable);
+            return hashSet.IsSupersetOf(items);
+        }
 
         /// <summary>
         /// Used for Linq queries to match on empty child collections

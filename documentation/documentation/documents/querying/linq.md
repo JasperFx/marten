@@ -189,6 +189,10 @@ To find one of for an array you can use this strategy:
 
 <[sample:is_one_of_array]>
 
+## IsSupersetOf
+
+<[sample:is_superset_of]>
+
 ## Modulo Queries
 
 Marten v0.8 added the ability to use the modulo operator in Linq queries:
