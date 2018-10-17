@@ -11,7 +11,7 @@
 
 **My query throws a `NotSupportedException` exception. Why? What to do?**
 
-Marten needs to translate LINQ queries to SQL in order to execute them against the database. This translation requires explicit support for all the query operators that are used. If your query operation is not covered, Marten will throw a `NotSupportedException`. In such a case, consider [filing a feature requset](https://github.com/JasperFx/marten/issues/new). Lastly, as a mitigation, consider 
+Marten needs to translate LINQ queries to SQL in order to execute them against the database. This translation requires explicit support for all the query operators that are used. If your query operation is not covered, Marten will throw a `NotSupportedException`. In such a case, consider [filing a feature request](https://github.com/JasperFx/marten/issues/new). Lastly, as a mitigation, consider 
 <[linkto:documentation/documents/querying/sql;title=hand-crafting the required query]>.
 
 **How do I serialize to Camel case?**
@@ -22,10 +22,10 @@ While it's possible to accommodate any serialization schemes by implementing a c
 
 **How do I disable PLV8?**
 
-If you don't want PLV8 (required for Javascript transformations) related items in your database schema, you can disable PLV8 alltogether by setting `StoreOptions.PLV8Enabled` to false.
+If you don't want PLV8 (required for JavaScript transformations) related items in your database schema, you can disable PLV8 altogether by setting `StoreOptions.PLV8Enabled` to false.
 
 **Marten isn't giving me the diagnostic data that I need**
 
 If you cannot obtain the desired diagnostic data through Marten's <[linkto:documentation/documents/diagnostics;title=diagnostics]>, consider using the [Npgsql logging facilities](https://www.npgsql.org/doc/logging.html), by hooking into `NpgsqlLogManager.Provider`, or by using the [performance counters exposed by Npgsql](https://www.npgsql.org/doc/performance.html).
 
-Lastly, if you feel that exposing the data should be the responsibility of Marten, consider [filing a feature requset](https://github.com/JasperFx/marten/issues/new).
+Lastly, if you feel that exposing the data should be the responsibility of Marten, consider [filing a feature request](https://github.com/JasperFx/marten/issues/new).
