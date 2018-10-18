@@ -75,6 +75,7 @@ namespace Marten
             Options = options;
             _logger = options.Logger();
             Serializer = options.Serializer();
+            _retryPolicy = options.RetryPolicy();
 
             if (options.CreateDatabases != null)
             {
@@ -113,6 +114,7 @@ namespace Marten
 
         private readonly IMartenLogger _logger;
         private readonly MemoryPool<char> _writerPool;
+        private readonly IRetryPolicy _retryPolicy;
 
         public StorageFeatures Storage => Options.Storage;
 
@@ -188,7 +190,7 @@ namespace Marten
 
             var tenant = Tenancy[options.TenantId];
 
-            var connection = buildManagedConnection(options, tenant, CommandRunnerMode.Transactional);
+            var connection = buildManagedConnection(options, tenant, CommandRunnerMode.Transactional, _retryPolicy);
 
             var session = new DocumentSession(this, connection, _parser, map, tenant, options.ConcurrencyChecks, options.Listeners);
             connection.BeginSession();
@@ -199,7 +201,7 @@ namespace Marten
         }
 
         private static IManagedConnection buildManagedConnection(SessionOptions options, ITenant tenant,
-            CommandRunnerMode commandRunnerMode)
+            CommandRunnerMode commandRunnerMode, IRetryPolicy retryPolicy)
         {
             // TODO -- this is all spaghetti code. Make this some kind of more intelligent state machine
             // w/ the logic encapsulated into SessionOptions
@@ -242,7 +244,7 @@ namespace Marten
             }
             else
             {
-                return new ManagedConnection(options, commandRunnerMode);
+                return new ManagedConnection(options, commandRunnerMode, retryPolicy);
             }
         }
 
@@ -294,7 +296,7 @@ namespace Marten
 
             var tenant = Tenancy[options.TenantId];
 
-            var connection = buildManagedConnection(options, tenant, CommandRunnerMode.ReadOnly);
+            var connection = buildManagedConnection(options, tenant, CommandRunnerMode.ReadOnly, _retryPolicy);
 
             var session = new QuerySession(this,
                 connection, parser,

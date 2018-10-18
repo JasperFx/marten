@@ -12,7 +12,7 @@ namespace Marten.Testing.Services
         [Fact]
         public async Task increments_the_request_count()
         {
-            using (var connection = new ManagedConnection(new ConnectionSource()))
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()))
             {
                 connection.RequestCount.ShouldBe(0);
 
@@ -56,7 +56,7 @@ namespace Marten.Testing.Services
         {
             var ex = new DivideByZeroException();
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 Exception<DivideByZeroException>.ShouldBeThrownBy(() =>
                 {
@@ -78,7 +78,7 @@ namespace Marten.Testing.Services
         {
             var ex = new DivideByZeroException();
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 await Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
                 {
@@ -102,7 +102,7 @@ namespace Marten.Testing.Services
         {
             var ex = new DivideByZeroException();
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 var cmd = new NpgsqlCommand();
 
@@ -121,7 +121,7 @@ namespace Marten.Testing.Services
         {
             var ex = new DivideByZeroException();
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 var cmd = new NpgsqlCommand();
 
@@ -144,7 +144,7 @@ namespace Marten.Testing.Services
         public void log_execute_success_1()
         {
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 connection.Execute(c => c.CommandText = "do something");
 
@@ -157,7 +157,7 @@ namespace Marten.Testing.Services
         public async Task log_execute_success_1_async()
         {
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 await connection.ExecuteAsync(async (c, tkn) =>
                 {
@@ -174,7 +174,7 @@ namespace Marten.Testing.Services
         public void log_execute_success_2()
         {
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 var cmd = new NpgsqlCommand();
                 connection.Execute(cmd, c => c.CommandText = "do something");
@@ -188,7 +188,7 @@ namespace Marten.Testing.Services
         public async Task log_execute_success_2_async()
         {
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 var cmd = new NpgsqlCommand();
                 await connection.ExecuteAsync(cmd, async (c, tkn) =>
@@ -206,7 +206,7 @@ namespace Marten.Testing.Services
         public void log_execute_success_with_answer_1()
         {
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 connection.Execute(c =>
                 {
@@ -223,7 +223,7 @@ namespace Marten.Testing.Services
         public async Task log_execute_success_with_answer_1_async()
         {
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 await connection.Execute(async c =>
                 {
@@ -241,7 +241,7 @@ namespace Marten.Testing.Services
         public void log_execute_success_with_answer_2()
         {
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 var cmd = new NpgsqlCommand();
                 connection.Execute(cmd, c => "something");
@@ -255,7 +255,7 @@ namespace Marten.Testing.Services
         public async Task log_execute_success_with_answer_2_async()
         {
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 var cmd = new NpgsqlCommand();
                 await connection.ExecuteAsync(cmd, async (c, tkn) =>
@@ -273,7 +273,7 @@ namespace Marten.Testing.Services
         {
             var ex = new DivideByZeroException();
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 Exception<DivideByZeroException>.ShouldBeThrownBy(() =>
                 {
@@ -295,7 +295,7 @@ namespace Marten.Testing.Services
         {
             var ex = new DivideByZeroException();
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 await Exception<DivideByZeroException>.ShouldBeThrownByAsync(async () =>
                 {
@@ -319,7 +319,7 @@ namespace Marten.Testing.Services
         {
             var ex = new DivideByZeroException();
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 var cmd = new NpgsqlCommand();
 
@@ -340,7 +340,7 @@ namespace Marten.Testing.Services
         {
             var ex = new DivideByZeroException();
             var logger = new RecordingLogger();
-            using (var connection = new ManagedConnection(new ConnectionSource()) {Logger = logger})
+            using (var connection = new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
                 var cmd = new NpgsqlCommand();
 
