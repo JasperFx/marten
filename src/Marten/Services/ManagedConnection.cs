@@ -18,7 +18,19 @@ namespace Marten.Services
         private bool _ownsConnection;
         private IRetryPolicy _retryPolicy;
 
+        // keeping this for binary compatibility (but not used)
+        [Obsolete("Use the method which includes IRetryPolicy instead")]
+        public ManagedConnection(IConnectionFactory factory) : this(factory, new NulloRetryPolicy())
+        {
+        }
+
         public ManagedConnection(IConnectionFactory factory, IRetryPolicy retryPolicy) : this(factory, CommandRunnerMode.AutoCommit, retryPolicy)
+        {
+        }
+
+        // keeping this for binary compatibility (but not used)
+        [Obsolete("Use the method which includes IRetryPolicy instead")]
+        public ManagedConnection(SessionOptions options, CommandRunnerMode mode) : this(options, mode, new NulloRetryPolicy())
         {
         }
 
@@ -33,6 +45,14 @@ namespace Marten.Services
 
             _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, conn, options.OwnsConnection, options.Transaction);
             _retryPolicy = retryPolicy;
+        }
+
+        // keeping this for binary compatibility (but not used)
+        [Obsolete("Use the method which includes IRetryPolicy instead")]
+        public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int commandTimeout = 30) : this(factory, mode,
+            new NulloRetryPolicy(), isolationLevel, commandTimeout)
+        {
         }
 
 
