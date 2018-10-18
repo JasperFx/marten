@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
@@ -124,7 +124,9 @@ namespace Marten.Testing
 
         public int[] NumberArray { get; set; }
 
-        public string[] Tags { get; set; }
+        public string[] TagsArray { get; set; }
+
+        public HashSet<string> TagsHashSet { get; set; }
 
         public Target[] Children { get; set; }
 

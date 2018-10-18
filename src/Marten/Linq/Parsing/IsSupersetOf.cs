@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -12,7 +13,22 @@ namespace Marten.Linq.Parsing
         public bool Matches(MethodCallExpression expression)
         {
             MethodInfo method = expression.Method;
+            return IsMartenLinqExtension(method) ||
+                   IsISetMethod(method);
+        }
+
+        private static bool IsMartenLinqExtension(MethodInfo method)
+        {
             return method.Name == nameof(LinqExtensions.IsSupersetOf) && method.DeclaringType == typeof(LinqExtensions);
+        }
+
+        private static bool IsISetMethod(MethodInfo method)
+        {
+            return method.Name == "IsSupersetOf" &&
+                   method.DeclaringType
+                       .GetInterfaces()
+                       .Where(i => i.IsGenericType)
+                       .Any(i => i.GetGenericTypeDefinition() == typeof(ISet<>));
         }
 
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
