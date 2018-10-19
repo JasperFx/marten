@@ -32,6 +32,32 @@ namespace Marten
         }
 
         /// <summary>
+        /// Used for Linq queries to determines whether an element is a subset of the specified collection
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumerable"></param>
+        /// <param name="items"></param>
+        /// <returns></returns>
+        public static bool IsSubsetOf<T>(this IEnumerable<T> enumerable, IEnumerable<T> items)
+        {
+            var hashSet = new HashSet<T>(enumerable);
+            return hashSet.IsSubsetOf(items);
+        }
+
+        /// <summary>
+        /// Used for Linq queries to determines whether an element is a subset of the specified collection
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumerable"></param>
+        /// <param name="items"></param>
+        /// <returns></returns>
+        public static bool IsSubsetOf<T>(this IEnumerable<T> enumerable, params T[] items)
+        {
+            var hashSet = new HashSet<T>(enumerable);
+            return hashSet.IsSubsetOf(items);
+        }
+
+        /// <summary>
         /// Used for Linq queries to determines whether an element is a superset of the specified collection
         /// </summary>
         /// <typeparam name="T"></typeparam>

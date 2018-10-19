@@ -75,6 +75,7 @@ namespace Marten.Linq
             new IsInGenericEnumerable(),
             new IsEmpty(),
             new IsSupersetOf(),
+            new IsSubsetOf(),
 
             // multi-tenancy
             new AnyTenant(),
