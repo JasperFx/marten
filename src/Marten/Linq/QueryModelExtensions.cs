@@ -90,12 +90,20 @@ namespace Marten.Linq
         public static void ApplySkip(this QueryModel model, CommandBuilder sql)
         {
             var skip = model.FindOperators<SkipResultOperator>().LastOrDefault();
-            if (skip != null)
+            if (skip == null)
             {
-                var param = sql.AddParameter(skip.Count.Value());
-                sql.Append(" OFFSET :");
-                sql.Append(param.ParameterName);
+                return;
             }
+
+            int offset = (int) skip.Count.Value();
+            if (offset == 0)
+            {
+                return;
+            }
+
+            var param = sql.AddParameter(offset);
+            sql.Append(" OFFSET :");
+            sql.Append(param.ParameterName);
         }
     }
 }
