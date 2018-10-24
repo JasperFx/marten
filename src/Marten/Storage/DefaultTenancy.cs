@@ -22,7 +22,7 @@ namespace Marten.Storage
             Schema = new TenantSchema(options, Default.As<Tenant>());
         }
 
-        public ITenant this[string tenantId] => new LightweightTenant(tenantId, Default);
+        public ITenant this[string tenantId] => new LightweightTenant(tenantId, Default, Options.RetryPolicy());
 
         public ITenant Default { get; }
 
@@ -39,11 +39,13 @@ namespace Marten.Storage
     public class LightweightTenant : ITenant
     {
         private readonly ITenant _inner;
+        private readonly IRetryPolicy _retryPolicy;
 
-        public LightweightTenant(string tenantId, ITenant inner)
+        public LightweightTenant(string tenantId, ITenant inner, IRetryPolicy retryPolicy)
         {
             _inner = inner;
             TenantId = tenantId;
+            _retryPolicy = retryPolicy;
         }
 
         public IDbObjects DbObjects => _inner.DbObjects;

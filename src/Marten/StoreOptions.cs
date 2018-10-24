@@ -50,6 +50,7 @@ namespace Marten
 
         private IMartenLogger _logger = new NulloMartenLogger();
         private ISerializer _serializer;
+        private IRetryPolicy _retryPolicy = new NulloRetryPolicy();
 
         /// <summary>
         ///     Whether or Marten should attempt to create any missing database schema objects at runtime. This
@@ -224,6 +225,16 @@ namespace Marten
         public void Logger(IMartenLogger logger)
         {
             _logger = logger;
+        }
+
+        public IRetryPolicy RetryPolicy()
+        {
+            return _retryPolicy ?? new NulloRetryPolicy();
+        }
+
+        public void RetryPolicy(IRetryPolicy retryPolicy)
+        {
+            _retryPolicy = retryPolicy;
         }
 
         /// <summary>

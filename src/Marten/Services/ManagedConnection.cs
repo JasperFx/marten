@@ -16,12 +16,25 @@ namespace Marten.Services
         private readonly int _commandTimeout;
         private TransactionState _connection;
         private bool _ownsConnection;
+        private IRetryPolicy _retryPolicy;
 
-        public ManagedConnection(IConnectionFactory factory) : this(factory, CommandRunnerMode.AutoCommit)
+        // keeping this for binary compatibility (but not used)
+        [Obsolete("Use the method which includes IRetryPolicy instead")]
+        public ManagedConnection(IConnectionFactory factory) : this(factory, new NulloRetryPolicy())
         {
         }
 
-        public ManagedConnection(SessionOptions options, CommandRunnerMode mode)
+        public ManagedConnection(IConnectionFactory factory, IRetryPolicy retryPolicy) : this(factory, CommandRunnerMode.AutoCommit, retryPolicy)
+        {
+        }
+
+        // keeping this for binary compatibility (but not used)
+        [Obsolete("Use the method which includes IRetryPolicy instead")]
+        public ManagedConnection(SessionOptions options, CommandRunnerMode mode) : this(options, mode, new NulloRetryPolicy())
+        {
+        }
+
+        public ManagedConnection(SessionOptions options, CommandRunnerMode mode, IRetryPolicy retryPolicy)
         {
             _ownsConnection = options.OwnsConnection;
             _mode = options.OwnsTransactionLifecycle ? mode : CommandRunnerMode.External;
@@ -31,12 +44,20 @@ namespace Marten.Services
             var conn = options.Connection ?? options.Transaction?.Connection;
 
             _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, conn, options.OwnsConnection, options.Transaction);
+            _retryPolicy = retryPolicy;
+        }
 
+        // keeping this for binary compatibility (but not used)
+        [Obsolete("Use the method which includes IRetryPolicy instead")]
+        public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int commandTimeout = 30) : this(factory, mode,
+            new NulloRetryPolicy(), isolationLevel, commandTimeout)
+        {
         }
 
 
         // 30 is NpgsqlCommand.DefaultTimeout - ok to burn it to the call site?
-        public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode,
+        public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode, IRetryPolicy retryPolicy,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int commandTimeout = 30)
         {
             _factory = factory;
@@ -44,6 +65,7 @@ namespace Marten.Services
             _isolationLevel = isolationLevel;
             _commandTimeout = commandTimeout;
             _ownsConnection = true;
+            _retryPolicy = retryPolicy;
 
         }
 
@@ -52,18 +74,19 @@ namespace Marten.Services
             if (_connection == null)
             {
                 _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout, _ownsConnection);
-                _connection.Open();
+
+                _retryPolicy.Execute(() => _connection.Open());
             }
         }
 
-        private Task buildConnectionAsync(CancellationToken token)
+        private async Task buildConnectionAsync(CancellationToken token)
         {
             if (_connection == null)
             {
                 _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout, _ownsConnection);
-                return _connection.OpenAsync(token);
+
+                await _retryPolicy.ExecuteAsync(async () => await _connection.OpenAsync(token), token);
             }
-            return Task.CompletedTask;
         }
 
         public IMartenSessionLogger Logger { get; set; } = NulloMartenLogger.Flyweight;
@@ -76,7 +99,7 @@ namespace Marten.Services
 
             buildConnection();
 
-            _connection.Commit();
+            _retryPolicy.Execute(() => _connection.Commit());
 
             _connection.Dispose();
             _connection = null;
@@ -86,7 +109,8 @@ namespace Marten.Services
         {
             if (_mode == CommandRunnerMode.External) return;
 
-            await buildConnectionAsync(token).ConfigureAwait(false);
+            await buildConnectionAsync(token).ConfigureAwait(false);   
+            await _retryPolicy.ExecuteAsync( async () => await _connection.CommitAsync(token).ConfigureAwait(false), token);
 
             await _connection.CommitAsync(token).ConfigureAwait(false);
 
@@ -101,7 +125,7 @@ namespace Marten.Services
 
             try
             {
-                _connection.Rollback();
+                _retryPolicy.Execute(() => _connection.Rollback());
             }
             catch (RollbackException e)
             {
@@ -125,7 +149,7 @@ namespace Marten.Services
 
             try
             {
-                await _connection.RollbackAsync(token).ConfigureAwait(false);
+                await _retryPolicy.ExecuteAsync(async () => await _connection.RollbackAsync(token).ConfigureAwait(false), token);
             }
             catch (RollbackException e)
             {
@@ -209,7 +233,7 @@ namespace Marten.Services
             _connection.Apply(cmd);
             try
             {
-                action(cmd);
+                _retryPolicy.Execute(() => action(cmd));
                 Logger.LogSuccess(cmd);
             }
             catch (Exception e)
@@ -228,7 +252,7 @@ namespace Marten.Services
             var cmd = _connection.CreateCommand();
             try
             {
-                action(cmd);
+                _retryPolicy.Execute(() => action(cmd));
                 Logger.LogSuccess(cmd);
             }
             catch (Exception e)
@@ -247,7 +271,7 @@ namespace Marten.Services
             var cmd = _connection.CreateCommand();
             try
             {
-                var returnValue = func(cmd);
+                var returnValue = _retryPolicy.Execute<T>(() => func(cmd));
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }
@@ -268,7 +292,7 @@ namespace Marten.Services
 
             try
             {
-                var returnValue = func(cmd);
+                var returnValue = _retryPolicy.Execute<T>(() => func(cmd));
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }
@@ -289,7 +313,7 @@ namespace Marten.Services
 
             try
             {
-                await action(cmd, token).ConfigureAwait(false);
+                await _retryPolicy.ExecuteAsync(async () => await action(cmd, token).ConfigureAwait(false), token);
                 Logger.LogSuccess(cmd);
             }
             catch (Exception e)
@@ -301,7 +325,7 @@ namespace Marten.Services
 
         public async Task ExecuteAsync(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
         {
-            await buildConnectionAsync(token).ConfigureAwait(false);
+            await _retryPolicy.ExecuteAsync(async () => await buildConnectionAsync(token).ConfigureAwait(false), token);
 
             RequestCount++;
 
@@ -329,7 +353,7 @@ namespace Marten.Services
 
             try
             {
-                var returnValue = await func(cmd, token).ConfigureAwait(false);
+                var returnValue = await _retryPolicy.ExecuteAsync<T>(async () => await func(cmd, token).ConfigureAwait(false), token);
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }
@@ -350,7 +374,7 @@ namespace Marten.Services
 
             try
             {
-                var returnValue = await func(cmd, token).ConfigureAwait(false);
+                var returnValue = await _retryPolicy.ExecuteAsync<T>(async () => await func(cmd, token).ConfigureAwait(false), token);
                 Logger.LogSuccess(cmd);
                 return returnValue;
             }
