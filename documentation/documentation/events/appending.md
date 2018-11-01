@@ -49,6 +49,6 @@ If you have an existing stream, you can later append additional events with `IEv
 
 <[sample:append-events-assert-on-eventid]> 
 
-### CreateStream vs. Append
+### StartStream vs. Append
 
 Both `StartStream` and `Append` can be used to start a new event stream. The difference with the methods is that `StartStream` always checks for existing stream and throws `ExistingStreamIdCollisionException` in case the stream already exists.
