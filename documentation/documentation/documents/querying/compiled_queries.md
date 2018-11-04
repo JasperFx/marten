@@ -82,7 +82,7 @@ A sample usage of this type of query is shown below:
 
 ## Querying for included documents
 
-If you wish to use a compiled query for a document, using a `JOIN` so that the query will include another document, just as the <[linkto:documentation/documents/include;title=Include()]> method does on a simple query, the compiled query would be constructed just like any other, using the `Include()` method
+If you wish to use a compiled query for a document, using a `JOIN` so that the query will include another document, just as the <[linkto:documentation/documents/querying/include;title=Include()]> method does on a simple query, the compiled query would be constructed just like any other, using the `Include()` method
 on the query:
 
 <[sample:compiled_include]>
@@ -158,4 +158,4 @@ And an example:
 
 <[sample:FindJsonUserByUsername]>
 
-(our ToJson method simply reuturns a string representation of the `User` instance in Json notation)
+(our `ToJson()` method simply returns a string representation of the `User` instance in Json notation)
