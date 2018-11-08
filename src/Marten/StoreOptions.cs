@@ -199,7 +199,7 @@ namespace Marten
         /// <param name="casing">Casing style to be used in serialization</param>
         public void UseDefaultSerialization(EnumStorage enumStyle = EnumStorage.AsInteger, Casing casing = Casing.Default)
         {
-            Serializer(new JsonNetSerializer {EnumStorage = enumStyle, Casing = casing});
+            Serializer(CreateDefaultSerializer(enumStyle, casing));
         }
 
         /// <summary>
@@ -213,9 +213,26 @@ namespace Marten
 
         public ISerializer Serializer()
         {
-            return _serializer ?? new JsonNetSerializer();
+            return _serializer ?? CreateDefaultSerializer();
         }
 
+        private ISerializer CreateDefaultSerializer(
+            EnumStorage enumStyle = EnumStorage.AsInteger,
+            Casing casing = Casing.Default)
+        {
+            var serializer = new JsonNetSerializer
+            {
+                EnumStorage = enumStyle,
+                Casing = casing
+            };
+
+            if (UseCharBufferPooling)
+            {
+                serializer.ArrayPool = JsonNetArrayPool.Shared;
+            }
+
+            return serializer;
+        }
 
         public IMartenLogger Logger()
         {

@@ -9,6 +9,8 @@ namespace Marten.Services
 {
     public class JsonNetSerializer : ISerializer
     {
+        public JsonNetArrayPool ArrayPool { get; set; }
+
         private readonly JsonSerializer _clean = new JsonSerializer
         {
             TypeNameHandling =  TypeNameHandling.None,
@@ -40,13 +42,13 @@ namespace Marten.Services
 
         public void ToJson(object document, TextWriter writer)
         {
-            _serializer.Serialize(writer, document);
+            _serializer.Serialize(CreateJsonWriter(writer), document);
         }
 
         public string ToJson(object document)
         {
             var writer = new StringWriter();
-            _serializer.Serialize(writer, document);
+            _serializer.Serialize(CreateJsonWriter(writer), document);
 
             return writer.ToString();
         }
@@ -58,12 +60,12 @@ namespace Marten.Services
 
         public T FromJson<T>(TextReader reader)
         {
-            return _serializer.Deserialize<T>(new JsonTextReader(reader));
+            return _serializer.Deserialize<T>(CreateJsonReader(reader));
         }
 
         public object FromJson(Type type, TextReader reader)
         {
-            return _serializer.Deserialize(new JsonTextReader(reader), type);
+            return _serializer.Deserialize(CreateJsonReader(reader), type);
         }
 
         public string ToCleanJson(object document)
@@ -135,6 +137,28 @@ namespace Marten.Services
                     _clean.ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy { ProcessDictionaryKeys = true, OverrideSpecifiedNames = true } };
                 }
             }
+        }
+
+        private JsonReader CreateJsonReader(TextReader reader)
+        {
+            var jsonReader = new JsonTextReader(reader);
+            if (ArrayPool != null)
+            {
+                jsonReader.ArrayPool = ArrayPool;
+            }
+
+            return jsonReader;
+        }
+
+        private JsonWriter CreateJsonWriter(TextWriter writer)
+        {
+            var jsonWriter = new JsonTextWriter(writer);
+            if (ArrayPool != null)
+            {
+                jsonWriter.ArrayPool = ArrayPool;
+            }
+
+            return jsonWriter;
         }
     }
 }
