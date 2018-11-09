@@ -7,7 +7,7 @@ Main goal of this release was to accommodate the **Npgsql 4.*** dependency.
 
 Besides the usage of Npgsql 4, our biggest change was making the **default schema object creation mode** to `CreateOrUpdate`. Meaning that Marten even in its default mode will not drop any existing tables, even in development mode. You can still opt into the full "sure, I’ll blow away a table and start over if it’s incompatible" mode, but we felt like this option was safer after a few user problems were reported with the previous rules. See <[linkto:documentation/schema/migrations;title=Schema Migrations and Patches]> for more information.
 
-We also aligned usage of `EnumStorage`. Previously,  for <[linkto:documentation/documents/configuration/duplicated_fields;title=Enum Duplicated Fields]> it was always storing it as `varchar`. Now it's using setting from `JsonSerializer` options - so by default it's `integer`. We felt that it's not consistent to have different settings for Enums stored in json and stored in fields. 
+We also aligned usage of `EnumStorage`. Previously, <[linkto:documentation/documents/configuration/duplicated_fields;title=Enum Duplicated Field]> was always stored as `varchar`. Now it's using setting from `JsonSerializer` options - so by default it's `integer`. We felt that it's not consistent to have different default setting for Enums stored in json and in duplicated fields. 
 
 See full list of the fixed issues on [GitHub](https://github.com/JasperFx/marten/milestone/26?closed=1).
 
