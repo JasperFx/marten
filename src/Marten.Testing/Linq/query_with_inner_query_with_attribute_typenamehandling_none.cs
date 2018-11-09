@@ -3,21 +3,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Marten.Services;
+using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_inner_query : IntegratedFixture
+    public class query_with_inner_query_with_attribute_typenamehandling_none : IntegratedFixture
     {
         public class TypeWithInnerCollections
         {
             public Guid Id { get; set; }
             public string Flatten { get; set; }
             public string[] Array { get; set; }
+
+            [JsonProperty(ItemTypeNameHandling = TypeNameHandling.None)]
             public IEnumerable<string> Enumerable { get; set; }
+
             public IEnumerable<string> IEnumerableFromArray { get; set; }
             public IEnumerable<string> IEnumerbaleFromList { get; set; }
             public List<string> List { get; set; }
@@ -83,7 +86,6 @@ namespace Marten.Testing.Linq
         [MemberData(nameof(Predicates))]
         public async Task can_query_against_array_of_string(Expression<Func<TypeWithInnerCollections, bool>> predicate)
         {
-            ConfigureStoreToHaveJsonTypeNameHandlingNone();
             SetupTestData();
 
             using (var query = theStore.QuerySession())
@@ -95,16 +97,6 @@ namespace Marten.Testing.Linq
                 results.Count.ShouldBe(2);
                 results.All(e => e.Enumerable.Contains(SearchPhrase)).ShouldBeTrue();
             }
-        }
-
-        private void ConfigureStoreToHaveJsonTypeNameHandlingNone()
-        {
-            var serializer = new JsonNetSerializer();
-            serializer.Customize(s =>
-            {
-                s.TypeNameHandling = Newtonsoft.Json.TypeNameHandling.None;
-            });
-            StoreOptions(options => options.Serializer(serializer));
         }
 
         private void SetupTestData()
