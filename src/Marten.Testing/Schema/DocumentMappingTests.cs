@@ -9,6 +9,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Schema.Hierarchies;
+using NpgsqlTypes;
 using Shouldly;
 using Xunit;
 
@@ -36,9 +37,6 @@ namespace Marten.Testing.Schema
         {
             public Guid Id { get; set; } = Guid.NewGuid();
         }
-
-
-
 
         public class IntId
         {
@@ -116,6 +114,7 @@ namespace Marten.Testing.Schema
                 mapping.Alias = "different";
             }
         }
+
         // ENDSAMPLE
 
         // SAMPLE: ConfigureMarten-specifically
@@ -129,6 +128,7 @@ namespace Marten.Testing.Schema
                 mapping.Duplicate(x => x.Name);
             }
         }
+
         // ENDSAMPLE
 
         [Fact]
@@ -136,14 +136,13 @@ namespace Marten.Testing.Schema
         {
             var mapping = DocumentMapping.For<LongId>();
 
-            var newDef = new HiloSettings {MaxLo = 33};
+            var newDef = new HiloSettings { MaxLo = 33 };
 
             mapping.HiloSettings = newDef;
 
             var sequence = mapping.IdStrategy.ShouldBeOfType<HiloIdGeneration>();
             sequence.MaxLo.ShouldBe(newDef.MaxLo);
         }
-
 
         [Fact]
         public void concrete_type_with_subclasses_is_hierarchy()
@@ -232,6 +231,18 @@ namespace Marten.Testing.Schema
             mapping.UpsertFunction.QualifiedName.ShouldBe("public.mt_upsert_user");
         }
 
+        [Theory]
+        [InlineData(EnumStorage.AsInteger)]
+        [InlineData(EnumStorage.AsString)]
+        public void enum_storage_should_be_taken_from_store_options(EnumStorage enumStorage)
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.UseDefaultSerialization(enumStorage);
+
+            var mapping = new DocumentMapping<User>(storeOptions);
+            mapping.EnumStorage.ShouldBe(enumStorage);
+        }
+
         [Fact]
         public void doc_type_with_use_optimistic_concurrency_attribute()
         {
@@ -244,13 +255,41 @@ namespace Marten.Testing.Schema
         {
             var mapping = DocumentMapping.For<User>();
 
-            mapping.DuplicateField("FirstName");
+            mapping.DuplicateField(nameof(User.FirstName));
 
-            mapping.FieldFor("FirstName").ShouldBeOfType<DuplicatedField>();
+            mapping.FieldFor(nameof(User.FirstName)).ShouldBeOfType<DuplicatedField>();
 
             // other fields are still the same
 
-            mapping.FieldFor("LastName").ShouldNotBeOfType<DuplicatedField>();
+            mapping.FieldFor(nameof(User.LastName)).ShouldNotBeOfType<DuplicatedField>();
+        }
+
+        [Theory]
+        [InlineData(EnumStorage.AsInteger, NpgsqlDbType.Integer)]
+        [InlineData(EnumStorage.AsString, NpgsqlDbType.Varchar)]
+        public void duplicated_field_enum_storage_should_be_taken_from_store_options_enum_storage_by_default(EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.UseDefaultSerialization(enumStorage);
+
+            var mapping = new DocumentMapping<Target>(storeOptions);
+
+            var duplicatedField = mapping.DuplicateField(nameof(Target.Color));
+            duplicatedField.DbType.ShouldBe(expectedNpgsqlDbType);
+        }
+
+        [Theory]
+        [InlineData(EnumStorage.AsInteger, NpgsqlDbType.Integer)]
+        [InlineData(EnumStorage.AsString, NpgsqlDbType.Varchar)]
+        public void duplicated_field_enum_storage_should_be_taken_from_store_options_duplicated_field_enum_storage_when_it_was_changed(EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.DuplicatedFieldEnumStorage = enumStorage;
+
+            var mapping = new DocumentMapping<Target>(storeOptions);
+
+            var duplicatedField = mapping.DuplicateField(nameof(Target.Color));
+            duplicatedField.DbType.ShouldBe(expectedNpgsqlDbType);
         }
 
         [Fact]
@@ -279,13 +318,12 @@ namespace Marten.Testing.Schema
                 store.Advanced.Clean.CompletelyRemove(typeof(User));
 
                 var mapping = store.Tenancy.Default.MappingFor(typeof(User)).As<DocumentMapping>();
-                mapping.DuplicateField("FirstName");
+                mapping.DuplicateField(nameof(User.FirstName));
 
                 store.Tenancy.Default.EnsureStorageExists(typeof(User));
 
                 store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
             }
-
         }
 
         [Fact]
@@ -437,7 +475,6 @@ namespace Marten.Testing.Schema
             mapping.PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
         }
 
-
         [Fact]
         public void picks_up_searchable_attribute_on_fields()
         {
@@ -486,15 +523,15 @@ namespace Marten.Testing.Schema
         {
             var mapping = DocumentMapping.For<User>();
 
-            mapping.DuplicateField("FirstName");
+            mapping.DuplicateField(nameof(User.FirstName));
 
             mapping.PropertySearching = PropertySearching.JSON_Locator_Only;
 
-            mapping.FieldFor("LastName").ShouldBeOfType<JsonLocatorField>();
+            mapping.FieldFor(nameof(User.LastName)).ShouldBeOfType<JsonLocatorField>();
 
             // leave duplicates alone
 
-            mapping.FieldFor("FirstName").ShouldBeOfType<DuplicatedField>();
+            mapping.FieldFor(nameof(User.FirstName)).ShouldBeOfType<DuplicatedField>();
         }
 
         [Fact]
@@ -532,7 +569,7 @@ namespace Marten.Testing.Schema
         public void to_table_columns_with_duplicated_fields()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.DuplicateField("FirstName");
+            mapping.DuplicateField(nameof(User.FirstName));
 
             var table = new DocumentTable(mapping);
 
@@ -540,7 +577,6 @@ namespace Marten.Testing.Schema
                 .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn,
                     DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, "first_name");
         }
-
 
         [Fact]
         public void to_table_columns_with_subclasses()
@@ -580,8 +616,8 @@ namespace Marten.Testing.Schema
         public void to_upsert_with_duplicated_fields()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.DuplicateField("FirstName");
-            mapping.DuplicateField("LastName");
+            mapping.DuplicateField(nameof(User.FirstName));
+            mapping.DuplicateField(nameof(User.LastName));
 
             var function = new UpsertFunction(mapping);
 
@@ -754,5 +790,4 @@ namespace Marten.Testing.Schema
             objects.OfType<OverwriteFunction>().Any().ShouldBeTrue();
         }
     }
-
 }
