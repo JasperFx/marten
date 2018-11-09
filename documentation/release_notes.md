@@ -13,7 +13,7 @@ See full list of the fixed issues on [GitHub](https://github.com/JasperFx/marten
 
 You can also read more in [Jeremy's blog post from](https://jeremydmiller.com/2018/09/27/marten-3-0-is-released-and-introducing-the-new-core-team/).
 
-## Migration Guide from 2.x
+## Migration Guide from 2.*
 
 - To keep Marten fully rebuilding your schema (so to allow Marten drop tables) set store options to:
 
